@@ -5530,6 +5530,7 @@ grpc_cc_library(
         "channel_fwd",
         "context",
         "dual_ref_counted",
+        "experiments",
         "grpc_lb_policy_ring_hash",
         "grpc_resolver_xds_header",
         "grpc_service_config",
@@ -5655,7 +5656,10 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chttp2/transport/ping_abuse_policy.h",
     ],
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
     deps = [
         "channel_args",
         "time",

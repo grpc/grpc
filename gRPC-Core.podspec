@@ -65,9 +65,6 @@ Pod::Spec.new do |s|
   # following lets users write `#include <grpc/grpc.h>`.
   s.header_dir = name
 
-  # The module map created automatically by Cocoapods doesn't work for C libraries like gRPC-Core.
-  s.module_map = 'include/grpc/module.modulemap'
-
   # To compile the library, we need the user headers search path (quoted includes) to point to the
   # root of the repo, third_party/** and two upb generated directories, and the system headers
   # search path (angled includes) to point to `include/`.

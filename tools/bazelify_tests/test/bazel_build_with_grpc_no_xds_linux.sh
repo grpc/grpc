@@ -1,4 +1,5 @@
-# Copyright 2019 The gRPC Authors
+#!/bin/bash
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/pull_request/grpc_basictests_c_cpp_build_only.sh"
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+# Test that builds with --define=grpc_no_xds=true work.
+tools/bazel build //test/cpp/end2end:end2end_test --define=grpc_no_xds=true

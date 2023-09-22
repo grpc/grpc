@@ -88,10 +88,6 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 
@@ -127,10 +123,6 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 
@@ -166,10 +158,6 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 #endif
@@ -201,7 +189,6 @@ enum ExperimentIds {
   kExperimentIdJitterMaxIdle,
   kExperimentIdRoundRobinDelegateToPickFirst,
   kExperimentIdWrrDelegateToPickFirst,
-  kExperimentIdClientChannelSubchannelWrapperWorkSerializerOrphan,
   kExperimentIdCombinerOffloadToEventEngine,
   kNumExperiments
 };
@@ -304,11 +291,6 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() {
   return IsExperimentEnabled(kExperimentIdWrrDelegateToPickFirst);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return IsExperimentEnabled(
-      kExperimentIdClientChannelSubchannelWrapperWorkSerializerOrphan);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() {
