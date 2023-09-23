@@ -21,6 +21,10 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/random/bit_gen_ref.h"
 
+#include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/gprpp/time.h"
+
 namespace grpc_core {
 
 class Chttp2PingCallbacks {
@@ -31,16 +35,23 @@ class Chttp2PingCallbacks {
   void OnPing(Callback on_start, Callback on_ack);
   void OnPingAck(Callback on_ack);
 
-  GRPC_MUST_USE_RESULT uint64_t StartPing(absl::BitGenRef bitgen);
-  bool AckPing(uint64_t id);
+  GRPC_MUST_USE_RESULT uint64_t
+  StartPing(absl::BitGenRef bitgen, Duration ping_timeout, Callback on_timeout,
+            grpc_event_engine::experimental::EventEngine* event_engine);
+  bool AckPing(uint64_t id,
+               grpc_event_engine::experimental::EventEngine* event_engine);
 
-  void CancelAll();
+  void CancelAll(grpc_event_engine::experimental::EventEngine* event_engine);
 
   bool ping_requested() const { return ping_requested_; }
 
  private:
   using CallbackVec = std::vector<Callback>;
-  absl::flat_hash_map<uint64_t, CallbackVec> inflight_;
+  struct InflightPing {
+    grpc_event_engine::experimental::EventEngine::TaskHandle on_timeout;
+    CallbackVec on_ack;
+  };
+  absl::flat_hash_map<uint64_t, InflightPing> inflight_;
   uint64_t most_recent_inflight_ = 0;
   bool ping_requested_ = false;
   CallbackVec on_start_;

@@ -14,9 +14,13 @@
 
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 
+#include <inttypes.h>
+
 #include <cstdint>
 
 #include "absl/random/distributions.h"
+
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 
@@ -29,22 +33,28 @@ void Chttp2PingCallbacks::OnPing(Callback on_start, Callback on_ack) {
 void Chttp2PingCallbacks::OnPingAck(Callback on_ack) {
   auto it = inflight_.find(most_recent_inflight_);
   if (it != inflight_.end()) {
-    it->second.emplace_back(std::move(on_ack));
+    it->second.on_ack.emplace_back(std::move(on_ack));
     return;
   }
   ping_requested_ = true;
   on_ack_.emplace_back(std::move(on_ack));
 }
 
-uint64_t Chttp2PingCallbacks::StartPing(absl::BitGenRef bitgen) {
+uint64_t Chttp2PingCallbacks::StartPing(
+    absl::BitGenRef bitgen, Duration ping_timeout, Callback on_timeout,
+    grpc_event_engine::experimental::EventEngine* event_engine) {
   uint64_t id;
   do {
     id = absl::Uniform<uint64_t>(bitgen);
+    gpr_log(GPR_INFO, "ID=%" PRIu64, id);
   } while (inflight_.contains(id));
   CallbackVec cbs = std::move(on_start_);
-  inflight_.emplace(id, std::move(on_ack_));
   CallbackVec().swap(on_start_);
-  CallbackVec().swap(on_ack_);
+  InflightPing inflight;
+  inflight.on_ack.swap(on_ack_);
+  inflight.on_timeout =
+      event_engine->RunAfter(ping_timeout, std::move(on_timeout));
+  inflight_.emplace(id, std::move(inflight));
   most_recent_inflight_ = id;
   ping_requested_ = false;
   for (auto& cb : cbs) {
@@ -53,20 +63,24 @@ uint64_t Chttp2PingCallbacks::StartPing(absl::BitGenRef bitgen) {
   return id;
 }
 
-bool Chttp2PingCallbacks::AckPing(uint64_t id) {
+bool Chttp2PingCallbacks::AckPing(
+    uint64_t id, grpc_event_engine::experimental::EventEngine* event_engine) {
   auto ping = inflight_.extract(id);
   if (ping.empty()) return false;
-  for (auto& cb : ping.mapped()) {
+  event_engine->Cancel(ping.mapped().on_timeout);
+  for (auto& cb : ping.mapped().on_ack) {
     cb();
   }
   return true;
 }
 
-void Chttp2PingCallbacks::CancelAll() {
+void Chttp2PingCallbacks::CancelAll(
+    grpc_event_engine::experimental::EventEngine* event_engine) {
   CallbackVec().swap(on_start_);
   CallbackVec().swap(on_ack_);
   for (auto& cbs : inflight_) {
-    CallbackVec().swap(cbs.second);
+    CallbackVec().swap(cbs.second.on_ack);
+    event_engine->Cancel(cbs.second.on_timeout);
   }
 }
 

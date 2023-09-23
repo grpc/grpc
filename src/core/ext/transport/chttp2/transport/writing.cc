@@ -116,19 +116,18 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   Match(
       t->ping_rate_policy.RequestSendPing(NextAllowedPingInterval(t)),
       [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
-        const uint64_t id = t->ping_callbacks.StartPing(t->bitgen);
+        const uint64_t id = t->ping_callbacks.StartPing(
+            t->bitgen, t->keepalive_timeout,
+            [t = t->Ref()] {
+              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+              grpc_core::ExecCtx exec_ctx;
+              grpc_chttp2_ping_timeout(std::move(t));
+            },
+            t->event_engine.get());
         grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_ping_create(false, id));
         if (t->channelz_socket != nullptr) {
           t->channelz_socket->RecordKeepaliveSent();
         }
-        auto hdl =
-            t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
-              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-              grpc_core::ExecCtx exec_ctx;
-              grpc_chttp2_ping_timeout(std::move(t));
-            });
-        t->ping_callbacks.OnPingAck(
-            [hdl, t = t->Ref()]() { t->event_engine->Cancel(hdl); });
         grpc_core::global_stats().IncrementHttp2PingsSent();
         if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||

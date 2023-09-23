@@ -438,17 +438,12 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// timer to initiate ping events
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       keepalive_ping_timer_handle;
-  /// watchdog to kill the transport when waiting for the keepalive ping
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      keepalive_watchdog_timer_handle;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
   /// grace period for a ping to complete before watchdog kicks in
   grpc_core::Duration keepalive_timeout;
   /// if keepalive pings are allowed when there's no outstanding streams
   bool keepalive_permit_without_calls = false;
-  /// If start_keepalive_ping_locked has been called
-  bool keepalive_ping_started = false;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.

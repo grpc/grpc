@@ -5682,7 +5682,12 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/random:distributions",
     ],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "time",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
