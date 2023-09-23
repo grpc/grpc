@@ -40,7 +40,6 @@
 #endif
 
 ABSL_FLAG(std::string, target, "xds:///helloworld:50051", "Target string");
-ABSL_FLAG(bool, secure, true, "Secure mode");
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -94,7 +93,6 @@ class GreeterClient {
       if (cookie.name == cookie_name) {
         values.emplace_back(cookie);
       }
-      // ABSL_ASSERT(!(values.back().value.empty()));
     }
     return values;
   }
@@ -191,10 +189,7 @@ int main(int argc, char** argv) {
     return static_cast<int>(observability.status().code());
   }
   GreeterClient greeter(grpc::CreateChannel(
-      absl::GetFlag(FLAGS_target),
-      absl::GetFlag(FLAGS_secure)
-          ? grpc::XdsCredentials(grpc::InsecureChannelCredentials())
-          : grpc::InsecureChannelCredentials()));
+      absl::GetFlag(FLAGS_target), grpc::InsecureChannelCredentials()));
 
   Cookie session_cookie;
   sayHello(greeter, &session_cookie, NULL);

@@ -43,7 +43,6 @@
 #endif
 
 ABSL_FLAG(int32_t, port, 50051, "Server port for service.");
-ABSL_FLAG(bool, secure, true, "Secure mode");
 
 using grpc::CallbackServerContext;
 using grpc::Server;
