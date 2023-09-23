@@ -70,7 +70,10 @@ bool Chttp2PingCallbacks::AckPing(
     uint64_t id, grpc_event_engine::experimental::EventEngine* event_engine) {
   auto ping = inflight_.extract(id);
   if (ping.empty()) return false;
-  event_engine->Cancel(ping.mapped().on_timeout);
+  if (ping.mapped().on_timeout !=
+      grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
+    event_engine->Cancel(ping.mapped().on_timeout);
+  }
   for (auto& cb : ping.mapped().on_ack) {
     cb();
   }
@@ -83,8 +86,11 @@ void Chttp2PingCallbacks::CancelAll(
   CallbackVec().swap(on_ack_);
   for (auto& cbs : inflight_) {
     CallbackVec().swap(cbs.second.on_ack);
-    event_engine->Cancel(cbs.second.on_timeout);
+    event_engine->Cancel(std::exchange(
+        cbs.second.on_timeout,
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
   }
+  ping_requested_ = false;
 }
 
 }  // namespace grpc_core
