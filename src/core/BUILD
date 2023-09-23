@@ -5680,6 +5680,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/hash",
+        "absl/meta:type_traits",
         "absl/random:bit_gen_ref",
         "absl/random:distributions",
     ],
