@@ -11691,6 +11691,18 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: ping_callbacks_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/mock_event_engine.h
+  src:
+  - test/core/transport/chttp2/ping_callbacks_test.cc
+  deps:
+  - gtest
+  - grpc
+  uses_polling: false
 - name: ping_configuration_test
   gtest: true
   build: test
