@@ -18,8 +18,9 @@
 
 #include <inttypes.h>
 
-#include <cstdint>
+#include <utility>
 
+#include "absl/meta/type_traits.h"
 #include "absl/random/distributions.h"
 
 #include <grpc/support/log.h>

@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 
+#include <algorithm>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
