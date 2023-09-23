@@ -120,7 +120,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
             [t = t->Ref()] {
               grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
               grpc_core::ExecCtx exec_ctx;
-              grpc_chttp2_ping_timeout(std::move(t));
+              grpc_chttp2_ping_timeout(t);
             },
             t->event_engine.get());
         grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_ping_create(false, id));
