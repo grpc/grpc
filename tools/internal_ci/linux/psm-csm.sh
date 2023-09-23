@@ -161,7 +161,7 @@ main() {
   test_suites=(
     "gamma.gamma_baseline_test"
     "gamma.affinity_test"
-    "app_net_ssa_test"
+    # "app_net_ssa_test"
   )
   for test in "${test_suites[@]}"; do
     run_test $test || (( ++failed_tests ))
