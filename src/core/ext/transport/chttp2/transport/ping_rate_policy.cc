@@ -48,7 +48,8 @@ void Chttp2PingRatePolicy::SetDefaults(const ChannelArgs& args) {
 }
 
 Chttp2PingRatePolicy::RequestSendPingResult
-Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval) {
+Chttp2PingRatePolicy::RequestSendPing(
+    Duration next_allowed_ping_interval) const {
   if (max_pings_without_data_ != 0 && pings_before_data_required_ == 0) {
     return TooManyRecentPings{};
   }
@@ -59,9 +60,12 @@ Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval) {
     return TooSoon{next_allowed_ping_interval, last_ping_sent_time_,
                    next_allowed_ping - now};
   }
-  last_ping_sent_time_ = now;
-  if (pings_before_data_required_) --pings_before_data_required_;
   return SendGranted{};
+}
+
+void Chttp2PingRatePolicy::SentPing() {
+  last_ping_sent_time_ = Timestamp::Now();
+  if (pings_before_data_required_) --pings_before_data_required_;
 }
 
 void Chttp2PingRatePolicy::ReceivedDataFrame() {

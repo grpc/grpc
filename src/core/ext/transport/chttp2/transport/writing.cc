@@ -115,6 +115,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   Match(
       t->ping_rate_policy.RequestSendPing(NextAllowedPingInterval(t)),
       [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
+        t->ping_rate_policy.SentPing();
         const uint64_t id = t->ping_callbacks.StartPing(
             t->bitgen, t->keepalive_timeout,
             [t = t->Ref()] {

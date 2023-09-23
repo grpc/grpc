@@ -51,7 +51,9 @@ class Chttp2PingRatePolicy {
   using RequestSendPingResult =
       absl::variant<SendGranted, TooManyRecentPings, TooSoon>;
 
-  RequestSendPingResult RequestSendPing(Duration next_allowed_ping_interval);
+  RequestSendPingResult RequestSendPing(
+      Duration next_allowed_ping_interval) const;
+  void SentPing();
   void ResetPingsBeforeDataRequired();
   void ReceivedDataFrame();
   std::string GetDebugString() const;

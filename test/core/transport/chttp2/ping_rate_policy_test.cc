@@ -51,7 +51,9 @@ TEST(PingRatePolicy, ClientBlockedUntilDataSent) {
             TooManyRecentPings());
   policy.ResetPingsBeforeDataRequired();
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10)), SendGranted());
+  policy.SentPing();
   EXPECT_EQ(policy.RequestSendPing(Duration::Zero()), SendGranted());
+  policy.SentPing();
   EXPECT_EQ(policy.RequestSendPing(Duration::Zero()), TooManyRecentPings());
 }
 
@@ -59,12 +61,14 @@ TEST(PingRatePolicy, RateThrottlingWorks) {
   Chttp2PingRatePolicy policy{ChannelArgs(), false};
   // Observe that we can fail if we send in a tight loop
   while (policy.RequestSendPing(Duration::Milliseconds(10)) == SendGranted()) {
+    policy.SentPing();
   }
   // Observe that we can succeed if we wait a bit between pings
   for (int i = 0; i < 100; i++) {
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
     EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10)),
               SendGranted());
+    policy.SentPing();
   }
 }
 
