@@ -116,6 +116,20 @@ void PrivateGenerator::PrintAllComments(StringVector comments,
   out->Print("\"\"\"\n");
 }
 
+std::string SnakeCase(std::string str) {
+  std::string output;
+  for (auto ch : str) {
+    if (std::isupper(ch)) {
+      output += "_";
+      output += std::tolower(ch);
+    } else {
+      output += ch;
+    }
+  }
+  if (output.rfind("_", 0) == 0) output.erase(output.begin());
+  return output;
+}
+
 bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service* service,
                                          grpc_generator::Printer* out) {
   StringMap service_dict;
@@ -138,7 +152,9 @@ bool PrivateGenerator::PrintBetaServicer(const grpc_generator::Service* service,
       std::string arg_name =
           method->ClientStreaming() ? "request_iterator" : "request";
       StringMap method_dict;
-      method_dict["Method"] = method->name();
+      method_dict["Method"] = config.snake_case_methods
+                                  ? SnakeCase(method->name())
+                                  : method->name();
       method_dict["ArgName"] = arg_name;
       out->Print(method_dict, "def $Method$(self, $ArgName$, context):\n");
       {
@@ -823,7 +839,8 @@ pair<bool, std::string> PrivateGenerator::GetGrpcServices() {
 GeneratorConfiguration::GeneratorConfiguration()
     : grpc_package_root("grpc"),
       beta_package_root("grpc.beta"),
-      import_prefix("") {}
+      import_prefix(""),
+      snake_case_methods(false) {}
 
 PythonGrpcGenerator::PythonGrpcGenerator(const GeneratorConfiguration& config)
     : config_(config) {}
@@ -859,22 +876,41 @@ static bool GenerateGrpc(GeneratorContext* context, PrivateGenerator& generator,
 static bool ParseParameters(const std::string& parameter,
                             std::string* grpc_version,
                             std::vector<std::string>* strip_prefixes,
-                            std::string* error) {
+                            bool* snake_case_methods, std::string* error) {
+  // Legacy parameters
   std::vector<std::string> comma_delimited_parameters;
   grpc_python_generator::Split(parameter, ',', &comma_delimited_parameters);
   if (comma_delimited_parameters.size() == 1 &&
       comma_delimited_parameters[0].empty()) {
     *grpc_version = "grpc_2_0";
-  } else if (comma_delimited_parameters.size() == 1) {
+  } else if (comma_delimited_parameters.size() == 1 &&
+             comma_delimited_parameters[0].find("=") == std::string::npos) {
     *grpc_version = comma_delimited_parameters[0];
-  } else if (comma_delimited_parameters.size() == 2) {
+  } else if (comma_delimited_parameters.size() == 2 &&
+             comma_delimited_parameters[0].find("=") == std::string::npos &&
+             comma_delimited_parameters[1].find("=") == std::string::npos) {
     *grpc_version = comma_delimited_parameters[0];
     std::copy(comma_delimited_parameters.begin() + 1,
               comma_delimited_parameters.end(),
               std::back_inserter(*strip_prefixes));
   } else {
-    *error = "--grpc_python_out received too many comma-delimited parameters.";
-    return false;
+    // Key=Value parameters
+    *grpc_version = "grpc_2_0";
+    std::vector<std::string> parameters_list =
+        grpc_generator::tokenize(parameter, ",");
+    for (auto parameter_string = parameters_list.begin();
+         parameter_string != parameters_list.end(); parameter_string++) {
+      std::vector<std::string> param =
+          grpc_generator::tokenize(*parameter_string, "=");
+      if (param[0] == "snake_case_methods") {
+        *snake_case_methods = true;
+      } else if (param[0] == "strip_prefixes") {
+        grpc_python_generator::Split(param[1], '|', strip_prefixes);
+      } else {
+        *error = std::string("Unknown parameter: ") + *parameter_string;
+        return false;
+      }
+    }
   }
   return true;
 }
@@ -908,7 +944,8 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
   std::string grpc_version;
   GeneratorConfiguration extended_config(config_);
   bool success = ParseParameters(parameter, &grpc_version,
-                                 &(extended_config.prefixes_to_filter), error);
+                                 &(extended_config.prefixes_to_filter),
+                                 &(extended_config.snake_case_methods), error);
   PrivateGenerator generator(extended_config, &pbfile);
   if (!success) return false;
   if (grpc_version == "grpc_2_0") {
