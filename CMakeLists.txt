@@ -1832,6 +1832,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
+  src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -2868,6 +2869,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
+  src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/varint.cc
