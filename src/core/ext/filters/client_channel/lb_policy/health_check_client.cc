@@ -28,6 +28,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "upb/base/string_view.h"
@@ -44,6 +45,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/debug/trace.h"
@@ -114,7 +116,7 @@ void HealthProducer::HealthChecker::Orphan() {
 
 void HealthProducer::HealthChecker::AddWatcherLocked(HealthWatcher* watcher) {
   watchers_.insert(watcher);
-  watcher->Notify(state_, status_);
+  if (state_.has_value()) watcher->Notify(*state_, status_);
 }
 
 bool HealthProducer::HealthChecker::RemoveWatcherLocked(
@@ -128,13 +130,18 @@ void HealthProducer::HealthChecker::OnConnectivityStateChangeLocked(
   if (state == GRPC_CHANNEL_READY) {
     // We should already be in CONNECTING, and we don't want to change
     // that until we see the initial response on the stream.
-    GPR_ASSERT(state_ == GRPC_CHANNEL_CONNECTING);
+    if (!state_.has_value()) {
+      state_ = GRPC_CHANNEL_CONNECTING;
+      status_ = absl::OkStatus();
+    } else {
+      GPR_ASSERT(state_ == GRPC_CHANNEL_CONNECTING);
+    }
     // Start the health watch stream.
     StartHealthStreamLocked();
   } else {
     state_ = state;
     status_ = status;
-    NotifyWatchersLocked(state_, status_);
+    NotifyWatchersLocked(*state_, status_);
     // We're not connected, so stop health checking.
     stream_client_.reset();
   }
@@ -177,12 +184,21 @@ void HealthProducer::HealthChecker::NotifyWatchersLocked(
 void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
     grpc_connectivity_state state, const absl::Status& status) {
   if (state == GRPC_CHANNEL_SHUTDOWN) return;
+  // Prepend the subchannel's address to the status if needed.
+  absl::Status use_status;
+  if (!status.ok()) {
+    std::string address_str =
+        grpc_sockaddr_to_uri(&producer_->subchannel_->address())
+            .value_or("<unknown address type>");
+    use_status = absl::Status(
+        status.code(), absl::StrCat(address_str, ": ", status.message()));
+  }
   work_serializer_->Schedule(
-      [self = Ref(), state, status]() {
+      [self = Ref(), state, status = std::move(use_status)]() mutable {
         MutexLock lock(&self->producer_->mu_);
         if (self->stream_client_ != nullptr) {
           self->state_ = state;
-          self->status_ = status;
+          self->status_ = std::move(status);
           for (HealthWatcher* watcher : self->watchers_) {
             watcher->Notify(state, self->status_);
           }
@@ -364,7 +380,7 @@ void HealthProducer::AddWatcher(
   grpc_pollset_set_add_pollset_set(interested_parties_,
                                    watcher->interested_parties());
   if (!health_check_service_name.has_value()) {
-    watcher->Notify(state_, status_);
+    if (state_.has_value()) watcher->Notify(*state_, status_);
     non_health_watchers_.insert(watcher);
   } else {
     auto it =
@@ -421,6 +437,13 @@ void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
 //
 
 HealthWatcher::~HealthWatcher() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO,
+            "HealthWatcher %p: unregistering from producer %p "
+            "(health_check_service_name=\"%s\")",
+            this, producer_.get(),
+            health_check_service_name_.value_or("N/A").c_str());
+  }
   if (producer_ != nullptr) {
     producer_->RemoveWatcher(this, health_check_service_name_);
   }
@@ -447,6 +470,13 @@ void HealthWatcher::SetSubchannel(Subchannel* subchannel) {
   if (created) producer_->Start(subchannel->Ref());
   // Register ourself with the producer.
   producer_->AddWatcher(this, health_check_service_name_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO,
+            "HealthWatcher %p: registered with producer %p (created=%d, "
+            "health_check_service_name=\"%s\")",
+            this, producer_.get(), created,
+            health_check_service_name_.value_or("N/A").c_str());
+  }
 }
 
 void HealthWatcher::Notify(grpc_connectivity_state state, absl::Status status) {
@@ -471,6 +501,11 @@ MakeHealthCheckWatcher(
   if (!args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
     health_check_service_name =
         args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
+    gpr_log(GPR_INFO,
+            "creating HealthWatcher -- health_check_service_name=\"%s\"",
+            health_check_service_name.value_or("N/A").c_str());
   }
   return std::make_unique<HealthWatcher>(std::move(work_serializer),
                                          std::move(health_check_service_name),

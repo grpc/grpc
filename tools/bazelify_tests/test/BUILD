@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package")
-load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_cpp_distribtest_test", "grpc_run_tests_harness_test")
+load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_cpp_distribtest_test", "grpc_run_simple_command_test", "grpc_run_tests_harness_test")
 load(":portability_tests.bzl", "generate_run_tests_portability_tests")
 load(":bazel_distribtests.bzl", "generate_bazel_distribtests")
 
@@ -27,19 +27,19 @@ generate_bazel_distribtests(name = "bazel_distribtests_linux")
 
 # C/C++
 grpc_run_tests_harness_test(
-    name = "runtests_c_linux_dbg",
+    name = "runtests_c_linux_dbg_build_only",
     size = "enormous",
     args = [
-        "-l c -c dbg",
+        "-l c -c dbg --build_only",
     ],
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
 
 grpc_run_tests_harness_test(
-    name = "runtests_c_linux_opt",
+    name = "runtests_c_linux_opt_build_only",
     size = "enormous",
     args = [
-        "-l c -c opt",
+        "-l c -c opt --build_only",
     ],
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
@@ -136,14 +136,13 @@ grpc_run_tests_harness_test(
 test_suite(
     name = "basic_tests_linux",
     tests = [
-        ":runtests_c_linux_dbg",
-        ":runtests_c_linux_opt",
+        ":runtests_c_linux_dbg_build_only",
+        ":runtests_c_linux_opt_build_only",
         ":runtests_cpp_linux_dbg_build_only",
         ":runtests_cpp_linux_opt_build_only",
         ":runtests_csharp_linux_dbg",
         ":runtests_csharp_linux_opt",
-        # TODO(jtattermusch): reenable the test once not flaky anymore
-        #":runtests_php_linux_dbg",
+        ":runtests_php_linux_dbg",
         ":runtests_php_linux_opt",
         ":runtests_python_linux_opt",
         ":runtests_ruby_linux_dbg",
@@ -213,10 +212,42 @@ test_suite(
     ],
 )
 
+# "Bazel build" tests
+grpc_run_simple_command_test(
+    name = "bazel_build_with_strict_warnings_linux",
+    size = "enormous",
+    args = ["tools/bazelify_tests/test/bazel_build_with_strict_warnings_linux.sh"],
+    docker_image_version = "tools/dockerfile/test/bazel.current_version",
+)
+
+grpc_run_simple_command_test(
+    name = "bazel_build_with_grpc_no_xds_linux",
+    size = "enormous",
+    args = ["tools/bazelify_tests/test/bazel_build_with_grpc_no_xds_linux.sh"],
+    docker_image_version = "tools/dockerfile/test/bazel.current_version",
+)
+
+grpc_run_simple_command_test(
+    name = "bazel_build_with_grpc_no_xds_negative_test_linux",
+    size = "enormous",
+    args = ["tools/bazelify_tests/test/bazel_build_with_grpc_no_xds_negative_test_linux.sh"],
+    docker_image_version = "tools/dockerfile/test/bazel.current_version",
+)
+
+test_suite(
+    name = "bazel_build_tests_linux",
+    tests = [
+        ":bazel_build_with_grpc_no_xds_linux",
+        ":bazel_build_with_grpc_no_xds_negative_test_linux",
+        ":bazel_build_with_strict_warnings_linux",
+    ],
+)
+
 test_suite(
     name = "all_tests_linux",
     tests = [
         ":basic_tests_linux",
+        ":bazel_build_tests_linux",
         ":bazel_distribtests_linux",
         ":cpp_distribtests_linux",
         ":portability_tests_linux",

@@ -192,7 +192,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionNoServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
@@ -201,7 +201,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     result.service_config =
         grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), "{}");
     ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   void SetNextResolutionInvalidServiceConfig(const std::vector<int>& ports) {
@@ -209,7 +209,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
     result.service_config =
         absl::InvalidArgumentError("error parsing service config");
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   void SetNextResolutionWithServiceConfig(const std::vector<int>& ports,
@@ -218,7 +218,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
     result.service_config =
         grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), svc_cfg);
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   std::vector<int> GetServersPorts(size_t start_index = 0) {

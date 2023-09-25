@@ -41,6 +41,9 @@ _ChannelzSubchannel = grpc_channelz.Subchannel
 _ChannelzSocket = grpc_channelz.Socket
 _CsdsClient = grpc_csds.CsdsClient
 
+# Use in get_load_balancer_stats request to request all metadata.
+REQ_LB_STATS_METADATA_ALL = ("*",)
+
 
 class XdsTestClient(framework.rpc.grpc.GrpcApp):
     """
@@ -104,13 +107,16 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         self,
         *,
         num_rpcs: int,
+        metadata_keys: Optional[tuple[str, ...]] = None,
         timeout_sec: Optional[int] = None,
     ) -> grpc_testing.LoadBalancerStatsResponse:
         """
         Shortcut to LoadBalancerStatsServiceClient.get_client_stats()
         """
         return self.load_balancer_stats.get_client_stats(
-            num_rpcs=num_rpcs, timeout_sec=timeout_sec
+            num_rpcs=num_rpcs,
+            timeout_sec=timeout_sec,
+            metadata_keys=metadata_keys,
         )
 
     def get_load_balancer_accumulated_stats(

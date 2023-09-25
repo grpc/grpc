@@ -77,7 +77,7 @@ function venv_relative_python() {
   fi
 }
 
-# Distutils toolchain to use depending on the system.
+# Toolchain to use depending on the system.
 function toolchain() {
   if [ "$(is_mingw)" ]; then
     echo 'mingw32'
@@ -140,7 +140,6 @@ pip_install() {
 
 # Pin setuptools to < 60.0.0 to restore the distutil installation, see:
 # https://github.com/pypa/setuptools/pull/2896
-export SETUPTOOLS_USE_DISTUTILS=stdlib
 pip_install --upgrade pip==21.3.1
 pip_install --upgrade setuptools==59.6.0
 

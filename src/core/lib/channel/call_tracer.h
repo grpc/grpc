@@ -139,7 +139,7 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
 
   // Records a new attempt for the associated call. \a transparent denotes
   // whether the attempt is being made as a transparent retry or as a
-  // non-transparent retry/heding attempt. (There will be at least one attempt
+  // non-transparent retry/hedging attempt. (There will be at least one attempt
   // even if the call is not being retried.) The `ClientCallTracer` object
   // retains ownership to the newly created `CallAttemptTracer` object.
   // RecordEnd() serves as an indication that the call stack is done with all
@@ -169,6 +169,9 @@ class ServerCallTracerFactory {
   virtual ~ServerCallTracerFactory() {}
 
   virtual ServerCallTracer* CreateNewServerCallTracer(Arena* arena) = 0;
+
+  // Returns true if a server is to be traced, false otherwise.
+  virtual bool IsServerTraced(const ChannelArgs& /*args*/) { return true; }
 
   // Use this method to get the server call tracer factory from channel args,
   // instead of directly fetching it with `GetObject`.

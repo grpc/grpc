@@ -59,7 +59,6 @@
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
@@ -836,6 +835,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
       call->send_initial_metadata_.Set(HttpAuthorityMetadata(),
                                        std::move(*args->authority));
     }
+    call->send_initial_metadata_.Set(
+        GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
+                                    args->registered_method)));
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -844,11 +846,11 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     // collecting from when the call is created at the transport. The idea is
     // that the transport would create the call tracer and pass it in as part of
     // the metadata.
-    auto* server_call_tracer_factory = ServerCallTracerFactory::Get(
-        args->server != nullptr ? args->server->channel_args() : ChannelArgs());
-    if (server_call_tracer_factory != nullptr) {
+    if (args->server != nullptr &&
+        args->server->server_call_tracer_factory() != nullptr) {
       auto* server_call_tracer =
-          server_call_tracer_factory->CreateNewServerCallTracer(arena);
+          args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
+              arena);
       if (server_call_tracer != nullptr) {
         // Note that we are setting both
         // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
@@ -2732,6 +2734,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),
                                   std::move(*args->authority));
     }
+    send_initial_metadata_->Set(GrpcRegisteredMethod(),
+                                reinterpret_cast<void*>(static_cast<uintptr_t>(
+                                    args->registered_method)));
     if (auto* channelz_channel = channel()->channelz_node()) {
       channelz_channel->RecordCallStarted();
     }
@@ -3277,11 +3282,10 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   // collecting from when the call is created at the transport. The idea is that
   // the transport would create the call tracer and pass it in as part of the
   // metadata.
-  auto* server_call_tracer_factory =
-      ServerCallTracerFactory::Get(args->server->channel_args());
-  if (server_call_tracer_factory != nullptr) {
+  if (args->server->server_call_tracer_factory() != nullptr) {
     auto* server_call_tracer =
-        server_call_tracer_factory->CreateNewServerCallTracer(arena);
+        args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
+            arena);
     if (server_call_tracer != nullptr) {
       // Note that we are setting both
       // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and

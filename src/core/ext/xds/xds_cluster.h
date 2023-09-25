@@ -21,7 +21,6 @@
 
 #include <stdint.h>
 
-#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>
@@ -45,8 +44,6 @@
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
-
-bool XdsOverrideHostEnabled();
 
 struct XdsClusterResource : public XdsResourceType::ResourceData {
   struct Eds {

@@ -15,6 +15,10 @@
 #ifndef GRPC_IMPL_CHANNEL_ARG_NAMES_H
 #define GRPC_IMPL_CHANNEL_ARG_NAMES_H
 
+// IWYU pragma: private, include "third_party/grpc/include/grpc/grpc.h"
+// IWYU pragma: friend "src/.*"
+// IWYU pragma: friend "test/.*"
+
 /** \defgroup grpc_arg_keys
  * Channel argument keys.
  * \{

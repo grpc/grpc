@@ -560,8 +560,8 @@ class CLanguage(object):
 
         if compiler == "default" or compiler == "cmake":
             return ("debian11", [])
-        elif compiler == "gcc7":
-            return ("gcc_7", [])
+        elif compiler == "gcc8":
+            return ("gcc_8", [])
         elif compiler == "gcc10.2":
             return ("debian11", [])
         elif compiler == "gcc10.2_openssl102":
@@ -772,23 +772,21 @@ class PythonLanguage(object):
                 # overrides threading settings in C-Core.
                 if io_platform != "native":
                     environment["GRPC_ENABLE_FORK_SUPPORT"] = "0"
-                    jobs.extend(
-                        [
-                            self.config.job_spec(
-                                python_config.run
-                                + [self._TEST_COMMAND[io_platform]],
-                                timeout_seconds=8 * 60,
-                                environ=dict(
-                                    GRPC_PYTHON_TESTRUNNER_FILTER=str(
-                                        test_case
-                                    ),
-                                    **environment,
-                                ),
-                                shortname=f"{python_config.name}.{io_platform}.{test_case}",
-                            )
-                            for test_case in test_cases
-                        ]
-                    )
+                jobs.extend(
+                    [
+                        self.config.job_spec(
+                            python_config.run
+                            + [self._TEST_COMMAND[io_platform]],
+                            timeout_seconds=8 * 60,
+                            environ=dict(
+                                GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
+                                **environment,
+                            ),
+                            shortname=f"{python_config.name}.{io_platform}.{test_case}",
+                        )
+                        for test_case in test_cases
+                    ]
+                )
         return jobs
 
     def pre_build_steps(self):
@@ -1716,7 +1714,7 @@ argp.add_argument(
     "--compiler",
     choices=[
         "default",
-        "gcc7",
+        "gcc8",
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc12",
@@ -1852,10 +1850,6 @@ jobset.measure_cpu_costs = args.measure_cpu_costs
 # grab config
 run_config = _CONFIGS[args.config]
 build_config = run_config.build_config
-
-# TODO(jtattermusch): is this setting applied/being used?
-if args.travis:
-    _FORCE_ENVIRON_FOR_WRAPPERS = {"GRPC_TRACE": "api"}
 
 languages = set(_LANGUAGES[l] for l in args.language)
 for l in languages:

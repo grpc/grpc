@@ -58,6 +58,7 @@ class ServerAddress {
   ServerAddress& operator=(ServerAddress&& other) noexcept;
 
   bool operator==(const ServerAddress& other) const { return Cmp(other) == 0; }
+  bool operator<(const ServerAddress& other) const { return Cmp(other) < 0; }
 
   int Cmp(const ServerAddress& other) const;
 

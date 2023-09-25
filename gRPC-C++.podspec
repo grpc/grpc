@@ -231,6 +231,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
+    ss.dependency 'abseil/random/bit_gen_ref', abseil_version
+    ss.dependency 'abseil/random/distributions', abseil_version
     ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
@@ -259,10 +261,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/connector.h',
                       'src/core/ext/filters/client_channel/dynamic_filters.h',
                       'src/core/ext/filters/client_channel/global_subchannel_pool.h',
-                      'src/core/ext/filters/client_channel/http_proxy.h',
+                      'src/core/ext/filters/client_channel/http_proxy_mapper.h',
                       'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                       'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
                       'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h',
+                      'src/core/ext/filters/client_channel/lb_policy/endpoint_list.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h',
@@ -710,6 +713,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_cluster.h',
                       'src/core/ext/xds/xds_cluster_specifier_plugin.h',
                       'src/core/ext/xds/xds_common_types.h',
+                      'src/core/ext/xds/xds_enabled_server.h',
                       'src/core/ext/xds/xds_endpoint.h',
                       'src/core/ext/xds/xds_health_status.h',
                       'src/core/ext/xds/xds_http_fault_filter.h',
@@ -767,6 +771,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/grpc_polled_fd.h',
                       'src/core/lib/event_engine/handle_containers.h',
                       'src/core/lib/event_engine/memory_allocator_factory.h',
+                      'src/core/lib/event_engine/nameser.h',
                       'src/core/lib/event_engine/poller.h',
                       'src/core/lib/event_engine/posix.h',
                       'src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h',
@@ -794,7 +799,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/shim.h',
                       'src/core/lib/event_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/thread_local.h',
-                      'src/core/lib/event_engine/thread_pool/original_thread_pool.h',
                       'src/core/lib/event_engine/thread_pool/thread_count.h',
                       'src/core/lib/event_engine/thread_pool/thread_pool.h',
                       'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h',
@@ -1344,10 +1348,11 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/connector.h',
                               'src/core/ext/filters/client_channel/dynamic_filters.h',
                               'src/core/ext/filters/client_channel/global_subchannel_pool.h',
-                              'src/core/ext/filters/client_channel/http_proxy.h',
+                              'src/core/ext/filters/client_channel/http_proxy_mapper.h',
                               'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                               'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
                               'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h',
+                              'src/core/ext/filters/client_channel/lb_policy/endpoint_list.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h',
@@ -1777,6 +1782,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_cluster.h',
                               'src/core/ext/xds/xds_cluster_specifier_plugin.h',
                               'src/core/ext/xds/xds_common_types.h',
+                              'src/core/ext/xds/xds_enabled_server.h',
                               'src/core/ext/xds/xds_endpoint.h',
                               'src/core/ext/xds/xds_health_status.h',
                               'src/core/ext/xds/xds_http_fault_filter.h',
@@ -1834,6 +1840,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/grpc_polled_fd.h',
                               'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/memory_allocator_factory.h',
+                              'src/core/lib/event_engine/nameser.h',
                               'src/core/lib/event_engine/poller.h',
                               'src/core/lib/event_engine/posix.h',
                               'src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h',
@@ -1861,7 +1868,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/shim.h',
                               'src/core/lib/event_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/thread_local.h',
-                              'src/core/lib/event_engine/thread_pool/original_thread_pool.h',
                               'src/core/lib/event_engine/thread_pool/thread_count.h',
                               'src/core/lib/event_engine/thread_pool/thread_pool.h',
                               'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h',

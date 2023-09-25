@@ -823,7 +823,7 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         test
         for test in tests
         if not test.startswith("test/cpp/ext/otel:")
-        and not test.startswith("test/cpp/ext/gsm:")
+        and not test.startswith("test/cpp/ext/csm:")
     ]
 
     # missing opencensus/stats/stats.h

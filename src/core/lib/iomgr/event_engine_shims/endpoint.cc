@@ -60,10 +60,8 @@ class EventEngineEndpointWrapper {
   struct grpc_event_engine_endpoint {
     grpc_endpoint base;
     EventEngineEndpointWrapper* wrapper;
-    std::aligned_storage<sizeof(SliceBuffer), alignof(SliceBuffer)>::type
-        read_buffer;
-    std::aligned_storage<sizeof(SliceBuffer), alignof(SliceBuffer)>::type
-        write_buffer;
+    alignas(SliceBuffer) char read_buffer[sizeof(SliceBuffer)];
+    alignas(SliceBuffer) char write_buffer[sizeof(SliceBuffer)];
   };
 
   explicit EventEngineEndpointWrapper(

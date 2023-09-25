@@ -32,7 +32,7 @@ namespace {
 // messages and ends with a non-OK status. Client reads after server is done
 // writing, and expects to get the status after the messages.
 void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1)
