@@ -357,7 +357,7 @@ void AresResolver::LookupTXT(
 void AresResolver::CheckSocketsLocked() {
   FdNodeList new_list;
   if (!shutting_down_) {
-    ares_socket_t socks[ARES_GETSOCK_MAXNUM];
+    ares_socket_t socks[ARES_GETSOCK_MAXNUM] = {};
     int socks_bitmask = ares_getsock(channel_, socks, ARES_GETSOCK_MAXNUM);
     for (size_t i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
       if (ARES_GETSOCK_READABLE(socks_bitmask, i) ||

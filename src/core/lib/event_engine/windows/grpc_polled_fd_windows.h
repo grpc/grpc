@@ -55,7 +55,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   ~GrpcPolledFdFactoryWindows() override = default;
 
   void Initialize(grpc_core::Mutex* mutex, EventEngine* event_engine) override;
-  GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override;
+  GrpcPolledFdReturnType NewGrpcPolledFdLocked(ares_socket_t as) override;
   void ConfigureAresChannelLocked(ares_channel channel) override;
 
  private:
@@ -94,7 +94,9 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   // to and read from c-ares and are used with the grpc windows poller, and it,
   // e.g., manufactures virtual socket error codes when it e.g. needs to tell
   // the c-ares library to wait for an async read.
-  class GrpcPolledFdWindows : public GrpcPolledFd {
+  class GrpcPolledFdWindows
+      : public GrpcPolledFd,
+        public std::enable_shared_from_this<GrpcPolledFdWindows> {
    public:
     GrpcPolledFdWindows(std::unique_ptr<WinSocket> winsocket,
                         grpc_core::Mutex* mu, int address_family,
@@ -160,8 +162,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
     grpc_slice write_buf_;
     absl::AnyInvocable<void(absl::Status)> read_closure_;
     absl::AnyInvocable<void(absl::Status)> write_closure_;
-    AnyInvocableClosure outer_read_closure_;
-    AnyInvocableClosure outer_write_closure_;
+    std::unique_ptr<AnyInvocableClosure> outer_read_closure_;
+    std::unique_ptr<AnyInvocableClosure> outer_write_closure_;
     const std::string name_;
     bool shutdown_called_ = false;
     int address_family_;
@@ -197,7 +199,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   grpc_core::Mutex* mu_;
   IOCP* iocp_;
   EventEngine* event_engine_;
-  std::map<SOCKET, std::unique_ptr<GrpcPolledFdWindows>> sockets_;
+  std::map<SOCKET, std::shared_ptr<GrpcPolledFdWindows>> sockets_;
 };
 
 }  // namespace experimental

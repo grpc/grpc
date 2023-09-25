@@ -14,6 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "grpc/support/log.h"
+
+#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
@@ -47,8 +50,6 @@ GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::GrpcPolledFdWindows(
       winsocket_(std::move(winsocket)),
       read_buf_(grpc_empty_slice()),
       write_buf_(grpc_empty_slice()),
-      outer_read_closure_([this]() { OnIocpReadable(); }),
-      outer_write_closure_([this]() { OnIocpWriteable(); }),
       name_(absl::StrFormat("c-ares socket: %" PRIdPTR,
                             winsocket_->raw_socket())),
       address_family_(address_family),
@@ -65,7 +66,6 @@ GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::~GrpcPolledFdWindows() {
   GPR_ASSERT(read_closure_ == nullptr);
   GPR_ASSERT(write_closure_ == nullptr);
   if (!shutdown_called_) {
-    // This is a normal path if the request has not been externally cancelled.
     winsocket_->Shutdown(DEBUG_LOCATION, "~GrpcPolledFdWindows");
   }
 }
@@ -133,7 +133,12 @@ void GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::
       return;
     }
   }
-  winsocket_->NotifyOnRead(&outer_read_closure_);
+  outer_read_closure_ = std::make_unique<AnyInvocableClosure>(
+      [self = shared_from_this()]() mutable {
+        self->OnIocpReadable();
+        self.reset();
+      });
+  winsocket_->NotifyOnRead(outer_read_closure_.get());
 }
 
 void GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::
@@ -190,7 +195,12 @@ void GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::
           ScheduleAndNullWriteClosure(
               GRPC_WSA_ERROR(wsa_error_code, "WSASend (overlapped)"));
         } else {
-          winsocket_->NotifyOnWrite(&outer_write_closure_);
+          outer_write_closure_ = std::make_unique<AnyInvocableClosure>(
+              [self = shared_from_this()]() mutable {
+                self->OnIocpWriteable();
+                self.reset();
+              });
+          winsocket_->NotifyOnWrite(outer_write_closure_.get());
         }
         break;
       case WRITE_PENDING:
@@ -207,8 +217,7 @@ bool GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::
 
 void GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::ShutdownLocked(
     absl::Status error) {
-  GPR_ASSERT(!shutdown_called_);
-  if (absl::IsCancelled(error)) {
+  if (absl::IsCancelled(error) && !shutdown_called_) {
     GRPC_ARES_RESOLVER_TRACE_LOG("fd:|%s| ShutdownLocked", GetName());
     shutdown_called_ = true;
     // The socket is disconnected and closed here since this is an external
@@ -598,11 +607,11 @@ void GrpcPolledFdFactoryWindows::Initialize(grpc_core::Mutex* mutex,
   event_engine_ = event_engine;
 }
 
-GrpcPolledFd* GrpcPolledFdFactoryWindows::NewGrpcPolledFdLocked(
+GrpcPolledFdReturnType GrpcPolledFdFactoryWindows::NewGrpcPolledFdLocked(
     ares_socket_t as) {
   auto it = sockets_.find(as);
   GPR_ASSERT(it != sockets_.end());
-  return it->second.get();
+  return it->second;
 }
 
 void GrpcPolledFdFactoryWindows::ConfigureAresChannelLocked(
@@ -642,12 +651,12 @@ ares_socket_t GrpcPolledFdFactoryWindows::Socket(int af, int type, int protocol,
       return INVALID_SOCKET;
     }
   }
-  auto polled_fd = std::make_unique<GrpcPolledFdWindows>(
+  auto polled_fd = std::make_shared<GrpcPolledFdWindows>(
       self->iocp_->Watch(s), self->mu_, af, type, self->event_engine_);
   GRPC_ARES_RESOLVER_TRACE_LOG(
       "fd:|%s| created with params af:%d type:%d protocol:%d",
       polled_fd->GetName(), af, type, protocol);
-  GPR_ASSERT(self->sockets_.insert({s, std::move(polled_fd)}).second);
+  GPR_ASSERT(self->sockets_.insert({s, polled_fd}).second);
   return s;
 }
 
