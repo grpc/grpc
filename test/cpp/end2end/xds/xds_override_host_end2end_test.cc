@@ -92,9 +92,9 @@ class OverrideHostTest : public XdsEnd2endTest {
     auto pair = server_initial_metadata.equal_range("set-cookie");
     for (auto it = pair.first; it != pair.second; ++it) {
       std::pair<absl::string_view, absl::string_view> key_value =
-          absl::StrSplit(it->second, "=");
+          absl::StrSplit(it->second, '=');
       std::pair<absl::string_view, absl::string_view> key_value2 =
-          absl::StrSplit(key_value.second, ";");
+          absl::StrSplit(key_value.second, ';');
       std::string decoded;
       EXPECT_TRUE(absl::Base64Unescape(key_value2.first, &decoded));
       gpr_log(GPR_INFO, "set-cookie header: %s (decoded: %s)",

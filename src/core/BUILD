@@ -5173,6 +5173,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
+        "absl/types:span",
         "absl/types:variant",
     ],
     language = "c++",

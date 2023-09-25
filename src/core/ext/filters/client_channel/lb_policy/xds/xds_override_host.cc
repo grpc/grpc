@@ -20,6 +20,7 @@
 
 #include <inttypes.h>
 #include <stddef.h>
+#include <string.h>
 
 #include <algorithm>
 #include <atomic>
@@ -37,9 +38,11 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "absl/types/variant.h"
 
 #include <grpc/impl/connectivity_state.h>
@@ -356,8 +359,7 @@ XdsOverrideHostLb::Picker::Picker(
 
 absl::string_view XdsOverrideHostLb::Picker::AllocateStringOnArena(
     const PickArgs& args, absl::string_view string) const {
-  char* buffer =
-      static_cast<char*>(args.call_state->Alloc(string.size()));
+  char* buffer = static_cast<char*>(args.call_state->Alloc(string.size()));
   memcpy(buffer, string.data(), string.size());
   return absl::string_view(buffer, string.size());
 }
@@ -384,7 +386,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   bool found_connecting = false;
   {
     MutexLock lock(&policy_->subchannel_map_mu_);
-    for (absl::string_view address : absl::StrSplit(cookie_address_list, ",")) {
+    for (absl::string_view address : absl::StrSplit(cookie_address_list, ',')) {
       auto it = policy_->subchannel_map_.find(address);
       if (it == policy_->subchannel_map_.end() ||
           it->second.GetSubchannel() == nullptr) {
@@ -605,8 +607,7 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
     XdsHealthStatus eds_health_status;
     std::string address_list;
     AddressInfo(XdsHealthStatus status, std::string addresses)
-        : eds_health_status(status),
-        address_list(std::move(addresses)) {}
+        : eds_health_status(status), address_list(std::move(addresses)) {}
   };
   std::map<const std::string, AddressInfo> addresses_for_map;
   for (const auto& endpoint : *endpoints) {
@@ -646,9 +647,9 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
     for (size_t i = 0; i < addresses.size(); ++i) {
       std::string start = absl::StrJoin(addresses_span.subspan(0, i), ",");
       std::string end = absl::StrJoin(addresses_span.subspan(i + 1), ",");
-      std::string address_list = absl::StrCat(
-          addresses[i], (start.empty() ? "" : ","),
-          start, (start.empty() || end.empty() ? "" : ","), end);
+      std::string address_list =
+          absl::StrCat(addresses[i], (start.empty() ? "" : ","), start,
+                       (start.empty() || end.empty() ? "" : ","), end);
       addresses_for_map.emplace(
           std::piecewise_construct, std::forward_as_tuple(addresses[i]),
           std::forward_as_tuple(status, std::move(address_list)));
@@ -677,10 +678,10 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
           gpr_log(GPR_INFO, "[xds_override_host_lb %p] adding map key %s", this,
                   address.c_str());
         }
-        it = subchannel_map_.emplace(
-                 std::piecewise_construct,
-                 std::forward_as_tuple(address),
-                 std::forward_as_tuple(address_info.eds_health_status))
+        it = subchannel_map_
+                 .emplace(std::piecewise_construct,
+                          std::forward_as_tuple(address),
+                          std::forward_as_tuple(address_info.eds_health_status))
                  .first;
       } else {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
@@ -697,8 +698,7 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
                 "[xds_override_host_lb %p] setting address list for %s to %s",
                 this, address.c_str(), address_info.address_list.c_str());
       }
-      it->second.set_address_list(
-          std::move(address_info.address_list));
+      it->second.set_address_list(address_info.address_list);
     }
   }
   return child_addresses;
