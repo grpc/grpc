@@ -86,9 +86,12 @@ void Chttp2PingCallbacks::CancelAll(
   CallbackVec().swap(on_ack_);
   for (auto& cbs : inflight_) {
     CallbackVec().swap(cbs.second.on_ack);
-    event_engine->Cancel(std::exchange(
-        cbs.second.on_timeout,
-        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
+    if (cbs.second.on_timeout !=
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
+      event_engine->Cancel(std::exchange(
+          cbs.second.on_timeout,
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
+    }
   }
   ping_requested_ = false;
 }
