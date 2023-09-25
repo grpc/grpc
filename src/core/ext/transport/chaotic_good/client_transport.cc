@@ -120,11 +120,13 @@ ClientTransport::ClientTransport(
   writer_ = MakeActivity(
       // Continuously write next outgoing frames to promise endpoints.
       std::move(write_loop), EventEngineWakeupScheduler(event_engine_),
-      [](absl::Status status) {
+      [this](absl::Status status) {
         GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
                    status.code() == absl::StatusCode::kInternal);
-        // TODO(ladynana): handle the promise endpoint write failures with
-        // outgoing_frames.close() once available.
+        if (status.code() == absl::StatusCode::kInternal) {
+          // Abort transport when internal errors happened.
+          this->AbortWithError();
+        }
       });
   auto read_loop = Loop([this] {
     return TrySeq(
@@ -185,11 +187,13 @@ ClientTransport::ClientTransport(
   reader_ = MakeActivity(
       // Continuously read next incoming frames from promise endpoints.
       std::move(read_loop), EventEngineWakeupScheduler(event_engine_),
-      [](absl::Status status) {
+      [this](absl::Status status) {
         GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
                    status.code() == absl::StatusCode::kInternal);
-        // TODO(ladynana): handle the promise endpoint read failures with
-        // iterating stream_map_ and close all the pipes once available.
+        if (status.code() == absl::StatusCode::kInternal) {
+          // Abort transport when internal errors happened.
+          this->AbortWithError();
+        }
       });
 }
 
