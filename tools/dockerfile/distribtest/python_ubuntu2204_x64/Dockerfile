@@ -19,4 +19,4 @@ RUN apt-get update -y && apt-get install -y python3 python3-pip
 # Ubuntu's python-pip package installs pip to /usr/bin, whereas the upgraded
 # pip lives at /usr/local/bin/pip. We'll use the absolute path for now, since
 # this will all be replaced with python3.
-RUN /usr/local/bin/pip install virtualenv
+RUN pip install virtualenv
