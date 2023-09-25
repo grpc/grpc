@@ -49,7 +49,6 @@ uint64_t Chttp2PingCallbacks::StartPing(
   uint64_t id;
   do {
     id = absl::Uniform<uint64_t>(bitgen);
-    gpr_log(GPR_INFO, "ID=%" PRIu64, id);
   } while (inflight_.contains(id));
   CallbackVec cbs = std::move(on_start_);
   CallbackVec().swap(on_start_);
