@@ -67,6 +67,8 @@ EXTERNAL_DEPS = {
     "absl/meta/type_traits.h": "absl/meta:type_traits",
     "absl/numeric/int128.h": "absl/numeric:int128",
     "absl/random/random.h": "absl/random",
+    "absl/random/bit_gen_ref.h": "absl/random:bit_gen_ref",
+    "absl/random/mocking_bit_gen.h": "absl/random:mocking_bit_gen",
     "absl/random/distributions.h": "absl/random:distributions",
     "absl/random/uniform_int_distribution.h": "absl/random:distributions",
     "absl/status/status.h": "absl/status",

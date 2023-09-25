@@ -1819,6 +1819,8 @@ libs:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
+  - absl/random:bit_gen_ref
+  - absl/random:distributions
   - absl/status:statusor
   - absl/types:span
   - absl/utility:utility
@@ -2791,6 +2793,8 @@ libs:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
+  - absl/random:bit_gen_ref
+  - absl/random:distributions
   - absl/status:statusor
   - absl/types:span
   - absl/utility:utility
@@ -12244,6 +12248,8 @@ targets:
   - test/core/backoff/random_early_detection_test.cc
   deps:
   - gtest
+  - absl/random:bit_gen_ref
+  - absl/random:distributions
   - absl/random:random
   uses_polling: false
 - name: raw_end2end_test
@@ -16181,6 +16187,8 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
+  - absl/random:bit_gen_ref
+  - absl/random:distributions
   - absl/status:statusor
   - absl/types:span
   - absl/utility:utility
