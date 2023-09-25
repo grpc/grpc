@@ -575,7 +575,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       combiner(grpc_combiner_create(event_engine)),
       state_tracker(is_client ? "client_transport" : "server_transport",
                     GRPC_CHANNEL_READY),
-      is_client(is_client),
       next_stream_id(is_client ? 1 : 2),
       ping_abuse_policy(channel_args),
       ping_rate_policy(channel_args, is_client),
@@ -583,7 +582,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           peer_string.as_string_view(),
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner),
-      deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0) {
+      deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0),
+      is_client(is_client) {
   cl = new grpc_core::ContextList();
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
