@@ -41,6 +41,8 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
     td_bootstrap_image: str
     xds_server_uri: str
     network: str
+    pre_stop_hook: bool = False
+    termination_grace_period_seconds: Optional[int] = None
 
     # Optional fields.
     service_account_name: Optional[str] = None
@@ -73,6 +75,8 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         namespace_template: Optional[str] = None,
         debug_use_port_forwarding: bool = False,
         enable_workload_identity: bool = True,
+        pre_stop_hook: bool = False,
+        termination_grace_period_seconds=termination_grace_period_seconds,
     ):
         super().__init__(
             k8s_namespace,
@@ -92,6 +96,9 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         self.reuse_service = reuse_service
         self.enable_workload_identity = enable_workload_identity
         self.debug_use_port_forwarding = debug_use_port_forwarding
+        self.pre_stop_hook = pre_stop_hook
+        self.termination_grace_period_seconds = termination_grace_period_seconds
+
         # GCP Network Endpoint Group.
         self.gcp_neg_name = neg_name or (
             f"{self.k8s_namespace.name}-{self.service_name}"
@@ -204,6 +211,8 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             maintenance_port=maintenance_port,
             secure_mode=secure_mode,
             bootstrap_version=bootstrap_version,
+            termination_grace_period_seconds=termination_grace_period_seconds,
+            pre_stop_hook=pre_stop_hook,
         )
 
         return self._make_servers_for_deployment(
