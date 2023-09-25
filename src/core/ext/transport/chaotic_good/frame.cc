@@ -138,11 +138,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
 }  // namespace
 
 absl::Status SettingsFrame::Deserialize(HPackParser*, const FrameHeader& header,
-<<<<<<< HEAD
-                                        absl::BitGenRef bitsrc,
-=======
                                         absl::BitGenRef,
->>>>>>> 59d886cb5cc2463078a5d30c94b8442967554f96
                                         SliceBuffer& slice_buffer) {
   if (header.type != FrameType::kSettings) {
     return absl::InvalidArgumentError("Expected settings frame");
