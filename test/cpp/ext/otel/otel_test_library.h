@@ -26,6 +26,7 @@
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
 
+#include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/grpcpp.h>
 
 #include "src/core/lib/channel/call_tracer.h"
@@ -66,13 +67,17 @@ class OTelPluginEnd2EndTest : public ::testing::Test {
           target_selector = absl::AnyInvocable<bool(absl::string_view) const>(),
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attribute_filter =
-              absl::AnyInvocable<bool(absl::string_view) const>());
+              absl::AnyInvocable<bool(absl::string_view) const>(),
+      absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+          generic_method_attribute_filter = absl::AnyInvocable<
+              bool(absl::string_view /*generic_method*/) const>());
 
   void TearDown() override;
 
   void ResetStub(std::shared_ptr<Channel> channel);
 
   void SendRPC();
+  void SendGenericRPC();
 
   absl::flat_hash_map<
       std::string,
@@ -85,12 +90,14 @@ class OTelPluginEnd2EndTest : public ::testing::Test {
           continue_predicate);
 
   const absl::string_view kMethodName = "grpc.testing.EchoTestService/Echo";
+  const absl::string_view kGenericMethodName = "foo/bar";
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader_;
   std::string server_address_;
   std::string canonical_server_address_;
   CallbackTestServiceImpl service_;
   std::unique_ptr<grpc::Server> server_;
   std::unique_ptr<EchoTestService::Stub> stub_;
+  std::unique_ptr<grpc::GenericStub> generic_stub_;
 };
 
 }  // namespace testing

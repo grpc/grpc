@@ -46,6 +46,7 @@ grpc_cc_test(
     name = "frame_test",
     srcs = ["frame_test.cc"],
     external_deps = [
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "gtest",
@@ -57,7 +58,10 @@ grpc_fuzzer(
     name = "frame_fuzzer",
     srcs = ["frame_fuzzer.cc"],
     corpus = "frame_fuzzer_corpus",
-    external_deps = ["absl/status:statusor"],
+    external_deps = [
+        "absl/random:bit_gen_ref",
+        "absl/status:statusor",
+    ],
     language = "C++",
     tags = ["no_windows"],
     deps = [
