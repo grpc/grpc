@@ -3072,7 +3072,10 @@ grpc_cc_library(
         "libcrypto",
         "libssl",
     ],
-    deps = ["//:grpc_base"],
+    deps = [
+        "//:gpr",
+        "//:grpc_base",
+    ],
 )
 
 grpc_cc_library(
