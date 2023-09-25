@@ -42,6 +42,7 @@
 #include <openssl/ssl.h>
 #include <openssl/tls1.h>
 #include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
 #include <openssl/x509v3.h>
 
 #include "absl/strings/match.h"
@@ -57,6 +58,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
@@ -144,6 +146,7 @@ struct tsi_ssl_frame_protector {
 
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;
+static int g_ssl_ctx_ex_crl_provider_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
 static int g_ssl_ex_verified_root_cert_index = -1;
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
@@ -198,6 +201,10 @@ static void init_openssl(void) {
   g_ssl_ctx_ex_factory_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GPR_ASSERT(g_ssl_ctx_ex_factory_index != -1);
+
+  g_ssl_ctx_ex_crl_provider_index =
+      SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+  GPR_ASSERT(g_ssl_ctx_ex_crl_provider_index != -1);
 
   g_ssl_ex_verified_root_cert_index =
       SSL_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
@@ -951,6 +958,35 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
     gpr_log(GPR_INFO, "Could not set verified root cert in SSL's ex_data");
   }
   return preverify_ok;
+}
+
+// X509_STORE_set_get_crl() sets the function to get the crl for a given
+// certificate x. When found, the crl must be assigned to *crl. This function
+// must return 0 on failure and 1 on success. If no function to get the issuer
+// is provided, the internal default function will be used instead.
+static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
+                              X509* x) {
+  SSL* ssl = static_cast<SSL*>(
+      X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
+  grpc_core::experimental::CrlProvider* provider =
+      static_cast<grpc_core::experimental::CrlProvider*>(
+          SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_crl_provider_index));
+
+  char* buf = X509_NAME_oneline(X509_get_issuer_name(x), nullptr, 0);
+  grpc_core::experimental::CertificateInfoImpl cert_impl =
+      grpc_core::experimental::CertificateInfoImpl(buf);
+  grpc_core::experimental::CertificateInfo* cert = &cert_impl;
+  std::shared_ptr<grpc_core::experimental::Crl> internal_crl =
+      provider->GetCrl(*cert);
+
+  X509_CRL* crl =
+      &std::static_pointer_cast<grpc_core::experimental::CrlImpl>(internal_crl)
+           ->crl();
+
+  X509_CRL* copy = X509_CRL_dup(crl);
+  *crl_out = copy;
+  return 1;
 }
 
 // Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
@@ -2276,8 +2312,15 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-      if (options->crl_directory != nullptr &&
-          strcmp(options->crl_directory, "") != 0) {
+      if (options->crl_provider) {
+        gpr_log(GPR_INFO, "enabling servr CRL checking using provider");
+        SSL_CTX_set_ex_data(impl->ssl_contexts[i],
+                            g_ssl_ctx_ex_crl_provider_index,
+                            options->crl_provider);
+        X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
+        X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
+      } else if (options->crl_directory != nullptr &&
+                 strcmp(options->crl_directory, "") != 0) {
         gpr_log(GPR_INFO, "enabling server CRL checking with path %s",
                 options->crl_directory);
         X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);

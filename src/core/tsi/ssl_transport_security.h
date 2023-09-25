@@ -25,6 +25,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security_constants.h>
 
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
@@ -182,6 +183,9 @@ struct tsi_ssl_client_handshaker_options {
   // > 1.1 is supported for CRL checking
   const char* crl_directory;
 
+  // TODO(gtcooke94) description
+  grpc_core::experimental::CrlProvider* crl_provider;
+
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
         pem_root_certs(nullptr),
@@ -328,6 +332,9 @@ struct tsi_ssl_server_handshaker_options {
   // checking will fail open and just log. An empty directory will not enable
   // crl checking. Only OpenSSL version > 1.1 is supported for CRL checking
   const char* crl_directory;
+
+  // TODO (gtcooke94)
+  grpc_core::experimental::CrlProvider* crl_provider;
 
   // If true, the SSL server sends a list of CA names to the client in the
   // ServerHello. This list of CA names is extracted from the server's trust

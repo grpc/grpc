@@ -33,7 +33,7 @@ class CrlImpl : public Crl {
   explicit CrlImpl(X509_CRL* crl);
   ~CrlImpl() override;
   std::string Issuer() override;
-  const X509_CRL& crl() const { return *crl_; }
+  X509_CRL& crl() const { return *crl_; }
 
  private:
   X509_CRL* crl_;

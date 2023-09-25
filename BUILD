@@ -3546,6 +3546,7 @@ grpc_cc_library(
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
         "//src/core:error",
+        "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:ref_counted",
         "//src/core:slice",
