@@ -42,7 +42,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "random_early_detection_test",
     srcs = ["random_early_detection_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/random",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,

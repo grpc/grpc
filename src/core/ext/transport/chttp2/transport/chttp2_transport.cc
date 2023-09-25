@@ -569,7 +569,10 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                            grpc_endpoint_get_peer(ep), ":client_transport"))),
       self_reservation(
           memory_owner.MakeReservation(sizeof(grpc_chttp2_transport))),
-      combiner(grpc_combiner_create()),
+      event_engine(
+          channel_args
+              .GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+      combiner(grpc_combiner_create(event_engine)),
       state_tracker(is_client ? "client_transport" : "server_transport",
                     GRPC_CHANNEL_READY),
       next_stream_id(is_client ? 1 : 2),
@@ -580,9 +583,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner),
       deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0),
-      event_engine(
-          channel_args
-              .GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       is_client(is_client) {
   cl = new grpc_core::ContextList();
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
@@ -1875,6 +1875,7 @@ static void perform_transport_op_locked(void* stream_op,
   if (op->set_accept_stream) {
     t->accept_stream_cb = op->set_accept_stream_fn;
     t->accept_stream_cb_user_data = op->set_accept_stream_user_data;
+    t->registered_method_matcher_cb = op->set_registered_method_matcher_fn;
   }
 
   if (op->bind_pollset) {
@@ -1943,6 +1944,10 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
         s->published_metadata[1] == GRPC_METADATA_SYNTHESIZED_FROM_FAKE) {
       *s->trailing_metadata_available = true;
       s->trailing_metadata_available = nullptr;
+    }
+    if (t->registered_method_matcher_cb != nullptr) {
+      t->registered_method_matcher_cb(t->accept_stream_cb_user_data,
+                                      s->recv_initial_metadata);
     }
     null_then_sched_closure(&s->recv_initial_metadata_ready);
   }
