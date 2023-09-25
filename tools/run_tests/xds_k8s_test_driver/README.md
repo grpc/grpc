@@ -38,7 +38,7 @@ sudo apt-get install python3-venv
 ##### Getting Started
 
 1. If you haven't, [initialize](https://cloud.google.com/sdk/docs/install-sdk) gcloud SDK
-2. Activate gcloud [configuration](https://cloud.google.com/sdk/docs/configurations) with your project 
+2. Activate gcloud [configuration](https://cloud.google.com/sdk/docs/configurations) with your project
 3. Enable gcloud services:
    ```shell
    gcloud services enable \
@@ -54,7 +54,6 @@ sudo apt-get install python3-venv
 
 #### Configure GKE cluster
 This is an example outlining minimal requirements to run the [baseline tests](xds-baseline-tests).
- 
 Update gloud sdk:
 ```shell
 gcloud -q components update
@@ -91,7 +90,6 @@ gcloud container clusters create "${CLUSTER_NAME}" \
  --workload-metadata=GKE_METADATA \
  --tags=allow-health-checks
 ```
-
 For security tests you also need to create CAs and configure the cluster to use those CAs
 as described
 [here](https://cloud.google.com/traffic-director/docs/security-proxyless-setup#configure-cas).
@@ -366,13 +364,13 @@ XDS_K8S_CONFIG=./path-to-flagfile.cfg ./run.sh bin/run_td_setup.py --resource_su
 ./run.sh bin/run_td_setup.py --security=mtls
 
 # Start test server in a secure mode
-./run.sh bin/run_test_server.py --secure
+./run.sh bin/run_test_server.py --mode=secure
 
 # Add test server to the backend service
 ./run.sh bin/run_td_setup.py --cmd=backends-add
 
-# Start test client in a secure more --secure
-./run.sh bin/run_test_client.py --secure
+# Start test client in a secure more --mode=secure
+./run.sh bin/run_test_client.py --mode=secure
 ```
 
 ### Sending RPCs
@@ -432,9 +430,9 @@ Cleanup regular and security-specific resources:
 # Cleanup TD resources, with security
 ./run.sh bin/run_td_setup.py --cmd=cleanup --security=mtls
 # Stop test client (secure)
-./run.sh bin/run_test_client.py --cmd=cleanup --secure
+./run.sh bin/run_test_client.py --cmd=cleanup --mode=secure
 # Stop test server (secure), and remove the namespace
-./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --secure
+./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --mode=secure
 ```
 
 In addition, here's some other helpful partial cleanup commands:

@@ -9,15 +9,7 @@
 #ifndef XDS_TYPE_V3_CEL_PROTO_UPB_H_
 #define XDS_TYPE_V3_CEL_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
-
+#include "upb/generated_code_support.h"
 // Must be last. 
 #include "upb/port/def.inc"
 
@@ -79,42 +71,42 @@ typedef enum {
   xds_type_v3_CelExpression_expr_specifier_NOT_SET = 0
 } xds_type_v3_CelExpression_expr_specifier_oneofcases;
 UPB_INLINE xds_type_v3_CelExpression_expr_specifier_oneofcases xds_type_v3_CelExpression_expr_specifier_case(const xds_type_v3_CelExpression* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (xds_type_v3_CelExpression_expr_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(msg, &field);
 }
 UPB_INLINE void xds_type_v3_CelExpression_clear_parsed_expr(xds_type_v3_CelExpression* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_api_expr_v1alpha1_ParsedExpr* xds_type_v3_CelExpression_parsed_expr(const xds_type_v3_CelExpression* msg) {
   const struct google_api_expr_v1alpha1_ParsedExpr* default_val = NULL;
   const struct google_api_expr_v1alpha1_ParsedExpr* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool xds_type_v3_CelExpression_has_parsed_expr(const xds_type_v3_CelExpression* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void xds_type_v3_CelExpression_clear_checked_expr(xds_type_v3_CelExpression* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_api_expr_v1alpha1_CheckedExpr* xds_type_v3_CelExpression_checked_expr(const xds_type_v3_CelExpression* msg) {
   const struct google_api_expr_v1alpha1_CheckedExpr* default_val = NULL;
   const struct google_api_expr_v1alpha1_CheckedExpr* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool xds_type_v3_CelExpression_has_checked_expr(const xds_type_v3_CelExpression* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void xds_type_v3_CelExpression_set_parsed_expr(xds_type_v3_CelExpression *msg, struct google_api_expr_v1alpha1_ParsedExpr* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_api_expr_v1alpha1_ParsedExpr* xds_type_v3_CelExpression_mutable_parsed_expr(xds_type_v3_CelExpression* msg, upb_Arena* arena) {
@@ -126,7 +118,7 @@ UPB_INLINE struct google_api_expr_v1alpha1_ParsedExpr* xds_type_v3_CelExpression
   return sub;
 }
 UPB_INLINE void xds_type_v3_CelExpression_set_checked_expr(xds_type_v3_CelExpression *msg, struct google_api_expr_v1alpha1_CheckedExpr* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_api_expr_v1alpha1_CheckedExpr* xds_type_v3_CelExpression_mutable_checked_expr(xds_type_v3_CelExpression* msg, upb_Arena* arena) {
@@ -174,38 +166,38 @@ UPB_INLINE char* xds_type_v3_CelExtractString_serialize_ex(const xds_type_v3_Cel
   return ptr;
 }
 UPB_INLINE void xds_type_v3_CelExtractString_clear_expr_extract(xds_type_v3_CelExtractString* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const xds_type_v3_CelExpression* xds_type_v3_CelExtractString_expr_extract(const xds_type_v3_CelExtractString* msg) {
   const xds_type_v3_CelExpression* default_val = NULL;
   const xds_type_v3_CelExpression* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool xds_type_v3_CelExtractString_has_expr_extract(const xds_type_v3_CelExtractString* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void xds_type_v3_CelExtractString_clear_default_value(xds_type_v3_CelExtractString* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_StringValue* xds_type_v3_CelExtractString_default_value(const xds_type_v3_CelExtractString* msg) {
   const struct google_protobuf_StringValue* default_val = NULL;
   const struct google_protobuf_StringValue* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool xds_type_v3_CelExtractString_has_default_value(const xds_type_v3_CelExtractString* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void xds_type_v3_CelExtractString_set_expr_extract(xds_type_v3_CelExtractString *msg, xds_type_v3_CelExpression* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct xds_type_v3_CelExpression* xds_type_v3_CelExtractString_mutable_expr_extract(xds_type_v3_CelExtractString* msg, upb_Arena* arena) {
@@ -217,7 +209,7 @@ UPB_INLINE struct xds_type_v3_CelExpression* xds_type_v3_CelExtractString_mutabl
   return sub;
 }
 UPB_INLINE void xds_type_v3_CelExtractString_set_default_value(xds_type_v3_CelExtractString *msg, struct google_protobuf_StringValue* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_StringValue* xds_type_v3_CelExtractString_mutable_default_value(xds_type_v3_CelExtractString* msg, upb_Arena* arena) {

@@ -400,10 +400,36 @@ class GcpProjectApiResource:
         except _HttpLib2Error as error:
             raise TransportError(error)
 
-    def resource_pretty_format(self, body: dict) -> str:
+    def resource_pretty_format(
+        self,
+        resource: Any,
+        *,
+        highlight: bool = True,
+    ) -> str:
         """Return a string with pretty-printed resource body."""
-        yaml_out: str = yaml.dump(body, explicit_start=True, explicit_end=True)
-        return self._highlighter.highlight(yaml_out)
+        yaml_out: str = yaml.dump(
+            resource,
+            explicit_start=True,
+            explicit_end=True,
+        )
+        return self._highlighter.highlight(yaml_out) if highlight else yaml_out
+
+    def resources_pretty_format(
+        self,
+        resources: list[Any],
+        *,
+        highlight: bool = True,
+    ) -> str:
+        out = []
+        for resource in resources:
+            if hasattr(resource, "name"):
+                out.append(f"{resource.name}:")
+            elif "name" in resource:
+                out.append(f"{resource['name']}:")
+            out.append(
+                self.resource_pretty_format(resource, highlight=highlight)
+            )
+        return "\n".join(out)
 
     @staticmethod
     def wait_for_operation(

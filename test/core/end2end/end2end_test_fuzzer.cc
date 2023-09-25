@@ -46,7 +46,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/fuzz_config_vars.pb.h"
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
@@ -100,18 +99,11 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
     return tests;
   }();
   if (tests.empty()) return;
-  static const auto only_experiment =
-      grpc_core::GetEnv("GRPC_TEST_FUZZER_EXPERIMENT");
 
   const int test_id = msg.test_id() % tests.size();
 
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
-  }
-
-  if (only_experiment.has_value() &&
-      msg.config_vars().experiments() != only_experiment.value()) {
-    return;
   }
 
   // TODO(ctiller): make this per fixture?

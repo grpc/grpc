@@ -9,15 +9,7 @@
 #ifndef ENVOY_CONFIG_TRACE_V3_LIGHTSTEP_PROTO_UPB_H_
 #define ENVOY_CONFIG_TRACE_V3_LIGHTSTEP_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
-
+#include "upb/generated_code_support.h"
 // Must be last. 
 #include "upb/port/def.inc"
 
@@ -75,33 +67,33 @@ UPB_INLINE char* envoy_config_trace_v3_LightstepConfig_serialize_ex(const envoy_
   return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_LightstepConfig_clear_collector_cluster(envoy_config_trace_v3_LightstepConfig* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView envoy_config_trace_v3_LightstepConfig_collector_cluster(const envoy_config_trace_v3_LightstepConfig* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void envoy_config_trace_v3_LightstepConfig_clear_access_token_file(envoy_config_trace_v3_LightstepConfig* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView envoy_config_trace_v3_LightstepConfig_access_token_file(const envoy_config_trace_v3_LightstepConfig* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void envoy_config_trace_v3_LightstepConfig_clear_propagation_modes(envoy_config_trace_v3_LightstepConfig* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t const* envoy_config_trace_v3_LightstepConfig_propagation_modes(const envoy_config_trace_v3_LightstepConfig* msg, size_t* size) {
-  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -112,7 +104,7 @@ UPB_INLINE int32_t const* envoy_config_trace_v3_LightstepConfig_propagation_mode
   }
 }
 UPB_INLINE const upb_Array* _envoy_config_trace_v3_LightstepConfig_propagation_modes_upb_array(const envoy_config_trace_v3_LightstepConfig* msg, size_t* size) {
-  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (size) {
     *size = arr ? arr->size : 0;
@@ -120,7 +112,7 @@ UPB_INLINE const upb_Array* _envoy_config_trace_v3_LightstepConfig_propagation_m
   return arr;
 }
 UPB_INLINE upb_Array* _envoy_config_trace_v3_LightstepConfig_propagation_modes_mutable_upb_array(const envoy_config_trace_v3_LightstepConfig* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       (upb_Message*)msg, &field, arena);
   if (size) {
@@ -134,31 +126,31 @@ UPB_INLINE bool envoy_config_trace_v3_LightstepConfig_has_propagation_modes(cons
   return size != 0;
 }
 UPB_INLINE void envoy_config_trace_v3_LightstepConfig_clear_access_token(envoy_config_trace_v3_LightstepConfig* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(8, 48), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(8, 48), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct envoy_config_core_v3_DataSource* envoy_config_trace_v3_LightstepConfig_access_token(const envoy_config_trace_v3_LightstepConfig* msg) {
   const struct envoy_config_core_v3_DataSource* default_val = NULL;
   const struct envoy_config_core_v3_DataSource* ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(8, 48), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(8, 48), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_trace_v3_LightstepConfig_has_access_token(const envoy_config_trace_v3_LightstepConfig* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(8, 48), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(8, 48), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void envoy_config_trace_v3_LightstepConfig_set_collector_cluster(envoy_config_trace_v3_LightstepConfig *msg, upb_StringView value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void envoy_config_trace_v3_LightstepConfig_set_access_token_file(envoy_config_trace_v3_LightstepConfig *msg, upb_StringView value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE int32_t* envoy_config_trace_v3_LightstepConfig_mutable_propagation_modes(envoy_config_trace_v3_LightstepConfig* msg, size_t* size) {
-  upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -169,11 +161,11 @@ UPB_INLINE int32_t* envoy_config_trace_v3_LightstepConfig_mutable_propagation_mo
   }
 }
 UPB_INLINE int32_t* envoy_config_trace_v3_LightstepConfig_resize_propagation_modes(envoy_config_trace_v3_LightstepConfig* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (int32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
+  upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int32_t*)upb_Message_ResizeArrayUninitialized(msg, &field, size, arena);
 }
 UPB_INLINE bool envoy_config_trace_v3_LightstepConfig_add_propagation_modes(envoy_config_trace_v3_LightstepConfig* msg, int32_t val, upb_Arena* arena) {
-  upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
   if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
     return false;
@@ -182,7 +174,7 @@ UPB_INLINE bool envoy_config_trace_v3_LightstepConfig_add_propagation_modes(envo
   return true;
 }
 UPB_INLINE void envoy_config_trace_v3_LightstepConfig_set_access_token(envoy_config_trace_v3_LightstepConfig *msg, struct envoy_config_core_v3_DataSource* value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(8, 48), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(8, 48), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_DataSource* envoy_config_trace_v3_LightstepConfig_mutable_access_token(envoy_config_trace_v3_LightstepConfig* msg, upb_Arena* arena) {

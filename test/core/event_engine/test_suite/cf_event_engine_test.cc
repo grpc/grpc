@@ -37,8 +37,6 @@ int main(int argc, char** argv) {
   SetEventEngineFactories(factory, oracle_factory);
   grpc_event_engine::experimental::InitTimerTests();
   grpc_event_engine::experimental::InitClientTests();
-  // TODO(vigneshbabu): remove when the experiment is over
-  grpc_core::ForceEnableExperiment("event_engine_client", true);
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();

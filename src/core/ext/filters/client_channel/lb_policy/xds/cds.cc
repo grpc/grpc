@@ -123,7 +123,8 @@ class CdsLb : public LoadBalancingPolicy {
     ClusterWatcher(RefCountedPtr<CdsLb> parent, std::string name)
         : parent_(std::move(parent)), name_(std::move(name)) {}
 
-    void OnResourceChanged(XdsClusterResource cluster_data) override {
+    void OnResourceChanged(
+        std::shared_ptr<const XdsClusterResource> cluster_data) override {
       RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
           [self = std::move(self),
@@ -160,7 +161,7 @@ class CdsLb : public LoadBalancingPolicy {
     // Not owned, so do not dereference.
     ClusterWatcher* watcher = nullptr;
     // Most recent update obtained from this watcher.
-    absl::optional<XdsClusterResource> update;
+    std::shared_ptr<const XdsClusterResource> update;
   };
 
   // Delegating helper to be passed to child policy.
@@ -174,7 +175,7 @@ class CdsLb : public LoadBalancingPolicy {
       const std::string& name, int depth, Json::Array* discovery_mechanisms,
       std::set<std::string>* clusters_added);
   void OnClusterChanged(const std::string& name,
-                        XdsClusterResource cluster_data);
+                        std::shared_ptr<const XdsClusterResource> cluster_data);
   void OnError(const std::string& name, absl::Status status);
   void OnResourceDoesNotExist(const std::string& name);
 
@@ -328,7 +329,7 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
     return false;
   }
   // Don't have the update we need yet.
-  if (!state.update.has_value()) return false;
+  if (state.update == nullptr) return false;
   // For AGGREGATE clusters, recursively expand to child clusters.
   auto* aggregate =
       absl::get_if<XdsClusterResource::Aggregate>(&state.update->type);
@@ -422,13 +423,15 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
   return true;
 }
 
-void CdsLb::OnClusterChanged(const std::string& name,
-                             XdsClusterResource cluster_data) {
+void CdsLb::OnClusterChanged(
+    const std::string& name,
+    std::shared_ptr<const XdsClusterResource> cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(
         GPR_INFO,
         "[cdslb %p] received CDS update for cluster %s from xds client %p: %s",
-        this, name.c_str(), xds_client_.get(), cluster_data.ToString().c_str());
+        this, name.c_str(), xds_client_.get(),
+        cluster_data->ToString().c_str());
   }
   // Store the update in the map if we are still interested in watching this
   // cluster (i.e., it is not cancelled already).
@@ -436,10 +439,9 @@ void CdsLb::OnClusterChanged(const std::string& name,
   // that was scheduled before the deletion, so we can just ignore it.
   auto it = watchers_.find(name);
   if (it == watchers_.end()) return;
-  it->second.update = cluster_data;
+  it->second.update = std::move(cluster_data);
   // Take care of integration with new certificate code.
-  absl::Status status =
-      UpdateXdsCertificateProvider(name, it->second.update.value());
+  absl::Status status = UpdateXdsCertificateProvider(name, *it->second.update);
   if (!status.ok()) {
     return OnError(name, status);
   }
@@ -455,6 +457,10 @@ void CdsLb::OnClusterChanged(const std::string& name,
     return OnError(name, result.status());
   }
   if (*result) {
+    if (discovery_mechanisms.empty()) {
+      return OnError(name, absl::FailedPreconditionError(
+                               "aggregate cluster graph has no leaf clusters"));
+    }
     // LB policy is configured by aggregate cluster, not by the individual
     // underlying cluster that we may be processing an update for.
     auto it = watchers_.find(config_->cluster());

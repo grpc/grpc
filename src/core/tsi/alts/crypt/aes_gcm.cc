@@ -35,7 +35,12 @@ constexpr size_t kKdfCounterLen = 6;
 constexpr size_t kKdfCounterOffset = 2;
 constexpr size_t kRekeyAeadKeyLen = kAes128GcmKeyLength;
 
-// Struct for additional data required if rekeying is enabled.
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+const char kEvpMacAlgorithm[] = "HMAC";
+char kEvpDigest[] = "SHA-256";
+#endif
+
+/* Struct for additional data required if rekeying is enabled. */
 struct gsec_aes_gcm_aead_rekey_data {
   uint8_t kdf_counter[kKdfCounterLen];
   uint8_t nonce_mask[kAesGcmNonceLength];
@@ -196,7 +201,7 @@ static grpc_status_code aes_gcm_derive_aead_key(uint8_t* dst,
     return GRPC_STATUS_INTERNAL;
   }
   HMAC_CTX_cleanup(&hmac);
-#else
+#elif OPENSSL_VERSION_NUMBER < 0x30000000L
   HMAC_CTX* hmac = HMAC_CTX_new();
   if (hmac == nullptr) {
     return GRPC_STATUS_INTERNAL;
@@ -208,6 +213,26 @@ static grpc_status_code aes_gcm_derive_aead_key(uint8_t* dst,
     return GRPC_STATUS_INTERNAL;
   }
   HMAC_CTX_free(hmac);
+#else
+  EVP_MAC* mac = EVP_MAC_fetch(nullptr, kEvpMacAlgorithm, nullptr);
+  EVP_MAC_CTX* ctx = EVP_MAC_CTX_new(mac);
+  if (ctx == nullptr) {
+    return GRPC_STATUS_INTERNAL;
+  }
+  OSSL_PARAM params[2];
+  params[0] = OSSL_PARAM_construct_utf8_string("digest", kEvpDigest, 0);
+  params[1] = OSSL_PARAM_construct_end();
+
+  if (!EVP_MAC_init(ctx, kdf_key, kKdfKeyLen, params) ||
+      !EVP_MAC_update(ctx, kdf_counter, kKdfCounterLen) ||
+      !EVP_MAC_update(ctx, &ctr, 1) ||
+      !EVP_MAC_final(ctx, buf, nullptr, EVP_MAX_MD_SIZE)) {
+    EVP_MAC_CTX_free(ctx);
+    EVP_MAC_free(mac);
+    return GRPC_STATUS_INTERNAL;
+  }
+  EVP_MAC_CTX_free(ctx);
+  EVP_MAC_free(mac);
 #endif
   memcpy(dst, buf, kRekeyAeadKeyLen);
   return GRPC_STATUS_OK;

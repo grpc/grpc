@@ -18,7 +18,13 @@ import os
 
 import setuptools
 
+import grpc_version
+
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Ensure we're in the proper directory whether or not we're being used by pip.
+os.chdir(WORK_DIR)
+
 EXCLUDE_PYTHON_FILES = ["generated_file_import_test.py", "build.py"]
 
 # Use setuptools to build Python package
@@ -35,10 +41,12 @@ INSTALL_REQUIRES = [
     "grpcio>=1.49.0",
     "protobuf>=4.21.6,<5.0dev",
 ]
-SETUP_REQUIRES = INSTALL_REQUIRES + ["grpcio-tools"]
+
+SETUP_REQUIRES = INSTALL_REQUIRES + ["grpcio-tools>=1.49.0"]
+
 setuptools.setup(
     name="xds-protos",
-    version="0.0.12",
+    version=grpc_version.VERSION,
     packages=PACKAGES,
     description="Generated Python code from envoyproxy/data-plane-api",
     long_description_content_type="text/x-rst",

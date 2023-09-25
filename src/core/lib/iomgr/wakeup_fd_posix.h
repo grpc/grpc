@@ -81,12 +81,9 @@ extern int grpc_allow_pipe_wakeup_fd;
 
 #define GRPC_WAKEUP_FD_GET_READ_FD(fd_info) ((fd_info)->read_fd)
 
-grpc_error_handle grpc_wakeup_fd_init(grpc_wakeup_fd* fd_info)
-    GRPC_MUST_USE_RESULT;
-grpc_error_handle grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd* fd_info)
-    GRPC_MUST_USE_RESULT;
-grpc_error_handle grpc_wakeup_fd_wakeup(grpc_wakeup_fd* fd_info)
-    GRPC_MUST_USE_RESULT;
+grpc_error_handle grpc_wakeup_fd_init(grpc_wakeup_fd* fd_info);
+grpc_error_handle grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd* fd_info);
+grpc_error_handle grpc_wakeup_fd_wakeup(grpc_wakeup_fd* fd_info);
 void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info);
 
 // Defined in some specialized implementation's .c file, or by

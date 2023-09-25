@@ -135,6 +135,40 @@ static void test_with_vtable(const grpc_socket_mutator_vtable* vtable) {
   ASSERT_FALSE(err.ok());
 }
 
+static void test_set_socket_dscp(int sock, int dscp) {
+  // Get the initial IP_TOS byte that consists of following bits:
+  // | 7 6 5 4 3 2 | 1 0 |
+  // |    DSCP     | ECN |
+  int optval;
+  socklen_t optlen = sizeof(optval);
+  ASSERT_TRUE(getsockopt(sock, IPPROTO_IP, IP_TOS, &optval, &optlen) == 0);
+  ASSERT_TRUE((optval >> 2) != dscp);
+
+  ASSERT_TRUE(
+      GRPC_LOG_IF_ERROR("set_socket_dscp", grpc_set_socket_dscp(sock, dscp)));
+
+  // Verify that value was changed
+  ASSERT_TRUE(getsockopt(sock, IPPROTO_IP, IP_TOS, &optval, &optlen) == 0);
+  ASSERT_TRUE((optval >> 2) == dscp);
+}
+
+static void test_set_socket_dscp_ipv6(int sock, int dscp) {
+  int optval;
+  socklen_t optlen = sizeof(optval);
+  // Get the initial IPPROTO_IPV6, same bit layout as IP_TOS above.
+  ASSERT_TRUE(getsockopt(sock, IPPROTO_IPV6, IPV6_TCLASS, &optval, &optlen) ==
+              0);
+  ASSERT_TRUE((optval >> 2) != dscp);
+
+  ASSERT_TRUE(
+      GRPC_LOG_IF_ERROR("set_socket_dscp", grpc_set_socket_dscp(sock, dscp)));
+
+  // Verify that value was changed
+  ASSERT_TRUE(getsockopt(sock, IPPROTO_IPV6, IPV6_TCLASS, &optval, &optlen) ==
+              0);
+  ASSERT_TRUE((optval >> 2) == dscp);
+}
+
 TEST(SocketUtilsTest, MainTest) {
   int sock;
 
@@ -157,11 +191,23 @@ TEST(SocketUtilsTest, MainTest) {
                                 grpc_set_socket_low_latency(sock, 1)));
   ASSERT_TRUE(GRPC_LOG_IF_ERROR("set_socket_low_latency",
                                 grpc_set_socket_low_latency(sock, 0)));
+  test_set_socket_dscp(sock, 8 /*CS1*/);
+  test_set_socket_dscp(sock, 16 /*CS2*/);
+
+  close(sock);
+
+  if (grpc_ipv6_loopback_available()) {
+    sock = socket(AF_INET6, SOCK_STREAM, 0);
+    GPR_ASSERT(sock > 0);
+
+    test_set_socket_dscp_ipv6(sock, 8 /*CS1*/);
+    test_set_socket_dscp_ipv6(sock, 16 /*CS2*/);
+
+    close(sock);
+  }
 
   test_with_vtable(&mutator_vtable);
   test_with_vtable(&mutator_vtable2);
-
-  close(sock);
 }
 
 int main(int argc, char** argv) {

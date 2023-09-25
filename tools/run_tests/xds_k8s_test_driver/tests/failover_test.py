@@ -25,6 +25,7 @@ from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
+xds_k8s_flags.require_secondary_context(__file__)
 
 # Type aliases
 _Lang = skips.Lang

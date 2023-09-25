@@ -280,10 +280,9 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
     XdsEnd2endTest* test_obj)
     : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
       ads_service_(new AdsServiceImpl()),
-      lrs_service_(new LrsServiceImpl(
-          (GetParam().enable_load_reporting() ? 20 * grpc_test_slowdown_factor()
-                                              : 0),
-          {kDefaultClusterName})) {}
+      lrs_service_(
+          new LrsServiceImpl((GetParam().enable_load_reporting() ? 20 : 0),
+                             {kDefaultClusterName})) {}
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
@@ -1052,6 +1051,8 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       "(UNKNOWN|UNAVAILABLE): (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
       "(Failed to connect to remote host: )?"
       "(Connection refused|Connection reset by peer|"
+      "recvmsg:Connection reset by peer|"
+      "getsockopt\\(SO\\_ERROR\\): Connection reset by peer|"
       "Socket closed|FD shutdown)");
 }
 

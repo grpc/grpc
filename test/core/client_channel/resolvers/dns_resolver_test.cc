@@ -87,7 +87,8 @@ static void test_fails(grpc_core::ResolverFactory* factory,
 }
 
 TEST(DnsResolverTest, MainTest) {
-  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
+  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   g_work_serializer = &work_serializer;
 
   grpc_core::ResolverFactory* dns = grpc_core::CoreConfiguration::Get()

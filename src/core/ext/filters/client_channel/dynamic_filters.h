@@ -68,9 +68,9 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
     void SetAfterCallStackDestroy(grpc_closure* closure);
 
     // Interface of RefCounted<>.
-    RefCountedPtr<Call> Ref() GRPC_MUST_USE_RESULT;
-    RefCountedPtr<Call> Ref(const DebugLocation& location,
-                            const char* reason) GRPC_MUST_USE_RESULT;
+    GRPC_MUST_USE_RESULT RefCountedPtr<Call> Ref();
+    GRPC_MUST_USE_RESULT RefCountedPtr<Call> Ref(const DebugLocation& location,
+                                                 const char* reason);
     // When refcount drops to 0, destroys itself and the associated call stack,
     // but does NOT free the memory because it's in the call arena.
     void Unref();
@@ -98,6 +98,8 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
       : channel_stack_(std::move(channel_stack)) {}
 
   RefCountedPtr<Call> CreateCall(Call::Args args, grpc_error_handle* error);
+
+  grpc_channel_stack* channel_stack() const { return channel_stack_.get(); }
 
  private:
   RefCountedPtr<grpc_channel_stack> channel_stack_;

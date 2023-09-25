@@ -235,6 +235,32 @@ sh_test(
     tags = ["no_windows"],
 )
 
+grpc_cc_library(
+    name = "xds_stats_watcher",
+    srcs = ["xds_stats_watcher.cc"],
+    hdrs = ["xds_stats_watcher.h"],
+    deps = [
+        ":rpc_behavior_lb_policy",
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
+        "//src/proto/grpc/testing:empty_proto",
+        "//src/proto/grpc/testing:messages_proto",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_stats_watcher_test",
+    srcs = [
+        "xds_stats_watcher_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [":xds_stats_watcher"],
+)
+
 grpc_cc_binary(
     name = "xds_interop_client",
     srcs = [
@@ -245,6 +271,7 @@ grpc_cc_binary(
     ],
     deps = [
         ":rpc_behavior_lb_policy",
+        ":xds_stats_watcher",
         "//:grpc++",
         "//:grpc++_reflection",
         "//:grpcpp_admin",
@@ -260,9 +287,13 @@ grpc_cc_library(
     name = "xds_interop_server_lib",
     testonly = True,
     srcs = [
+        "pre_stop_hook_server.cc",
         "xds_interop_server_lib.cc",
     ],
-    hdrs = ["xds_interop_server_lib.h"],
+    hdrs = [
+        "pre_stop_hook_server.h",
+        "xds_interop_server_lib.h",
+    ],
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",
@@ -288,6 +319,21 @@ grpc_cc_binary(
         "//:grpc++",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:test_health_check_service_impl",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_test(
+    name = "pre_stop_hook_server_test",
+    srcs = [
+        "pre_stop_hook_server_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        ":xds_interop_server_lib",
+        "//:grpc++",
+        "//src/proto/grpc/testing:istio_echo_proto",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
 )
@@ -414,12 +460,15 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "otel/exporters/prometheus:prometheus_exporter",
+        "otel/sdk/src/metrics",
     ],
     language = "C++",
     tags = ["nobuilder"],
     deps = [
         ":client_helper_lib",
         "//:grpcpp_gcp_observability",
+        "//src/cpp/ext/otel:otel_plugin",
     ],
 )
 

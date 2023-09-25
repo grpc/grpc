@@ -316,7 +316,7 @@ void ResetEventManagerOnFork() {
   while (!fork_poller_list.empty()) {
     PollPoller* poller = fork_poller_list.front();
     fork_poller_list.pop_front();
-    delete poller;
+    poller->Close();
   }
   gpr_mu_unlock(&fork_fd_list_mu);
   InitPollPollerPosix();
@@ -566,6 +566,9 @@ bool PollEventHandle::EndPollLocked(bool got_read, bool got_write) {
 
 void PollPoller::KickExternal(bool ext) {
   grpc_core::MutexLock lock(&mu_);
+  if (closed_) {
+    return;
+  }
   if (was_kicked_) {
     if (ext) {
       was_kicked_ext_ = true;
@@ -610,7 +613,8 @@ PollPoller::PollPoller(Scheduler* scheduler)
       was_kicked_(false),
       was_kicked_ext_(false),
       num_poll_handles_(0),
-      poll_handles_list_head_(nullptr) {
+      poll_handles_list_head_(nullptr),
+      closed_(false) {
   wakeup_fd_ = *CreateWakeupFd();
   GPR_ASSERT(wakeup_fd_ != nullptr);
   ForkPollerListAddPoller(this);
@@ -622,7 +626,8 @@ PollPoller::PollPoller(Scheduler* scheduler, bool use_phony_poll)
       was_kicked_(false),
       was_kicked_ext_(false),
       num_poll_handles_(0),
-      poll_handles_list_head_(nullptr) {
+      poll_handles_list_head_(nullptr),
+      closed_(false) {
   wakeup_fd_ = *CreateWakeupFd();
   GPR_ASSERT(wakeup_fd_ != nullptr);
   ForkPollerListAddPoller(this);
@@ -829,6 +834,17 @@ void PollPoller::Shutdown() {
   Unref();
 }
 
+void PollPoller::PrepareFork() { Kick(); }
+// TODO(vigneshbabu): implement
+void PollPoller::PostforkParent() {}
+// TODO(vigneshbabu): implement
+void PollPoller::PostforkChild() {}
+
+void PollPoller::Close() {
+  grpc_core::MutexLock lock(&mu_);
+  closed_ = true;
+}
+
 PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
   static bool kPollPollerSupported = InitPollPollerPosix();
   if (kPollPollerSupported) {
@@ -874,6 +890,12 @@ PollPoller* MakePollPoller(Scheduler* /*scheduler*/,
                            bool /* use_phony_poll */) {
   return nullptr;
 }
+
+void PollPoller::PrepareFork() { grpc_core::Crash("unimplemented"); }
+void PollPoller::PostforkParent() { grpc_core::Crash("unimplemented"); }
+void PollPoller::PostforkChild() { grpc_core::Crash("unimplemented"); }
+
+void PollPoller::Close() { grpc_core::Crash("unimplemented"); }
 
 void PollPoller::KickExternal(bool /*ext*/) {
   grpc_core::Crash("unimplemented");

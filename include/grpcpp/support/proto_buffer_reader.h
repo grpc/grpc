@@ -124,10 +124,14 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
 
 #ifdef GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
   /// Read the next `count` bytes and append it to the given Cord.
-  // (override is intentionally omitted here to support old Protobuf which
+  // (override is conditionally omitted here to support old Protobuf which
   //  doesn't have ReadCord method)
   // NOLINTNEXTLINE(modernize-use-override)
-  virtual bool ReadCord(absl::Cord* cord, int count) {
+  virtual bool ReadCord(absl::Cord* cord, int count)
+#if PROTOBUF_VERSION >= 4022000
+      override
+#endif
+  {
     if (!status().ok()) {
       return false;
     }
@@ -154,7 +158,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
       }
       uint64_t slice_length = GRPC_SLICE_LENGTH(*slice());
       set_byte_count(ByteCount() + slice_length);
-      if (slice_length <= count) {
+      if (slice_length <= static_cast<uint64_t>(count)) {
         cord->Append(MakeCordFromSlice(grpc_slice_ref(*slice())));
         count -= slice_length;
       } else {
@@ -188,7 +192,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
     return absl::MakeCordFromExternal(
         absl::string_view(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                           GRPC_SLICE_LENGTH(slice)),
-        [slice](absl::string_view view) { grpc_slice_unref(slice); });
+        [slice](absl::string_view /* view */) { grpc_slice_unref(slice); });
   }
 #endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
 

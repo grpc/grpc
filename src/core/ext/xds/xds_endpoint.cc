@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -33,7 +34,6 @@
 #include "absl/types/optional.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
-#include "envoy/config/core/v3/health_check.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
@@ -44,7 +44,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -157,11 +156,6 @@ absl::optional<ServerAddress> ServerAddressParse(
   // health_status
   const int32_t health_status =
       envoy_config_endpoint_v3_LbEndpoint_health_status(lb_endpoint);
-  if (!XdsOverrideHostEnabled() &&
-      health_status != envoy_config_core_v3_UNKNOWN &&
-      health_status != envoy_config_core_v3_HEALTHY) {
-    return absl::nullopt;
-  }
   auto status = XdsHealthStatus::FromUpb(health_status);
   if (!status.has_value()) return absl::nullopt;
   // load_balancing_weight
@@ -353,12 +347,12 @@ void DropParseAndAppend(
   drop_config->AddCategory(std::move(category), numerator);
 }
 
-absl::StatusOr<XdsEndpointResource> EdsResourceParse(
+absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
     const XdsResourceType::DecodeContext& /*context*/,
     const envoy_config_endpoint_v3_ClusterLoadAssignment*
         cluster_load_assignment) {
   ValidationErrors errors;
-  XdsEndpointResource eds_resource;
+  auto eds_resource = std::make_shared<XdsEndpointResource>();
   // endpoints
   {
     ValidationErrors::ScopedField field(&errors, "endpoints");
@@ -374,11 +368,11 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
         GPR_ASSERT(parsed_locality->locality.lb_weight != 0);
         // Make sure prorities is big enough. Note that they might not
         // arrive in priority order.
-        if (eds_resource.priorities.size() < parsed_locality->priority + 1) {
-          eds_resource.priorities.resize(parsed_locality->priority + 1);
+        if (eds_resource->priorities.size() < parsed_locality->priority + 1) {
+          eds_resource->priorities.resize(parsed_locality->priority + 1);
         }
         auto& locality_map =
-            eds_resource.priorities[parsed_locality->priority].localities;
+            eds_resource->priorities[parsed_locality->priority].localities;
         auto it = locality_map.find(parsed_locality->locality.name.get());
         if (it != locality_map.end()) {
           errors.AddError(absl::StrCat(
@@ -391,8 +385,8 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
         }
       }
     }
-    for (size_t i = 0; i < eds_resource.priorities.size(); ++i) {
-      const auto& priority = eds_resource.priorities[i];
+    for (size_t i = 0; i < eds_resource->priorities.size(); ++i) {
+      const auto& priority = eds_resource->priorities[i];
       if (priority.localities.empty()) {
         errors.AddError(absl::StrCat("priority ", i, " empty"));
       } else {
@@ -412,7 +406,7 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
     }
   }
   // policy
-  eds_resource.drop_config = MakeRefCounted<XdsEndpointResource::DropConfig>();
+  eds_resource->drop_config = MakeRefCounted<XdsEndpointResource::DropConfig>();
   const auto* policy = envoy_config_endpoint_v3_ClusterLoadAssignment_policy(
       cluster_load_assignment);
   if (policy != nullptr) {
@@ -424,7 +418,7 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
     for (size_t i = 0; i < drop_size; ++i) {
       ValidationErrors::ScopedField field(
           &errors, absl::StrCat(".drop_overloads[", i, "]"));
-      DropParseAndAppend(drop_overload[i], eds_resource.drop_config.get(),
+      DropParseAndAppend(drop_overload[i], eds_resource->drop_config.get(),
                          &errors);
     }
   }
@@ -466,10 +460,9 @@ XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed ClusterLoadAssignment %s: %s",
               context.client, result.name->c_str(),
-              eds_resource->ToString().c_str());
+              (*eds_resource)->ToString().c_str());
     }
-    result.resource =
-        std::make_unique<XdsEndpointResource>(std::move(*eds_resource));
+    result.resource = std::move(*eds_resource);
   }
   return result;
 }

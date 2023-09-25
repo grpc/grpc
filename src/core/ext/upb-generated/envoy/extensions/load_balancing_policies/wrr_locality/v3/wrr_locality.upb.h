@@ -9,15 +9,7 @@
 #ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_WRR_LOCALITY_V3_WRR_LOCALITY_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_WRR_LOCALITY_V3_WRR_LOCALITY_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
-
+#include "upb/generated_code_support.h"
 // Must be last. 
 #include "upb/port/def.inc"
 
@@ -68,23 +60,23 @@ UPB_INLINE char* envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLoc
   return ptr;
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_clear_endpoint_picking_policy(envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct envoy_config_cluster_v3_LoadBalancingPolicy* envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_endpoint_picking_policy(const envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality* msg) {
   const struct envoy_config_cluster_v3_LoadBalancingPolicy* default_val = NULL;
   const struct envoy_config_cluster_v3_LoadBalancingPolicy* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_has_endpoint_picking_policy(const envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_set_endpoint_picking_policy(envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality *msg, struct envoy_config_cluster_v3_LoadBalancingPolicy* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_LoadBalancingPolicy* envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_mutable_endpoint_picking_policy(envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality* msg, upb_Arena* arena) {

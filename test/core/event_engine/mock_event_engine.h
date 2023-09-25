@@ -44,7 +44,7 @@ class MockEventEngine : public EventEngine {
                Duration timeout));
   MOCK_METHOD(bool, CancelConnect, (ConnectionHandle handle));
   MOCK_METHOD(bool, IsWorkerThread, ());
-  MOCK_METHOD(std::unique_ptr<DNSResolver>, GetDNSResolver,
+  MOCK_METHOD(absl::StatusOr<std::unique_ptr<DNSResolver>>, GetDNSResolver,
               (const DNSResolver::ResolverOptions& options));
   MOCK_METHOD(void, Run, (Closure * closure));
   MOCK_METHOD(void, Run, (absl::AnyInvocable<void()> closure));

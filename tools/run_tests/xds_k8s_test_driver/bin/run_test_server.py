@@ -11,6 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Run test xds server.
+
+Gamma example:
+./run.sh bin/run_test_server.py --mode=gamma
+"""
 import logging
 import signal
 
@@ -28,8 +34,11 @@ logger = logging.getLogger(__name__)
 _CMD = flags.DEFINE_enum(
     "cmd", default="run", enum_values=["run", "cleanup"], help="Command"
 )
-_SECURE = flags.DEFINE_bool(
-    "secure", default=False, help="Run server in the secure mode"
+_MODE = flags.DEFINE_enum(
+    "mode",
+    default="default",
+    enum_values=["default", "secure", "gamma"],
+    help="Select server mode",
 )
 _REUSE_NAMESPACE = flags.DEFINE_bool(
     "reuse_namespace", default=True, help="Use existing namespace if exists"
@@ -76,21 +85,22 @@ def main(argv):
     gcp_api_manager = gcp.api.GcpApiManager()
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
     server_namespace = common.make_server_namespace(k8s_api_manager)
+
     server_runner = common.make_server_runner(
         server_namespace,
         gcp_api_manager,
         reuse_namespace=_REUSE_NAMESPACE.value,
         reuse_service=_REUSE_SERVICE.value,
-        secure=_SECURE.value,
+        mode=_MODE.value,
         port_forwarding=should_port_forward,
     )
 
     if _CMD.value == "run":
-        logger.info("Run server, secure_mode=%s", _SECURE.value)
+        logger.info("Run server, mode=%s", _MODE.value)
         server_runner.run(
             test_port=xds_flags.SERVER_PORT.value,
             maintenance_port=xds_flags.SERVER_MAINTENANCE_PORT.value,
-            secure_mode=_SECURE.value,
+            secure_mode=_MODE.value == "secure",
             log_to_stdout=_FOLLOW.value,
         )
         if should_follow_logs:

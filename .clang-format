@@ -46,4 +46,8 @@ Language: ObjC
 BasedOnStyle: Google
 ColumnLimit: 100
 ObjCBlockIndentWidth: 2
+---
+Language: Proto
+BasedOnStyle: Google
+ColumnLimit: 100
 ...

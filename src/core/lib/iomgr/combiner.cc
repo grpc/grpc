@@ -27,6 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -50,14 +51,22 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure,
                                   grpc_error_handle error);
 
+// TODO(ctiller): delete this when the combiner_offload_to_event_engine
+// experiment is removed.
 static void offload(void* arg, grpc_error_handle error);
 
-grpc_core::Combiner* grpc_combiner_create(void) {
+grpc_core::Combiner* grpc_combiner_create(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
   grpc_core::Combiner* lock = new grpc_core::Combiner();
+  if (grpc_core::IsCombinerOffloadToEventEngineEnabled()) {
+    lock->event_engine = event_engine;
+  } else {
+    GRPC_CLOSURE_INIT(&lock->offload, offload, lock, nullptr);
+  }
   gpr_ref_init(&lock->refs, 1);
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   grpc_closure_list_init(&lock->final_list);
-  GRPC_CLOSURE_INIT(&lock->offload, offload, lock, nullptr);
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p create", lock));
   return lock;
 }
@@ -172,7 +181,16 @@ static void offload(void* arg, grpc_error_handle /*error*/) {
 static void queue_offload(grpc_core::Combiner* lock) {
   move_next();
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
-  grpc_core::Executor::Run(&lock->offload, absl::OkStatus());
+  if (grpc_core::IsCombinerOffloadToEventEngineEnabled()) {
+    lock->event_engine->Run([lock] {
+      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+      grpc_core::ExecCtx exec_ctx(0);
+      push_last_on_exec_ctx(lock);
+      exec_ctx.Flush();
+    });
+  } else {
+    grpc_core::Executor::Run(&lock->offload, absl::OkStatus());
+  }
 }
 
 bool grpc_combiner_continue_exec_ctx() {
@@ -194,18 +212,33 @@ bool grpc_combiner_continue_exec_ctx() {
                               grpc_core::ExecCtx::Get()->IsReadyToFinish(),
                               lock->time_to_execute_final_list));
 
-  // offload only if all the following conditions are true:
-  // 1. the combiner is contended and has more than one closure to execute
-  // 2. the current execution context needs to finish as soon as possible
-  // 3. the current thread is not a worker for any background poller
-  // 4. the DEFAULT executor is threaded
-  if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish() &&
-      !grpc_iomgr_platform_is_any_background_poller_thread() &&
-      grpc_core::Executor::IsThreadedDefault()) {
-    // this execution context wants to move on: schedule remaining work to be
-    // picked up on the executor
-    queue_offload(lock);
-    return true;
+  if (grpc_core::IsCombinerOffloadToEventEngineEnabled()) {
+    // offload only if both (1) the combiner is contended and has more than one
+    // closure to execute, and (2) the current execution context needs to finish
+    // as soon as possible
+    if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish()) {
+      // this execution context wants to move on: schedule remaining work to be
+      // picked up on the executor
+      queue_offload(lock);
+      return true;
+    }
+  } else {
+    // TODO(ctiller): delete this when the combiner_offload_to_event_engine
+    // experiment is removed.
+
+    // offload only if all the following conditions are true:
+    // 1. the combiner is contended and has more than one closure to execute
+    // 2. the current execution context needs to finish as soon as possible
+    // 3. the current thread is not a worker for any background poller
+    // 4. the DEFAULT executor is threaded
+    if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish() &&
+        !grpc_iomgr_platform_is_any_background_poller_thread() &&
+        grpc_core::Executor::IsThreadedDefault()) {
+      // this execution context wants to move on: schedule remaining work to be
+      // picked up on the executor
+      queue_offload(lock);
+      return true;
+    }
   }
 
   if (!lock->time_to_execute_final_list ||
@@ -328,4 +361,10 @@ void Combiner::Run(grpc_closure* closure, grpc_error_handle error) {
 void Combiner::FinallyRun(grpc_closure* closure, grpc_error_handle error) {
   combiner_finally_exec(this, closure, error);
 }
+
+void Combiner::ForceOffload() {
+  gpr_atm_no_barrier_store(&initiating_exec_ctx_or_null, 0);
+  ExecCtx::Get()->SetReadyToFinishFlag();
+}
+
 }  // namespace grpc_core

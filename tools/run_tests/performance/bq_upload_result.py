@@ -15,8 +15,6 @@
 
 # Uploads performance benchmark result file to bigquery.
 
-from __future__ import print_function
-
 import argparse
 import calendar
 import json

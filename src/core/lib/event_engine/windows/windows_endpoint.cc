@@ -284,6 +284,7 @@ void WindowsEndpoint::HandleWriteClosure::Prime(
 
 void WindowsEndpoint::HandleReadClosure::Run() {
   // Deletes the shared_ptr when this closure returns
+  // Note that the endpoint may have already been destroyed.
   auto io_state = std::move(io_state_);
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p Handling Read Event",
                                    io_state->endpoint);
@@ -297,10 +298,8 @@ void WindowsEndpoint::HandleReadClosure::Run() {
   if (result.bytes_transferred == 0) {
     // Either the endpoint is shut down or we've seen the end of the stream
     if (grpc_event_engine_endpoint_data_trace.enabled()) {
-      DumpSliceBuffer(
-          buffer_, absl::StrFormat("WindowsEndpoint::%p READ (peer=%s)",
-                                   io_state->endpoint,
-                                   io_state->endpoint->peer_address_string_));
+      DumpSliceBuffer(buffer_, absl::StrFormat("WindowsEndpoint::%p READ",
+                                               io_state->endpoint));
     }
     status = absl::UnavailableError("End of TCP stream");
     grpc_core::StatusSetInt(&status, grpc_core::StatusIntProperty::kRpcStatus,

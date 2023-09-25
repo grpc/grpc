@@ -31,7 +31,7 @@ ENVIRONMENT:
                             Default: $XDS_K8S_DRIVER_DIR/venv
 EXAMPLES:
 $0
-$0 --secure
+$0 --nosecure
 XDS_K8S_CONFIG=./path-to-flagfile.cfg $0 --resource_suffix=override-suffix
 EOF
   exit 1
@@ -54,6 +54,6 @@ if [[ "$1" == "--nosecure" ]]; then
   ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace "$@"
 else
   ./run.sh bin/run_td_setup.py --cmd=cleanup --security=mtls "$@" && \
-  ./run.sh bin/run_test_client.py --cmd=cleanup --cleanup_namespace --secure "$@" && \
-  ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --secure "$@"
+  ./run.sh bin/run_test_client.py --cmd=cleanup --cleanup_namespace --mode=secure "$@" && \
+  ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --mode=secure "$@"
 fi

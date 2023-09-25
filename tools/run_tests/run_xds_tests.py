@@ -337,6 +337,14 @@ args = argp.parse_args()
 if args.verbose:
     logger.setLevel(logging.DEBUG)
 
+# In grpc-testing, use non-legacy network.
+if (
+    args.project_id == "grpc-testing"
+    and args.network
+    and args.network == argp.get_default("network")
+):
+    args.network += "-vpc"
+
 CLIENT_HOSTS = []
 if args.client_hosts:
     CLIENT_HOSTS = args.client_hosts.split(",")

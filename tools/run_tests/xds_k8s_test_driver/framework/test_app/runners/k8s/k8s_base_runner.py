@@ -250,7 +250,13 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return templates_path.joinpath(template_name).resolve()
 
-    def _create_from_template(self, template_name, **kwargs) -> object:
+    def _create_from_template(
+        self,
+        template_name,
+        *,
+        custom_object: bool = False,
+        **kwargs,
+    ) -> object:
         template_file = self._template_file_from_name(template_name)
         logger.debug("Loading k8s manifest template: %s", template_file)
 
@@ -270,17 +276,13 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
                 f"Exactly one document expected in manifest {template_file}"
             )
 
-        k8s_objects = self.k8s_namespace.create_single_resource(manifest)
-        if len(k8s_objects) != 1:
-            raise _RunnerError(
-                "Expected exactly one object must created from "
-                f"manifest {template_file}"
-            )
-
-        logger.info(
-            "%s %s created", k8s_objects[0].kind, k8s_objects[0].metadata.name
+        k8s_object = self.k8s_namespace.create_single_resource(
+            manifest,
+            custom_object=custom_object,
         )
-        return k8s_objects[0]
+
+        logger.info("%s %s created", k8s_object.kind, k8s_object.metadata.name)
+        return k8s_object
 
     def _reuse_deployment(self, deployment_name) -> k8s.V1Deployment:
         deployment = self.k8s_namespace.get_deployment(deployment_name)
@@ -289,10 +291,12 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
 
     def _reuse_service(self, service_name) -> k8s.V1Service:
         service = self.k8s_namespace.get_service(service_name)
+        logger.info("Reusing service: %s", service_name)
         # TODO(sergiitk): check if good or must be recreated
         return service
 
     def _reuse_namespace(self) -> k8s.V1Namespace:
+        logger.info("Reusing namespace: %s", self.k8s_namespace.name)
         return self.k8s_namespace.get()
 
     def _create_namespace(self, template, **kwargs) -> k8s.V1Namespace:
@@ -395,6 +399,14 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return resource
 
+    def delete_pod_async(self, pod_name: str):
+        logger.info(
+            "Initiating deletion of pod %s in namespace %s",
+            pod_name,
+            self.k8s_namespace.name,
+        )
+        self.k8s_namespace.delete_pod_async(pod_name)
+
     def _create_deployment(self, template, **kwargs) -> k8s.V1Deployment:
         # Not making deployment_name an explicit kwarg to be consistent with
         # the rest of the _create_* methods, which pass kwargs as-is
@@ -439,6 +451,115 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return deployment
 
+    def _create_gamma_route(self, template, **kwargs) -> k8s.GammaHttpRoute:
+        route = self._create_from_template(
+            template,
+            custom_object=True,
+            **kwargs,
+        )
+        if not (
+            isinstance(route, k8s.GammaHttpRoute) and route.kind == "HTTPRoute"
+        ):
+            raise _RunnerError(
+                f"Expected ResourceInstance[HTTPRoute] to be created from"
+                f" manifest {template}"
+            )
+        if route.metadata.name != kwargs["route_name"]:
+            raise _RunnerError(
+                "ResourceInstance[HTTPRoute] created with unexpected name: "
+                f"{route.metadata.name}"
+            )
+        logger.debug(
+            "ResourceInstance[HTTPRoute] %s created at %s",
+            route.metadata.name,
+            route.metadata.creation_timestamp,
+        )
+        return route
+
+    def _create_session_affinity_policy(
+        self, template, **kwargs
+    ) -> k8s.GcpSessionAffinityPolicy:
+        saPolicy = self._create_from_template(
+            template,
+            custom_object=True,
+            **kwargs,
+        )
+        if not (
+            isinstance(saPolicy, k8s.GcpSessionAffinityPolicy)
+            and saPolicy.kind == "GCPSessionAffinityPolicy"
+        ):
+            raise _RunnerError(
+                f"Expected ResourceInstance[GCPSessionAffinityPolicy] to be"
+                f" created from manifest {template}"
+            )
+        if saPolicy.metadata.name != kwargs["session_affinity_policy_name"]:
+            raise _RunnerError(
+                "ResourceInstance[GCPSessionAffinityPolicy] created with"
+                f" unexpected name: {saPolicy.metadata.name}"
+            )
+        logger.debug(
+            "ResourceInstance[GCPSessionAffinityPolicy] %s created at %s",
+            saPolicy.metadata.name,
+            saPolicy.metadata.creation_timestamp,
+        )
+        return saPolicy
+
+    def _create_session_affinity_filter(
+        self, template, **kwargs
+    ) -> k8s.GcpSessionAffinityFilter:
+        saFilter = self._create_from_template(
+            template,
+            custom_object=True,
+            **kwargs,
+        )
+        if not (
+            isinstance(saFilter, k8s.GcpSessionAffinityFilter)
+            and saFilter.kind == "GCPSessionAffinityFilter"
+        ):
+            raise _RunnerError(
+                f"Expected ResourceInstance[GCPSessionAffinityFilter] to be"
+                f" created from manifest {template}"
+            )
+        if saFilter.metadata.name != kwargs["session_affinity_filter_name"]:
+            raise _RunnerError(
+                "ResourceInstance[GCPSessionAffinityFilter] created with"
+                f" unexpected name: {saFilter.metadata.name}"
+            )
+        logger.debug(
+            "ResourceInstance[GCPSessionAffinityFilter] %s created at %s",
+            saFilter.metadata.name,
+            saFilter.metadata.creation_timestamp,
+        )
+        return saFilter
+
+    def _create_backend_policy(
+        self, template, **kwargs
+    ) -> k8s.GcpBackendPolicy:
+        be_policy = self._create_from_template(
+            template,
+            custom_object=True,
+            **kwargs,
+        )
+        if not (
+            isinstance(be_policy, k8s.GcpBackendPolicy)
+            and be_policy.kind == "GCPBackendPolicy"
+        ):
+            raise _RunnerError(
+                f"Expected ResourceInstance[GCPBackendPolicy] to be"
+                f" created from manifest {template}"
+            )
+        if be_policy.metadata.name != kwargs["be_policy_name"]:
+            raise _RunnerError(
+                "ResourceInstance[GCPBackendPolicy] created with"
+                f" unexpected name: {be_policy.metadata.name}"
+            )
+        logger.debug(
+            "ResourceInstance[GCPBackendPolicy] %s created at %s",
+            be_policy.metadata.name,
+            be_policy.metadata.creation_timestamp,
+        )
+        return be_policy
+
     def _create_service(self, template, **kwargs) -> k8s.V1Service:
         service = self._create_from_template(template, **kwargs)
         if not isinstance(service, k8s.V1Service):
@@ -457,9 +578,65 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return service
 
+    def _delete_gamma_route(self, name, wait_for_deletion=True):
+        logger.info("Deleting HTTPRoute %s", name)
+        try:
+            self.k8s_namespace.delete_gamma_route(name)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info("HTTPRoute %s deletion failed: %s", name, e)
+            return
+
+        if wait_for_deletion:
+            self.k8s_namespace.wait_for_get_gamma_route_deleted(name)
+        logger.debug("HTTPRoute %s deleted", name)
+
+    def _delete_session_affinity_policy(self, name, wait_for_deletion=True):
+        logger.info("Deleting GCPSessionAffinityPolicy %s", name)
+        try:
+            self.k8s_namespace.delete_session_affinity_policy(name)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info(
+                "GCPSessionAffinityPolicy %s deletion failed: %s", name, e
+            )
+            return
+
+        if wait_for_deletion:
+            self.k8s_namespace.wait_for_get_session_affinity_policy_deleted(
+                name
+            )
+        logger.debug("GCPSessionAffinityPolicy %s deleted", name)
+
+    def _delete_session_affinity_filter(self, name, wait_for_deletion=True):
+        logger.info("Deleting GCPSessionAffinityFilter %s", name)
+        try:
+            self.k8s_namespace.delete_session_affinity_filter(name)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info(
+                "GCPSessionAffinityFilter %s deletion failed: %s", name, e
+            )
+            return
+
+        if wait_for_deletion:
+            self.k8s_namespace.wait_for_get_session_affinity_filter_deleted(
+                name
+            )
+        logger.debug("GCPSessionAffinityFilter %s deleted", name)
+
+    def _delete_backend_policy(self, name, wait_for_deletion=True):
+        logger.info("Deleting GCPBackendPolicy %s", name)
+        try:
+            self.k8s_namespace.delete_backend_policy(name)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info("GGCPBackendPolicy %s deletion failed: %s", name, e)
+            return
+
+        if wait_for_deletion:
+            self.k8s_namespace.wait_for_get_backend_policy_deleted(name)
+        logger.debug("GCPBackendPolicy %s deleted", name)
+
     def _delete_deployment(self, name, wait_for_deletion=True):
-        self.stop_pod_dependencies()
         logger.info("Deleting deployment %s", name)
+        self.stop_pod_dependencies()
         try:
             self.k8s_namespace.delete_deployment(name)
         except (retryers.RetryError, k8s.NotFound) as e:

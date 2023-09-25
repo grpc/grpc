@@ -17,13 +17,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
+#include <stdint.h>
 
-#include "absl/strings/string_view.h"
+#include <string>
 
 namespace grpc_core {
 
-std::string ValidateExperimentsStringForFuzzing(absl::string_view experiments);
+std::string ValidateExperimentsStringForFuzzing(uint64_t experiments);
 
 }  // namespace grpc_core
 

@@ -102,7 +102,8 @@ absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
   absl::Status found_err;
   for (i = 0; i < nslices; i++) {
     ExecCtx exec_ctx;
-    auto err = parser.Parse(slices[i], i == nslices - 1);
+    auto err =
+        parser.Parse(slices[i], i == nslices - 1, /*call_tracer=*/nullptr);
     if (!err.ok()) {
       if (!IsStreamError(err)) return err;
       if (found_err.ok()) found_err = err;

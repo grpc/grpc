@@ -15,7 +15,6 @@
 #include "src/core/lib/promise/join.h"
 
 #include <tuple>
-#include <utility>
 
 #include "gtest/gtest.h"
 

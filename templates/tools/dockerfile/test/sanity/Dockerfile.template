@@ -59,7 +59,6 @@
 
   <%include file="../../bazel.include"/>
   <%include file="../../buildifier.include"/>
-  <%include file="../../git-jenkins.include"/>
 
   # Define the default command.
   CMD ["bash"]

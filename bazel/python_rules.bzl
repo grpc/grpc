@@ -140,7 +140,7 @@ def _generate_py_impl(context):
         for py_src in context.attr.deps[0][PyProtoInfo].generated_py_srcs:
             reimport_py_file = context.actions.declare_file(py_src.basename)
             py_sources.append(reimport_py_file)
-            import_line = "from %s import *" % py_src.short_path.replace("/", ".")[:-len(".py")]
+            import_line = "from %s import *" % py_src.short_path.replace("..", "external").replace("/", ".")[:-len(".py")]
             context.actions.write(reimport_py_file, import_line)
 
     # Collect output PyInfo provider.
@@ -190,10 +190,15 @@ def _generate_pb2_grpc_src_impl(context):
     arguments = []
     tools = [context.executable._protoc, context.executable._grpc_plugin]
     out_dir = get_out_dir(protos, context)
+    if out_dir.import_path:
+        # is virtual imports
+        out_path = out_dir.path
+    else:
+        out_path = context.genfiles_dir.path
     arguments += get_plugin_args(
         context.executable._grpc_plugin,
         plugin_flags,
-        out_dir.path,
+        out_path,
         False,
     )
 

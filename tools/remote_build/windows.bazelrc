@@ -16,4 +16,8 @@ build --build_tag_filters=-no_windows
 
 build --jobs=100
 
+# Without this the build is broken on windows RBE with bazel 6.x+
+# TODO(jtattermusch): Remove the workaround.
+build --dynamic_mode=off
+
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc

@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "envoy/service/discovery/v3/ads.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "udpa/annotations/status.upb.h"

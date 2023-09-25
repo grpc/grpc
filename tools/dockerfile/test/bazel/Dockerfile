@@ -15,8 +15,8 @@
 # Pinned version of the base image is used to avoid regressions caused
 # by rebuilding of this docker image. To see available versions, you can run
 # "gcloud container images list-tags gcr.io/oss-fuzz-base/base-builder"
-# Image(a4ad7a70fe10) is built on Apr 19, 2023
-FROM gcr.io/oss-fuzz-base/base-builder@sha256:a4ad7a70fe10674c880ca8618a564860114a31dcdd6f9896aac89f0b2f86112a
+# Image(fd89316ac4c5) is built on Aug 17, 2023
+FROM gcr.io/oss-fuzz-base/base-builder@sha256:fd89316ac4c5f3e25802ca95a00062cece14f0602c5512d71ffeedc22734c0b9
 
 # -------------------------- WARNING --------------------------------------
 # If you are making changes to this file, consider changing
@@ -38,7 +38,7 @@ RUN apt-get update && apt-get -y install \
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 6.1.2
+ENV BAZEL_VERSION 6.3.2
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1
@@ -58,9 +58,11 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 # hardware, when qemu-user-static isn't getting into the way.
 
 #=================
-# Setup git to access working directory across docker boundary
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
 
-RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
 
 

@@ -38,17 +38,25 @@ grpc_cc_test(
     name = "cancel_ares_query_test",
     srcs = ["cancel_ares_query_test.cc"],
     external_deps = ["gtest"],
+    tags = ["cancel_ares_query_test"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:ares_resolver",
         "//src/core:channel_args",
         "//test/core/end2end:cq_verifier",
         "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:socket_use_after_close_detector",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
+)
+
+filegroup(
+    name = "resolver_test_record_groups",
+    srcs = ["resolver_test_record_groups.yaml"],
 )
 
 generate_resolver_component_tests()

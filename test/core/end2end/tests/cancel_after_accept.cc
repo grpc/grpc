@@ -21,7 +21,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -76,6 +76,7 @@ CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterAccept) {
 }
 
 CORE_END2END_TEST(CoreClientChannelTest, DeadlineAfterAcceptWithServiceConfig) {
+  // TODO(vigneshbabu): re-enable these before release
   SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   SKIP_IF_USES_EVENT_ENGINE_LISTENER();
   InitServer(ChannelArgs());

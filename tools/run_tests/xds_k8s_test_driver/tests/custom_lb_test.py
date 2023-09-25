@@ -59,6 +59,8 @@ class CustomLbTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             return config.version_gte("v1.55.x")
         if config.client_lang == _Lang.GO:
             return config.version_gte("v1.56.x")
+        if config.client_lang == _Lang.NODE:
+            return config.version_gte("v1.10.x")
         return False
 
     def test_custom_lb_config(self):

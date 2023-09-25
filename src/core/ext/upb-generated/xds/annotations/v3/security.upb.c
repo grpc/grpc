@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "xds/annotations/v3/security.upb.h"
 #include "xds/annotations/v3/status.upb.h"
 #include "google/protobuf/descriptor.upb.h"
@@ -18,8 +16,8 @@
 #include "upb/port/def.inc"
 
 static const upb_MiniTableField xds_annotations_v3_FieldSecurityAnnotation__fields[2] = {
-  {1, 0, 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {2, 1, 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, 1, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_annotations_v3_FieldSecurityAnnotation_msg_init = {
@@ -41,7 +39,7 @@ static const upb_MiniTable *messages_layout[1] = {
 extern const upb_MiniTable google_protobuf_FieldOptions_msg_init;
 extern const upb_MiniTable xds_annotations_v3_FieldSecurityAnnotation_msg_init;
 const upb_MiniTableExtension xds_annotations_v3_security_ext = {
-  {99044135, 0, 0, 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {99044135, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   &google_protobuf_FieldOptions_msg_init,
   {.submsg = &xds_annotations_v3_FieldSecurityAnnotation_msg_init},
 

@@ -9,15 +9,7 @@
 #ifndef SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H_
 #define SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
-
+#include "upb/generated_code_support.h"
 // Must be last. 
 #include "upb/port/def.inc"
 
@@ -70,119 +62,119 @@ UPB_INLINE char* grpc_gcp_AltsContext_serialize_ex(const grpc_gcp_AltsContext* m
   return ptr;
 }
 UPB_INLINE void grpc_gcp_AltsContext_clear_application_protocol(grpc_gcp_AltsContext* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView grpc_gcp_AltsContext_application_protocol(const grpc_gcp_AltsContext* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_gcp_AltsContext_clear_record_protocol(grpc_gcp_AltsContext* msg) {
-  const upb_MiniTableField field = {2, 24, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 24, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView grpc_gcp_AltsContext_record_protocol(const grpc_gcp_AltsContext* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {2, 24, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 24, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_gcp_AltsContext_clear_security_level(grpc_gcp_AltsContext* msg) {
-  const upb_MiniTableField field = {3, 4, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, 4, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t grpc_gcp_AltsContext_security_level(const grpc_gcp_AltsContext* msg) {
   int32_t default_val = 0;
   int32_t ret;
-  const upb_MiniTableField field = {3, 4, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, 4, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_gcp_AltsContext_clear_peer_service_account(grpc_gcp_AltsContext* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(32, 40), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(32, 40), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView grpc_gcp_AltsContext_peer_service_account(const grpc_gcp_AltsContext* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(32, 40), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(32, 40), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_gcp_AltsContext_clear_local_service_account(grpc_gcp_AltsContext* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(40, 56), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(40, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView grpc_gcp_AltsContext_local_service_account(const grpc_gcp_AltsContext* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {5, UPB_SIZE(40, 56), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(40, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_gcp_AltsContext_clear_peer_rpc_versions(grpc_gcp_AltsContext* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(8, 72), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(8, 72), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct grpc_gcp_RpcProtocolVersions* grpc_gcp_AltsContext_peer_rpc_versions(const grpc_gcp_AltsContext* msg) {
   const struct grpc_gcp_RpcProtocolVersions* default_val = NULL;
   const struct grpc_gcp_RpcProtocolVersions* ret;
-  const upb_MiniTableField field = {6, UPB_SIZE(8, 72), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(8, 72), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_gcp_AltsContext_has_peer_rpc_versions(const grpc_gcp_AltsContext* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(8, 72), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(8, 72), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void grpc_gcp_AltsContext_clear_peer_attributes(grpc_gcp_AltsContext* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE size_t grpc_gcp_AltsContext_peer_attributes_size(const grpc_gcp_AltsContext* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   return map ? _upb_Map_Size(map) : 0;
 }
 UPB_INLINE bool grpc_gcp_AltsContext_peer_attributes_get(const grpc_gcp_AltsContext* msg, upb_StringView key, upb_StringView* val) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, 0);
 }
 UPB_INLINE const grpc_gcp_AltsContext_PeerAttributesEntry* grpc_gcp_AltsContext_peer_attributes_next(const grpc_gcp_AltsContext* msg, size_t* iter) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const grpc_gcp_AltsContext_PeerAttributesEntry*)_upb_map_next(map, iter);
 }
 
 UPB_INLINE void grpc_gcp_AltsContext_set_application_protocol(grpc_gcp_AltsContext *msg, upb_StringView value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void grpc_gcp_AltsContext_set_record_protocol(grpc_gcp_AltsContext *msg, upb_StringView value) {
-  const upb_MiniTableField field = {2, 24, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 24, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void grpc_gcp_AltsContext_set_security_level(grpc_gcp_AltsContext *msg, int32_t value) {
-  const upb_MiniTableField field = {3, 4, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, 4, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void grpc_gcp_AltsContext_set_peer_service_account(grpc_gcp_AltsContext *msg, upb_StringView value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(32, 40), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(32, 40), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void grpc_gcp_AltsContext_set_local_service_account(grpc_gcp_AltsContext *msg, upb_StringView value) {
-  const upb_MiniTableField field = {5, UPB_SIZE(40, 56), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(40, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void grpc_gcp_AltsContext_set_peer_rpc_versions(grpc_gcp_AltsContext *msg, struct grpc_gcp_RpcProtocolVersions* value) {
-  const upb_MiniTableField field = {6, UPB_SIZE(8, 72), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(8, 72), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_AltsContext_mutable_peer_rpc_versions(grpc_gcp_AltsContext* msg, upb_Arena* arena) {
@@ -194,25 +186,25 @@ UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_AltsContext_mutable_pee
   return sub;
 }
 UPB_INLINE void grpc_gcp_AltsContext_peer_attributes_clear(grpc_gcp_AltsContext* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Map* map = (upb_Map*)upb_Message_GetMap(msg, &field);
   if (!map) return;
   _upb_Map_Clear(map);
 }
 UPB_INLINE bool grpc_gcp_AltsContext_peer_attributes_set(grpc_gcp_AltsContext* msg, upb_StringView key, upb_StringView val, upb_Arena* a) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(msg, &field, 0, 0, a);
   return _upb_Map_Insert(map, &key, 0, &val, 0, a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
 UPB_INLINE bool grpc_gcp_AltsContext_peer_attributes_delete(grpc_gcp_AltsContext* msg, upb_StringView key) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Map* map = (upb_Map*)upb_Message_GetMap(msg, &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
 }
 UPB_INLINE grpc_gcp_AltsContext_PeerAttributesEntry* grpc_gcp_AltsContext_peer_attributes_nextmutable(grpc_gcp_AltsContext* msg, size_t* iter) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 80), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Map* map = (upb_Map*)upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (grpc_gcp_AltsContext_PeerAttributesEntry*)_upb_map_next(map, iter);

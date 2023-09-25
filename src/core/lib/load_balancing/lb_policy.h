@@ -148,6 +148,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// The LB policy may use the existing metadata to influence its routing
     /// decision, and it may add new metadata elements to be sent with the
     /// call to the chosen backend.
+    // TODO(roth): Before making the LB policy API public, consider
+    // whether this is the right way to expose metadata to the picker.
+    // This approach means that if a pick modifies metadata but then we
+    // discard the pick because the subchannel is not connected, the
+    // metadata change will still have been made.  Maybe we actually
+    // want to somehow provide metadata changes in PickResult::Complete
+    // instead?  Or maybe we use a CallTracer that can add metadata when
+    // the call actually starts on the subchannel?
     MetadataInterface* initial_metadata;
     /// An interface for accessing call state.  Can be used to allocate
     /// memory associated with the call in an efficient way.
@@ -168,6 +176,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// Interface for tracking subchannel calls.
   /// Implemented by LB policy and used by the channel.
+  // TODO(roth): Before making this API public, consider whether we
+  // should just replace this with a CallTracer, similar to what Java does.
   class SubchannelCallTrackerInterface {
    public:
     virtual ~SubchannelCallTrackerInterface() = default;
@@ -257,10 +267,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// state and logic needed on the control plane (i.e., resolver
   /// updates, connectivity state notifications, etc); the latter should
   /// live in the LB policy object itself.
-  ///
-  /// Currently, pickers are always accessed from within the
-  /// client_channel data plane mutex, so they do not have to be
-  /// thread-safe.
   class SubchannelPicker : public DualRefCounted<SubchannelPicker> {
    public:
     SubchannelPicker();
@@ -272,11 +278,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object implemented by the client channel and used by the
   /// LB policy to communicate with the channel.
-  // TODO(roth): Once insecure builds go away, add methods for accessing
-  // channel creds.  By default, that should strip off the call creds
-  // attached to the channel creds, but there should also be a "use at
-  // your own risk" option to get the channel creds without stripping
-  // off the attached call creds.
   class ChannelControlHelper {
    public:
     ChannelControlHelper() = default;

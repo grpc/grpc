@@ -9,15 +9,7 @@
 #ifndef ENVOY_TYPE_V3_TOKEN_BUCKET_PROTO_UPB_H_
 #define ENVOY_TYPE_V3_TOKEN_BUCKET_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
-
+#include "upb/generated_code_support.h"
 // Must be last. 
 #include "upb/port/def.inc"
 
@@ -70,53 +62,53 @@ UPB_INLINE char* envoy_type_v3_TokenBucket_serialize_ex(const envoy_type_v3_Toke
   return ptr;
 }
 UPB_INLINE void envoy_type_v3_TokenBucket_clear_max_tokens(envoy_type_v3_TokenBucket* msg) {
-  const upb_MiniTableField field = {1, 4, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 4, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t envoy_type_v3_TokenBucket_max_tokens(const envoy_type_v3_TokenBucket* msg) {
   uint32_t default_val = (uint32_t)0u;
   uint32_t ret;
-  const upb_MiniTableField field = {1, 4, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 4, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void envoy_type_v3_TokenBucket_clear_tokens_per_fill(envoy_type_v3_TokenBucket* msg) {
-  const upb_MiniTableField field = {2, 8, 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 8, 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_type_v3_TokenBucket_tokens_per_fill(const envoy_type_v3_TokenBucket* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {2, 8, 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 8, 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_type_v3_TokenBucket_has_tokens_per_fill(const envoy_type_v3_TokenBucket* msg) {
-  const upb_MiniTableField field = {2, 8, 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 8, 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_type_v3_TokenBucket_clear_fill_interval(envoy_type_v3_TokenBucket* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* envoy_type_v3_TokenBucket_fill_interval(const envoy_type_v3_TokenBucket* msg) {
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_type_v3_TokenBucket_has_fill_interval(const envoy_type_v3_TokenBucket* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void envoy_type_v3_TokenBucket_set_max_tokens(envoy_type_v3_TokenBucket *msg, uint32_t value) {
-  const upb_MiniTableField field = {1, 4, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 4, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void envoy_type_v3_TokenBucket_set_tokens_per_fill(envoy_type_v3_TokenBucket *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {2, 8, 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 8, 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_type_v3_TokenBucket_mutable_tokens_per_fill(envoy_type_v3_TokenBucket* msg, upb_Arena* arena) {
@@ -128,7 +120,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_type_v3_TokenBucket_mutable
   return sub;
 }
 UPB_INLINE void envoy_type_v3_TokenBucket_set_fill_interval(envoy_type_v3_TokenBucket *msg, struct google_protobuf_Duration* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_type_v3_TokenBucket_mutable_fill_interval(envoy_type_v3_TokenBucket* msg, upb_Arena* arena) {

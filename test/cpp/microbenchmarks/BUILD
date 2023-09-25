@@ -43,6 +43,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "bm_rng",
+    srcs = ["bm_rng.cc"],
+    external_deps = [
+        "benchmark",
+        "absl/container:btree",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/core:channel_args",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "bm_exec_ctx",
     srcs = ["bm_exec_ctx.cc"],
     args = grpc_benchmark_args(),
@@ -150,8 +164,14 @@ grpc_cc_test(
     tags = [
         "no_mac",
         "no_windows",
+        "nomsan",
+        "notsan",
+        "noubsan",
     ],
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//test/cpp/microbenchmarks/huffman_geometries",
+    ],
 )
 
 grpc_cc_test(

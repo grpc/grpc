@@ -46,6 +46,7 @@ from framework.test_app import client_app
 from framework.test_app import server_app
 from framework.test_app.runners.k8s import k8s_xds_client_runner
 from framework.test_app.runners.k8s import k8s_xds_server_runner
+from framework.test_cases import base_testcase
 
 logger = logging.getLogger(__name__)
 # TODO(yashkt): We will no longer need this flag once Core exposes local certs
@@ -73,6 +74,8 @@ _LoadBalancerAccumulatedStatsResponse = (
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
 ClientConfig = grpc_csds.ClientConfig
+RpcMetadata = grpc_testing.LoadBalancerStatsResponse.RpcMetadata
+MetadataByPeer: list[str, RpcMetadata]
 # pylint complains about signal.Signals for some reason.
 _SignalNum = Union[int, signal.Signals]  # pylint: disable=no-member
 _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
@@ -80,11 +83,35 @@ _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
 _TD_CONFIG_MAX_WAIT_SEC = 600
 
 
+def evaluate_test_config(
+    check: Callable[[skips.TestConfig], bool]
+) -> skips.TestConfig:
+    """Evaluates the test config check against Abseil flags.
+
+    TODO(sergiitk): split into parse_lang_spec and check_is_supported.
+    """
+    # NOTE(lidiz) a manual skip mechanism is needed because absl/flags
+    # cannot be used in the built-in test-skipping decorators. See the
+    # official FAQs:
+    # https://abseil.io/docs/python/guides/flags#faqs
+    test_config = skips.TestConfig(
+        client_lang=skips.get_lang(xds_k8s_flags.CLIENT_IMAGE.value),
+        server_lang=skips.get_lang(xds_k8s_flags.SERVER_IMAGE.value),
+        version=xds_flags.TESTING_VERSION.value,
+    )
+    if not check(test_config):
+        logger.info("Skipping %s", test_config)
+        raise absltest.SkipTest(f"Unsupported test config: {test_config}")
+
+    logger.info("Detected language and version: %s", test_config)
+    return test_config
+
+
 class TdPropagationRetryableError(Exception):
     """Indicates that TD config hasn't propagated yet, and it's safe to retry"""
 
 
-class XdsKubernetesBaseTestCase(absltest.TestCase):
+class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
     lang_spec: skips.TestConfig
     client_namespace: str
     client_runner: KubernetesClientRunner
@@ -93,7 +120,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     gcp_api_manager: gcp.api.GcpApiManager
     gcp_service_account: Optional[str]
     k8s_api_manager: k8s.KubernetesApiManager
-    secondary_k8s_api_manager: k8s.KubernetesApiManager
+    secondary_k8s_api_manager: Optional[k8s.KubernetesApiManager] = None
     network: str
     project: str
     resource_prefix: str
@@ -105,7 +132,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     server_namespace: str
     server_runner: KubernetesServerRunner
     server_xds_host: str
-    server_xds_port: int
+    server_xds_port: Optional[int]
     td: TrafficDirectorManager
     td_bootstrap_image: str
     _prev_sigint_handler: Optional[_SignalHandler] = None
@@ -132,7 +159,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
-        cls.lang_spec = skips.evaluate_test_config(cls.is_supported)
+        cls.lang_spec = evaluate_test_config(cls.is_supported)
 
         # Must be called before KubernetesApiManager or GcpApiManager init.
         xds_flags.set_socket_default_timeout_from_flag()
@@ -168,6 +195,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
         # Test suite settings
         cls.force_cleanup = xds_flags.FORCE_CLEANUP.value
+        cls.force_cleanup_namespace = xds_flags.FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = (
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
         )
@@ -180,9 +208,10 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         cls.k8s_api_manager = k8s.KubernetesApiManager(
             xds_k8s_flags.KUBE_CONTEXT.value
         )
-        cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
-            xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value
-        )
+        if xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value is not None:
+            cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
+                xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value
+            )
         cls.gcp_api_manager = gcp.api.GcpApiManager()
 
         # Other
@@ -211,7 +240,8 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.k8s_api_manager.close()
-        cls.secondary_k8s_api_manager.close()
+        if cls.secondary_k8s_api_manager is not None:
+            cls.secondary_k8s_api_manager.close()
         cls.gcp_api_manager.close()
 
     def setUp(self):
@@ -284,7 +314,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
     def assertSuccessfulRpcs(
         self, test_client: XdsTestClient, num_rpcs: int = 100
-    ):
+    ) -> _LoadBalancerStatsResponse:
         lb_stats = self.getClientRpcStats(test_client, num_rpcs)
         self.assertAllBackendsReceivedRpcs(lb_stats)
         failed = int(lb_stats.num_failures)
@@ -293,6 +323,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
             0,
             msg=f"Expected all RPCs to succeed: {failed} of {num_rpcs} failed",
         )
+        return lb_stats
 
     @staticmethod
     def diffAccumulatedStatsPerMethod(
@@ -550,15 +581,21 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
             msg=f"Expected all RPCs to fail: {failed} of {num_rpcs} failed",
         )
 
-    @classmethod
     def getClientRpcStats(
-        cls, test_client: XdsTestClient, num_rpcs: int
+        self,
+        test_client: XdsTestClient,
+        num_rpcs: int,
+        *,
+        metadata_keys: Optional[tuple[str, ...]] = None,
     ) -> _LoadBalancerStatsResponse:
-        lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
+        lb_stats = test_client.get_load_balancer_stats(
+            num_rpcs=num_rpcs,
+            metadata_keys=metadata_keys,
+        )
         logger.info(
             "[%s] << Received LoadBalancerStatsResponse:\n%s",
             test_client.hostname,
-            cls._pretty_lb_stats(lb_stats),
+            self._pretty_lb_stats(lb_stats),
         )
         return lb_stats
 
@@ -585,13 +622,8 @@ class IsolatedXdsKubernetesTestCase(
         """Hook method for setting up the test fixture before exercising it."""
         super().setUp()
 
-        if self.resource_suffix_randomize:
-            self.resource_suffix = helpers_rand.random_resource_suffix()
-        logger.info(
-            "Test run resource prefix: %s, suffix: %s",
-            self.resource_prefix,
-            self.resource_suffix,
-        )
+        # Random suffix per test.
+        self.createRandomSuffix()
 
         # TD Manager
         self.td = self.initTrafficDirectorManager()
@@ -623,6 +655,15 @@ class IsolatedXdsKubernetesTestCase(
             #  but we should find a better approach.
             self.server_xds_port = self.td.find_unused_forwarding_rule_port()
             logger.info("Found unused xds port: %s", self.server_xds_port)
+
+    def createRandomSuffix(self):
+        if self.resource_suffix_randomize:
+            self.resource_suffix = helpers_rand.random_resource_suffix()
+        logger.info(
+            "Test run resource prefix: %s, suffix: %s",
+            self.resource_prefix,
+            self.resource_suffix,
+        )
 
     @abc.abstractmethod
     def initTrafficDirectorManager(self) -> TrafficDirectorManager:
@@ -670,7 +711,7 @@ class IsolatedXdsKubernetesTestCase(
                 client_restarts,
                 0,
                 msg=(
-                    "Client pods unexpectedly restarted"
+                    "Client container unexpectedly restarted"
                     f" {client_restarts} times during test. In most cases, this"
                     " is caused by the test client app crash."
                 ),
@@ -679,7 +720,7 @@ class IsolatedXdsKubernetesTestCase(
                 server_restarts,
                 0,
                 msg=(
-                    "Server pods unexpectedly restarted"
+                    "Server container unexpectedly restarted"
                     f" {server_restarts} times during test. In most cases, this"
                     " is caused by the test client app crash."
                 ),
@@ -773,8 +814,11 @@ class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
     def startTestClient(
         self, test_server: XdsTestServer, **kwargs
     ) -> XdsTestClient:
+        return self._start_test_client(test_server.xds_uri, **kwargs)
+
+    def _start_test_client(self, server_target: str, **kwargs) -> XdsTestClient:
         test_client = self.client_runner.run(
-            server_target=test_server.xds_uri, **kwargs
+            server_target=server_target, **kwargs
         )
         test_client.wait_for_active_server_channel()
         return test_client

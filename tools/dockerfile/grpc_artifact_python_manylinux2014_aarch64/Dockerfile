@@ -12,19 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM dockcross/manylinux2014-aarch64:20230202-a61e35f
+FROM dockcross/manylinux2014-aarch64:20230905-7b2d74f
 
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
 
 ###################################
 # Install Python build requirements
-RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
-RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
-RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
-RUN /opt/python/cp310-cp310/bin/pip install --upgrade cython
-RUN /opt/python/cp311-cp311/bin/pip install --upgrade cython
+RUN /opt/python/cp36-cp36m/bin/pip install --upgrade 'cython<3.0.0rc1'
+RUN /opt/python/cp37-cp37m/bin/pip install --upgrade 'cython<3.0.0rc1'
+RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython<3.0.0rc1'
+RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython<3.0.0rc1'
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython<3.0.0rc1'
+RUN /opt/python/cp311-cp311/bin/pip install --upgrade 'cython<3.0.0rc1'
+RUN /opt/python/cp312-cp312/bin/pip install --upgrade 'cython<3.0.0rc1'
 
 #=================
 # Install ccache
@@ -42,3 +43,4 @@ RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY \
     && rm -rf ccache-4.5.1 ccache.tar.gz
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always

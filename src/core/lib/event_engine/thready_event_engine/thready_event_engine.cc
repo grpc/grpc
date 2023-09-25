@@ -82,9 +82,10 @@ bool ThreadyEventEngine::IsWorkerThread() {
   grpc_core::Crash("we should remove this");
 }
 
-std::unique_ptr<EventEngine::DNSResolver> ThreadyEventEngine::GetDNSResolver(
+absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
+ThreadyEventEngine::GetDNSResolver(
     const DNSResolver::ResolverOptions& options) {
-  return std::make_unique<ThreadyDNSResolver>(impl_->GetDNSResolver(options));
+  return std::make_unique<ThreadyDNSResolver>(*impl_->GetDNSResolver(options));
 }
 
 void ThreadyEventEngine::Run(Closure* closure) {

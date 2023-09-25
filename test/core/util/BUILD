@@ -59,8 +59,6 @@ grpc_cc_library(
         "passthru_endpoint.cc",
         "resolve_localhost_ip46.cc",
         "slice_splitter.cc",
-        "subprocess_posix.cc",
-        "subprocess_windows.cc",
         "tracer_util.cc",
     ],
     hdrs = [
@@ -75,7 +73,6 @@ grpc_cc_library(
         "passthru_endpoint.h",
         "resolve_localhost_ip46.h",
         "slice_splitter.h",
-        "subprocess.h",
         "tracer_util.h",
     ],
     external_deps = [
@@ -360,6 +357,36 @@ grpc_cc_library(
         "//:grpc",
         "//:sockaddr_utils",
         "//src/core:resolved_address",
+    ],
+)
+
+grpc_cc_library(
+    name = "socket_use_after_close_detector",
+    testonly = True,
+    srcs = ["socket_use_after_close_detector.cc"],
+    hdrs = ["socket_use_after_close_detector.h"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "grpc_test_util",
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_sockaddr",
+    ],
+)
+
+grpc_cc_library(
+    name = "socket_use_after_close_detector_unsecure",
+    testonly = True,
+    srcs = ["socket_use_after_close_detector.cc"],
+    hdrs = ["socket_use_after_close_detector.h"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "grpc_test_util_unsecure",
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_sockaddr",
     ],
 )
 

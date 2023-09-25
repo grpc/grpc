@@ -119,8 +119,8 @@ class ValueInExternalAllocation
 };
 
 TEST(RefCounted, CallDtorUponUnref) {
-  std::aligned_storage<sizeof(ValueInExternalAllocation),
-                       alignof(ValueInExternalAllocation)>::type storage;
+  alignas(ValueInExternalAllocation) char
+      storage[sizeof(ValueInExternalAllocation)];
   RefCountedPtr<ValueInExternalAllocation> value(
       new (&storage) ValueInExternalAllocation(5));
   EXPECT_EQ(value->value(), 5);

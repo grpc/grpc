@@ -54,7 +54,6 @@
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
 #include "src/proto/grpc/testing/xds/v3/percent.pb.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 using envoy::config::endpoint::v3::ClusterLoadAssignment;
@@ -146,7 +145,8 @@ TEST_F(XdsEndpointTest, MinimumValidConfig) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
   ASSERT_EQ(resource.priorities.size(), 1);
   const auto& priority = resource.priorities[0];
   ASSERT_EQ(priority.localities.size(), 1);
@@ -192,7 +192,8 @@ TEST_F(XdsEndpointTest, EndpointWeight) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
   ASSERT_EQ(resource.priorities.size(), 1);
   const auto& priority = resource.priorities[0];
   ASSERT_EQ(priority.localities.size(), 1);
@@ -240,7 +241,8 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithNoWeight) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
   ASSERT_EQ(resource.priorities.size(), 1);
   const auto& priority = resource.priorities[0];
   ASSERT_EQ(priority.localities.size(), 1);
@@ -289,7 +291,8 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithZeroWeight) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
   ASSERT_EQ(resource.priorities.size(), 1);
   const auto& priority = resource.priorities[0];
   ASSERT_EQ(priority.localities.size(), 1);
@@ -329,7 +332,8 @@ TEST_F(XdsEndpointTest, LocalityWithNoEndpoints) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
   ASSERT_EQ(resource.priorities.size(), 1);
   const auto& priority = resource.priorities[0];
   ASSERT_EQ(priority.localities.size(), 1);
@@ -758,7 +762,8 @@ TEST_F(XdsEndpointTest, DropConfig) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
   ASSERT_NE(resource.drop_config, nullptr);
   const auto& drop_list = resource.drop_config->drop_category_list();
   ASSERT_EQ(drop_list.size(), 3);
@@ -796,7 +801,8 @@ TEST_F(XdsEndpointTest, CapsDropPercentageAt100) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
   ASSERT_NE(resource.drop_config, nullptr);
   const auto& drop_list = resource.drop_config->drop_category_list();
   ASSERT_EQ(drop_list.size(), 1);
@@ -907,54 +913,7 @@ TEST_F(XdsEndpointTest, DropPercentageInvalidDenominator) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsEndpointTest, IgnoresEndpointsInUnsupportedStates) {
-  ClusterLoadAssignment cla;
-  cla.set_cluster_name("foo");
-  auto* locality = cla.add_endpoints();
-  locality->mutable_load_balancing_weight()->set_value(1);
-  auto* locality_name = locality->mutable_locality();
-  locality_name->set_region("myregion");
-  locality_name->set_zone("myzone");
-  locality_name->set_sub_zone("mysubzone");
-  auto* endpoint = locality->add_lb_endpoints();
-  auto* socket_address =
-      endpoint->mutable_endpoint()->mutable_address()->mutable_socket_address();
-  socket_address->set_address("127.0.0.1");
-  socket_address->set_port_value(443);
-  endpoint = locality->add_lb_endpoints();
-  endpoint->set_health_status(envoy::config::core::v3::HealthStatus::DRAINING);
-  socket_address =
-      endpoint->mutable_endpoint()->mutable_address()->mutable_socket_address();
-  socket_address->set_address("127.0.0.1");
-  socket_address->set_port_value(444);
-  std::string serialized_resource;
-  ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsEndpointResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  ASSERT_TRUE(decode_result.name.has_value());
-  EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
-  ASSERT_EQ(resource.priorities.size(), 1);
-  const auto& priority = resource.priorities[0];
-  ASSERT_EQ(priority.localities.size(), 1);
-  const auto& p = *priority.localities.begin();
-  ASSERT_EQ(p.first, p.second.name.get());
-  EXPECT_EQ(p.first->region(), "myregion");
-  EXPECT_EQ(p.first->zone(), "myzone");
-  EXPECT_EQ(p.first->sub_zone(), "mysubzone");
-  EXPECT_EQ(p.second.lb_weight, 1);
-  ASSERT_EQ(p.second.endpoints.size(), 1);
-  const auto& address = p.second.endpoints.front();
-  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
-}
-
 TEST_F(XdsEndpointTest, EndpointHealthStatus) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
@@ -988,7 +947,8 @@ TEST_F(XdsEndpointTest, EndpointHealthStatus) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsEndpointResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
   ASSERT_EQ(resource.priorities.size(), 1);
   const auto& priority = resource.priorities[0];
   ASSERT_EQ(priority.localities.size(), 1);

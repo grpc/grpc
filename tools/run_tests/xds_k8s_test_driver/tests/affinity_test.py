@@ -63,7 +63,7 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             #      the issue is fixed.
             return False
         elif config.client_lang == _Lang.NODE:
-            return False
+            return config.version_gte("v1.10.x")
         return True
 
     def test_affinity(self) -> None:  # pylint: disable=too-many-statements
@@ -143,20 +143,9 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                     f" {len(ready_channels)} instead."
                 ),
             )
-            # The rest should be IDLE.
-            expected_idle_channels = _REPLICA_COUNT - 1
-            idle_channels = test_client.find_subchannels_with_state(
-                _ChannelzChannelState.IDLE
-            )
-            self.assertLen(
-                idle_channels,
-                expected_idle_channels,
-                msg=(
-                    "(AffinityTest) The client expected to have IDLE"
-                    f" subchannels to {expected_idle_channels} of the test"
-                    f" servers. Found {len(idle_channels)} instead."
-                ),
-            )
+
+            # Any remaining subchannels may be in any state.
+
             # Remember the backend inuse, and turn it down later.
             first_backend_inuse = list(
                 rpc_distribution.raw["rpcsByPeer"].keys()

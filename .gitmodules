@@ -22,9 +22,6 @@
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://github.com/google/googletest.git
-[submodule "third_party/libuv"]
-	path = third_party/libuv
-	url = https://github.com/libuv/libuv.git
 [submodule "third_party/opencensus-proto"]
 	path = third_party/opencensus-proto
 	url = https://github.com/census-instrumentation/opencensus-proto.git
@@ -50,3 +47,6 @@
 	# generated file that makes Git consider the submodule dirty. This
 	# state can be ignored for day-to-day development on gRPC.
 	ignore = dirty
+[submodule "third_party/upb"]
+	path = third_party/upb
+	url = https://github.com/protocolbuffers/upb.git

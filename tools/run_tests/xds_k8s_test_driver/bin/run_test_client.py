@@ -11,6 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Run test xds client.
+
+Gamma example:
+./run.sh bin/run_test_client.py --server_xds_host=psm-grpc-server \
+    --server_xds_port=80 \
+    --config_mesh=gketd-psm-grpc-server
+"""
+
+
 import logging
 import signal
 
@@ -28,8 +38,16 @@ logger = logging.getLogger(__name__)
 _CMD = flags.DEFINE_enum(
     "cmd", default="run", enum_values=["run", "cleanup"], help="Command"
 )
-_SECURE = flags.DEFINE_bool(
-    "secure", default=False, help="Run client in the secure mode"
+_MODE = flags.DEFINE_enum(
+    "mode",
+    default="default",
+    enum_values=[
+        "default",
+        "secure",
+        # Uncomment if gamma-specific changes added to the client.
+        # "gamma",
+    ],
+    help="Select client mode",
 )
 _QPS = flags.DEFINE_integer("qps", default=25, help="Queries per second")
 _PRINT_RESPONSE = flags.DEFINE_bool(
@@ -43,7 +61,7 @@ _FOLLOW = flags.DEFINE_bool(
         " --debug_use_port_forwarding"
     ),
 )
-_CONFIG_MESH = flags.DEFINE_bool(
+_CONFIG_MESH = flags.DEFINE_string(
     "config_mesh",
     default=None,
     help="Optional. Supplied to bootstrap generator to indicate AppNet mesh.",
@@ -105,21 +123,22 @@ def main(argv):
         client_namespace,
         gcp_api_manager,
         reuse_namespace=_REUSE_NAMESPACE.value,
-        secure=_SECURE.value,
+        mode=_MODE.value,
         port_forwarding=should_port_forward,
     )
 
     # Server target
-    server_xds_host = xds_flags.SERVER_XDS_HOST.value
-    server_xds_port = xds_flags.SERVER_XDS_PORT.value
+    server_target = f"xds:///{xds_flags.SERVER_XDS_HOST.value}"
+    if xds_flags.SERVER_XDS_PORT.value != 80:
+        server_target = f"{server_target}:{xds_flags.SERVER_XDS_PORT.value}"
 
     if _CMD.value == "run":
-        logger.info("Run client, secure_mode=%s", _SECURE.value)
+        logger.info("Run client, mode=%s", _MODE.value)
         client_runner.run(
-            server_target=f"xds:///{server_xds_host}:{server_xds_port}",
+            server_target=server_target,
             qps=_QPS.value,
             print_response=_PRINT_RESPONSE.value,
-            secure_mode=_SECURE.value,
+            secure_mode=_MODE.value == "secure",
             config_mesh=_CONFIG_MESH.value,
             log_to_stdout=_FOLLOW.value,
         )

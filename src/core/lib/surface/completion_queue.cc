@@ -57,6 +57,10 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/event_string.h"
 
+#ifdef GPR_WINDOWS
+#include "src/core/lib/experiments/experiments.h"
+#endif
+
 grpc_core::TraceFlag grpc_trace_operation_failures(false, "op_failure");
 grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags(false, "pending_tags");
 grpc_core::DebugOnlyTraceFlag grpc_trace_cq_refcount(false, "cq_refcount");
@@ -882,6 +886,12 @@ void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,
                     void (*done)(void* done_arg, grpc_cq_completion* storage),
                     void* done_arg, grpc_cq_completion* storage,
                     bool internal) {
+// TODO(hork): remove when the listener flake is identified
+#ifdef GPR_WINDOWS
+  if (grpc_core::IsEventEngineListenerEnabled()) {
+    gpr_log(GPR_ERROR, "cq_end_op called for tag %d (0x%p)", tag, tag);
+  }
+#endif
   cq->vtable->end_op(cq, tag, error, done, done_arg, storage, internal);
 }
 

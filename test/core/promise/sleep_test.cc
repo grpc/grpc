@@ -24,6 +24,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/notification.h"

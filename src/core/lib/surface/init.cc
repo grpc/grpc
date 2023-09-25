@@ -27,6 +27,7 @@
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>

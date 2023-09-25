@@ -223,6 +223,10 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     const char* server_name_indication, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
 
+// Increments reference count of the client handshaker factory.
+tsi_ssl_client_handshaker_factory* tsi_ssl_client_handshaker_factory_ref(
+    tsi_ssl_client_handshaker_factory* client_factory);
+
 // Decrements reference count of the handshaker factory. Handshaker factory will
 // be destroyed once no references exist.
 void tsi_ssl_client_handshaker_factory_unref(
@@ -325,6 +329,17 @@ struct tsi_ssl_server_handshaker_options {
   // crl checking. Only OpenSSL version > 1.1 is supported for CRL checking
   const char* crl_directory;
 
+  // If true, the SSL server sends a list of CA names to the client in the
+  // ServerHello. This list of CA names is extracted from the server's trust
+  // bundle, and the client may use this lint as a hint to decide which
+  // certificate it should send to the server.
+  //
+  // WARNING: This is an extremely dangerous option. If the server's trust
+  // bundle is sufficiently large, then setting this bit to true will result in
+  // the server being unable to generate a ServerHello, and hence the server
+  // will be unusable.
+  bool send_client_ca_list;
+
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
         num_key_cert_pairs(0),
@@ -338,7 +353,8 @@ struct tsi_ssl_server_handshaker_options {
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
         key_logger(nullptr),
-        crl_directory(nullptr) {}
+        crl_directory(nullptr),
+        send_client_ca_list(true) {}
 };
 
 // Creates a server handshaker factory.

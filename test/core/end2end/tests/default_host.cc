@@ -60,8 +60,10 @@ CORE_END2END_TEST(CoreClientChannelTest, DefaultHost) {
   if (GetParam()->overridden_call_host != nullptr) {
     EXPECT_EQ(GetParam()->overridden_call_host, s.host());
   } else {
-    EXPECT_THAT(s.host(), AnyOf(StartsWith("localhost"),
-                                StartsWith("127.0.0.1"), StartsWith("[::1]")));
+    EXPECT_THAT(s.host(),
+                AnyOf(StartsWith("localhost"), StartsWith("127.0.0.1"),
+                      StartsWith("[::1]"), StartsWith("grpc_fullstack_test."),
+                      StartsWith("tmp%2Fgrpc_fullstack_test.")));
   }
   EXPECT_FALSE(client_close.was_cancelled());
 }

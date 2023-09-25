@@ -54,9 +54,9 @@ struct LoopTraits<absl::StatusOr<LoopCtl<T>>> {
   using Result = absl::StatusOr<T>;
   static LoopCtl<Result> ToLoopCtl(absl::StatusOr<LoopCtl<T>> value) {
     if (!value.ok()) return value.status();
-    const auto& inner = *value;
+    auto& inner = *value;
     if (absl::holds_alternative<Continue>(inner)) return Continue{};
-    return absl::get<T>(inner);
+    return absl::get<T>(std::move(inner));
   }
 };
 
@@ -87,7 +87,10 @@ class Loop {
     if (started_) Destruct(&promise_);
   }
 
-  Loop(Loop&& loop) noexcept : factory_(std::move(loop.factory_)) {}
+  Loop(Loop&& loop) noexcept
+      : factory_(std::move(loop.factory_)), started_(loop.started_) {
+    if (started_) Construct(&promise_, std::move(loop.promise_));
+  }
 
   Loop(const Loop& loop) = delete;
   Loop& operator=(const Loop& loop) = delete;
@@ -104,14 +107,14 @@ class Loop {
       if (auto* p = promise_result.value_if_ready()) {
         //  - then if it's Continue, destroy the promise and recreate a new one
         //  from our factory.
-        auto lc = LoopTraits<PromiseResult>::ToLoopCtl(*p);
+        auto lc = LoopTraits<PromiseResult>::ToLoopCtl(std::move(*p));
         if (absl::holds_alternative<Continue>(lc)) {
           Destruct(&promise_);
           Construct(&promise_, factory_.Make());
           continue;
         }
         //  - otherwise there's our result... return it out.
-        return absl::get<Result>(lc);
+        return absl::get<Result>(std::move(lc));
       } else {
         // Otherwise the inner promise was pending, so we are pending.
         return Pending();

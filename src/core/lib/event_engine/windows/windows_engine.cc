@@ -194,7 +194,8 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
   return handle;
 }
 
-std::unique_ptr<EventEngine::DNSResolver> WindowsEventEngine::GetDNSResolver(
+absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
+WindowsEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& /*options*/) {
   grpc_core::Crash("unimplemented");
 }

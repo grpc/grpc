@@ -43,6 +43,11 @@ class RandomEarlyDetection {
   uint64_t soft_limit() const { return soft_limit_; }
   uint64_t hard_limit() const { return hard_limit_; }
 
+  void SetLimits(uint64_t soft_limit, uint64_t hard_limit) {
+    soft_limit_ = soft_limit;
+    hard_limit_ = hard_limit;
+  }
+
  private:
   // The soft limit is the size at which we start rejecting items with a
   // probability that increases linearly to 1 as the size approaches the hard

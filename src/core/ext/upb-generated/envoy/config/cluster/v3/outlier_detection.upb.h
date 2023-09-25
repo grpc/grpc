@@ -9,15 +9,7 @@
 #ifndef ENVOY_CONFIG_CLUSTER_V3_OUTLIER_DETECTION_PROTO_UPB_H_
 #define ENVOY_CONFIG_CLUSTER_V3_OUTLIER_DETECTION_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
-
+#include "upb/generated_code_support.h"
 // Must be last. 
 #include "upb/port/def.inc"
 
@@ -70,334 +62,334 @@ UPB_INLINE char* envoy_config_cluster_v3_OutlierDetection_serialize_ex(const env
   return ptr;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_consecutive_5xx(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_consecutive_5xx(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_consecutive_5xx(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_interval(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_interval(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_interval(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_base_ejection_time(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_base_ejection_time(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_base_ejection_time(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_max_ejection_percent(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 4, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 4, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_max_ejection_percent(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 4, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 4, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_max_ejection_percent(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 4, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 4, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_enforcing_consecutive_5xx(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 40), 5, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 40), 5, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_enforcing_consecutive_5xx(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 40), 5, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 40), 5, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_enforcing_consecutive_5xx(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 40), 5, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 40), 5, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_enforcing_success_rate(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 6, 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 6, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_enforcing_success_rate(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 6, 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 6, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_enforcing_success_rate(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 6, 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 6, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_success_rate_minimum_hosts(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(28, 56), 7, 6, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 56), 7, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_success_rate_minimum_hosts(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {7, UPB_SIZE(28, 56), 7, 6, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 56), 7, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_success_rate_minimum_hosts(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(28, 56), 7, 6, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 56), 7, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_success_rate_request_volume(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {8, UPB_SIZE(32, 64), 8, 7, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 64), 8, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_success_rate_request_volume(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {8, UPB_SIZE(32, 64), 8, 7, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 64), 8, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_success_rate_request_volume(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {8, UPB_SIZE(32, 64), 8, 7, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 64), 8, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_success_rate_stdev_factor(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {9, UPB_SIZE(36, 72), 9, 8, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(36, 72), 9, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_success_rate_stdev_factor(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {9, UPB_SIZE(36, 72), 9, 8, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(36, 72), 9, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_success_rate_stdev_factor(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {9, UPB_SIZE(36, 72), 9, 8, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(36, 72), 9, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_consecutive_gateway_failure(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {10, UPB_SIZE(40, 80), 10, 9, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {10, UPB_SIZE(40, 80), 10, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_consecutive_gateway_failure(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {10, UPB_SIZE(40, 80), 10, 9, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {10, UPB_SIZE(40, 80), 10, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_consecutive_gateway_failure(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {10, UPB_SIZE(40, 80), 10, 9, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {10, UPB_SIZE(40, 80), 10, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_enforcing_consecutive_gateway_failure(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {11, UPB_SIZE(44, 88), 11, 10, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(44, 88), 11, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_enforcing_consecutive_gateway_failure(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {11, UPB_SIZE(44, 88), 11, 10, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(44, 88), 11, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_enforcing_consecutive_gateway_failure(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {11, UPB_SIZE(44, 88), 11, 10, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(44, 88), 11, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_split_external_local_origin_errors(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {12, UPB_SIZE(48, 3), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {12, UPB_SIZE(48, 3), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_split_external_local_origin_errors(const envoy_config_cluster_v3_OutlierDetection* msg) {
   bool default_val = false;
   bool ret;
-  const upb_MiniTableField field = {12, UPB_SIZE(48, 3), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {12, UPB_SIZE(48, 3), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_consecutive_local_origin_failure(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {13, UPB_SIZE(52, 96), 12, 11, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, UPB_SIZE(52, 96), 12, 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_consecutive_local_origin_failure(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {13, UPB_SIZE(52, 96), 12, 11, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, UPB_SIZE(52, 96), 12, 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_consecutive_local_origin_failure(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {13, UPB_SIZE(52, 96), 12, 11, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, UPB_SIZE(52, 96), 12, 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_enforcing_consecutive_local_origin_failure(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {14, UPB_SIZE(56, 104), 13, 12, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {14, UPB_SIZE(56, 104), 13, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_enforcing_consecutive_local_origin_failure(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {14, UPB_SIZE(56, 104), 13, 12, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {14, UPB_SIZE(56, 104), 13, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_enforcing_consecutive_local_origin_failure(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {14, UPB_SIZE(56, 104), 13, 12, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {14, UPB_SIZE(56, 104), 13, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_enforcing_local_origin_success_rate(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {15, UPB_SIZE(60, 112), 14, 13, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {15, UPB_SIZE(60, 112), 14, 13, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_enforcing_local_origin_success_rate(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {15, UPB_SIZE(60, 112), 14, 13, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {15, UPB_SIZE(60, 112), 14, 13, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_enforcing_local_origin_success_rate(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {15, UPB_SIZE(60, 112), 14, 13, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {15, UPB_SIZE(60, 112), 14, 13, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_failure_percentage_threshold(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {16, UPB_SIZE(64, 120), 15, 14, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {16, UPB_SIZE(64, 120), 15, 14, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_failure_percentage_threshold(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {16, UPB_SIZE(64, 120), 15, 14, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {16, UPB_SIZE(64, 120), 15, 14, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_failure_percentage_threshold(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {16, UPB_SIZE(64, 120), 15, 14, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {16, UPB_SIZE(64, 120), 15, 14, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_enforcing_failure_percentage(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {17, UPB_SIZE(68, 128), 16, 15, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {17, UPB_SIZE(68, 128), 16, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_enforcing_failure_percentage(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {17, UPB_SIZE(68, 128), 16, 15, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {17, UPB_SIZE(68, 128), 16, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_enforcing_failure_percentage(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {17, UPB_SIZE(68, 128), 16, 15, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {17, UPB_SIZE(68, 128), 16, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_enforcing_failure_percentage_local_origin(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {18, UPB_SIZE(72, 136), 17, 16, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {18, UPB_SIZE(72, 136), 17, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_enforcing_failure_percentage_local_origin(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {18, UPB_SIZE(72, 136), 17, 16, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {18, UPB_SIZE(72, 136), 17, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_enforcing_failure_percentage_local_origin(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {18, UPB_SIZE(72, 136), 17, 16, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {18, UPB_SIZE(72, 136), 17, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_failure_percentage_minimum_hosts(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {19, UPB_SIZE(76, 144), 18, 17, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {19, UPB_SIZE(76, 144), 18, 17, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_failure_percentage_minimum_hosts(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {19, UPB_SIZE(76, 144), 18, 17, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {19, UPB_SIZE(76, 144), 18, 17, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_failure_percentage_minimum_hosts(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {19, UPB_SIZE(76, 144), 18, 17, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {19, UPB_SIZE(76, 144), 18, 17, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_failure_percentage_request_volume(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {20, UPB_SIZE(80, 152), 19, 18, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {20, UPB_SIZE(80, 152), 19, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_failure_percentage_request_volume(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {20, UPB_SIZE(80, 152), 19, 18, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {20, UPB_SIZE(80, 152), 19, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_failure_percentage_request_volume(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {20, UPB_SIZE(80, 152), 19, 18, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {20, UPB_SIZE(80, 152), 19, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_max_ejection_time(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {21, UPB_SIZE(84, 160), 20, 19, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {21, UPB_SIZE(84, 160), 20, 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_max_ejection_time(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
-  const upb_MiniTableField field = {21, UPB_SIZE(84, 160), 20, 19, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {21, UPB_SIZE(84, 160), 20, 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_max_ejection_time(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {21, UPB_SIZE(84, 160), 20, 19, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {21, UPB_SIZE(84, 160), 20, 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_max_ejection_time_jitter(envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {22, UPB_SIZE(88, 168), 21, 20, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {22, UPB_SIZE(88, 168), 21, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_max_ejection_time_jitter(const envoy_config_cluster_v3_OutlierDetection* msg) {
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
-  const upb_MiniTableField field = {22, UPB_SIZE(88, 168), 21, 20, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {22, UPB_SIZE(88, 168), 21, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_max_ejection_time_jitter(const envoy_config_cluster_v3_OutlierDetection* msg) {
-  const upb_MiniTableField field = {22, UPB_SIZE(88, 168), 21, 20, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {22, UPB_SIZE(88, 168), 21, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_consecutive_5xx(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_consecutive_5xx(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -409,7 +401,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_interval(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_Duration* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_mutable_interval(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -421,7 +413,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_base_ejection_time(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_Duration* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_mutable_base_ejection_time(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -433,7 +425,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_max_ejection_percent(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 4, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 32), 4, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_max_ejection_percent(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -445,7 +437,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_enforcing_consecutive_5xx(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 40), 5, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 40), 5, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_enforcing_consecutive_5xx(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -457,7 +449,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_enforcing_success_rate(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 6, 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 6, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_enforcing_success_rate(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -469,7 +461,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_success_rate_minimum_hosts(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {7, UPB_SIZE(28, 56), 7, 6, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 56), 7, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_success_rate_minimum_hosts(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -481,7 +473,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_success_rate_request_volume(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {8, UPB_SIZE(32, 64), 8, 7, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 64), 8, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_success_rate_request_volume(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -493,7 +485,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_success_rate_stdev_factor(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {9, UPB_SIZE(36, 72), 9, 8, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(36, 72), 9, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_success_rate_stdev_factor(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -505,7 +497,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_consecutive_gateway_failure(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {10, UPB_SIZE(40, 80), 10, 9, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {10, UPB_SIZE(40, 80), 10, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_consecutive_gateway_failure(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -517,7 +509,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_enforcing_consecutive_gateway_failure(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {11, UPB_SIZE(44, 88), 11, 10, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(44, 88), 11, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_enforcing_consecutive_gateway_failure(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -529,11 +521,11 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_split_external_local_origin_errors(envoy_config_cluster_v3_OutlierDetection *msg, bool value) {
-  const upb_MiniTableField field = {12, UPB_SIZE(48, 3), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {12, UPB_SIZE(48, 3), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_consecutive_local_origin_failure(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {13, UPB_SIZE(52, 96), 12, 11, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, UPB_SIZE(52, 96), 12, 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_consecutive_local_origin_failure(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -545,7 +537,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_enforcing_consecutive_local_origin_failure(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {14, UPB_SIZE(56, 104), 13, 12, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {14, UPB_SIZE(56, 104), 13, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_enforcing_consecutive_local_origin_failure(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -557,7 +549,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_enforcing_local_origin_success_rate(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {15, UPB_SIZE(60, 112), 14, 13, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {15, UPB_SIZE(60, 112), 14, 13, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_enforcing_local_origin_success_rate(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -569,7 +561,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_failure_percentage_threshold(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {16, UPB_SIZE(64, 120), 15, 14, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {16, UPB_SIZE(64, 120), 15, 14, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_failure_percentage_threshold(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -581,7 +573,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_enforcing_failure_percentage(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {17, UPB_SIZE(68, 128), 16, 15, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {17, UPB_SIZE(68, 128), 16, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_enforcing_failure_percentage(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -593,7 +585,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_enforcing_failure_percentage_local_origin(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {18, UPB_SIZE(72, 136), 17, 16, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {18, UPB_SIZE(72, 136), 17, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_enforcing_failure_percentage_local_origin(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -605,7 +597,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_failure_percentage_minimum_hosts(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {19, UPB_SIZE(76, 144), 18, 17, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {19, UPB_SIZE(76, 144), 18, 17, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_failure_percentage_minimum_hosts(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -617,7 +609,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_failure_percentage_request_volume(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {20, UPB_SIZE(80, 152), 19, 18, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {20, UPB_SIZE(80, 152), 19, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_mutable_failure_percentage_request_volume(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -629,7 +621,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_max_ejection_time(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_Duration* value) {
-  const upb_MiniTableField field = {21, UPB_SIZE(84, 160), 20, 19, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {21, UPB_SIZE(84, 160), 20, 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_mutable_max_ejection_time(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
@@ -641,7 +633,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetec
   return sub;
 }
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_max_ejection_time_jitter(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_Duration* value) {
-  const upb_MiniTableField field = {22, UPB_SIZE(88, 168), 21, 20, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {22, UPB_SIZE(88, 168), 21, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_mutable_max_ejection_time_jitter(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {

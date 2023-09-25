@@ -89,7 +89,7 @@ class TimerList {
   // timer has already fired, or if its closure is currently running. The
   // closure is guaranteed to run eventually if this method returns false.
   // Otherwise, this returns true, and the closure will not be run.
-  bool TimerCancel(Timer* timer) GRPC_MUST_USE_RESULT;
+  GRPC_MUST_USE_RESULT bool TimerCancel(Timer* timer);
 
   // Check for timers to be run, and return them.
   // Return nullopt if timers could not be checked due to contention with
