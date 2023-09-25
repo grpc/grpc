@@ -20,6 +20,8 @@
 #include <string>
 #include <tuple>
 
+#include "absl/random/bit_gen_ref.h"
+#include "absl/random/random.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -153,7 +155,9 @@ ClientTransport::ClientTransport(
           // Initialized to get this_cpu() info in global_stat().
           ExecCtx exec_ctx;
           // Deserialize frame from read buffer.
+          absl::BitGen bitgen;
           auto status = frame.Deserialize(hpack_parser_.get(), *frame_header_,
+                                          absl::BitGenRef(bitgen),
                                           control_endpoint_read_buffer_);
           GPR_ASSERT(status.ok());
           // Move message into frame.

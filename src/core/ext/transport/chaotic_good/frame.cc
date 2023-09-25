@@ -221,8 +221,9 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
     }
   }
   if (header.flags.is_set(1)) {
-    auto r = ReadMetadata<ServerMetadata>(
-        parser, deserializer.ReceiveTrailers(), header.stream_id, false, false, bitsrc);
+    auto r =
+        ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveTrailers(),
+                                     header.stream_id, false, false, bitsrc);
     if (!r.ok()) return r.status();
     if (r.value() != nullptr) {
       trailers = std::move(r.value());
