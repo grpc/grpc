@@ -1309,7 +1309,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
   FilterStackCall* call = call_;
   grpc_error_handle error = batch_error_.get();
 
-  if (grpc_core::IsCallStatusOverrideOnCancellationEnabled()) {
+  if (IsCallStatusOverrideOnCancellationEnabled()) {
     // On the client side, if final call status is already known (i.e if this op
     // includes recv_trailing_metadata) and if the call status is known to be
     // OK, then disregard the batch error to ensure call->receiving_buffer_ is
