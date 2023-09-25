@@ -73,6 +73,7 @@ typedef struct grpc_call_create_args {
   absl::optional<grpc_core::Slice> authority;
 
   grpc_core::Timestamp send_deadline;
+  bool registered_method;  // client_only
 } grpc_call_create_args;
 
 namespace grpc_core {

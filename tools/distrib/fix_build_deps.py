@@ -109,6 +109,8 @@ EXTERNAL_DEPS = {
     "opentelemetry/nostd/unique_ptr.h": "otel/api",
     "opentelemetry/sdk/metrics/meter_provider.h": "otel/sdk/src/metrics",
     "opentelemetry/sdk/common/attribute_utils.h": "otel/sdk:headers",
+    "opentelemetry/sdk/resource/resource.h": "otel/sdk:headers",
+    "opentelemetry/sdk/resource/resource_detector.h": "otel/sdk:headers",
     "opentelemetry/sdk/resource/semantic_conventions.h": "otel/sdk:headers",
     "ares.h": "cares",
     "fuzztest/fuzztest.h": ["fuzztest", "fuzztest_main"],

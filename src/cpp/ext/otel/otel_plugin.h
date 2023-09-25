@@ -100,6 +100,8 @@ struct OTelPluginState {
   std::unique_ptr<LabelsInjector> labels_injector;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const>
       target_attribute_filter;
+  absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+      generic_method_attribute_filter;
   absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
       server_selector;
 };
@@ -165,6 +167,14 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetTargetAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attribute_filter);
+  // If set, \a generic_method_attribute_filter is called per call with a
+  // generic method type to decide whether to record the method name or to
+  // replace it with "other". Non-generic or pre-registered methods remain
+  // unaffected. If not set, by default, generic method names are replaced with
+  // "other" when recording metrics.
+  OpenTelemetryPluginBuilder& SetGenericMethodAttributeFilter(
+      absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+          generic_method_attribute_filter);
   void BuildAndRegisterGlobal();
 
  private:
@@ -174,6 +184,8 @@ class OpenTelemetryPluginBuilder {
       target_attribute_filter_;
   absl::flat_hash_set<std::string> metrics_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
+  absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+      generic_method_attribute_filter_;
   absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
       server_selector_;
 };
