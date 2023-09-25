@@ -1851,10 +1851,6 @@ jobset.measure_cpu_costs = args.measure_cpu_costs
 run_config = _CONFIGS[args.config]
 build_config = run_config.build_config
 
-# TODO(jtattermusch): is this setting applied/being used?
-if args.travis:
-    _FORCE_ENVIRON_FOR_WRAPPERS = {"GRPC_TRACE": "api"}
-
 languages = set(_LANGUAGES[l] for l in args.language)
 for l in languages:
     l.configure(run_config, args)

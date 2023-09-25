@@ -223,6 +223,10 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     const char* server_name_indication, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
 
+// Increments reference count of the client handshaker factory.
+tsi_ssl_client_handshaker_factory* tsi_ssl_client_handshaker_factory_ref(
+    tsi_ssl_client_handshaker_factory* client_factory);
+
 // Decrements reference count of the handshaker factory. Handshaker factory will
 // be destroyed once no references exist.
 void tsi_ssl_client_handshaker_factory_unref(

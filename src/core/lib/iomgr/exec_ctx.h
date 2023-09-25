@@ -138,13 +138,6 @@ class GRPC_DLL ExecCtx {
   ExecCtx(const ExecCtx&) = delete;
   ExecCtx& operator=(const ExecCtx&) = delete;
 
-  unsigned starting_cpu() {
-    if (starting_cpu_ == std::numeric_limits<unsigned>::max()) {
-      starting_cpu_ = gpr_cpu_current_cpu();
-    }
-    return starting_cpu_;
-  }
-
   struct CombinerData {
     // currently active combiner: updated only via combiner.c
     Combiner* active_combiner;
@@ -235,8 +228,6 @@ class GRPC_DLL ExecCtx {
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
   CombinerData combiner_data_ = {nullptr, nullptr};
   uintptr_t flags_;
-
-  unsigned starting_cpu_ = std::numeric_limits<unsigned>::max();
 
 #if !TARGET_OS_IPHONE
   ScopedTimeCache time_cache_;

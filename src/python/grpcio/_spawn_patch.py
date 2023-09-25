@@ -30,7 +30,7 @@ MAX_COMMAND_LENGTH = 8191
 _classic_spawn = ccompiler.CCompiler.spawn
 
 
-def _commandfile_spawn(self, command):
+def _commandfile_spawn(self, command, **kwargs):
     command_length = sum([len(arg) for arg in command])
     if os.name == "nt" and command_length > MAX_COMMAND_LENGTH:
         # Even if this command doesn't support the @command_file, it will
@@ -51,11 +51,11 @@ def _commandfile_spawn(self, command):
             command_file.write(" \n".join(escaped_args))
         modified_command = command[:1] + ["@{}".format(command_filename)]
         try:
-            _classic_spawn(self, modified_command)
+            _classic_spawn(self, modified_command, **kwargs)
         finally:
             shutil.rmtree(temporary_directory)
     else:
-        _classic_spawn(self, command)
+        _classic_spawn(self, command, **kwargs)
 
 
 def monkeypatch_spawn():

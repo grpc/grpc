@@ -626,7 +626,7 @@ void OldWeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
             self->BuildSchedulerAndStartTimerLocked();
           }
         }
-        if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+        if (!IsWorkSerializerDispatchEnabled()) {
           // Release the picker ref inside the WorkSerializer.
           work_serializer->Run([self = std::move(self)]() {}, DEBUG_LOCATION);
           return;
@@ -1463,7 +1463,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
             self->BuildSchedulerAndStartTimerLocked();
           }
         }
-        if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+        if (!IsWorkSerializerDispatchEnabled()) {
           // Release the picker ref inside the WorkSerializer.
           work_serializer->Run([self = std::move(self)]() {}, DEBUG_LOCATION);
           return;

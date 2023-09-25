@@ -193,6 +193,7 @@ class PythonDistribTest(object):
                 % (self.docker_suffix, self.arch),
                 "test/distrib/python/run_source_distrib_test.sh",
                 copy_rel_path="test/distrib",
+                timeout_seconds=45 * 60,
             )
         else:
             return create_docker_jobspec(
@@ -201,6 +202,7 @@ class PythonDistribTest(object):
                 % (self.docker_suffix, self.arch),
                 "test/distrib/python/run_binary_distrib_test.sh",
                 copy_rel_path="test/distrib",
+                timeout_seconds=45 * 60,
             )
 
     def __str__(self):
@@ -415,6 +417,12 @@ def targets():
             "windows",
             "x86",
             testcase="cmake_as_externalproject",
+            presubmit=True,
+        ),
+        CppDistribTest(
+            "windows",
+            "x86",
+            testcase="cmake_for_dll",
             presubmit=True,
         ),
         # C#

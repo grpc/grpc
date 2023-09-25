@@ -231,7 +231,6 @@ class Server : public InternallyRefCounted<Server>,
 
     ChannelRegisteredMethod* GetRegisteredMethod(const grpc_slice& host,
                                                  const grpc_slice& path);
-
     // Filter vtable functions.
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
@@ -244,6 +243,8 @@ class Server : public InternallyRefCounted<Server>,
 
     static void AcceptStream(void* arg, grpc_transport* /*transport*/,
                              const void* transport_server_data);
+    static void SetRegisteredMethodOnMetadata(void* arg,
+                                              ServerMetadata* metadata);
 
     void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
