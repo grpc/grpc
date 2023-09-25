@@ -146,15 +146,6 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: unique_metadata_strings
-  description:
-    Ensure a unique copy of strings from parsed metadata are taken.
-    The hypothesis here is that ref counting these are causing read buffer
-    lifetimes to be extended leading to memory bloat.
-  expiry: 2023/11/01
-  owner: ctiller@google.com
-  test_tags: []
-  allow_in_fuzzing_config: true
 - name: keepalive_fix
   description:
     Allows overriding keepalive_permit_without_calls.
@@ -209,10 +200,15 @@
   expiry: 2023/11/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
-- name: client_channel_subchannel_wrapper_work_serializer_orphan
+- name: combiner_offload_to_event_engine
   description:
-    Client channel subchannel wrapper hops into WorkSerializer at
-    Orphan() time, rather than requiring callers to do it.
-  expiry: 2023/11/15
-  owner: roth@google.com
-  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+    Offload Combiner work onto the EventEngine instead of the Executor.
+  expiry: 2024/01/15
+  owner: hork@google.com
+  test_tags: []
+- name: registered_method_lookup_in_transport
+  description:
+    Change registered method's lookup point to transport
+  expiry: 2024/03/31
+  owner: yashkt@google.com
+  test_tags: ["surface_registered_method_lookup"]

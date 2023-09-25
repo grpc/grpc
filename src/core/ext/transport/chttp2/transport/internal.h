@@ -28,6 +28,7 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -267,7 +268,9 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
 
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
+  absl::BitGen bitgen;
 
   grpc_closure* notify_on_receive_settings = nullptr;
   grpc_closure* notify_on_close = nullptr;
@@ -306,6 +309,10 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   // accept stream callback
   void (*accept_stream_cb)(void* user_data, grpc_transport* transport,
                            const void* server_data);
+  // registered_method_matcher_cb is called before invoking the recv initial
+  // metadata callback.
+  void (*registered_method_matcher_cb)(
+      void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* accept_stream_cb_user_data;
 
   /// connectivity tracking
@@ -479,8 +486,6 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// covering a write in a pollset. Such closures cannot be scheduled until
   /// we can prove that the write got scheduled.
   uint8_t closure_barrier_may_cover_write = CLOSURE_BARRIER_MAY_COVER_WRITE;
-
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 
 typedef enum {

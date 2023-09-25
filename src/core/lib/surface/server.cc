@@ -1161,6 +1161,10 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->set_accept_stream = true;
   op->set_accept_stream_fn = AcceptStream;
+  if (IsRegisteredMethodLookupInTransportEnabled()) {
+    op->set_registered_method_matcher_fn = SetRegisteredMethodOnMetadata;
+  }
+  // op->set_registered_method_matcher_fn = Registered
   op->set_accept_stream_user_data = this;
   op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);
   if (server_->ShutdownCalled()) {
@@ -1183,6 +1187,28 @@ Server::RegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     return it->second.get();
   }
   return nullptr;
+}
+
+void Server::ChannelData::SetRegisteredMethodOnMetadata(
+    void* arg, ServerMetadata* metadata) {
+  auto* chand = static_cast<Server::ChannelData*>(arg);
+  auto* authority = metadata->get_pointer(HttpAuthorityMetadata());
+  if (authority == nullptr) {
+    authority = metadata->get_pointer(HostMetadata());
+    if (authority == nullptr) {
+      // Authority not being set is an RPC error.
+      return;
+    }
+  }
+  auto* path = metadata->get_pointer(HttpPathMetadata());
+  if (path == nullptr) {
+    // Path not being set would result in an RPC error.
+    return;
+  }
+  RegisteredMethod* method = chand->GetRegisteredMethod(
+      authority->as_string_view(), path->as_string_view());
+  // insert in metadata
+  metadata->Set(GrpcRegisteredMethod(), method);
 }
 
 void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
@@ -1251,8 +1277,15 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
   Timestamp deadline = GetContext<CallContext>()->deadline();
   // Find request matcher.
   RequestMatcherInterface* matcher;
-  RegisteredMethod* rm = chand->GetRegisteredMethod(host_ptr->as_string_view(),
-                                                    path->as_string_view());
+  RegisteredMethod* rm = nullptr;
+  if (IsRegisteredMethodLookupInTransportEnabled()) {
+    rm = static_cast<RegisteredMethod*>(
+        call_args.client_initial_metadata->get(GrpcRegisteredMethod())
+            .value_or(nullptr));
+  } else {
+    rm = chand->GetRegisteredMethod(host_ptr->as_string_view(),
+                                    path->as_string_view());
+  }
   ArenaPromise<absl::StatusOr<NextResult<MessageHandle>>>
       maybe_read_first_message([] { return NextResult<MessageHandle>(); });
   if (rm != nullptr) {
@@ -1511,8 +1544,15 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
   grpc_server_register_method_payload_handling payload_handling =
       GRPC_SRM_PAYLOAD_NONE;
   if (path_.has_value() && host_.has_value()) {
-    RegisteredMethod* rm = chand->GetRegisteredMethod(host_->as_string_view(),
-                                                      path_->as_string_view());
+    RegisteredMethod* rm;
+    if (IsRegisteredMethodLookupInTransportEnabled()) {
+      rm = static_cast<RegisteredMethod*>(
+          recv_initial_metadata_->get(GrpcRegisteredMethod())
+              .value_or(nullptr));
+    } else {
+      rm = chand->GetRegisteredMethod(host_->as_string_view(),
+                                      path_->as_string_view());
+    }
     if (rm != nullptr) {
       matcher_ = rm->matcher.get();
       payload_handling = rm->payload_handling;

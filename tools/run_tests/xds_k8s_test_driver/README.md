@@ -38,7 +38,7 @@ sudo apt-get install python3-venv
 ##### Getting Started
 
 1. If you haven't, [initialize](https://cloud.google.com/sdk/docs/install-sdk) gcloud SDK
-2. Activate gcloud [configuration](https://cloud.google.com/sdk/docs/configurations) with your project 
+2. Activate gcloud [configuration](https://cloud.google.com/sdk/docs/configurations) with your project
 3. Enable gcloud services:
    ```shell
    gcloud services enable \
@@ -54,7 +54,6 @@ sudo apt-get install python3-venv
 
 #### Configure GKE cluster
 This is an example outlining minimal requirements to run the [baseline tests](xds-baseline-tests).
- 
 Update gloud sdk:
 ```shell
 gcloud -q components update
@@ -91,7 +90,6 @@ gcloud container clusters create "${CLUSTER_NAME}" \
  --workload-metadata=GKE_METADATA \
  --tags=allow-health-checks
 ```
-
 For security tests you also need to create CAs and configure the cluster to use those CAs
 as described
 [here](https://cloud.google.com/traffic-director/docs/security-proxyless-setup#configure-cas).

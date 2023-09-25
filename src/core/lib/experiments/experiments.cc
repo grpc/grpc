@@ -83,11 +83,6 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
-const char* const description_unique_metadata_strings =
-    "Ensure a unique copy of strings from parsed metadata are taken. The "
-    "hypothesis here is that ref counting these are causing read buffer "
-    "lifetimes to be extended leading to memory bloat.";
-const char* const additional_constraints_unique_metadata_strings = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -119,13 +114,14 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-const char* const
-    description_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "Client channel subchannel wrapper hops into WorkSerializer at "
-        "Orphan() time, rather than requiring callers to do it.";
-const char* const
-    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "{}";
+const char* const description_combiner_offload_to_event_engine =
+    "Offload Combiner work onto the EventEngine instead of the Executor.";
+const char* const additional_constraints_combiner_offload_to_event_engine =
+    "{}";
+const char* const description_registered_method_lookup_in_transport =
+    "Change registered method's lookup point to transport";
+const char* const additional_constraints_registered_method_lookup_in_transport =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -169,8 +165,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_canary_client_privacy, false, false},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, false, false},
-    {"unique_metadata_strings", description_unique_metadata_strings,
-     additional_constraints_unique_metadata_strings, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -186,10 +180,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
-    {"client_channel_subchannel_wrapper_work_serializer_orphan",
-     description_client_channel_subchannel_wrapper_work_serializer_orphan,
-     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
-     true, true},
+    {"combiner_offload_to_event_engine",
+     description_combiner_offload_to_event_engine,
+     additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"registered_method_lookup_in_transport",
+     description_registered_method_lookup_in_transport,
+     additional_constraints_registered_method_lookup_in_transport, true, true},
 };
 
 }  // namespace grpc_core
@@ -257,11 +253,6 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
-const char* const description_unique_metadata_strings =
-    "Ensure a unique copy of strings from parsed metadata are taken. The "
-    "hypothesis here is that ref counting these are causing read buffer "
-    "lifetimes to be extended leading to memory bloat.";
-const char* const additional_constraints_unique_metadata_strings = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -293,13 +284,14 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-const char* const
-    description_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "Client channel subchannel wrapper hops into WorkSerializer at "
-        "Orphan() time, rather than requiring callers to do it.";
-const char* const
-    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "{}";
+const char* const description_combiner_offload_to_event_engine =
+    "Offload Combiner work onto the EventEngine instead of the Executor.";
+const char* const additional_constraints_combiner_offload_to_event_engine =
+    "{}";
+const char* const description_registered_method_lookup_in_transport =
+    "Change registered method's lookup point to transport";
+const char* const additional_constraints_registered_method_lookup_in_transport =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -343,8 +335,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_canary_client_privacy, false, false},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, false, false},
-    {"unique_metadata_strings", description_unique_metadata_strings,
-     additional_constraints_unique_metadata_strings, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -360,10 +350,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
-    {"client_channel_subchannel_wrapper_work_serializer_orphan",
-     description_client_channel_subchannel_wrapper_work_serializer_orphan,
-     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
-     true, true},
+    {"combiner_offload_to_event_engine",
+     description_combiner_offload_to_event_engine,
+     additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"registered_method_lookup_in_transport",
+     description_registered_method_lookup_in_transport,
+     additional_constraints_registered_method_lookup_in_transport, true, true},
 };
 
 }  // namespace grpc_core
@@ -431,11 +423,6 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
-const char* const description_unique_metadata_strings =
-    "Ensure a unique copy of strings from parsed metadata are taken. The "
-    "hypothesis here is that ref counting these are causing read buffer "
-    "lifetimes to be extended leading to memory bloat.";
-const char* const additional_constraints_unique_metadata_strings = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -467,13 +454,14 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-const char* const
-    description_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "Client channel subchannel wrapper hops into WorkSerializer at "
-        "Orphan() time, rather than requiring callers to do it.";
-const char* const
-    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "{}";
+const char* const description_combiner_offload_to_event_engine =
+    "Offload Combiner work onto the EventEngine instead of the Executor.";
+const char* const additional_constraints_combiner_offload_to_event_engine =
+    "{}";
+const char* const description_registered_method_lookup_in_transport =
+    "Change registered method's lookup point to transport";
+const char* const additional_constraints_registered_method_lookup_in_transport =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -517,8 +505,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_canary_client_privacy, false, false},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, false, false},
-    {"unique_metadata_strings", description_unique_metadata_strings,
-     additional_constraints_unique_metadata_strings, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -534,10 +520,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
-    {"client_channel_subchannel_wrapper_work_serializer_orphan",
-     description_client_channel_subchannel_wrapper_work_serializer_orphan,
-     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
-     true, true},
+    {"combiner_offload_to_event_engine",
+     description_combiner_offload_to_event_engine,
+     additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"registered_method_lookup_in_transport",
+     description_registered_method_lookup_in_transport,
+     additional_constraints_registered_method_lookup_in_transport, true, true},
 };
 
 }  // namespace grpc_core

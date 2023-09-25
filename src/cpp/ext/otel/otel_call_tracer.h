@@ -100,7 +100,8 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
 
   explicit OpenTelemetryCallTracer(OpenTelemetryClientFilter* parent,
                                    grpc_core::Slice path,
-                                   grpc_core::Arena* arena);
+                                   grpc_core::Arena* arena,
+                                   bool registered_method);
   ~OpenTelemetryCallTracer() override;
 
   std::string TraceId() override {
@@ -124,10 +125,13 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   void RecordAnnotation(const Annotation& /*annotation*/) override;
 
  private:
+  absl::string_view MethodForStats() const;
+
   const OpenTelemetryClientFilter* parent_;
   // Client method.
   grpc_core::Slice path_;
   grpc_core::Arena* arena_;
+  const bool registered_method_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
