@@ -16,7 +16,7 @@ FROM ubuntu:22.04
 
 # Install Git and basic packages.
 RUN apt-get update -y && apt-get install -y \
-  curl \
+  curl gnupg \
   gcc && apt-get clean
 
 #==================
