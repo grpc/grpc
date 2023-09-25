@@ -35,7 +35,9 @@ namespace grpc_core {
 namespace experimental {
 
 CrlImpl::CrlImpl(X509_CRL* crl) : crl_(crl) {
-  issuer_ = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
+  char* buf = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
+  issuer_ = buf;
+  OPENSSL_free(buf);
 }
 
 CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
