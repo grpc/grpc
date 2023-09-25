@@ -119,6 +119,16 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_call_status_override_on_cancellation =
+    "Avoid overriding call status of successfully finished calls if it races "
+    "with cancellation.";
+const char* const additional_constraints_call_status_override_on_cancellation =
+    "{}";
+#ifdef NDEBUG
+const bool kDefaultForDebugOnly = false;
+#else
+const bool kDefaultForDebugOnly = true;
+#endif
 }  // namespace
 
 namespace grpc_core {
@@ -181,6 +191,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"call_status_override_on_cancellation",
+     description_call_status_override_on_cancellation,
+     additional_constraints_call_status_override_on_cancellation,
+     kDefaultForDebugOnly, true},
 };
 
 }  // namespace grpc_core
@@ -284,6 +298,16 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_call_status_override_on_cancellation =
+    "Avoid overriding call status of successfully finished calls if it races "
+    "with cancellation.";
+const char* const additional_constraints_call_status_override_on_cancellation =
+    "{}";
+#ifdef NDEBUG
+const bool kDefaultForDebugOnly = false;
+#else
+const bool kDefaultForDebugOnly = true;
+#endif
 }  // namespace
 
 namespace grpc_core {
@@ -346,6 +370,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"call_status_override_on_cancellation",
+     description_call_status_override_on_cancellation,
+     additional_constraints_call_status_override_on_cancellation,
+     kDefaultForDebugOnly, true},
 };
 
 }  // namespace grpc_core
@@ -449,6 +477,16 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_call_status_override_on_cancellation =
+    "Avoid overriding call status of successfully finished calls if it races "
+    "with cancellation.";
+const char* const additional_constraints_call_status_override_on_cancellation =
+    "{}";
+#ifdef NDEBUG
+const bool kDefaultForDebugOnly = false;
+#else
+const bool kDefaultForDebugOnly = true;
+#endif
 }  // namespace
 
 namespace grpc_core {
@@ -511,6 +549,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"call_status_override_on_cancellation",
+     description_call_status_override_on_cancellation,
+     additional_constraints_call_status_override_on_cancellation,
+     kDefaultForDebugOnly, true},
 };
 
 }  // namespace grpc_core

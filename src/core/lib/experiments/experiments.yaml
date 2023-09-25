@@ -203,3 +203,10 @@
   expiry: 2024/03/31
   owner: yashkt@google.com
   test_tags: ["surface_registered_method_lookup"]
+- name: call_status_override_on_cancellation
+  description:
+    Avoid overriding call status of successfully finished calls if it races with
+    cancellation.
+  expiry: 2024/01/01
+  owner: vigneshbabu@google.com
+  test_tags: []
