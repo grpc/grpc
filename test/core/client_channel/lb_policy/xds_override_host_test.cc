@@ -99,10 +99,11 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     EXPECT_EQ(ApplyUpdate(update, lb_policy()), absl::OkStatus());
   }
 
-  CallAttributes MakeOverrideHostAttribute(absl::string_view host) {
+  CallAttributes MakeOverrideHostAttribute(absl::string_view address) {
     CallAttributes override_host_attributes;
     override_host_attributes.emplace_back(
-        std::make_unique<XdsOverrideHostAttribute>(host));
+        std::make_unique<XdsOverrideHostAttribute>(
+            absl::StripPrefix(address, "ipv4:")));
     return override_host_attributes;
   }
 };

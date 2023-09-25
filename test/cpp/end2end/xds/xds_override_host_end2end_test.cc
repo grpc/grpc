@@ -91,8 +91,14 @@ class OverrideHostTest : public XdsEnd2endTest {
     std::vector<Cookie> values;
     auto pair = server_initial_metadata.equal_range("set-cookie");
     for (auto it = pair.first; it != pair.second; ++it) {
-      gpr_log(GPR_INFO, "set-cookie header: %s",
-              std::string(it->second).c_str());
+      std::pair<absl::string_view, absl::string_view> key_value =
+          absl::StrSplit(it->second, "=");
+      std::pair<absl::string_view, absl::string_view> key_value2 =
+          absl::StrSplit(key_value.second, ";");
+      std::string decoded;
+      EXPECT_TRUE(absl::Base64Unescape(key_value2.first, &decoded));
+      gpr_log(GPR_INFO, "set-cookie header: %s (decoded: %s)",
+              std::string(it->second).c_str(), decoded.c_str());
       values.emplace_back(ParseCookie(it->second));
       EXPECT_FALSE(values.back().value.empty());
       EXPECT_THAT(values.back().attributes, ::testing::Contains("HttpOnly"));

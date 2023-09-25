@@ -34,20 +34,32 @@
 
 namespace grpc_core {
 
+// A call attribute to be passed to the xds_override_host LB policy.
+// The StatefulSession filter will populate the cookie's address list,
+// if set.  The xds_override_host LB policy will use that info, and then
+// set the actual address list based on the chosen endpoint.  The
+// StatefulSession filter will then use the actual address list to
+// update the cookie.
 class XdsOverrideHostAttribute
     : public ServiceConfigCallData::CallAttributeInterface {
  public:
   static UniqueTypeName TypeName();
 
-  explicit XdsOverrideHostAttribute(absl::string_view host_name)
-      : host_name_(host_name) {}
+  explicit XdsOverrideHostAttribute(absl::string_view cookie_address_list)
+      : cookie_address_list_(cookie_address_list) {}
 
-  absl::string_view host_name() const { return host_name_; }
+  absl::string_view cookie_address_list() const { return cookie_address_list_; }
+
+  absl::string_view actual_address_list() const { return actual_address_list_; }
+  void set_actual_address_list(absl::string_view actual_address_list) {
+    actual_address_list_ = actual_address_list;
+  }
 
  private:
   UniqueTypeName type() const override { return TypeName(); }
 
-  absl::string_view host_name_;
+  absl::string_view cookie_address_list_;
+  absl::string_view actual_address_list_;
 };
 
 // A filter to provide cookie-based stateful session affinity.
