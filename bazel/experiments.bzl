@@ -60,9 +60,6 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "core_end2end_test": [
-                "work_stealing",
-            ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
@@ -126,9 +123,6 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "core_end2end_test": [
-                "work_stealing",
-            ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
@@ -202,9 +196,6 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "core_end2end_test": [
-                "work_stealing",
-            ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",

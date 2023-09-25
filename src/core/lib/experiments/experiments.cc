@@ -73,9 +73,6 @@ const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_work_stealing =
-    "If set, use a work stealing thread pool implementation in EventEngine";
-const char* const additional_constraints_work_stealing = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_canary_client_privacy =
@@ -160,8 +157,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_trace_record_callops, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
-    {"work_stealing", description_work_stealing,
-     additional_constraints_work_stealing, true, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -248,9 +243,6 @@ const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_work_stealing =
-    "If set, use a work stealing thread pool implementation in EventEngine";
-const char* const additional_constraints_work_stealing = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_canary_client_privacy =
@@ -335,8 +327,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_trace_record_callops, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
-    {"work_stealing", description_work_stealing,
-     additional_constraints_work_stealing, true, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -423,9 +413,6 @@ const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_work_stealing =
-    "If set, use a work stealing thread pool implementation in EventEngine";
-const char* const additional_constraints_work_stealing = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_canary_client_privacy =
@@ -510,8 +497,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_trace_record_callops, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
-    {"work_stealing", description_work_stealing,
-     additional_constraints_work_stealing, true, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,
