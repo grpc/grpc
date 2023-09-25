@@ -94,6 +94,7 @@ inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+inline bool IsMultipingEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -133,6 +134,7 @@ inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+inline bool IsMultipingEnabled() { return false; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -172,6 +174,7 @@ inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+inline bool IsMultipingEnabled() { return false; }
 #endif
 
 #else
@@ -203,6 +206,7 @@ enum ExperimentIds {
   kExperimentIdWrrDelegateToPickFirst,
   kExperimentIdClientChannelSubchannelWrapperWorkSerializerOrphan,
   kExperimentIdCombinerOffloadToEventEngine,
+  kExperimentIdMultiping,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -313,6 +317,10 @@ inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() {
   return IsExperimentEnabled(kExperimentIdCombinerOffloadToEventEngine);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MULTIPING
+inline bool IsMultipingEnabled() {
+  return IsExperimentEnabled(kExperimentIdMultiping);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

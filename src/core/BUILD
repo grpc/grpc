@@ -5707,6 +5707,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "experiments",
         "match",
         "time",
         "//:channel_arg_names",

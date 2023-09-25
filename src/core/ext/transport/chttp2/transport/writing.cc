@@ -96,6 +96,9 @@ static grpc_core::Duration NextAllowedPingInterval(grpc_chttp2_transport* t) {
     // The gRPC keepalive spec doesn't call for any throttling on the server
     // side, but we are adding some throttling for protection anyway, unless
     // we are doing a graceful GOAWAY in which case we don't want to wait.
+    if (grpc_core::IsMultipingEnabled()) {
+      return grpc_core::Duration::Seconds(1);
+    }
     return t->keepalive_time == grpc_core::Duration::Infinity()
                ? grpc_core::Duration::Seconds(20)
                : t->keepalive_time / 2;
@@ -113,7 +116,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   // https://github.com/grpc/grpc/issues/26079.
   grpc_core::ExecCtx::Get()->InvalidateNow();
   Match(
-      t->ping_rate_policy.RequestSendPing(NextAllowedPingInterval(t)),
+      t->ping_rate_policy.RequestSendPing(NextAllowedPingInterval(t),
+                                          t->ping_callbacks.pings_inflight()),
       [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
         t->ping_rate_policy.SentPing();
         const uint64_t id = t->ping_callbacks.StartPing(
