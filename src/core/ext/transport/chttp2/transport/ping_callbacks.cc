@@ -16,14 +16,10 @@
 
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 
-#include <inttypes.h>
-
 #include <utility>
 
 #include "absl/meta/type_traits.h"
 #include "absl/random/distributions.h"
-
-#include <grpc/support/log.h>
 
 namespace grpc_core {
 
