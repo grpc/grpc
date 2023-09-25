@@ -55,8 +55,13 @@ uint64_t Chttp2PingCallbacks::StartPing(
   CallbackVec().swap(on_start_);
   InflightPing inflight;
   inflight.on_ack.swap(on_ack_);
-  inflight.on_timeout =
-      event_engine->RunAfter(ping_timeout, std::move(on_timeout));
+  if (ping_timeout != Duration::Infinity()) {
+    inflight.on_timeout =
+        event_engine->RunAfter(ping_timeout, std::move(on_timeout));
+  } else {
+    inflight.on_timeout =
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
+  }
   inflight_.emplace(id, std::move(inflight));
   most_recent_inflight_ = id;
   ping_requested_ = false;

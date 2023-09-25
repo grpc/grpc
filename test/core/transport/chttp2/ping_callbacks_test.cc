@@ -72,6 +72,7 @@ TEST(PingCallbacksTest, PingRoundtrips) {
         acked = true;
       });
   EXPECT_TRUE(callbacks.ping_requested());
+  EXPECT_EQ(callbacks.pings_inflight(), 0);
   EXPECT_FALSE(started);
   EXPECT_FALSE(acked);
   // Start ping should call the start methods, set a timeout, and clear the
@@ -85,12 +86,49 @@ TEST(PingCallbacksTest, PingRoundtrips) {
       bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
       &event_engine);
   EXPECT_FALSE(callbacks.ping_requested());
+  EXPECT_EQ(callbacks.pings_inflight(), 1);
   EXPECT_TRUE(started);
   EXPECT_FALSE(acked);
   // Ack should cancel the timeout
   EXPECT_CALL(event_engine, Cancel(EventEngine::TaskHandle{123, 456}))
       .WillOnce(Return(true));
   EXPECT_TRUE(callbacks.AckPing(id, &event_engine));
+  EXPECT_EQ(callbacks.pings_inflight(), 0);
+  EXPECT_FALSE(callbacks.ping_requested());
+  EXPECT_TRUE(started);
+  EXPECT_TRUE(acked);
+}
+
+TEST(PingCallbacksTest, PingRoundtripsWithInfiniteTimeout) {
+  StrictMock<MockEventEngine> event_engine;
+  absl::BitGen bitgen;
+  Chttp2PingCallbacks callbacks;
+  bool started = false;
+  bool acked = false;
+  EXPECT_FALSE(callbacks.ping_requested());
+  // Request ping
+  callbacks.OnPing(
+      [&started] {
+        EXPECT_FALSE(started);
+        started = true;
+      },
+      [&acked] {
+        EXPECT_FALSE(acked);
+        acked = true;
+      });
+  EXPECT_TRUE(callbacks.ping_requested());
+  EXPECT_EQ(callbacks.pings_inflight(), 0);
+  EXPECT_FALSE(started);
+  EXPECT_FALSE(acked);
+  auto id = callbacks.StartPing(
+      bitgen, Duration::Infinity(), [] { Crash("should not reach here"); },
+      &event_engine);
+  EXPECT_FALSE(callbacks.ping_requested());
+  EXPECT_EQ(callbacks.pings_inflight(), 1);
+  EXPECT_TRUE(started);
+  EXPECT_FALSE(acked);
+  EXPECT_TRUE(callbacks.AckPing(id, &event_engine));
+  EXPECT_EQ(callbacks.pings_inflight(), 0);
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started);
   EXPECT_TRUE(acked);

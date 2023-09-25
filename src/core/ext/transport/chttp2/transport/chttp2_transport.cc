@@ -388,8 +388,10 @@ static void read_channel_args(grpc_chttp2_transport* t,
   t->keepalive_timeout = std::max(
       grpc_core::Duration::Zero(),
       channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
-          .value_or(t->is_client ? g_default_client_keepalive_timeout
-                                 : g_default_server_keepalive_timeout));
+          .value_or(t->keepalive_time == grpc_core::Duration::Infinity()
+                        ? grpc_core::Duration::Infinity()
+                        : (t->is_client ? g_default_client_keepalive_timeout
+                                        : g_default_server_keepalive_timeout)));
   if (t->is_client) {
     t->keepalive_permit_without_calls =
         channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)

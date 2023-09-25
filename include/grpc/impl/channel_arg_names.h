@@ -113,6 +113,10 @@
    pings can be sent without sending a data frame or header frame) */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
+/** How many pings do we allow to be inflight at any given time?
+    In older versions of gRPC this was implicitly 1.
+    With the multiping experiment we allow this to rise to 100 by default. */
+#define GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS "grpc.http2.max_inflight_pings"
 /** How many misbehaving pings the server can bear before sending goaway and
     closing the transport? (0 indicates that the server can bear an infinite
     number of misbehaving pings) */

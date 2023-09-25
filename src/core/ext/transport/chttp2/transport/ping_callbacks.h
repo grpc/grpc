@@ -50,6 +50,7 @@ class Chttp2PingCallbacks {
   void CancelAll(grpc_event_engine::experimental::EventEngine* event_engine);
 
   bool ping_requested() const { return ping_requested_; }
+  size_t pings_inflight() const { return inflight_.size(); }
 
  private:
   using CallbackVec = std::vector<Callback>;
