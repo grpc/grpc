@@ -398,14 +398,14 @@ def targets():
             ProtocArtifact("windows", "x64", presubmit=True),
             ProtocArtifact("windows", "x86", presubmit=True),
             PythonArtifact("manylinux2014", "x64", "cp38-cp38", presubmit=True),
-            PythonArtifact("manylinux2014", "x64", "cp39-cp39"),
+            PythonArtifact("manylinux2014", "x64", "cp39-cp39", presubmit=True),
             PythonArtifact("manylinux2014", "x64", "cp310-cp310"),
             PythonArtifact("manylinux2014", "x64", "cp311-cp311"),
             PythonArtifact(
                 "manylinux2014", "x64", "cp312-cp312", presubmit=True
             ),
             PythonArtifact("manylinux2014", "x86", "cp38-cp38", presubmit=True),
-            PythonArtifact("manylinux2014", "x86", "cp39-cp39"),
+            PythonArtifact("manylinux2014", "x86", "cp39-cp39", presubmit=True),
             PythonArtifact("manylinux2014", "x86", "cp310-cp310"),
             PythonArtifact("manylinux2014", "x86", "cp311-cp311"),
             PythonArtifact(
