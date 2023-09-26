@@ -65,7 +65,7 @@ const std::string kValidCertPath =
 const std::string kRevokedIntermediateKeyPath = absl::StrCat(
     kSslTsiTestCrlSupportedCredentialsDir, "leaf_signed_by_intermediate.key");
 const std::string kRevokedIntermediateCertPath = absl::StrCat(
-    kSslTsiTestCrlSupportedCredentialsDir, "leaf_signed_by_intermediate.pem");
+    kSslTsiTestCrlSupportedCredentialsDir, "leaf_and_intermediate_chain.pem");
 
 class CrlSslTransportSecurityTest
     : public testing::TestWithParam<tsi_tls_version> {
@@ -438,7 +438,7 @@ TEST_P(CrlSslTransportSecurityTest, ValidCerts) {
 TEST_P(CrlSslTransportSecurityTest, UseFaultyCrlDirectory) {
   auto* fixture = new SslTsiTestFixture(
       kRevokedKeyPath, kRevokedCertPath, kValidKeyPath, kValidCertPath,
-      kSslTsiTestFaultyCrlsDir, false, false, false);
+      kSslTsiTestFaultyCrlsDir, true, true, true);
   fixture->Run();
 }
 
