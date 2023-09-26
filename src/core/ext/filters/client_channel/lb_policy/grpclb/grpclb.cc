@@ -320,7 +320,7 @@ class GrpcLb : public LoadBalancingPolicy {
           client_stats_(std::move(client_stats)) {}
 
     void Orphan() override {
-      if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+      if (!IsWorkSerializerDispatchEnabled()) {
         if (!lb_policy_->shutting_down_) {
           lb_policy_->CacheDeletedSubchannelLocked(wrapped_subchannel());
         }

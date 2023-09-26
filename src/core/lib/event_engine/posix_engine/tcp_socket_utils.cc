@@ -749,7 +749,7 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
     }
     // If this isn't an IPv4 address, then return whatever we've got.
     if (!ResolvedAddressIsV4Mapped(addr, nullptr)) {
-      if (newfd <= 0) {
+      if (newfd < 0) {
         return ErrorForFd(newfd, addr);
       }
       dsmode = PosixSocketWrapper::DSMode::DSMODE_IPV6;

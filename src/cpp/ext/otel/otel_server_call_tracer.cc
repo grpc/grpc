@@ -32,6 +32,7 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
@@ -128,10 +129,21 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   }
 
  private:
+  absl::string_view MethodForStats() const {
+    absl::string_view method = absl::StripPrefix(path_.as_string_view(), "/");
+    if (registered_method_ ||
+        (OTelPluginState().generic_method_attribute_filter != nullptr &&
+         OTelPluginState().generic_method_attribute_filter(method))) {
+      return method;
+    }
+    return "other";
+  }
+
   absl::Time start_time_;
   absl::Duration elapsed_time_;
   grpc_core::Slice path_;
   std::unique_ptr<LabelsIterable> injected_labels_;
+  bool registered_method_;
 };
 
 void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
@@ -142,9 +154,11 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     injected_labels_ =
         OTelPluginState().labels_injector->GetLabels(recv_initial_metadata);
   }
+  registered_method_ =
+      recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
+          .value_or(nullptr) != nullptr;
   std::array<std::pair<absl::string_view, absl::string_view>, 1>
-      additional_labels = {
-          {{OTelMethodKey(), absl::StripPrefix(path_.as_string_view(), "/")}}};
+      additional_labels = {{{OTelMethodKey(), MethodForStats()}}};
   if (OTelPluginState().server.call.started != nullptr) {
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
@@ -164,10 +178,9 @@ void OpenTelemetryServerCallTracer::RecordSendTrailingMetadata(
 void OpenTelemetryServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
   std::array<std::pair<absl::string_view, absl::string_view>, 2>
-      additional_labels = {
-          {{OTelMethodKey(), absl::StripPrefix(path_.as_string_view(), "/")},
-           {OTelStatusKey(),
-            grpc_status_code_to_string(final_info->final_status)}}};
+      additional_labels = {{{OTelMethodKey(), MethodForStats()},
+                            {OTelStatusKey(), grpc_status_code_to_string(
+                                                  final_info->final_status)}}};
   KeyValueIterable labels(injected_labels_.get(), additional_labels);
   if (OTelPluginState().server.call.duration != nullptr) {
     OTelPluginState().server.call.duration->Record(

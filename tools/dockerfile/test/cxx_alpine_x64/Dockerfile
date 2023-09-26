@@ -21,7 +21,6 @@ RUN apk update && apk add \
   bzip2 \
   build-base \
   cmake \
-  ccache \
   curl \
   gcc \
   git \

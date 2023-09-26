@@ -101,6 +101,7 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
         metadata="",
         secure_mode=False,
         config_mesh=None,
+        generate_mesh_id=False,
         print_response=False,
         log_to_stdout: bool = False,
     ) -> XdsTestClient:
@@ -155,6 +156,7 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
             metadata=metadata,
             secure_mode=secure_mode,
             config_mesh=config_mesh,
+            generate_mesh_id=generate_mesh_id,
             print_response=print_response,
         )
 

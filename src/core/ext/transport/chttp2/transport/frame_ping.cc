@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <initializer_list>
+#include <string>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
@@ -34,6 +35,10 @@
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
+#include "src/core/lib/debug/trace.h"
+
+extern grpc_core::TraceFlag grpc_keepalive_trace;
+extern grpc_core::TraceFlag grpc_http_trace;
 
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
@@ -96,6 +101,10 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
       if (!t->is_client) {
         const bool transport_idle =
             t->keepalive_permit_without_calls == 0 && t->stream_map.empty();
+        if (grpc_keepalive_trace.enabled() || grpc_http_trace.enabled()) {
+          gpr_log(GPR_INFO, "t=%p received ping: %s", t,
+                  t->ping_abuse_policy.GetDebugString(transport_idle).c_str());
+        }
         if (t->ping_abuse_policy.ReceivedOnePing(transport_idle)) {
           grpc_chttp2_exceeded_ping_strikes(t);
         }
