@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:16.04
+FROM ubuntu:22.04
 
 # Install Git and basic packages.
 RUN apt-get update -y && apt-get install -y \
-  curl \
+  curl gnupg2 \
   gcc && apt-get clean
 
 #==================
@@ -27,7 +27,8 @@ RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A170
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 2.7
-RUN /bin/bash -l -c "rvm install ruby-2.7"
+RUN /bin/bash -l -c "rvm pkg install openssl"
+RUN /bin/bash -l -c "rvm install ruby-2.7 --with-openssl-dir=/usr/local/rvm/usr"
 RUN /bin/bash -l -c "rvm use --default ruby-2.7"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
