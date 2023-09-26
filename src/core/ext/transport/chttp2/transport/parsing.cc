@@ -26,6 +26,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -869,7 +870,8 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
               .value);
     }
   }
-  grpc_error_handle error = parser->Parse(slice, is_last != 0, call_tracer);
+  grpc_error_handle error = parser->Parse(
+      slice, is_last != 0, absl::BitGenRef(t->bitgen), call_tracer);
   if (!error.ok()) {
     return error;
   }

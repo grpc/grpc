@@ -213,7 +213,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "generative"  # @unused
 
-core_version = "35.0.0"  # @unused
+core_version = "36.0.0"  # @unused
 
 version = "1.59.0-dev"  # @unused
 
@@ -3858,6 +3858,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/random:bit_gen_ref",
         "absl/status",
         "absl/strings",
         "absl/types:optional",
@@ -3980,6 +3981,8 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/hash",
         "absl/meta:type_traits",
+        "absl/random",
+        "absl/random:bit_gen_ref",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",

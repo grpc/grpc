@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -47,6 +48,7 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/hpack_sync_fuzzer.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
+#include "test/core/util/proto_bit_gen.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -62,6 +64,8 @@ bool IsStreamError(const absl::Status& status) {
 }
 
 void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
+  ProtoBitGen proto_bit_src(msg.random_numbers());
+
   // STAGE 1: Encode the fuzzing input into a buffer (encode_output)
   HPackCompressor compressor;
   SliceBuffer encode_output;
@@ -126,9 +130,9 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
       HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
   std::vector<std::pair<size_t, absl::Status>> seen_errors;
   for (size_t i = 0; i < encode_output.Count(); i++) {
-    auto err =
-        parser.Parse(encode_output.c_slice_at(i),
-                     i == (encode_output.Count() - 1), /*call_tracer=*/nullptr);
+    auto err = parser.Parse(
+        encode_output.c_slice_at(i), i == (encode_output.Count() - 1),
+        absl::BitGenRef(proto_bit_src), /*call_tracer=*/nullptr);
     if (!err.ok()) {
       seen_errors.push_back(std::make_pair(i, err));
       // If we get a connection error (i.e. not a stream error), stop parsing,

@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/types/variant.h"
 
@@ -39,6 +40,7 @@ class FrameInterface {
  public:
   virtual absl::Status Deserialize(HPackParser* parser,
                                    const FrameHeader& header,
+                                   absl::BitGenRef bitsrc,
                                    SliceBuffer& slice_buffer) = 0;
   virtual SliceBuffer Serialize(HPackCompressor* encoder) const = 0;
 
@@ -62,6 +64,7 @@ class FrameInterface {
 
 struct SettingsFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
 
@@ -70,6 +73,7 @@ struct SettingsFrame final : public FrameInterface {
 
 struct ClientFragmentFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
 
@@ -86,6 +90,7 @@ struct ClientFragmentFrame final : public FrameInterface {
 
 struct ServerFragmentFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
 
@@ -101,6 +106,7 @@ struct ServerFragmentFrame final : public FrameInterface {
 
 struct CancelFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
 

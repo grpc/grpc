@@ -1955,6 +1955,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/profiling/internal/sample_recorder.h )
   s.files += %w( third_party/abseil-cpp/absl/random/bernoulli_distribution.h )
   s.files += %w( third_party/abseil-cpp/absl/random/beta_distribution.h )
+  s.files += %w( third_party/abseil-cpp/absl/random/bit_gen_ref.h )
   s.files += %w( third_party/abseil-cpp/absl/random/discrete_distribution.cc )
   s.files += %w( third_party/abseil-cpp/absl/random/discrete_distribution.h )
   s.files += %w( third_party/abseil-cpp/absl/random/distributions.h )
