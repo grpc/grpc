@@ -72,8 +72,6 @@ inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_STEALING
-inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
@@ -88,10 +86,10 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
+#define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
+inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
+inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -109,8 +107,6 @@ inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_STEALING
-inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
@@ -125,10 +121,10 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
+#define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
+inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
+inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -146,8 +142,6 @@ inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_STEALING
-inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
@@ -162,10 +156,10 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
+#define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
+inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
+inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 #endif
 
 #else
@@ -184,7 +178,6 @@ enum ExperimentIds {
   kExperimentIdScheduleCancellationOverWrite,
   kExperimentIdTraceRecordCallops,
   kExperimentIdEventEngineDns,
-  kExperimentIdWorkStealing,
   kExperimentIdClientPrivacy,
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdServerPrivacy,
@@ -195,7 +188,8 @@ enum ExperimentIds {
   kExperimentIdJitterMaxIdle,
   kExperimentIdRoundRobinDelegateToPickFirst,
   kExperimentIdWrrDelegateToPickFirst,
-  kExperimentIdClientChannelSubchannelWrapperWorkSerializerOrphan,
+  kExperimentIdCombinerOffloadToEventEngine,
+  kExperimentIdRegisteredMethodLookupInTransport,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -254,10 +248,6 @@ inline bool IsTraceRecordCallopsEnabled() {
 inline bool IsEventEngineDnsEnabled() {
   return IsExperimentEnabled(kExperimentIdEventEngineDns);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_STEALING
-inline bool IsWorkStealingEnabled() {
-  return IsExperimentEnabled(kExperimentIdWorkStealing);
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
 inline bool IsClientPrivacyEnabled() {
   return IsExperimentEnabled(kExperimentIdClientPrivacy);
@@ -298,10 +288,13 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() {
 inline bool IsWrrDelegateToPickFirstEnabled() {
   return IsExperimentEnabled(kExperimentIdWrrDelegateToPickFirst);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return IsExperimentEnabled(
-      kExperimentIdClientChannelSubchannelWrapperWorkSerializerOrphan);
+#define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
+inline bool IsCombinerOffloadToEventEngineEnabled() {
+  return IsExperimentEnabled(kExperimentIdCombinerOffloadToEventEngine);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
+inline bool IsRegisteredMethodLookupInTransportEnabled() {
+  return IsExperimentEnabled(kExperimentIdRegisteredMethodLookupInTransport);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

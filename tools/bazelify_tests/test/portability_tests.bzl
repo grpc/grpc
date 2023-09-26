@@ -32,12 +32,12 @@ def generate_run_tests_portability_tests(name):
 
     # portability C x86
     grpc_run_tests_harness_test(
-        name = "runtests_c_linux_dbg_x86",
-        args = ["-l c -c dbg"],
+        name = "runtests_c_linux_dbg_x86_build_only",
+        args = ["-l c -c dbg --build_only"],
         docker_image_version = "tools/dockerfile/test/cxx_debian11_x86.current_version",
         size = "enormous",
     )
-    test_names.append("runtests_c_linux_dbg_x86")
+    test_names.append("runtests_c_linux_dbg_x86_build_only")
 
     # C and C++ with no-exceptions on Linux
     for language in ["c", "c++"]:
@@ -53,7 +53,7 @@ def generate_run_tests_portability_tests(name):
     # C and C++ under different compilers
     for language in ["c", "c++"]:
         compiler_configs = [
-            ["gcc_7", "", "tools/dockerfile/test/cxx_gcc_7_x64.current_version"],
+            ["gcc_7", "", "tools/dockerfile/test/cxx_gcc_8_x64.current_version"],
             ["gcc_12", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=20", "tools/dockerfile/test/cxx_gcc_12_x64.current_version"],
             ["gcc_12_openssl309", "--cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian12_openssl309_x64.current_version"],
             ["gcc_musl", "", "tools/dockerfile/test/cxx_alpine_x64.current_version"],

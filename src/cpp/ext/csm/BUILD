@@ -23,9 +23,10 @@ licenses(["reciprocal"])
 
 package(
     default_visibility = ["//visibility:public"],
-    features = [
-        "layering_check",
-    ],
+    # TODO(yashykt): Google Cloud C++ does not explicitly export the headers. Remove this once that is fixed.
+    #features = [
+    #    "layering_check",
+    #],
 )
 
 grpc_cc_library(
@@ -46,6 +47,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "absl/types:variant",
+        "google_cloud_cpp:experimental-opentelemetry",
         "otel/sdk/src/metrics",
         "otel/sdk:headers",
         "upb_lib",

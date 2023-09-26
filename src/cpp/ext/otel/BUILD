@@ -62,6 +62,7 @@ grpc_cc_library(
         "//:config",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc++",
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_public_hdrs",

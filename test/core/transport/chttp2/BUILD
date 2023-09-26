@@ -32,6 +32,7 @@ grpc_proto_fuzzer(
         "//:grpc",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:proto_bit_gen",
     ],
 )
 
@@ -47,6 +48,7 @@ grpc_proto_fuzzer(
         "//:grpc",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:proto_bit_gen",
     ],
 )
 
@@ -75,6 +77,7 @@ grpc_fuzzer(
         "absl/cleanup",
         "absl/status:statusor",
         "absl/status",
+        "absl/random:mocking_bit_gen",
     ],
     tags = ["no_windows"],
     uses_polling = False,

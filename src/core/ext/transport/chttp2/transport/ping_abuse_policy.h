@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -40,6 +42,8 @@ class Chttp2PingAbusePolicy {
   Duration TestOnlyMinPingIntervalWithoutData() const {
     return min_recv_ping_interval_without_data_;
   }
+
+  std::string GetDebugString(bool transport_idle) const;
 
  private:
   Duration RecvPingIntervalWithoutData(bool transport_idle) const;

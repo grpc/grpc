@@ -509,6 +509,16 @@ struct GrpcTrailersOnly {
   static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
 };
 
+// On the client-side, the value is a uintptr_t with a value of 1 if the call
+// has a registered/known method, or 0, if it's not known. On the server side,
+// the value is a (ChannelRegisteredMethod*).
+struct GrpcRegisteredMethod {
+  static absl::string_view DebugKey() { return "GrpcRegisteredMethod"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = void*;
+  static std::string DisplayValue(void* x);
+};
+
 namespace metadata_detail {
 
 // Build a key/value formatted debug string.
@@ -1486,7 +1496,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
     grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady,
-    grpc_core::GrpcTrailersOnly GRPC_CUSTOM_CLIENT_METADATA
+    grpc_core::GrpcTrailersOnly,
+    grpc_core::GrpcRegisteredMethod GRPC_CUSTOM_CLIENT_METADATA
         GRPC_CUSTOM_SERVER_METADATA>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {
