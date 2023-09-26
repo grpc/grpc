@@ -429,43 +429,40 @@ TEST_P(CrlSslTransportSecurityTest, RevokedClientCert) {
 }
 
 TEST_P(CrlSslTransportSecurityTest, ValidCerts) {
-  auto* fixture = SslTsiTestFixture::Create(
-      /*use_revoked_server_cert=*/false,
-      /*use_revoked_client_cert=*/false,
-      /*use_faulty_crl_directory=*/false);
+  auto* fixture = new SslTsiTestFixture(
+      kValidKeyPath, kValidCertPath, kValidKeyPath, kValidCertPath,
+      kSslTsiTestCrlSupportedCrlDir, true, true, true);
   fixture->Run();
 }
 
 TEST_P(CrlSslTransportSecurityTest, UseFaultyCrlDirectory) {
-  auto* fixture = SslTsiTestFixture::Create(
-      /*use_revoked_server_cert=*/false,
-      /*use_revoked_client_cert=*/false,
-      /*use_faulty_crl_directory=*/true);
+  auto* fixture = new SslTsiTestFixture(
+      kRevokedKeyPath, kRevokedCertPath, kValidKeyPath, kValidCertPath,
+      kSslTsiTestFaultyCrlsDir, false, false, false);
   fixture->Run();
 }
 
-TEST_P(CrlSslTransportSecurityTest, UseRevokedIntermediate) {
-  auto* fixture = SslTsiTestFixture::CreateWithIntermediate(
-      /*use_revoked_intermediate=*/true,
-      /*use_missing_intermediate_crl=*/false,
-      /*use_missing_root_crl=*/false);
+TEST_P(CrlSslTransportSecurityTest, UseRevokedIntermediateValidCrl) {
+  auto* fixture = new SslTsiTestFixture(
+      kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
+      kValidCertPath, kSslTsiTestCrlSupportedCrlDir, false, false, false);
   fixture->Run();
 }
 
 TEST_P(CrlSslTransportSecurityTest,
        UseRevokedIntermediateWithMissingIntermediateCrl) {
-  auto* fixture = SslTsiTestFixture::CreateWithIntermediate(
-      /*use_revoked_intermediate=*/true,
-      /*use_missing_intermediate_crl=*/true,
-      /*use_missing_root_crl=*/false);
+  auto* fixture = new SslTsiTestFixture(
+      kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
+      kValidCertPath, kSslTsiTestCrlSupportedCrlDirMissingIntermediate, false,
+      false, false);
   fixture->Run();
 }
 
 TEST_P(CrlSslTransportSecurityTest, UseRevokedIntermediateWithMissingRootCrl) {
-  auto* fixture = SslTsiTestFixture::CreateWithIntermediate(
-      /*use_revoked_intermediate=*/true,
-      /*use_missing_intermediate_crl=*/false,
-      /*use_missing_root_crl=*/true);
+  auto* fixture = new SslTsiTestFixture(
+      kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
+      kValidCertPath, kSslTsiTestCrlSupportedCrlDirMissingRoot, true, true,
+      true);
   fixture->Run();
 }
 
