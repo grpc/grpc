@@ -56,9 +56,9 @@ int main(int argc, char** argv) {
     return 1;
   }
   grpc::EnableDefaultHealthCheckService(false);
-  grpc::testing::RunServer(absl::GetFlag(FLAGS_secure_mode), port,
-                           maintenance_port, hostname,
-                           absl::GetFlag(FLAGS_server_id));
+  grpc::testing::RunServer(
+      absl::GetFlag(FLAGS_secure_mode), port, maintenance_port, hostname,
+      absl::GetFlag(FLAGS_server_id), [](grpc::Server* /* unused */) {});
 
   return 0;
 }

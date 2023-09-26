@@ -1,4 +1,5 @@
-# Copyright 2015 gRPC authors.
+#!/bin/bash
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM fedora:34
+set -ex
 
-RUN yum clean all && yum update -y && yum install -y python3 python3-pip
-RUN python3 -m pip install virtualenv
+ARCHIVE_WITH_SUBMODULES="$1"
+shift
 
-RUN yum install -y findutils
+# Extract grpc repo archive
+tar -xopf ${ARCHIVE_WITH_SUBMODULES}
+cd grpc
+
+# Override the "do not detect toolchain" setting that was set
+# by the .bazelrc configuration for the remote build.
+# TODO(jtattermusch): find a better solution to avoid breaking toolchain detection.
+export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=0
+
+# Run command passed as args
+"$@"

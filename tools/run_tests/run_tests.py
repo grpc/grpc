@@ -560,8 +560,8 @@ class CLanguage(object):
 
         if compiler == "default" or compiler == "cmake":
             return ("debian11", [])
-        elif compiler == "gcc7":
-            return ("gcc_7", [])
+        elif compiler == "gcc8":
+            return ("gcc_8", [])
         elif compiler == "gcc10.2":
             return ("debian11", [])
         elif compiler == "gcc10.2_openssl102":
@@ -1714,7 +1714,7 @@ argp.add_argument(
     "--compiler",
     choices=[
         "default",
-        "gcc7",
+        "gcc8",
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc12",
@@ -1850,10 +1850,6 @@ jobset.measure_cpu_costs = args.measure_cpu_costs
 # grab config
 run_config = _CONFIGS[args.config]
 build_config = run_config.build_config
-
-# TODO(jtattermusch): is this setting applied/being used?
-if args.travis:
-    _FORCE_ENVIRON_FOR_WRAPPERS = {"GRPC_TRACE": "api"}
 
 languages = set(_LANGUAGES[l] for l in args.language)
 for l in languages:

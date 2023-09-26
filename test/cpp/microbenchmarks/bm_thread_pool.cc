@@ -21,10 +21,13 @@
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/support/cpu.h>
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"

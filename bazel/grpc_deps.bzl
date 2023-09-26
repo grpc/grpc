@@ -395,11 +395,11 @@ def grpc_deps():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "6fd3496c82919a433219733819a93b56699519a193126959e9c4fedc25e70663",
-            strip_prefix = "data-plane-api-e53e7bbd012f81965f2e79848ad9a58ceb67201f",
+            sha256 = "fff067a5d6d776fc88549b5dd4773a6f8f0187b26a859de8b29bd4226a28ee63",
+            strip_prefix = "data-plane-api-9d6ffa70677c4dbf23f6ed569676206c4e2edff4",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/9d6ffa70677c4dbf23f6ed569676206c4e2edff4.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/9d6ffa70677c4dbf23f6ed569676206c4e2edff4.tar.gz",
             ],
         )
 
@@ -486,6 +486,23 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz",
                 "https://github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz",
+            ],
+        )
+
+    # TODO(stanleycheung): remove this when prometheus-cpp AND
+    #   opentelemetry-cpp cut a new release
+    # This override is needed because this fix
+    #   https://github.com/jupp0r/prometheus-cpp/pull/626
+    #   has not been included in the latest prometheus-cpp release yet.
+    # We also need opentelemetry-cpp to update their dependency on
+    #   prometheus-cpp after that fix is released.
+    # Without the fix, we cannot build the prometheus exporter with bazel 6
+    if "com_github_jupp0r_prometheus_cpp" not in native.existing_rules():
+        http_archive(
+            name = "com_github_jupp0r_prometheus_cpp",
+            strip_prefix = "prometheus-cpp-b1234816facfdda29845c46696a02998a4af115a",
+            urls = [
+                "https://github.com/jupp0r/prometheus-cpp/archive/b123481.zip",
             ],
         )
 

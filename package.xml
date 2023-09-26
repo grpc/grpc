@@ -1960,6 +1960,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/profiling/internal/sample_recorder.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/bernoulli_distribution.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/beta_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/bit_gen_ref.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/discrete_distribution.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/discrete_distribution.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/distributions.h" role="src" />

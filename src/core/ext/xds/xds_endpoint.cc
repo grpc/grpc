@@ -34,7 +34,6 @@
 #include "absl/types/optional.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
-#include "envoy/config/core/v3/health_check.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
@@ -45,7 +44,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -171,11 +169,6 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
   // health_status
   const int32_t health_status =
       envoy_config_endpoint_v3_LbEndpoint_health_status(lb_endpoint);
-  if (!XdsOverrideHostEnabled() &&
-      health_status != envoy_config_core_v3_UNKNOWN &&
-      health_status != envoy_config_core_v3_HEALTHY) {
-    return absl::nullopt;
-  }
   auto status = XdsHealthStatus::FromUpb(health_status);
   if (!status.has_value()) return absl::nullopt;
   // load_balancing_weight

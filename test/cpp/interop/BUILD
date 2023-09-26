@@ -460,12 +460,15 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "otel/exporters/prometheus:prometheus_exporter",
+        "otel/sdk/src/metrics",
     ],
     language = "C++",
     tags = ["nobuilder"],
     deps = [
         ":client_helper_lib",
         "//:grpcpp_gcp_observability",
+        "//src/cpp/ext/otel:otel_plugin",
     ],
 )
 
