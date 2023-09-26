@@ -94,7 +94,7 @@ class CrlSslTransportSecurityTest
       crl_directory_ = crl_directory;
       expect_server_success_ = expect_server_success;
       expect_client_success_1_2_ = expect_client_success_1_2;
-      expect_client_success_1_2_ = expect_client_success_1_3;
+      expect_client_success_1_3_ = expect_client_success_1_3;
 
       server_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
