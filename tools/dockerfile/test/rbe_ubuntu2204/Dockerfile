@@ -14,7 +14,7 @@
 
 FROM ubuntu:22.04
 
-# Workaround the "tzdata hangs apt-get install during docker image build" issue for ubuntu20.04
+# Workaround the "tzdata hangs apt-get install during docker image build" issue for ubuntu22.04
 # by setting timezone to "Etc/UTC" in advance.
 RUN echo "Etc/UTC" > /etc/timezone
 
@@ -68,7 +68,7 @@ RUN wget -q https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04
   && mkdir -p /usr/local/libcxx-tsan && tar -xzf /tmp/libcxx-tsan.tar.gz -C /usr/local/libcxx-tsan && rm /tmp/libcxx-tsan.tar.gz
 RUN wget -q https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04/lld_r${LLVM_LATEST}.tar.gz -O /tmp/lld.tar.gz \
   && tar -xzf /tmp/lld.tar.gz -C /usr/local && rm /tmp/lld.tar.gz
-
+  
 ENV ASAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 ENV CC=/usr/local/bin/clang
 ENV GCOV=/dev/null
