@@ -50,6 +50,8 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
@@ -60,7 +62,7 @@ namespace {
 // TODO(roth): Remove this once dualstack support is stable.
 bool XdsDualstackEndpointsEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
-  if (!value.has_value()) return true;
+  if (!value.has_value()) return false;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
@@ -163,6 +165,38 @@ void MaybeLogClusterLoadAssignment(
   }
 }
 
+absl::optional<grpc_resolved_address> ParseCoreAddress(
+    const envoy_config_core_v3_Address* address, ValidationErrors* errors) {
+  if (address == nullptr) {
+    errors->AddError("field not present");
+    return absl::nullopt;
+  }
+  ValidationErrors::ScopedField field(errors, ".socket_address");
+  const envoy_config_core_v3_SocketAddress* socket_address =
+      envoy_config_core_v3_Address_socket_address(address);
+  if (socket_address == nullptr) {
+    errors->AddError("field not present");
+    return absl::nullopt;
+  }
+  std::string address_str = UpbStringToStdString(
+      envoy_config_core_v3_SocketAddress_address(socket_address));
+  uint32_t port;
+  {
+    ValidationErrors::ScopedField field(errors, ".port_value");
+    port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
+    if (GPR_UNLIKELY(port >> 16) != 0) {
+      errors->AddError("invalid port");
+      return absl::nullopt;
+    }
+  }
+  auto addr = StringToSockaddr(address_str, port);
+  if (!addr.ok()) {
+    errors->AddError(addr.status().message());
+    return absl::nullopt;
+  }
+  return *addr;
+}
+
 absl::optional<EndpointAddresses> EndpointAddressesParse(
     const envoy_config_endpoint_v3_LbEndpoint* lb_endpoint,
     ValidationErrors* errors) {
@@ -185,8 +219,7 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
     }
   }
   // endpoint
-  // TODO(roth): add support for multiple addresses per endpoint
-  grpc_resolved_address grpc_address;
+  std::vector<grpc_resolved_address> addresses;
   {
     ValidationErrors::ScopedField field(errors, ".endpoint");
     const envoy_config_endpoint_v3_Endpoint* endpoint =
@@ -195,43 +228,34 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
       errors->AddError("field not present");
       return absl::nullopt;
     }
-    ValidationErrors::ScopedField field2(errors, ".address");
-    const envoy_config_core_v3_Address* address =
-        envoy_config_endpoint_v3_Endpoint_address(endpoint);
-    if (address == nullptr) {
-      errors->AddError("field not present");
-      return absl::nullopt;
-    }
-    ValidationErrors::ScopedField field3(errors, ".socket_address");
-    const envoy_config_core_v3_SocketAddress* socket_address =
-        envoy_config_core_v3_Address_socket_address(address);
-    if (socket_address == nullptr) {
-      errors->AddError("field not present");
-      return absl::nullopt;
-    }
-    std::string address_str = UpbStringToStdString(
-        envoy_config_core_v3_SocketAddress_address(socket_address));
-    uint32_t port;
     {
-      ValidationErrors::ScopedField field(errors, ".port_value");
-      port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
-      if (GPR_UNLIKELY(port >> 16) != 0) {
-        errors->AddError("invalid port");
-        return absl::nullopt;
+      ValidationErrors::ScopedField field(errors, ".address");
+      auto address = ParseCoreAddress(
+          envoy_config_endpoint_v3_Endpoint_address(endpoint), errors);
+      if (address.has_value()) addresses.push_back(*address);
+    }
+    if (XdsDualstackEndpointsEnabled()) {
+      size_t size;
+      auto* additional_addresses =
+          envoy_config_endpoint_v3_Endpoint_additional_addresses(endpoint,
+                                                                 &size);
+      for (size_t i = 0; i < size; ++i) {
+        ValidationErrors::ScopedField field(
+            errors, absl::StrCat(".additional_addresses[", i, "].address"));
+        auto address = ParseCoreAddress(
+            envoy_config_endpoint_v3_Endpoint_AdditionalAddress_address(
+                additional_addresses[i]),
+            errors);
+        if (address.has_value()) addresses.push_back(*address);
       }
     }
-    auto addr = StringToSockaddr(address_str, port);
-    if (!addr.ok()) {
-      errors->AddError(addr.status().message());
-    } else {
-      grpc_address = *addr;
-    }
   }
+  if (addresses.empty()) return absl::nullopt;
   // Convert to EndpointAddresses.
   return EndpointAddresses(
-      grpc_address, ChannelArgs()
-                        .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
-                        .Set(GRPC_ARG_XDS_HEALTH_STATUS, status->status()));
+      addresses, ChannelArgs()
+                     .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
+                     .Set(GRPC_ARG_XDS_HEALTH_STATUS, status->status()));
 }
 
 struct ParsedLocality {
