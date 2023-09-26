@@ -2312,7 +2312,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-      if (options->crl_provider) {
+      if (options->crl_provider != nullptr) {
         gpr_log(GPR_INFO, "enabling servr CRL checking using provider");
         SSL_CTX_set_ex_data(impl->ssl_contexts[i],
                             g_ssl_ctx_ex_crl_provider_index,
