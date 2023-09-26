@@ -2560,7 +2560,6 @@ grpc_cc_library(
     ],
     deps = [
         "useful",
-        "//:exec_ctx",
         "//:gpr",
     ],
 )
@@ -4093,7 +4092,10 @@ grpc_cc_library(
     hdrs = [
         "lib/backoff/random_early_detection.h",
     ],
-    external_deps = ["absl/random"],
+    external_deps = [
+        "absl/random:bit_gen_ref",
+        "absl/random:distributions",
+    ],
     deps = ["//:gpr_platform"],
 )
 
@@ -5671,7 +5673,10 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chttp2/transport/ping_abuse_policy.h",
     ],
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
     deps = [
         "channel_args",
         "time",
@@ -5905,6 +5910,7 @@ grpc_cc_library(
         "ext/transport/chaotic_good/frame.h",
     ],
     external_deps = [
+        "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/types:variant",

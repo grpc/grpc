@@ -3872,6 +3872,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/random:bit_gen_ref",
         "absl/status",
         "absl/strings",
         "absl/types:optional",
@@ -3994,6 +3995,8 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/hash",
         "absl/meta:type_traits",
+        "absl/random",
+        "absl/random:bit_gen_ref",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",

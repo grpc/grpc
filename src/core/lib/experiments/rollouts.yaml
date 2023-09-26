@@ -76,8 +76,6 @@
     # TODO(yijiem): resolve when the WindowsEventEngine DNS Resolver is
     # implemented
     windows: broken
-- name: work_stealing
-  default: true
 - name: work_serializer_dispatch
   default: false
 - name: client_privacy
@@ -101,4 +99,6 @@
 - name: pick_first_happy_eyeballs
   default: true
 - name: combiner_offload_to_event_engine
+  default: true
+- name: registered_method_lookup_in_transport
   default: true

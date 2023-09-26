@@ -73,9 +73,6 @@ const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_work_stealing =
-    "If set, use a work stealing thread pool implementation in EventEngine";
-const char* const additional_constraints_work_stealing = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_canary_client_privacy =
@@ -121,6 +118,10 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_registered_method_lookup_in_transport =
+    "Change registered method's lookup point to transport";
+const char* const additional_constraints_registered_method_lookup_in_transport =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -156,8 +157,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_trace_record_callops, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
-    {"work_stealing", description_work_stealing,
-     additional_constraints_work_stealing, true, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -184,6 +183,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"registered_method_lookup_in_transport",
+     description_registered_method_lookup_in_transport,
+     additional_constraints_registered_method_lookup_in_transport, true, true},
 };
 
 }  // namespace grpc_core
@@ -241,9 +243,6 @@ const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_work_stealing =
-    "If set, use a work stealing thread pool implementation in EventEngine";
-const char* const additional_constraints_work_stealing = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_canary_client_privacy =
@@ -289,6 +288,10 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_registered_method_lookup_in_transport =
+    "Change registered method's lookup point to transport";
+const char* const additional_constraints_registered_method_lookup_in_transport =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -324,8 +327,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_trace_record_callops, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
-    {"work_stealing", description_work_stealing,
-     additional_constraints_work_stealing, true, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -352,6 +353,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"registered_method_lookup_in_transport",
+     description_registered_method_lookup_in_transport,
+     additional_constraints_registered_method_lookup_in_transport, true, true},
 };
 
 }  // namespace grpc_core
@@ -409,9 +413,6 @@ const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_work_stealing =
-    "If set, use a work stealing thread pool implementation in EventEngine";
-const char* const additional_constraints_work_stealing = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_canary_client_privacy =
@@ -457,6 +458,10 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_registered_method_lookup_in_transport =
+    "Change registered method's lookup point to transport";
+const char* const additional_constraints_registered_method_lookup_in_transport =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -492,8 +497,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_trace_record_callops, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
-    {"work_stealing", description_work_stealing,
-     additional_constraints_work_stealing, true, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -520,6 +523,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"registered_method_lookup_in_transport",
+     description_registered_method_lookup_in_transport,
+     additional_constraints_registered_method_lookup_in_transport, true, true},
 };
 
 }  // namespace grpc_core

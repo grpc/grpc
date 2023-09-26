@@ -168,6 +168,14 @@ then
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.11.0rc1-macos11.pkg -target /
   fi
+
+  # Install Python 3.12 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.12" ]; then
+    time curl -O https://www.python.org/ftp/python/3.12.0/python-3.12.0rc2-macos11.pkg
+    echo "e5dc5511b604b501b892991d257d117bb5757437  python-3.12.0rc2-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.12.0rc2-macos11.pkg -target /
+  fi
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
