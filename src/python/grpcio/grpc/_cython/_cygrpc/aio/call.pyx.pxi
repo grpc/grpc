@@ -308,7 +308,7 @@ cdef class _AioCall(GrpcCallWrapper):
         cdef ReceiveStatusOnClientOperation receive_status_on_client_op = ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
 
         if context is not None:
-            set_census_context_on_call_aio(self, context)
+            set_instrumentation_context_on_call_aio(self, context)
         ops = (initial_metadata_op, send_message_op, send_close_op,
                receive_initial_metadata_op, receive_message_op,
                receive_status_on_client_op)
@@ -404,7 +404,7 @@ cdef class _AioCall(GrpcCallWrapper):
             _EMPTY_FLAGS)
 
         if context is not None:
-            set_census_context_on_call_aio(self, context)
+            set_instrumentation_context_on_call_aio(self, context)
         outbound_ops = (
             initial_metadata_op,
             send_message_op,
@@ -462,7 +462,7 @@ cdef class _AioCall(GrpcCallWrapper):
         cdef ReceiveStatusOnClientOperation receive_status_on_client_op = ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
 
         if context is not None:
-            set_census_context_on_call_aio(self, context)
+            set_instrumentation_context_on_call_aio(self, context)
         inbound_ops = (receive_message_op, receive_status_on_client_op)
 
         # Executes all operations in one batch.
@@ -500,7 +500,7 @@ cdef class _AioCall(GrpcCallWrapper):
         status_task = self._loop.create_task(self._handle_status_once_received())
 
         if context is not None:
-            set_census_context_on_call_aio(self, context)
+            set_instrumentation_context_on_call_aio(self, context)
 
         try:
             # Sends out initial_metadata ASAP.
