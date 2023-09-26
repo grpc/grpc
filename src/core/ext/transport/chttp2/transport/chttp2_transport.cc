@@ -565,8 +565,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep))),
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
                        ->memory_quota()
-                       ->CreateMemoryOwner(absl::StrCat(
-                           grpc_endpoint_get_peer(ep), ":client_transport"))),
+                       ->CreateMemoryOwner()),
       self_reservation(
           memory_owner.MakeReservation(sizeof(grpc_chttp2_transport))),
       event_engine(

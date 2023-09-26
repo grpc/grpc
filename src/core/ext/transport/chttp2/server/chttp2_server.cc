@@ -839,8 +839,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       return;
     }
   }
-  auto memory_owner = self->memory_quota_->CreateMemoryOwner(
-      absl::StrCat(grpc_endpoint_get_peer(tcp), ":server_channel"));
+  auto memory_owner = self->memory_quota_->CreateMemoryOwner();
   EventEngine* const event_engine = self->args_.GetObject<EventEngine>();
   auto connection = memory_owner.MakeOrphanable<ActiveConnection>(
       accepting_pollset, acceptor, event_engine, args, std::move(memory_owner));

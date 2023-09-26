@@ -85,11 +85,9 @@ struct secure_endpoint {
                             grpc_core::CSliceRef(leftover_slices[i]));
     }
     grpc_slice_buffer_init(&output_buffer);
-    memory_owner =
-        grpc_core::ResourceQuotaFromChannelArgs(channel_args)
-            ->memory_quota()
-            ->CreateMemoryOwner(absl::StrCat(grpc_endpoint_get_peer(transport),
-                                             ":secure_endpoint"));
+    memory_owner = grpc_core::ResourceQuotaFromChannelArgs(channel_args)
+                       ->memory_quota()
+                       ->CreateMemoryOwner();
     self_reservation = memory_owner.MakeReservation(sizeof(*this));
     if (zero_copy_protector) {
       read_staging_buffer = grpc_empty_slice();

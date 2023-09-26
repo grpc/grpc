@@ -76,7 +76,7 @@ Channel::Channel(bool is_client, bool is_promising, std::string target,
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
       allocator_(channel_args.GetObject<ResourceQuota>()
                      ->memory_quota()
-                     ->CreateMemoryOwner(target)),
+                     ->CreateMemoryOwner()),
       target_(std::move(target)),
       channel_stack_(std::move(channel_stack)) {
   // We need to make sure that grpc_shutdown() does not shut things down
