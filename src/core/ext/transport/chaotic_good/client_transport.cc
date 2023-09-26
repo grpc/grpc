@@ -63,7 +63,6 @@ ClientTransport::ClientTransport(
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "client_transport")),
       arena_(MakeScopedArena(1024, &memory_allocator_)),
-      context_(arena_.get()),
       event_engine_(event_engine) {
   auto write_loop = Loop([this] {
     return TrySeq(
@@ -127,18 +126,21 @@ ClientTransport::ClientTransport(
           // Abort transport when internal errors happened.
           this->AbortWithError();
         }
-      });
+      },
+      // Hold Arena in activity for GetContext<Arena> usage.
+      arena_.get());
   auto read_loop = Loop([this] {
     return TrySeq(
         // Read frame header from control endpoint.
-        this->control_endpoint_->Read(FrameHeader::frame_header_size_),
+        // TODO(ladynana): remove memcpy in ReadSlice.
+        this->control_endpoint_->ReadSlice(FrameHeader::frame_header_size_),
         // Read different parts of the server frame from control/data endpoints
         // based on frame header.
-        [this](SliceBuffer read_buffer) mutable {
+        [this](Slice read_buffer) mutable {
           frame_header_ = std::make_shared<FrameHeader>(
               FrameHeader::Parse(
-                  reinterpret_cast<const uint8_t*>(GRPC_SLICE_START_PTR(
-                      read_buffer.c_slice_buffer()->slices[0])))
+                  reinterpret_cast<const uint8_t*>(
+                      GRPC_SLICE_START_PTR(read_buffer.c_slice())))
                   .value());
           // Read header and trailers from control endpoint.
           // Read message padding and message from data endpoint.
@@ -194,7 +196,10 @@ ClientTransport::ClientTransport(
           // Abort transport when internal errors happened.
           this->AbortWithError();
         }
-      });
+      },
+      // Hold Arena in activity for GetContext<Arena> usage.
+      arena_.get());
+
 }
 
 }  // namespace chaotic_good
