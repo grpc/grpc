@@ -45,7 +45,7 @@ class WinSocket {
     // If a callback is already primed for notification, it will be executed via
     // the WinSocket's ThreadPool. Otherwise, a "pending iocp" flag will
     // be set.
-    void SetReady();
+    void SetReady() ABSL_LOCKS_EXCLUDED(ready_mu_);
     // Set error results for a completed op
     void SetError(int wsa_error);
     // Set an OverlappedResult. Useful when WSARecv returns immediately.
@@ -70,6 +70,7 @@ class WinSocket {
     std::atomic<EventEngine::Closure*> closure_{nullptr};
     bool has_pending_iocp_ = false;
     OverlappedResult result_;
+    grpc_core::Mutex ready_mu_;
   };
 
   WinSocket(SOCKET socket, ThreadPool* thread_pool) noexcept;
@@ -78,8 +79,10 @@ class WinSocket {
   //  - The IOCP already completed in the background, and we need to call
   //    the callback now.
   //  - The IOCP hasn't completed yet, and we're queuing it for later.
-  void NotifyOnRead(EventEngine::Closure* on_read);
-  void NotifyOnWrite(EventEngine::Closure* on_write);
+  void NotifyOnRead(EventEngine::Closure* on_read)
+      ABSL_LOCKS_EXCLUDED(info.ready_mu_);
+  void NotifyOnWrite(EventEngine::Closure* on_write)
+      ABSL_LOCKS_EXCLUDED(info.ready_mu_);
   bool IsShutdown();
   // Shutdown socket operations, but do not delete the WinSocket.
   // Connections will be disconnected, and the socket will be closed.
@@ -100,7 +103,8 @@ class WinSocket {
   SOCKET raw_socket();
 
  private:
-  void NotifyOnReady(OpState& info, EventEngine::Closure* closure);
+  void NotifyOnReady(OpState& info, EventEngine::Closure* closure)
+      ABSL_LOCKS_EXCLUDED(info.ready_mu_);
 
   SOCKET socket_;
   std::atomic<bool> is_shutdown_{false};

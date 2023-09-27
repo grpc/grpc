@@ -93,12 +93,20 @@ void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
     thread_pool_->Run(closure);
     return;
   };
-  if (std::exchange(info.has_pending_iocp_, false)) {
-    thread_pool_->Run(closure);
-  } else {
-    EventEngine::Closure* prev = nullptr;
-    GPR_ASSERT(info.closure_.compare_exchange_strong(prev, closure));
+  {
+    grpc_core::MutexLock lock(&info.ready_mu_);
+    if (!std::exchange(info.has_pending_iocp_, false)) {
+      // No overlapped results have been returned for this socket. Assert that
+      // there is no notification callback yet, set the notification callback,
+      // and return.
+      EventEngine::Closure* prev = nullptr;
+      GPR_ASSERT(info.closure_.compare_exchange_strong(prev, closure));
+      return;
+    }
   }
+  // Overlapped results are already available. Schedule the callback
+  // immediately.
+  thread_pool_->Run(closure);
 }
 
 void WinSocket::NotifyOnRead(EventEngine::Closure* on_read) {
@@ -117,13 +125,16 @@ WinSocket::OpState::OpState(WinSocket* win_socket) noexcept
 }
 
 void WinSocket::OpState::SetReady() {
-  GPR_ASSERT(!has_pending_iocp_);
-  auto* closure = closure_.exchange(nullptr);
-  if (closure) {
-    win_socket_->thread_pool_->Run(closure);
-  } else {
-    has_pending_iocp_ = true;
+  EventEngine::Closure* closure;
+  {
+    grpc_core::MutexLock lock(&ready_mu_);
+    GPR_ASSERT(!has_pending_iocp_);
+    closure = closure_.exchange(nullptr);
+    if (!closure) {
+      has_pending_iocp_ = true;
+    }
   }
+  if (closure) win_socket_->thread_pool_->Run(closure);
 }
 
 void WinSocket::OpState::SetError(int wsa_error) {
