@@ -82,15 +82,13 @@ class CrlSslTransportSecurityTest
   // A tsi_test_fixture implementation.
   class SslTsiTestFixture {
    public:
-    SslTsiTestFixture(const std::string& server_key_path,
-                      const std::string& server_cert_path,
-                      const std::string& client_key_path,
-                      const std::string& client_cert_path,
-                      const char* crl_directory,
-                      grpc_core::experimental::CrlProvider* crl_provider,
-                      bool expect_server_success,
-                      bool expect_client_success_1_2,
-                      bool expect_client_success_1_3) {
+    SslTsiTestFixture(
+        const std::string& server_key_path, const std::string& server_cert_path,
+        const std::string& client_key_path, const std::string& client_cert_path,
+        const char* crl_directory,
+        std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+        bool expect_server_success, bool expect_client_success_1_2,
+        bool expect_client_success_1_3) {
       tsi_test_fixture_init(&base_);
       base_.test_unused_bytes = true;
       base_.vtable = &kVtable;
@@ -269,7 +267,7 @@ class CrlSslTransportSecurityTest
     bool expect_client_success_1_3_;
     tsi_ssl_pem_key_cert_pair* client_pem_key_cert_pairs_;
     tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs_;
-    grpc_core::experimental::CrlProvider* crl_provider_;
+    std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider_;
   };
 };
 
@@ -339,12 +337,15 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderValidCerts) {
   gpr_free(root_crl);
   gpr_free(intermediate_crl);
 
-  grpc_core::experimental::StaticCrlProvider provider =
-      grpc_core::experimental::StaticCrlProvider(crls);
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
+      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+  ASSERT_TRUE(result.ok());
+  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
+      std::move(*result);
 
   auto* fixture = new SslTsiTestFixture(kValidKeyPath, kValidCertPath,
                                         kValidKeyPath, kValidCertPath, nullptr,
-                                        &provider, true, true, true);
+                                        provider, true, true, true);
   fixture->Run();
 }
 
@@ -355,12 +356,15 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedServer) {
   gpr_free(root_crl);
   gpr_free(intermediate_crl);
 
-  grpc_core::experimental::StaticCrlProvider provider =
-      grpc_core::experimental::StaticCrlProvider(crls);
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
+      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+  ASSERT_TRUE(result.ok());
+  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
+      std::move(*result);
 
   auto* fixture = new SslTsiTestFixture(kRevokedKeyPath, kRevokedCertPath,
                                         kValidKeyPath, kValidCertPath, nullptr,
-                                        &provider, false, false, false);
+                                        provider, false, false, false);
   fixture->Run();
 }
 
@@ -371,12 +375,15 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedClient) {
   gpr_free(root_crl);
   gpr_free(intermediate_crl);
 
-  grpc_core::experimental::StaticCrlProvider provider =
-      grpc_core::experimental::StaticCrlProvider(crls);
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
+      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+  ASSERT_TRUE(result.ok());
+  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
+      std::move(*result);
 
   auto* fixture = new SslTsiTestFixture(kValidKeyPath, kValidCertPath,
                                         kRevokedKeyPath, kRevokedCertPath,
-                                        nullptr, &provider, false, false, true);
+                                        nullptr, provider, false, false, true);
   fixture->Run();
 }
 
@@ -387,12 +394,15 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedIntermediateValidCrl) {
   gpr_free(root_crl);
   gpr_free(intermediate_crl);
 
-  grpc_core::experimental::StaticCrlProvider provider =
-      grpc_core::experimental::StaticCrlProvider(crls);
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
+      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+  ASSERT_TRUE(result.ok());
+  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
+      std::move(*result);
 
   auto* fixture = new SslTsiTestFixture(
       kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
-      kValidCertPath, nullptr, &provider, false, false, false);
+      kValidCertPath, nullptr, provider, false, false, false);
   fixture->Run();
 }
 
@@ -402,12 +412,15 @@ TEST_P(CrlSslTransportSecurityTest,
   std::vector<std::string> crls = {root_crl};
   gpr_free(root_crl);
 
-  grpc_core::experimental::StaticCrlProvider provider =
-      grpc_core::experimental::StaticCrlProvider(crls);
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
+      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+  ASSERT_TRUE(result.ok());
+  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
+      std::move(*result);
 
   auto* fixture = new SslTsiTestFixture(
       kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
-      kValidCertPath, nullptr, &provider, false, false, false);
+      kValidCertPath, nullptr, provider, false, false, false);
   fixture->Run();
 }
 
@@ -417,12 +430,15 @@ TEST_P(CrlSslTransportSecurityTest,
   std::vector<std::string> crls = {intermediate_crl};
   gpr_free(intermediate_crl);
 
-  grpc_core::experimental::StaticCrlProvider provider =
-      grpc_core::experimental::StaticCrlProvider(crls);
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
+      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+  ASSERT_TRUE(result.ok());
+  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
+      std::move(*result);
 
   auto* fixture = new SslTsiTestFixture(
       kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
-      kValidCertPath, nullptr, &provider, true, true, true);
+      kValidCertPath, nullptr, provider, true, true, true);
   fixture->Run();
 }
 

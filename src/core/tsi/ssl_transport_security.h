@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include <openssl/x509.h>
 
 #include "absl/strings/string_view.h"
@@ -187,7 +189,7 @@ struct tsi_ssl_client_handshaker_options {
   // A provider of CRLs. If set, when doing handshakes the `CrlProvider`'s
   // `GetCrl` function will be called to find CRLs when checking certificates
   // for revocation. Cannot be used in conjunction with `crl_directory`.
-  grpc_core::experimental::CrlProvider* crl_provider;
+  std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider;
 
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
@@ -338,7 +340,7 @@ struct tsi_ssl_server_handshaker_options {
   const char* crl_directory;
 
   // TODO (gtcooke94)
-  grpc_core::experimental::CrlProvider* crl_provider;
+  std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider;
 
   // If true, the SSL server sends a list of CA names to the client in the
   // ServerHello. This list of CA names is extracted from the server's trust

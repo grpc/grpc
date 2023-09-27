@@ -74,13 +74,25 @@ absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
   return std::make_unique<CrlImpl>(crl);
 }
 
-StaticCrlProvider::StaticCrlProvider(const std::vector<std::string>& crls) {
+StaticCrlProvider::StaticCrlProvider(
+    const absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls)
+    : crls_(crls) {}
+
+absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::FromVector(
+    const std::vector<std::string> crls) {
+  absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crl_map;
   for (const auto& raw_crl : crls) {
     absl::StatusOr<std::unique_ptr<Crl>> result = Crl::Parse(raw_crl);
-    GPR_ASSERT(result.ok());
+    if (!result.ok()) {
+      return absl::InvalidArgumentError(
+          absl::StrCat("Parsing crl string failed with result ",
+                       result.status().ToString()));
+    }
     std::unique_ptr<Crl> crl = std::move(*result);
-    crls_[crl->Issuer()] = std::move(crl);
+    crl_map[crl->Issuer()] = std::move(crl);
   }
+  StaticCrlProvider provider = StaticCrlProvider(std::move(crl_map));
+  return std::make_shared<StaticCrlProvider>(std::move(provider));
 }
 
 std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
