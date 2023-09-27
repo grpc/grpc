@@ -1770,6 +1770,9 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     update_args.addresses = serverlist_->GetServerAddressList(
         lb_calld_ == nullptr ? nullptr : lb_calld_->client_stats());
     is_backend_from_grpclb_load_balancer = true;
+    if (update_args.addresses.ok() && update_args.addresses->empty()) {
+      update_args.resolution_note = "empty serverlist from grpclb balancer";
+    }
   }
   update_args.args =
       CreateChildPolicyArgsLocked(is_backend_from_grpclb_load_balancer);

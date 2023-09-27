@@ -96,6 +96,8 @@
   default: true
 - name: wrr_delegate_to_pick_first
   default: true
+- name: pick_first_happy_eyeballs
+  default: true
 - name: combiner_offload_to_event_engine
   default: true
 - name: registered_method_lookup_in_transport
