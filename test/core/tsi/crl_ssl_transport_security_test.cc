@@ -63,6 +63,18 @@ const std::string kRevokedIntermediateKeyPath = absl::StrCat(
     kSslTsiTestCrlSupportedCredentialsDir, "leaf_signed_by_intermediate.key");
 const std::string kRevokedIntermediateCertPath = absl::StrCat(
     kSslTsiTestCrlSupportedCredentialsDir, "leaf_and_intermediate_chain.pem");
+const std::string kRootCrlPath =
+    absl::StrCat(kSslTsiTestCrlSupportedCrlDir, "current.crl");
+const std::string kIntermediateCrlPath =
+    absl::StrCat(kSslTsiTestCrlSupportedCrlDir, "intermediate.crl");
+
+char* LoadFile(absl::string_view file_path) {
+  grpc_slice slice;
+  GPR_ASSERT(grpc_load_file(file_path.data(), 1, &slice) == absl::OkStatus());
+  char* data = grpc_slice_to_c_string(slice);
+  grpc_slice_unref(slice);
+  return data;
+}
 
 class CrlSslTransportSecurityTest
     : public testing::TestWithParam<tsi_tls_version> {
@@ -74,7 +86,9 @@ class CrlSslTransportSecurityTest
                       const std::string& server_cert_path,
                       const std::string& client_key_path,
                       const std::string& client_cert_path,
-                      const char* crl_directory, bool expect_server_success,
+                      const char* crl_directory,
+                      grpc_core::experimental::CrlProvider* crl_provider,
+                      bool expect_server_success,
                       bool expect_client_success_1_2,
                       bool expect_client_success_1_3) {
       tsi_test_fixture_init(&base_);
@@ -89,6 +103,7 @@ class CrlSslTransportSecurityTest
           absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "ca.pem"));
       root_store_ = tsi_ssl_root_certs_store_create(root_cert_);
       crl_directory_ = crl_directory;
+      crl_provider_ = crl_provider;
       expect_server_success_ = expect_server_success;
       expect_client_success_1_2_ = expect_client_success_1_2;
       expect_client_success_1_3_ = expect_client_success_1_3;
@@ -135,6 +150,7 @@ class CrlSslTransportSecurityTest
       client_options.pem_root_certs = root_cert_;
       client_options.pem_key_cert_pair = client_pem_key_cert_pairs_;
       client_options.crl_directory = crl_directory_;
+      client_options.crl_provider = crl_provider_;
       client_options.root_store = root_store_;
       client_options.min_tls_version = GetParam();
       client_options.max_tls_version = GetParam();
@@ -147,6 +163,7 @@ class CrlSslTransportSecurityTest
       server_options.num_key_cert_pairs = 1;
       server_options.pem_client_root_certs = root_cert_;
       server_options.crl_directory = crl_directory_;
+      server_options.crl_provider = crl_provider_;
       server_options.client_certificate_request =
           TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
       server_options.session_ticket_key = nullptr;
@@ -235,15 +252,6 @@ class CrlSslTransportSecurityTest
       delete self;
     }
 
-    static char* LoadFile(absl::string_view file_path) {
-      grpc_slice slice;
-      GPR_ASSERT(grpc_load_file(file_path.data(), 1, &slice) ==
-                 absl::OkStatus());
-      char* data = grpc_slice_to_c_string(slice);
-      grpc_slice_unref(slice);
-      return data;
-    }
-
     static struct tsi_test_fixture_vtable kVtable;
 
     tsi_test_fixture base_;
@@ -262,6 +270,7 @@ class CrlSslTransportSecurityTest
     bool expect_client_success_1_3_;
     tsi_ssl_pem_key_cert_pair* client_pem_key_cert_pairs_;
     tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs_;
+    grpc_core::experimental::CrlProvider* crl_provider_;
   };
 };
 
@@ -274,35 +283,36 @@ struct tsi_test_fixture_vtable
 TEST_P(CrlSslTransportSecurityTest, RevokedServerCert) {
   auto* fixture = new SslTsiTestFixture(
       kRevokedKeyPath, kRevokedCertPath, kValidKeyPath, kValidCertPath,
-      kSslTsiTestCrlSupportedCrlDir, false, false, false);
+      kSslTsiTestCrlSupportedCrlDir, nullptr, false, false, false);
   fixture->Run();
 }
 
 TEST_P(CrlSslTransportSecurityTest, RevokedClientCert) {
   auto* fixture = new SslTsiTestFixture(
       kValidKeyPath, kValidCertPath, kRevokedKeyPath, kRevokedCertPath,
-      kSslTsiTestCrlSupportedCrlDir, false, false, true);
+      kSslTsiTestCrlSupportedCrlDir, nullptr, false, false, true);
   fixture->Run();
 }
 
 TEST_P(CrlSslTransportSecurityTest, ValidCerts) {
   auto* fixture = new SslTsiTestFixture(
       kValidKeyPath, kValidCertPath, kValidKeyPath, kValidCertPath,
-      kSslTsiTestCrlSupportedCrlDir, true, true, true);
+      kSslTsiTestCrlSupportedCrlDir, nullptr, true, true, true);
   fixture->Run();
 }
 
 TEST_P(CrlSslTransportSecurityTest, UseFaultyCrlDirectory) {
   auto* fixture = new SslTsiTestFixture(
       kRevokedKeyPath, kRevokedCertPath, kValidKeyPath, kValidCertPath,
-      kSslTsiTestFaultyCrlsDir, true, true, true);
+      kSslTsiTestFaultyCrlsDir, nullptr, true, true, true);
   fixture->Run();
 }
 
 TEST_P(CrlSslTransportSecurityTest, UseRevokedIntermediateValidCrl) {
   auto* fixture = new SslTsiTestFixture(
       kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
-      kValidCertPath, kSslTsiTestCrlSupportedCrlDir, false, false, false);
+      kValidCertPath, kSslTsiTestCrlSupportedCrlDir, nullptr, false, false,
+      false);
   fixture->Run();
 }
 
@@ -310,16 +320,42 @@ TEST_P(CrlSslTransportSecurityTest,
        UseRevokedIntermediateWithMissingIntermediateCrl) {
   auto* fixture = new SslTsiTestFixture(
       kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
-      kValidCertPath, kSslTsiTestCrlSupportedCrlDirMissingIntermediate, false,
-      false, false);
+      kValidCertPath, kSslTsiTestCrlSupportedCrlDirMissingIntermediate, nullptr,
+      false, false, false);
   fixture->Run();
 }
 
 TEST_P(CrlSslTransportSecurityTest, UseRevokedIntermediateWithMissingRootCrl) {
   auto* fixture = new SslTsiTestFixture(
       kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
-      kValidCertPath, kSslTsiTestCrlSupportedCrlDirMissingRoot, true, true,
-      true);
+      kValidCertPath, kSslTsiTestCrlSupportedCrlDirMissingRoot, nullptr, true,
+      true, true);
+  fixture->Run();
+}
+
+TEST_P(CrlSslTransportSecurityTest, CrlProviderValidCerts) {
+  std::vector<std::string> crls = {LoadFile(kRootCrlPath),
+                                   LoadFile(kIntermediateCrlPath)};
+
+  grpc_core::experimental::StaticCrlProvider provider =
+      grpc_core::experimental::StaticCrlProvider(crls);
+
+  auto* fixture = new SslTsiTestFixture(kValidKeyPath, kValidCertPath,
+                                        kValidKeyPath, kValidCertPath, nullptr,
+                                        &provider, true, true, true);
+  fixture->Run();
+}
+
+TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedServer) {
+  std::vector<std::string> crls = {LoadFile(kRootCrlPath),
+                                   LoadFile(kIntermediateCrlPath)};
+
+  grpc_core::experimental::StaticCrlProvider provider =
+      grpc_core::experimental::StaticCrlProvider(crls);
+
+  auto* fixture = new SslTsiTestFixture(kRevokedKeyPath, kRevokedCertPath,
+                                        kValidKeyPath, kValidCertPath, nullptr,
+                                        &provider, false, false, false);
   fixture->Run();
 }
 

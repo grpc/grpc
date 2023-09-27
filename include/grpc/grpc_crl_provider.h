@@ -61,7 +61,7 @@ class CrlProvider {
   virtual std::shared_ptr<Crl> GetCrl(const CertificateInfo& cert) = 0;
 };
 
-class StaticCrlProvider : CrlProvider {
+class StaticCrlProvider : public CrlProvider {
  public:
   explicit StaticCrlProvider(std::vector<std::string> crls);
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& cert) override;

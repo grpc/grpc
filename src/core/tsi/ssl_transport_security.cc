@@ -882,10 +882,14 @@ static tsi_result build_alpn_protocol_name_list(
 // errors in verification depending on certain error types.
 static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   int cert_error = X509_STORE_CTX_get_error(ctx);
-  if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL) {
-    gpr_log(
-        GPR_INFO,
-        "Certificate verification failed to get CRL files. Ignoring error.");
+  // TODO(gtcooke94) using CRL provider makes this a little different, maybe
+  // override the check_crl fn?
+  if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL ||
+      cert_error == X509_V_ERR_DIFFERENT_CRL_SCOPE ||
+      cert_error == X509_V_ERR_CRL_PATH_VALIDATION_ERROR) {
+    gpr_log(GPR_INFO,
+            "Certificate verification failed to find relevant CRL file. "
+            "Ignoring error.");
     return 1;
   }
   if (cert_error != 0) {
@@ -2124,8 +2128,19 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-  if (options->crl_directory != nullptr &&
-      strcmp(options->crl_directory, "") != 0) {
+  if (options->crl_provider != nullptr) {
+    gpr_log(GPR_INFO, "enabling client CRL checking using provider");
+    SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
+                        options->crl_provider);
+    X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_context);
+    X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
+    X509_STORE_set_verify_cb(cert_store, verify_cb);
+    X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+    X509_VERIFY_PARAM_set_flags(
+        param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+    gpr_log(GPR_INFO, "enabled client side CRL checking.");
+  } else if (options->crl_directory != nullptr &&
+             strcmp(options->crl_directory, "") != 0) {
     gpr_log(GPR_INFO, "enabling client CRL checking with path: %s",
             options->crl_directory);
     X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
@@ -2319,6 +2334,10 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                             options->crl_provider);
         X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
         X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
+        X509_STORE_set_verify_cb(cert_store, verify_cb);
+        X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+        X509_VERIFY_PARAM_set_flags(
+            param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
       } else if (options->crl_directory != nullptr &&
                  strcmp(options->crl_directory, "") != 0) {
         gpr_log(GPR_INFO, "enabling server CRL checking with path %s",
