@@ -734,7 +734,8 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
 // MemoryQuota
 //
 
-MemoryAllocator MemoryQuota::CreateMemoryAllocator(absl::string_view name) {
+MemoryAllocator MemoryQuota::CreateMemoryAllocator(
+    GRPC_UNUSED absl::string_view name) {
   auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
   return MemoryAllocator(std::move(impl));
 }
