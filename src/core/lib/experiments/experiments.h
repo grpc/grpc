@@ -90,6 +90,8 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
+inline bool IsRstpitEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -125,6 +127,8 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
+inline bool IsRstpitEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -160,6 +164,8 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
+inline bool IsRstpitEnabled() { return true; }
 #endif
 
 #else
@@ -190,6 +196,7 @@ enum ExperimentIds {
   kExperimentIdWrrDelegateToPickFirst,
   kExperimentIdCombinerOffloadToEventEngine,
   kExperimentIdRegisteredMethodLookupInTransport,
+  kExperimentIdRstpit,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -295,6 +302,10 @@ inline bool IsCombinerOffloadToEventEngineEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() {
   return IsExperimentEnabled(kExperimentIdRegisteredMethodLookupInTransport);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
+inline bool IsRstpitEnabled() {
+  return IsExperimentEnabled(kExperimentIdRstpit);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

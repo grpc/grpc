@@ -278,6 +278,7 @@ class WriteContext {
       t_->dirtied_local_settings = false;
       t_->sent_local_settings = true;
       t_->flow_control.FlushedSettings();
+      t_->max_concurrent_streams_policy.FlushedSettings();
       grpc_core::global_stats().IncrementHttp2SettingsWrites();
     }
   }

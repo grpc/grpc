@@ -119,6 +119,10 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -181,6 +185,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, true, true},
 };
 
 }  // namespace grpc_core
@@ -284,6 +289,10 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -346,6 +355,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, true, true},
 };
 
 }  // namespace grpc_core
@@ -449,6 +459,10 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -511,6 +525,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, true, true},
 };
 
 }  // namespace grpc_core

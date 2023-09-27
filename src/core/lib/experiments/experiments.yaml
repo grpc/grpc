@@ -203,3 +203,9 @@
   expiry: 2024/03/31
   owner: yashkt@google.com
   test_tags: ["surface_registered_method_lookup"]
+- name: rstpit
+  description:
+    On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: [flow_control_test]

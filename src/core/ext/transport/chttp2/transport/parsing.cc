@@ -763,6 +763,7 @@ static grpc_error_handle init_rst_stream_parser(grpc_chttp2_transport* t) {
   s->stats.incoming.framing_bytes += 9;
   t->parser = grpc_chttp2_transport::Parser{
       "rst_stream", grpc_chttp2_rst_stream_parser_parse, &t->simple.rst_stream};
+  if (!t->is_client) t->max_concurrent_streams_policy.AddDemerit();
   return absl::OkStatus();
 }
 
@@ -797,6 +798,7 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
             t->settings[GRPC_ACKED_SETTINGS]
                        [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
         t, nullptr);
+    t->max_concurrent_streams_policy.AckLastSend();
     t->sent_local_settings = false;
   }
   t->parser = grpc_chttp2_transport::Parser{
