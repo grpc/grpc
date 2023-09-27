@@ -422,8 +422,8 @@ TEST_P(EdsTest, MultipleAddressesPerEndpoint) {
   StartBackend(2);
   // The first endpoint is backends 0 and 1, the second endpoint is backend 2.
   EdsResourceArgs args({
-      {"locality0", {CreateEndpoint(0, HealthStatus::UNKNOWN, 1, {1}),
-                     CreateEndpoint(2)}},
+      {"locality0",
+       {CreateEndpoint(0, HealthStatus::UNKNOWN, 1, {1}), CreateEndpoint(2)}},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Initially, backend 0 is offline, so the first endpoint should
