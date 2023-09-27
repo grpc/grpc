@@ -983,6 +983,7 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
   grpc_core::experimental::CertificateInfo* cert = &cert_impl;
   std::shared_ptr<grpc_core::experimental::Crl> internal_crl =
       provider->GetCrl(*cert);
+  OPENSSL_free(buf);
 
   X509_CRL* crl =
       &std::static_pointer_cast<grpc_core::experimental::CrlImpl>(internal_crl)

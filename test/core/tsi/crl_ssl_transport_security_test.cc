@@ -98,7 +98,6 @@ class CrlSslTransportSecurityTest
       server_cert_ = LoadFile(server_cert_path);
       client_key_ = LoadFile(client_key_path);
       client_cert_ = LoadFile(client_cert_path);
-      char* c = client_cert_;
       root_cert_ = LoadFile(
           absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "ca.pem"));
       root_store_ = tsi_ssl_root_certs_store_create(root_cert_);
@@ -334,8 +333,11 @@ TEST_P(CrlSslTransportSecurityTest, UseRevokedIntermediateWithMissingRootCrl) {
 }
 
 TEST_P(CrlSslTransportSecurityTest, CrlProviderValidCerts) {
-  std::vector<std::string> crls = {LoadFile(kRootCrlPath),
-                                   LoadFile(kIntermediateCrlPath)};
+  char* root_crl = LoadFile(kRootCrlPath);
+  char* intermediate_crl = LoadFile(kIntermediateCrlPath);
+  std::vector<std::string> crls = {root_crl, intermediate_crl};
+  gpr_free(root_crl);
+  gpr_free(intermediate_crl);
 
   grpc_core::experimental::StaticCrlProvider provider =
       grpc_core::experimental::StaticCrlProvider(crls);
@@ -347,8 +349,11 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderValidCerts) {
 }
 
 TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedServer) {
-  std::vector<std::string> crls = {LoadFile(kRootCrlPath),
-                                   LoadFile(kIntermediateCrlPath)};
+  char* root_crl = LoadFile(kRootCrlPath);
+  char* intermediate_crl = LoadFile(kIntermediateCrlPath);
+  std::vector<std::string> crls = {root_crl, intermediate_crl};
+  gpr_free(root_crl);
+  gpr_free(intermediate_crl);
 
   grpc_core::experimental::StaticCrlProvider provider =
       grpc_core::experimental::StaticCrlProvider(crls);
