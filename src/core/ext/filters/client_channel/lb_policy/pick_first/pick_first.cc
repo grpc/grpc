@@ -850,7 +850,7 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
       gpr_log(GPR_INFO,
               "Pick First %p subchannel list %p: starting Connection "
-              "Attempt Delay timer for %" PRIdPTR "ms for index %" PRIuPTR,
+              "Attempt Delay timer for %" PRId64 "ms for index %" PRIuPTR,
               p, subchannel_list_, p->connection_attempt_delay_.millis(),
               Index());
     }
