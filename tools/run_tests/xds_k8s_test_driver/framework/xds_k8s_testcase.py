@@ -827,7 +827,7 @@ class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
             server_target=server_target, **kwargs
         )
         test_client.wait_for_active_server_channel(
-            timeout=wait_for_active_channel_timeout
+            timeout=wait_for_active_channel_timeout,
         )
         return test_client
 
