@@ -637,9 +637,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       size_t backend_idx,
       ::envoy::config::core::v3::HealthStatus health_status =
           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-      int lb_weight = 1,
-      std::vector<size_t> additional_backend_indxees = {}) {
+      int lb_weight = 1, std::vector<size_t> additional_backend_indxees = {}) {
     std::vector<int> additional_ports;
+    additional_ports.reserve(additional_backend_indxees.size());
     for (size_t idx : additional_backend_indxees) {
       additional_ports.push_back(backends_[idx]->port());
     }

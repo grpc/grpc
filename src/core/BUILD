@@ -5073,7 +5073,6 @@ grpc_cc_library(
         "resolved_address",
         "subchannel_interface",
         "unique_type_name",
-        "useful",
         "validation_errors",
         "//:config",
         "//:debug_location",
