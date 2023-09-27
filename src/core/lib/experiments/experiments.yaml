@@ -191,6 +191,12 @@
   expiry: 2023/11/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: pick_first_happy_eyeballs
+  description:
+    Use Happy Eyeballs in pick_first.
+  expiry: 2023/12/15
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: combiner_offload_to_event_engine
   description:
     Offload Combiner work onto the EventEngine instead of the Executor.

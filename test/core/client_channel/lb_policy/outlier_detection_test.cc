@@ -229,6 +229,10 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
 }
 
 TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
+  // Can't use timer duration expectation here, because the Happy
+  // Eyeballs timer inside pick_first will use a different duration than
+  // the timer in outlier_detection.
+  SetExpectedTimerDuration(absl::nullopt);
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
   // Send initial update.

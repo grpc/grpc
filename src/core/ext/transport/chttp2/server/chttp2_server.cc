@@ -456,7 +456,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
     MutexLock connection_lock(&self->connection_->mu_);
     if (!error.ok() || self->connection_->shutdown_) {
       std::string error_str = StatusToString(error);
-      gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str.c_str());
       cleanup_connection = true;
       if (error.ok() && args->endpoint != nullptr) {
         // We were shut down or stopped serving after handshaking completed
@@ -825,16 +824,12 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     absl::StatusOr<ChannelArgs> args_result =
         connection_manager->UpdateChannelArgsForConnection(args, tcp);
     if (!args_result.ok()) {
-      gpr_log(GPR_DEBUG, "Closing connection: %s",
-              args_result.status().ToString().c_str());
       endpoint_cleanup(GRPC_ERROR_CREATE(args_result.status().ToString()));
       return;
     }
     grpc_error_handle error;
     args = self->args_modifier_(*args_result, &error);
     if (!error.ok()) {
-      gpr_log(GPR_DEBUG, "Closing connection: %s",
-              StatusToString(error).c_str());
       endpoint_cleanup(error);
       return;
     }
