@@ -15,7 +15,7 @@
 FROM fedora:36
 
 RUN yum clean all && yum update -y && yum install -y python3 python3-pip
-RUN python3 -m pip install virtualenv==16.7.9
+RUN python3 -m pip install virtualenv
 
 RUN yum groupinstall -y "Development Tools"
 RUN yum install -y redhat-rpm-config
