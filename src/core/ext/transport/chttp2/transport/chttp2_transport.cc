@@ -321,8 +321,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   grpc_slice_buffer_destroy(&qbuf);
 
-  grpc_slice_buffer_destroy(&outbuf);
-
   grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
   // ContextList::Execute follows semantics of a callback function and does not
   // take a ref on error
@@ -584,10 +582,10 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   base.vtable = get_vtable();
 
   grpc_slice_buffer_init(&read_buffer);
-  grpc_slice_buffer_init(&outbuf);
   if (is_client) {
-    grpc_slice_buffer_add(&outbuf, grpc_slice_from_copied_string(
-                                       GRPC_CHTTP2_CLIENT_CONNECT_STRING));
+    grpc_slice_buffer_add(
+        outbuf.c_slice_buffer(),
+        grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
   }
   grpc_slice_buffer_init(&qbuf);
   // copy in initial settings to all setting sets
@@ -1005,7 +1003,7 @@ static void write_action(grpc_chttp2_transport* t) {
   if (max_frame_size == 0) {
     max_frame_size = INT_MAX;
   }
-  grpc_endpoint_write(t->ep, &t->outbuf,
+  grpc_endpoint_write(t->ep, t->outbuf.c_slice_buffer(),
                       grpc_core::InitTransportClosure<write_action_end>(
                           t->Ref(), &t->write_action_end_locked),
                       cl, max_frame_size);

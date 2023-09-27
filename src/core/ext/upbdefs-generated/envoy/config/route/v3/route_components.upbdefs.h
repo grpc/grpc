@@ -117,6 +117,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RouteAction_HashPolicy_He
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RouteAction.HashPolicy.Header");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RouteAction_HashPolicy_CookieAttribute_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RouteAction.HashPolicy.CookieAttribute");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RouteAction_HashPolicy_Cookie_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RouteAction.HashPolicy.Cookie");
