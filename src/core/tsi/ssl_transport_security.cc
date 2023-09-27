@@ -969,8 +969,8 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
   SSL* ssl = static_cast<SSL*>(
       X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   if (ssl == nullptr) {
-    // TODO(gtcooke94) Log something here TBD. This is a problem that is
-    // different than not finding a CRL in the lookup from the provider.
+    gpr_log(GPR_ERROR,
+            "error while fetching from CrlProvider. SSL object is null");
     return 0;
   }
 

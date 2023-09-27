@@ -49,7 +49,7 @@ class CertificateInfoImpl : public CertificateInfo {
   absl::string_view GetIssuer() const override;
 
  private:
-  const absl::string_view issuer_;
+  const std::string issuer_;
 };
 
 }  // namespace experimental
