@@ -42,6 +42,11 @@ RUN apt-get update && apt-get install -y unzip && apt-get clean
 RUN apt-get update && apt-get install -y curl && apt-get clean
 RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert.pem && rm -f ~/cacert.pem
 
+# libssl 1.0. Ubuntu22.04 only has libssl 3
+RUN curl -sSL -o libssl1.0.0_1.0.2n-1ubuntu5.8_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.13_amd64.deb
+RUN dpkg -i libssl1.0.0_1.0.2n-1ubuntu5.8_amd64.deb
+RUN rm libssl1.0.0_1.0.2n-1ubuntu5.8_amd64.deb
+
 # we have a separate distribtest for netcoreapp3.1
 ENV SKIP_NETCOREAPP31_DISTRIBTEST=1
 # we have a separate distribtest for net5.0
