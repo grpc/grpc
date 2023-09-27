@@ -579,8 +579,112 @@ TEST_F(XdsEndpointTest, AdditionalAddressesMissingAddress) {
       << decode_result.resource.status();
 }
 
-// FIXME: add tests for invalid address, invalid port, and missing
-// socket address for AdditionalAddresses
+TEST_F(XdsEndpointTest, AdditionalAddressesMissingSocketAddress) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
+  ClusterLoadAssignment cla;
+  cla.set_cluster_name("foo");
+  auto* locality = cla.add_endpoints();
+  locality->mutable_load_balancing_weight()->set_value(1);
+  auto* locality_name = locality->mutable_locality();
+  locality_name->set_region("myregion");
+  locality_name->set_zone("myzone");
+  locality_name->set_sub_zone("mysubzone");
+  auto* ep = locality->add_lb_endpoints()->mutable_endpoint();
+  auto* socket_address = ep->mutable_address()->mutable_socket_address();
+  socket_address->set_address("127.0.0.1");
+  socket_address->set_port_value(443);
+  ep->add_additional_addresses()->mutable_address();
+  std::string serialized_resource;
+  ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsEndpointResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors parsing EDS resource: ["
+            "field:endpoints[0].lb_endpoints[0].endpoint"
+            ".additional_addresses[0].address.socket_address "
+            "error:field not present]")
+      << decode_result.resource.status();
+}
+
+TEST_F(XdsEndpointTest, AdditionalAddressesInvalidPort) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
+  ClusterLoadAssignment cla;
+  cla.set_cluster_name("foo");
+  auto* locality = cla.add_endpoints();
+  locality->mutable_load_balancing_weight()->set_value(1);
+  auto* locality_name = locality->mutable_locality();
+  locality_name->set_region("myregion");
+  locality_name->set_zone("myzone");
+  locality_name->set_sub_zone("mysubzone");
+  auto* ep = locality->add_lb_endpoints()->mutable_endpoint();
+  auto* socket_address = ep->mutable_address()->mutable_socket_address();
+  socket_address->set_address("127.0.0.1");
+  socket_address->set_port_value(443);
+  socket_address = ep->add_additional_addresses()
+                       ->mutable_address()
+                       ->mutable_socket_address();
+  socket_address->set_address("127.0.0.1");
+  socket_address->set_port_value(65537);
+  std::string serialized_resource;
+  ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsEndpointResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors parsing EDS resource: ["
+            "field:endpoints[0].lb_endpoints[0].endpoint"
+            ".additional_addresses[0].address.socket_address.port_value "
+            "error:invalid port]")
+      << decode_result.resource.status();
+}
+
+TEST_F(XdsEndpointTest, AdditionalAddressesInvalidAddress) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
+  ClusterLoadAssignment cla;
+  cla.set_cluster_name("foo");
+  auto* locality = cla.add_endpoints();
+  locality->mutable_load_balancing_weight()->set_value(1);
+  auto* locality_name = locality->mutable_locality();
+  locality_name->set_region("myregion");
+  locality_name->set_zone("myzone");
+  locality_name->set_sub_zone("mysubzone");
+  auto* ep = locality->add_lb_endpoints()->mutable_endpoint();
+  auto* socket_address = ep->mutable_address()->mutable_socket_address();
+  socket_address->set_address("127.0.0.1");
+  socket_address->set_port_value(443);
+  socket_address = ep->add_additional_addresses()
+                       ->mutable_address()
+                       ->mutable_socket_address();
+  socket_address->set_address("not_an_ip_address");
+  socket_address->set_port_value(444);
+  std::string serialized_resource;
+  ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsEndpointResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors parsing EDS resource: ["
+            "field:endpoints[0].lb_endpoints[0].endpoint"
+            ".additional_addresses[0].address.socket_address error:"
+            "Failed to parse address:not_an_ip_address:444]")
+      << decode_result.resource.status();
+}
 
 TEST_F(XdsEndpointTest, IgnoresMultipleAddressesPerEndpointWhenNotEnabled) {
   ClusterLoadAssignment cla;
