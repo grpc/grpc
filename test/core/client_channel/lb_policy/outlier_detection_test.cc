@@ -240,6 +240,10 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
 
 TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   if (!IsRoundRobinDelegateToPickFirstEnabled()) return;
+  // Can't use timer duration expectation here, because the Happy
+  // Eyeballs timer inside pick_first will use a different duration than
+  // the timer in outlier_detection.
+  SetExpectedTimerDuration(absl::nullopt);
   constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
