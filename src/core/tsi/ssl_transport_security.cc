@@ -2148,7 +2148,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   if (options->crl_provider != nullptr) {
-    gpr_log(GPR_INFO, "enabling client CRL checking using provider");
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
                         options->crl_provider);
     X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_context);
@@ -2158,11 +2157,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
     X509_VERIFY_PARAM_set_flags(
         param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-    gpr_log(GPR_INFO, "enabled client side CRL checking.");
   } else if (options->crl_directory != nullptr &&
              strcmp(options->crl_directory, "") != 0) {
-    gpr_log(GPR_INFO, "enabling client CRL checking with path: %s",
-            options->crl_directory);
     X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
     X509_STORE_set_verify_cb(cert_store, verify_cb);
     if (!X509_STORE_load_locations(cert_store, nullptr,
@@ -2172,7 +2168,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
       X509_VERIFY_PARAM_set_flags(
           param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-      gpr_log(GPR_INFO, "enabled client side CRL checking.");
     }
   }
 #endif
