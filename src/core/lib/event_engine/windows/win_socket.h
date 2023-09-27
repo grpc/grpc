@@ -80,9 +80,9 @@ class WinSocket {
   //    the callback now.
   //  - The IOCP hasn't completed yet, and we're queuing it for later.
   void NotifyOnRead(EventEngine::Closure* on_read)
-      ABSL_LOCKS_EXCLUDED(info.ready_mu_);
+      ABSL_LOCKS_EXCLUDED(read_info_.ready_mu_);
   void NotifyOnWrite(EventEngine::Closure* on_write)
-      ABSL_LOCKS_EXCLUDED(info.ready_mu_);
+      ABSL_LOCKS_EXCLUDED(write_info_.ready_mu_);
   bool IsShutdown();
   // Shutdown socket operations, but do not delete the WinSocket.
   // Connections will be disconnected, and the socket will be closed.
