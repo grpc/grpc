@@ -53,6 +53,12 @@ class CertificateInfo {
 };
 
 // The base class for CRL Provider implementations.
+// CrlProviders can be passed in as a way to supply CRLs during handshakes.
+// CrlProviders must be thread safe. They are on the critical path of gRPC
+// creating a connection and doing a handshake, so the implementation of
+// `GetCrl` should be very fast. It is suggested to have an in-memory map of
+// CRLs for quick lookup and return, and doing expensive updates to this map
+// asynchronously.
 class CrlProvider {
  public:
   virtual ~CrlProvider() = default;
