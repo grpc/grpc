@@ -270,7 +270,16 @@ grpc_build_artifact_task(
     docker_image_version = "tools/dockerfile/test/php73_zts_debian11_x64.current_version",
 )
 
-# TODO(jtattermusch): add grpc_build_artifact_task targets for python artifacts (but they would require ability to set env)
+# Python artifact build tasks
+
+grpc_build_artifact_task(
+    name = "artifact_python_linux_x64_manylinux2014_cp311",
+    build_script = "build_artifact_python_linux_x64_cp311.sh",
+    docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
+)
+
+# TODO(jtattermusch): add more grpc_build_artifact_task targets for existing python artifacts from artifact_targets.py
+
 # TODO(jtattermusch): add grpc_build_artifact_task targets for ruby artifacts (which is tricky, since ruby artifact builds do not run under docker since they invoke docker themselves)
 
 test_suite(
@@ -280,6 +289,7 @@ test_suite(
         ":artifact_protoc_linux_x64_build_test",
         ":artifact_protoc_linux_x86_build_test",
         ":artifact_php_linux_x64_build_test",
+        ":artifact_python_linux_x64_manylinux2014_cp311_build_test",
     ],
 )
 
