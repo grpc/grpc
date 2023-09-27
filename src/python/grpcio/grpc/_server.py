@@ -154,7 +154,7 @@ class _RPCState(object):
 
 
 def _raise_rpc_error(state: _RPCState) -> None:
-    rpc_error = grpc.RpcError()
+    rpc_error = grpc.RpcError(state.client)
     state.rpc_errors.append(rpc_error)
     raise rpc_error
 
