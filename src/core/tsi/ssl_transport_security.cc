@@ -982,7 +982,13 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
   std::shared_ptr<grpc_core::experimental::Crl> internal_crl =
       provider->GetCrl(*cert);
   OPENSSL_free(buf);
-
+  // There wasn't a CRL found in the provider. Returning 0 will end up causing
+  // OpenSSL to return X509_V_ERR_UNABLE_TO_GET_CRL. We then catch that error
+  // and behave how we want for a missing CRL.
+  // It is important to treat missing CRLs and empty CRLs differently.
+  if (internal_crl == nullptr) {
+    return 0;
+  }
   X509_CRL* crl =
       &std::static_pointer_cast<grpc_core::experimental::CrlImpl>(internal_crl)
            ->crl();

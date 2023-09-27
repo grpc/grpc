@@ -364,6 +364,68 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedServer) {
   fixture->Run();
 }
 
+TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedClient) {
+  char* root_crl = LoadFile(kRootCrlPath);
+  char* intermediate_crl = LoadFile(kIntermediateCrlPath);
+  std::vector<std::string> crls = {root_crl, intermediate_crl};
+  gpr_free(root_crl);
+  gpr_free(intermediate_crl);
+
+  grpc_core::experimental::StaticCrlProvider provider =
+      grpc_core::experimental::StaticCrlProvider(crls);
+
+  auto* fixture = new SslTsiTestFixture(kValidKeyPath, kValidCertPath,
+                                        kRevokedKeyPath, kRevokedCertPath,
+                                        nullptr, &provider, false, false, true);
+  fixture->Run();
+}
+
+TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedIntermediateValidCrl) {
+  char* root_crl = LoadFile(kRootCrlPath);
+  char* intermediate_crl = LoadFile(kIntermediateCrlPath);
+  std::vector<std::string> crls = {root_crl, intermediate_crl};
+  gpr_free(root_crl);
+  gpr_free(intermediate_crl);
+
+  grpc_core::experimental::StaticCrlProvider provider =
+      grpc_core::experimental::StaticCrlProvider(crls);
+
+  auto* fixture = new SslTsiTestFixture(
+      kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
+      kValidCertPath, nullptr, &provider, false, false, false);
+  fixture->Run();
+}
+
+TEST_P(CrlSslTransportSecurityTest,
+       CrlProviderRevokedIntermediateMissingIntermediateCrl) {
+  char* root_crl = LoadFile(kRootCrlPath);
+  std::vector<std::string> crls = {root_crl};
+  gpr_free(root_crl);
+
+  grpc_core::experimental::StaticCrlProvider provider =
+      grpc_core::experimental::StaticCrlProvider(crls);
+
+  auto* fixture = new SslTsiTestFixture(
+      kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
+      kValidCertPath, nullptr, &provider, false, false, false);
+  fixture->Run();
+}
+
+TEST_P(CrlSslTransportSecurityTest,
+       CrlProviderRevokedIntermediateMissingRootCrl) {
+  char* intermediate_crl = LoadFile(kIntermediateCrlPath);
+  std::vector<std::string> crls = {intermediate_crl};
+  gpr_free(intermediate_crl);
+
+  grpc_core::experimental::StaticCrlProvider provider =
+      grpc_core::experimental::StaticCrlProvider(crls);
+
+  auto* fixture = new SslTsiTestFixture(
+      kRevokedIntermediateKeyPath, kRevokedIntermediateCertPath, kValidKeyPath,
+      kValidCertPath, nullptr, &provider, true, true, true);
+  fixture->Run();
+}
+
 std::string TestNameSuffix(
     const ::testing::TestParamInfo<tsi_tls_version>& version) {
   if (version.param == tsi_tls_version::TSI_TLS1_2) return "TLS_1_2";
