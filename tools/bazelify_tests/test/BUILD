@@ -285,10 +285,10 @@ grpc_build_artifact_task(
 test_suite(
     name = "artifact_build_tests_linux",
     tests = [
+        ":artifact_php_linux_x64_build_test",
         ":artifact_protoc_linux_aarch64_build_test",
         ":artifact_protoc_linux_x64_build_test",
         ":artifact_protoc_linux_x86_build_test",
-        ":artifact_php_linux_x64_build_test",
         ":artifact_python_linux_x64_manylinux2014_cp311_build_test",
     ],
 )
