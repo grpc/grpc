@@ -23,6 +23,11 @@ export GRPC_SKIP_PIP_CYTHON_UPGRADE=TRUE
 export GRPC_RUN_AUDITWHEEL_REPAIR=TRUE
 export GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS=TRUE
 
+# Without this python cannot find the c++ compiler
+# TODO(jtattermusch): find better solution to prevent bazel from
+# restricting path contents
+export PATH="/opt/rh/devtoolset-10/root/usr/bin:$PATH"
+
 # set build parallelism to fit the machine configuration of bazelified tests RBE pool.
 export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=8
 
