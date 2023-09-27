@@ -4849,6 +4849,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "experiments",
         "health_check_client",
         "iomgr_fwd",
         "json",
@@ -4857,14 +4858,19 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "subchannel_interface",
+        "time",
+        "useful",
+        "//:channel_arg_names",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:work_serializer",
     ],
 )
 
