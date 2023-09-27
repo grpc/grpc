@@ -2918,12 +2918,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "server_address",
+    name = "endpoint_addresses",
     srcs = [
-        "//src/core:lib/resolver/server_address.cc",
+        "//src/core:lib/resolver/endpoint_addresses.cc",
     ],
     hdrs = [
-        "//src/core:lib/resolver/server_address.h",
+        "//src/core:lib/resolver/endpoint_addresses.h",
     ],
     external_deps = [
         "absl/status",
@@ -2933,11 +2933,25 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
+        "gpr",
         "gpr_platform",
         "sockaddr_utils",
         "//src/core:channel_args",
         "//src/core:resolved_address",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "server_address",
+    hdrs = [
+        "//src/core:lib/resolver/server_address.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:client_channel"],
+    deps = [
+        "endpoint_addresses",
+        "gpr_public_hdrs",
     ],
 )
 
