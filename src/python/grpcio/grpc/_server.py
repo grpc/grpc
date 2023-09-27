@@ -557,9 +557,7 @@ def _call_behavior(
                 if state.aborted:
                     if not isinstance(exception, AbortError):
                         try:
-                            details = (
-                                f"Exception happened while aborting: {exception}"
-                            )
+                            details = f"Exception happened while aborting: {exception}"
                         except Exception:  # pylint: disable=broad-except
                             details = (
                                 "Calling abort raised unprintable Exception!"
