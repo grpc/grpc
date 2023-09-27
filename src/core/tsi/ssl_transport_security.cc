@@ -882,8 +882,6 @@ static tsi_result build_alpn_protocol_name_list(
 // errors in verification depending on certain error types.
 static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   int cert_error = X509_STORE_CTX_get_error(ctx);
-  // TODO(gtcooke94) using CRL provider makes this a little different, maybe
-  // override the check_crl fn?
   if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL) {
     gpr_log(GPR_INFO,
             "Certificate verification failed to find relevant CRL file. "
