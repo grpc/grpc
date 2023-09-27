@@ -39,11 +39,14 @@ CertificateInfoImpl::CertificateInfoImpl(absl::string_view issuer)
 
 absl::string_view CertificateInfoImpl::GetIssuer() const { return issuer_; }
 
-CrlImpl::CrlImpl(X509_CRL* crl) : crl_(crl) {
+std::string IssuerFromCrl(X509_CRL* crl) {
   char* buf = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
-  issuer_ = buf;
+  std::string ret = buf;
   OPENSSL_free(buf);
+  return ret;
 }
+
+CrlImpl::CrlImpl(X509_CRL* crl) : crl_(crl), issuer_(IssuerFromCrl(crl)) {}
 
 CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
 

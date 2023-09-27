@@ -30,19 +30,22 @@ namespace experimental {
 
 class CrlImpl : public Crl {
  public:
+  // Takes ownership of the crl pointer
   explicit CrlImpl(X509_CRL* crl);
   ~CrlImpl() override;
+  // Returns a string representation of the issuer pulled from the CRL
   std::string Issuer() override;
   X509_CRL& crl() const;
 
  private:
   X509_CRL* crl_;
-  std::string issuer_;
+  const std::string issuer_;
 };
 
 class CertificateInfoImpl : public CertificateInfo {
  public:
   explicit CertificateInfoImpl(absl::string_view issuer);
+  // Returns a string representation of the issuer pulled from the certificate
   absl::string_view GetIssuer() const override;
 
  private:
