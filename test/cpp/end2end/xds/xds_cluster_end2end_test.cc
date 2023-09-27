@@ -27,6 +27,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -411,6 +412,42 @@ TEST_P(EdsTest, Vanilla) {
             channel_->GetLoadBalancingPolicyName());
 }
 
+TEST_P(EdsTest, MultipleAddressesPerEndpoint) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
+  const size_t kNumRpcsPerAddress = 10;
+  // Create 3 backends, but leave backend 0 unstarted.
+  CreateBackends(3);
+  StartBackend(1);
+  StartBackend(2);
+  // The first endpoint is backends 0 and 1, the second endpoint is backend 2.
+  EdsResourceArgs args({
+      {"locality0", {CreateEndpoint(0, HealthStatus::UNKNOWN, 1, {1}),
+                     CreateEndpoint(2)}},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Initially, backend 0 is offline, so the first endpoint should
+  // connect to backend 1 instead.  Traffic should round-robin across
+  // backends 1 and 2.
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * 2);
+  EXPECT_EQ(kNumRpcsPerAddress,
+            backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(kNumRpcsPerAddress,
+            backends_[2]->backend_service()->request_count());
+  // Now start backend 0 and shutdown backend 1.
+  StartBackend(0);
+  ShutdownBackend(1);
+  // Wait for traffic to go to backend 0.
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Traffic should now round-robin across backends 0 and 2.
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * 2);
+  EXPECT_EQ(kNumRpcsPerAddress,
+            backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(kNumRpcsPerAddress,
+            backends_[2]->backend_service()->request_count());
+}
+
 TEST_P(EdsTest, IgnoresUnhealthyEndpoints) {
   CreateAndStartBackends(2);
   const size_t kNumRpcsPerAddress = 100;
@@ -433,32 +470,6 @@ TEST_P(EdsTest, IgnoresUnhealthyEndpoints) {
     EXPECT_EQ(kNumRpcsPerAddress,
               backends_[i]->backend_service()->request_count());
   }
-}
-
-TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
-  CreateAndStartBackends(1);
-  // Initial EDS resource has one locality with no endpoints.
-  EdsResourceArgs::Locality empty_locality("locality0", {});
-  EdsResourceArgs args({std::move(empty_locality)});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // RPCs should fail.
-  constexpr char kErrorMessage[] =
-      "no children in weighted_target policy: "
-      "EDS resource eds_service_name contains empty localities: "
-      "\\[\\{region=\"xds_default_locality_region\", "
-      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
-  // Send EDS resource that has an endpoint.
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // RPCs should eventually succeed.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 1, [&](const RpcResult& result) {
-    if (!result.status.ok()) {
-      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-      EXPECT_THAT(result.status.error_message(),
-                  ::testing::MatchesRegex(kErrorMessage));
-    }
-  });
 }
 
 // This tests the bug described in https://github.com/grpc/grpc/issues/32486.
@@ -650,7 +661,7 @@ TEST_P(EdsTest, KeepUsingLastDataIfBalancerGoesDown) {
 
 // Tests that the localities in a locality map are picked according to their
 // weights.
-TEST_P(EdsTest, WeightedRoundRobin) {
+TEST_P(EdsTest, LocalityWeights) {
   CreateAndStartBackends(2);
   const int kLocalityWeight0 = 2;
   const int kLocalityWeight1 = 8;
@@ -722,6 +733,32 @@ TEST_P(EdsTest, NoIntegerOverflowInLocalityWeights) {
               ::testing::DoubleNear(kLocalityWeightRate0, kErrorTolerance));
   EXPECT_THAT(locality_picked_rate_1,
               ::testing::DoubleNear(kLocalityWeightRate1, kErrorTolerance));
+}
+
+TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
+  CreateAndStartBackends(1);
+  // Initial EDS resource has one locality with no endpoints.
+  EdsResourceArgs::Locality empty_locality("locality0", {});
+  EdsResourceArgs args({std::move(empty_locality)});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // RPCs should fail.
+  constexpr char kErrorMessage[] =
+      "no children in weighted_target policy: "
+      "EDS resource eds_service_name contains empty localities: "
+      "\\[\\{region=\"xds_default_locality_region\", "
+      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
+  // Send EDS resource that has an endpoint.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // RPCs should eventually succeed.
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(kErrorMessage));
+    }
+  });
 }
 
 // Tests that we correctly handle a locality containing no endpoints.
