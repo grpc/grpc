@@ -884,9 +884,7 @@ static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   int cert_error = X509_STORE_CTX_get_error(ctx);
   // TODO(gtcooke94) using CRL provider makes this a little different, maybe
   // override the check_crl fn?
-  if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL ||
-      cert_error == X509_V_ERR_DIFFERENT_CRL_SCOPE ||
-      cert_error == X509_V_ERR_CRL_PATH_VALIDATION_ERROR) {
+  if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL) {
     gpr_log(GPR_INFO,
             "Certificate verification failed to find relevant CRL file. "
             "Ignoring error.");
@@ -991,6 +989,17 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
 
   X509_CRL* copy = X509_CRL_dup(crl);
   *crl_out = copy;
+  return 1;
+}
+
+// When using CRL Providers, this function used to override the default
+// `check_crl` function in OpenSSL using `X509_STORE_set_check_crl`.
+// CrlProviders put the onus on the users to provide the CRLs that they want to
+// provide, and because we override default CRL fetching behavior, we can expect
+// some of these verification checks to fails for custom CRL providers as well.
+// Thus, we need a passthrough to indicate to OpenSSL that we've provided a CRL
+// and we are good with it.
+static int CheckCrlPassthrough(X509_STORE_CTX* /*ctx*/, X509_CRL* /*crl*/) {
   return 1;
 }
 
@@ -2135,6 +2144,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
                         options->crl_provider);
     X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_context);
     X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
+    X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
     X509_STORE_set_verify_cb(cert_store, verify_cb);
     X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
     X509_VERIFY_PARAM_set_flags(
@@ -2335,6 +2345,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                             options->crl_provider);
         X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
         X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
+        X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
         X509_STORE_set_verify_cb(cert_store, verify_cb);
         X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
         X509_VERIFY_PARAM_set_flags(
