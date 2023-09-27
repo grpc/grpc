@@ -993,8 +993,8 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
     return 0;
   }
   X509_CRL* crl =
-      &std::static_pointer_cast<grpc_core::experimental::CrlImpl>(internal_crl)
-           ->crl();
+      std::static_pointer_cast<grpc_core::experimental::CrlImpl>(internal_crl)
+          ->crl();
 
   X509_CRL* copy = X509_CRL_dup(crl);
   *crl_out = copy;

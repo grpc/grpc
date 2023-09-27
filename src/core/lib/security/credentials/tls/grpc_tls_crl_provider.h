@@ -35,7 +35,8 @@ class CrlImpl : public Crl {
   ~CrlImpl() override;
   // Returns a string representation of the issuer pulled from the CRL
   std::string Issuer() override;
-  X509_CRL& crl() const;
+  // The caller should not take ownership of the returned pointer
+  X509_CRL* crl() const;
 
  private:
   X509_CRL* crl_;

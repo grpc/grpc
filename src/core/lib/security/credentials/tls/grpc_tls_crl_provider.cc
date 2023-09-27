@@ -50,7 +50,7 @@ CrlImpl::CrlImpl(X509_CRL* crl) : crl_(crl), issuer_(IssuerFromCrl(crl)) {}
 
 CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
 
-X509_CRL& CrlImpl::crl() const { return *crl_; }
+X509_CRL* CrlImpl::crl() const { return crl_; }
 
 std::string CrlImpl::Issuer() { return issuer_; }
 
