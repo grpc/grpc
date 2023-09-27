@@ -64,6 +64,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
