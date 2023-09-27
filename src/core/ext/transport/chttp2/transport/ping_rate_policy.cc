@@ -25,12 +25,14 @@
 
 #include <grpc/impl/channel_arg_names.h>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/match.h"
 
 namespace grpc_core {
 
 namespace {
 int g_default_max_pings_without_data = 2;
+absl::optional<int> g_default_max_inflight_pings;
 }  // namespace
 
 Chttp2PingRatePolicy::Chttp2PingRatePolicy(const ChannelArgs& args,
@@ -39,17 +41,28 @@ Chttp2PingRatePolicy::Chttp2PingRatePolicy(const ChannelArgs& args,
           is_client
               ? std::max(0, args.GetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)
                                 .value_or(g_default_max_pings_without_data))
-              : 0) {}
+              : 0),
+      // Configuration via channel arg dominates, otherwise if the multiping
+      // experiment is enabled we use 100, otherwise 1.
+      max_inflight_pings_(
+          std::max(0, args.GetInt(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS)
+                          .value_or(g_default_max_inflight_pings.value_or(
+                              IsMultipingEnabled() ? 100 : 1)))) {}
 
 void Chttp2PingRatePolicy::SetDefaults(const ChannelArgs& args) {
   g_default_max_pings_without_data =
       std::max(0, args.GetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)
                       .value_or(g_default_max_pings_without_data));
+  g_default_max_inflight_pings = args.GetInt(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS);
 }
 
 Chttp2PingRatePolicy::RequestSendPingResult
-Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval) {
+Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval,
+                                      size_t inflight_pings) const {
   if (max_pings_without_data_ != 0 && pings_before_data_required_ == 0) {
+    return TooManyRecentPings{};
+  }
+  if (max_inflight_pings_ != 0 && inflight_pings > max_inflight_pings_) {
     return TooManyRecentPings{};
   }
   const Timestamp next_allowed_ping =
@@ -59,9 +72,12 @@ Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval) {
     return TooSoon{next_allowed_ping_interval, last_ping_sent_time_,
                    next_allowed_ping - now};
   }
-  last_ping_sent_time_ = now;
-  if (pings_before_data_required_) --pings_before_data_required_;
   return SendGranted{};
+}
+
+void Chttp2PingRatePolicy::SentPing() {
+  last_ping_sent_time_ = Timestamp::Now();
+  if (pings_before_data_required_) --pings_before_data_required_;
 }
 
 void Chttp2PingRatePolicy::ReceivedDataFrame() {
