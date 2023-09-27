@@ -968,6 +968,12 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
                               X509* x) {
   SSL* ssl = static_cast<SSL*>(
       X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  if (ssl == nullptr) {
+    // TODO(gtcooke94) Log something here TBD. This is a problem that is
+    // different than not finding a CRL in the lookup from the provider.
+    return 0;
+  }
+
   SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
   grpc_core::experimental::CrlProvider* provider =
       static_cast<grpc_core::experimental::CrlProvider*>(
@@ -976,9 +982,8 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
   char* buf = X509_NAME_oneline(X509_get_issuer_name(x), nullptr, 0);
   grpc_core::experimental::CertificateInfoImpl cert_impl =
       grpc_core::experimental::CertificateInfoImpl(buf);
-  grpc_core::experimental::CertificateInfo* cert = &cert_impl;
   std::shared_ptr<grpc_core::experimental::Crl> internal_crl =
-      provider->GetCrl(*cert);
+      provider->GetCrl(cert_impl);
   OPENSSL_free(buf);
   // There wasn't a CRL found in the provider. Returning 0 will end up causing
   // OpenSSL to return X509_V_ERR_UNABLE_TO_GET_CRL. We then catch that error

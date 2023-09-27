@@ -34,6 +34,11 @@
 namespace grpc_core {
 namespace experimental {
 
+CertificateInfoImpl::CertificateInfoImpl(absl::string_view issuer)
+    : issuer_(issuer) {}
+
+absl::string_view CertificateInfoImpl::GetIssuer() const { return issuer_; }
+
 CrlImpl::CrlImpl(X509_CRL* crl) : crl_(crl) {
   char* buf = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
   issuer_ = buf;
@@ -41,6 +46,8 @@ CrlImpl::CrlImpl(X509_CRL* crl) : crl_(crl) {
 }
 
 CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
+
+X509_CRL& CrlImpl::crl() const { return *crl_; }
 
 std::string CrlImpl::Issuer() { return issuer_; }
 
@@ -61,7 +68,7 @@ absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
   return std::make_unique<CrlImpl>(crl);
 }
 
-StaticCrlProvider::StaticCrlProvider(std::vector<std::string> crls) {
+StaticCrlProvider::StaticCrlProvider(const std::vector<std::string>& crls) {
   for (const auto& raw_crl : crls) {
     absl::StatusOr<std::unique_ptr<Crl>> result = Crl::Parse(raw_crl);
     GPR_ASSERT(result.ok());
@@ -70,8 +77,9 @@ StaticCrlProvider::StaticCrlProvider(std::vector<std::string> crls) {
   }
 }
 
-std::shared_ptr<Crl> StaticCrlProvider::GetCrl(const CertificateInfo& cert) {
-  auto it = crls_.find(cert.GetIssuer());
+std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
+    const CertificateInfo& certificate_info) {
+  auto it = crls_.find(certificate_info.GetIssuer());
   if (it == crls_.end()) {
     return nullptr;
   }

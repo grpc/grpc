@@ -35,15 +35,8 @@ using grpc_core::experimental::
     CertificateInfo;                         // NOLINT(misc-unused-using-decls)
 using grpc_core::experimental::Crl;          // NOLINT(misc-unused-using-decls)
 using grpc_core::experimental::CrlProvider;  // NOLINT(misc-unused-using-decls)
-
-class StaticCrlProvider : CrlProvider {
- public:
-  explicit StaticCrlProvider(std::vector<std::string> crls);
-
- private:
-  grpc::internal::Mutex mu_;
-  std::map<std::string, std::unique_ptr<Crl>> crls_ ABSL_GUARDED_BY(mu_);
-};
+using grpc_core::experimental::
+    StaticCrlProvider;  // NOLINT(misc-unused-using-decls)
 
 }  // namespace experimental
 }  // namespace grpc

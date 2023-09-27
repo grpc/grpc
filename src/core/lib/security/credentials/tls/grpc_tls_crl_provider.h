@@ -33,7 +33,7 @@ class CrlImpl : public Crl {
   explicit CrlImpl(X509_CRL* crl);
   ~CrlImpl() override;
   std::string Issuer() override;
-  X509_CRL& crl() const { return *crl_; }
+  X509_CRL& crl() const;
 
  private:
   X509_CRL* crl_;
@@ -42,11 +42,11 @@ class CrlImpl : public Crl {
 
 class CertificateInfoImpl : public CertificateInfo {
  public:
-  explicit CertificateInfoImpl(absl::string_view issuer) : issuer_(issuer) {}
-  absl::string_view GetIssuer() const override { return issuer_; }
+  explicit CertificateInfoImpl(absl::string_view issuer);
+  absl::string_view GetIssuer() const override;
 
  private:
-  absl::string_view issuer_;
+  const absl::string_view issuer_;
 };
 
 }  // namespace experimental
