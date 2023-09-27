@@ -55,6 +55,9 @@ X509_CRL* CrlImpl::crl() const { return crl_; }
 std::string CrlImpl::Issuer() { return issuer_; }
 
 absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
+  if (crl_string.size() >= INT_MAX) {
+    return absl::InvalidArgumentError("crl_string cannot be of size INT_MAX");
+  }
   BIO* crl_bio =
       BIO_new_mem_buf(crl_string.data(), static_cast<int>(crl_string.size()));
   // Errors on BIO
