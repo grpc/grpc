@@ -21,7 +21,6 @@ from absl import flags
 from googleapiclient import discovery
 import googleapiclient.errors
 
-from framework import xds_flags
 import framework.errors
 from framework.helpers import retryers
 from framework.infrastructure import gcp
@@ -30,9 +29,7 @@ logger = logging.getLogger(__name__)
 
 DEBUG_HEADER_IN_RESPONSE = "x-encrypted-debug-headers"
 DEBUG_HEADER_KEY = "X-Return-Encrypted-Headers"
-DEBUG_HEADER_VALUE = "request_and_response"
-
-flags.adopt_module_key_flags(xds_flags)
+DISABLE_DEBUG_HEADER_VALUE = "disable_gfe_debug_header"
 
 
 class ComputeV1(
@@ -56,9 +53,11 @@ class ComputeV1(
         self,
         api_manager: gcp.api.GcpApiManager,
         project: str,
+        gfe_debug_header: str,
         version: str = "v1",
     ):
         super().__init__(api_manager.compute(version), project)
+        self.gfe_debug_header = gfe_debug_header
 
     class HealthCheckProtocol(enum.Enum):
         TCP = enum.auto()
@@ -587,20 +586,18 @@ class ComputeV1(
     def _execute(  # pylint: disable=arguments-differ
         self, request, *, timeout_sec=_WAIT_FOR_OPERATION_SEC
     ):
-        if xds_flags.ENABLE_GFE_DEBUG_HEADER.value:
-            old_postproc = request.postproc
+        if self.gfe_debug_header != DISABLE_DEBUG_HEADER_VALUE:
 
-            def _log_debug_header(resp, contents):
+            def _log_debug_header(resp):
                 if DEBUG_HEADER_IN_RESPONSE in resp:
                     logger.info(
                         "Received debug headers: %s",
                         resp[DEBUG_HEADER_IN_RESPONSE],
                     )
-                return old_postproc(resp, contents)
 
             logger.info("Adding debug headers for method: %s", request.methodId)
-            request.headers[DEBUG_HEADER_KEY] = DEBUG_HEADER_VALUE
-            request.postproc = _log_debug_header
+            request.headers[DEBUG_HEADER_KEY] = self.gfe_debug_header
+            request.response_callbacks.append(_log_debug_header)
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
         logger.debug("Operation %s", operation)
         return self._wait(operation["name"], timeout_sec)
