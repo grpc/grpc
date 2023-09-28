@@ -26,12 +26,27 @@ shift 5
 tar -xopf ${ARCHIVE_WITH_SUBMODULES}
 cd grpc
 
+# Extract all input archives with artifacts into input_artifacts directory
+mkdir -p input_artifacts
+pushd input_artifacts >/dev/null
+# all remaining args are .tar.gz archives with input artifacts
+for input_artifact_archive in "$@"
+do
+  # extract the .tar.gz with artifacts into a directory named after a basename
+  # of the archive itself (and strip the "artifact/" prefix)
+  # Note that input artifacts from different dependencies can have files
+  # with the same name, so disambiguating through the name of the archive
+  # is important.
+  tar --strip-components=1 --one-top-level -xopf ../../${input_artifact_archive}
+done
+popd >/dev/null
+
 mkdir -p artifacts
 
 # Run the build script with args, storing its stdout and stderr
 # in a log file.
 SCRIPT_EXIT_CODE=0
-../"${BUILD_SCRIPT}" "$@" >"../${SCRIPT_LOG_FILE}" 2>&1  || SCRIPT_EXIT_CODE="$?"
+../"${BUILD_SCRIPT}" >"../${SCRIPT_LOG_FILE}" 2>&1  || SCRIPT_EXIT_CODE="$?"
 
 # Store build script's exitcode in a file.
 # Note that the build atifacts task will terminate with success even when

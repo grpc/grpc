@@ -280,6 +280,20 @@ grpc_build_artifact_task(
 
 # TODO(jtattermusch): add more grpc_build_artifact_task targets for existing python artifacts from artifact_targets.py
 
+# C# package build tasks
+
+grpc_build_artifact_task(
+    name = "package_csharp_linux",
+    # csharp package needs pre-built protoc and protoc plugin binaries
+    artifact_deps = [
+        "artifact_protoc_linux_x64",
+        "artifact_protoc_linux_x86",
+        "artifact_protoc_linux_aarch64",
+    ],
+    build_script = "build_package_csharp_linux.sh",
+    docker_image_version = "tools/dockerfile/test/csharp_debian11_x64.current_version",
+)
+
 # TODO(jtattermusch): add grpc_build_artifact_task targets for ruby artifacts (which is tricky, since ruby artifact builds do not run under docker since they invoke docker themselves)
 
 test_suite(
@@ -290,6 +304,7 @@ test_suite(
         ":artifact_protoc_linux_x64_build_test",
         ":artifact_protoc_linux_x86_build_test",
         ":artifact_python_linux_x64_manylinux2014_cp311_build_test",
+        ":package_csharp_linux_build_test",
     ],
 )
 

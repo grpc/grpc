@@ -247,13 +247,14 @@ def grpc_run_simple_command_test(name, args = [], data = [], size = "medium", ti
     env = {}
     _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env, docker_run_as_root = False)
 
-def grpc_build_artifact_task(name, timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, build_script = None):
+def grpc_build_artifact_task(name, timeout = None, artifact_deps = [], tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, build_script = None):
     """Execute a build artifact task and a corresponding 'build test'
 
 
     Args:
         name: The name of the target.
         timeout: The test timeout for the build.
+        artifact_deps: List of dependencies on artifacts built by another grpc_build_artifact_task.
         tags: The tags for the target.
         exec_compatible_with: A list of constraint values that must be
             satisifed for the platform.
@@ -279,6 +280,12 @@ def grpc_build_artifact_task(name, timeout = None, tags = [], exec_compatible_wi
     ]
 
     cmd = "$(location //tools/bazelify_tests:grpc_build_artifact_task.sh) $(location //tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz) $(location " + build_script + ") $(location " + out_exitcode_file + ") $(location " + out_build_log + ") $(location " + out_archive_name + ")"
+
+    # for each artifact task we depends on, use the correponding tar.gz as extra src and pass its location as an extra cmdline arg.
+    for dep in artifact_deps:
+        dep_archive_name = str(dep + ".tar.gz")
+        cmd = cmd + " $(location " + dep_archive_name + ")"
+        genrule_srcs.append(dep_archive_name)
 
     _dockerized_genrule(name = name, cmd = cmd, outs = genrule_outs, srcs = genrule_srcs, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, docker_run_as_root = False)
 

@@ -22,7 +22,7 @@ shift 3
 
 BUILD_ARTIFACT_EXITCODE="$(cat ${EXIT_CODE_FILE})"
 
-echo "Build artifact task for '${ARTIFACTS_ARCHIVE}' has finished with exitcode ${BUILD_ARTIFACT_EXITCODE}."
+echo "Build artifact/package task for '${ARTIFACTS_ARCHIVE}' has finished with exitcode ${BUILD_ARTIFACT_EXITCODE}."
 
 echo "BUILD LOG"
 echo "--------------"
@@ -35,18 +35,21 @@ mkdir -p input_artifacts
 pushd input_artifacts >/dev/null
 echo "Artifacts that were built by the build artifact task:"
 echo "--------------"
+# TODO(jtattermusch): strip top level artifacts/ directory from the archive?
 tar -xopvf ../${ARTIFACTS_ARCHIVE}
 echo "--------------"
 popd >/dev/null
 
-# TODO(jtattermusch): consider adding the contents of artifacts archive
-# to bazel "undeclared test outputs" directory to make them available in the resultstore UI
-# easily. See docs for TEST_UNDECLARED_OUTPUTS_DIR for details.
+# Add artifact archive to the "undeclared test outputs" directory
+# to make it readily available in the resultstore UI.
+# See bazel docs for TEST_UNDECLARED_OUTPUTS_DIR.
+mkdir -p "${TEST_UNDECLARED_OUTPUTS_DIR}"
+cp "${ARTIFACTS_ARCHIVE}" "${TEST_UNDECLARED_OUTPUTS_DIR}" || true
 
 if [ "${BUILD_ARTIFACT_EXITCODE}" -eq "0" ]
 then
-  echo "SUCCESS: Artifact build task for '${ARTIFACTS_ARCHIVE}' to build 'ran successfully."
+  echo "SUCCESS: Build artifact/package task for '${ARTIFACTS_ARCHIVE}' ran successfully."
 else
-  echo "FAIL: Artifact build task for '${ARTIFACTS_ARCHIVE}' failed with exitcode ${BUILD_ARTIFACT_EXITCODE}."
+  echo "FAIL: Build artifact/package task for '${ARTIFACTS_ARCHIVE}' failed with exitcode ${BUILD_ARTIFACT_EXITCODE}."
   exit 1
 fi
