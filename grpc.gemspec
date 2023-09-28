@@ -1585,6 +1585,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h )
+  s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc )
+  s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h )
   s.files += %w( src/core/lib/security/credentials/tls/tls_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/tls/tls_credentials.h )
   s.files += %w( src/core/lib/security/credentials/tls/tls_utils.cc )

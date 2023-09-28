@@ -42,7 +42,6 @@
 #include <openssl/ssl.h>
 #include <openssl/tls1.h>
 #include <openssl/x509.h>
-#include <openssl/x509_vfy.h>
 #include <openssl/x509v3.h>
 
 #include "absl/strings/match.h"

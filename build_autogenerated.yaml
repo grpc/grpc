@@ -930,6 +930,7 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
+  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/credentials/tls/tls_utils.h
   - src/core/lib/security/credentials/xds/xds_credentials.h
@@ -1710,6 +1711,7 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/credentials/tls/tls_utils.cc
   - src/core/lib/security/credentials/xds/xds_credentials.cc
@@ -3551,7 +3553,6 @@ libs:
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/core/ext/xds/xds_enabled_server.h
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -3583,7 +3584,6 @@ libs:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -5703,7 +5703,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -5736,7 +5735,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -7683,7 +7681,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -7716,7 +7713,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -8169,7 +8165,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -8202,7 +8197,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -9178,18 +9172,6 @@ targets:
   - src/compiler/cpp_plugin.cc
   deps:
   - grpc_plugin_support
-- name: grpc_crl_provider_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
-  src:
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
-  - test/core/security/grpc_crl_provider_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: grpc_csharp_plugin
   build: protoc
   language: c++
@@ -9427,6 +9409,16 @@ targets:
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
+  deps:
+  - gtest
+  - grpc_test_util
+- name: grpc_tls_crl_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/grpc_tls_crl_provider_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16650,7 +16642,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -16682,7 +16673,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -17020,7 +17010,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -17053,7 +17042,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -17131,7 +17119,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -17164,7 +17151,6 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
-  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
