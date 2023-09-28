@@ -92,6 +92,16 @@ inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#ifndef NDEBUG
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
+#endif
+inline bool IsCallStatusOverrideOnCancellationEnabled() {
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -129,6 +139,16 @@ inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#ifndef NDEBUG
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
+#endif
+inline bool IsCallStatusOverrideOnCancellationEnabled() {
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -166,6 +186,16 @@ inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#ifndef NDEBUG
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
+#endif
+inline bool IsCallStatusOverrideOnCancellationEnabled() {
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
 #endif
 
 #else
@@ -197,6 +227,7 @@ enum ExperimentIds {
   kExperimentIdPickFirstHappyEyeballs,
   kExperimentIdCombinerOffloadToEventEngine,
   kExperimentIdRegisteredMethodLookupInTransport,
+  kExperimentIdCallStatusOverrideOnCancellation,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -306,6 +337,10 @@ inline bool IsCombinerOffloadToEventEngineEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() {
   return IsExperimentEnabled(kExperimentIdRegisteredMethodLookupInTransport);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
+inline bool IsCallStatusOverrideOnCancellationEnabled() {
+  return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
