@@ -44,7 +44,7 @@
 #include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -61,8 +61,9 @@ class EndpointList::Endpoint::Helper
   ~Helper() override { endpoint_.reset(DEBUG_LOCATION, "Helper"); }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const ChannelArgs& args) override {
-    return endpoint_->CreateSubchannel(std::move(address), args);
+      const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+      const ChannelArgs& args) override {
+    return endpoint_->CreateSubchannel(address, per_address_args, args);
   }
 
   void UpdateState(
@@ -86,7 +87,7 @@ class EndpointList::Endpoint::Helper
 //
 
 void EndpointList::Endpoint::Init(
-    const ServerAddress& address, const ChannelArgs& args,
+    const EndpointAddresses& addresses, const ChannelArgs& args,
     std::shared_ptr<WorkSerializer> work_serializer) {
   ChannelArgs child_args =
       args.Set(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING, true)
@@ -118,7 +119,7 @@ void EndpointList::Endpoint::Init(
   GPR_ASSERT(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
-  update_args.addresses.emplace().emplace_back(address);
+  update_args.addresses.emplace().emplace_back(addresses);
   update_args.args = child_args;
   update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,
@@ -152,9 +153,10 @@ size_t EndpointList::Endpoint::Index() const {
 }
 
 RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
+    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const ChannelArgs& args) {
   return endpoint_list_->channel_control_helper()->CreateSubchannel(
-      std::move(address), args);
+      address, per_address_args, args);
 }
 
 //
@@ -162,13 +164,14 @@ RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
 //
 
 void EndpointList::Init(
-    const ServerAddressList& addresses, const ChannelArgs& args,
-    absl::AnyInvocable<OrphanablePtr<Endpoint>(
-        RefCountedPtr<EndpointList>, const ServerAddress&, const ChannelArgs&)>
+    const EndpointAddressesList& endpoints, const ChannelArgs& args,
+    absl::AnyInvocable<OrphanablePtr<Endpoint>(RefCountedPtr<EndpointList>,
+                                               const EndpointAddresses&,
+                                               const ChannelArgs&)>
         create_endpoint) {
-  for (const ServerAddress& address : addresses) {
+  for (const EndpointAddresses& addresses : endpoints) {
     endpoints_.push_back(
-        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), address, args));
+        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), addresses, args));
   }
 }
 

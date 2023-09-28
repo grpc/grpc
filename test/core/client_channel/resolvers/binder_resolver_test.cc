@@ -26,9 +26,9 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
@@ -97,7 +97,7 @@ class BinderResolverTest : public ::testing::Test {
       EXPECT_TRUE(expect_result_);
       ASSERT_TRUE(result.addresses.ok());
       ASSERT_EQ(result.addresses->size(), 1);
-      grpc_core::ServerAddress addr = (*result.addresses)[0];
+      grpc_core::EndpointAddresses addr = (*result.addresses)[0];
       const struct sockaddr_un* un =
           reinterpret_cast<const struct sockaddr_un*>(addr.address().addr);
       EXPECT_EQ(addr.address().len,

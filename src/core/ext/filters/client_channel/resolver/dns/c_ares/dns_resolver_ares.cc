@@ -70,7 +70,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -178,9 +178,9 @@ class AresClientChannelDNSResolver : public PollingResolver {
     std::unique_ptr<grpc_ares_request> txt_request_
         ABSL_GUARDED_BY(on_resolved_mu_);
     // Output fields from ares request.
-    std::unique_ptr<ServerAddressList> addresses_
+    std::unique_ptr<EndpointAddressesList> addresses_
         ABSL_GUARDED_BY(on_resolved_mu_);
-    std::unique_ptr<ServerAddressList> balancer_addresses_
+    std::unique_ptr<EndpointAddressesList> balancer_addresses_
         ABSL_GUARDED_BY(on_resolved_mu_);
     char* service_config_json_ ABSL_GUARDED_BY(on_resolved_mu_) = nullptr;
   };
@@ -299,7 +299,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     if (addresses_ != nullptr) {
       result.addresses = std::move(*addresses_);
     } else {
-      result.addresses = ServerAddressList();
+      result.addresses.emplace();
     }
     if (service_config_json_ != nullptr) {
       auto service_config_string = ChooseServiceConfig(service_config_json_);
@@ -320,8 +320,8 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
       }
     }
     if (balancer_addresses_ != nullptr) {
-      result.args = SetGrpcLbBalancerAddresses(
-          result.args, ServerAddressList(*balancer_addresses_));
+      result.args =
+          SetGrpcLbBalancerAddresses(result.args, *balancer_addresses_);
     }
   } else {
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
@@ -535,7 +535,7 @@ class AresDNSResolver : public DNSResolver {
         absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_resolve_address_done_;
     // currently resolving addresses
-    std::unique_ptr<ServerAddressList> addresses_;
+    std::unique_ptr<EndpointAddressesList> addresses_;
   };
 
   class AresSRVRequest : public AresRequest {
@@ -583,7 +583,7 @@ class AresDNSResolver : public DNSResolver {
         absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_resolve_address_done_;
     // currently resolving addresses
-    std::unique_ptr<ServerAddressList> balancer_addresses_;
+    std::unique_ptr<EndpointAddressesList> balancer_addresses_;
   };
 
   class AresTXTRequest : public AresRequest {
