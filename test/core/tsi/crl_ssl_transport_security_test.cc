@@ -83,8 +83,8 @@ class CrlSslTransportSecurityTest
   class SslTsiTestFixture {
    public:
     SslTsiTestFixture(
-        const std::string& server_key_path, const std::string& server_cert_path,
-        const std::string& client_key_path, const std::string& client_cert_path,
+        absl::string_view server_key_path, absl::string_view server_cert_path,
+        absl::string_view client_key_path, absl::string_view client_cert_path,
         const char* crl_directory,
         std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
         bool expect_server_success, bool expect_client_success_1_2,
