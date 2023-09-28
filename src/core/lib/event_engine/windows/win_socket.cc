@@ -100,7 +100,7 @@ void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
       // there is no notification callback yet, set the notification callback,
       // and return.
       EventEngine::Closure* prev = nullptr;
-      GPR_ASSERT(info.closure_.compare_exchange_strong(prev, closure));
+      GPR_ASSERT(std::exchange(info.closure_, closure) == nullptr);
       return;
     }
   }
@@ -129,7 +129,7 @@ void WinSocket::OpState::SetReady() {
   {
     grpc_core::MutexLock lock(&ready_mu_);
     GPR_ASSERT(!has_pending_iocp_);
-    closure = closure_.exchange(nullptr);
+    closure = std::exchange(closure_, nullptr);
     if (!closure) {
       has_pending_iocp_ = true;
     }

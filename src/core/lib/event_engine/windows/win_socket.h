@@ -67,10 +67,10 @@ class WinSocket {
 
     OVERLAPPED overlapped_;
     WinSocket* win_socket_ = nullptr;
-    std::atomic<EventEngine::Closure*> closure_{nullptr};
+    grpc_core::Mutex ready_mu_;
+    EventEngine::Closure* closure_ ABSL_GUARDED_BY(ready_mu_) = nullptr;
     bool has_pending_iocp_ = false;
     OverlappedResult result_;
-    grpc_core::Mutex ready_mu_;
   };
 
   WinSocket(SOCKET socket, ThreadPool* thread_pool) noexcept;
