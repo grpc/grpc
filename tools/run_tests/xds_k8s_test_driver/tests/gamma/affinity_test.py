@@ -187,7 +187,9 @@ class SessionDrainAffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
 
     def setUp(self):
         self.pre_stop_hook = True
-        self.termination_grace_period_seconds = _TERMINATION_GRACE_PERIOD_SECONDS
+        self.termination_grace_period_seconds = (
+            _TERMINATION_GRACE_PERIOD_SECONDS
+        )
         super(SessionDrainAffinityTest, self).setUp()
 
     def test_session_drain(self):
@@ -195,7 +197,9 @@ class SessionDrainAffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
             test_servers = self.startTestServers(replica_count=_REPLICA_COUNT)
 
         with self.subTest("02_create_ssa_policy"):
-            self.server_runner.createSessionAffinityPolicy("gamma/session_affinity_policy_route.yaml")
+            self.server_runner.createSessionAffinityPolicy(
+                "gamma/session_affinity_policy_route.yaml"
+            )
 
         with self.subTest("03_create_backend_policy"):
             self.server_runner.createBackendPolicy()
@@ -206,7 +210,12 @@ class SessionDrainAffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
             test_client: _XdsTestClient = self.startTestClient(test_servers[0])
 
         with self.subTest("05_send_first_RPC_and_retrieve_cookie"):
-            cookie, chosen_server = session_affinity_util.assert_eventually_retrieve_cookie_and_server(self, test_client, test_servers)
+            (
+                cookie,
+                chosen_server,
+            ) = session_affinity_util.assert_eventually_retrieve_cookie_and_server(
+                self, test_client, test_servers
+            )
 
         with self.subTest("06_send_RPCs_with_cookie"):
             test_client.update_config.configure(
@@ -228,6 +237,7 @@ class SessionDrainAffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
             self.server_runner.delete_pod_async(chosen_server.hostname)
 
         with self.subTest("08_confirm_backend_is_draining"):
+
             def _assert_draining():
                 config = test_client.csds.fetch_client_status(
                     log_level=logging.INFO
@@ -245,7 +255,6 @@ class SessionDrainAffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
             )
             retryer(_assert_draining)
 
-
         with self.subTest("09_send_RPCs_to_draining_server"):
             self.assertRpcsEventuallyGoToGivenServers(
                 test_client, [chosen_server], 10
@@ -254,7 +263,12 @@ class SessionDrainAffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
         with self.subTest("10_kill_old_server_and_receive_new_assignment"):
             chosen_server.send_hook_request_return()
             refreshed_servers = self.refreshTestServers()
-            cookie, new_chosen_server = session_affinity_util.assert_eventually_retrieve_cookie_and_server(self, test_client, refreshed_servers)
+            (
+                cookie,
+                new_chosen_server,
+            ) = session_affinity_util.assert_eventually_retrieve_cookie_and_server(
+                self, test_client, refreshed_servers
+            )
 
         with self.subTest("11_send_traffic_to_new_assignment"):
             test_client.update_config.configure(

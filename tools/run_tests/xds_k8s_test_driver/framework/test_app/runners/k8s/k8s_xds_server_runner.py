@@ -225,7 +225,7 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             log_to_stdout=log_to_stdout,
             secure_mode=secure_mode,
         )
-        return self.servers	
+        return self.servers
 
     def _make_servers_for_deployment(
         self,
