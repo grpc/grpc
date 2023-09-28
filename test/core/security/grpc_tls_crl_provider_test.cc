@@ -40,8 +40,12 @@
 namespace grpc_core {
 namespace testing {
 
-using experimental::Crl;
-using experimental::CrlImpl;
+using ::grpc_core::experimental::CertificateInfo;
+using ::grpc_core::experimental::CertificateInfoImpl;
+using ::grpc_core::experimental::Crl;
+using ::grpc_core::experimental::CrlImpl;
+using ::grpc_core::experimental::CrlProvider;
+using ::grpc_core::experimental::StaticCrlProvider;
 
 TEST(CrlProviderTest, CanParseCrl) {
   std::string crl_string = GetFileContents(CRL_PATH);
@@ -62,13 +66,11 @@ TEST(CrlProviderTest, InvalidFile) {
 
 TEST(CrlProviderTest, StaticCrlProviderLookup) {
   std::vector<std::string> crl_strings = {GetFileContents(CRL_PATH)};
-  absl::StatusOr<std::shared_ptr<experimental::CrlProvider>> result =
-      experimental::StaticCrlProvider::FromVector(crl_strings);
-  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
-      std::move(*result);
+  absl::StatusOr<std::shared_ptr<CrlProvider>> result =
+      StaticCrlProvider::FromVector(crl_strings);
+  std::shared_ptr<CrlProvider> provider = std::move(*result);
 
-  experimental::CertificateInfoImpl cert =
-      experimental::CertificateInfoImpl(CRL_ISSUER);
+  CertificateInfoImpl cert = CertificateInfoImpl(CRL_ISSUER);
 
   auto crl = provider->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
@@ -76,13 +78,11 @@ TEST(CrlProviderTest, StaticCrlProviderLookup) {
 
 TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
   std::vector<std::string> crl_strings = {GetFileContents(CRL_PATH)};
-  absl::StatusOr<std::shared_ptr<experimental::CrlProvider>> result =
-      experimental::StaticCrlProvider::FromVector(crl_strings);
-  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
-      std::move(*result);
+  absl::StatusOr<std::shared_ptr<CrlProvider>> result =
+      StaticCrlProvider::FromVector(crl_strings);
+  std::shared_ptr<CrlProvider> provider = std::move(*result);
 
-  experimental::CertificateInfoImpl bad_cert =
-      experimental::CertificateInfoImpl("BAD CERT");
+  CertificateInfoImpl bad_cert = CertificateInfoImpl("BAD CERT");
   auto crl = provider->GetCrl(bad_cert);
   ASSERT_EQ(crl, nullptr);
 }
