@@ -124,6 +124,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
  private:
   class SubchannelState;
+  class EndpointState;
+
   class SubchannelWrapper : public DelegatingSubchannel {
    public:
     SubchannelWrapper(std::shared_ptr<WorkSerializer> work_serializer,
@@ -134,7 +136,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
           subchannel_state_(std::move(subchannel_state)) {
       if (subchannel_state_ != nullptr) {
         subchannel_state_->AddSubchannel(this);
-        if (subchannel_state_->ejection_time().has_value()) {
+        if (subchannel_state_->endpoint_state()->ejection_time().has_value()) {
           ejected_ = true;
         }
       }
@@ -147,14 +149,13 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
         }
         return;
       }
-      WeakRefCountedPtr<SubchannelWrapper> self = WeakRef();
-      work_serializer_->Run(
-          [self = std::move(self)]() {
-            if (self->subchannel_state_ != nullptr) {
-              self->subchannel_state_->RemoveSubchannel(self.get());
-            }
-          },
-          DEBUG_LOCATION);
+      if (subchannel_state_ != nullptr) {
+        work_serializer_->Run(
+            [subchannel_state = std::move(subchannel_state_)]() {
+              subchannel_state_->RemoveSubchannel(self.get());
+            },
+            DEBUG_LOCATION);
+      }
     }
 
     void Eject();
@@ -232,10 +233,42 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
   class SubchannelState : public RefCounted<SubchannelState> {
    public:
-    struct Bucket {
-      std::atomic<uint64_t> successes;
-      std::atomic<uint64_t> failures;
-    };
+    EndpointState* endpoint_state() const { return endpoint_state_.get(); }
+
+    void AddSubchannel(SubchannelWrapper* wrapper) {
+      subchannels_.insert(wrapper);
+    }
+
+    void RemoveSubchannel(SubchannelWrapper* wrapper) {
+      subchannels_.erase(wrapper);
+    }
+
+    void Eject() {
+      // Ejecting the subchannel may cause the child policy to unref the
+      // subchannel, so we need to be prepared for the set to be modified
+      // while we are iterating.
+      for (auto it = subchannels_.begin(); it != subchannels_.end();) {
+        SubchannelWrapper* subchannel = *it;
+        ++it;
+        subchannel->Eject();
+      }
+    }
+
+    void Uneject() {
+      for (auto& subchannel : subchannels_) {
+        subchannel->Uneject();
+      }
+    }
+
+   private:
+    std::set<SubchannelWrapper*> subchannels_;
+    RefCountedPtr<EndpointState> endpoint_state_;
+  };
+
+  class EndpointState : public RefCounted<EndpointState> {
+   public:
+    explicit EndpointState(std::set<SubchannelState*> subchannels)
+        : subchannels_(std::move(subchannels)) {}
 
     void RotateBucket() {
       backup_bucket_->successes = 0;
@@ -257,14 +290,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
           {success_rate, backup_bucket_->successes + backup_bucket_->failures}};
     }
 
-    void AddSubchannel(SubchannelWrapper* wrapper) {
-      subchannels_.insert(wrapper);
-    }
-
-    void RemoveSubchannel(SubchannelWrapper* wrapper) {
-      subchannels_.erase(wrapper);
-    }
-
     void AddSuccessCount() { active_bucket_.load()->successes.fetch_add(1); }
 
     void AddFailureCount() { active_bucket_.load()->failures.fetch_add(1); }
@@ -274,20 +299,15 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     void Eject(const Timestamp& time) {
       ejection_time_ = time;
       ++multiplier_;
-      // Ejecting the subchannel may cause the child policy to unref the
-      // subchannel, so we need to be prepared for the set to be modified
-      // while we are iterating.
-      for (auto it = subchannels_.begin(); it != subchannels_.end();) {
-        SubchannelWrapper* subchannel = *it;
-        ++it;
-        subchannel->Eject();
+      for (const SubchannelState* subchannel_state : subchannels_) {
+        subchannel_state->Eject();
       }
     }
 
     void Uneject() {
       ejection_time_.reset();
-      for (auto& subchannel : subchannels_) {
-        subchannel->Uneject();
+      for (const SubchannelState* subchannel_state : subchannels_) {
+        subchannel_state->Uneject();
       }
     }
 
@@ -318,6 +338,13 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
    private:
+    struct Bucket {
+      std::atomic<uint64_t> successes;
+      std::atomic<uint64_t> failures;
+    };
+
+    const std::set<SubchannelState*> subchannels_;
+
     std::unique_ptr<Bucket> current_bucket_ = std::make_unique<Bucket>();
     std::unique_ptr<Bucket> backup_bucket_ = std::make_unique<Bucket>();
     // The bucket used to update call counts.
@@ -325,7 +352,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     std::atomic<Bucket*> active_bucket_{current_bucket_.get()};
     uint32_t multiplier_ = 0;
     absl::optional<Timestamp> ejection_time_;
-    std::set<SubchannelWrapper*> subchannels_;
   };
 
   // A picker that wraps the picker from the child to perform outlier detection.
@@ -414,7 +440,9 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
   absl::Status status_;
   RefCountedPtr<SubchannelPicker> picker_;
-  std::map<EndpointAddressSet, RefCountedPtr<SubchannelState>>
+  std::map<EndpointAddressSet, RefCountedPtr<EndpointState>>
+      endpoint_state_map_;
+  std::map<grpc_resolved_address, RefCountedPtr<SubchannelState>>
       subchannel_state_map_;
   OrphanablePtr<EjectionTimer> ejection_timer_;
 };
@@ -529,17 +557,17 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
   PickResult result = picker_->Pick(args);
   auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
-    // Unwrap subchannel to pass back up the stack.
     auto* subchannel_wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
     // Inject subchannel call tracker to record call completion as long as
-    // not both success_rate_ejection and failure_percentage_ejection are unset.
+    // either success_rate_ejection or failure_percentage_ejection is enabled.
     if (counting_enabled_) {
       complete_pick->subchannel_call_tracker =
           std::make_unique<SubchannelCallTracker>(
               std::move(complete_pick->subchannel_call_tracker),
               subchannel_wrapper->subchannel_state());
     }
+    // Unwrap subchannel to pass back up the stack.
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
   }
   return result;
