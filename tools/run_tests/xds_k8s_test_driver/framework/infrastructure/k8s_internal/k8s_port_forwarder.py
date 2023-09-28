@@ -32,6 +32,7 @@ class PortForwarder:
         context: str,
         namespace: str,
         destination: str,
+        pod_name: str,
         remote_port: int,
         local_port: Optional[int] = None,
         local_address: Optional[str] = None,
@@ -39,6 +40,7 @@ class PortForwarder:
         self.context = context
         self.namespace = namespace
         self.destination = destination
+        self.pod_name = pod_name
         self.remote_port = remote_port
         self.local_address = local_address or self.PORT_FORWARD_LOCAL_ADDRESS
         self.local_port: Optional[int] = local_port

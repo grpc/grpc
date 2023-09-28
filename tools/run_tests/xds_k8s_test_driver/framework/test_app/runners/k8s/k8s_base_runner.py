@@ -735,7 +735,11 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
 
     def _start_port_forwarding_pod(
         self, pod: k8s.V1Pod, remote_port: int
-    ) -> k8s.PortForwarder:
+    ) -> Optional[k8s.PortForwarder]:
+        for forwarder in self.pod_port_forwarders:
+            if forwarder.pod_name == pod.metadata.name:
+                logging.info(f"Port forwarding for {pod.metadata.name} already started. Skipping.")
+                return None
         logger.info(
             "LOCAL DEV MODE: Enabling port forwarding to %s:%s",
             pod.status.pod_ip,
@@ -747,8 +751,12 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
 
     def _start_logging_pod(
         self, pod: k8s.V1Pod, *, log_to_stdout: bool = False
-    ) -> k8s.PodLogCollector:
+    ) -> Optional[k8s.PodLogCollector]:
         pod_name = pod.metadata.name
+        for collector in self.pod_log_collectors:
+            if collector.pod_name == pod_name:
+                logging.info(f"Log collection for {pod_name} already started. Skipping.")
+                return None
         logfile_name = f"{self.k8s_namespace.name}_{pod_name}.log"
         log_path = self.logs_subdir / logfile_name
         logger.info(

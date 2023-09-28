@@ -816,6 +816,9 @@ class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
             )
         return test_servers
 
+    def refreshTestServers(self) -> List[XdsTestServer]:
+        return self.server_runner.refresh_servers() 
+
     def startTestClient(
         self, test_server: XdsTestServer, **kwargs
     ) -> XdsTestClient:

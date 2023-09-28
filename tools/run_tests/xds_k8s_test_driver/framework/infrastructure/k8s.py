@@ -640,17 +640,17 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
     def delete_pod_async(
         self,
-        name: str,
-        grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
+        name: str
     ) -> None:
         # TODO(sergiitk): Do we need async? Won't it break error handling?
+		# NOTE(rbellevi): Yes. We need async. Because we need the test to do stuff between
+        # when SIGTERM is sent to the container and when it actually dies.
         self._execute(
             self._api.core.delete_namespaced_pod,
             name=name,
             namespace=self.name,
             body=client.V1DeleteOptions(
                 propagation_policy="Foreground",
-                grace_period_seconds=grace_period_seconds,
             ),
             async_req=True,
         )
@@ -954,6 +954,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             self._api.context,
             self.name,
             f"pod/{pod.metadata.name}",
+			pod.metadata.name,
             remote_port,
             local_port,
             local_address,

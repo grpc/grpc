@@ -15,7 +15,7 @@
 Run xDS Test Client on Kubernetes.
 """
 import logging
-from typing import List, Optional
+from typing import List, Mapping, Optional
 
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
@@ -51,6 +51,9 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
 
     # Mutable state.
     service: Optional[k8s.V1Service] = None
+
+    # Map from pod name to server
+    severs: Mapping[str, XdsTestServer] = {}
 
     def __init__(  # pylint: disable=too-many-locals
         self,
@@ -215,13 +218,14 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             pre_stop_hook=pre_stop_hook,
         )
 
-        return self._make_servers_for_deployment(
+        self.servers = self._make_servers_for_deployment(
             replica_count,
             test_port=test_port,
             maintenance_port=maintenance_port,
             log_to_stdout=log_to_stdout,
             secure_mode=secure_mode,
         )
+        return self.servers	
 
     def _make_servers_for_deployment(
         self,
@@ -249,15 +253,35 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         self._start_completed()
 
         servers: List[XdsTestServer] = []
+        self.servers = {}
         for pod in pods:
-            servers.append(
-                self._xds_test_server_for_pod(
-                    pod,
-                    test_port=test_port,
-                    maintenance_port=maintenance_port,
-                    secure_mode=secure_mode,
-                )
+            server = self._xds_test_server_for_pod(
+                pod,
+                test_port=test_port,
+                maintenance_port=maintenance_port,
+                secure_mode=secure_mode,
             )
+            servers.append(server)
+            self.servers[pod.metadata.name] = server
+        return servers
+
+    def refresh_servers(self) -> List[XdsTestServer]:
+        pods = self.k8s_namespace.list_deployment_pods(self.deployment)
+        pod_names = [pod.metadata.name for pod in pods]
+
+        servers: List[XdsTestServer] = []
+        for pod in pods:
+            if pod.metadata.name in self.servers:
+                # Reuse existing server if present
+                servers.append(self.servers[pod.metadata.name])
+            else:
+                # Add new server
+                server = self._xds_test_server_for_pod(pod)
+                servers.append(server)
+                self.servers[pod.metadata.name] = server
+                if self.should_collect_logs:
+                    self._start_logging_pod(pod, log_to_stdout=log_to_stdout)
+
         return servers
 
     def _get_default_maintenance_port(self, secure_mode: bool) -> int:

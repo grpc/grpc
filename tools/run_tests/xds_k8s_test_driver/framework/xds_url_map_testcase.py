@@ -90,6 +90,9 @@ class DumpedXdsConfig(dict):
         self.cds = []
         self.eds = []
         self.endpoints = []
+
+        self.draining_endpoints = []
+
         for xds_config in self.get("xdsConfig", []):
             try:
                 if "listenerConfig" in xds_config:
@@ -154,6 +157,8 @@ class DumpedXdsConfig(dict):
                                     ]["portValue"],
                                 )
                             )
+                        elif lb_endpoint["healthStatus"] == "DRAINING":
+                            self.draining_endpoints.append(lb_endpoint)
                     # TODO(lidiz) reduce the catch to LookupError
                     except Exception as e:  # pylint: disable=broad-except
                         logging.debug(

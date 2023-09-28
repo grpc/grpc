@@ -39,6 +39,7 @@ LoadBalancerAccumulatedStatsResponse = (
 MethodStats = messages_pb2.LoadBalancerAccumulatedStatsResponse.MethodStats
 RpcsByPeer = messages_pb2.LoadBalancerStatsResponse.RpcsByPeer
 
+_HOOK_SERVER_PORT = 8000
 
 class LoadBalancerStatsServiceClient(framework.rpc.grpc.GrpcClientHelper):
     stub: test_pb2_grpc.LoadBalancerStatsServiceStub
@@ -157,6 +158,18 @@ class XdsUpdateHealthServiceClient(framework.rpc.grpc.GrpcClientHelper):
     def set_not_serving(self):
         self.call_unary_with_deadline(
             rpc="SetNotServing", req=empty_pb2.Empty(), log_level=logging.INFO
+        )
+
+    def send_hook_request_start_server(self):
+        req = messages_pb2.HookRequest(command=messages_pb2.HookRequest.HookRequestCommand.START, server_port=_HOOK_SERVER_PORT)
+        self.call_unary_with_deadline(
+            rpc="SendHookRequest", req=req, log_level=logging.INFO
+        )
+
+    def send_hook_request_return(self):
+        req = messages_pb2.HookRequest(command=messages_pb2.HookRequest.HookRequestCommand.RETURN, grpc_code_to_return=0, grpc_status_description="Successfully returning")
+        self.call_unary_with_deadline(
+            rpc="SendHookRequest", req=req, log_level=logging.INFO
         )
 
 

@@ -105,6 +105,18 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
             self.health_client.check_health(),
         )
 
+    def send_hook_request_start_server(self):
+        logger.info(
+            "[%s] >> Sending request to start hook server", self.hostname
+        )
+        self.update_health_service_client.send_hook_request_start_server()
+
+    def send_hook_request_return(self):
+        logger.info(
+            "[%s] >> Sending request to return from hook server", self.hostname
+        )
+        self.update_health_service_client.send_hook_request_return()
+
     def set_xds_address(self, xds_host, xds_port: Optional[int] = None):
         self.xds_host, self.xds_port = xds_host, xds_port
 

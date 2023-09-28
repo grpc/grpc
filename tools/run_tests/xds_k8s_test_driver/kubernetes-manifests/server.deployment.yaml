@@ -64,7 +64,7 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: ["tail", "-f", "/dev/null"] 
+              command: ["grpcurl", "-plaintext", "-import-path", "/", "-proto", "/src/proto/grpc/testing/test.proto", "localhost:8000", "grpc.testing.HookService/Hook"] 
         % endif
       initContainers:
         - name: grpc-td-init

@@ -79,7 +79,7 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         self.client_runner = self.initKubernetesClientRunner()
 
         # Cleanup.
-        self.force_cleanup = True
+        self.force_cleanup = False
         self.force_cleanup_namespace = True
 
     # TODO(sergiitk): [GAMMA] Make a TD-manager-less base test case
