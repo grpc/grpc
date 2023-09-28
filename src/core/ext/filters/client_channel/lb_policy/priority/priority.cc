@@ -59,7 +59,7 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {

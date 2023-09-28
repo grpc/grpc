@@ -30,7 +30,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -64,7 +64,7 @@ void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
     CoreConfiguration::Builder* builder,
     InterceptRecvTrailingMetadataCallback cb);
 
-using AddressTestCallback = std::function<void(const ServerAddress&)>;
+using AddressTestCallback = std::function<void(const EndpointAddresses&)>;
 
 // Registers an LB policy called "address_test_lb" that invokes cb for each
 // address used to create a subchannel.
@@ -77,7 +77,7 @@ void RegisterFixedAddressLoadBalancingPolicy(
     CoreConfiguration::Builder* builder);
 
 using OobBackendMetricCallback =
-    std::function<void(ServerAddress, const BackendMetricData&)>;
+    std::function<void(EndpointAddresses, const BackendMetricData&)>;
 
 // Registers an LB policy called "oob_backend_metric_test_lb" that invokes
 // cb for each OOB backend metric report on each subchannel.

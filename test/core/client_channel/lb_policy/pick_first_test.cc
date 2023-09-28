@@ -37,12 +37,14 @@
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 
@@ -216,6 +218,66 @@ TEST_F(PickFirstTest, FirstAddressFails) {
   // Picker should return the same subchannel repeatedly.
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[1]);
+  }
+}
+
+TEST_F(PickFirstTest, FlattensEndpointAddressesList) {
+  // Send an update containing two endpoints, the first one with two addresses.
+  constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  constexpr std::array<absl::string_view, 1> kEndpoint2Addresses = {
+      "ipv4:127.0.0.1:445"};
+  const std::array<EndpointAddresses, 2> kEndpoints = {
+      MakeEndpointAddresses(kEndpoint1Addresses),
+      MakeEndpointAddresses(kEndpoint2Addresses)};
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kEndpoints, MakePickFirstConfig(false)), lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for all 3 addresses.
+  auto* subchannel = FindSubchannel(kEndpoint1Addresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  auto* subchannel2 = FindSubchannel(kEndpoint1Addresses[1]);
+  ASSERT_NE(subchannel2, nullptr);
+  auto* subchannel3 = FindSubchannel(kEndpoint2Addresses[0]);
+  ASSERT_NE(subchannel3, nullptr);
+  // When the LB policy receives the first subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports
+  // CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // The other subchannels should not be connecting.
+  EXPECT_FALSE(subchannel2->ConnectionRequested());
+  EXPECT_FALSE(subchannel3->ConnectionRequested());
+  // The first subchannel's connection attempt fails.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                   absl::UnavailableError("failed to connect"));
+  // The LB policy will start a connection attempt on the second subchannel.
+  EXPECT_TRUE(subchannel2->ConnectionRequested());
+  EXPECT_FALSE(subchannel3->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports
+  // CONNECTING.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // The connection attempt fails.
+  subchannel2->SetConnectivityState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("failed to connect"));
+  // The LB policy will start a connection attempt on the third subchannel.
+  EXPECT_TRUE(subchannel3->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports
+  // CONNECTING.
+  subchannel3->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // This one succeeds.
+  subchannel3->SetConnectivityState(GRPC_CHANNEL_READY);
+  // The LB policy will report CONNECTING some number of times (doesn't
+  // matter how many) and then report READY.
+  auto picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  // Picker should return the same subchannel repeatedly.
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(ExpectPickComplete(picker.get()), kEndpoint2Addresses[0]);
   }
 }
 

@@ -29,7 +29,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/service_config/service_config.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
@@ -55,8 +55,8 @@ class Resolver : public InternallyRefCounted<Resolver> {
  public:
   /// Results returned by the resolver.
   struct Result {
-    /// A list of addresses, or an error.
-    absl::StatusOr<ServerAddressList> addresses;
+    /// A list of endpoints, each with one or more addresses, or an error.
+    absl::StatusOr<EndpointAddressesList> addresses;
     /// A service config, or an error.
     absl::StatusOr<RefCountedPtr<ServiceConfig>> service_config = nullptr;
     /// An optional human-readable note describing context about the resolution,

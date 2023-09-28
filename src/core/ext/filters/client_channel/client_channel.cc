@@ -82,6 +82,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
@@ -93,8 +94,8 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
@@ -1082,15 +1083,16 @@ class ClientChannel::ClientChannelControlHelper
   }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const ChannelArgs& args) override
+      const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+      const ChannelArgs& args) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
     ChannelArgs subchannel_args = ClientChannel::MakeSubchannelArgs(
-        args, address.args(), chand_->subchannel_pool_,
+        args, per_address_args, chand_->subchannel_pool_,
         chand_->default_authority_);
     // Create subchannel.
     RefCountedPtr<Subchannel> subchannel =
-        chand_->client_channel_factory_->CreateSubchannel(address.address(),
+        chand_->client_channel_factory_->CreateSubchannel(address,
                                                           subchannel_args);
     if (subchannel == nullptr) return nullptr;
     // Make sure the subchannel has updated keepalive time.
