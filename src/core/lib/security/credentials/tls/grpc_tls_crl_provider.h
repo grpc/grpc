@@ -31,12 +31,15 @@ namespace experimental {
 class CrlImpl : public Crl {
  public:
   // Takes ownership of the X509_CRL pointer.
-  explicit CrlImpl(X509_CRL* crl);
+  CrlImpl(X509_CRL* crl, const std::string& issuer);
+  // Makes a copy of the X509_CRL
+  CrlImpl(const CrlImpl& other);
   ~CrlImpl() override;
   // Returns a string view representation of the issuer pulled from the CRL.
   absl::string_view Issuer() override;
   // The caller should not take ownership of the returned pointer.
   X509_CRL* crl() const;
+  static absl::StatusOr<CrlImpl> Create(X509_CRL* crl);
 
  private:
   X509_CRL* crl_;
@@ -46,7 +49,8 @@ class CrlImpl : public Crl {
 class CertificateInfoImpl : public CertificateInfo {
  public:
   explicit CertificateInfoImpl(absl::string_view issuer);
-  // Returns a string representation of the issuer pulled from the certificate.
+  // Returns a string representation of the issuer pulled from the
+  // certificate.
   absl::string_view Issuer() const override;
 
  private:

@@ -34,19 +34,39 @@
 namespace grpc_core {
 namespace experimental {
 
+namespace {
+std::string IssuerFromCrl(X509_CRL* crl) {
+  char* buf = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
+  std::string ret;
+  if (buf != nullptr) {
+    ret = buf;
+  }
+  OPENSSL_free(buf);
+  return ret;
+}
+
+}  // namespace
+
 CertificateInfoImpl::CertificateInfoImpl(absl::string_view issuer)
     : issuer_(issuer) {}
 
 absl::string_view CertificateInfoImpl::Issuer() const { return issuer_; }
 
-std::string IssuerFromCrl(X509_CRL* crl) {
-  char* buf = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
-  std::string ret = buf;
-  OPENSSL_free(buf);
-  return ret;
-}
+CrlImpl::CrlImpl(X509_CRL* crl, const std::string& issuer)
+    : crl_(crl), issuer_(issuer) {}
 
-CrlImpl::CrlImpl(X509_CRL* crl) : crl_(crl), issuer_(IssuerFromCrl(crl)) {}
+// Copy constructor needs to duplicate the X509_CRL* since the destructor frees
+// it
+CrlImpl::CrlImpl(const CrlImpl& other)
+    : crl_(X509_CRL_dup(other.crl())), issuer_(other.issuer_) {}
+
+absl::StatusOr<CrlImpl> CrlImpl::Create(X509_CRL* crl) {
+  std::string issuer = IssuerFromCrl(crl);
+  if (issuer.empty()) {
+    return absl::InvalidArgumentError("Issuer of crl cannot be empty");
+  }
+  return CrlImpl(crl, issuer);
+}
 
 CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
 
@@ -71,11 +91,15 @@ absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to X509 CRL failed.");
   }
-  return std::make_unique<CrlImpl>(crl);
+  absl::StatusOr<CrlImpl> result = CrlImpl::Create(crl);
+  if (!result.ok()) {
+    return result.status();
+  }
+  return std::make_unique<CrlImpl>(std::move(*result));
 }
 
 StaticCrlProvider::StaticCrlProvider(
-    const absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls)
+    const absl::flat_hash_map<std::string, std::shared_ptr<Crl>>& crls)
     : crls_(crls) {}
 
 absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::FromVector(
@@ -91,7 +115,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::FromVector(
     std::unique_ptr<Crl> crl = std::move(*result);
     crl_map[crl->Issuer()] = std::move(crl);
   }
-  StaticCrlProvider provider = StaticCrlProvider(std::move(crl_map));
+  StaticCrlProvider provider = StaticCrlProvider(crl_map);
   return std::make_shared<StaticCrlProvider>(std::move(provider));
 }
 

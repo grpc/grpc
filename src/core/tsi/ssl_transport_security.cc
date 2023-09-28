@@ -979,6 +979,10 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
           SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_crl_provider_index));
 
   char* buf = X509_NAME_oneline(X509_get_issuer_name(x), nullptr, 0);
+  if (buf == nullptr) {
+    gpr_log(GPR_ERROR, "Certificate has null issuer, cannot do CRL lookup");
+    return 0;
+  }
   grpc_core::experimental::CertificateInfoImpl cert_impl =
       grpc_core::experimental::CertificateInfoImpl(buf);
   std::shared_ptr<grpc_core::experimental::Crl> internal_crl =
@@ -2342,7 +2346,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
       if (options->crl_provider != nullptr) {
-        gpr_log(GPR_INFO, "enabling servr CRL checking using provider");
         SSL_CTX_set_ex_data(impl->ssl_contexts[i],
                             g_ssl_ctx_ex_crl_provider_index,
                             options->crl_provider.get());
@@ -2355,8 +2358,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
             param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
       } else if (options->crl_directory != nullptr &&
                  strcmp(options->crl_directory, "") != 0) {
-        gpr_log(GPR_INFO, "enabling server CRL checking with path %s",
-                options->crl_directory);
         X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
         X509_STORE_set_verify_cb(cert_store, verify_cb);
         if (!X509_STORE_load_locations(cert_store, nullptr,
@@ -2366,7 +2367,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
           X509_VERIFY_PARAM_set_flags(
               param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-          gpr_log(GPR_INFO, "enabled server CRL checking.");
         }
       }
 #endif

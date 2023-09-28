@@ -60,21 +60,22 @@ class CrlProvider {
  public:
   virtual ~CrlProvider() = default;
   // Get the CRL associated with a certificate. Read-only.
-  virtual std::shared_ptr<Crl> GetCrl(const CertificateInfo& cert) = 0;
+  virtual std::shared_ptr<Crl> GetCrl(
+      const CertificateInfo& certificate_info) = 0;
 };
 
 class StaticCrlProvider : public CrlProvider {
  public:
+  std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
   // Each element of the input vector is expected to be the raw contents of a
   // CRL file.
-  std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
   static absl::StatusOr<std::shared_ptr<CrlProvider>> FromVector(
       const std::vector<std::string> crls);
 
  private:
   explicit StaticCrlProvider(
-      const absl::flat_hash_map<std::string, std::shared_ptr<Crl>>);
-  absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls_;
+      const absl::flat_hash_map<std::string, std::shared_ptr<Crl>>& crls);
+  const absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls_;
 };
 
 }  // namespace experimental
