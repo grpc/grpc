@@ -37,7 +37,7 @@ namespace experimental {
 CertificateInfoImpl::CertificateInfoImpl(absl::string_view issuer)
     : issuer_(issuer) {}
 
-absl::string_view CertificateInfoImpl::GetIssuer() const { return issuer_; }
+absl::string_view CertificateInfoImpl::Issuer() const { return issuer_; }
 
 std::string IssuerFromCrl(X509_CRL* crl) {
   char* buf = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
@@ -52,7 +52,7 @@ CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
 
 X509_CRL* CrlImpl::crl() const { return crl_; }
 
-std::string CrlImpl::Issuer() { return issuer_; }
+absl::string_view CrlImpl::Issuer() { return issuer_; }
 
 absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
   if (crl_string.size() >= INT_MAX) {
@@ -97,7 +97,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::FromVector(
 
 std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
     const CertificateInfo& certificate_info) {
-  auto it = crls_.find(certificate_info.GetIssuer());
+  auto it = crls_.find(certificate_info.Issuer());
   if (it == crls_.end()) {
     return nullptr;
   }

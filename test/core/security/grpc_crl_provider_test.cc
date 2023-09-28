@@ -48,7 +48,7 @@ TEST(CrlProviderTest, CanParseCrl) {
   ASSERT_TRUE(result.ok());
   ASSERT_NE(*result, nullptr);
   auto* crl = static_cast<CrlImpl*>(result->get());
-  EXPECT_STREQ(crl->Issuer().c_str(), CRL_ISSUER);
+  EXPECT_STREQ(crl->Issuer().data(), CRL_ISSUER);
 }
 
 TEST(CrlProviderTest, InvalidFile) {
@@ -61,24 +61,28 @@ TEST(CrlProviderTest, InvalidFile) {
 
 TEST(CrlProviderTest, StaticCrlProviderLookup) {
   std::vector<std::string> crl_strings = {GetFileContents(CRL_PATH)};
-  experimental::StaticCrlProvider provider =
-      experimental::StaticCrlProvider(crl_strings);
+  absl::StatusOr<std::shared_ptr<experimental::CrlProvider>> result =
+      experimental::StaticCrlProvider::FromVector(crl_strings);
+  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
+      std::move(*result);
 
   experimental::CertificateInfoImpl cert =
       experimental::CertificateInfoImpl(CRL_ISSUER);
 
-  auto crl = provider.GetCrl(cert);
+  auto crl = provider->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
 }
 
 TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
   std::vector<std::string> crl_strings = {GetFileContents(CRL_PATH)};
-  experimental::StaticCrlProvider provider =
-      experimental::StaticCrlProvider(crl_strings);
+  absl::StatusOr<std::shared_ptr<experimental::CrlProvider>> result =
+      experimental::StaticCrlProvider::FromVector(crl_strings);
+  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
+      std::move(*result);
 
   experimental::CertificateInfoImpl bad_cert =
       experimental::CertificateInfoImpl("BAD CERT");
-  auto crl = provider.GetCrl(bad_cert);
+  auto crl = provider->GetCrl(bad_cert);
   ASSERT_EQ(crl, nullptr);
 }
 

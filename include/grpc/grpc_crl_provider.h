@@ -33,23 +33,20 @@
 namespace grpc_core {
 namespace experimental {
 
-// Opaque representation of a CRL
+// Opaque representation of a CRL.
 class Crl {
  public:
   static absl::StatusOr<std::unique_ptr<Crl>> Parse(
       absl::string_view crl_string);
   virtual ~Crl() = default;
-  virtual std::string Issuer() = 0;
-
- protected:
-  Crl() = default;
+  virtual absl::string_view Issuer() = 0;
 };
 
 // Information about a certificate to be used to fetch its associated CRL.
 class CertificateInfo {
  public:
   virtual ~CertificateInfo() = default;
-  virtual absl::string_view GetIssuer() const = 0;
+  virtual absl::string_view Issuer() const = 0;
 };
 
 // The base class for CRL Provider implementations.
@@ -68,7 +65,8 @@ class CrlProvider {
 
 class StaticCrlProvider : public CrlProvider {
  public:
-  // input strings expected to be the raw contents of a CRL file
+  // Each element of the input vector is expected to be the raw contents of a
+  // CRL file.
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
   static absl::StatusOr<std::shared_ptr<CrlProvider>> FromVector(
       const std::vector<std::string> crls);

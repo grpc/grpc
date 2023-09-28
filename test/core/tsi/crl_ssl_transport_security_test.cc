@@ -449,6 +449,8 @@ std::string TestNameSuffix(
   return "TLS_1_3";
 }
 
+// TODO(gtcooke94) Add nullptr issuer test cases
+
 INSTANTIATE_TEST_SUITE_P(TLSVersionsTest, CrlSslTransportSecurityTest,
                          testing::Values(tsi_tls_version::TSI_TLS1_2,
                                          tsi_tls_version::TSI_TLS1_3),
