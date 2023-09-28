@@ -3180,6 +3180,7 @@ grpc_cc_library(
         "uri_parser",
         "//src/core:channel_args",
         "//src/core:closure",
+        "//src/core:common_channel_args",
         "//src/core:error",
         "//src/core:grpc_service_config",
         "//src/core:grpc_sockaddr",

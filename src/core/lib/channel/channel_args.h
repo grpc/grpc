@@ -237,7 +237,15 @@ struct ChannelArgNameTraits<grpc_event_engine::experimental::EventEngine> {
     return GRPC_INTERNAL_ARG_EVENT_ENGINE;
   }
 };
+
 class ChannelArgs {
+ private:
+  enum class KeyBinBits {
+    kExcludedFromSubchannels = 0,
+    kCount  // Must be last
+  };
+  static constexpr size_t kBins = 1 << static_cast<size_t>(KeyBinBits::kCount);
+
  public:
   class Pointer {
    public:
@@ -282,46 +290,48 @@ class ChannelArgs {
     const grpc_arg_pointer_vtable* vtable_;
   };
 
-  class Value {
+  class KeyOptions {
    public:
-    explicit Value(int n) : rep_(reinterpret_cast<void*>(n), &int_vtable_) {}
-    explicit Value(std::string s)
-        : rep_(RefCountedString::Make(s).release(), &string_vtable_) {}
-    explicit Value(Pointer p) : rep_(std::move(p)) {}
-
-    absl::optional<int> GetIfInt() const {
-      if (rep_.c_vtable() != &int_vtable_) return absl::nullopt;
-      return reinterpret_cast<intptr_t>(rep_.c_pointer());
-    }
-    RefCountedPtr<RefCountedString> GetIfString() const {
-      if (rep_.c_vtable() != &string_vtable_) return nullptr;
-      return static_cast<RefCountedString*>(rep_.c_pointer())->Ref();
-    }
-    const Pointer* GetIfPointer() const {
-      if (rep_.c_vtable() == &int_vtable_) return nullptr;
-      if (rep_.c_vtable() == &string_vtable_) return nullptr;
-      return &rep_;
-    }
-
-    std::string ToString() const;
-
-    grpc_arg MakeCArg(const char* name) const;
-
-    bool operator<(const Value& rhs) const { return rep_ < rhs.rep_; }
-    bool operator==(const Value& rhs) const { return rep_ == rhs.rep_; }
-    bool operator!=(const Value& rhs) const { return !this->operator==(rhs); }
-    bool operator==(absl::string_view rhs) const {
-      auto str = GetIfString();
-      if (str == nullptr) return false;
-      return str->as_string_view() == rhs;
+    KeyOptions WithParseStringToInt(
+        absl::AnyInvocable<absl::optional<int>(absl::string_view) const>
+            parse_string_to_int) {
+      auto r = std::move(*this);
+      r.parse_string_to_int_ = std::move(parse_string_to_int);
+      return r;
     }
 
    private:
-    static const grpc_arg_pointer_vtable int_vtable_;
-    static const grpc_arg_pointer_vtable string_vtable_;
-
-    Pointer rep_;
+    absl::optional<
+        absl::AnyInvocable<absl::optional<int>(absl::string_view) const>>
+        parse_string_to_int_;
   };
+
+  template <typename T>
+  class BasicKey {
+   public:
+    static BasicKey Register(absl::string_view name, KeyOptions options);
+    static absl::optional<BasicKey> LookupRegistered(absl::string_view name);
+
+    absl::string_view name() const;
+
+    bool operator==(BasicKey rhs) const { return key_ == rhs.key_; }
+    bool operator<(BasicKey rhs) const { return key_ < rhs.key_; }
+    bool operator>(BasicKey rhs) const { return key_ > rhs.key_; }
+    bool operator!=(BasicKey rhs) const { return !(*this == rhs); }
+
+   private:
+    friend class ChannelArgs;
+
+    explicit BasicKey(uint32_t key) : key_(key) {}
+
+    uint32_t bin() const { return key_ & (kBins - 1); }
+
+    uint32_t key_;
+  };
+
+  using IntKey = BasicKey<int>;
+  using StringKey = BasicKey<std::string>;
+  using PointerKey = BasicKey<Pointer>;
 
   struct ChannelArgsDeleter {
     void operator()(const grpc_channel_args* p) const;
@@ -352,29 +362,25 @@ class ChannelArgs {
   GRPC_MUST_USE_RESULT ChannelArgs
   FuzzingReferenceUnionWith(ChannelArgs other) const;
 
-  const Value* Get(absl::string_view name) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                       Pointer value) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name, int value) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
+  GRPC_MUST_USE_RESULT ChannelArgs Set(PointerKey name, Pointer value) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(IntKey name, int value) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(StringKey name,
                                        absl::string_view value) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                       std::string value) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                       const char* value) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(grpc_arg arg) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(StringKey name, std::string value) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(StringKey name, const char* value) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(grpc_arg arg,
+                                       bool override = true) const;
   template <typename T>
   GRPC_MUST_USE_RESULT absl::enable_if_t<
       std::is_same<const grpc_arg_pointer_vtable*,
                    decltype(ChannelArgTypeTraits<T>::VTable())>::value,
       ChannelArgs>
-  Set(absl::string_view name, T* value) const {
+  Set(PointerKey name, T* value) const {
     return Set(name, Pointer(ChannelArgTypeTraits<T>::TakeUnownedPointer(value),
                              ChannelArgTypeTraits<T>::VTable()));
   }
   template <typename T>
-  GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
-                                RefCountedPtr<T> value) const
+  GRPC_MUST_USE_RESULT auto Set(PointerKey name, RefCountedPtr<T> value) const
       -> absl::enable_if_t<
           std::is_same<const grpc_arg_pointer_vtable*,
                        decltype(ChannelArgTypeTraits<
@@ -390,7 +396,7 @@ class ChannelArgs {
           const grpc_arg_pointer_vtable*,
           decltype(ChannelArgTypeTraits<std::shared_ptr<T>>::VTable())>::value,
       ChannelArgs>
-  Set(absl::string_view name, std::shared_ptr<T> value) const {
+  Set(PointerKey name, std::shared_ptr<T> value) const {
     auto* store_value = new std::shared_ptr<T>(value);
     return Set(
         name,
@@ -398,36 +404,34 @@ class ChannelArgs {
                     store_value),
                 ChannelArgTypeTraits<std::shared_ptr<T>>::VTable()));
   }
-  template <typename T>
-  GRPC_MUST_USE_RESULT ChannelArgs SetIfUnset(absl::string_view name,
-                                              T value) const {
+  template <typename Key, typename T>
+  GRPC_MUST_USE_RESULT ChannelArgs SetIfUnset(Key name, T value) const {
     if (Contains(name)) return *this;
     return Set(name, std::move(value));
   }
-  GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
-  bool Contains(absl::string_view name) const;
-
-  GRPC_MUST_USE_RESULT ChannelArgs
-  RemoveAllKeysWithPrefix(absl::string_view prefix) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Remove(IntKey name) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Remove(StringKey name) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Remove(PointerKey name) const;
+  bool Contains(IntKey name) const;
+  bool Contains(StringKey name) const;
+  bool Contains(PointerKey name) const;
 
   template <typename T>
   bool ContainsObject() const {
-    return Get(ChannelArgNameTraits<T>::ChannelArgName()) != nullptr;
+    return Contains(ChannelArgNameTraits<T>::ChannelArgName());
   }
 
-  absl::optional<int> GetInt(absl::string_view name) const;
-  absl::optional<absl::string_view> GetString(absl::string_view name) const;
-  absl::optional<std::string> GetOwnedString(absl::string_view name) const;
-  void* GetVoidPointer(absl::string_view name) const;
+  absl::optional<int> GetInt(IntKey name) const;
+  absl::optional<absl::string_view> GetString(StringKey name) const;
+  absl::optional<std::string> GetOwnedString(StringKey name) const;
+  void* GetVoidPointer(PointerKey name) const;
   template <typename T>
-  typename GetObjectImpl<T>::StoredType GetPointer(
-      absl::string_view name) const {
+  typename GetObjectImpl<T>::StoredType GetPointer(PointerKey name) const {
     return static_cast<typename GetObjectImpl<T>::StoredType>(
         GetVoidPointer(name));
   }
-  absl::optional<Duration> GetDurationFromIntMillis(
-      absl::string_view name) const;
-  absl::optional<bool> GetBool(absl::string_view name) const;
+  absl::optional<Duration> GetDurationFromIntMillis(IntKey name) const;
+  absl::optional<bool> GetBool(IntKey name) const;
 
   // Object based get/set.
   // Deal with the common case that we set a pointer to an object under
@@ -435,34 +439,18 @@ class ChannelArgs {
   // Expects ChannelArgTypeTraits to exist for T, and T to expose:
   //   static string_view ChannelArgName();
   template <typename T>
-  GRPC_MUST_USE_RESULT ChannelArgs SetObject(T* p) const {
-    return Set(T::ChannelArgName(), p);
-  }
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(T* p) const;
   template <typename T>
-  GRPC_MUST_USE_RESULT ChannelArgs SetObject(RefCountedPtr<T> p) const {
-    return Set(T::ChannelArgName(), std::move(p));
-  }
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(RefCountedPtr<T> p) const;
   template <typename T>
-  GRPC_MUST_USE_RESULT ChannelArgs SetObject(std::shared_ptr<T> p) const {
-    return Set(ChannelArgNameTraits<T>::ChannelArgName(), std::move(p));
-  }
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(std::shared_ptr<T> p) const;
   template <typename T>
-  typename GetObjectImpl<T>::Result GetObject() const {
-    return GetObjectImpl<T>::Get(
-        GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName()));
-  }
+  typename GetObjectImpl<T>::Result GetObject() const;
   template <typename T>
-  typename GetObjectImpl<T>::ReffedResult GetObjectRef() const {
-    return GetObjectImpl<T>::GetReffed(
-        GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName()));
-  }
+  typename GetObjectImpl<T>::ReffedResult GetObjectRef() const;
   template <typename T>
   typename GetObjectImpl<T>::ReffedResult GetObjectRef(
-      const DebugLocation& location, const char* reason) const {
-    return GetObjectImpl<T>::GetReffed(
-        GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName()), location,
-        reason);
-  }
+      const DebugLocation& location, const char* reason) const;
 
   bool operator!=(const ChannelArgs& other) const;
   bool operator<(const ChannelArgs& other) const;
@@ -474,13 +462,64 @@ class ChannelArgs {
   std::string ToString() const;
 
  private:
-  explicit ChannelArgs(AVL<RefCountedStringValue, Value> args);
+  struct Bin {
+    AVL<IntKey, int> ints;
+    AVL<StringKey, RefCountedStringValue> strings;
+    AVL<PointerKey, Pointer> pointers;
 
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                       Value value) const;
+    bool operator<(const Bin& other) const;
+    bool operator==(const Bin& other) const;
+    bool operator!=(const Bin& other) const { return !operator==(other); }
+  };
+  using Bins = std::array<Bin, kBins>;
 
-  AVL<RefCountedStringValue, Value> args_;
+  explicit ChannelArgs(Bins bins);
+
+  Bins bins_;
 };
+
+namespace channel_args_detail {
+template <typename T>
+struct PointerKeyAutoRegistrar {
+  static const ChannelArgs::PointerKey kKey;
+};
+template <typename T>
+const ChannelArgs::PointerKey PointerKeyAutoRegistrar<T>::kKey =
+    ChannelArgs::PointerKey::Register(ChannelArgNameTraits<T>::ChannelArgName(),
+                                      ChannelArgs::KeyOptions{});
+}  // namespace channel_args_detail
+
+template <typename T>
+ChannelArgs ChannelArgs::SetObject(T* p) const {
+  return Set(channel_args_detail::PointerKeyAutoRegistrar<T>::kKey, p);
+}
+template <typename T>
+ChannelArgs ChannelArgs::SetObject(RefCountedPtr<T> p) const {
+  return Set(channel_args_detail::PointerKeyAutoRegistrar<T>::kKey,
+             std::move(p));
+}
+template <typename T>
+ChannelArgs ChannelArgs::SetObject(std::shared_ptr<T> p) const {
+  return Set(channel_args_detail::PointerKeyAutoRegistrar<T>::kKey,
+             std::move(p));
+}
+template <typename T>
+typename GetObjectImpl<T>::Result ChannelArgs::GetObject() const {
+  return GetObjectImpl<T>::Get(
+      GetPointer<T>(channel_args_detail::PointerKeyAutoRegistrar<T>::kKey));
+}
+template <typename T>
+typename GetObjectImpl<T>::ReffedResult ChannelArgs::GetObjectRef() const {
+  return GetObjectImpl<T>::GetReffed(
+      GetPointer<T>(channel_args_detail::PointerKeyAutoRegistrar<T>::kKey));
+}
+template <typename T>
+typename GetObjectImpl<T>::ReffedResult ChannelArgs::GetObjectRef(
+    const DebugLocation& location, const char* reason) const {
+  return GetObjectImpl<T>::GetReffed(
+      GetPointer<T>(channel_args_detail::PointerKeyAutoRegistrar<T>::kKey),
+      location, reason);
+}
 
 std::ostream& operator<<(std::ostream& out, const ChannelArgs& args);
 
