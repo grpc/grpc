@@ -431,7 +431,7 @@ TEST_P(EdsTest, MultipleAddressesPerEndpoint) {
   // Initially, backend 0 is offline, so the first endpoint should
   // connect to backend 1 instead.  Traffic should round-robin across
   // backends 1 and 2.
-  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+  WaitForAllBackends(DEBUG_LOCATION, 1);  // Wait for backends 1 and 2.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * 2);
   EXPECT_EQ(kNumRpcsPerAddress,
             backends_[1]->backend_service()->request_count());
