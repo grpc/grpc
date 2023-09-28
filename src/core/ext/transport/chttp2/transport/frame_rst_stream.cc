@@ -125,6 +125,12 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
           grpc_core::StatusIntProperty::kHttp2Error,
           static_cast<intptr_t>(reason));
     }
+    if (grpc_core::IsPingOnRstStreamEnabled() && !t->is_client &&
+        absl::Bernoulli(t->bitgen, t->ping_on_rst_stream_percent / 100.0)) {
+      ++t->num_pending_induced_frames;
+      t->ping_callbacks.RequestPing();
+      grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);
+    }
     grpc_chttp2_mark_stream_closed(t, s, true, true, error);
   }
 

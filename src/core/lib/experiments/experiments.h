@@ -103,6 +103,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+inline bool IsPingOnRstStreamEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -151,6 +152,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+inline bool IsPingOnRstStreamEnabled() { return false; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -199,6 +201,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+inline bool IsPingOnRstStreamEnabled() { return false; }
 #endif
 
 #else
@@ -232,6 +235,7 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
+  kExperimentIdPingOnRstStream,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -349,6 +353,10 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
+inline bool IsPingOnRstStreamEnabled() {
+  return IsExperimentEnabled(kExperimentIdPingOnRstStream);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
