@@ -33,7 +33,7 @@ echo
 # Try extracting the archive with artifacts (and list the files)
 mkdir -p input_artifacts
 pushd input_artifacts >/dev/null
-echo "Artifacts that were built by the build artifact task:"
+echo "Artifacts that were built by the build artifact/package task:"
 echo "--------------"
 # TODO(jtattermusch): strip top level artifacts/ directory from the archive?
 tar -xopvf ../${ARTIFACTS_ARCHIVE}
