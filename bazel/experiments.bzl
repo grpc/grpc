@@ -21,9 +21,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "bad_client_test": [
-                "block_excessive_requests_before_settings_ack",
-            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -94,9 +91,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "bad_client_test": [
-                "block_excessive_requests_before_settings_ack",
-            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -167,9 +161,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "bad_client_test": [
-                "block_excessive_requests_before_settings_ack",
-            ],
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
