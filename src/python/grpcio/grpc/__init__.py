@@ -21,6 +21,8 @@ import sys
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
+from grpc._cython.cygrpc import AbortError
+from grpc._cython.cygrpc import BaseError
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
@@ -310,7 +312,7 @@ class Status(abc.ABC):
 #############################  gRPC Exceptions  ################################
 
 
-class RpcError(Exception):
+class RpcError(BaseError):
     """Raised by the gRPC library to indicate non-OK-status RPC termination."""
 
 
@@ -2249,6 +2251,8 @@ __all__ = (
     "ServiceRpcHandler",
     "Server",
     "ServerInterceptor",
+    "AbortError",
+    "BaseError",
     "unary_unary_rpc_method_handler",
     "unary_stream_rpc_method_handler",
     "stream_unary_rpc_method_handler",
