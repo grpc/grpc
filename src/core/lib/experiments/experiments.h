@@ -102,7 +102,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsWorkSerializerClearsTimeCacheEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -150,7 +151,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsWorkSerializerClearsTimeCacheEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -198,7 +200,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsWorkSerializerClearsTimeCacheEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #endif
 
 #else
