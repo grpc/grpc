@@ -65,7 +65,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
@@ -251,7 +251,7 @@ class FakeResolverResponseGeneratorWrapper {
       const grpc_core::ChannelArgs& per_address_args =
           grpc_core::ChannelArgs()) {
     grpc_core::Resolver::Result result;
-    result.addresses = grpc_core::EndpointAddressesList();
+    result.addresses = grpc_core::ServerAddressList();
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));
@@ -2792,7 +2792,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   }
 
  private:
-  static void SaveAddress(const grpc_core::EndpointAddresses& address) {
+  static void SaveAddress(const grpc_core::ServerAddress& address) {
     ClientLbAddressTest* self = current_test_instance_;
     grpc_core::MutexLock lock(&self->mu_);
     self->addresses_seen_.emplace_back(address.ToString());
@@ -2821,9 +2821,8 @@ TEST_F(ClientLbAddressTest, Basic) {
   // Make sure that the attributes wind up on the subchannels.
   std::vector<std::string> expected;
   for (const int port : GetServersPorts()) {
-    expected.emplace_back(
-        absl::StrCat("addrs=[", ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
-                     "] args={test_key=test_value}"));
+    expected.emplace_back(absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:",
+                                       port, " args={test_key=test_value}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }
@@ -2866,7 +2865,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
 
  private:
   static void BackendMetricCallback(
-      const grpc_core::EndpointAddresses& address,
+      const grpc_core::ServerAddress& address,
       const grpc_core::BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
     int port = grpc_sockaddr_get_port(&address.address());

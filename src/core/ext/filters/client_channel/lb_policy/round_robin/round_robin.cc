@@ -51,7 +51,6 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -524,17 +523,17 @@ class RoundRobin : public LoadBalancingPolicy {
   class RoundRobinEndpointList : public EndpointList {
    public:
     RoundRobinEndpointList(RefCountedPtr<RoundRobin> round_robin,
-                           const EndpointAddressesList& endpoints,
+                           const ServerAddressList& addresses,
                            const ChannelArgs& args)
         : EndpointList(std::move(round_robin),
                        GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)
                            ? "RoundRobinEndpointList"
                            : nullptr) {
-      Init(endpoints, args,
+      Init(addresses, args,
            [&](RefCountedPtr<RoundRobinEndpointList> endpoint_list,
-               const EndpointAddresses& addresses, const ChannelArgs& args) {
+               const ServerAddress& address, const ChannelArgs& args) {
              return MakeOrphanable<RoundRobinEndpoint>(
-                 std::move(endpoint_list), addresses, args,
+                 std::move(endpoint_list), address, args,
                  policy<RoundRobin>()->work_serializer());
            });
     }
@@ -543,11 +542,10 @@ class RoundRobin : public LoadBalancingPolicy {
     class RoundRobinEndpoint : public Endpoint {
      public:
       RoundRobinEndpoint(RefCountedPtr<RoundRobinEndpointList> endpoint_list,
-                         const EndpointAddresses& addresses,
-                         const ChannelArgs& args,
+                         const ServerAddress& address, const ChannelArgs& args,
                          std::shared_ptr<WorkSerializer> work_serializer)
           : Endpoint(std::move(endpoint_list)) {
-        Init(addresses, args, std::move(work_serializer));
+        Init(address, args, std::move(work_serializer));
       }
 
      private:
@@ -687,10 +685,10 @@ void RoundRobin::ResetBackoffLocked() {
 }
 
 absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
-  EndpointAddressesList addresses;
+  ServerAddressList addresses;
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-      gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " endpoints",
+      gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
     addresses = std::move(*args.addresses);
@@ -714,6 +712,9 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
       args.args);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
+  // TODO(roth): As part of adding dualstack backend support, we need to
+  // also handle the case where the list of addresses for a given
+  // endpoint is empty.
   if (latest_pending_endpoint_list_->size() == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace) &&
         endpoint_list_ != nullptr) {
@@ -837,6 +838,7 @@ void RoundRobin::RoundRobinEndpointList::
   }
   // Only set connectivity state if this is the current child list.
   if (round_robin->endpoint_list_.get() != this) return;
+  // FIXME: scan children each time instead of keeping counters?
   // First matching rule wins:
   // 1) ANY child is READY => policy is READY.
   // 2) ANY child is CONNECTING => policy is CONNECTING.
