@@ -27,10 +27,10 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <tuple>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
@@ -50,6 +50,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -176,16 +177,34 @@ class GracefulShutdownTest : public ::testing::Test {
 
   // Waits for \a bytes to show up in read_bytes_
   void WaitForReadBytes(absl::string_view bytes) {
-    std::atomic<bool> done{false};
     auto start_time = absl::Now();
-    {
-      MutexLock lock(&mu_);
-      while (!absl::StrContains(read_bytes_, bytes)) {
-        ASSERT_LT(absl::Now() - start_time, absl::Seconds(60));
-        read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
+    MutexLock lock(&mu_);
+    while (true) {
+      auto where = read_bytes_.find(std::string(bytes));
+      if (where != std::string::npos) {
+        read_bytes_ = read_bytes_.substr(where + bytes.size());
+        break;
       }
+      ASSERT_LT(absl::Now() - start_time, absl::Seconds(60));
+      read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
     }
-    done = true;
+  }
+
+  std::string WaitForNBytes(size_t bytes) {
+    auto start_time = absl::Now();
+    MutexLock lock(&mu_);
+    while (read_bytes_.size() < bytes) {
+      EXPECT_LT(absl::Now() - start_time, absl::Seconds(60));
+      read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
+    }
+    std::string result = read_bytes_.substr(0, bytes);
+    read_bytes_ = read_bytes_.substr(bytes);
+    return result;
+  }
+
+  void WaitForClose() {
+    ASSERT_TRUE(read_end_notification_.WaitForNotificationWithTimeout(
+        absl::Minutes(1)));
   }
 
   void WaitForGoaway(uint32_t last_stream_id, uint32_t error_code = 0,
@@ -201,9 +220,20 @@ class GracefulShutdownTest : public ::testing::Test {
     WaitForReadBytes(expected_bytes);
   }
 
-  void WaitForPing(uint64_t opaque_data) {
-    grpc_slice ping_slice = grpc_chttp2_ping_create(0, opaque_data);
-    WaitForReadBytes(StringViewFromSlice(ping_slice));
+  uint64_t WaitForPing() {
+    grpc_slice ping_slice = grpc_chttp2_ping_create(0, 0);
+    auto whole_ping = StringViewFromSlice(ping_slice);
+    GPR_ASSERT(whole_ping.size() == 9 + 8);
+    WaitForReadBytes(whole_ping.substr(0, 9));
+    std::string ping = WaitForNBytes(8);
+    return (static_cast<uint64_t>(static_cast<uint8_t>(ping[0])) << 56) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(ping[1])) << 48) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(ping[2])) << 40) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(ping[3])) << 32) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(ping[4])) << 24) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(ping[5])) << 16) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(ping[6])) << 8) |
+           (static_cast<uint64_t>(static_cast<uint8_t>(ping[7])));
   }
 
   void SendPingAck(uint64_t opaque_data) {
@@ -237,7 +267,9 @@ class GracefulShutdownTest : public ::testing::Test {
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    GPR_ASSERT(error.ok());
+    if (!error.ok()) {
+      Crash(absl::StrCat("Write failed: ", error.ToString()));
+    }
     Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }
@@ -263,9 +295,9 @@ TEST_F(GracefulShutdownTest, GracefulGoaway) {
   // Wait for first goaway
   WaitForGoaway((1u << 31) - 1);
   // Wait for the ping
-  WaitForPing(0);
+  uint64_t ping_id = WaitForPing();
   // Reply to the ping
-  SendPingAck(0);
+  SendPingAck(ping_id);
   // Wait for final goaway
   WaitForGoaway(0);
   // The shutdown should successfully complete.
@@ -288,7 +320,7 @@ TEST_F(GracefulShutdownTest, RequestStartedBeforeFinalGoaway) {
   // Wait for first goaway
   WaitForGoaway((1u << 31) - 1);
   // Wait for the ping
-  WaitForPing(0);
+  uint64_t ping_id = WaitForPing();
   // Start a request
   constexpr char kRequestFrame[] =
       "\x00\x00\xbe\x01\x05\x00\x00\x00\x01"
@@ -304,7 +336,7 @@ TEST_F(GracefulShutdownTest, RequestStartedBeforeFinalGoaway) {
       "\x10\x0auser-agent\x17grpc-c/0.12.0.0 (linux)";
   Write(absl::string_view(kRequestFrame, sizeof(kRequestFrame) - 1));
   // Reply to the ping
-  SendPingAck(0);
+  SendPingAck(ping_id);
   // Wait for final goaway with last stream ID 1 to show that the HTTP2
   // transport accepted the stream.
   WaitForGoaway(1);
@@ -352,9 +384,9 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
   // Wait for first goaway
   WaitForGoaway((1u << 31) - 1);
   // Wait for the ping
-  WaitForPing(0);
+  uint64_t ping_id = WaitForPing();
   // Reply to the ping
-  SendPingAck(0);
+  SendPingAck(ping_id);
   // Wait for final goaway
   WaitForGoaway(1);
 
@@ -418,9 +450,9 @@ TEST_F(GracefulShutdownTest, UnresponsiveClient) {
   // Wait for first goaway
   WaitForGoaway((1u << 31) - 1);
   // Wait for the ping
-  WaitForPing(0);
+  std::ignore = WaitForPing();
   // Wait for final goaway without sending a ping ACK.
-  WaitForGoaway(0);
+  WaitForClose();
   EXPECT_GE(absl::Now() - initial_time,
             absl::Seconds(20) -
                 absl::Seconds(
