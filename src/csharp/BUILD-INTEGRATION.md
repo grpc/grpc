@@ -81,20 +81,29 @@ For more examples see the example project files in GitHub: https://github.com/gr
 
 ## Sharing `.proto` files between projects
 
-As an alternative to each project generating their own code from a set of `.proto` files, you can have a shared .NET project that generates the code once, and then other projects reference the shared project.
+Instead of each project generating their own code from a set of `.proto` files, you may have a shared .NET project that generates the code once, and then have other projects in the solution reference the shared project.
 
-Here are a couple of examples:
-- for *gRPC for .NET* see the [Liber example](https://github.com/grpc/grpc-dotnet/tree/master/examples#liber)
-- for *gRPC C#* (legacy library) see the [RouteGuide example](https://github.com/grpc/grpc/tree/v1.46.x/examples/csharp/RouteGuide)
+There are a couple of examples in GitHub:
+- The [Liber example](https://github.com/grpc/grpc-dotnet/tree/master/examples#liber)
+  demonstrates how common protocol buffers messages can be compiled once and used in other projects:
+  - The *Common* project generates messages contained in `common.proto`
+  - The *Client* and *Server* projects reference the *Common* project.
+  - They do not need to recompile `common.proto` as those .NET types are already in
+    the *Common* project.
+  - They do however each generate their own gRPC client or server code as both have a 
+    `<Protobuf>` reference for `greet.proto`
 
-Looking at the *Libre* example, it has three projects:
-- *Common.csproj* uses Grpc.Tools to generate messages contained in `common.proto`.
-- *Client.csproj* uses Grpc.Tools to generate the gRPC client for `greet.proto`. There is no `<Protobuf>` reference for `common.proto` because we don't want its messages generated in this project. Instead the .NET types for its messages are referenced from the common project.
-- *Server.csproj* uses Grpc.Tools to generate the gRPC service for `greet.proto`. It also references the common project.
+- The [RouteGuide example](https://github.com/grpc/grpc/tree/v1.46.x/examples/csharp/RouteGuide)
+  demonstrates how the gRPC client and server code can be generated once and used in other
+  projects:
+  - **Note:** this example uses the *legacy c-core C#* packages, but the principles are the same
+    for *gRPC for .NET* projects.
+  - The *RouteGuide* project has a `<Protobuf>` reference to `route_guide.proto` and 
+    generates both the gRPC client and server code.
+  - The *RouteGuideClient* and *RouteGuideServer* projects reference the *RouteGuide* project.
+  - They do not need any `<Protobuf>` references since the code has already been
+    generated in the *RouteGuide* project.
 
-Another approach could be to have all the `.proto` files handled in the common project,
-generating the gRPC client and server code in that project, and not having any `.proto` files
-in the client and server projects. This is the approach taken by the *RouteGuide* example.
 
 # Reference
 
@@ -269,7 +278,7 @@ Quick links to the examples below:
 * [Visual Studio: setting per-file `.proto` file options](#visualstudio)
 * [Bypassing Grpc.Tools to run the protocol buffers compiler explicitly](#compiler)
 * [Using Grpc.Tools with unsupported architectures](#unsupported-arch)
-* [Referencing `.proto` files that are in NuGet packages](#proto-only-nuget)
+* [Including `.proto` files in NuGet packages](#proto-only-nuget)
 
 ---
 ## <a name="ProtoRoot"></a>ProtoRoot - Common root for one or more `.proto` files
@@ -583,15 +592,128 @@ dotnet build
 
 ---
 
-## <a name="proto-only-nuget"></a>Referencing `.proto` files that are in NuGet packages
+## <a name="proto-only-nuget"></a>Including `.proto` files in NuGet packages
 
-There might be occassions when you are given a NuGet package that contains `.proto` and you want to 
-generate the code from these files, or you wish to package your own `.proto` files in NuGet package.
+There might be occassions when you are given a NuGet package that contains
+`.proto` files that you wish to use in your own project, or you may wish to 
+package your own `.proto` files in a NuGet package for others to use.
 
-Note: This is not the same as a NuGet package providing a library built from the code already
-generated from the `.proto` files. It is just providing the `.proto` files themselves.
+There is no automatic way for `Grpc.Tools` to locate and include `.proto`
+files from other NuGet packages. Below is a suggested convention to use
+when creating NuGet packages that contain `.proto` files.
 
+__Note:__ This is not the same as a NuGet package providing a library built from
+the code generated from the `.proto` files. Below just describes how to provide
+the uncompiled `.proto` files in a NuGet package.
 
+### Creating the NuGet package
+
+The NuGet package should:
+- provide the `.proto` files in a `content\protos` subdirectory in the package
+- provide a `packagename.targets` file in the `build` subdirectory in the package that:
+  - defines an MSBuild property giving the path to the `.proto` files in the
+    installed package
+  - conditionally updates the `Protobuf_StandardImportsPath` property with the
+    above path so that the files can be found by the protocol buffers compiler
+    - it should be made optional forcing users to *opt in* to including
+      the `.proto` files
+
+For example, for the package `My.Example.Protos`:
+
+My.Example.Protos.nuspec:
+```XML
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>My.Example.Protos</id>
+    <version>1.0.0</version>
+    <title>Example package containing proto files</title>
+    <authors>author</authors>
+    <owners>owner</owners>
+    <licenseUrl>license url</licenseUrl>
+    <projectUrl>project url</projectUrl>
+    <description>See project site for more info.</description>
+    <summary>Example package containing proto files.</summary>
+    <releaseNotes>Example package containing proto files</releaseNotes>
+    <copyright>Copyright 2023, My Company.</copyright>
+  </metadata>
+  
+  <files>
+    <!-- copy the My.Example.Protos.targets file for MSBuild integration -->
+    <file src="build\**" target="build" />
+    <!-- copy the .proto files into the package -->
+    <file src="proto\**" target="content\protos" />
+  </files>
+</package>
+```
+
+My.Example.Protos.targets:
+```XML
+<?xml version="1.0"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- This targets file allows .proto files bundled in package, 
+  to be included in Grpc.Tools compilation. -->
+  
+  <PropertyGroup>
+    <!-- Define a property containing the path of the proto files.
+         Content from the nupkg. -->
+    <MyExampleProtos_ProtosPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../content/protos) )</MyExampleProtos_ProtosPath>
+  </PropertyGroup>
+
+  <!-- Run immediately before the Protobuf_BeforeCompile extension point. -->
+  <!-- Only include protos if project has set <IncludeMyExampleProtosProtos> 
+       property to true. -->
+  <Target Name="MyExampleProtos_BeforeCompile"
+          BeforeTargets="Protobuf_BeforeCompile"
+          Condition=" '$(IncludeMyExampleProtosProtos)' == 'true' ">
+    <PropertyGroup>
+      <!-- Add proto files by including path in Protobuf_StandardImportsPath.
+           This path is passed to protoc via the -I option -->
+      <Protobuf_StandardImportsPath>$(Protobuf_StandardImportsPath);$(MyPackage_ProtosPath)</Protobuf_StandardImportsPath>
+    </PropertyGroup>
+
+    <!-- These message are unnecessary but included here for diagnostics -->
+    <Message Text="Included proto files at $(MyExampleProtos_ProtosPath) in import path." Importance="high" />
+    <Message Text="Updated proto imports path: $(Protobuf_StandardImportsPath)" Importance="high" />
+  </Target>
+</Project>
+```
+
+### Using the NuGet package
+
+The project needs to add the package containing the `.proto` files:
+```XML
+<PackageReference Include="My.Example.Protos" Version="1.0.0" />
+```
+
+If the project only wants to compile the `.proto` files included in the package
+then all it needs to do is add the `<Protobuf>` items using the property defined
+in the package for the path to the files. For example, if the NuGet package contained
+the file `greet.proto`, then the project should add:
+
+```XML
+<Protobuf Include="$(MyExampleProtos_ProtosPath)/greet.proto" />
+```
+
+However if the provided `.proto` files are to be *imported* by the projects own `.proto`
+files then the `Protobuf_StandardImportsPath` needs updated to add the directory
+containing the package's files.  This is done by setting to `true` the property
+used in the package. For example, if the project has the local `.proto` file
+`my_services.proto` and it imported a file from the package `common_message.proto`,
+then:
+
+```XML
+<PropertyGroup>
+  <!-- Update the Protobuf_StandardImportsPath -->
+  <IncludeMyExampleProtosProtos>true</IncludeMyExampleProtosProtos>
+</PropertyGroup>
+
+<ItemGroup>
+  <!-- my_services.proto imports common_message.proto from the package
+   My.Example.Protos -->
+  <Protobuf Include="my_services.proto" />
+</ItemGroup>
+```
 
 ---
 
