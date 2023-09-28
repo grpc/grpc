@@ -216,3 +216,9 @@
   expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: block_excessive_requests_before_settings_ack
+  description:
+    If set, block excessive requests before receiving SETTINGS ACK.
+  expiry: 2024/01/01
+  owner: ctiller@google.com
+  test_tags: [bad_client_test]

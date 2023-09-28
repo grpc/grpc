@@ -102,6 +102,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -149,6 +150,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return false; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -196,6 +198,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return false; }
 #endif
 
 #else
@@ -228,6 +231,7 @@ enum ExperimentIds {
   kExperimentIdCombinerOffloadToEventEngine,
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
+  kExperimentIdBlockExcessiveRequestsBeforeSettingsAck,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -341,6 +345,11 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
+inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() {
+  return IsExperimentEnabled(
+      kExperimentIdBlockExcessiveRequestsBeforeSettingsAck);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

@@ -338,6 +338,9 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// last new stream id
   uint32_t last_new_stream_id = 0;
 
+  /// Number of incoming streams allowed before a settings ACK is required
+  uint32_t num_incoming_streams_before_settings_ack = 0;
+
   /// ping queues for various ping insertion points
   grpc_chttp2_ping_queue ping_queue = grpc_chttp2_ping_queue();
   grpc_core::Chttp2PingAbusePolicy ping_abuse_policy;

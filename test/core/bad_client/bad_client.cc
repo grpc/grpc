@@ -205,12 +205,16 @@ void grpc_run_bad_client_test(
   grpc_completion_queue* shutdown_cq;
   grpc_completion_queue* client_cq;
 
+  const auto server_args = grpc_core::ChannelArgs().Set(
+      GRPC_ARG_MAX_CONCURRENT_STREAMS,
+      (flags & GRPC_BAD_CLIENT_MAX_CONCURRENT_REQUESTS_OF_ONE) ? 1 : 10000);
+
   // Init grpc
   grpc_init();
 
   sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
   // Create server, completion events
-  a.server = grpc_server_create(nullptr, nullptr);
+  a.server = grpc_server_create(server_args.ToC().get(), nullptr);
   a.cq = grpc_completion_queue_create_for_next(nullptr);
   client_cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(a.server, a.cq, nullptr);
@@ -219,11 +223,11 @@ void grpc_run_bad_client_test(
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  transport =
-      grpc_create_chttp2_transport(grpc_core::CoreConfiguration::Get()
-                                       .channel_args_preconditioning()
-                                       .PreconditionChannelArgs(nullptr),
-                                   sfd.server, false);
+  transport = grpc_create_chttp2_transport(
+      grpc_core::CoreConfiguration::Get()
+          .channel_args_preconditioning()
+          .PreconditionChannelArgs(server_args.ToC().get()),
+      sfd.server, false);
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
