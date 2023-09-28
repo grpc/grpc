@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <iosfwd>
 #include <string>
 
@@ -51,7 +53,9 @@ class Chttp2PingRatePolicy {
   using RequestSendPingResult =
       absl::variant<SendGranted, TooManyRecentPings, TooSoon>;
 
-  RequestSendPingResult RequestSendPing(Duration next_allowed_ping_interval);
+  RequestSendPingResult RequestSendPing(Duration next_allowed_ping_interval,
+                                        size_t inflight_pings) const;
+  void SentPing();
   void ResetPingsBeforeDataRequired();
   void ReceivedDataFrame();
   std::string GetDebugString() const;
@@ -60,6 +64,7 @@ class Chttp2PingRatePolicy {
 
  private:
   const int max_pings_without_data_;
+  const int max_inflight_pings_;
   // No pings allowed before receiving a header or data frame.
   int pings_before_data_required_ = 0;
   Timestamp last_ping_sent_time_ = Timestamp::InfPast();

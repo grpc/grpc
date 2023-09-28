@@ -5678,6 +5678,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ping_callbacks",
+    srcs = [
+        "ext/transport/chttp2/transport/ping_callbacks.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/ping_callbacks.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/hash",
+        "absl/meta:type_traits",
+        "absl/random:bit_gen_ref",
+        "absl/random:distributions",
+    ],
+    deps = [
+        "time",
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "ping_rate_policy",
     srcs = [
         "ext/transport/chttp2/transport/ping_rate_policy.cc",
@@ -5692,6 +5715,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "experiments",
         "match",
         "time",
         "//:channel_arg_names",

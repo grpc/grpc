@@ -320,6 +320,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/parsing.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_abuse_policy.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/ping_callbacks.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/ping_callbacks.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_rate_policy.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_rate_policy.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_lists.cc )
