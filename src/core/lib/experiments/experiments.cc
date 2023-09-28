@@ -115,6 +115,9 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_multiping =
+    "Allow more than one ping to be in flight at a time by default.";
+const char* const additional_constraints_multiping = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
@@ -178,6 +181,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"multiping", description_multiping, additional_constraints_multiping,
+     false, true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
@@ -280,6 +285,9 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_multiping =
+    "Allow more than one ping to be in flight at a time by default.";
+const char* const additional_constraints_multiping = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
@@ -343,6 +351,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"multiping", description_multiping, additional_constraints_multiping,
+     false, true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
@@ -445,6 +455,9 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_multiping =
+    "Allow more than one ping to be in flight at a time by default.";
+const char* const additional_constraints_multiping = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
@@ -508,6 +521,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"multiping", description_multiping, additional_constraints_multiping,
+     false, true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},

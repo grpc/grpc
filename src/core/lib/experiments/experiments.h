@@ -88,6 +88,7 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 
@@ -123,6 +124,7 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 
@@ -158,6 +160,7 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 #endif
@@ -189,6 +192,7 @@ enum ExperimentIds {
   kExperimentIdRoundRobinDelegateToPickFirst,
   kExperimentIdWrrDelegateToPickFirst,
   kExperimentIdCombinerOffloadToEventEngine,
+  kExperimentIdMultiping,
   kExperimentIdRegisteredMethodLookupInTransport,
   kNumExperiments
 };
@@ -291,6 +295,10 @@ inline bool IsWrrDelegateToPickFirstEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() {
   return IsExperimentEnabled(kExperimentIdCombinerOffloadToEventEngine);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MULTIPING
+inline bool IsMultipingEnabled() {
+  return IsExperimentEnabled(kExperimentIdMultiping);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() {
