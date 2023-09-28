@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import datetime
 import logging
 from typing import Optional
 
@@ -125,4 +126,13 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             f":{test_server.rpc_port}"
         )
         kwargs.setdefault("generate_mesh_id", True)
-        return self._start_test_client(server_target=server_target, **kwargs)
+        # Waiting for an active channel takes less time in non-gamma
+        # test suites because they only start waiting after already waited for
+        # the TD backends to be created and report healthy.
+        # In GAMMA, these resources are created asynchronously by Kubernetes.
+        # To compensate for this, we double the timeout for GAMMA tests.
+        return self._start_test_client(
+            server_target,
+            wait_for_active_channel_timeout=datetime.timedelta(minutes=10),
+            **kwargs,
+        )
