@@ -51,6 +51,8 @@ COPY --from=0 /workdir/grpcurl /bin/grpcurl
 # protos is required for CLI RPC tools run against localhost of this container
 # image until this is fixed.
 COPY --from=0 /workdir/src/proto  /src/proto/
+
+# TODO: Replace with a premade pid 1 process such as tini.
 COPY tools/dockerfile/interoptest/grpc_interop_cxx_xds/xds_server_entrypoint.sh /
 
 ENTRYPOINT ["/xds_server_entrypoint.sh"]
