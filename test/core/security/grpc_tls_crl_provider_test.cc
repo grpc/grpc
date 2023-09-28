@@ -74,6 +74,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookup) {
 
   auto crl = provider->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
+  ASSERT_EQ(crl->Issuer(), CRL_ISSUER);
 }
 
 TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
