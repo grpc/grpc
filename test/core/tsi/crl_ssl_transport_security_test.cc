@@ -36,6 +36,8 @@
 #include "test/core/util/test_config.h"
 
 extern "C" {
+#include <utility>
+
 #include <openssl/crypto.h>
 #include <openssl/pem.h>
 }
@@ -100,7 +102,7 @@ class CrlSslTransportSecurityTest
           absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "ca.pem"));
       root_store_ = tsi_ssl_root_certs_store_create(root_cert_);
       crl_directory_ = crl_directory;
-      crl_provider_ = crl_provider;
+      crl_provider_ = std::move(crl_provider);
       expect_server_success_ = expect_server_success;
       expect_client_success_1_2_ = expect_client_success_1_2;
       expect_client_success_1_3_ = expect_client_success_1_3;
