@@ -30,6 +30,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/lib/resolver/server_address.h"  // IWYU pragma: keep
 #include "src/core/lib/service_config/service_config.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;

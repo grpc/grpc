@@ -42,6 +42,7 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
+                "multiping",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -114,6 +115,7 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
+                "multiping",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -193,6 +195,7 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
+                "multiping",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
