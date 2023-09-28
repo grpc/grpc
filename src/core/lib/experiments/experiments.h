@@ -103,7 +103,8 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
-inline bool IsEventEngineListenerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
+inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }

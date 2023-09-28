@@ -311,7 +311,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, false, true},
     {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, false, true},
+     additional_constraints_event_engine_listener, true, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, false, true},

@@ -63,7 +63,11 @@
 - name: promise_based_server_call
   default: false
 - name: event_engine_listener
-  default: false
+  default:
+    # not tested on iOS at all
+    ios: broken
+    posix: false
+    windows: true
 - name: schedule_cancellation_over_write
   default: false
 - name: trace_record_callops

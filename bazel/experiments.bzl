@@ -22,7 +22,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
@@ -34,9 +33,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "event_engine_listener_test": [
-                "event_engine_listener",
             ],
             "flow_control_test": [
                 "peer_state_based_framing",
@@ -63,9 +59,15 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "core_end2end_test": [
+                "event_engine_listener",
+            ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
+            ],
+            "event_engine_listener_test": [
+                "event_engine_listener",
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
@@ -88,7 +90,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
@@ -100,9 +101,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "event_engine_listener_test": [
-                "event_engine_listener",
             ],
             "flow_control_test": [
                 "peer_state_based_framing",
