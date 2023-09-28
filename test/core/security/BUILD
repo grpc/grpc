@@ -562,8 +562,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "grpc_crl_provider_test",
-    srcs = ["grpc_crl_provider_test.cc"],
+    name = "grpc_tls_crl_provider_test",
+    srcs = ["grpc_tls_crl_provider_test.cc"],
     data = [
         "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
     ],

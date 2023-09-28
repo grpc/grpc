@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -29,7 +31,6 @@
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_crl_provider.h>
 
-#include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
