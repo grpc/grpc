@@ -134,8 +134,8 @@
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -387,8 +387,8 @@ class GrpcLb : public LoadBalancingPolicy {
     // Returns a text representation suitable for logging.
     std::string AsText() const;
 
-    // Extracts all non-drop entries into an EndpointAddressesList.
-    EndpointAddressesList GetServerAddressList(
+    // Extracts all non-drop entries into a ServerAddressList.
+    ServerAddressList GetServerAddressList(
         GrpcLbClientStats* client_stats) const;
 
     // Returns true if the serverlist contains at least one drop entry and
@@ -467,8 +467,7 @@ class GrpcLb : public LoadBalancingPolicy {
         : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
-        const ChannelArgs& per_address_args, const ChannelArgs& args) override;
+        ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -572,7 +571,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // Whether we're in fallback mode.
   bool fallback_mode_ = false;
   // The backend addresses from the resolver.
-  absl::StatusOr<EndpointAddressesList> fallback_backend_addresses_;
+  absl::StatusOr<ServerAddressList> fallback_backend_addresses_;
   // The last resolution note from our parent.
   // To be passed to child policy when fallback_backend_addresses_ is empty.
   std::string resolution_note_;
@@ -669,11 +668,11 @@ bool IsServerValid(const GrpcLbServer& server, size_t idx, bool log) {
 }
 
 // Returns addresses extracted from the serverlist.
-EndpointAddressesList GrpcLb::Serverlist::GetServerAddressList(
+ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
     GrpcLbClientStats* client_stats) const {
   RefCountedPtr<GrpcLbClientStats> stats;
   if (client_stats != nullptr) stats = client_stats->Ref();
-  EndpointAddressesList endpoints;
+  ServerAddressList addresses;
   for (size_t i = 0; i < serverlist_.size(); ++i) {
     const GrpcLbServer& server = serverlist_[i];
     if (!IsServerValid(server, i, false)) continue;
@@ -693,11 +692,11 @@ EndpointAddressesList GrpcLb::Serverlist::GetServerAddressList(
                             : addr_uri.status().ToString().c_str());
     }
     // Add address with a channel arg containing LB token and stats object.
-    endpoints.emplace_back(
+    addresses.emplace_back(
         addr, ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
                   std::move(lb_token), stats)));
   }
-  return endpoints;
+  return addresses;
 }
 
 bool GrpcLb::Serverlist::ContainsAllDropEntries() const {
@@ -780,21 +779,19 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
 //
 
 RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
-    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
-    const ChannelArgs& args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
-  const auto* arg = per_address_args.GetObject<TokenAndClientStatsArg>();
+  const auto* arg = address.args().GetObject<TokenAndClientStatsArg>();
   if (arg == nullptr) {
-    auto addr_str = grpc_sockaddr_to_string(&address, false);
     Crash(
-        absl::StrFormat("[grpclb %p] no TokenAndClientStatsArg for address %s",
-                        parent(), addr_str.value_or("N/A").c_str()));
+        absl::StrFormat("[grpclb %p] no TokenAndClientStatsArg for address %p",
+                        parent(), address.ToString().c_str()));
   }
   std::string lb_token = arg->lb_token();
   RefCountedPtr<GrpcLbClientStats> client_stats = arg->client_stats();
   return MakeRefCounted<SubchannelWrapper>(
-      parent()->channel_control_helper()->CreateSubchannel(
-          address, per_address_args, args),
+      parent()->channel_control_helper()->CreateSubchannel(std::move(address),
+                                                           args),
       parent()->Ref(DEBUG_LOCATION, "SubchannelWrapper"), std::move(lb_token),
       std::move(client_stats));
 }
@@ -1350,11 +1347,11 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 // helper code for creating balancer channel
 //
 
-EndpointAddressesList ExtractBalancerAddresses(const ChannelArgs& args) {
-  const EndpointAddressesList* endpoints =
+ServerAddressList ExtractBalancerAddresses(const ChannelArgs& args) {
+  const ServerAddressList* addresses =
       FindGrpclbBalancerAddressesInChannelArgs(args);
-  if (endpoints != nullptr) return *endpoints;
-  return EndpointAddressesList();
+  if (addresses != nullptr) return *addresses;
+  return ServerAddressList();
 }
 
 // Returns the channel args for the LB channel, used to create a bidirectional
@@ -1517,10 +1514,10 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   fallback_backend_addresses_ = std::move(args.addresses);
   if (fallback_backend_addresses_.ok()) {
     // Add null LB token attributes.
-    for (EndpointAddresses& addresses : *fallback_backend_addresses_) {
-      addresses = EndpointAddresses(
-          addresses.addresses(),
-          addresses.args().SetObject(
+    for (ServerAddress& address : *fallback_backend_addresses_) {
+      address = ServerAddress(
+          address.address(),
+          address.args().SetObject(
               MakeRefCounted<TokenAndClientStatsArg>("", nullptr)));
     }
   }
@@ -1569,7 +1566,7 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
 
 absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   // Get balancer addresses.
-  EndpointAddressesList balancer_addresses = ExtractBalancerAddresses(args_);
+  ServerAddressList balancer_addresses = ExtractBalancerAddresses(args_);
   absl::Status status;
   if (balancer_addresses.empty()) {
     status = absl::UnavailableError("balancer address list must be non-empty");

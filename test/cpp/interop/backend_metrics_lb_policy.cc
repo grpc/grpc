@@ -139,11 +139,10 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
         : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
     RefCountedPtr<grpc_core::SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
-        const grpc_core::ChannelArgs& per_address_args,
+        grpc_core::ServerAddress address,
         const grpc_core::ChannelArgs& args) override {
       auto subchannel =
-          parent_helper()->CreateSubchannel(address, per_address_args, args);
+          parent_helper()->CreateSubchannel(std::move(address), args);
       subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
           grpc_core::Duration::Seconds(1),
           std::make_unique<OobMetricWatcher>(parent()->load_report_tracker_)));

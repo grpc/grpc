@@ -44,19 +44,18 @@ int HierarchicalPathArg::ChannelArgsCompare(const HierarchicalPathArg* a,
 }
 
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
-    const absl::StatusOr<EndpointAddressesList>& addresses) {
+    const absl::StatusOr<ServerAddressList>& addresses) {
   if (!addresses.ok()) return addresses.status();
   HierarchicalAddressMap result;
   RefCountedPtr<HierarchicalPathArg> remaining_path_attr;
-  for (const EndpointAddresses& endpoint_addresses : *addresses) {
-    const auto* path_arg =
-        endpoint_addresses.args().GetObject<HierarchicalPathArg>();
+  for (const ServerAddress& address : *addresses) {
+    const auto* path_arg = address.args().GetObject<HierarchicalPathArg>();
     if (path_arg == nullptr) continue;
     const std::vector<RefCountedStringValue>& path = path_arg->path();
     auto it = path.begin();
     if (it == path.end()) continue;
-    EndpointAddressesList& target_list = result[*it];
-    ChannelArgs args = endpoint_addresses.args();
+    ServerAddressList& target_list = result[*it];
+    ChannelArgs args = address.args();
     ++it;
     if (it != path.end()) {
       std::vector<RefCountedStringValue> remaining_path(it, path.end());
@@ -67,7 +66,7 @@ absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
       }
       args = args.SetObject(remaining_path_attr);
     }
-    target_list.emplace_back(endpoint_addresses.addresses(), args);
+    target_list.emplace_back(address.address(), args);
   }
   return result;
 }

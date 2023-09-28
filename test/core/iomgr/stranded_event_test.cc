@@ -297,7 +297,7 @@ class TestServer {
 grpc_core::Resolver::Result BuildResolverResponse(
     const std::vector<std::string>& addresses) {
   grpc_core::Resolver::Result result;
-  result.addresses = grpc_core::EndpointAddressesList();
+  result.addresses = grpc_core::ServerAddressList();
   for (const auto& address_str : addresses) {
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
     if (!uri.ok()) {

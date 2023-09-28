@@ -22,16 +22,16 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 
 grpc_arg CreateGrpclbBalancerAddressesArg(
-    const EndpointAddressesList* endpoint_list);
+    const ServerAddressList* address_list);
 GRPC_MUST_USE_RESULT
 ChannelArgs SetGrpcLbBalancerAddresses(const ChannelArgs& args,
-                                       EndpointAddressesList endpoint_list);
-const EndpointAddressesList* FindGrpclbBalancerAddressesInChannelArgs(
+                                       ServerAddressList address_list);
+const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
     const ChannelArgs& args);
 
 }  // namespace grpc_core

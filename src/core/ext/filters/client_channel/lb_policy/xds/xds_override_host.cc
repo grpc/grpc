@@ -65,7 +65,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -74,7 +73,7 @@
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -98,9 +97,9 @@ struct PtrLessThan {
   }
 };
 
-XdsHealthStatus GetEndpointHealthStatus(const EndpointAddresses& endpoint) {
+XdsHealthStatus GetAddressHealthStatus(const ServerAddress& address) {
   return XdsHealthStatus(static_cast<XdsHealthStatus::HealthStatus>(
-      endpoint.args()
+      address.args()
           .GetInt(GRPC_ARG_XDS_HEALTH_STATUS)
           .value_or(XdsHealthStatus::HealthStatus::kUnknown)));
 }
@@ -225,8 +224,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
               std::move(xds_override_host_policy)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
-        const ChannelArgs& per_address_args, const ChannelArgs& args) override;
+        ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
   };
@@ -287,12 +285,11 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   void MaybeUpdatePickerLocked();
 
-  absl::StatusOr<EndpointAddressesList> UpdateAddressMap(
-      absl::StatusOr<EndpointAddressesList> endpoints);
+  absl::StatusOr<ServerAddressList> UpdateAddressMap(
+      absl::StatusOr<ServerAddressList> addresses);
 
   RefCountedPtr<SubchannelWrapper> AdoptSubchannel(
-      const grpc_resolved_address& address,
-      RefCountedPtr<SubchannelInterface> subchannel);
+      ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel);
 
   void UnsetSubchannel(absl::string_view key, SubchannelWrapper* subchannel);
 
@@ -504,45 +501,43 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
-    absl::StatusOr<EndpointAddressesList> endpoints) {
-  if (!endpoints.ok()) {
+absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
+    absl::StatusOr<ServerAddressList> addresses) {
+  if (!addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
       gpr_log(GPR_INFO, "[xds_override_host_lb %p] address error: %s", this,
-              endpoints.status().ToString().c_str());
+              addresses.status().ToString().c_str());
     }
-    return endpoints;
+    return addresses;
   }
-  // TODO(roth): As we clarify this part of the dualstack design, add
-  // support for multiple addresses per endpoint.
-  EndpointAddressesList return_value;
+  ServerAddressList return_value;
   std::map<const std::string, XdsHealthStatus> addresses_for_map;
-  for (const auto& endpoint : *endpoints) {
-    XdsHealthStatus status = GetEndpointHealthStatus(endpoint);
+  for (const auto& address : *addresses) {
+    XdsHealthStatus status = GetAddressHealthStatus(address);
     if (status.status() != XdsHealthStatus::kDraining) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
         gpr_log(GPR_INFO,
-                "[xds_override_host_lb %p] endpoint %s: not draining, "
+                "[xds_override_host_lb %p] address %s: not draining, "
                 "passing to child",
-                this, endpoint.ToString().c_str());
+                this, address.ToString().c_str());
       }
-      return_value.push_back(endpoint);
+      return_value.push_back(address);
     } else if (!config_->override_host_status_set().Contains(status)) {
       // Skip draining hosts if not in the override status set.
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
         gpr_log(GPR_INFO,
-                "[xds_override_host_lb %p] endpoint %s: draining but not in "
+                "[xds_override_host_lb %p] address %s: draining but not in "
                 "override_host_status set -- ignoring",
-                this, endpoint.ToString().c_str());
+                this, address.ToString().c_str());
       }
       continue;
     }
-    auto key = grpc_sockaddr_to_uri(&endpoint.address());
+    auto key = grpc_sockaddr_to_uri(&address.address());
     if (key.ok()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
         gpr_log(GPR_INFO,
-                "[xds_override_host_lb %p] endpoint %s: adding map key %s",
-                this, endpoint.ToString().c_str(), key->c_str());
+                "[xds_override_host_lb %p] address %s: adding map key %s", this,
+                address.ToString().c_str(), key->c_str());
       }
       addresses_for_map.emplace(std::move(*key), status);
     }
@@ -586,9 +581,8 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
 
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
 XdsOverrideHostLb::AdoptSubchannel(
-    const grpc_resolved_address& address,
-    RefCountedPtr<SubchannelInterface> subchannel) {
-  auto key = grpc_sockaddr_to_uri(&address);
+    ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel) {
+  auto key = grpc_sockaddr_to_uri(&address.address());
   if (!key.ok()) {
     return subchannel;
   }
@@ -652,10 +646,9 @@ void XdsOverrideHostLb::OnSubchannelConnectivityStateChange(
 //
 
 RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::Helper::CreateSubchannel(
-    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
-    const ChannelArgs& args) {
-  auto subchannel = parent()->channel_control_helper()->CreateSubchannel(
-      address, per_address_args, args);
+    ServerAddress address, const ChannelArgs& args) {
+  auto subchannel =
+      parent()->channel_control_helper()->CreateSubchannel(address, args);
   return parent()->AdoptSubchannel(address, subchannel);
 }
 

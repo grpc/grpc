@@ -56,7 +56,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -65,7 +64,7 @@
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -237,8 +236,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
               std::move(xds_cluster_impl_policy)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
-        const ChannelArgs& per_address_args, const ChannelArgs& args) override;
+        ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
   };
@@ -250,8 +248,8 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
   absl::Status UpdateChildPolicyLocked(
-      absl::StatusOr<EndpointAddressesList> addresses,
-      std::string resolution_note, const ChannelArgs& args);
+      absl::StatusOr<ServerAddressList> addresses, std::string resolution_note,
+      const ChannelArgs& args);
 
   void MaybeUpdatePickerLocked();
 
@@ -569,8 +567,8 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
 }
 
 absl::Status XdsClusterImplLb::UpdateChildPolicyLocked(
-    absl::StatusOr<EndpointAddressesList> addresses,
-    std::string resolution_note, const ChannelArgs& args) {
+    absl::StatusOr<ServerAddressList> addresses, std::string resolution_note,
+    const ChannelArgs& args) {
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args);
@@ -596,13 +594,12 @@ absl::Status XdsClusterImplLb::UpdateChildPolicyLocked(
 //
 
 RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
-    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
-    const ChannelArgs& args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
   // If load reporting is enabled, wrap the subchannel such that it
   // includes the locality stats object, which will be used by the Picker.
   if (parent()->config_->lrs_load_reporting_server().has_value()) {
-    auto locality_name = per_address_args.GetObjectRef<XdsLocalityName>();
+    auto locality_name = address.args().GetObjectRef<XdsLocalityName>();
     RefCountedPtr<XdsClusterLocalityStats> locality_stats =
         parent()->xds_client_->AddClusterLocalityStats(
             parent()->config_->lrs_load_reporting_server().value(),
@@ -611,7 +608,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
     if (locality_stats != nullptr) {
       return MakeRefCounted<StatsSubchannelWrapper>(
           parent()->channel_control_helper()->CreateSubchannel(
-              address, per_address_args, args),
+              std::move(address), args),
           std::move(locality_stats));
     }
     gpr_log(
@@ -626,7 +623,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   }
   // Load reporting not enabled, so don't wrap the subchannel.
   return parent()->channel_control_helper()->CreateSubchannel(
-      address, per_address_args, args);
+      std::move(address), args);
 }
 
 void XdsClusterImplLb::Helper::UpdateState(
