@@ -49,14 +49,6 @@ class ComputeV1(
     class ZonalGcpResource(GcpResource):
         zone: str
 
-    @staticmethod
-    def _log_debug_header(resp: httplib2.Response):
-        if DEBUG_HEADER_IN_RESPONSE in resp:
-            logger.info(
-                "Received GCP debug headers: %s",
-                resp[DEBUG_HEADER_IN_RESPONSE],
-            )
-
     def __init__(
         self,
         api_manager: gcp.api.GcpApiManager,
@@ -590,6 +582,14 @@ class ComputeV1(
     @staticmethod
     def _operation_status_done(operation):
         return "status" in operation and operation["status"] == "DONE"
+
+    @staticmethod
+    def _log_debug_header(resp: httplib2.Response):
+        if DEBUG_HEADER_IN_RESPONSE in resp:
+            logger.info(
+                "Received GCP debug headers: %s",
+                resp[DEBUG_HEADER_IN_RESPONSE],
+            )
 
     def _execute(  # pylint: disable=arguments-differ
         self, request, *, timeout_sec=_WAIT_FOR_OPERATION_SEC
