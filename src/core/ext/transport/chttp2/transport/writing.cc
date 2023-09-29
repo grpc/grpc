@@ -274,11 +274,11 @@ class WriteContext {
                                       t_->settings[GRPC_LOCAL_SETTINGS],
                                       t_->force_send_settings,
                                       GRPC_CHTTP2_NUM_SETTINGS));
-      GPR_ASSERT(
-          t_->settings_ack_watchdog ==
-          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);
       if (grpc_core::IsSettingsTimeoutEnabled() &&
           t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
+        GPR_ASSERT(
+            t_->settings_ack_watchdog ==
+            grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);
         // We base settings timeout on keepalive timeout, but double it to allow
         // for implementations taking some more time about acking a setting.
         t_->settings_ack_watchdog = t_->event_engine->RunAfter(
