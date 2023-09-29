@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package")
-load("//tools/bazelify_tests:build_defs.bzl", "grpc_build_artifact_task", "grpc_run_cpp_distribtest_test", "grpc_run_simple_command_test", "grpc_run_tests_harness_test")
+load("//tools/bazelify_tests:build_defs.bzl", "grpc_build_artifact_task", "grpc_run_cpp_distribtest_test", "grpc_run_distribtest_test", "grpc_run_simple_command_test", "grpc_run_tests_harness_test")
 load(":portability_tests.bzl", "generate_run_tests_portability_tests")
 load(":bazel_distribtests.bzl", "generate_bazel_distribtests")
 
@@ -294,6 +294,88 @@ grpc_build_artifact_task(
     docker_image_version = "tools/dockerfile/test/csharp_debian11_x64.current_version",
 )
 
+# C# distribtests
+
+grpc_run_distribtest_test(
+    name = "distribtest_csharp_linux_x64_debian10",
+    # depend on the C# packages
+    artifact_deps = [
+        "package_csharp_linux",
+    ],
+    build_script = "run_distribtest_csharp_linux.sh",
+    docker_image_version = "tools/dockerfile/distribtest/csharp_debian10_x64.current_version",
+)
+
+grpc_run_distribtest_test(
+    name = "distribtest_csharp_linux_x64_ubuntu2204",
+    # depend on the C# packages
+    artifact_deps = [
+        "package_csharp_linux",
+    ],
+    build_script = "run_distribtest_csharp_linux.sh",
+    docker_image_version = "tools/dockerfile/distribtest/csharp_ubuntu2204_x64.current_version",
+)
+
+grpc_run_distribtest_test(
+    name = "distribtest_csharp_linux_x64_alpine",
+    # depend on the C# packages
+    artifact_deps = [
+        "package_csharp_linux",
+    ],
+    build_script = "run_distribtest_csharp_linux.sh",
+    docker_image_version = "tools/dockerfile/distribtest/csharp_alpine_x64.current_version",
+)
+
+grpc_run_distribtest_test(
+    name = "distribtest_csharp_linux_x64_dotnet31",
+    # depend on the C# packages
+    artifact_deps = [
+        "package_csharp_linux",
+    ],
+    build_script = "run_distribtest_csharp_linux.sh",
+    docker_image_version = "tools/dockerfile/distribtest/csharp_dotnet31_x64.current_version",
+)
+
+grpc_run_distribtest_test(
+    name = "distribtest_csharp_linux_x64_dotnet5",
+    # depend on the C# packages
+    artifact_deps = [
+        "package_csharp_linux",
+    ],
+    build_script = "run_distribtest_csharp_linux.sh",
+    docker_image_version = "tools/dockerfile/distribtest/csharp_dotnet5_x64.current_version",
+)
+
+test_suite(
+    name = "csharp_distribtests_linux",
+    tests = [
+        ":distribtest_csharp_linux_x64_alpine",
+        ":distribtest_csharp_linux_x64_debian10",
+        ":distribtest_csharp_linux_x64_dotnet31",
+        ":distribtest_csharp_linux_x64_dotnet5",
+        ":distribtest_csharp_linux_x64_ubuntu2204",
+    ],
+)
+
+# PHP distribtests
+
+grpc_run_distribtest_test(
+    name = "distribtest_php_linux_x64_debian10",
+    artifact_deps = [
+        "artifact_php_linux_x64",
+    ],
+    build_script = "run_distribtest_php_linux.sh",
+    docker_image_version = "tools/dockerfile/distribtest/php7_debian10_x64.current_version",
+    docker_run_as_root = True,
+)
+
+test_suite(
+    name = "php_distribtests_linux",
+    tests = [
+        ":distribtest_php_linux_x64_debian10",
+    ],
+)
+
 # TODO(jtattermusch): add grpc_build_artifact_task targets for ruby artifacts (which is tricky, since ruby artifact builds do not run under docker since they invoke docker themselves)
 
 test_suite(
@@ -316,6 +398,8 @@ test_suite(
         ":bazel_build_tests_linux",
         ":bazel_distribtests_linux",
         ":cpp_distribtests_linux",
+        ":csharp_distribtests_linux",
+        ":php_distribtests_linux",
         ":portability_tests_linux",
     ],
 )

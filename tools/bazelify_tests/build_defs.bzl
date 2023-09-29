@@ -305,3 +305,43 @@ def grpc_build_artifact_task(name, timeout = None, artifact_deps = [], tags = []
         "$(location " + out_archive_name + ")",
     ]
     _dockerized_sh_test(name = test_name, srcs = test_srcs, args = test_args, data = test_data, size = "small", tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = test_env, docker_run_as_root = False)
+
+def grpc_run_distribtest_test(name, artifact_deps = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, build_script = None, docker_run_as_root = False):
+    """Run a distribtest for a previously built artifact/package
+
+    Args:
+        name: The name of the test.
+        artifact_deps: List of dependencies on artifacts built by another grpc_build_artifact_task.
+        size: The size of the test.
+        timeout: The test timeout.
+        tags: The tags for the test.
+        exec_compatible_with: A list of constraint values that must be
+            satisifed for the platform.
+        flaky: Whether this test is flaky.
+        docker_image_version: The docker .current_version file to use for docker containerization.
+        build_script: The script that runs the test.
+        docker_run_as_root: If True, the test will run under docker as root.
+    """
+
+    data = [
+        "//tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz",
+        build_script,
+    ]
+
+    args = [
+        "$(location //tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz)",
+        "$(location " + build_script + ")",
+    ]
+
+    # for each artifact task we depends on, use the correponding tar.gz as extra data item and pass its location as an extra arg.
+    for dep in artifact_deps:
+        dep_archive_name = str(dep + ".tar.gz")
+        args.append("$(location " + dep_archive_name + ")")
+        data.append(dep_archive_name)
+
+    srcs = [
+        "//tools/bazelify_tests:grpc_run_distribtest_test.sh",
+    ]
+
+    env = {}
+    _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env, docker_run_as_root = docker_run_as_root)
