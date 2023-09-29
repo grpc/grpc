@@ -49,7 +49,8 @@ class ComputeV1(
     class ZonalGcpResource(GcpResource):
         zone: str
 
-    def _log_debug_header(self, resp: httplib2.Response):
+    @staticmethod
+    def _log_debug_header(resp: httplib2.Response):
         if DEBUG_HEADER_IN_RESPONSE in resp:
             logger.info(
                 "Received GCP debug headers: %s",
