@@ -255,7 +255,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     _api: KubernetesApiManager
     _name: str
 
-    NEG_STATUS_META = "cloud.google.com/neg-status"
+    NEG_STATUS_ANNOTATION = "cloud.google.com/neg-status"
     DELETE_GRACE_PERIOD_SEC: int = 5
     WAIT_SHORT_TIMEOUT_SEC: int = 60
     WAIT_SHORT_SLEEP_SEC: int = 1
@@ -771,7 +771,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         )
         retryer(self.get)
 
-    def wait_for_service_neg_annotation(
+    def wait_for_service_neg_status_annotation(
         self,
         name: str,
         timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
@@ -781,7 +781,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         retryer = retryers.constant_retryer(
             wait_fixed=_timedelta(seconds=wait_sec),
             timeout=timeout,
-            check_result=self._check_service_neg_annotation,
+            check_result=self._check_service_neg_status_annotation,
         )
         try:
             retryer(self.get_service, name)
@@ -789,11 +789,11 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             result = retry_err.result()
             note = framework.errors.FrameworkError.note_blanket_error_info_below(
                 "A Kubernetes Service wasn't assigned a NEG (Network Endpoint"
-                " Group) annotation.",
+                " Group) status annotation.",
                 info_below=(
                     f"Timeout {timeout} (h:mm:ss) waiting for Kubernetes"
-                    f" service {name} to report a NEG annotation."
-                    f" Last service status:\n"
+                    f" Service {name} to report a {self.NEG_STATUS_ANNOTATION}"
+                    f" annotation. Last service status:\n"
                     f"{self._pretty_format_status(result, highlight=False)}"
                 ),
             )
@@ -805,7 +805,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     ) -> Tuple[str, List[str]]:
         service = self.get_service(service_name)
         neg_info: dict = json.loads(
-            service.metadata.annotations[self.NEG_STATUS_META]
+            service.metadata.annotations[self.NEG_STATUS_ANNOTATION]
         )
         neg_name: str = neg_info["network_endpoint_groups"][str(service_port)]
         neg_zones: List[str] = neg_info["zones"]
@@ -1040,12 +1040,12 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         return self._highlighter.highlight(yaml_out) if highlight else yaml_out
 
     @classmethod
-    def _check_service_neg_annotation(
+    def _check_service_neg_status_annotation(
         cls, service: Optional[V1Service]
     ) -> bool:
         return (
             isinstance(service, V1Service)
-            and cls.NEG_STATUS_META in service.metadata.annotations
+            and cls.NEG_STATUS_ANNOTATION in service.metadata.annotations
         )
 
     @classmethod
