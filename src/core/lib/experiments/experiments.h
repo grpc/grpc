@@ -103,9 +103,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
-inline bool IsRstpitEnabled() { return true; }
-inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -154,9 +151,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
-inline bool IsRstpitEnabled() { return true; }
-inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -205,9 +199,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
-inline bool IsRstpitEnabled() { return true; }
-inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #endif
 
 #else
@@ -241,8 +232,6 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
-  kExperimentIdRstpit,
-  kExperimentIdRedMaxConcurrentStreams,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -360,14 +349,6 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
-inline bool IsRstpitEnabled() {
-  return IsExperimentEnabled(kExperimentIdRstpit);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_RED_MAX_CONCURRENT_STREAMS
-inline bool IsRedMaxConcurrentStreamsEnabled() {
-  return IsExperimentEnabled(kExperimentIdRedMaxConcurrentStreams);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

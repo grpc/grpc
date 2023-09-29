@@ -41,7 +41,6 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
-                "red_max_concurrent_streams",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -72,7 +71,6 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
-                "rstpit",
             ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",
@@ -113,7 +111,6 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
-                "red_max_concurrent_streams",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -144,7 +141,6 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
-                "rstpit",
             ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",
@@ -192,7 +188,6 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
-                "red_max_concurrent_streams",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -226,7 +221,6 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
-                "rstpit",
             ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",
