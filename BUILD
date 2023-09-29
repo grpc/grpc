@@ -4040,6 +4040,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:match",
+        "//src/core:max_concurrent_streams_policy",
         "//src/core:memory_quota",
         "//src/core:ping_abuse_policy",
         "//src/core:ping_callbacks",

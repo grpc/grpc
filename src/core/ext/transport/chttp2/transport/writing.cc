@@ -267,7 +267,15 @@ class WriteContext {
   }
 
   void FlushSettings() {
-    if (t_->dirtied_local_settings && !t_->sent_local_settings) {
+    const bool dirty =
+        t_->dirtied_local_settings ||
+        t_->settings[GRPC_SENT_SETTINGS]
+                    [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] !=
+            t_->max_concurrent_streams_policy.AdvertiseValue();
+    if (dirty && !t_->sent_local_settings) {
+      t_->settings[GRPC_LOCAL_SETTINGS]
+                  [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] =
+          t_->max_concurrent_streams_policy.AdvertiseValue();
       grpc_slice_buffer_add(
           t_->outbuf.c_slice_buffer(),
           grpc_chttp2_settings_create(t_->settings[GRPC_SENT_SETTINGS],

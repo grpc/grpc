@@ -134,6 +134,10 @@ const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
 const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -210,6 +214,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, true, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
 };
 
 }  // namespace grpc_core
@@ -328,6 +334,10 @@ const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
 const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -404,6 +414,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, true, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
 };
 
 }  // namespace grpc_core
@@ -522,6 +534,10 @@ const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
 const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -598,6 +614,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, true, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
 };
 
 }  // namespace grpc_core
