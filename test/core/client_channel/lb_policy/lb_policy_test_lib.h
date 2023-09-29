@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <inttypes.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -36,6 +37,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -79,7 +81,7 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -537,11 +539,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override {
-      SubchannelKey key(address.address(), args);
+        const grpc_resolved_address& address,
+        const ChannelArgs& /*per_address_args*/,
+        const ChannelArgs& args) override {
+      // TODO(roth): Need to use per_address_args here.
+      SubchannelKey key(address, args);
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
-        auto address_uri = grpc_sockaddr_to_uri(&address.address());
+        auto address_uri = grpc_sockaddr_to_uri(&address);
         GPR_ASSERT(address_uri.ok());
         it = test_->subchannel_pool_
                  .emplace(std::piecewise_construct, std::forward_as_tuple(key),
@@ -749,17 +754,46 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return address;
   }
 
-  // Constructs an update containing a list of addresses.
+  std::vector<grpc_resolved_address> MakeAddressList(
+      absl::Span<const absl::string_view> addresses) {
+    std::vector<grpc_resolved_address> addrs;
+    for (const absl::string_view& address : addresses) {
+      addrs.emplace_back(MakeAddress(address));
+    }
+    return addrs;
+  }
+
+  EndpointAddresses MakeEndpointAddresses(
+      absl::Span<const absl::string_view> addresses,
+      const ChannelArgs& args = ChannelArgs()) {
+    return EndpointAddresses(MakeAddressList(addresses), args);
+  }
+
+  // Constructs an update containing a list of endpoints.
+  LoadBalancingPolicy::UpdateArgs BuildUpdate(
+      absl::Span<const EndpointAddresses> endpoints,
+      RefCountedPtr<LoadBalancingPolicy::Config> config) {
+    LoadBalancingPolicy::UpdateArgs update;
+    update.addresses.emplace(endpoints.begin(), endpoints.end());
+    update.config = std::move(config);
+    return update;
+  }
+
+  std::vector<EndpointAddresses> MakeEndpointAddressesListFromAddressList(
+      absl::Span<const absl::string_view> addresses) {
+    std::vector<EndpointAddresses> endpoints;
+    for (const absl::string_view address : addresses) {
+      endpoints.emplace_back(MakeAddress(address), ChannelArgs());
+    }
+    return endpoints;
+  }
+
+  // Convenient overload that takes a flat address list.
   LoadBalancingPolicy::UpdateArgs BuildUpdate(
       absl::Span<const absl::string_view> addresses,
       RefCountedPtr<LoadBalancingPolicy::Config> config) {
-    LoadBalancingPolicy::UpdateArgs update;
-    update.addresses.emplace();
-    for (const absl::string_view& address : addresses) {
-      update.addresses->emplace_back(MakeAddress(address), ChannelArgs());
-    }
-    update.config = std::move(config);
-    return update;
+    return BuildUpdate(MakeEndpointAddressesListFromAddressList(addresses),
+                       std::move(config));
   }
 
   // Applies the update on the LB policy.
@@ -880,6 +914,21 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         },
         location);
     return final_picker;
+  }
+
+  void ExpectTransientFailureUpdate(
+      absl::Status expected_status,
+      SourceLocation location = SourceLocation()) {
+    auto picker =
+        ExpectState(GRPC_CHANNEL_TRANSIENT_FAILURE, expected_status, location);
+    ASSERT_NE(picker, nullptr);
+    ExpectPickFail(
+        picker.get(),
+        [&](const absl::Status& status) {
+          EXPECT_EQ(status, expected_status)
+              << location.file() << ":" << location.line();
+        },
+        location);
   }
 
   // Waits for the LB policy to fail a connection attempt.  There can be
@@ -1109,26 +1158,56 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Expect startup with RR with a set of addresses.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
-      absl::Span<const absl::string_view> addresses) {
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
-    // RR should have created a subchannel for each address.
-    for (size_t i = 0; i < addresses.size(); ++i) {
-      auto* subchannel = FindSubchannel(addresses[i]);
-      EXPECT_NE(subchannel, nullptr);
-      if (subchannel == nullptr) return nullptr;
-      // RR should ask each subchannel to connect.
-      EXPECT_TRUE(subchannel->ConnectionRequested());
-      subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-      // Expect the initial CONNECTNG update with a picker that queues.
+      absl::Span<const EndpointAddresses> endpoints) {
+    GPR_ASSERT(!endpoints.empty());
+    // There should be a subchannel for every address.
+    // We will wind up connecting to the first address for every endpoint.
+    std::vector<std::vector<SubchannelState*>> endpoint_subchannels;
+    endpoint_subchannels.reserve(endpoints.size());
+    std::vector<std::string> chosen_addresses_storage;
+    chosen_addresses_storage.reserve(endpoints.size());
+    std::vector<absl::string_view> chosen_addresses;
+    chosen_addresses.reserve(endpoints.size());
+    for (const EndpointAddresses& endpoint : endpoints) {
+      endpoint_subchannels.emplace_back();
+      endpoint_subchannels.back().reserve(endpoint.addresses().size());
+      for (size_t i = 0; i < endpoint.addresses().size(); ++i) {
+        const grpc_resolved_address& address = endpoint.addresses()[i];
+        std::string address_str = grpc_sockaddr_to_uri(&address).value();
+        auto* subchannel = FindSubchannel(address_str);
+        EXPECT_NE(subchannel, nullptr);
+        if (subchannel == nullptr) return nullptr;
+        endpoint_subchannels.back().push_back(subchannel);
+        if (i == 0) {
+          chosen_addresses_storage.emplace_back(std::move(address_str));
+          chosen_addresses.emplace_back(chosen_addresses_storage.back());
+        }
+      }
+    }
+    // We should request a connection to the first address of each endpoint,
+    // and not to any of the subsequent addresses.
+    for (const auto& subchannels : endpoint_subchannels) {
+      EXPECT_TRUE(subchannels[0]->ConnectionRequested());
+      for (size_t i = 1; i < subchannels.size(); ++i) {
+        EXPECT_FALSE(subchannels[i]->ConnectionRequested());
+      }
+    }
+    // The subchannels that we've asked to connect should report
+    // CONNECTING state.
+    for (size_t i = 0; i < endpoint_subchannels.size(); ++i) {
+      endpoint_subchannels[i][0]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
       if (i == 0) ExpectConnectingUpdate();
-      // The connection attempts succeed.
-      subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+    }
+    // The connection attempts should succeed.
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
+    for (size_t i = 0; i < endpoint_subchannels.size(); ++i) {
+      endpoint_subchannels[i][0]->SetConnectivityState(GRPC_CHANNEL_READY);
       if (i == 0) {
         // When the first subchannel becomes READY, accept any number of
         // CONNECTING updates with a picker that queues followed by a READY
         // update with a picker that repeatedly returns only the first address.
         picker = WaitForConnected();
-        ExpectRoundRobinPicks(picker.get(), {addresses[0]});
+        ExpectRoundRobinPicks(picker.get(), {chosen_addresses[0]});
       } else {
         // When each subsequent subchannel becomes READY, we accept any number
         // of READY updates where the picker returns only the previously
@@ -1136,11 +1215,96 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         // returns the previously connected subchannel(s) *and* the newly
         // connected subchannel.
         picker = WaitForRoundRobinListChange(
-            absl::MakeSpan(addresses).subspan(0, i),
-            absl::MakeSpan(addresses).subspan(0, i + 1));
+            absl::MakeSpan(chosen_addresses).subspan(0, i),
+            absl::MakeSpan(chosen_addresses).subspan(0, i + 1));
       }
     }
     return picker;
+  }
+
+  // A convenient override that takes a flat list of addresses, one per
+  // endpoint.
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
+      absl::Span<const absl::string_view> addresses) {
+    return ExpectRoundRobinStartup(
+        MakeEndpointAddressesListFromAddressList(addresses));
+  }
+
+  // Expects zero or more picker updates, each of which returns
+  // round-robin picks for the specified set of addresses.
+  void DrainRoundRobinPickerUpdates(
+      absl::Span<const absl::string_view> addresses,
+      SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO, "Draining RR picker updates...");
+    while (!helper_->QueueEmpty()) {
+      auto update = helper_->GetNextStateUpdate(location);
+      ASSERT_TRUE(update.has_value());
+      ASSERT_EQ(update->state, GRPC_CHANNEL_READY);
+      ExpectRoundRobinPicks(update->picker.get(), addresses);
+    }
+    gpr_log(GPR_INFO, "Done draining RR picker updates");
+  }
+
+  // Expects zero or more CONNECTING updates.
+  void DrainConnectingUpdates(SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO, "Draining CONNECTING updates...");
+    while (!helper_->QueueEmpty()) {
+      ExpectConnectingUpdate(location);
+    }
+    gpr_log(GPR_INFO, "Done draining CONNECTING updates");
+  }
+
+  // Triggers a connection failure for the current address for an
+  // endpoint and expects a reconnection to the specified new address.
+  void ExpectEndpointAddressChange(
+      absl::Span<const absl::string_view> addresses, size_t current_index,
+      size_t new_index, absl::AnyInvocable<void()> expect_after_disconnect,
+      SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO,
+            "Expecting endpoint address change: addresses={%s}, "
+            "current_index=%" PRIuPTR ", new_index=%" PRIuPTR,
+            absl::StrJoin(addresses, ", ").c_str(), current_index, new_index);
+    ASSERT_LT(current_index, addresses.size());
+    ASSERT_LT(new_index, addresses.size());
+    // Find all subchannels.
+    std::vector<SubchannelState*> subchannels;
+    subchannels.reserve(addresses.size());
+    for (absl::string_view address : addresses) {
+      SubchannelState* subchannel = FindSubchannel(address);
+      ASSERT_NE(subchannel, nullptr)
+          << "can't find subchannel for " << address << "\n"
+          << location.file() << ":" << location.line();
+      subchannels.push_back(subchannel);
+    }
+    // Cause current_address to become disconnected.
+    subchannels[current_index]->SetConnectivityState(GRPC_CHANNEL_IDLE);
+    ExpectReresolutionRequest(location);
+    if (expect_after_disconnect != nullptr) expect_after_disconnect();
+    // Attempt each address in the list until we hit the desired new address.
+    for (size_t i = 0; i < subchannels.size(); ++i) {
+      // A connection should be requested on the subchannel for this
+      // index, and none of the others.
+      for (size_t j = 0; j < addresses.size(); ++j) {
+        EXPECT_EQ(subchannels[j]->ConnectionRequested(), j == i)
+            << location.file() << ":" << location.line();
+      }
+      // Subchannel will report CONNECTING.
+      SubchannelState* subchannel = subchannels[i];
+      subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+      // If this is the one we want to stick with, it will report READY.
+      if (i == new_index) {
+        subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+        break;
+      }
+      // Otherwise, report TF.
+      subchannel->SetConnectivityState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE,
+          absl::UnavailableError("connection failed"));
+      // Report IDLE to leave it in the expected state in case the test
+      // interacts with it again.
+      subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+    }
+    gpr_log(GPR_INFO, "Done with endpoint address change");
   }
 
   // Requests a picker on picker and expects a Fail result.

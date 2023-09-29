@@ -19,7 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 // Internal channel arg to enable health checking in pick_first.
 // Intended to be used by petiole policies (e.g., round_robin) that

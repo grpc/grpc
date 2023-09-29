@@ -65,6 +65,7 @@ EXPERIMENTS = {
         },
         "on": {
             "cpp_lb_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -73,6 +74,7 @@ EXPERIMENTS = {
                 "rstpit",
             ],
             "lb_unit_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -80,6 +82,7 @@ EXPERIMENTS = {
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -133,6 +136,7 @@ EXPERIMENTS = {
         },
         "on": {
             "cpp_lb_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -141,6 +145,7 @@ EXPERIMENTS = {
                 "rstpit",
             ],
             "lb_unit_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -148,6 +153,7 @@ EXPERIMENTS = {
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -211,6 +217,7 @@ EXPERIMENTS = {
         },
         "on": {
             "cpp_lb_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -219,6 +226,7 @@ EXPERIMENTS = {
                 "rstpit",
             ],
             "lb_unit_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -226,6 +234,7 @@ EXPERIMENTS = {
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],

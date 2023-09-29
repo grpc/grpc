@@ -301,7 +301,7 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_core::ConnectivityStateTracker state_tracker;
 
   /// data to write now
-  grpc_slice_buffer outbuf;
+  grpc_core::SliceBuffer outbuf;
   /// hpack encoding
   grpc_core::HPackCompressor hpack_compressor;
 

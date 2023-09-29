@@ -32,6 +32,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_Endpoint_HealthCheckCo
   return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.Endpoint.HealthCheckConfig");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_Endpoint_AdditionalAddress_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.Endpoint.AdditionalAddress");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_LbEndpoint_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.LbEndpoint");

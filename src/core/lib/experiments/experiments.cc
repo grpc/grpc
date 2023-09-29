@@ -111,6 +111,9 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const char* const description_pick_first_happy_eyeballs =
+    "Use Happy Eyeballs in pick_first.";
+const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
@@ -122,10 +125,20 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_call_status_override_on_cancellation =
+    "Avoid overriding call status of successfully finished calls if it races "
+    "with cancellation.";
+const char* const additional_constraints_call_status_override_on_cancellation =
+    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
 const char* const additional_constraints_rstpit = "{}";
+#ifdef NDEBUG
+const bool kDefaultForDebugOnly = false;
+#else
+const bool kDefaultForDebugOnly = true;
+#endif
 }  // namespace
 
 namespace grpc_core {
@@ -182,6 +195,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
+    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
+     additional_constraints_pick_first_happy_eyeballs, true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
@@ -190,6 +205,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"call_status_override_on_cancellation",
+     description_call_status_override_on_cancellation,
+     additional_constraints_call_status_override_on_cancellation,
+     kDefaultForDebugOnly, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, true, true},
 };
 
@@ -286,6 +305,9 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const char* const description_pick_first_happy_eyeballs =
+    "Use Happy Eyeballs in pick_first.";
+const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
@@ -297,10 +319,20 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_call_status_override_on_cancellation =
+    "Avoid overriding call status of successfully finished calls if it races "
+    "with cancellation.";
+const char* const additional_constraints_call_status_override_on_cancellation =
+    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
 const char* const additional_constraints_rstpit = "{}";
+#ifdef NDEBUG
+const bool kDefaultForDebugOnly = false;
+#else
+const bool kDefaultForDebugOnly = true;
+#endif
 }  // namespace
 
 namespace grpc_core {
@@ -357,6 +389,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
+    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
+     additional_constraints_pick_first_happy_eyeballs, true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
@@ -365,6 +399,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"call_status_override_on_cancellation",
+     description_call_status_override_on_cancellation,
+     additional_constraints_call_status_override_on_cancellation,
+     kDefaultForDebugOnly, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, true, true},
 };
 
@@ -461,6 +499,9 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const char* const description_pick_first_happy_eyeballs =
+    "Use Happy Eyeballs in pick_first.";
+const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
@@ -472,10 +513,20 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_call_status_override_on_cancellation =
+    "Avoid overriding call status of successfully finished calls if it races "
+    "with cancellation.";
+const char* const additional_constraints_call_status_override_on_cancellation =
+    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
 const char* const additional_constraints_rstpit = "{}";
+#ifdef NDEBUG
+const bool kDefaultForDebugOnly = false;
+#else
+const bool kDefaultForDebugOnly = true;
+#endif
 }  // namespace
 
 namespace grpc_core {
@@ -532,6 +583,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
+    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
+     additional_constraints_pick_first_happy_eyeballs, true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
@@ -540,6 +593,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"call_status_override_on_cancellation",
+     description_call_status_override_on_cancellation,
+     additional_constraints_call_status_override_on_cancellation,
+     kDefaultForDebugOnly, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, true, true},
 };
 
