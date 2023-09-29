@@ -64,12 +64,16 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
@@ -134,12 +138,16 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
@@ -214,12 +222,16 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [

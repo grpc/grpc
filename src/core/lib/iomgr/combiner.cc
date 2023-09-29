@@ -180,6 +180,7 @@ static void offload(void* arg, grpc_error_handle /*error*/) {
 
 static void queue_offload(grpc_core::Combiner* lock) {
   move_next();
+  gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 1);
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
   if (grpc_core::IsCombinerOffloadToEventEngineEnabled()) {
     lock->event_engine->Run([lock] {
