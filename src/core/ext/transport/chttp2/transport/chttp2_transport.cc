@@ -1711,7 +1711,7 @@ void grpc_chttp2_ping_timeout(
                 std::string(t->peer_string.as_string_view()).c_str());
         send_goaway(
             t.get(),
-            grpc_error_set_int(GRPC_ERROR_CREATE("too_many_pings"),
+            grpc_error_set_int(GRPC_ERROR_CREATE("ping_timeout"),
                                grpc_core::StatusIntProperty::kHttp2Error,
                                GRPC_HTTP2_ENHANCE_YOUR_CALM),
             /*immediate_disconnect_hint=*/true);
@@ -1732,7 +1732,7 @@ void grpc_chttp2_settings_timeout(
                 std::string(t->peer_string.as_string_view()).c_str());
         send_goaway(
             t.get(),
-            grpc_error_set_int(GRPC_ERROR_CREATE("too_many_pings"),
+            grpc_error_set_int(GRPC_ERROR_CREATE("settings_timeout"),
                                grpc_core::StatusIntProperty::kHttp2Error,
                                GRPC_HTTP2_SETTINGS_TIMEOUT),
             /*immediate_disconnect_hint=*/true);
