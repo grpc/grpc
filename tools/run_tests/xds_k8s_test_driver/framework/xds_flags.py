@@ -173,6 +173,17 @@ SOCKET_DEFAULT_TIMEOUT = flags.DEFINE_float(
     ),
 )
 
+GFE_DEBUG_HEADER = flags.DEFINE_enum(
+    "gfe_debug_header",
+    default=None,
+    enum_values=[
+        "gfe_response_only",
+        "all_response",
+        "request_and_response",
+    ],
+    help="Whether to enable GFE debug headers and what value to use.",
+)
+
 
 def set_socket_default_timeout_from_flag() -> None:
     """A helper to configure default socket timeout from a flag.
