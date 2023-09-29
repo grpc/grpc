@@ -51,7 +51,7 @@ CORE_END2END_TEST(Http2SingleHopTest, KeepaliveTimeout) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
-  EXPECT_EQ(server_status.message(), "keepalive watchdog timeout");
+  EXPECT_EQ(server_status.message(), "ping timeout");
 }
 
 // Verify that reads reset the keepalive ping timer. The client sends 30 pings

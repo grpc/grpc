@@ -49,17 +49,17 @@
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
+#include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -98,6 +98,9 @@ static grpc_core::Duration NextAllowedPingInterval(grpc_chttp2_transport* t) {
     // The gRPC keepalive spec doesn't call for any throttling on the server
     // side, but we are adding some throttling for protection anyway, unless
     // we are doing a graceful GOAWAY in which case we don't want to wait.
+    if (grpc_core::IsMultipingEnabled()) {
+      return grpc_core::Duration::Seconds(1);
+    }
     return t->keepalive_time == grpc_core::Duration::Infinity()
                ? grpc_core::Duration::Seconds(20)
                : t->keepalive_time / 2;
@@ -106,20 +109,8 @@ static grpc_core::Duration NextAllowedPingInterval(grpc_chttp2_transport* t) {
 }
 
 static void maybe_initiate_ping(grpc_chttp2_transport* t) {
-  grpc_chttp2_ping_queue* pq = &t->ping_queue;
-  if (grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
+  if (!t->ping_callbacks.ping_requested()) {
     // no ping needed: wait
-    return;
-  }
-  if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
-    // ping already in-flight: wait
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-      gpr_log(GPR_INFO, "%s: Ping delayed [%s]: already pinging",
-              t->is_client ? "CLIENT" : "SERVER",
-              std::string(t->peer_string.as_string_view()).c_str());
-    }
     return;
   }
   // InvalidateNow to avoid getting stuck re-initializing the ping timer
@@ -127,16 +118,23 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   // https://github.com/grpc/grpc/issues/26079.
   grpc_core::ExecCtx::Get()->InvalidateNow();
   Match(
-      t->ping_rate_policy.RequestSendPing(NextAllowedPingInterval(t)),
-      [pq, t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
-        pq->inflight_id = t->ping_ctr;
-        t->ping_ctr++;
-        grpc_core::ExecCtx::RunList(DEBUG_LOCATION,
-                                    &pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
-        grpc_closure_list_move(&pq->lists[GRPC_CHTTP2_PCL_NEXT],
-                               &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
+      t->ping_rate_policy.RequestSendPing(NextAllowedPingInterval(t),
+                                          t->ping_callbacks.pings_inflight()),
+      [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
+        t->ping_rate_policy.SentPing();
+        const uint64_t id = t->ping_callbacks.StartPing(
+            t->bitgen, t->keepalive_timeout,
+            [t = t->Ref()] {
+              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+              grpc_core::ExecCtx exec_ctx;
+              grpc_chttp2_ping_timeout(t);
+            },
+            t->event_engine.get());
         grpc_slice_buffer_add(t->outbuf.c_slice_buffer(),
-                              grpc_chttp2_ping_create(false, pq->inflight_id));
+                              grpc_chttp2_ping_create(false, id));
+        if (t->channelz_socket != nullptr) {
+          t->channelz_socket->RecordKeepaliveSent();
+        }
         grpc_core::global_stats().IncrementHttp2PingsSent();
         if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||

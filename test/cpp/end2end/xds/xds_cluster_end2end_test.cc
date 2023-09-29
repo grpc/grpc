@@ -26,6 +26,7 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
@@ -413,6 +414,7 @@ TEST_P(EdsTest, Vanilla) {
 }
 
 TEST_P(EdsTest, MultipleAddressesPerEndpoint) {
+  if (!grpc_core::IsRoundRobinDelegateToPickFirstEnabled()) return;
   grpc_core::testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   const size_t kNumRpcsPerAddress = 10;
@@ -429,7 +431,7 @@ TEST_P(EdsTest, MultipleAddressesPerEndpoint) {
   // Initially, backend 0 is offline, so the first endpoint should
   // connect to backend 1 instead.  Traffic should round-robin across
   // backends 1 and 2.
-  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+  WaitForAllBackends(DEBUG_LOCATION, 1);  // Wait for backends 1 and 2.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * 2);
   EXPECT_EQ(kNumRpcsPerAddress,
             backends_[1]->backend_service()->request_count());
