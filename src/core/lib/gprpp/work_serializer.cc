@@ -262,7 +262,7 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
     }
     // There is at least one callback on the queue. Pop the callback from the
     // queue and execute it.
-    if (IsWorkSerializerClearsTimeCacheEnabled()) {
+    if (IsWorkSerializerClearsTimeCacheEnabled() && ExecCtx::Get() != nullptr) {
       ExecCtx::Get()->InvalidateNow();
     }
     CallbackWrapper* cb_wrapper = nullptr;
