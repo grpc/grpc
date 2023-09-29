@@ -98,6 +98,7 @@ SslSessionLRUCache::Node* SslSessionLRUCache::FindLocked(
 }
 
 void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
+  if (session == nullptr) return;
   grpc_core::MutexLock lock(&lock_);
   Node* node = FindLocked(key);
   if (node != nullptr) {
