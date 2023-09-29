@@ -678,6 +678,12 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     t->closed_with_error = error;
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
+    if (t->settings_ack_watchdog !=
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
+      t->event_engine->Cancel(std::exchange(
+          t->settings_ack_watchdog,
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
+    }
     if (t->delayed_ping_timer_handle.has_value()) {
       if (t->event_engine->Cancel(*t->delayed_ping_timer_handle)) {
         t->delayed_ping_timer_handle.reset();
@@ -1703,6 +1709,21 @@ void grpc_chttp2_ping_timeout(
         close_transport_locked(
             t.get(),
             grpc_error_set_int(GRPC_ERROR_CREATE("ping timeout"),
+                               grpc_core::StatusIntProperty::kRpcStatus,
+                               GRPC_STATUS_UNAVAILABLE));
+      }),
+      absl::OkStatus());
+}
+
+void grpc_chttp2_settings_timeout(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+  t->combiner->Run(
+      grpc_core::NewClosure([t](grpc_error_handle) {
+        gpr_log(GPR_INFO, "%s: Settings timeout. Closing transport.",
+                std::string(t->peer_string.as_string_view()).c_str());
+        close_transport_locked(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("settings timeout"),
                                grpc_core::StatusIntProperty::kRpcStatus,
                                GRPC_STATUS_UNAVAILABLE));
       }),
