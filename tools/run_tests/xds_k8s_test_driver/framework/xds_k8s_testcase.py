@@ -290,7 +290,10 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
         if server_runner is None:
             server_runner = self.server_runner
         # Load Backends
-        neg_name, neg_zones = server_runner.k8s_namespace.get_service_neg(
+        (
+            neg_name,
+            neg_zones,
+        ) = server_runner.k8s_namespace.parse_service_neg_status(
             server_runner.service_name, self.server_port
         )
 
@@ -305,7 +308,10 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
         if server_runner is None:
             server_runner = self.server_runner
         # Load Backends
-        neg_name, neg_zones = server_runner.k8s_namespace.get_service_neg(
+        (
+            neg_name,
+            neg_zones,
+        ) = server_runner.k8s_namespace.parse_service_neg_status(
             server_runner.service_name, self.server_port
         )
 

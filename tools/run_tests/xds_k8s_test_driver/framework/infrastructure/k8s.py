@@ -800,7 +800,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             retry_err.add_note(note)
             raise
 
-    def get_service_neg(
+    def parse_service_neg_status(
         self, service_name: str, service_port: int
     ) -> Tuple[str, List[str]]:
         service = self.get_service(service_name)

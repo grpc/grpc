@@ -786,17 +786,17 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         self.k8s_namespace.wait_for_service_neg_status_annotation(
             service_name, **kwargs
         )
-        neg_name, neg_zones = self.k8s_namespace.get_service_neg(
+        neg_name, neg_zones = self.k8s_namespace.parse_service_neg_status(
             service_name, service_port
         )
         logger.info(
-            "Detected %s annotation for Kubernetes Service %s, port %s, namespace %s:"
-            " detected %s neg_name=%s, zones=%s",
+            "Detected %s annotation for Kubernetes Service %s, namespace %s:"
+            " detected %s neg_name=%s, port=%s, zones=%s",
             self.k8s_namespace.NEG_STATUS_ANNOTATION,
             service_name,
-            service_port,
             self.k8s_namespace.name,
             neg_name,
+            service_port,
             neg_zones,
         )
 
