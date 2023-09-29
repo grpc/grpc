@@ -40,7 +40,6 @@
 namespace grpc_core {
 namespace testing {
 
-using ::grpc_core::experimental::CertificateInfo;
 using ::grpc_core::experimental::CertificateInfoImpl;
 using ::grpc_core::experimental::Crl;
 using ::grpc_core::experimental::CrlImpl;
