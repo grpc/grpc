@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <initializer_list>
+#include <limits>
 #include <memory>
 #include <new>
 #include <string>
@@ -525,6 +526,15 @@ static void read_channel_args(grpc_chttp2_transport* t,
         t, GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
         grpc_core::Clamp(INT_MAX, static_cast<int>(sp->min_value),
                          static_cast<int>(sp->max_value)));
+  }
+
+  const auto max_requests_per_read =
+      channel_args.GetInt("grpc.http2.max_requests_per_read");
+  if (max_requests_per_read.has_value()) {
+    t->max_requests_per_read =
+        grpc_core::Clamp(*max_requests_per_read, 1, 10000);
+  } else {
+    t->max_requests_per_read = std::numeric_limits<size_t>::max();
   }
 }
 

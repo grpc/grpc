@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <initializer_list>
+#include <limits>
 #include <string>
 
 #include "absl/base/attributes.h"
@@ -252,7 +253,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         return absl::OkStatus();
       }
     dts_fh_0:
-      if (requests_started >= 8) {
+      if (requests_started >= t->max_requests_per_read) {
         t->deframe_state = GRPC_DTS_FH_0;
         return static_cast<size_t>(cur - beg);
       }
@@ -385,6 +386,10 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         }
         cur += t->incoming_frame_size;
         t->incoming_stream = nullptr;
+        if (t->incoming_frame_type == GRPC_CHTTP2_FRAME_RST_STREAM &&
+            grpc_core::IsChttp2OffloadOnRstStreamEnabled()) {
+          requests_started = std::numeric_limits<size_t>::max();
+        }
         goto dts_fh_0;  // loop
       } else {
         err = parse_frame_slice(

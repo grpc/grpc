@@ -28,6 +28,7 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
+                "chttp2_offload_on_rst_stream",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -39,6 +40,7 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
+                "chttp2_offload_on_rst_stream",
                 "multiping",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",
@@ -102,6 +104,7 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
+                "chttp2_offload_on_rst_stream",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -113,6 +116,7 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
+                "chttp2_offload_on_rst_stream",
                 "multiping",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",
@@ -180,6 +184,7 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
+                "chttp2_offload_on_rst_stream",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -194,6 +199,7 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
+                "chttp2_offload_on_rst_stream",
                 "multiping",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",

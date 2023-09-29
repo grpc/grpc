@@ -307,6 +307,8 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// data to write next write
   grpc_slice_buffer qbuf;
 
+  size_t max_requests_per_read;
+
   /// Set to a grpc_error object if a goaway frame is received. By default, set
   /// to absl::OkStatus()
   grpc_error_handle goaway_error;
