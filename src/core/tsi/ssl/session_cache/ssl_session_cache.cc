@@ -62,7 +62,11 @@ class SslSessionLRUCache::Node {
 };
 
 SslSessionLRUCache::SslSessionLRUCache(size_t capacity) : capacity_(capacity) {
-  GPR_ASSERT(capacity > 0);
+  if (capacity == 0) {
+    gpr_log(
+        GPR_ERROR,
+        "SslSessionLRUCache capacity is zero. SSL sessions cannot be resumed.");
+  }
 }
 
 SslSessionLRUCache::~SslSessionLRUCache() {
