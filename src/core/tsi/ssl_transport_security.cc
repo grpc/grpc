@@ -946,8 +946,16 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
     return preverify_ok;
   }
 
-  SSL* ssl = static_cast<SSL*>(
-      X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  ERR_clear_error();
+  int ssl_index = SSL_get_ex_data_X509_STORE_CTX_idx();
+  if (ssl_index < 0) {
+    char err_str[256];
+    ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
+    gpr_log(GPR_ERROR,
+            "error getting the SSL index from the X509_STORE_CTX: %s", err_str);
+    return preverify_ok;
+  }
+  SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
   if (ssl == nullptr) {
     return preverify_ok;
   }
@@ -965,8 +973,18 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
 // is provided, the internal default function will be used instead.
 static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
                               X509* x) {
-  SSL* ssl = static_cast<SSL*>(
-      X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  ERR_clear_error();
+  int ssl_index = SSL_get_ex_data_X509_STORE_CTX_idx();
+  if (ssl_index < 0) {
+    char err_str[256];
+    ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
+    gpr_log(GPR_ERROR,
+            "error getting the SSL index from the X509_STORE_CTX while looking "
+            "up Crl: %s",
+            err_str);
+    return 0;
+  }
+  SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
   if (ssl == nullptr) {
     gpr_log(GPR_ERROR,
             "error while fetching from CrlProvider. SSL object is null");

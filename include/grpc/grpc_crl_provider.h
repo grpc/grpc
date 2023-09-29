@@ -33,7 +33,7 @@
 namespace grpc_core {
 namespace experimental {
 
-// Opaque representation of a CRL.
+// Opaque representation of a CRL. Must be thread safe.
 class Crl {
  public:
   static absl::StatusOr<std::unique_ptr<Crl>> Parse(
@@ -42,7 +42,8 @@ class Crl {
   virtual absl::string_view Issuer() = 0;
 };
 
-// Information about a certificate to be used to fetch its associated CRL.
+// Information about a certificate to be used to fetch its associated CRL. Must
+// be thread safe.
 class CertificateInfo {
  public:
   virtual ~CertificateInfo() = default;
