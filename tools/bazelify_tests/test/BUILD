@@ -278,6 +278,12 @@ grpc_build_artifact_task(
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
+grpc_build_artifact_task(
+    name = "artifact_python_linux_x64_manylinux2014_cp37",
+    build_script = "build_artifact_python_linux_x64_cp37.sh",
+    docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
+)
+
 # TODO(jtattermusch): add more grpc_build_artifact_task targets for existing python artifacts from artifact_targets.py
 
 grpc_build_artifact_task(
@@ -285,6 +291,7 @@ grpc_build_artifact_task(
     # TODO(jtattermusch): add more python artifacts once they are migrated from artifact_targets.py
     artifact_deps = [
         "artifact_python_linux_x64_manylinux2014_cp311",
+        "artifact_python_linux_x64_manylinux2014_cp37",
     ],
     build_script = "build_package_python_linux.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
@@ -397,67 +404,21 @@ grpc_run_distribtest_test(
     docker_image_version = "tools/dockerfile/distribtest/python_buster_x64.current_version",
 )
 
-
-test_suite(
-    name = "python_distribtests_linux",
-    tests = [
-        ":distribtest_python_linux_x64_buster",
-    ],
-)
-
-#PythonDistribTest("linux", "x64", "buster", presubmit=True),
-#PythonDistribTest("linux", "x86", "buster", presubmit=True),
-#PythonDistribTest("linux", "x64", "fedora36"),
-#PythonDistribTest("linux", "x64", "arch"),
-#PythonDistribTest("linux", "x64", "alpine"),
-#PythonDistribTest("linux", "x64", "ubuntu2204"),
-#PythonDistribTest(
-#    "linux", "aarch64", "python38_buster", presubmit=True
-#),
-#PythonDistribTest(
-#    "linux", "x64", "alpine3.7", source=True, presubmit=True
-#),
-#PythonDistribTest(
-#    "linux", "x64", "buster", source=True, presubmit=True
-#),
-#PythonDistribTest(
-#    "linux", "x86", "buster", source=True, presubmit=True
-#),
-#PythonDistribTest("linux", "x64", "fedora36", source=True),
-#PythonDistribTest("linux", "x64", "arch", source=True),
-#PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
-
-# source vs binary
-# if self.source:
-#return create_docker_jobspec(
-#    self.name,
-#    "tools/dockerfile/distribtest/python_dev_%s_%s"
-#    % (self.docker_suffix, self.arch),
-#    "test/distrib/python/run_source_distrib_test.sh",
-#    copy_rel_path="test/distrib",
-#    timeout_seconds=45 * 60,
-#)
-#else:
-#return create_docker_jobspec(
-#    self.name,
-#    "tools/dockerfile/distribtest/python_%s_%s"
-#    % (self.docker_suffix, self.arch),
-#    "test/distrib/python/run_binary_distrib_test.sh",
-#    copy_rel_path="test/distrib",
-#    timeout_seconds=45 * 60,
+# TODO(jtattermusch): add more grpc_run_distribtest_test targets for existing python distribtests from distribtest_targets.py
+# Note that there a two flavors of python distribtests - "binary" (which uses pre-built wheels) and "source" (which compiles python extension for sources)
 
 # TODO(jtattermusch): add grpc_build_artifact_task targets for ruby artifacts (which is tricky, since ruby artifact builds do not run under docker since they invoke docker themselves)
 
 test_suite(
     name = "artifact_build_tests_linux",
     tests = [
+        ":ackage_python_linux_build_test",
         ":artifact_php_linux_x64_build_test",
         ":artifact_protoc_linux_aarch64_build_test",
         ":artifact_protoc_linux_x64_build_test",
         ":artifact_protoc_linux_x86_build_test",
         ":artifact_python_linux_x64_manylinux2014_cp311_build_test",
         ":package_csharp_linux_build_test",
-        ":ackage_python_linux_build_test",
     ],
 )
 
@@ -471,7 +432,7 @@ test_suite(
         ":cpp_distribtests_linux",
         ":csharp_distribtests_linux",
         ":php_distribtests_linux",
-        ":python_distribtests_linux",
         ":portability_tests_linux",
+        ":python_distribtests_linux",
     ],
 )
