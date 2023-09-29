@@ -641,22 +641,28 @@ ClusterLoadAssignment XdsEnd2endTest::BuildEdsResource(
     endpoints->mutable_locality()->set_zone(kDefaultLocalityZone);
     endpoints->mutable_locality()->set_sub_zone(locality.sub_zone);
     for (size_t i = 0; i < locality.endpoints.size(); ++i) {
-      const int& port = locality.endpoints[i].port;
+      const auto& endpoint = locality.endpoints[i];
       auto* lb_endpoints = endpoints->add_lb_endpoints();
       if (locality.endpoints.size() > i &&
           locality.endpoints[i].health_status != HealthStatus::UNKNOWN) {
-        lb_endpoints->set_health_status(locality.endpoints[i].health_status);
+        lb_endpoints->set_health_status(endpoint.health_status);
       }
-      if (locality.endpoints.size() > i &&
-          locality.endpoints[i].lb_weight >= 1) {
+      if (locality.endpoints.size() > i && endpoint.lb_weight >= 1) {
         lb_endpoints->mutable_load_balancing_weight()->set_value(
-            locality.endpoints[i].lb_weight);
+            endpoint.lb_weight);
       }
-      auto* endpoint = lb_endpoints->mutable_endpoint();
-      auto* address = endpoint->mutable_address();
-      auto* socket_address = address->mutable_socket_address();
+      auto* endpoint_proto = lb_endpoints->mutable_endpoint();
+      auto* socket_address =
+          endpoint_proto->mutable_address()->mutable_socket_address();
       socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-      socket_address->set_port_value(port);
+      socket_address->set_port_value(endpoint.port);
+      for (int port : endpoint.additional_ports) {
+        socket_address = endpoint_proto->add_additional_addresses()
+                             ->mutable_address()
+                             ->mutable_socket_address();
+        socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+        socket_address->set_port_value(port);
+      }
     }
   }
   if (!args.drop_categories.empty()) {
