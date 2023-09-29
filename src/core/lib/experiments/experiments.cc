@@ -206,7 +206,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      kDefaultForDebugOnly, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, false, true},
+     additional_constraints_work_serializer_clears_time_cache, true, true},
 };
 
 }  // namespace grpc_core
@@ -397,7 +397,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      kDefaultForDebugOnly, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, false, true},
+     additional_constraints_work_serializer_clears_time_cache, true, true},
 };
 
 }  // namespace grpc_core
@@ -588,7 +588,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      kDefaultForDebugOnly, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, false, true},
+     additional_constraints_work_serializer_clears_time_cache, true, true},
 };
 
 }  // namespace grpc_core
