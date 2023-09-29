@@ -404,6 +404,13 @@ grpc_run_distribtest_test(
     docker_image_version = "tools/dockerfile/distribtest/python_buster_x64.current_version",
 )
 
+test_suite(
+    name = "python_distribtests_linux",
+    tests = [
+        ":distribtest_python_linux_x64_buster",
+    ],
+)
+
 # TODO(jtattermusch): add more grpc_run_distribtest_test targets for existing python distribtests from distribtest_targets.py
 # Note that there a two flavors of python distribtests - "binary" (which uses pre-built wheels) and "source" (which compiles python extension for sources)
 
@@ -412,13 +419,14 @@ grpc_run_distribtest_test(
 test_suite(
     name = "artifact_build_tests_linux",
     tests = [
-        ":ackage_python_linux_build_test",
         ":artifact_php_linux_x64_build_test",
         ":artifact_protoc_linux_aarch64_build_test",
         ":artifact_protoc_linux_x64_build_test",
         ":artifact_protoc_linux_x86_build_test",
         ":artifact_python_linux_x64_manylinux2014_cp311_build_test",
+        ":artifact_python_linux_x64_manylinux2014_cp37_build_test",
         ":package_csharp_linux_build_test",
+        ":package_python_linux_build_test",
     ],
 )
 
