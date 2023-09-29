@@ -19,6 +19,8 @@
 #ifndef GRPC_GRPC_CRL_PROVIDER_H
 #define GRPC_GRPC_CRL_PROVIDER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 #include <string>
