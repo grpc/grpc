@@ -27,7 +27,6 @@
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
-#include "gmock/gmock.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

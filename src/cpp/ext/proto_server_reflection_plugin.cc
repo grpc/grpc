@@ -17,6 +17,7 @@
 //
 
 #include <memory>
+#include <string>
 
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/impl/server_builder_plugin.h>
