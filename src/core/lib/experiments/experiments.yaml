@@ -221,4 +221,9 @@
     cancellation.
   expiry: 2024/01/01
   owner: vigneshbabu@google.com
+- name: tarpit
+  description:
+    Support tarpitting responses to mitigate some classes of http2 attack
+  expiry: 2024/03/03
+  owner: ctiller@google.com
   test_tags: []

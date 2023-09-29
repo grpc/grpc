@@ -519,6 +519,15 @@ struct GrpcRegisteredMethod {
   static std::string DisplayValue(void* x);
 };
 
+// Annotation added by filters to inform the transport to tarpit this
+// response: add some random delay to thwart certain kinds of attacks.
+struct GrpcTarPit {
+  static absl::string_view DebugKey() { return "GrpcTarPit"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = Empty;
+  static absl::string_view DisplayValue(Empty x) { return "tarpit"; }
+};
+
 namespace metadata_detail {
 
 // Build a key/value formatted debug string.
@@ -1496,7 +1505,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
     grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady,
-    grpc_core::GrpcTrailersOnly,
+    grpc_core::GrpcTrailersOnly, grpc_core::GrpcTarPit,
     grpc_core::GrpcRegisteredMethod GRPC_CUSTOM_CLIENT_METADATA
         GRPC_CUSTOM_SERVER_METADATA>;
 
