@@ -440,7 +440,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
           .millis();
   t->max_tarpit_duration_ms =
       channel_args
-          .GetDurationFromIntMillis(GRPC_ARG_HTTP_TARPIT_MIN_DURATION_MS)
+          .GetDurationFromIntMillis(GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS)
           .value_or(grpc_core::Duration::Seconds(1))
           .millis();
 
@@ -2091,18 +2091,19 @@ Duration TarpitDuration(grpc_chttp2_transport* t) {
 
 template <typename F>
 void MaybeTarpit(grpc_chttp2_transport* t, bool tarpit, F fn) {
-  if (!tarpit || !t->allow_tarpit) {
+  if (!tarpit || !t->allow_tarpit || t->is_client) {
     fn(t);
     return;
   }
   const auto duration = TarpitDuration(t);
-  gpr_log(GPR_INFO, "Tarpit response for %s", duration.ToString().c_str());
   t->event_engine->RunAfter(duration, [t = t->Ref(),
                                        fn = std::move(fn)]() mutable {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     t->combiner->Run(
         NewClosure([t, fn = std::move(fn)](grpc_error_handle error) mutable {
+          // TODO(ctiller): this can result in not sending RST_STREAMS if a
+          // request gets tarpit behind a transport close.
           if (!t->closed_with_error.ok()) return;
           fn(t.get());
         }),
@@ -3011,7 +3012,7 @@ static void destructive_reclaimer_locked(
         grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
                            grpc_core::StatusIntProperty::kHttp2Error,
                            GRPC_HTTP2_ENHANCE_YOUR_CALM),
-        true);
+        false);
     if (!t->stream_map.empty()) {
       // Since we cancel one stream per destructive reclamation, if
       //   there are more streams left, we can immediately post a new
