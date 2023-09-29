@@ -175,9 +175,8 @@ SOCKET_DEFAULT_TIMEOUT = flags.DEFINE_float(
 
 GFE_DEBUG_HEADER = flags.DEFINE_enum(
     "gfe_debug_header",
-    default="disable_gfe_debug_header",
+    default=None,
     enum_values=[
-        "disable_gfe_debug_header",
         "gfe_response_only",
         "all_response",
         "request_and_response",
