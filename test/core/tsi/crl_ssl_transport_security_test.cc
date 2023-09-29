@@ -434,7 +434,10 @@ std::string TestNameSuffix(
   return "TLS_1_3";
 }
 
-// TODO(gtcooke94) Add nullptr issuer test cases
+// TODO(gtcooke94) Add nullptr issuer test cases - this is not simple to test
+// the way the code is currently designed - we plan to refactor ways the OpenSSL
+// callback functions are written to have more easily testable chunks in
+// ssl_transport_security_utils and will add nullptr issuer tests at that time.
 
 INSTANTIATE_TEST_SUITE_P(TLSVersionsTest, CrlSslTransportSecurityTest,
                          testing::Values(tsi_tls_version::TSI_TLS1_2,
