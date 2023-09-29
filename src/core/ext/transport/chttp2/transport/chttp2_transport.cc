@@ -25,7 +25,6 @@
 
 #include <algorithm>
 #include <initializer_list>
-#include <limits>
 #include <memory>
 #include <new>
 #include <string>
@@ -48,7 +47,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
