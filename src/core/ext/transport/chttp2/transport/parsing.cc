@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include <initializer_list>
-#include <limits>
 #include <string>
 
 #include "absl/base/attributes.h"
