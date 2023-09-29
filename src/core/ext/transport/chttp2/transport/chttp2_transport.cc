@@ -42,8 +42,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "internal.h"
-#include "legacy_frame.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -119,11 +117,6 @@
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
-// EXPERIMENTAL: control tarpitting in chttp2
-#define GRPC_ARG_HTTP_ALLOW_TARPIT "grpc.http.tarpit"
-#define GRPC_ARG_HTTP_TARPIT_MIN_DURATION_MS "grpc.http.tarpit_min_duration_ms"
-#define GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS "grpc.http.tarpit_max_duration_ms"
-
 static grpc_core::Duration g_default_client_keepalive_time =
     grpc_core::Duration::Infinity();
 static grpc_core::Duration g_default_client_keepalive_timeout =
@@ -134,6 +127,11 @@ static grpc_core::Duration g_default_server_keepalive_timeout =
     grpc_core::Duration::Seconds(20);
 static bool g_default_client_keepalive_permit_without_calls = false;
 static bool g_default_server_keepalive_permit_without_calls = false;
+
+// EXPERIMENTAL: control tarpitting in chttp2
+#define GRPC_ARG_HTTP_ALLOW_TARPIT "grpc.http.tarpit"
+#define GRPC_ARG_HTTP_TARPIT_MIN_DURATION_MS "grpc.http.tarpit_min_duration_ms"
+#define GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS "grpc.http.tarpit_max_duration_ms"
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 grpc_core::TraceFlag grpc_keepalive_trace(false, "http_keepalive");
