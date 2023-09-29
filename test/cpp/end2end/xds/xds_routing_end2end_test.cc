@@ -20,6 +20,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
+
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"

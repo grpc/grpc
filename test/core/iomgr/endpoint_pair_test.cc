@@ -22,6 +22,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

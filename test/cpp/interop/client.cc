@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include "absl/flags/flag.h"
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

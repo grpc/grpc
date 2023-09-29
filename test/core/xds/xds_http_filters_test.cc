@@ -25,6 +25,7 @@
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
 #include "absl/types/variant.h"

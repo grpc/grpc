@@ -16,6 +16,8 @@
 
 #include "src/core/lib/transport/parsed_metadata.h"
 
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
+
 namespace grpc_core {
 namespace metadata_detail {
 

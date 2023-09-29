@@ -26,6 +26,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 

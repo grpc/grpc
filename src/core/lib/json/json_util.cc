@@ -20,6 +20,8 @@
 
 #include "src/core/lib/json/json_util.h"
 
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
+
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json_args.h"

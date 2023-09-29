@@ -18,6 +18,8 @@
 #include <AvailabilityMacros.h>
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
+
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/strerror.h"

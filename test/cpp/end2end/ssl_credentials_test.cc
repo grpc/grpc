@@ -20,6 +20,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc_security.h>
