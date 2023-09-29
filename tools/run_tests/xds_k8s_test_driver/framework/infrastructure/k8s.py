@@ -771,7 +771,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         )
         retryer(self.get)
 
-    def wait_for_service_neg(
+    def wait_for_service_neg_annotation(
         self,
         name: str,
         timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
@@ -788,10 +788,12 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         except retryers.RetryError as retry_err:
             result = retry_err.result()
             note = framework.errors.FrameworkError.note_blanket_error_info_below(
-                "A k8s service wasn't assigned a NEG (Network Endpoint Group).",
+                "A Kubernetes Service wasn't assigned a NEG (Network Endpoint"
+                " Group) annotation.",
                 info_below=(
-                    f"Timeout {timeout} (h:mm:ss) waiting for service {name}"
-                    f" to report NEG status. Last service status:\n"
+                    f"Timeout {timeout} (h:mm:ss) waiting for Kubernetes"
+                    f" service {name} to report a NEG annotation."
+                    f" Last service status:\n"
                     f"{self._pretty_format_status(result, highlight=False)}"
                 ),
             )
