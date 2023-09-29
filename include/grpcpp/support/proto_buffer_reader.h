@@ -189,6 +189,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   // This function takes ownership of slice and return a newly created Cord off
   // of it.
   static absl::Cord MakeCordFromSlice(grpc_slice slice) {
+    // slice_for_cord is created to keep inlined data of the given slice
     grpc_slice* slice_for_cord = new grpc_slice;
     *slice_for_cord = slice;
     return absl::MakeCordFromExternal(
