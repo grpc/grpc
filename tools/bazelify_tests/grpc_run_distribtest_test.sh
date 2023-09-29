@@ -34,7 +34,11 @@ do
   # Note that input artifacts from different dependencies can have files
   # with the same name, so disambiguating through the name of the archive
   # is important.
-  tar --strip-components=1 --one-top-level -xopf ../../${input_artifact_archive}
+  archive_extract_dir="$(basename ${input_artifact_archive} .tar.gz)"
+  mkdir -p "${archive_extract_dir}"
+  pushd "${archive_extract_dir}" >/dev/null
+  tar --strip-components=1 -xopf ../../../${input_artifact_archive}
+  popd >/dev/null
 done
 popd >/dev/null
 
