@@ -48,6 +48,15 @@ class Chttp2MaxConcurrentStreamsPolicy {
 
  private:
   uint32_t target_ = std::numeric_limits<int32_t>::max();
+  // Demerit flow:
+  // When we add a demerit, we add to both new & unacked.
+  // When we flush settings, we move new to sent.
+  // When we ack settings, we remove what we sent from unacked.
+  // eg:
+  // we add 10 demerits - now new=10, sent=0, unacked=10
+  // we send settings - now new=0, sent=10, unacked=10
+  // we add 5 demerits - now new=5, sent=10, unacked=15
+  // we get the settings ack - now new=5, sent=0, unacked=5
   uint32_t new_demerits_ = 0;
   uint32_t sent_demerits_ = 0;
   uint32_t unacked_demerits_ = 0;
