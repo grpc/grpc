@@ -98,7 +98,10 @@ SslSessionLRUCache::Node* SslSessionLRUCache::FindLocked(
 }
 
 void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
-  if (session == nullptr) return;
+  if (session == nullptr) {
+    gpr_log(GPR_ERROR, "Attempted to put null SSL session in session cache.");
+    return;
+  }
   grpc_core::MutexLock lock(&lock_);
   Node* node = FindLocked(key);
   if (node != nullptr) {
