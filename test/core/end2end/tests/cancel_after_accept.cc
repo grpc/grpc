@@ -82,15 +82,18 @@ CORE_END2END_TEST(CoreClientChannelTest, DeadlineAfterAcceptWithServiceConfig) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      { \"service\": \"service\", \"method\": \"method\" },\n"
-      "      { \"service\": \"unused\" }\n"
-      "    ],\n"
-      "    \"timeout\": \"5s\"\n"
-      "  } ]\n"
-      "}"));
+      absl::StrCat(
+          "{\n"
+          "  \"methodConfig\": [ {\n"
+          "    \"name\": [\n"
+          "      { \"service\": \"service\", \"method\": \"method\" },\n"
+          "      { \"service\": \"unused\" }\n"
+          "    ],\n"
+          "    \"timeout\": \"",
+          5 * grpc_test_slowdown_factor(),
+          "s\"\n"
+          "  } ]\n"
+          "}")));
   CancelAfterAccept(*this, std::make_unique<DeadlineCancellationMode>(),
                     Duration::Infinity());
 }
