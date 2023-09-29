@@ -70,12 +70,14 @@ const std::string kRootCrlPath =
 const std::string kIntermediateCrlPath =
     absl::StrCat(kSslTsiTestCrlSupportedCrlDir, "intermediate.crl");
 
-char* LoadFile(absl::string_view file_path) {
+std::string LoadFile(absl::string_view file_path) {
   grpc_slice slice;
   GPR_ASSERT(grpc_load_file(file_path.data(), 1, &slice) == absl::OkStatus());
   char* data = grpc_slice_to_c_string(slice);
   grpc_slice_unref(slice);
-  return data;
+  std::string ret = data;
+  gpr_free(data);
+  return ret;
 }
 
 class CrlSslTransportSecurityTest
@@ -100,7 +102,7 @@ class CrlSslTransportSecurityTest
       client_cert_ = LoadFile(client_cert_path);
       root_cert_ = LoadFile(
           absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "ca.pem"));
-      root_store_ = tsi_ssl_root_certs_store_create(root_cert_);
+      root_store_ = tsi_ssl_root_certs_store_create(root_cert_.c_str());
       crl_directory_ = crl_directory;
       crl_provider_ = std::move(crl_provider);
       expect_server_success_ = expect_server_success;
@@ -109,12 +111,12 @@ class CrlSslTransportSecurityTest
 
       server_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      server_pem_key_cert_pairs_[0].private_key = server_key_;
-      server_pem_key_cert_pairs_[0].cert_chain = server_cert_;
+      server_pem_key_cert_pairs_[0].private_key = server_key_.c_str();
+      server_pem_key_cert_pairs_[0].cert_chain = server_cert_.c_str();
       client_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      client_pem_key_cert_pairs_[0].private_key = client_key_;
-      client_pem_key_cert_pairs_[0].cert_chain = client_cert_;
+      client_pem_key_cert_pairs_[0].private_key = client_key_.c_str();
+      client_pem_key_cert_pairs_[0].cert_chain = client_cert_.c_str();
       GPR_ASSERT(root_store_ != nullptr);
     }
 
@@ -124,12 +126,12 @@ class CrlSslTransportSecurityTest
     }
 
     ~SslTsiTestFixture() {
-      PemKeyCertPairDestroy(server_pem_key_cert_pairs_[0]);
-      PemKeyCertPairDestroy(client_pem_key_cert_pairs_[0]);
+      // PemKeyCertPairDestroy(server_pem_key_cert_pairs_[0]);
+      // PemKeyCertPairDestroy(client_pem_key_cert_pairs_[0]);
       gpr_free(server_pem_key_cert_pairs_);
       gpr_free(client_pem_key_cert_pairs_);
 
-      gpr_free(root_cert_);
+      // gpr_free(root_cert_);
 
       tsi_ssl_root_certs_store_destroy(root_store_);
       tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
@@ -146,7 +148,7 @@ class CrlSslTransportSecurityTest
     void SetupHandshakers() {
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
-      client_options.pem_root_certs = root_cert_;
+      client_options.pem_root_certs = root_cert_.c_str();
       client_options.pem_key_cert_pair = client_pem_key_cert_pairs_;
       client_options.crl_directory = crl_directory_;
       client_options.crl_provider = crl_provider_;
@@ -160,7 +162,7 @@ class CrlSslTransportSecurityTest
       tsi_ssl_server_handshaker_options server_options;
       server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
       server_options.num_key_cert_pairs = 1;
-      server_options.pem_client_root_certs = root_cert_;
+      server_options.pem_client_root_certs = root_cert_.c_str();
       server_options.crl_directory = crl_directory_;
       server_options.crl_provider = crl_provider_;
       server_options.client_certificate_request =
@@ -242,8 +244,8 @@ class CrlSslTransportSecurityTest
     }
 
     static void PemKeyCertPairDestroy(tsi_ssl_pem_key_cert_pair kp) {
-      gpr_free(const_cast<char*>(kp.private_key));
-      gpr_free(const_cast<char*>(kp.cert_chain));
+      // gpr_free(const_cast<char*>(kp.private_key));
+      // gpr_free(const_cast<char*>(kp.cert_chain));
     }
 
     static void Destruct(tsi_test_fixture* fixture) {
@@ -254,15 +256,15 @@ class CrlSslTransportSecurityTest
     static struct tsi_test_fixture_vtable kVtable;
 
     tsi_test_fixture base_;
-    char* root_cert_;
+    std::string root_cert_;
     tsi_ssl_root_certs_store* root_store_;
     tsi_ssl_server_handshaker_factory* server_handshaker_factory_;
     tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
 
-    char* server_key_;
-    char* server_cert_;
-    char* client_key_;
-    char* client_cert_;
+    std::string server_key_;
+    std::string server_cert_;
+    std::string client_key_;
+    std::string client_cert_;
     const char* crl_directory_;
     bool expect_server_success_;
     bool expect_client_success_1_2_;
@@ -333,11 +335,11 @@ TEST_P(CrlSslTransportSecurityTest, UseRevokedIntermediateWithMissingRootCrl) {
 }
 
 TEST_P(CrlSslTransportSecurityTest, CrlProviderValidCerts) {
-  char* root_crl = LoadFile(kRootCrlPath);
-  char* intermediate_crl = LoadFile(kIntermediateCrlPath);
+  std::string root_crl = LoadFile(kRootCrlPath);
+  std::string intermediate_crl = LoadFile(kIntermediateCrlPath);
   std::vector<std::string> crls = {root_crl, intermediate_crl};
-  gpr_free(root_crl);
-  gpr_free(intermediate_crl);
+  // gpr_free(root_crl);
+  // gpr_free(intermediate_crl);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
       grpc_core::experimental::StaticCrlProvider::FromVector(crls);
@@ -352,11 +354,11 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderValidCerts) {
 }
 
 TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedServer) {
-  char* root_crl = LoadFile(kRootCrlPath);
-  char* intermediate_crl = LoadFile(kIntermediateCrlPath);
+  std::string root_crl = LoadFile(kRootCrlPath);
+  std::string intermediate_crl = LoadFile(kIntermediateCrlPath);
   std::vector<std::string> crls = {root_crl, intermediate_crl};
-  gpr_free(root_crl);
-  gpr_free(intermediate_crl);
+  // gpr_free(root_crl);
+  // gpr_free(intermediate_crl);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
       grpc_core::experimental::StaticCrlProvider::FromVector(crls);
@@ -371,11 +373,11 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedServer) {
 }
 
 TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedClient) {
-  char* root_crl = LoadFile(kRootCrlPath);
-  char* intermediate_crl = LoadFile(kIntermediateCrlPath);
+  std::string root_crl = LoadFile(kRootCrlPath);
+  std::string intermediate_crl = LoadFile(kIntermediateCrlPath);
   std::vector<std::string> crls = {root_crl, intermediate_crl};
-  gpr_free(root_crl);
-  gpr_free(intermediate_crl);
+  // gpr_free(root_crl);
+  // gpr_free(intermediate_crl);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
       grpc_core::experimental::StaticCrlProvider::FromVector(crls);
@@ -390,11 +392,11 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedClient) {
 }
 
 TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedIntermediateValidCrl) {
-  char* root_crl = LoadFile(kRootCrlPath);
-  char* intermediate_crl = LoadFile(kIntermediateCrlPath);
+  std::string root_crl = LoadFile(kRootCrlPath);
+  std::string intermediate_crl = LoadFile(kIntermediateCrlPath);
   std::vector<std::string> crls = {root_crl, intermediate_crl};
-  gpr_free(root_crl);
-  gpr_free(intermediate_crl);
+  // gpr_free(root_crl);
+  // gpr_free(intermediate_crl);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
       grpc_core::experimental::StaticCrlProvider::FromVector(crls);
@@ -410,9 +412,9 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedIntermediateValidCrl) {
 
 TEST_P(CrlSslTransportSecurityTest,
        CrlProviderRevokedIntermediateMissingIntermediateCrl) {
-  char* root_crl = LoadFile(kRootCrlPath);
+  std::string root_crl = LoadFile(kRootCrlPath);
   std::vector<std::string> crls = {root_crl};
-  gpr_free(root_crl);
+  // gpr_free(root_crl);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
       grpc_core::experimental::StaticCrlProvider::FromVector(crls);
@@ -428,9 +430,9 @@ TEST_P(CrlSslTransportSecurityTest,
 
 TEST_P(CrlSslTransportSecurityTest,
        CrlProviderRevokedIntermediateMissingRootCrl) {
-  char* intermediate_crl = LoadFile(kIntermediateCrlPath);
+  std::string intermediate_crl = LoadFile(kIntermediateCrlPath);
   std::vector<std::string> crls = {intermediate_crl};
-  gpr_free(intermediate_crl);
+  // gpr_free(intermediate_crl);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
       grpc_core::experimental::StaticCrlProvider::FromVector(crls);
