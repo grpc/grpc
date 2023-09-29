@@ -417,6 +417,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
   if (max_requests_per_read.has_value()) {
     t->max_requests_per_read =
         grpc_core::Clamp(*max_requests_per_read, 1, 10000);
+  } else if (grpc_core::IsChttp2BatchRequestsEnabled()) {
+    t->max_requests_per_read = 32;
   } else {
     t->max_requests_per_read = std::numeric_limits<size_t>::max();
   }
