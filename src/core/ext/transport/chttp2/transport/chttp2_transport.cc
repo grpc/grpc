@@ -871,7 +871,7 @@ static const char* write_state_name(grpc_chttp2_write_state st) {
 
 static void set_write_state(grpc_chttp2_transport* t,
                             grpc_chttp2_write_state st, const char* reason) {
-  (gpr_log(GPR_INFO, "W:%p %s [%s] state %s -> %s [%s]", t,
+  (gpr_log(GPR_ERROR, "W:%p %s [%s] state %s -> %s [%s]", t,
            t->is_client ? "CLIENT" : "SERVER",
            std::string(t->peer_string.as_string_view()).c_str(),
            write_state_name(t->write_state), write_state_name(st), reason));
