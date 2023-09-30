@@ -1684,6 +1684,7 @@ static void retry_initiate_ping_locked(
 }
 
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
+  gpr_log(GPR_ERROR, "t=%p ack ping %" PRId64, t, id);
   if (!t->ping_callbacks.AckPing(id, t->event_engine.get())) {
     gpr_log(GPR_DEBUG, "Unknown ping response from %s: %" PRIx64,
             std::string(t->peer_string.as_string_view()).c_str(), id);

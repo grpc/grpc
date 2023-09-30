@@ -98,12 +98,14 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
     if (p->is_ack) {
       grpc_chttp2_ack_ping(t, p->opaque_8bytes);
     } else {
+      const bool transport_idle =
+          t->keepalive_permit_without_calls == 0 && t->stream_map.empty();
+      gpr_log(GPR_ERROR, "t=%p received ping %" PRId64 ": %s", t,
+              p->opaque_8bytes,
+              t->ping_abuse_policy.GetDebugString(transport_idle).c_str());
       if (!t->is_client) {
-        const bool transport_idle =
-            t->keepalive_permit_without_calls == 0 && t->stream_map.empty();
-        if (grpc_keepalive_trace.enabled() || grpc_http_trace.enabled()) {
-          gpr_log(GPR_INFO, "t=%p received ping: %s", t,
-                  t->ping_abuse_policy.GetDebugString(transport_idle).c_str());
+        if (true || grpc_keepalive_trace.enabled() ||
+            grpc_http_trace.enabled()) {
         }
         if (t->ping_abuse_policy.ReceivedOnePing(transport_idle)) {
           grpc_chttp2_exceeded_ping_strikes(t);

@@ -127,37 +127,41 @@ static bool maybe_initiate_ping(grpc_chttp2_transport* t) {
           return true;
         }
         t->ping_rate_policy.SentPing();
+        std::shared_ptr<uint64_t> debug = std::make_shared<uint64_t>(0);
         const uint64_t id = t->ping_callbacks.StartPing(
             t->bitgen, t->keepalive_timeout,
-            [t = t->Ref()] {
+            [t = t->Ref(), debug] {
               grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
               grpc_core::ExecCtx exec_ctx;
+              gpr_log(GPR_ERROR, "%p: PING TIMEOUT: %" PRId64, t.get(), *debug);
               grpc_chttp2_ping_timeout(t);
             },
             t->event_engine.get());
+        *debug = id;
         grpc_slice_buffer_add(t->outbuf.c_slice_buffer(),
                               grpc_chttp2_ping_create(false, id));
         if (t->channelz_socket != nullptr) {
           t->channelz_socket->RecordKeepaliveSent();
         }
         grpc_core::global_stats().IncrementHttp2PingsSent();
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        if (true || GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-          gpr_log(GPR_INFO, "%s: Ping sent [%s]: %s",
+          gpr_log(GPR_ERROR, "%s: Ping sent [%s]: %s id=%" PRId64 " timeout=%s",
                   t->is_client ? "CLIENT" : "SERVER",
                   std::string(t->peer_string.as_string_view()).c_str(),
-                  t->ping_rate_policy.GetDebugString().c_str());
+                  t->ping_rate_policy.GetDebugString().c_str(), id,
+                  t->keepalive_timeout.ToString().c_str());
         }
         return false;
       },
       [t](grpc_core::Chttp2PingRatePolicy::TooManyRecentPings) {
         // need to receive something of substance before sending a ping again
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        if (true || GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-          gpr_log(GPR_INFO,
-                  "CLIENT: Ping delayed [%s]: too many recent pings: %s",
+          gpr_log(GPR_ERROR, "%s: Ping delayed [%s]: too many recent pings: %s",
+                  t->is_client ? "CLIENT" : "SERVER",
                   std::string(t->peer_string.as_string_view()).c_str(),
                   t->ping_rate_policy.GetDebugString().c_str());
         }
@@ -165,10 +169,10 @@ static bool maybe_initiate_ping(grpc_chttp2_transport* t) {
       },
       [t](grpc_core::Chttp2PingRatePolicy::TooSoon too_soon) {
         // not enough elapsed time between successive pings
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        if (true || GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-          gpr_log(GPR_INFO,
+          gpr_log(GPR_ERROR,
                   "%s: Ping delayed [%s]: not enough time elapsed since last "
                   "ping. "
                   " Last ping:%s, minimum wait:%s need to wait:%s",
