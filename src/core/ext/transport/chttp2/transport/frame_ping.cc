@@ -100,9 +100,10 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
     } else {
       const bool transport_idle =
           t->keepalive_permit_without_calls == 0 && t->stream_map.empty();
-      gpr_log(GPR_ERROR, "t=%p received ping %" PRId64 ": %s", t,
+      gpr_log(GPR_ERROR, "t=%p received ping %" PRId64 ": %s ack_pings=%d", t,
               p->opaque_8bytes,
-              t->ping_abuse_policy.GetDebugString(transport_idle).c_str());
+              t->ping_abuse_policy.GetDebugString(transport_idle).c_str(),
+              t->ack_pings);
       if (!t->is_client) {
         if (true || grpc_keepalive_trace.enabled() ||
             grpc_http_trace.enabled()) {
