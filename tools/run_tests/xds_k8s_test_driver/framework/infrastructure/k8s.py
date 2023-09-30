@@ -798,7 +798,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                     f" the NEG creation event hasn't propagated to Kubernetes."
                     f" Service metadata:\n"
                     f"{self._pretty_format_metadata(result, highlight=False)}"
-                    f" Service status:\n"
+                    f"Service status:\n"
                     f"{self._pretty_format_status(result, highlight=False)}"
                 ),
             )
