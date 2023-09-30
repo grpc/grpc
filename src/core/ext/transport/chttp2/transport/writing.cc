@@ -108,19 +108,24 @@ static grpc_core::Duration NextAllowedPingInterval(grpc_chttp2_transport* t) {
   return grpc_core::Duration::Zero();
 }
 
-static void maybe_initiate_ping(grpc_chttp2_transport* t) {
+// Returns true if the ping was delayed because of an enormous output buffer
+static bool maybe_initiate_ping(grpc_chttp2_transport* t) {
   if (!t->ping_callbacks.ping_requested()) {
     // no ping needed: wait
-    return;
+    return false;
   }
   // InvalidateNow to avoid getting stuck re-initializing the ping timer
   // in a loop while draining the currently-held combiner. Also see
   // https://github.com/grpc/grpc/issues/26079.
   grpc_core::ExecCtx::Get()->InvalidateNow();
-  Match(
+  return Match(
       t->ping_rate_policy.RequestSendPing(NextAllowedPingInterval(t),
                                           t->ping_callbacks.pings_inflight()),
       [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
+        if (t->outbuf.Length() > 32768) {
+          // don't send a ping if there's too much data in the outgoing buffer
+          return true;
+        }
         t->ping_rate_policy.SentPing();
         const uint64_t id = t->ping_callbacks.StartPing(
             t->bitgen, t->keepalive_timeout,
@@ -144,6 +149,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                   std::string(t->peer_string.as_string_view()).c_str(),
                   t->ping_rate_policy.GetDebugString().c_str());
         }
+        return false;
       },
       [t](grpc_core::Chttp2PingRatePolicy::TooManyRecentPings) {
         // need to receive something of substance before sending a ping again
@@ -155,6 +161,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                   std::string(t->peer_string.as_string_view()).c_str(),
                   t->ping_rate_policy.GetDebugString().c_str());
         }
+        return false;
       },
       [t](grpc_core::Chttp2PingRatePolicy::TooSoon too_soon) {
         // not enough elapsed time between successive pings
@@ -179,7 +186,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                 grpc_chttp2_retry_initiate_ping(std::move(t));
               });
         }
+        return false;
       });
+  return false;
 }
 
 static bool update_list(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
@@ -347,6 +356,11 @@ class WriteContext {
   void IncTrailingMetadataWrites() { ++trailing_metadata_writes_; }
 
   void NoteScheduledResults() { result_.early_results_scheduled = true; }
+  void MaybeInitiatePing() {
+    if (maybe_initiate_ping(t_)) {
+      result_.partial = true;
+    }
+  }
 
   grpc_chttp2_transport* transport() const { return t_; }
 
@@ -671,8 +685,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   }
 
   ctx.FlushWindowUpdates();
-
-  maybe_initiate_ping(t);
+  ctx.MaybeInitiatePing();
 
   return ctx.Result();
 }
