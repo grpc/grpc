@@ -1039,6 +1039,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         k8s_object: Optional[object],
         *,
         highlight: bool = True,
+        managed_fields: bool = False,
     ) -> str:
         if k8s_object is None:
             return "No data"
@@ -1051,10 +1052,11 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
         # Pretty-print metadata.
         try:
-            metadata = self._pretty_format(
-                k8s_object.metadata.to_dict(),
-                highlight=highlight,
-            )
+            metadata_dict: dict = k8s_object.metadata.to_dict()
+            # Don't print manged fields by default. Lots of noise with no value.
+            if not managed_fields:
+                metadata_dict.pop("managed_fields", None)
+            metadata = self._pretty_format(metadata_dict, highlight=highlight)
         except Exception as e:  # pylint: disable=broad-except
             # Catching all exceptions because not printing the metadata
             # isn't as important as the system under test.
