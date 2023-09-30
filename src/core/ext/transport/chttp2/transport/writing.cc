@@ -316,6 +316,7 @@ class WriteContext {
 
   void FlushPingAcks() {
     for (size_t i = 0; i < t_->ping_ack_count; i++) {
+      gpr_log(GPR_ERROR, "Write ping ack %" PRId64, t_->ping_acks[i]);
       grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
                             grpc_chttp2_ping_create(true, t_->ping_acks[i]));
     }
