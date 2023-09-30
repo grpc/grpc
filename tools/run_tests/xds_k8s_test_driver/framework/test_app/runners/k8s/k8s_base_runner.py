@@ -776,11 +776,11 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         **kwargs,
     ) -> None:
         logger.info(
-            "Waiting for the %s annotation to be assigned "
-            "to Kubernetes Service %s, with service port %s, namespace %s",
+            "Waiting for '%s' annotation for a NEG at port %s to be assigned to"
+            " Kubernetes Service %s in namespace %s",
             self.k8s_namespace.NEG_STATUS_ANNOTATION,
-            service_name,
             service_port,
+            service_name,
             self.k8s_namespace.name,
         )
         self.k8s_namespace.wait_for_service_neg_status_annotation(
@@ -790,8 +790,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
             service_name, service_port
         )
         logger.info(
-            "Detected %s annotation for Kubernetes Service %s, namespace %s:"
-            " detected %s neg_name=%s, port=%s, zones=%s",
+            "Detected '%s' annotation for Kubernetes Service %s, namespace %s:"
+            " neg_name=%s, port=%s, zones=%s",
             self.k8s_namespace.NEG_STATUS_ANNOTATION,
             service_name,
             self.k8s_namespace.name,

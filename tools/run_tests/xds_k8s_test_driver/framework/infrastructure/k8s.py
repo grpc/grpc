@@ -792,8 +792,13 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 " Group) status annotation.",
                 info_below=(
                     f"Timeout {timeout} (h:mm:ss) waiting for Kubernetes"
-                    f" Service {name} to report a {self.NEG_STATUS_ANNOTATION}"
-                    f" annotation. Last service status:\n"
+                    f" Service {name} in the namespace {self.name} to report"
+                    f" the '{self.NEG_STATUS_ANNOTATION}' metadata annotation."
+                    f"\nThis indicates the NEG wasn't created OR"
+                    f" the NEG creation event hasn't propagated to Kubernetes."
+                    f" Service metadata:\n"
+                    f"{self._pretty_format_metadata(result, highlight=False)}"
+                    f" Service status:\n"
                     f"{self._pretty_format_status(result, highlight=False)}"
                 ),
             )
@@ -1028,6 +1033,35 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
         # Return the name of k8s object, and its pretty-printed status.
         return f"{name}:\n{status}\n"
+
+    def _pretty_format_metadata(
+        self,
+        k8s_object: Optional[object],
+        *,
+        highlight: bool = True,
+    ) -> str:
+        if k8s_object is None:
+            return "No data"
+
+        # Parse the name if present.
+        if not hasattr(k8s_object, "metadata"):
+            return "Object metadata missing"
+
+        name = k8s_object.metadata.name or "Can't parse resource name"
+
+        # Pretty-print metadata.
+        try:
+            metadata = self._pretty_format(
+                k8s_object.metadata.to_dict(),
+                highlight=highlight,
+            )
+        except Exception as e:  # pylint: disable=broad-except
+            # Catching all exceptions because not printing the metadata
+            # isn't as important as the system under test.
+            metadata = f"Can't parse resource metadata: {e}"
+
+        # Return the name of k8s object, and its pretty-printed status.
+        return f"{name}:\n{metadata}\n"
 
     def _pretty_format(
         self,
