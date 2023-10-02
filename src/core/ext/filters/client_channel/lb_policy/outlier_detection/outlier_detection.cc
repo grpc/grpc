@@ -166,8 +166,9 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
     void CancelDataWatcher(DataWatcherInterface* watcher) override;
 
-    RefCountedPtr<SubchannelState> subchannel_state() const {
-      return subchannel_state_;
+    RefCountedPtr<EndpointState> endpoint_state() const {
+      if (subchannel_state_ == nullptr) return nullptr;
+      return subchannel_state_->endpoint_state();
     }
 
    private:
@@ -243,6 +244,16 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       subchannels_.erase(wrapper);
     }
 
+    RefCountedPtr<EndpointState> endpoint_state() const {
+      MutexLock lock(&mu_);
+      return endpoint_state_;
+    }
+
+    void set_endpoint_state(RefCountedPtr<EndpointState> endpoint_state) {
+      MutexLock lock(&mu_);
+      endpoint_state_ = std::move(endpoint_state);
+    }
+
     void Eject() {
       // Ejecting the subchannel may cause the child policy to unref the
       // subchannel, so we need to be prepared for the set to be modified
@@ -262,7 +273,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
    private:
     std::set<SubchannelWrapper*> subchannels_;
-    RefCountedPtr<EndpointState> endpoint_state_;
+    Mutex mu_;
+    RefCountedPtr<EndpointState> endpoint_state_ ABSL_GUARDED_BY(mu_);
   };
 
   class EndpointState : public RefCounted<EndpointState> {
@@ -376,7 +388,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     const EndpointAddressSet& addresses() const { return addresses_; }
 
     static absl::string_view ChannelArgName() {
-      return GRPC_ARG_NO_SUBCHANNEL_PREFIX "endpoint_addresses";
+      return GRPC_ARG_NO_SUBCHANNEL_PREFIX
+             "outlier_detection.endpoint_addresses";
     }
     static int ChannelArgsCompare(const EndpointAddressesArg* a,
                                   const EndpointAddressesArg* b) {
@@ -491,13 +504,13 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
   SubchannelCallTracker(
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           original_subchannel_call_tracker,
-      RefCountedPtr<SubchannelState> subchannel_state)
+      RefCountedPtr<EndpointState> endpoint_state)
       : original_subchannel_call_tracker_(
             std::move(original_subchannel_call_tracker)),
-        subchannel_state_(std::move(subchannel_state)) {}
+        endpoint_state_(std::move(endpoint_state)) {}
 
   ~SubchannelCallTracker() override {
-    subchannel_state_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    endpoint_state_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
   }
 
   void Start() override {
@@ -515,19 +528,17 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
     }
     // Record call completion based on status for outlier detection
     // calculations.
-    if (subchannel_state_ != nullptr) {
-      if (args.status.ok()) {
-        subchannel_state_->AddSuccessCount();
-      } else {
-        subchannel_state_->AddFailureCount();
-      }
+    if (args.status.ok()) {
+      endpoint_state_->AddSuccessCount();
+    } else {
+      endpoint_state_->AddFailureCount();
     }
   }
 
  private:
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       original_subchannel_call_tracker_;
-  RefCountedPtr<SubchannelState> subchannel_state_;
+  RefCountedPtr<EndpointState> endpoint_state_;
 };
 
 //
@@ -562,10 +573,13 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
     // Inject subchannel call tracker to record call completion as long as
     // either success_rate_ejection or failure_percentage_ejection is enabled.
     if (counting_enabled_) {
-      complete_pick->subchannel_call_tracker =
-          std::make_unique<SubchannelCallTracker>(
-              std::move(complete_pick->subchannel_call_tracker),
-              subchannel_wrapper->subchannel_state());
+      auto endpoint_state = subchannel_wrapper->endpoint_state();
+      if (endpoint_state != nullptr) {
+        complete_pick->subchannel_call_tracker =
+            std::make_unique<SubchannelCallTracker>(
+                std::move(complete_pick->subchannel_call_tracker),
+                std::move(endpoint_state));
+      }
     }
     // Unwrap subchannel to pass back up the stack.
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
@@ -657,11 +671,29 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     ejection_timer_ =
         MakeOrphanable<EjectionTimer>(Ref(), ejection_timer_->StartTime());
   }
-  // Update subchannel state map.
+  // Update subchannel and endpoint maps.
   if (args.addresses.ok()) {
     std::set<EndpointAddressSet> current_addresses;
     for (EndpointAddresses& endpoint : *args.addresses) {
       EndpointAddressSet key(endpoint.addresses());
+      auto it = endpoint_state_map_.find(key);
+      if (it == endpoint_state_map_.end()) {
+        std::set<SubchannelState*> subchannels;
+        for (const grpc_resolved_address& address : endpoint.addresses()) {
+          auto it2 = subchannel_state_map_.find(address);
+          if (it2 == subchannel_state_map_.end()) {
+            it2 = subchannel_state_map_.emplace(
+                address, MakeRefCounted<SubchannelState>())
+                .first;
+          }
+          subchannels.insert(it2->second.get());
+        }
+// FIXME
+
+      }
+
+
+
       auto& subchannel_state = subchannel_state_map_[key];
       if (subchannel_state == nullptr) {
         subchannel_state = MakeRefCounted<SubchannelState>();
@@ -680,6 +712,7 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         }
         subchannel_state->DisableEjection();
       }
+
       current_addresses.emplace(key);
       // Add channel arg containing the key, for use in CreateSubchannel().
       endpoint = EndpointAddresses(
