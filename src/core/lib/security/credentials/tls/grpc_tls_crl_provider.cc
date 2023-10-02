@@ -20,8 +20,12 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
+#include <dirent.h>
 #include <limits.h>
+#include <sys/param.h>
+#include <sys/stat.h>
 
+#include <filesystem>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -36,6 +40,9 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
+#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/slice/slice.h"
+
 namespace grpc_core {
 namespace experimental {
 
@@ -48,6 +55,36 @@ std::string IssuerFromCrl(X509_CRL* crl) {
   }
   OPENSSL_free(buf);
   return ret;
+}
+
+gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
+  return gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                      gpr_time_from_seconds(seconds, GPR_TIMESPAN));
+}
+
+absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
+    absl::string_view crl_path) {
+  grpc_slice crl_slice = grpc_empty_slice();
+  grpc_error_handle err = grpc_load_file(crl_path.data(), 1, &crl_slice);
+  if (!err.ok()) {
+    // TODO(gtcooke94) log error
+  }
+  std::string data = std::string(StringViewFromSlice(crl_slice));
+  std::shared_ptr<Crl> crl = std::make_shared<Crl>(Crl::Parse(data)));
+  grpc_slice_unref(crl_slice);
+  return crl;
+}
+
+void GetAbsoluteFilePath(const char* valid_file_dir,
+                         const char* file_entry_name, char* path_buffer) {
+  if (valid_file_dir != nullptr && file_entry_name != nullptr) {
+    int path_len = snprintf(path_buffer, MAXPATHLEN, "%s/%s", valid_file_dir,
+                            file_entry_name);
+    if (path_len == 0) {
+      gpr_log(GPR_ERROR, "failed to get absolute path for file: %s",
+              file_entry_name);
+    }
+  }
 }
 
 }  // namespace
@@ -131,6 +168,77 @@ std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
     return nullptr;
   }
   return it->second;
+}
+
+DirectoryReloaderCrlProvider::DirectoryReloaderCrlProvider(
+    absl::string_view directory, absl::Duration refresh_duration,
+    std::function<void(absl::Status)> reload_error_callback)
+    : crl_directory_(directory),
+      refresh_duration_(refresh_duration),
+      reload_error_callback_(reload_error_callback) {}
+
+DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
+  gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
+  refresh_thread_.join();
+}
+
+absl::StatusOr<std::shared_ptr<CrlProvider>>
+DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
+    absl::string_view directory, absl::Duration refresh_duration,
+    std::function<void(absl::Status)> reload_error_callback) {
+  // TODO(gtcooke94) validate directory, inputs, etc
+  // Todo do first load here or in the thread?
+  auto provider = std::make_shared<CrlProvider>(DirectoryReloaderCrlProvider(
+      directory, refresh_duration, reload_error_callback));
+  std::shared_ptr<DirectoryReloaderCrlProvider> crl_provider =
+      std::static_pointer_cast<DirectoryReloaderCrlProvider>(provider);
+  gpr_event_init(&crl_provider->shutdown_event_);
+  auto thread_lambda = [&]() {
+    absl::Status status = crl_provider->Update();
+    while (true) {
+      if (!status.ok()) {
+        crl_provider->reload_error_callback_(status);
+      }
+      void* value = gpr_event_wait(
+          &crl_provider->shutdown_event_,
+          TimeoutSecondsToDeadline(
+              absl::ToInt64Seconds(crl_provider->refresh_duration_)));
+      if (value != nullptr) {
+        return;
+      }
+    }
+  };
+  crl_provider->refresh_thread_ = std::thread(thread_lambda);
+  return provider;
+}
+
+absl::Status DirectoryReloaderCrlProvider::Update() {
+  // for () absl::MutexLock lock(&mu_);
+  // TODO(gtcooke94) reading directory in C++ on windows vs. unix
+  DIR* crl_directory = opendir(crl_directory_.c_str());
+  struct FileData {
+    char path[MAXPATHLEN];
+    off_t size;
+  };
+  std::vector<FileData> roots_filenames;
+  struct dirent* directory_entry;
+  while ((directory_entry = readdir(crl_directory)) != nullptr) {
+    const char* file_name = directory_entry->d_name;
+    FileData file_data;
+    GetAbsoluteFilePath(crl_directory_.c_str(), file_name, file_data.path);
+    struct stat dir_entry_stat;
+    int stat_return = stat(file_data.path, &dir_entry_stat);
+    if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
+      // TODO(gtcooke94) More checks here
+      // no subdirectories.
+      if (stat_return == -1) {
+        gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
+      }
+      continue;
+    }
+  }
+
+  return absl::OkStatus();
 }
 
 }  // namespace experimental
