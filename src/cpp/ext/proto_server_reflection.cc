@@ -23,6 +23,10 @@
 
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/interceptor.h>
+#include <grpcpp/support/sync_stream.h>
+
+#include "src/proto/grpc/reflection/v1/reflection.pb.h"
+#include "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
 
 // IWYU pragma: no_include "google/protobuf/descriptor.h"
 // IWYU pragma: no_include <google/protobuf/descriptor.h>

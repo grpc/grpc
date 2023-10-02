@@ -19,7 +19,7 @@
 #include <memory>
 #include <vector>
 
-#include <gmock/gmock.h>
+#include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
