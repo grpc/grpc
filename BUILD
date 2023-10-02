@@ -4041,6 +4041,7 @@ grpc_cc_library(
         "//src/core:match",
         "//src/core:memory_quota",
         "//src/core:ping_abuse_policy",
+        "//src/core:ping_callbacks",
         "//src/core:ping_rate_policy",
         "//src/core:poll",
         "//src/core:ref_counted",

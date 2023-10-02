@@ -730,6 +730,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
 }
 
 TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
+  TransportCounter::WaitForTransportsToBeDestroyed();
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   // create the server
   std::string server_address =
@@ -805,6 +806,7 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
 }
 
 TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
+  TransportCounter::WaitForTransportsToBeDestroyed();
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   // create the client and server
   std::string server_address =

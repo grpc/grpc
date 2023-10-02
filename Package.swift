@@ -314,6 +314,8 @@ let package = Package(
         "src/core/ext/transport/chttp2/transport/parsing.cc",
         "src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc",
         "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h",
+        "src/core/ext/transport/chttp2/transport/ping_callbacks.cc",
+        "src/core/ext/transport/chttp2/transport/ping_callbacks.h",
         "src/core/ext/transport/chttp2/transport/ping_rate_policy.cc",
         "src/core/ext/transport/chttp2/transport/ping_rate_policy.h",
         "src/core/ext/transport/chttp2/transport/stream_lists.cc",

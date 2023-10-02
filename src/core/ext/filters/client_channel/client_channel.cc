@@ -2670,7 +2670,7 @@ ServiceConfigCallData::CallAttributeInterface*
 ClientChannel::LoadBalancedCall::LbCallState::GetCallAttribute(
     UniqueTypeName type) const {
   auto* service_config_call_data =
-      GetServiceConfigCallData(lb_call_->call_context());
+      GetServiceConfigCallData(lb_call_->call_context_);
   return service_config_call_data->GetCallAttribute(type);
 }
 
@@ -2725,14 +2725,13 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
 
 namespace {
 
-ClientCallTracer::CallAttemptTracer* CreateCallAttemptTracer(
-    grpc_call_context_element* context, bool is_transparent_retry) {
+void CreateCallAttemptTracer(grpc_call_context_element* context,
+                             bool is_transparent_retry) {
   auto* call_tracer = static_cast<ClientCallTracer*>(
       context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value);
-  if (call_tracer == nullptr) return nullptr;
+  if (call_tracer == nullptr) return;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
   context[GRPC_CONTEXT_CALL_TRACER].value = tracer;
-  return tracer;
 }
 
 }  // namespace
@@ -2745,7 +2744,8 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
               ? "LoadBalancedCall"
               : nullptr),
       chand_(chand),
-      on_commit_(std::move(on_commit)) {
+      on_commit_(std::move(on_commit)),
+      call_context_(call_context) {
   CreateCallAttemptTracer(call_context, is_transparent_retry);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: created", chand_, this);
@@ -3007,7 +3007,6 @@ ClientChannel::FilterBasedLoadBalancedCall::FilterBasedLoadBalancedCall(
                        is_transparent_retry),
       deadline_(args.deadline),
       arena_(args.arena),
-      call_context_(args.context),
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       pollent_(pollent),
@@ -3444,7 +3443,7 @@ void ClientChannel::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
       deadline_, arena_,
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
-      call_context_, call_combiner_};
+      call_context(), call_combiner_};
   grpc_error_handle error;
   subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
@@ -3493,12 +3492,14 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
   }
   // Extract peer name from server initial metadata.
   call_args.server_initial_metadata->InterceptAndMap(
-      [this](ServerMetadataHandle metadata) {
-        if (call_attempt_tracer() != nullptr) {
-          call_attempt_tracer()->RecordReceivedInitialMetadata(metadata.get());
+      [self = RefCountedPtr<PromiseBasedLoadBalancedCall>(lb_call->Ref())](
+          ServerMetadataHandle metadata) {
+        if (self->call_attempt_tracer() != nullptr) {
+          self->call_attempt_tracer()->RecordReceivedInitialMetadata(
+              metadata.get());
         }
         Slice* peer_string = metadata->get_pointer(PeerString());
-        if (peer_string != nullptr) peer_string_ = peer_string->Ref();
+        if (peer_string != nullptr) self->peer_string_ = peer_string->Ref();
         return metadata;
       });
   client_initial_metadata_ = std::move(call_args.client_initial_metadata);
@@ -3587,11 +3588,6 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
 
 Arena* ClientChannel::PromiseBasedLoadBalancedCall::arena() const {
   return GetContext<Arena>();
-}
-
-grpc_call_context_element*
-ClientChannel::PromiseBasedLoadBalancedCall::call_context() const {
-  return GetContext<grpc_call_context_element>();
 }
 
 grpc_metadata_batch*
