@@ -168,7 +168,7 @@ TEST_F(ProtoServerReflectionTest, V1AlphaApiInstalled) {
   request.set_list_services("*");
   reader_writer->Write(request);
   Response response;
-  ASSERT_TRUE(reader_writer->Read(&response));
+  ASSERT_EQ(reader_writer->Read(&response), true);
   EXPECT_THAT(ServicesFromResponse(response),
               ::testing::UnorderedElementsAre(
                   reflection::v1alpha::ServerReflection::service_full_name(),
@@ -177,7 +177,7 @@ TEST_F(ProtoServerReflectionTest, V1AlphaApiInstalled) {
   request.set_file_containing_symbol(Service::service_full_name());
   reader_writer->WriteLast(request, WriteOptions());
   response = Response::default_instance();
-  ASSERT_TRUE(reader_writer->Read(&response));
+  ASSERT_EQ(reader_writer->Read(&response), true);
   EXPECT_EQ(response.file_descriptor_response().file_descriptor_proto_size(), 1)
       << response.DebugString();
 }
