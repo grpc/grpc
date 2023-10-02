@@ -18,7 +18,9 @@
 #include <atomic>
 #include <memory>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>

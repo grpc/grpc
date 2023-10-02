@@ -65,7 +65,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
@@ -251,7 +251,7 @@ class FakeResolverResponseGeneratorWrapper {
       const grpc_core::ChannelArgs& per_address_args =
           grpc_core::ChannelArgs()) {
     grpc_core::Resolver::Result result;
-    result.addresses = grpc_core::ServerAddressList();
+    result.addresses = grpc_core::EndpointAddressesList();
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));
@@ -975,79 +975,6 @@ TEST_F(ClientLbEnd2endTest,
       grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   EXPECT_LT(waited.millis(), 1000 * grpc_test_slowdown_factor());
-}
-
-TEST_F(
-    PickFirstTest,
-    TriesAllSubchannelsBeforeReportingTransientFailureWithSubchannelSharing) {
-  // Start connection injector.
-  ConnectionAttemptInjector injector;
-  // Get 5 unused ports.  Each channel will have 2 unique ports followed
-  // by a common port.
-  std::vector<int> ports1 = {grpc_pick_unused_port_or_die(),
-                             grpc_pick_unused_port_or_die(),
-                             grpc_pick_unused_port_or_die()};
-  std::vector<int> ports2 = {grpc_pick_unused_port_or_die(),
-                             grpc_pick_unused_port_or_die(), ports1[2]};
-  // Create channel 1.
-  auto response_generator1 = BuildResolverResponseGenerator();
-  auto channel1 = BuildChannel("pick_first", response_generator1);
-  auto stub1 = BuildStub(channel1);
-  response_generator1.SetNextResolution(ports1);
-  // Allow the connection attempts for ports 0 and 1 to fail normally.
-  // Inject a hold for the connection attempt to port 2.
-  auto hold_channel1_port2 = injector.AddHold(ports1[2]);
-  // Trigger connection attempt.
-  gpr_log(GPR_INFO, "=== START CONNECTING CHANNEL 1 ===");
-  channel1->GetState(/*try_to_connect=*/true);
-  // Wait for connection attempt to port 2.
-  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL 1 PORT 2 TO START ===");
-  hold_channel1_port2->Wait();
-  gpr_log(GPR_INFO, "=== CHANNEL 1 PORT 2 STARTED ===");
-  // Now create channel 2.
-  auto response_generator2 = BuildResolverResponseGenerator();
-  auto channel2 = BuildChannel("pick_first", response_generator2);
-  response_generator2.SetNextResolution(ports2);
-  // Inject a hold for port 0.
-  auto hold_channel2_port0 = injector.AddHold(ports2[0]);
-  // Trigger connection attempt.
-  gpr_log(GPR_INFO, "=== START CONNECTING CHANNEL 2 ===");
-  channel2->GetState(/*try_to_connect=*/true);
-  // Wait for connection attempt to port 0.
-  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL 2 PORT 0 TO START ===");
-  hold_channel2_port0->Wait();
-  gpr_log(GPR_INFO, "=== CHANNEL 2 PORT 0 STARTED ===");
-  // Inject a hold for port 0, which will be retried by channel 1.
-  auto hold_channel1_port0 = injector.AddHold(ports1[0]);
-  // Now allow the connection attempt to port 2 to complete.  The subchannel
-  // will deliver a TRANSIENT_FAILURE notification to both channels.
-  gpr_log(GPR_INFO, "=== RESUMING CHANNEL 1 PORT 2 ===");
-  hold_channel1_port2->Resume();
-  // Wait for channel 1 to retry port 0, so that we know it's seen the
-  // connectivity state notification for port 2.
-  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL 1 PORT 0 ===");
-  hold_channel1_port0->Wait();
-  gpr_log(GPR_INFO, "=== CHANNEL 1 PORT 0 STARTED ===");
-  // Channel 1 should now report TRANSIENT_FAILURE.
-  // Channel 2 should continue to report CONNECTING.
-  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel1->GetState(false));
-  EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel2->GetState(false));
-  // Allow channel 2 to resume port 0.  Port 0 will fail, as will port 1.
-  // When it gets to port 2, it will see it already in state
-  // TRANSIENT_FAILURE due to being shared with channel 1, so it won't
-  // trigger another connection attempt.
-  gpr_log(GPR_INFO, "=== RESUMING CHANNEL 2 PORT 0 ===");
-  hold_channel2_port0->Resume();
-  // Channel 2 should soon report TRANSIENT_FAILURE.
-  EXPECT_TRUE(
-      WaitForChannelState(channel2.get(), [](grpc_connectivity_state state) {
-        if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) return true;
-        EXPECT_EQ(state, GRPC_CHANNEL_CONNECTING);
-        return false;
-      }));
-  // Clean up.
-  gpr_log(GPR_INFO, "=== RESUMING CHANNEL 1 PORT 0 ===");
-  hold_channel1_port0->Resume();
 }
 
 TEST_F(PickFirstTest, Updates) {
@@ -1823,7 +1750,7 @@ TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
 TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   // Start connection injector.
   ConnectionAttemptInjector injector;
-  // Get port.
+  // Get ports.
   const std::vector<int> ports = {grpc_pick_unused_port_or_die(),
                                   grpc_pick_unused_port_or_die()};
   // Create channel.
@@ -1842,7 +1769,6 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   hold1->Wait();
   hold2->Wait();
   // Inject a custom failure message.
-  hold1->Wait();
   hold1->Fail(GRPC_ERROR_CREATE("Survey says... Bzzzzt!"));
   // Wait until RPC fails with the right message.
   absl::Time deadline =
@@ -1856,6 +1782,7 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
             "Survey says... Bzzzzt!"))(status.error_message())) {
       break;
     }
+    gpr_log(GPR_INFO, "STATUS MESSAGE: %s", status.error_message().c_str());
     EXPECT_THAT(status.error_message(),
                 ::testing::MatchesRegex(MakeConnectionFailureRegex(
                     "connections to all backends failing")));
@@ -2865,7 +2792,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   }
 
  private:
-  static void SaveAddress(const grpc_core::ServerAddress& address) {
+  static void SaveAddress(const grpc_core::EndpointAddresses& address) {
     ClientLbAddressTest* self = current_test_instance_;
     grpc_core::MutexLock lock(&self->mu_);
     self->addresses_seen_.emplace_back(address.ToString());
@@ -2894,8 +2821,9 @@ TEST_F(ClientLbAddressTest, Basic) {
   // Make sure that the attributes wind up on the subchannels.
   std::vector<std::string> expected;
   for (const int port : GetServersPorts()) {
-    expected.emplace_back(absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:",
-                                       port, " args={test_key=test_value}"));
+    expected.emplace_back(
+        absl::StrCat("addrs=[", ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
+                     "] args={test_key=test_value}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }
@@ -2938,7 +2866,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
 
  private:
   static void BackendMetricCallback(
-      const grpc_core::ServerAddress& address,
+      const grpc_core::EndpointAddresses& address,
       const grpc_core::BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
     int port = grpc_sockaddr_get_port(&address.address());

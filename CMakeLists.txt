@@ -348,18 +348,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz
-    6fd3496c82919a433219733819a93b56699519a193126959e9c4fedc25e70663
-    data-plane-api-e53e7bbd012f81965f2e79848ad9a58ceb67201f
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/9d6ffa70677c4dbf23f6ed569676206c4e2edff4.tar.gz
+    fff067a5d6d776fc88549b5dd4773a6f8f0187b26a859de8b29bd4226a28ee63
+    data-plane-api-9d6ffa70677c4dbf23f6ed569676206c4e2edff4
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz
-    6fd3496c82919a433219733819a93b56699519a193126959e9c4fedc25e70663
-    data-plane-api-e53e7bbd012f81965f2e79848ad9a58ceb67201f
+    https://github.com/envoyproxy/data-plane-api/archive/9d6ffa70677c4dbf23f6ed569676206c4e2edff4.tar.gz
+    fff067a5d6d776fc88549b5dd4773a6f8f0187b26a859de8b29bd4226a28ee63
+    data-plane-api-9d6ffa70677c4dbf23f6ed569676206c4e2edff4
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
@@ -1175,6 +1175,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx pick_first_test)
   add_dependencies(buildtests_cxx pid_controller_test)
   add_dependencies(buildtests_cxx ping_abuse_policy_test)
+  add_dependencies(buildtests_cxx ping_callbacks_test)
   add_dependencies(buildtests_cxx ping_configuration_test)
   add_dependencies(buildtests_cxx ping_pong_streaming_test)
   add_dependencies(buildtests_cxx ping_rate_policy_test)
@@ -1832,6 +1833,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
+  src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -2352,9 +2354,9 @@ add_library(grpc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
   src/core/lib/promise/trace.cc
+  src/core/lib/resolver/endpoint_addresses.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
-  src/core/lib/resolver/server_address.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -2868,6 +2870,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
+  src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -3065,9 +3068,9 @@ add_library(grpc_unsecure
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
   src/core/lib/promise/trace.cc
+  src/core/lib/resolver/endpoint_addresses.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
-  src/core/lib/resolver/server_address.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -5005,9 +5008,9 @@ add_library(grpc_authorization_provider
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/trace.cc
+  src/core/lib/resolver/endpoint_addresses.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
-  src/core/lib/resolver/server_address.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -17290,6 +17293,39 @@ target_link_libraries(ping_abuse_policy_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(ping_callbacks_test
+  test/core/transport/chttp2/ping_callbacks_test.cc
+)
+target_compile_features(ping_callbacks_test PUBLIC cxx_std_14)
+target_include_directories(ping_callbacks_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(ping_callbacks_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(ping_configuration_test
   test/core/transport/chttp2/ping_configuration_test.cc
   test/core/util/cmdline.cc
@@ -24041,9 +24077,9 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/trace.cc
+  src/core/lib/resolver/endpoint_addresses.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
-  src/core/lib/resolver/server_address.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc

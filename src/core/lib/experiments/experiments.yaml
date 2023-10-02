@@ -191,15 +191,34 @@
   expiry: 2023/11/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: pick_first_happy_eyeballs
+  description:
+    Use Happy Eyeballs in pick_first.
+  expiry: 2023/12/15
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: combiner_offload_to_event_engine
   description:
     Offload Combiner work onto the EventEngine instead of the Executor.
   expiry: 2024/01/15
   owner: hork@google.com
   test_tags: []
+- name: multiping
+  description:
+    Allow more than one ping to be in flight at a time by default.
+  expiry: 2024/01/15
+  owner: ctiller@google.com
+  test_tags: [flow_control_test]
 - name: registered_method_lookup_in_transport
   description:
     Change registered method's lookup point to transport
   expiry: 2024/03/31
   owner: yashkt@google.com
   test_tags: ["surface_registered_method_lookup"]
+- name: call_status_override_on_cancellation
+  description:
+    Avoid overriding call status of successfully finished calls if it races with
+    cancellation.
+  expiry: 2024/01/01
+  owner: vigneshbabu@google.com
+  test_tags: []

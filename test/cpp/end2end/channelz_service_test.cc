@@ -43,6 +43,7 @@
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
+#include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -190,13 +191,21 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
 #endif
   }
   void SetUp() override {
+    grpc_init();
+    bool localhost_resolves_to_ipv4 = false;
+    bool localhost_resolves_to_ipv6 = false;
+    grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
+                                 &localhost_resolves_to_ipv6);
+    ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
+
     // ensure channel server is brought up on all severs we build.
     grpc::channelz::experimental::InitChannelzService();
 
     // We set up a proxy server with channelz enabled.
     proxy_port_ = grpc_pick_unused_port_or_die();
     ServerBuilder proxy_builder;
-    std::string proxy_server_address = "localhost:" + to_string(proxy_port_);
+    std::string proxy_server_address =
+        absl::StrCat(LocalIp(), ":", proxy_port_);
     proxy_builder.AddListeningPort(proxy_server_address,
                                    GetServerCredentials(GetParam()));
     // forces channelz and channel tracing to be enabled.
@@ -212,6 +221,11 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
       backend.server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     }
     proxy_server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+    grpc_shutdown();
+  }
+
+  absl::string_view LocalIp() const {
+    return ipv6_only_ ? "127.0.0.1" : "[::1]";
   }
 
   // Sets the proxy up to have an arbitrary number of backends.
@@ -222,7 +236,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
       backends_[i].port = grpc_pick_unused_port_or_die();
       ServerBuilder backend_builder;
       std::string backend_server_address =
-          "localhost:" + to_string(backends_[i].port);
+          absl::StrCat(LocalIp(), ":", backends_[i].port);
       backend_builder.AddListeningPort(backend_server_address,
                                        GetServerCredentials(GetParam()));
       backends_[i].service = std::make_unique<TestServiceImpl>();
@@ -244,7 +258,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
   }
 
   void ResetStubs() {
-    string target = "dns:localhost:" + to_string(proxy_port_);
+    string target = absl::StrCat("dns:", LocalIp(), ":", proxy_port_);
     ChannelArguments args;
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
@@ -255,7 +269,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
   }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> NewEchoStub() {
-    string target = "dns:localhost:" + to_string(proxy_port_);
+    string target = absl::StrCat("dns:", LocalIp(), ":", proxy_port_);
     ChannelArguments args;
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
@@ -331,6 +345,8 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     int port;
     std::unique_ptr<TestServiceImpl> service;
   };
+
+  bool ipv6_only_;
 
   std::unique_ptr<grpc::channelz::v1::Channelz::Stub> channelz_stub_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> echo_stub_;
