@@ -38,6 +38,9 @@
 #include "src/core/lib/slice/slice.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
+using grpc_event_engine::experimental::FuzzingEventEngine;
+using grpc_event_engine::experimental::GetDefaultEventEngine;
+
 namespace grpc_core {
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -415,20 +418,27 @@ void FilterTestBase::Call::FinishNextFilter(ServerMetadataHandle md) {
 ///////////////////////////////////////////////////////////////////////////////
 // FilterTestBase
 
-FilterTestBase::FilterTestBase()
-    : event_engine_(
-          []() {
-            grpc_timer_manager_set_threading(false);
-            grpc_event_engine::experimental::FuzzingEventEngine::Options
-                options;
-            return options;
-          }(),
-          fuzzing_event_engine::Actions()) {}
+FilterTestBase::FilterTestBase() {
+  grpc_event_engine::experimental::SetEventEngineFactory([]() {
+    FuzzingEventEngine::Options options;
+    options.max_delay_run_after = std::chrono::milliseconds(500);
+    options.max_delay_write = std::chrono::milliseconds(50);
+    return std::make_unique<FuzzingEventEngine>(
+        options, fuzzing_event_engine::Actions());
+  });
+  event_engine_ =
+      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+  grpc_init();
+  grpc_timer_manager_set_threading(false);
+}
 
-FilterTestBase::~FilterTestBase() { event_engine_.UnsetGlobalHooks(); }
+FilterTestBase::~FilterTestBase() {
+  grpc_shutdown();
+  event_engine_->UnsetGlobalHooks();
+}
 
 void FilterTestBase::Step() {
-  event_engine_.TickUntilIdle();
+  event_engine_->TickUntilIdle();
   ::testing::Mock::VerifyAndClearExpectations(&events);
 }
 
