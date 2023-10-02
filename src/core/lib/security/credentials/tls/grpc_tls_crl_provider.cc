@@ -220,8 +220,9 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
     char path[MAXPATHLEN];
     off_t size;
   };
-  std::vector<FileData> roots_filenames;
+  std::vector<FileData> crl_files;
   struct dirent* directory_entry;
+  bool all_files_successful = true;
   while ((directory_entry = readdir(crl_directory)) != nullptr) {
     const char* file_name = directory_entry->d_name;
     FileData file_data;
@@ -232,13 +233,34 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
       // TODO(gtcooke94) More checks here
       // no subdirectories.
       if (stat_return == -1) {
+        all_files_successful = false;
         gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
       }
       continue;
     }
-  }
+    file_data.size = dir_entry_stat.st_size;
+    crl_files.push_back(file_data);
+    closedir(crl_directory);
+    for (const FileData& file : crl_files) {
+      absl::StatusOr<std::unique_ptr<Crl>> result = Crl::Parse(file.path);
+      if (!result.ok()) {
+        all_files_successful = false;
+        // TODO(gtcooke94) error logging
+      }
+      // Now we have a good CRL to update in our map
+      std::unique_ptr<Crl> crl = std::move(*result);
+      mu_.Lock();
+      crls_[crl->Issuer()] = std::move(crl);
+      mu_.Unlock();
+    }
 
-  return absl::OkStatus();
+    if (!all_files_successful) {
+      return absl::UnknownError(
+          "Not all files in CRL directory read successfully during async "
+          "update.");
+    }
+    return absl::OkStatus();
+  }
 }
 
 }  // namespace experimental
