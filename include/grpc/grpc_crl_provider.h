@@ -83,17 +83,19 @@ class StaticCrlProvider : public CrlProvider {
 };
 
 class DirectoryReloaderCrlProvider : public CrlProvider {
+ public:
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
   static absl::StatusOr<std::shared_ptr<CrlProvider>>
   CreateDirectoryReloaderProvider(
       absl::string_view directory, absl::Duration refresh_duration,
       std::function<void(absl::Status)> reload_error_callback);
   ~DirectoryReloaderCrlProvider() override;
-
- private:
-  explicit DirectoryReloaderCrlProvider(
+  DirectoryReloaderCrlProvider(
       absl::string_view directory, absl::Duration refresh_duration,
       std::function<void(absl::Status)> reload_error_callback);
+
+ protected:
+ private:
   absl::Status Update();
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls_;
   const std::string crl_directory_;

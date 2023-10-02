@@ -69,8 +69,13 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
   if (!err.ok()) {
     // TODO(gtcooke94) log error
   }
-  std::string data = std::string(StringViewFromSlice(crl_slice));
-  std::shared_ptr<Crl> crl = std::make_shared<Crl>(Crl::Parse(data)));
+  std::string raw_crl = std::string(StringViewFromSlice(crl_slice));
+  absl::StatusOr<std::unique_ptr<Crl>> result = Crl::Parse(raw_crl);
+  if (!result.ok()) {
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Parsing crl string failed with result ", result.status().ToString()));
+  }
+  std::shared_ptr<Crl> crl = std::move(*result);
   grpc_slice_unref(crl_slice);
   return crl;
 }
@@ -188,27 +193,28 @@ DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
     std::function<void(absl::Status)> reload_error_callback) {
   // TODO(gtcooke94) validate directory, inputs, etc
   // Todo do first load here or in the thread?
-  auto provider = std::make_shared<CrlProvider>(DirectoryReloaderCrlProvider(
-      directory, refresh_duration, reload_error_callback));
-  std::shared_ptr<DirectoryReloaderCrlProvider> crl_provider =
-      std::static_pointer_cast<DirectoryReloaderCrlProvider>(provider);
-  gpr_event_init(&crl_provider->shutdown_event_);
+  // auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
+  //     DirectoryReloaderCrlProvider(directory, refresh_duration,
+  //                                  reload_error_callback));
+  auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
+      directory, refresh_duration, reload_error_callback);
+  gpr_event_init(&provider->shutdown_event_);
   auto thread_lambda = [&]() {
-    absl::Status status = crl_provider->Update();
+    absl::Status status = provider->Update();
     while (true) {
       if (!status.ok()) {
-        crl_provider->reload_error_callback_(status);
+        provider->reload_error_callback_(status);
       }
       void* value = gpr_event_wait(
-          &crl_provider->shutdown_event_,
+          &provider->shutdown_event_,
           TimeoutSecondsToDeadline(
-              absl::ToInt64Seconds(crl_provider->refresh_duration_)));
+              absl::ToInt64Seconds(provider->refresh_duration_)));
       if (value != nullptr) {
         return;
       }
     }
   };
-  crl_provider->refresh_thread_ = std::thread(thread_lambda);
+  provider->refresh_thread_ = std::thread(thread_lambda);
   return provider;
 }
 
@@ -242,25 +248,34 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
     crl_files.push_back(file_data);
     closedir(crl_directory);
     for (const FileData& file : crl_files) {
-      absl::StatusOr<std::unique_ptr<Crl>> result = Crl::Parse(file.path);
+      absl::StatusOr<std::shared_ptr<Crl>> result = ReadCrlFromFile(file.path);
       if (!result.ok()) {
         all_files_successful = false;
         // TODO(gtcooke94) error logging
       }
       // Now we have a good CRL to update in our map
-      std::unique_ptr<Crl> crl = std::move(*result);
+      std::shared_ptr<Crl> crl = *result;
       mu_.Lock();
       crls_[crl->Issuer()] = std::move(crl);
       mu_.Unlock();
     }
-
-    if (!all_files_successful) {
-      return absl::UnknownError(
-          "Not all files in CRL directory read successfully during async "
-          "update.");
-    }
-    return absl::OkStatus();
   }
+  if (!all_files_successful) {
+    return absl::UnknownError(
+        "Not all files in CRL directory read successfully during async "
+        "update.");
+  }
+  return absl::OkStatus();
+}
+
+std::shared_ptr<Crl> DirectoryReloaderCrlProvider::GetCrl(
+    const CertificateInfo& certificate_info) {
+  absl::MutexLock lock(&mu_);
+  auto it = crls_.find(certificate_info.Issuer());
+  if (it == crls_.end()) {
+    return nullptr;
+  }
+  return it->second;
 }
 
 }  // namespace experimental

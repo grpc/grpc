@@ -3074,6 +3074,7 @@ grpc_cc_library(
         "libssl",
     ],
     deps = [
+        "slice",
         "//:gpr",
         "//:grpc_base",
     ],
