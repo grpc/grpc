@@ -112,7 +112,7 @@
 - name: event_engine_dns
   description:
     If set, use EventEngine DNSResolver for client channel resolution
-  expiry: 2024/01/01
+  expiry: 2024/01/08
   owner: yijiem@google.com
   test_tags: ["cancel_ares_query_test", "resolver_component_tests_runner_invoker"]
   allow_in_fuzzing_config: false
