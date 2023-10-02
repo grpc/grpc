@@ -200,7 +200,7 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
                                  &localhost_resolves_to_ipv6);
     bool ipv6_only = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
-    absl::string_view local_ip = ipv6_only ? "127.0.0.1" : "[::1]";
+    absl::string_view local_ip = ipv6_only ? "[::1]" : "127.0.0.1";
 
     for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       ASSERT_NE(0, ports_[i]);

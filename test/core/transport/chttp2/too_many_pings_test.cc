@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
 
@@ -59,6 +60,7 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
+#include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -104,6 +106,23 @@ class TransportCounter {
 };
 
 int TransportCounter::count_ = 0;
+
+class TooManyPings : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    bool localhost_resolves_to_ipv4 = false;
+    bool localhost_resolves_to_ipv6 = false;
+    grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
+                                 &localhost_resolves_to_ipv6);
+    ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
+  }
+
+  absl::string_view GetLocalIp() const {
+    return ipv6_only_ ? "[::1]" : "127.0.0.1";
+  }
+
+  bool ipv6_only_;
+};
 
 // Perform a simple RPC where the server cancels the request with
 // grpc_call_cancel_with_status
@@ -177,12 +196,12 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
 
 // Test that sending a lot of RPCs that are cancelled by the server doesn't
 // result in too many pings due to the pings sent by BDP.
-TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
+TEST_F(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   // create the server
   grpc_server* server = grpc_server_create(nullptr, nullptr);
   std::string server_address =
-      grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
+      grpc_core::JoinHostPort(GetLocalIp(), grpc_pick_unused_port_or_die());
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
@@ -351,7 +370,7 @@ void VerifyChannelDisconnected(grpc_channel* channel,
   // necessary.
 }
 
-class KeepaliveThrottlingTest : public ::testing::Test {
+class KeepaliveThrottlingTest : public TooManyPings {
  protected:
   // Starts the server and makes sure that the channel is able to get connected.
   grpc_server* ServerStart(const char* addr, grpc_completion_queue* cq) {
@@ -381,7 +400,7 @@ class KeepaliveThrottlingTest : public ::testing::Test {
 TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   std::string server_address =
-      grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
+      grpc_core::JoinHostPort(GetLocalIp(), grpc_pick_unused_port_or_die());
   grpc_server* server = ServerStart(server_address.c_str(), cq);
   // create two channel with a keepalive ping interval of 1 second.
   grpc_arg client_args[] = {
@@ -455,9 +474,9 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
   grpc_core::ExecCtx exec_ctx;
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   std::string server_address1 =
-      grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
+      grpc_core::JoinHostPort(GetLocalIp(), grpc_pick_unused_port_or_die());
   std::string server_address2 =
-      grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
+      grpc_core::JoinHostPort(GetLocalIp(), grpc_pick_unused_port_or_die());
   grpc_server* server1 = ServerStart(server_address1.c_str(), cq);
   grpc_server* server2 = ServerStart(server_address2.c_str(), cq);
   // create a single channel with multiple subchannels with a keepalive ping
@@ -532,9 +551,9 @@ TEST_F(KeepaliveThrottlingTest,
        ExistingSubchannelsUseNewKeepaliveTimeWhenReconnecting) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   std::string server_address1 =
-      grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
+      grpc_core::JoinHostPort(GetLocalIp(), grpc_pick_unused_port_or_die());
   std::string server_address2 =
-      grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
+      grpc_core::JoinHostPort(GetLocalIp(), grpc_pick_unused_port_or_die());
   // create a single channel with round robin load balancing policy.
   auto response_generator =
       grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
@@ -729,12 +748,12 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   grpc_byte_buffer_destroy(response_payload_recv);
 }
 
-TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
+TEST_F(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   TransportCounter::WaitForTransportsToBeDestroyed();
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   // create the server
   std::string server_address =
-      grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
+      grpc_core::JoinHostPort(GetLocalIp(), grpc_pick_unused_port_or_die());
   grpc_arg server_args[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(
@@ -805,12 +824,12 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   grpc_completion_queue_destroy(cq);
 }
 
-TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
+TEST_F(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
   TransportCounter::WaitForTransportsToBeDestroyed();
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   // create the client and server
   std::string server_address =
-      grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
+      grpc_core::JoinHostPort(GetLocalIp(), grpc_pick_unused_port_or_die());
   grpc_arg server_args[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(
