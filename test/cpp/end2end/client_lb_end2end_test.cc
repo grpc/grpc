@@ -1945,6 +1945,9 @@ TEST_F(RoundRobinTest, HealthChecking) {
   gpr_log(GPR_INFO, "*** server 0 healthy");
   servers_[0]->SetServingStatus("health_check_service_name", true);
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  // New channel state may be reported before the picker is updated, so
+  // wait for the server before proceeding.
+  WaitForServer(DEBUG_LOCATION, stub, 0);
   for (int i = 0; i < 10; ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
@@ -1990,15 +1993,23 @@ TEST_F(RoundRobinTest, HealthChecking) {
   servers_[1]->SetServingStatus("health_check_service_name", false);
   servers_[2]->SetServingStatus("health_check_service_name", false);
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-      grpc_core::IsRoundRobinDelegateToPickFirstEnabled()
-          ? "connections to all backends failing; last error: "
-            "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-            "backend unhealthy"
-          : "connections to all backends failing; last error: "
-            "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-            "backend unhealthy");
+  // New channel state may be reported before the picker is updated, so
+  // one or two more RPCs may succeed before we see a failure.
+  SendRpcsUntil(DEBUG_LOCATION, stub, [&](const Status& status) {
+    if (status.ok()) return true;
+    EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
+    EXPECT_THAT(
+        status.error_message(),
+        ::testing::MatchesRegex(
+            grpc_core::IsRoundRobinDelegateToPickFirstEnabled()
+                ? "connections to all backends failing; last error: "
+                  "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                  "backend unhealthy"
+                : "connections to all backends failing; last error: "
+                  "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                  "backend unhealthy"));
+    return false;
+  });
   // Clean up.
   EnableDefaultHealthCheckService(false);
 }
