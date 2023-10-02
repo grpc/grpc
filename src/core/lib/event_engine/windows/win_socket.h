@@ -35,6 +35,7 @@ class WinSocket {
   struct OverlappedResult {
     int wsa_error;
     DWORD bytes_transferred;
+    absl::Status error_status;
   };
 
   // State related to a Read or Write socket operation
@@ -45,11 +46,14 @@ class WinSocket {
     // If a callback is already primed for notification, it will be executed via
     // the WinSocket's ThreadPool. Otherwise, a "pending iocp" flag will
     // be set.
-    void SetReady() ABSL_LOCKS_EXCLUDED(ready_mu_);
-    // Set error results for a completed op
+    void SetReady();
+    // Set WSA error results for a completed op.
     void SetError(int wsa_error);
     // Set an OverlappedResult. Useful when WSARecv returns immediately.
     void SetResult(OverlappedResult result);
+    // Set error results for a completed op.
+    // This is a manual override, meant to override any WSA status code.
+    void SetErrorStatus(absl::Status error_status);
     // Retrieve the results of an overlapped operation (via Winsock API) and
     // store them locally.
     void GetOverlappedResult();
@@ -67,22 +71,33 @@ class WinSocket {
 
     OVERLAPPED overlapped_;
     WinSocket* win_socket_ = nullptr;
-    grpc_core::Mutex ready_mu_;
-    EventEngine::Closure* closure_ ABSL_GUARDED_BY(ready_mu_) = nullptr;
-    bool has_pending_iocp_ = false;
+    EventEngine::Closure* closure_ = nullptr;
     OverlappedResult result_;
   };
 
   WinSocket(SOCKET socket, ThreadPool* thread_pool) noexcept;
   ~WinSocket();
-  // Calling NotifyOnRead means either of two things:
-  //  - The IOCP already completed in the background, and we need to call
-  //    the callback now.
-  //  - The IOCP hasn't completed yet, and we're queuing it for later.
-  void NotifyOnRead(EventEngine::Closure* on_read)
-      ABSL_LOCKS_EXCLUDED(read_info_.ready_mu_);
-  void NotifyOnWrite(EventEngine::Closure* on_write)
-      ABSL_LOCKS_EXCLUDED(write_info_.ready_mu_);
+  // Provide a closure that will be called when an IOCP completion has occurred.
+  //
+  // Notification callbacks *must be registered* before any WSASend or WSARecv
+  // operations are started. Only one closure can be registered at a time for
+  // each read or send operation.
+  void NotifyOnRead(EventEngine::Closure* on_read);
+  void NotifyOnWrite(EventEngine::Closure* on_write);
+  // Trigger Notifications manually.
+  //
+  // This is useful if a notification was registered optimistically, but a
+  // read/write error occurs such that the notification would never be called.
+  // DO NOT SUBMIT - see if this can be removed, replaced with Unregister*
+  void TriggerReadCallbackWithError(absl::Status error_status);
+  void TriggerWriteCallbackWithError(absl::Status error_status);
+  // Remove the callback without running them.
+  //
+  // It is UB if an IOCP event comes through and a notification is not
+  // registered.
+  void UnregisterReadCallback();
+  void UnregisterWriteCallback();
+
   bool IsShutdown();
   // Shutdown socket operations, but do not delete the WinSocket.
   // Connections will be disconnected, and the socket will be closed.
@@ -103,8 +118,7 @@ class WinSocket {
   SOCKET raw_socket();
 
  private:
-  void NotifyOnReady(OpState& info, EventEngine::Closure* closure)
-      ABSL_LOCKS_EXCLUDED(info.ready_mu_);
+  void NotifyOnReady(OpState& info, EventEngine::Closure* closure);
 
   SOCKET socket_;
   std::atomic<bool> is_shutdown_{false};

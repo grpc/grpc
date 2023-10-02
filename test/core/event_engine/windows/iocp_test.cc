@@ -75,6 +75,14 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     char read_char_buffer[2048];
     read_wsabuf.buf = read_char_buffer;
     DWORD bytes_rcvd;
+    on_read = new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
+                                       &read_called, &read_wsabuf]() {
+      gpr_log(GPR_DEBUG, "Notified on read");
+      EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
+      EXPECT_STREQ(read_wsabuf.buf, "hello!");
+      read_called.Notify();
+    });
+    wrapped_client_socket->NotifyOnRead(on_read);
     int status = WSARecv(
         wrapped_client_socket->raw_socket(), &read_wsabuf, 1, &bytes_rcvd,
         &flags, wrapped_client_socket->read_info()->overlapped(), NULL);
@@ -85,16 +93,13 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     if (last_error != WSA_IO_PENDING) {
       LogErrorMessage(last_error, "WSARecv");
     }
-    on_read = new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
-                                       &read_called, &read_wsabuf]() {
-      gpr_log(GPR_DEBUG, "Notified on read");
-      EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
-      EXPECT_STREQ(read_wsabuf.buf, "hello!");
-      read_called.Notify();
-    });
-    wrapped_client_socket->NotifyOnRead(on_read);
   }
   {
+    on_write = new AnyInvocableClosure([&write_called] {
+      gpr_log(GPR_DEBUG, "Notified on write");
+      write_called.Notify();
+    });
+    wrapped_server_socket->NotifyOnWrite(on_write);
     // Have the server send a message to the client
     WSABUF write_wsabuf;
     char write_char_buffer[2048] = "hello!";
@@ -108,11 +113,6 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     if (status != 0) {
       LogErrorMessage(WSAGetLastError(), "WSASend");
     }
-    on_write = new AnyInvocableClosure([&write_called] {
-      gpr_log(GPR_DEBUG, "Notified on write");
-      write_called.Notify();
-    });
-    wrapped_server_socket->NotifyOnWrite(on_write);
   }
   // Doing work for WSASend
   bool cb_invoked = false;
