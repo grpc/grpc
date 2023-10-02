@@ -27,6 +27,7 @@ tar -xopf ${ARCHIVE_WITH_SUBMODULES}
 cd grpc
 
 # Extract all input archives with artifacts into input_artifacts directory
+# TODO(jtattermusch): Deduplicate the snippet below (it appears in multiple files).
 mkdir -p input_artifacts
 pushd input_artifacts >/dev/null
 # all remaining args are .tar.gz archives with input artifacts

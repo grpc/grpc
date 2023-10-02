@@ -248,8 +248,13 @@ def grpc_run_simple_command_test(name, args = [], data = [], size = "medium", ti
     _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env, docker_run_as_root = False)
 
 def grpc_build_artifact_task(name, timeout = None, artifact_deps = [], tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, build_script = None):
-    """Execute a build artifact task and a corresponding 'build test'
+    """Execute a build artifact task and a corresponding 'build test'.
 
+    The artifact is built by a genrule that always succeeds (Even if the underlying build fails)
+    and an sh_test (with "_build_test" suffix) that presents the result of the artifact build
+    in the result UI (by displaying the the build status, the log, and artifacts produced).
+    Such layout helps to easily build artifacts and run distribtests that depend on other artifacts,
+    while making the test results well structured and easy to interpret.
 
     Args:
         name: The name of the target.
@@ -289,6 +294,11 @@ def grpc_build_artifact_task(name, timeout = None, artifact_deps = [], tags = []
 
     _dockerized_genrule(name = name, cmd = cmd, outs = genrule_outs, srcs = genrule_srcs, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, docker_run_as_root = False)
 
+    # The genrule above always succeeds (even if the underlying build fails), so that we can create rules that depend
+    # on multiple artifact builds (of which some can fail). The actual build status (exitcode) and the log of the build
+    # will be reported by an associated sh_test (that gets displayed in the UI in a much nicer way than a genrule).
+    # Note that in bazel you cannot declare a test that has declared outputs and you also cannot make other rules
+    # depend on a test - which is the reason why we need a separate genrule to represent the build itself.
     test_name = str(name + "_build_test")
     test_srcs = [
         "//tools/bazelify_tests:grpc_build_artifact_task_build_test.sh",
