@@ -374,14 +374,14 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
   gpr_log(GPR_INFO, "### failed RPC on %s", ejected_address->c_str());
   // Based on the address that the failed call went to, we determine
   // which addresses to use in the subsequent steps.
-  absl::Span<const absl::string_view> expected_round_robin_while_ejected;
+  std::vector<absl::string_view> expected_round_robin_while_ejected;
   std::vector<EndpointAddresses> new_endpoints;
   if (kEndpoint1Addresses[0] == *ejected_address) {
     expected_round_robin_while_ejected = {kEndpoint2Addresses[0],
                                           kEndpoint3Addresses[0]};
     new_endpoints = {MakeEndpointAddresses({kEndpoint1Addresses[0]}),
                      MakeEndpointAddresses(kEndpoint2Addresses),
-                     MakeEndpointAddresses(kEndpoint2Addresses)};
+                     MakeEndpointAddresses(kEndpoint3Addresses)};
   } else if (kEndpoint2Addresses[0] == *ejected_address) {
     expected_round_robin_while_ejected = {kEndpoint1Addresses[0],
                                           kEndpoint3Addresses[0]};

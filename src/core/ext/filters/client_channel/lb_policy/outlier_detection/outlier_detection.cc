@@ -663,6 +663,9 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     for (EndpointAddresses& endpoint : *args.addresses) {
       EndpointAddressSet key(endpoint.addresses());
       current_endpoints.emplace(key);
+      for (const grpc_resolved_address& address : endpoint.addresses()) {
+        current_addresses.emplace(address);
+      }
       // Find the entry in the endpoint map.
       auto it = endpoint_state_map_.find(key);
       if (it == endpoint_state_map_.end()) {
@@ -676,7 +679,6 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         // subchannel map, creating the entry if needed.
         std::set<SubchannelState*> subchannels;
         for (const grpc_resolved_address& address : endpoint.addresses()) {
-          current_addresses.emplace(address);
           auto it2 = subchannel_state_map_.find(address);
           if (it2 == subchannel_state_map_.end()) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {

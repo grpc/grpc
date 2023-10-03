@@ -125,13 +125,14 @@ bool EndpointAddressSet::operator==(const EndpointAddressSet& other) const {
 bool EndpointAddressSet::operator<(const EndpointAddressSet& other) const {
   auto other_it = other.addresses_.begin();
   for (auto it = addresses_.begin(); it != addresses_.end(); ++it) {
-    if (other_it == other.addresses_.end()) return true;
+    if (other_it == other.addresses_.end()) return false;
     if (it->len < other_it->len) return true;
     if (it->len > other_it->len) return false;
     int r = memcmp(it->addr, other_it->addr, it->len);
     if (r != 0) return r < 0;
+    ++other_it;
   }
-  return false;
+  return other_it != other.addresses_.end();
 }
 
 std::string EndpointAddressSet::ToString() const {
