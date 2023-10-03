@@ -39,6 +39,7 @@ using ::grpc_event_engine::experimental::WinSocket;
 }  // namespace
 
 class WinSocketTest : public testing::Test {
+ public:
   WinSocketTest()
       : thread_pool_(grpc_event_engine::experimental::MakeThreadPool(8)) {
     CreateSockpair(sockpair_, IOCP::GetDefaultSocketFlags());
@@ -51,7 +52,7 @@ class WinSocketTest : public testing::Test {
   ~WinSocketTest() override {
     wrapped_client_socket_->Shutdown();
     wrapped_server_socket_->Shutdown();
-    thread_pool->Quiesce();
+    thread_pool_->Quiesce();
   }
 
  protected:
@@ -62,42 +63,27 @@ class WinSocketTest : public testing::Test {
 };
 
 TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
-  bool read_called = false;
-  AnyInvocableClosure on_read([&read_called]() { read_called = true; });
-  NotifyOnRead(&on_read);
+  grpc_core::Notification read_called;
+  AnyInvocableClosure on_read([&read_called]() { read_called.Notify(); });
+  wrapped_client_socket_->NotifyOnRead(&on_read);
   AnyInvocableClosure on_write([] { FAIL() << "No Write expected"; });
   wrapped_client_socket_->NotifyOnWrite(&on_write);
-  ASSERT_FALSE(read_called);
   wrapped_client_socket_->read_info()->SetReady();
-  absl::Time deadline = absl::Now() + absl::Seconds(10);
-  while (!read_called) {
-    absl::SleepFor(absl::Milliseconds(42));
-    if (deadline < absl::Now()) {
-      FAIL() << "Deadline exceeded";
-    }
-  }
-  ASSERT_TRUE(read_called);
+  read_called.WaitForNotification();
 }
 
 TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
   wrapped_client_socket_->Shutdown();
-  bool read_called = false;
-  AnyInvocableClosure closure([&wrapped_client_socket, &read_called] {
+  grpc_core::Notification read_called;
+  AnyInvocableClosure closure([&wrapped_client_socket_, &read_called] {
     ASSERT_EQ(wrapped_client_socket_->read_info()->result().bytes_transferred,
               0u);
     ASSERT_EQ(wrapped_client_socket_->read_info()->result().wsa_error,
               WSAESHUTDOWN);
-    read_called = true;
+    read_called.Notify();
   });
   wrapped_client_socket_->NotifyOnRead(&closure);
-  absl::Time deadline = absl::Now() + absl::Seconds(3);
-  while (!read_called) {
-    absl::SleepFor(absl::Milliseconds(42));
-    if (deadline < absl::Now()) {
-      FAIL() << "Deadline exceeded";
-    }
-  }
-  ASSERT_TRUE(read_called);
+  read_called.WaitForNotification();
 }
 
 TEST_F(WinSocketTest, UnsetNotificationWorks) {

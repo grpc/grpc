@@ -94,7 +94,6 @@ void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
     return;
   };
   // It is an error if any notification is already registered for this socket.
-  EventEngine::Closure* prev = nullptr;
   GPR_ASSERT(std::exchange(info.closure_, closure) == nullptr);
 }
 
@@ -107,12 +106,10 @@ void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
 }
 
 void WinSocket::UnregisterReadCallback() {
-  EventEngine::Closure* prev = nullptr;
   GPR_ASSERT(std::exchange(read_info_.closure_, nullptr) != nullptr);
 }
 
 void WinSocket::UnregisterWriteCallback() {
-  EventEngine::Closure* prev = nullptr;
   GPR_ASSERT(std::exchange(write_info_.closure_, nullptr) != nullptr);
 }
 
