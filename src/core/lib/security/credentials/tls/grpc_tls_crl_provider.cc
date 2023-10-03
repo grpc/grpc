@@ -40,11 +40,14 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 namespace experimental {
+using ::absl::Mutex;
+using ::std::thread;
 
 namespace {
 std::string IssuerFromCrl(X509_CRL* crl) {
@@ -93,6 +96,23 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
 }
 
 }  // namespace
+
+// Defining this here lets us hide implementation details (and includes) from
+// the header in include
+class DirectoryReloaderCrlProviderImpl : public DirectoryReloaderCrlProvider {
+ public:
+  ~DirectoryReloaderCrlProviderImpl() override;
+
+  ::absl::Status Update();
+  ::absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_;
+  ::std::string crl_directory_;
+  ::absl::Mutex mu_;
+  ::std::thread refresh_thread_;
+  ::std::chrono::seconds refresh_duration_;
+  ::std::function<void(::absl::Status)> reload_error_callback_;
+  gpr_event shutdown_event_;
+  grpc_event_engine::experimental::EventEngine::TaskHandle refresh_handle_;
+};
 
 CertificateInfoImpl::CertificateInfoImpl(absl::string_view issuer)
     : issuer_(issuer) {}
@@ -182,45 +202,53 @@ std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
 //       refresh_duration_(refresh_duration),
 //       reload_error_callback_(reload_error_callback) {}
 
-DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
+DirectoryReloaderCrlProviderImpl::~DirectoryReloaderCrlProviderImpl() {
   gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
   refresh_thread_.join();
 }
 
 absl::StatusOr<std::shared_ptr<CrlProvider>>
 DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
-    absl::string_view directory, absl::Duration refresh_duration,
+    absl::string_view directory, std::chrono::seconds refresh_duration,
     std::function<void(absl::Status)> reload_error_callback) {
   // TODO(gtcooke94) validate directory, inputs, etc
   // TODO(gtcooke94) do first load here or in the thread?
-  auto provider = std::make_shared<DirectoryReloaderCrlProvider>();
+  auto provider = std::make_shared<DirectoryReloaderCrlProviderImpl>();
   provider->crl_directory_ = std::string(directory);
   provider->refresh_duration_ = refresh_duration;
-  provider->reload_error_callback_ = reload_error_callback;
+  provider->reload_error_callback_ = std::move(reload_error_callback);
   gpr_event_init(&provider->shutdown_event_);
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+
   auto thread_lambda = [&]() {
     absl::Status status = provider->Update();
-    while (true) {
-      if (!status.ok()) {
+    if (!status.ok()) {
+      if (provider->reload_error_callback_ != nullptr) {
         provider->reload_error_callback_(status);
       }
-      void* value = gpr_event_wait(
-          &provider->shutdown_event_,
-          TimeoutSecondsToDeadline(
-              absl::ToInt64Seconds(provider->refresh_duration_)));
-      if (value != nullptr) {
-        return;
-      }
     }
+    // void* value = gpr_event_wait(
+    //     &provider->shutdown_event_,
+    //     TimeoutSecondsToDeadline(
+    //         absl::ToInt64Seconds(provider->refresh_duration_)));
+
+    // auto handle =
+    //     event_engine->RunAfter(provider->refresh_duration_, thread_lambda);
   };
-  provider->refresh_thread_ = std::thread(thread_lambda);
+  grpc_event_engine::experimental::EventEngine::TaskHandle handle =
+      event_engine->RunAfter(provider->refresh_duration_, thread_lambda);
+  // provider->refresh_thread_ = std::thread(thread_lambda);
   return provider;
 }
 
-absl::Status DirectoryReloaderCrlProvider::Update() {
+absl::Status DirectoryReloaderCrlProviderImpl::Update() {
   // for () absl::MutexLock lock(&mu_);
   // TODO(gtcooke94) reading directory in C++ on windows vs. unix
-  DIR* crl_directory = opendir(crl_directory_.c_str());
+  DIR* crl_directory;
+  if ((crl_directory = opendir(crl_directory_.c_str())) == nullptr) {
+    // Try getting full absolute path of crl_directory_
+  }
   struct FileData {
     char path[MAXPATHLEN];
     off_t size;
@@ -251,6 +279,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
       if (!result.ok()) {
         all_files_successful = false;
         // TODO(gtcooke94) error logging
+        continue;
       }
       // Now we have a good CRL to update in our map
       std::shared_ptr<Crl> crl = *result;
@@ -267,7 +296,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
   return absl::OkStatus();
 }
 
-std::shared_ptr<Crl> DirectoryReloaderCrlProvider::GetCrl(
+std::shared_ptr<Crl> DirectoryReloaderCrlProviderImpl::GetCrl(
     const CertificateInfo& certificate_info) {
   absl::MutexLock lock(&mu_);
   auto it = crls_.find(certificate_info.Issuer());

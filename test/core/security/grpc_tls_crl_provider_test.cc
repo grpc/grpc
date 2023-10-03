@@ -40,6 +40,8 @@
 namespace grpc_core {
 namespace testing {
 
+const std::string kCrlDirectory = "test/core/tsi/test_creds/crl_data/crls";
+
 using ::grpc_core::experimental::CertificateInfoImpl;
 using ::grpc_core::experimental::Crl;
 using ::grpc_core::experimental::CrlImpl;
@@ -85,6 +87,12 @@ TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
   CertificateInfoImpl bad_cert = CertificateInfoImpl("BAD CERT");
   auto crl = provider->GetCrl(bad_cert);
   ASSERT_EQ(crl, nullptr);
+}
+
+TEST(CrlProviderTest, DirectoryReloaderCrl) {
+  auto result = experimental::DirectoryReloaderCrlProvider::
+      CreateDirectoryReloaderProvider(kCrlDirectory, absl::Seconds(1), nullptr);
+  ASSERT_TRUE(result.ok());
 }
 
 }  // namespace testing

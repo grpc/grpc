@@ -87,20 +87,9 @@ class DirectoryReloaderCrlProvider : public CrlProvider {
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
   static absl::StatusOr<std::shared_ptr<CrlProvider>>
   CreateDirectoryReloaderProvider(
-      absl::string_view directory, absl::Duration refresh_duration,
+      absl::string_view directory, std::chrono::seconds refresh_duration,
       std::function<void(absl::Status)> reload_error_callback);
-  ~DirectoryReloaderCrlProvider() override;
-
- protected:
- private:
-  absl::Status Update();
-  absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls_;
-  std::string crl_directory_;
-  absl::Mutex mu_;
-  std::thread refresh_thread_;
-  absl::Duration refresh_duration_;
-  std::function<void(absl::Status)> reload_error_callback_;
-  gpr_event shutdown_event_;
+  // ~DirectoryReloaderCrlProvider() override;
 };
 
 }  // namespace experimental
