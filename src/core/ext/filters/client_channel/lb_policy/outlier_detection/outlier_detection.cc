@@ -726,7 +726,7 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         ++it;
       }
     }
-    // Remove any entries we no longer need in the subchannel map.
+    // Remove any entries we no longer need in the endpoint map.
     for (auto it = endpoint_state_map_.begin();
          it != endpoint_state_map_.end();) {
       if (current_endpoints.find(it->first) == current_endpoints.end()) {
