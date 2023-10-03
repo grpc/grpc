@@ -112,8 +112,6 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
 
   done:
     if (call1 != nullptr) grpc_call_unref(call1);
-    grpc_call_details_destroy(&call_details1);
-    grpc_metadata_array_destroy(&request_metadata1);
     grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
     grpc_core::Timestamp deadline =
@@ -146,6 +144,8 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
                grpc_core::Timestamp::Now() < deadline);
       GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
     }
+    grpc_call_details_destroy(&call_details1);
+    grpc_metadata_array_destroy(&request_metadata1);
     grpc_server_destroy(server);
     grpc_completion_queue_destroy(cq);
   }
