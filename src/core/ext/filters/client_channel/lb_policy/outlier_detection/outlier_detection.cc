@@ -280,7 +280,11 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   class EndpointState : public RefCounted<EndpointState> {
    public:
     explicit EndpointState(std::set<SubchannelState*> subchannels)
-        : subchannels_(std::move(subchannels)) {}
+        : subchannels_(std::move(subchannels)) {
+      for (SubchannelState* subchannel : subchannels_) {
+        subchannel->set_endpoint_state(Ref());
+      }
+    }
 
     void RotateBucket() {
       backup_bucket_->successes = 0;
@@ -673,63 +677,86 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   }
   // Update subchannel and endpoint maps.
   if (args.addresses.ok()) {
-    std::set<EndpointAddressSet> current_addresses;
+    std::set<EndpointAddressSet> current_endpoints;
+    std::set<grpc_resolved_address> current_addresses;
     for (EndpointAddresses& endpoint : *args.addresses) {
       EndpointAddressSet key(endpoint.addresses());
+      current_endpoints.emplace(key);
+      // Find the entry in the endpoint map.
       auto it = endpoint_state_map_.find(key);
       if (it == endpoint_state_map_.end()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+          gpr_log(GPR_INFO,
+                  "[outlier_detection_lb %p] adding endpoint entry for %s",
+                  this, key.ToString().c_str());
+        }
+        // The endpoint is not present in the map, so we'll need to add it.
+        // Start by getting a pointer to the entry for each address in the
+        // subchannel map, creating the entry if needed.
         std::set<SubchannelState*> subchannels;
         for (const grpc_resolved_address& address : endpoint.addresses()) {
+          current_addresses.emplace(address);
           auto it2 = subchannel_state_map_.find(address);
           if (it2 == subchannel_state_map_.end()) {
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+              auto address = grpc_sockaddr_to_string(&address, false);
+              gpr_log(GPR_INFO,
+                      "[outlier_detection_lb %p] adding address entry for %s",
+                      this, address.value_or("unknown").c_str());
+            }
             it2 = subchannel_state_map_.emplace(
                 address, MakeRefCounted<SubchannelState>())
                 .first;
           }
           subchannels.insert(it2->second.get());
         }
-// FIXME
-
-      }
-
-
-
-      auto& subchannel_state = subchannel_state_map_[key];
-      if (subchannel_state == nullptr) {
-        subchannel_state = MakeRefCounted<SubchannelState>();
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-          gpr_log(GPR_INFO,
-                  "[outlier_detection_lb %p] adding map entry for %s (%p)",
-                  this, key.ToString().c_str(), subchannel_state.get());
-        }
+        // Now create the endpoint.
+        endpoint_state_map_.emplace(
+            key, MakeRefCounted<EndpointState>(std::move(subchannels)));
       } else if (!config_->CountingEnabled()) {
         // If counting is not enabled, reset state.
         if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
           gpr_log(GPR_INFO,
                   "[outlier_detection_lb %p] counting disabled; disabling "
-                  "ejection for %s (%p)",
-                  this, key.ToString().c_str(), subchannel_state.get());
+                  "ejection for %s",
+                  this, key.ToString().c_str());
         }
-        subchannel_state->DisableEjection();
+        it->second->DisableEjection();
       }
-
-      current_addresses.emplace(key);
       // Add channel arg containing the key, for use in CreateSubchannel().
       endpoint = EndpointAddresses(
           endpoint.addresses(),
           endpoint.args().SetObject(MakeRefCounted<EndpointAddressesArg>(key)));
     }
+    // Remove any entries we no longer need in the subchannel map.
     for (auto it = subchannel_state_map_.begin();
          it != subchannel_state_map_.end();) {
       if (current_addresses.find(it->first) == current_addresses.end()) {
-        // remove each map entry for a subchannel address not in the updated
-        // address list.
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+          auto address = grpc_sockaddr_to_string(&it->first, false);
+          gpr_log(GPR_INFO,
+                  "[outlier_detection_lb %p] removing subchannel map entry %s",
+                  this, address.value_or("unknown").c_str());
+        }
+        // Don't hold a ref to the corresponding EndpointState object,
+        // because there could be subchannel wrappers keeping this alive
+        // for a while, and we don't need them to do any call tracking.
+        it->second->set_endpoint_state(nullptr);
+        it = subchannel_state_map_.erase(it);
+      } else {
+        ++it;
+      }
+    }
+    // Remove any entries we no longer need in the subchannel map.
+    for (auto it = endpoint_state_map_.begin();
+         it != endpoint_state_map_.end();) {
+      if (current_endpoints.find(it->first) == current_endpoints.end()) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
           gpr_log(GPR_INFO,
-                  "[outlier_detection_lb %p] removing map entry for %s (%p)",
-                  this, it->first.ToString().c_str(), it->second.get());
+                  "[outlier_detection_lb %p] removing endpoint map entry %s",
+                  this, it->first.ToString().c_str());
         }
-        it = subchannel_state_map_.erase(it);
+        it = endpoint_state_map_.erase(it);
       } else {
         ++it;
       }
@@ -890,18 +917,18 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
   double success_rate_sum = 0;
   auto time_now = Timestamp::Now();
   auto& config = parent_->config_->outlier_detection_config();
-  for (auto& state : parent_->subchannel_state_map_) {
-    auto* subchannel_state = state.second.get();
+  for (auto& state : parent_->endpoint_state_map_) {
+    auto* endpoint_state = state.second.get();
     // For each address, swap the call counter's buckets in that address's
     // map entry.
-    subchannel_state->RotateBucket();
+    endpoint_state->RotateBucket();
     // Gather data to run success rate algorithm or failure percentage
     // algorithm.
-    if (subchannel_state->ejection_time().has_value()) {
+    if (endpoint_state->ejection_time().has_value()) {
       ++ejected_host_count;
     }
     absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
-        subchannel_state->GetSuccessRateAndVolume();
+        endpoint_state->GetSuccessRateAndVolume();
     if (!host_success_rate_and_volume.has_value()) {
       continue;
     }
@@ -909,14 +936,14 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     uint64_t request_volume = host_success_rate_and_volume->second;
     if (config.success_rate_ejection.has_value()) {
       if (request_volume >= config.success_rate_ejection->request_volume) {
-        success_rate_ejection_candidates[subchannel_state] = success_rate;
+        success_rate_ejection_candidates[endpoint_state] = success_rate;
         success_rate_sum += success_rate;
       }
     }
     if (config.failure_percentage_ejection.has_value()) {
       if (request_volume >=
           config.failure_percentage_ejection->request_volume) {
-        failure_percentage_ejection_candidates[subchannel_state] = success_rate;
+        failure_percentage_ejection_candidates[endpoint_state] = success_rate;
       }
     }
   }
@@ -968,7 +995,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
       if (candidate.second < ejection_threshold) {
         uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
         double current_percent =
-            100.0 * ejected_host_count / parent_->subchannel_state_map_.size();
+            100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
         if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
           gpr_log(GPR_INFO,
                   "[outlier_detection_lb %p] random_key=%d "
@@ -1016,7 +1043,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           config.failure_percentage_ejection->threshold) {
         uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
         double current_percent =
-            100.0 * ejected_host_count / parent_->subchannel_state_map_.size();
+            100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
         if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
           gpr_log(GPR_INFO,
                   "[outlier_detection_lb %p] random_key=%d "
@@ -1046,13 +1073,13 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
   //   current time is after ejection_timestamp + min(base_ejection_time *
   //   multiplier, max(base_ejection_time, max_ejection_time)), un-eject the
   //   address.
-  for (auto& state : parent_->subchannel_state_map_) {
-    auto* subchannel_state = state.second.get();
-    const bool unejected = subchannel_state->MaybeUneject(
+  for (auto& state : parent_->endpoint_state_map_) {
+    auto* endpoint_state = state.second.get();
+    const bool unejected = endpoint_state->MaybeUneject(
         config.base_ejection_time.millis(), config.max_ejection_time.millis());
     if (unejected && GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO, "[outlier_detection_lb %p] unejected endpoint %s (%p)",
-              parent_.get(), state.first.ToString().c_str(), subchannel_state);
+              parent_.get(), state.first.ToString().c_str(), endpoint_state);
     }
   }
   parent_->ejection_timer_ =
