@@ -17,6 +17,11 @@
 # bazel under a docker container.
 # This is especially useful for running bazel RBE builds, since inside
 # the container, bazel won't have access to local build cache.
+# Access to the local workspace is provided by mounting the workspace
+# as a volume to the docker container. That also means that any changes
+# in the workspace will be visible to the bazel instance running inside
+# the container (but also this is a similar scenario to making changes
+# to local files when bazel is running normally).
 
 # Usage:
 # tools/docker_runners/examples/concurrent_bazel.sh ANY_NORMAL_BAZEL_FLAGS_HERE
