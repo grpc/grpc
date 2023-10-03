@@ -337,6 +337,82 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
       final_addresses);
 }
 
+TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
+  if (!IsRoundRobinDelegateToPickFirstEnabled()) return;
+  // Can't use timer duration expectation here, because the Happy
+  // Eyeballs timer inside pick_first will use a different duration than
+  // the timer in outlier_detection.
+  SetExpectedTimerDuration(absl::nullopt);
+  constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
+      "ipv4:127.0.0.1:445", "ipv4:127.0.0.1:446"};
+  constexpr std::array<absl::string_view, 2> kEndpoint3Addresses = {
+      "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
+  const std::array<EndpointAddresses, 3> kEndpoints = {
+      MakeEndpointAddresses(kEndpoint1Addresses),
+      MakeEndpointAddresses(kEndpoint2Addresses),
+      MakeEndpointAddresses(kEndpoint3Addresses)};
+  auto kConfig = ConfigBuilder()
+                     .SetFailurePercentageThreshold(1)
+                     .SetFailurePercentageMinimumHosts(1)
+                     .SetFailurePercentageRequestVolume(1)
+                     .SetMaxEjectionTime(Duration::Seconds(1))
+                     .SetBaseEjectionTime(Duration::Seconds(1))
+                     .Build();
+  // Send initial update.
+  absl::Status status = ApplyUpdate(BuildUpdate(kEndpoints, kConfig),
+                                    lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // Expect normal startup.
+  auto picker = ExpectRoundRobinStartup(kEndpoints);
+  ASSERT_NE(picker, nullptr);
+  gpr_log(GPR_INFO, "### RR startup complete");
+  // Do a pick and report a failed call.
+  auto ejected_address = DoPickWithFailedCall(picker.get());
+  ASSERT_TRUE(ejected_address.has_value());
+  gpr_log(GPR_INFO, "### failed RPC on %s", ejected_address->c_str());
+  // Based on the address that the failed call went to, we determine
+  // which addresses to use in the subsequent steps.
+  absl::Span<const absl::string_view> expected_round_robin_while_ejected;
+  std::vector<EndpointAddresses> new_endpoints;
+  if (kEndpoint1Addresses[0] == *ejected_address) {
+    expected_round_robin_while_ejected = {kEndpoint2Addresses[0],
+                                          kEndpoint3Addresses[0]};
+    new_endpoints = {MakeEndpointAddresses({kEndpoint1Addresses[0]}),
+                     MakeEndpointAddresses(kEndpoint2Addresses),
+                     MakeEndpointAddresses(kEndpoint2Addresses)};
+  } else if (kEndpoint2Addresses[0] == *ejected_address) {
+    expected_round_robin_while_ejected = {kEndpoint1Addresses[0],
+                                          kEndpoint3Addresses[0]};
+    new_endpoints = {MakeEndpointAddresses(kEndpoint1Addresses),
+                     MakeEndpointAddresses({kEndpoint2Addresses[0]}),
+                     MakeEndpointAddresses(kEndpoint3Addresses)};
+  } else {
+    expected_round_robin_while_ejected = {kEndpoint1Addresses[0],
+                                          kEndpoint2Addresses[0]};
+    new_endpoints = {MakeEndpointAddresses(kEndpoint1Addresses),
+                     MakeEndpointAddresses(kEndpoint2Addresses),
+                     MakeEndpointAddresses({kEndpoint3Addresses[0]})};
+  }
+  // Advance time and run the timer callback to trigger ejection.
+  IncrementTimeBy(Duration::Seconds(10));
+  gpr_log(GPR_INFO, "### ejection complete");
+  // Expect a picker that removes the ejected address.
+  WaitForRoundRobinListChange(
+      {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
+      expected_round_robin_while_ejected);
+  gpr_log(GPR_INFO, "### ejected endpoint removed");
+  // Send an update that removes the other address from the ejected endpoint.
+  status = ApplyUpdate(BuildUpdate(new_endpoints, kConfig), lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // This should cause the address to start getting used again, since
+  // it's now associated with a different endpoint.
+  WaitForRoundRobinListChange(
+      expected_round_robin_while_ejected,
+      {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]});
+}
+
 TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
