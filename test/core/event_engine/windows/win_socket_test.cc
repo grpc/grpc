@@ -27,6 +27,7 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
@@ -75,7 +76,7 @@ TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
 TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
   wrapped_client_socket_->Shutdown();
   grpc_core::Notification read_called;
-  AnyInvocableClosure closure([&wrapped_client_socket_, &read_called] {
+  AnyInvocableClosure closure([this, &read_called] {
     ASSERT_EQ(wrapped_client_socket_->read_info()->result().bytes_transferred,
               0u);
     ASSERT_EQ(wrapped_client_socket_->read_info()->result().wsa_error,
@@ -87,27 +88,28 @@ TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
 }
 
 TEST_F(WinSocketTest, UnsetNotificationWorks) {
-  wrapped_client_socket_->NotifyOnRead(
-      []() { grpc_core::Crash("read callback called") });
-  wrapped_client_socket_->NotifyOnWrite(
-      []() { grpc_core::Crash("write callback called") });
-  wrapped_client_socket_.UnregisterReadCallback();
-  wrapped_client_socket_.UnregisterWriteCallback();
+  AnyInvocableClosure read_closure{
+      []() { grpc_core::Crash("read callback called"); }};
+  wrapped_client_socket_->NotifyOnRead(&read_closure);
+  AnyInvocableClosure write_closure{
+      []() { grpc_core::Crash("write callback called"); }};
+  wrapped_client_socket_->NotifyOnWrite(&write_closure);
+  wrapped_client_socket_->UnregisterReadCallback();
+  wrapped_client_socket_->UnregisterWriteCallback();
   // Give this time to fail.
   absl::SleepFor(absl::Seconds(1));
 }
 
 TEST_F(WinSocketTest, UnsetNotificationCanBeDoneRepeatedly) {
   // This should crash if a callback is already registered.
-  wrapped_client_socket_->NotifyOnRead(
-      []() { grpc_core::Crash("read callback 1 called") });
-  wrapped_client_socket_.UnregisterReadCallback();
-  wrapped_client_socket_->NotifyOnRead(
-      []() { grpc_core::Crash("read callback 2 called") });
-  wrapped_client_socket_.UnregisterReadCallback();
-  wrapped_client_socket_->NotifyOnRead(
-      []() { grpc_core::Crash("read callback 3 called") });
-  wrapped_client_socket_.UnregisterReadCallback();
+  AnyInvocableClosure closure{
+      []() { grpc_core::Crash("read callback 1 called"); }};
+  wrapped_client_socket_->NotifyOnRead(&closure);
+  wrapped_client_socket_->UnregisterReadCallback();
+  wrapped_client_socket_->NotifyOnRead(&closure);
+  wrapped_client_socket_->UnregisterReadCallback();
+  wrapped_client_socket_->NotifyOnRead(&closure);
+  wrapped_client_socket_->UnregisterReadCallback();
   // Give this time to fail.
   absl::SleepFor(absl::Seconds(1));
 }
