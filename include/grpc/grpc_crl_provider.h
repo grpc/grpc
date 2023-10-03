@@ -90,15 +90,12 @@ class DirectoryReloaderCrlProvider : public CrlProvider {
       absl::string_view directory, absl::Duration refresh_duration,
       std::function<void(absl::Status)> reload_error_callback);
   ~DirectoryReloaderCrlProvider() override;
-  DirectoryReloaderCrlProvider(
-      absl::string_view directory, absl::Duration refresh_duration,
-      std::function<void(absl::Status)> reload_error_callback);
 
  protected:
  private:
   absl::Status Update();
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls_;
-  const std::string crl_directory_;
+  std::string crl_directory_;
   absl::Mutex mu_;
   std::thread refresh_thread_;
   absl::Duration refresh_duration_;

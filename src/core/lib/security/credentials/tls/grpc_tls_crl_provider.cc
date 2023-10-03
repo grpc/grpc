@@ -175,12 +175,12 @@ std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
   return it->second;
 }
 
-DirectoryReloaderCrlProvider::DirectoryReloaderCrlProvider(
-    absl::string_view directory, absl::Duration refresh_duration,
-    std::function<void(absl::Status)> reload_error_callback)
-    : crl_directory_(directory),
-      refresh_duration_(refresh_duration),
-      reload_error_callback_(reload_error_callback) {}
+// DirectoryReloaderCrlProvider::DirectoryReloaderCrlProvider(
+//     absl::string_view directory, absl::Duration refresh_duration,
+//     std::function<void(absl::Status)> reload_error_callback)
+//     : crl_directory_(directory),
+//       refresh_duration_(refresh_duration),
+//       reload_error_callback_(reload_error_callback) {}
 
 DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
   gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
@@ -192,12 +192,11 @@ DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
     absl::string_view directory, absl::Duration refresh_duration,
     std::function<void(absl::Status)> reload_error_callback) {
   // TODO(gtcooke94) validate directory, inputs, etc
-  // Todo do first load here or in the thread?
-  // auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
-  //     DirectoryReloaderCrlProvider(directory, refresh_duration,
-  //                                  reload_error_callback));
-  auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
-      directory, refresh_duration, reload_error_callback);
+  // TODO(gtcooke94) do first load here or in the thread?
+  auto provider = std::make_shared<DirectoryReloaderCrlProvider>();
+  provider->crl_directory_ = std::string(directory);
+  provider->refresh_duration_ = refresh_duration;
+  provider->reload_error_callback_ = reload_error_callback;
   gpr_event_init(&provider->shutdown_event_);
   auto thread_lambda = [&]() {
     absl::Status status = provider->Update();
