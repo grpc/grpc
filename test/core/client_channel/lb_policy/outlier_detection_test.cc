@@ -361,8 +361,8 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
                      .SetBaseEjectionTime(Duration::Seconds(1))
                      .Build();
   // Send initial update.
-  absl::Status status = ApplyUpdate(BuildUpdate(kEndpoints, kConfig),
-                                    lb_policy_.get());
+  absl::Status status =
+      ApplyUpdate(BuildUpdate(kEndpoints, kConfig), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kEndpoints);
