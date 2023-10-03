@@ -58,7 +58,7 @@ TEST_F(ConfigurationTest, ClientKeepaliveDefaults) {
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
       grpc_create_chttp2_transport(args_, mock_endpoint_, /*is_client=*/true));
   EXPECT_EQ(t->keepalive_time, Duration::Infinity());
-  EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(20));
+  EXPECT_EQ(t->keepalive_timeout, Duration::Infinity());
   EXPECT_EQ(t->keepalive_permit_without_calls, false);
   EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 2);
   grpc_transport_destroy(&t->base);

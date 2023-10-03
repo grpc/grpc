@@ -219,6 +219,22 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "ping_callbacks_test",
+    srcs = ["ping_callbacks_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/random",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/event_engine:mock_event_engine",
+    ],
+)
+
+grpc_cc_test(
     name = "flow_control_test",
     srcs = ["flow_control_test.cc"],
     external_deps = [
