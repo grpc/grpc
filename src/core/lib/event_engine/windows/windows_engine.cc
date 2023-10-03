@@ -195,7 +195,7 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
   return handle;
 }
 
-#if GRPC_ARES == 1
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
 WindowsEventEngine::WindowsDNSResolver::WindowsDNSResolver(
     grpc_core::OrphanablePtr<AresResolver> ares_resolver)
@@ -217,12 +217,12 @@ void WindowsEventEngine::WindowsDNSResolver::LookupTXT(
   ares_resolver_->LookupTXT(name, std::move(on_resolve));
 }
 
-#endif  // GRPC_ARES == 1
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 WindowsEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& options) {
-#if GRPC_ARES == 1
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   auto ares_resolver = AresResolver::CreateAresResolver(
       options.dns_server,
       std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
@@ -232,12 +232,12 @@ WindowsEventEngine::GetDNSResolver(
   }
   return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
       std::move(*ares_resolver));
-#else   // GRPC_ARES == 1
+#else   // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   // TODO(yijiem): Implement a basic A/AAAA-only native resolver in
   // WindowsEventEngine.
   (void)options;
   grpc_core::Crash("unimplemented");
-#endif  // GRPC_ARES == 1
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 }
 
 bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }

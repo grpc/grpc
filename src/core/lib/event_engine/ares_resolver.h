@@ -89,8 +89,8 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
   // close the socket (possibly through ares_destroy).
   struct FdNode {
     FdNode() = default;
-    FdNode(ares_socket_t as, GrpcPolledFdReturnType polled_fd)
-        : as(as), polled_fd(std::move(polled_fd)) {}
+    FdNode(ares_socket_t as, GrpcPolledFdReturnType pf)
+        : as(as), polled_fd(std::move(pf)) {}
     ares_socket_t as;
     GrpcPolledFdReturnType polled_fd;
     // true if the readable closure has been registered
