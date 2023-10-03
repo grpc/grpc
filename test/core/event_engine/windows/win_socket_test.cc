@@ -100,21 +100,6 @@ TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
   ASSERT_TRUE(read_called);
 }
 
-TEST_F(WinSocketTest, TriggerNotificationWorks) {
-  grpc_core::Notification read_called;
-  grpc_core::Notification write_called;
-  wrapped_client_socket_->NotifyOnRead(
-      [&read_called]() { read_called.Notify(); });
-  wrapped_client_socket_->NotifyOnWrite(
-      [&write_called]() { write_called.Notify(); });
-  wrapped_client_socket_.TriggerReadCallbackWithError(
-      absl::UnknowError("triggered read"));
-  read_called.Wait();
-  wrapped_client_socket_.TriggerWriteCallbackWithError(
-      absl::UnknowError("triggered write"));
-  write_called.Wait();
-}
-
 TEST_F(WinSocketTest, UnsetNotificationWorks) {
   wrapped_client_socket_->NotifyOnRead(
       []() { grpc_core::Crash("read callback called") });

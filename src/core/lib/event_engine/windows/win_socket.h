@@ -84,16 +84,10 @@ class WinSocket {
   // each read or send operation.
   void NotifyOnRead(EventEngine::Closure* on_read);
   void NotifyOnWrite(EventEngine::Closure* on_write);
-  // Trigger Notifications manually.
+  // Remove the notification callback for read/write events.
   //
-  // This is useful if a notification was registered optimistically, but a
-  // read/write error occurs such that the notification would never be called.
-  // DO NOT SUBMIT - see if this can be removed, replaced with Unregister*
-  void TriggerReadCallbackWithError(absl::Status error_status);
-  void TriggerWriteCallbackWithError(absl::Status error_status);
-  // Remove the callback without running them.
-  //
-  // It is UB if an IOCP event comes through and a notification is not
+  // This method should only be called if no IOCP event is pending for the
+  // socket. It is UB if an IOCP event comes through and a notification is not
   // registered.
   void UnregisterReadCallback();
   void UnregisterWriteCallback();

@@ -79,8 +79,10 @@ WindowsEndpoint::~WindowsEndpoint() {
 void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", endpoint);
   if (socket->IsShutdown()) {
-    socket->TriggerReadCallbackWithError(
+    socket->UnregisterReadCallback();
+    socket->read_info()->SetErrorStatus(
         absl::UnavailableError("Socket is shutting down."));
+    thread_pool->Run(&handle_read_event);
     return;
   }
   // Prepare the WSABUF struct
@@ -118,9 +120,11 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   wsa_error = status == 0 ? 0 : WSAGetLastError();
   if (wsa_error != 0 && wsa_error != WSA_IO_PENDING) {
     // The async read attempt returned an error immediately.
-    socket->TriggerReadCallbackWithError(GRPC_WSA_ERROR(
+    socket->UnregisterReadCallback();
+    socket->read_info()->SetErrorStatus(GRPC_WSA_ERROR(
         wsa_error,
         absl::StrFormat("WindowsEndpont::%p Read failed", this).c_str()));
+    thread_pool->Run(&handle_read_event);
   }
 }
 
@@ -216,8 +220,10 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   if (status != 0) {
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
-      io_state_->socket->TriggerWriteCallbackWithError(
+      io_state_->socket->UnregisterWriteCallback();
+      io_state_->socket->write_info()->SetErrorStatus(
           GRPC_WSA_ERROR(wsa_error, "WSASend"));
+      io_state_->thread_pool->Run(&io_state_->handle_write_event);
     }
   }
   return false;

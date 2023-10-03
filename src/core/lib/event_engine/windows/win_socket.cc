@@ -106,16 +106,6 @@ void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
   NotifyOnReady(write_info_, on_write);
 }
 
-void WinSocket::TriggerReadCallbackWithError(absl::Status error_status) {
-  read_info_.SetErrorStatus(error_status);
-  thread_pool_->Run(read_info_.closure_);
-}
-
-void WinSocket::TriggerWriteCallbackWithError(absl::Status error_status) {
-  write_info_.SetErrorStatus(error_status);
-  thread_pool_->Run(write_info_.closure_);
-}
-
 void WinSocket::UnregisterReadCallback() {
   EventEngine::Closure* prev = nullptr;
   GPR_ASSERT(std::exchange(read_info_.closure_, nullptr) != nullptr);
