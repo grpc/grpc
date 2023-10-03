@@ -79,19 +79,26 @@ For `.proto` files that are outside of the project directory a link can be added
 
 For more examples see the example project files in GitHub: https://github.com/grpc/grpc-dotnet/tree/master/examples
 
-## Sharing `.proto` files between projects
+## Sharing `.proto` files between multiple projects (in the same VS solution)
 
-Instead of each project generating their own code from a set of `.proto` files, you may have a shared .NET project that generates the code once, and then have other projects in the solution reference the shared project.
+If you have one or more `.proto` files that you want to use in multiple project then
+you may create a shared class library that compiled the generated the code.
+The other projects in the solution then can reference this shared class library instead of each project having to compile
+the same `.proto` files.
+
+The advantages of this are:
+- The `.proto` only need to be compiled once.
+- It prevents some projects getting multiple definitions of the same generated code, which can in turn break the build.
 
 There are a couple of examples in GitHub:
 - The [Liber example](https://github.com/grpc/grpc-dotnet/tree/master/examples#liber)
   demonstrates how common protocol buffers messages can be compiled once and used in other projects:
-  - The *Common* project generates messages contained in `common.proto`
+  - The *Common* project creates a class library that includes the generates messages contained in `common.proto`
   - The *Client* and *Server* projects reference the *Common* project.
   - They do not need to recompile `common.proto` as those .NET types are already in
-    the *Common* project.
+    the *Common* class library.
   - They do however each generate their own gRPC client or server code as both have a 
-    `<Protobuf>` reference for `greet.proto`
+    `<Protobuf>` reference for `greet.proto`.  The *Client* and *Server* projects each having their own version of `greet.proto` is OK since they don't reference each other - they only reference the shared *Common* class library.
 
 - The [RouteGuide example](https://github.com/grpc/grpc/tree/v1.46.x/examples/csharp/RouteGuide)
   demonstrates how the gRPC client and server code can be generated once and used in other
@@ -672,7 +679,7 @@ My.Example.Protos.targets:
       <Protobuf_StandardImportsPath>$(Protobuf_StandardImportsPath);$(MyPackage_ProtosPath)</Protobuf_StandardImportsPath>
     </PropertyGroup>
 
-    <!-- These message are unnecessary but included here for diagnostics -->
+    <!-- These message are not required but included here for diagnostics -->
     <Message Text="Included proto files at $(MyExampleProtos_ProtosPath) in import path." Importance="high" />
     <Message Text="Updated proto imports path: $(Protobuf_StandardImportsPath)" Importance="high" />
   </Target>
