@@ -27,6 +27,7 @@
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -428,8 +429,8 @@ FilterTestBase::FilterTestBase() {
   });
   event_engine_ =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+  grpc_timer_manager_set_start_threaded(false);
   grpc_init();
-  grpc_timer_manager_set_threading(false);
 }
 
 FilterTestBase::~FilterTestBase() {
