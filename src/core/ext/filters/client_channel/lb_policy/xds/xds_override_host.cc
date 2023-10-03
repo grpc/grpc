@@ -219,17 +219,17 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     XdsHealthStatus eds_health_status() const { return eds_health_status_; }
 
-    void set_address_list(std::string address_list) {
+    void set_address_list(RefCountedStringValue address_list) {
       address_list_ = std::move(address_list);
     }
 
-    const std::string& address_list() const { return address_list_; }
+    RefCountedStringValue address_list() const { return address_list_; }
 
    private:
     absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>
         subchannel_;
     XdsHealthStatus eds_health_status_;
-    std::string address_list_;
+    RefCountedStringValue address_list_;
   };
 
   // A picker that wraps the picker from the child for cases when cookie is
@@ -275,11 +275,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     absl::string_view AllocateStringOnArena(const PickArgs& args,
                                             absl::string_view string) const;
-
-    void SetActualAddressList(
-        const PickArgs& args,
-        const XdsOverrideHostLb::SubchannelEntry& subchannel_entry,
-        XdsOverrideHostAttribute* override_host_attr) const;
 
     RefCountedPtr<XdsOverrideHostLb> policy_;
     RefCountedPtr<SubchannelPicker> picker_;
@@ -364,17 +359,6 @@ absl::string_view XdsOverrideHostLb::Picker::AllocateStringOnArena(
   return absl::string_view(buffer, string.size());
 }
 
-void XdsOverrideHostLb::Picker::SetActualAddressList(
-    const PickArgs& args,
-    const XdsOverrideHostLb::SubchannelEntry& subchannel_entry,
-    XdsOverrideHostAttribute* override_host_attr) const {
-  absl::string_view address_list = subchannel_entry.address_list();
-  if (!address_list.empty()) {
-    override_host_attr->set_actual_address_list(
-        AllocateStringOnArena(args, address_list));
-  }
-}
-
 absl::optional<LoadBalancingPolicy::PickResult>
 XdsOverrideHostLb::Picker::PickOverridenHost(
     const PickArgs& args, XdsOverrideHostAttribute* override_host_attr) const {
@@ -412,7 +396,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
       if (connectivity_state == GRPC_CHANNEL_READY) {
         // Found a READY subchannel.  Pass back the actual address list
         // and return the subchannel.
-        SetActualAddressList(args, it->second, override_host_attr);
+        override_host_attr->set_actual_address_list(it->second.address_list());
         return PickResult::Complete(subchannel->wrapped_subchannel());
       } else if (connectivity_state == GRPC_CHANNEL_IDLE) {
         if (idle_subchannel == nullptr) idle_subchannel = std::move(subchannel);
@@ -463,7 +447,8 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
         MutexLock lock(&policy_->subchannel_map_mu_);
         auto it = policy_->subchannel_map_.find(*key);
         if (it != policy_->subchannel_map_.end()) {  // Should always be true.
-          SetActualAddressList(args, it->second, override_host_attr);
+          override_host_attr->set_actual_address_list(
+              it->second.address_list());
         }
       }
     }
@@ -605,8 +590,8 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
   EndpointAddressesList child_addresses;
   struct AddressInfo {
     XdsHealthStatus eds_health_status;
-    std::string address_list;
-    AddressInfo(XdsHealthStatus status, std::string addresses)
+    RefCountedStringValue address_list;
+    AddressInfo(XdsHealthStatus status, RefCountedStringValue addresses)
         : eds_health_status(status), address_list(std::move(addresses)) {}
   };
   std::map<const std::string, AddressInfo> addresses_for_map;
@@ -647,9 +632,9 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
     for (size_t i = 0; i < addresses.size(); ++i) {
       std::string start = absl::StrJoin(addresses_span.subspan(0, i), ",");
       std::string end = absl::StrJoin(addresses_span.subspan(i + 1), ",");
-      std::string address_list =
+      RefCountedStringValue address_list(
           absl::StrCat(addresses[i], (start.empty() ? "" : ","), start,
-                       (start.empty() || end.empty() ? "" : ","), end);
+                       (start.empty() || end.empty() ? "" : ","), end));
       addresses_for_map.emplace(
           std::piecewise_construct, std::forward_as_tuple(addresses[i]),
           std::forward_as_tuple(status, std::move(address_list)));
@@ -698,7 +683,7 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
                 "[xds_override_host_lb %p] setting address list for %s to %s",
                 this, address.c_str(), address_info.address_list.c_str());
       }
-      it->second.set_address_list(address_info.address_list);
+      it->second.set_address_list(std::move(address_info.address_list));
     }
   }
   return child_addresses;

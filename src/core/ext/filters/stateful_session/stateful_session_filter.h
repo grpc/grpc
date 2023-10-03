@@ -27,6 +27,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -50,16 +51,18 @@ class XdsOverrideHostAttribute
 
   absl::string_view cookie_address_list() const { return cookie_address_list_; }
 
-  absl::string_view actual_address_list() const { return actual_address_list_; }
-  void set_actual_address_list(absl::string_view actual_address_list) {
-    actual_address_list_ = actual_address_list;
+  absl::string_view actual_address_list() const {
+    return actual_address_list_.as_string_view();
+  }
+  void set_actual_address_list(RefCountedStringValue actual_address_list) {
+    actual_address_list_ = std::move(actual_address_list);
   }
 
  private:
   UniqueTypeName type() const override { return TypeName(); }
 
   absl::string_view cookie_address_list_;
-  absl::string_view actual_address_list_;
+  RefCountedStringValue actual_address_list_;
 };
 
 // A filter to provide cookie-based stateful session affinity.

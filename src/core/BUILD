@@ -3985,6 +3985,7 @@ grpc_cc_library(
         "map",
         "pipe",
         "poll",
+        "ref_counted_string",
         "service_config_parser",
         "slice",
         "time",
