@@ -63,7 +63,7 @@ def _dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", 
         **test_args
     )
 
-def grpc_run_tests_harness_test(name, args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, use_login_shell = None, prepare_script = None):
+def grpc_run_tests_harness_test(name, args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, use_login_shell = None, prepare_script = None, run_tests_jobs_verbose_success = False):
     """Execute an run_tests.py-harness style test under bazel.
 
     Args:
@@ -79,6 +79,7 @@ def grpc_run_tests_harness_test(name, args = [], data = [], size = "medium", tim
         docker_image_version: The docker .current_version file to use for docker containerization.
         use_login_shell: If True, the run_tests.py command will run under a login shell.
         prepare_script: Optional script that will be sourced before run_tests.py runs.
+        run_tests_jobs_verbose_success: Print output from run_tests.py jobs even when they are successful.
     """
 
     data = [
@@ -101,6 +102,11 @@ def grpc_run_tests_harness_test(name, args = [], data = [], size = "medium", tim
     if prepare_script:
         data = data + [prepare_script]
         env["GRPC_RUNTESTS_PREPARE_SCRIPT"] = "$(location " + prepare_script + ")"
+
+    # since output of every test is viewable separately from other tests via "target log",
+    # it makes sense to make successful actions (e.g. build) print their output to the target log.
+    if run_tests_jobs_verbose_success:
+        env["GRPC_RUN_TESTS_JOBSET_FORCE_VERBOSE_SUCCESS"] = "true"
 
     # Enable ccache by default. This is important for speeding up the C++ cmake build,
     # which isn't very efficient and tends to recompile some source files multiple times.
