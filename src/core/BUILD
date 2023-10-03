@@ -5050,6 +5050,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -5073,7 +5074,6 @@ grpc_cc_library(
         "resolved_address",
         "subchannel_interface",
         "unique_type_name",
-        "useful",
         "validation_errors",
         "//:config",
         "//:debug_location",

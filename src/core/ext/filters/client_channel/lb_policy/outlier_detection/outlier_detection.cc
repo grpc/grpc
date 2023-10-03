@@ -32,6 +32,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -50,11 +51,11 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -679,16 +680,15 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
           auto it2 = subchannel_state_map_.find(address);
           if (it2 == subchannel_state_map_.end()) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-              std::string address_str =
-                  grpc_sockaddr_to_string(&address, false)
-                  .value_or("<unknown>");
+              std::string address_str = grpc_sockaddr_to_string(&address, false)
+                                            .value_or("<unknown>");
               gpr_log(GPR_INFO,
                       "[outlier_detection_lb %p] adding address entry for %s",
                       this, address_str.c_str());
             }
-            it2 = subchannel_state_map_.emplace(
-                address, MakeRefCounted<SubchannelState>())
-                .first;
+            it2 = subchannel_state_map_
+                      .emplace(address, MakeRefCounted<SubchannelState>())
+                      .first;
           }
           subchannels.insert(it2->second.get());
         }
