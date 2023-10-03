@@ -43,18 +43,18 @@ class WinSocketTest : public testing::Test {
       : thread_pool_(grpc_event_engine::experimental::MakeThreadPool(8)) {
     CreateSockpair(sockpair_, IOCP::GetDefaultSocketFlags());
     wrapped_client_socket_ =
-        std::make_unique<WinSocket>{sockpair_[0], thread_pool_.get()};
+        std::make_unique<WinSocket>(sockpair_[0], thread_pool_.get());
     wrapped_server_socket_ =
-        std::make_unique<WinSocket>{sockpair_[1], thread_pool_.get()};
+        std::make_unique<WinSocket>(sockpair_[1], thread_pool_.get());
   }
 
-  ~WinSocketTest() {
+  ~WinSocketTest() override {
     wrapped_client_socket_->Shutdown();
     wrapped_server_socket_->Shutdown();
     thread_pool->Quiesce();
   }
 
- private:
+ protected:
   std::shared_ptr<ThreadPool> thread_pool_;
   SOCKET sockpair_[2];
   std::unique_ptr<WinSocket> wrapped_client_socket_;
@@ -64,7 +64,7 @@ class WinSocketTest : public testing::Test {
 TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
   bool read_called = false;
   AnyInvocableClosure on_read([&read_called]() { read_called = true; });
-  ∏NotifyOnRead(&on_read);
+  NotifyOnRead(&on_read);
   AnyInvocableClosure on_write([] { FAIL() << "No Write expected"; });
   wrapped_client_socket_->NotifyOnWrite(&on_write);
   ASSERT_FALSE(read_called);
