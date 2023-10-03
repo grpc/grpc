@@ -218,7 +218,10 @@ void WindowsEventEngine::OnConnectCompleted(
     const auto& overlapped_result = state->socket->write_info()->result();
     // return early if we cannot cancel the connection timeout timer.
     if (!Cancel(state->timer_handle)) return;
-    if (overlapped_result.wsa_error != 0) {
+    if (!overlapped_result.error_status.ok()) {
+      state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx failure");
+      endpoint = overlapped_result.error_status;
+    } else if (overlapped_result.wsa_error != 0) {
       state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx failure");
       endpoint = GRPC_WSA_ERROR(overlapped_result.wsa_error, "ConnectEx");
     } else {
@@ -298,36 +301,37 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     });
     return EventEngine::ConnectionHandle::kInvalid;
   }
+  // Prepare the socket to receive a connection
+  auto connection_state = std::make_shared<ConnectionState>();
+  connection_state->socket = iocp_.Watch(sock);
+  GPR_ASSERT(connection_state->socket != nullptr);
+  auto* info = connection_state->socket->write_info();
+  connection_state->allocator = std::move(memory_allocator);
+  connection_state->on_connected_user_callback = std::move(on_connect);
+  connection_state->on_connected =
+      SelfDeletingClosure::Create([this, connection_state]() mutable {
+        OnConnectCompleted(std::move(connection_state));
+      });
+  connection_state->socket->NotifyOnWrite(connection_state->on_connected);
   // Connect
-  auto watched_socket = iocp_.Watch(sock);
-  auto* info = watched_socket->write_info();
   bool success =
-      ConnectEx(watched_socket->raw_socket(), address.address(), address.size(),
-                nullptr, 0, nullptr, info->overlapped());
+      ConnectEx(connection_state->socket->raw_socket(), address.address(),
+                address.size(), nullptr, 0, nullptr, info->overlapped());
   // It wouldn't be unusual to get a success immediately. But we'll still get an
   // IOCP notification, so let's ignore it.
   if (!success) {
     int last_error = WSAGetLastError();
     if (last_error != ERROR_IO_PENDING) {
-      Run([on_connect = std::move(on_connect),
-           status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
-        on_connect(status);
-      });
-      watched_socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
+      connection_state->socket->UnregisterWriteCallback();
+      connection_state->socket->write_info()->SetErrorStatus(
+          GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx"));
+      Run(connection_state->on_connected);
+      connection_state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
       return EventEngine::ConnectionHandle::kInvalid;
     }
   }
-  GPR_ASSERT(watched_socket != nullptr);
-  auto connection_state = std::make_shared<ConnectionState>();
   grpc_core::MutexLock lock(&connection_state->mu);
   connection_state->address = address;
-  connection_state->socket = std::move(watched_socket);
-  connection_state->on_connected_user_callback = std::move(on_connect);
-  connection_state->allocator = std::move(memory_allocator);
-  connection_state->on_connected =
-      SelfDeletingClosure::Create([this, connection_state]() mutable {
-        OnConnectCompleted(std::move(connection_state));
-      });
   {
     grpc_core::MutexLock conn_lock(&connection_mu_);
     connection_state->connection_handle =
@@ -339,13 +343,14 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
       RunAfter(timeout, [this, connection_state]() {
         grpc_core::MutexLock lock(&connection_state->mu);
         if (CancelConnectFromDeadlineTimer(connection_state.get())) {
-          connection_state->on_connected_user_callback(
+          connection_state->socket->UnregisterWriteCallback();
+          connection_state->socket->write_info()->SetErrorStatus(
               absl::DeadlineExceededError("Connection timed out"));
+          Run(connection_state->on_connected);
         }
         // else: The connection attempt could not be canceled. We can assume the
         // connection callback will be called.
       });
-  connection_state->socket->NotifyOnWrite(connection_state->on_connected);
   return connection_state->connection_handle;
 }
 

@@ -146,11 +146,18 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   auto wrapped_client_socket = iocp.Watch(sockpair[0]);
   grpc_core::Notification read_called;
   DWORD flags = 0;
-  AnyInvocableClosure* on_read;
   {
     // Set the client to receive asynchronously
     // Prepare a notification callback, but don't register it yet.
     WSABUF read_wsabuf;
+    wrapped_client_socket->NotifyOnRead(
+        SelfDeletingClosure::Create([win_socket = wrapped_client_socket.get(),
+                                     &read_called, &read_wsabuf]() {
+          gpr_log(GPR_DEBUG, "Notified on read");
+          EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
+          EXPECT_STREQ(read_wsabuf.buf, "hello!");
+          read_called.Notify();
+        }));
     read_wsabuf.len = 2048;
     char read_char_buffer[2048];
     read_wsabuf.buf = read_char_buffer;
@@ -165,13 +172,6 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     if (last_error != WSA_IO_PENDING) {
       LogErrorMessage(last_error, "WSARecv");
     }
-    on_read = new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
-                                       &read_called, &read_wsabuf]() {
-      gpr_log(GPR_DEBUG, "Notified on read");
-      EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
-      EXPECT_STREQ(read_wsabuf.buf, "hello!");
-      read_called.Notify();
-    });
   }
   {
     // Have the server send a message to the client. No need to track via IOCP
@@ -195,11 +195,8 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
                                [&cb_invoked]() { cb_invoked = true; });
   ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
   ASSERT_TRUE(cb_invoked);
-  // register the closure, which should trigger it immediately.
-  wrapped_client_socket->NotifyOnRead(on_read);
   // wait for the callbacks to run
   read_called.WaitForNotification();
-  delete on_read;
   wrapped_client_socket->Shutdown();
   iocp.Shutdown();
   thread_pool->Quiesce();
