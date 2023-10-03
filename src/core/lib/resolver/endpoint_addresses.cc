@@ -101,6 +101,13 @@ std::string EndpointAddresses::ToString() const {
   return absl::StrJoin(parts, " ");
 }
 
+bool ResolvedAddressLessThan::operator()(
+    const grpc_resolved_address& addr1,
+    const grpc_resolved_address& addr2) const {
+  if (addr1.len < addr2.len) return true;
+  return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
+}
+
 bool EndpointAddressSet::operator==(const EndpointAddressSet& other) const {
   if (addresses_.size() != other.addresses_.size()) return false;
   auto other_it = other.addresses_.begin();
@@ -125,13 +132,6 @@ bool EndpointAddressSet::operator<(const EndpointAddressSet& other) const {
     if (r != 0) return r < 0;
   }
   return false;
-}
-
-bool EndpointAddressSet::ResolvedAddressLessThan::operator()(
-    const grpc_resolved_address& addr1,
-    const grpc_resolved_address& addr2) const {
-  if (addr1.len < addr2.len) return true;
-  return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
 }
 
 std::string EndpointAddressSet::ToString() const {

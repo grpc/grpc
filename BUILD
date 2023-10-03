@@ -2980,6 +2980,7 @@ grpc_cc_library(
         "grpc_trace",
         "orphanable",
         "ref_counted_ptr",
+        "server_address",
         "uri_parser",
         "//src/core:channel_args",
         "//src/core:grpc_service_config",

@@ -91,6 +91,11 @@ class EndpointAddresses {
 
 using EndpointAddressesList = std::vector<EndpointAddresses>;
 
+struct ResolvedAddressLessThan {
+  bool operator()(const grpc_resolved_address& addr1,
+                  const grpc_resolved_address& addr2) const;
+};
+
 class EndpointAddressSet {
  public:
   explicit EndpointAddressSet(
@@ -103,11 +108,6 @@ class EndpointAddressSet {
   std::string ToString() const;
 
  private:
-  struct ResolvedAddressLessThan {
-    bool operator()(const grpc_resolved_address& addr1,
-                    const grpc_resolved_address& addr2) const;
-  };
-
   std::set<grpc_resolved_address, ResolvedAddressLessThan> addresses_;
 };
 
