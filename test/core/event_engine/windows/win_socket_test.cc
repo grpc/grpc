@@ -55,7 +55,7 @@ class WinSocketTest : public testing::Test {
   }
 
  private:
-  ThreadPool thread_pool_;
+  std::shared_ptr<ThreadPool> thread_pool_;
   SOCKET sockpair_[2];
   std::unique_ptr<WinSocket> wrapped_client_socket_;
   std::unique_ptr<WinSocket> wrapped_server_socket_;
