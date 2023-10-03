@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 
+#include <memory>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
@@ -38,6 +39,7 @@
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
@@ -100,6 +102,7 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordEnd(const gpr_timespec& /*latency*/) override;
     void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& annotation) override;
+    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
 
     experimental::CensusContext* context() { return &context_; }
 

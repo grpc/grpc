@@ -54,6 +54,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -584,6 +585,12 @@ struct grpc_chttp2_stream {
 
   /// Byte counter for number of bytes written
   size_t byte_counter = 0;
+
+  /// Only set when enabled.
+  grpc_core::CallTracerInterface* call_tracer = nullptr;
+
+  /// Only set when enabled.
+  std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;
 
   // time this stream was created
   gpr_timespec creation_time = gpr_now(GPR_CLOCK_MONOTONIC);

@@ -76,7 +76,7 @@ class BdpEstimator {
   // Completes a previously started ping, returns when to schedule the next one
   Timestamp CompletePing();
 
-  int64_t accumulator() { return accumulator_; }
+  int64_t accumulator() const { return accumulator_; }
 
  private:
   enum class PingState { UNSCHEDULED, SCHEDULED, STARTED };

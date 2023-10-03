@@ -17,6 +17,7 @@
 //
 
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 
 #include <algorithm>
 #include <memory>
@@ -68,6 +69,9 @@ class FakeClientCallTracer : public ClientCallTracer {
       annotation_logger_->push_back(std::string(annotation));
     }
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
+    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+      return nullptr;
+    }
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
     bool IsSampled() override { return false; }
@@ -121,6 +125,9 @@ class FakeServerCallTracer : public ServerCallTracer {
     annotation_logger_->push_back(std::string(annotation));
   }
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
+  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+    return nullptr;
+  }
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
   bool IsSampled() override { return false; }

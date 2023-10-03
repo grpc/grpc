@@ -69,15 +69,13 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
   }
 
   switch (annotation.type()) {
-    case AnnotationType::kMetadataSizes:
-      // This annotation is expensive to create. We should only create it if
-      // the call is being sampled, not just recorded.
+    // Annotations are expensive to create. We should only create it if the call
+    // is being sampled by default.
+    default:
       if (IsSampled()) {
-        context_.AddSpanAnnotation(annotation.ToString());
+        context_.AddSpanAnnotation(annotation.ToString(), {});
       }
       break;
-    default:
-      context_.AddSpanAnnotation(annotation.ToString());
   }
 }
 
@@ -299,15 +297,13 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   }
 
   switch (annotation.type()) {
-    case AnnotationType::kMetadataSizes:
-      // This annotation is expensive to create. We should only create it if
-      // the call is being sampled, not just recorded.
+    // Annotations are expensive to create. We should only create it if the call
+    // is being sampled by default.
+    default:
       if (IsSampled()) {
-        context_.AddSpanAnnotation(annotation.ToString());
+        context_.AddSpanAnnotation(annotation.ToString(), {});
       }
       break;
-    default:
-      context_.AddSpanAnnotation(annotation.ToString());
   }
 }
 

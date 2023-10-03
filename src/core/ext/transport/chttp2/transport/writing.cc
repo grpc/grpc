@@ -480,6 +480,12 @@ class StreamWriteContext {
     grpc_chttp2_complete_closure_step(
         t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
+    if (s_->call_tracer) {
+      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
+          grpc_core::HttpAnnotation::Type::kHeadWritten,
+          grpc_core::Timestamp::Now(), s_->t->flow_control.stats(),
+          s_->flow_control.stats()));
+    }
   }
 
   void FlushWindowUpdates() {
@@ -607,6 +613,11 @@ class StreamWriteContext {
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
+    if (s_->call_tracer) {
+      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
+          grpc_core::HttpAnnotation::Type::kEnd, grpc_core::Timestamp::Now(),
+          s_->t->flow_control.stats(), s_->flow_control.stats()));
+    }
   }
 
   WriteContext* const write_context_;
@@ -653,7 +664,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
           t->cl->emplace_back(copy_context_fn(s->context),
                               outbuf_relative_start_pos, num_stream_bytes,
-                              s->byte_counter);
+                              s->byte_counter, s->tcp_tracer);
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;

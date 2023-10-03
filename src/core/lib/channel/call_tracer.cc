@@ -19,8 +19,10 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -141,6 +143,9 @@ class DelegatingClientCallTracer : public ClientCallTracer {
       for (auto* tracer : tracers_) {
         tracer->RecordAnnotation(annotation);
       }
+    }
+    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+      return nullptr;
     }
     std::string TraceId() override { return tracers_[0]->TraceId(); }
     std::string SpanId() override { return tracers_[0]->SpanId(); }
@@ -264,6 +269,9 @@ class DelegatingServerCallTracer : public ServerCallTracer {
     for (auto* tracer : tracers_) {
       tracer->RecordAnnotation(annotation);
     }
+  }
+  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+    return nullptr;
   }
   std::string TraceId() override { return tracers_[0]->TraceId(); }
   std::string SpanId() override { return tracers_[0]->SpanId(); }
