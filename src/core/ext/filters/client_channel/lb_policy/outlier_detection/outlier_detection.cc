@@ -660,7 +660,7 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   if (args.addresses.ok()) {
     std::set<EndpointAddressSet> current_endpoints;
     std::set<grpc_resolved_address, ResolvedAddressLessThan> current_addresses;
-    for (EndpointAddresses& endpoint : *args.addresses) {
+    for (const EndpointAddresses& endpoint : *args.addresses) {
       EndpointAddressSet key(endpoint.addresses());
       current_endpoints.emplace(key);
       for (const grpc_resolved_address& address : endpoint.addresses()) {
