@@ -70,7 +70,7 @@ class GammaServerRunner(KubernetesServerRunner):
         safilter_name: str = "ssa-filter",
         sapolicy_name: str = "ssa-policy",
         bepolicy_name: str = "backend-policy",
-        termination_grace_period_seconds: Optional[int] = None,
+        termination_grace_period_seconds: int = 0,
         pre_stop_hook: bool = False,
     ):
         # pylint: disable=too-many-locals
