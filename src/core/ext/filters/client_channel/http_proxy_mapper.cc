@@ -185,8 +185,18 @@ absl::optional<std::string> HttpProxyMapper::MapName(
             std::string(server_uri).c_str());
     return absl::nullopt;
   }
-  // Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set.
-  auto no_proxy_str = GetEnv("no_grpc_proxy");
+  // 1. Try channel arg.
+  auto arg_optional = args->GetString(GRPC_ARG_NO_HTTP_PROXY_HOSTS);
+  // Environment variables are returned as std::string so a new container is
+  // needed
+  absl::optional<std::string> no_proxy_str;
+  // 2. otherwise, try 'no_grpc_proxy' env var. Note that env var values are
+  if (arg_optional.has_value()) {
+    no_proxy_str = std::string(*arg_optional);
+  } else if (!no_proxy_str.has_value()) {
+    no_proxy_str = GetEnv("no_grpc_proxy");
+  }
+  // 3. "no_proxy" is the last possible place
   if (!no_proxy_str.has_value()) {
     no_proxy_str = GetEnv("no_proxy");
   }
