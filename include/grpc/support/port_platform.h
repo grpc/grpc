@@ -866,4 +866,11 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #endif
 #endif
 
+// Apple platforms do not have SOCK_CLOEXEC
+#if defined(__APPLE__)
+#define GRP_CLOEXEC FD_CLOEXEC
+#else
+#define GRP_CLOEXEC SOCK_CLOEXEC
+#endif
+
 #endif /* GRPC_SUPPORT_PORT_PLATFORM_H */
