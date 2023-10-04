@@ -101,6 +101,13 @@ std::string EndpointAddresses::ToString() const {
   return absl::StrJoin(parts, " ");
 }
 
+bool ResolvedAddressLessThan::operator()(
+    const grpc_resolved_address& addr1,
+    const grpc_resolved_address& addr2) const {
+  if (addr1.len < addr2.len) return true;
+  return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
+}
+
 bool EndpointAddressSet::operator==(const EndpointAddressSet& other) const {
   if (addresses_.size() != other.addresses_.size()) return false;
   auto other_it = other.addresses_.begin();
@@ -118,20 +125,14 @@ bool EndpointAddressSet::operator==(const EndpointAddressSet& other) const {
 bool EndpointAddressSet::operator<(const EndpointAddressSet& other) const {
   auto other_it = other.addresses_.begin();
   for (auto it = addresses_.begin(); it != addresses_.end(); ++it) {
-    if (other_it == other.addresses_.end()) return true;
+    if (other_it == other.addresses_.end()) return false;
     if (it->len < other_it->len) return true;
     if (it->len > other_it->len) return false;
     int r = memcmp(it->addr, other_it->addr, it->len);
     if (r != 0) return r < 0;
+    ++other_it;
   }
-  return false;
-}
-
-bool EndpointAddressSet::ResolvedAddressLessThan::operator()(
-    const grpc_resolved_address& addr1,
-    const grpc_resolved_address& addr2) const {
-  if (addr1.len < addr2.len) return true;
-  return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
+  return other_it != other.addresses_.end();
 }
 
 std::string EndpointAddressSet::ToString() const {

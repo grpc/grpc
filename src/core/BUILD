@@ -5050,6 +5050,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
