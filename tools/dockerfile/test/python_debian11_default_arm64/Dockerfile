@@ -51,6 +51,7 @@ RUN apt-get update && apt-get install -y \
   unzip \
   wget \
   zip \
+  libsqlite3-dev \
   && apt-get clean
 
 #=================
