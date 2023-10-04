@@ -102,8 +102,16 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
 // TODO(gtcooke94) move to same place that CrlImpl header is?
 class DirectoryReloaderCrlProviderImpl
     : public DirectoryReloaderCrlProvider,
-      std::enable_shared_from_this<DirectoryReloaderCrlProviderImpl> {
+      public std::enable_shared_from_this<DirectoryReloaderCrlProviderImpl> {
  public:
+  DirectoryReloaderCrlProviderImpl(::absl::string_view directory,
+                                   ::std::chrono::seconds duration,
+                                   ::std::function<void(absl::Status)> callback)
+      : crl_directory_(directory),
+        refresh_duration_(duration),
+        reload_error_callback_(callback),
+        event_engine_(
+            grpc_event_engine::experimental::GetDefaultEventEngine()) {}
   ~DirectoryReloaderCrlProviderImpl() override;
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
   void ScheduleReload();
@@ -204,27 +212,39 @@ std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
   return it->second;
 }
 
-// DirectoryReloaderCrlProvider::DirectoryReloaderCrlProvider(
-//     absl::string_view directory, absl::Duration refresh_duration,
-//     std::function<void(absl::Status)> reload_error_callback)
-//     : crl_directory_(directory),
-//       refresh_duration_(refresh_duration),
-//       reload_error_callback_(reload_error_callback) {}
-
 DirectoryReloaderCrlProviderImpl::~DirectoryReloaderCrlProviderImpl() {
-  // gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
-  // refresh_thread_.join();
+  event_engine_->Cancel(refresh_handle_);
+}
+
+absl::StatusOr<std::shared_ptr<CrlProvider>>
+DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
+    absl::string_view directory, std::chrono::seconds refresh_duration,
+    std::function<void(absl::Status)> reload_error_callback) {
+  // TODO(gtcooke94) validate directory, inputs, etc
+  // TODO(gtcooke94) do first load here or in the thread?
+  // TODO(gtcooke94) now that it's an internal impl we can have more
+  // constructors
+  auto provider = std::make_shared<DirectoryReloaderCrlProviderImpl>(
+      directory, refresh_duration, reload_error_callback);
+  // provider->crl_directory_ = std::string(directory);
+  // provider->refresh_duration_ = refresh_duration;
+  // provider->reload_error_callback_ = std::move(reload_error_callback);
+  // provider->event_engine_ =
+  //     grpc_event_engine::experimental::GetDefaultEventEngine();
+  gpr_event_init(&provider->shutdown_event_);
+
+  provider->ScheduleReload();
+  // provider->self_ = provider;
+  return provider;
 }
 
 bool DirectoryReloaderCrlProviderImpl::OnNextUpdateTimer() {
-  absl::Status status = Update();
+  absl::Status status = absl::OkStatus();
+  // absl::Status status = Update();
   if (!status.ok()) {
     if (reload_error_callback_ != nullptr) {
       reload_error_callback_(status);
     }
-  }
-  if (callback_count >= 1) {
-    return true;
   }
   ScheduleReload();
   return false;
@@ -248,41 +268,11 @@ void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
         if (valid_ptr->OnNextUpdateTimer()) {
           // TODO(gtcooke94)
         }
+      } else {
+        gpr_log(GPR_ERROR, "GREG: weak_ptr no longer valid");
       }
     }
   });
-}
-
-// refresh_handle_ = event_engine_->RunAfter(refresh_duration_, [&]() {
-//   absl::Status status = Update();
-//   if (!status.ok()) {
-//     if (reload_error_callback_ != nullptr) {
-//       reload_error_callback_(status);
-//     }
-//   }
-//   ScheduleReload();
-// });
-// provider->refresh_thread_ = std::thread(thread_lambda);
-
-absl::StatusOr<std::shared_ptr<CrlProvider>>
-DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
-    absl::string_view directory, std::chrono::seconds refresh_duration,
-    std::function<void(absl::Status)> reload_error_callback) {
-  // TODO(gtcooke94) validate directory, inputs, etc
-  // TODO(gtcooke94) do first load here or in the thread?
-  // TODO(gtcooke94) now that it's an internal impl we can have more
-  // constructors
-  auto provider = std::make_shared<DirectoryReloaderCrlProviderImpl>();
-  provider->crl_directory_ = std::string(directory);
-  provider->refresh_duration_ = refresh_duration;
-  provider->reload_error_callback_ = std::move(reload_error_callback);
-  gpr_event_init(&provider->shutdown_event_);
-  provider->event_engine_ =
-      grpc_event_engine::experimental::GetDefaultEventEngine();
-
-  provider->ScheduleReload();
-  // provider->self_ = provider;
-  return provider;
 }
 
 absl::Status DirectoryReloaderCrlProviderImpl::Update() {

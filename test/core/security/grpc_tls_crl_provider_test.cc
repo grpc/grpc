@@ -95,8 +95,7 @@ TEST(CrlProviderTest, DirectoryReloaderCrl) {
       CreateDirectoryReloaderProvider(kCrlDirectory, std::chrono::seconds(1),
                                       nullptr);
   ASSERT_TRUE(result.ok());
-  sleep(1);
-  ASSERT_FALSE(true);
+  sleep(5);
 }
 
 }  // namespace testing
