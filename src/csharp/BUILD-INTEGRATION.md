@@ -734,7 +734,7 @@ used in the package. For example, if the project has the local `.proto` file
 `my_services.proto` and it imported a file from the package `common_message.proto`,
 then:
 
-```XML
+```xml
 <PropertyGroup>
   <!-- Update the Protobuf_StandardImportsPath -->
   <IncludeMyExampleProtosProtos>true</IncludeMyExampleProtosProtos>
