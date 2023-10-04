@@ -680,7 +680,7 @@ My.Example.Protos.nuspec:
 ```
 
 My.Example.Protos.targets:
-```XML
+```xml
 <?xml version="1.0"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- This targets file allows .proto files bundled in package, 
