@@ -635,7 +635,8 @@ when creating NuGet packages that contain `.proto` files.
 
 __Note:__ This is not the same as a NuGet package providing a library built from
 the code generated from the `.proto` files. Below just describes how to provide
-the uncompiled `.proto` files in a NuGet package.
+the uncompiled `.proto` files in a NuGet package and have `Grpc.Tools` automatically
+use them.
 
 ### Creating the NuGet package
 
