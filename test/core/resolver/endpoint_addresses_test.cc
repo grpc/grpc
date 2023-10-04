@@ -18,13 +18,19 @@
 
 #include "src/core/lib/resolver/endpoint_addresses.h"
 
+#include <set>
+
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/uri/uri_parser.h"
+#include <grpc/support/log.h>
+
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -53,24 +59,22 @@ TEST(ResolvedAddressLessThan, Basic) {
   address_set.insert(MakeAddress("ipv4:127.0.0.2:443"));
   address_set.insert(MakeAddress("ipv4:127.0.0.3:443"));
   address_set.insert(MakeAddress("ipv4:127.0.0.1:443"));
-  EXPECT_THAT(address_set, ::testing::ElementsAre(
-      EqualsAddress("ipv4:127.0.0.1:443"),
-      EqualsAddress("ipv4:127.0.0.2:443"),
-      EqualsAddress("ipv4:127.0.0.3:443")));
+  EXPECT_THAT(address_set,
+              ::testing::ElementsAre(EqualsAddress("ipv4:127.0.0.1:443"),
+                                     EqualsAddress("ipv4:127.0.0.2:443"),
+                                     EqualsAddress("ipv4:127.0.0.3:443")));
 }
 
 TEST(EndpointAddressSet, Basic) {
-  EndpointAddressSet set1({
-      MakeAddress("ipv4:127.0.0.2:443"),
-      MakeAddress("ipv4:127.0.0.3:443"),
-      MakeAddress("ipv4:127.0.0.1:443")});
+  EndpointAddressSet set1({MakeAddress("ipv4:127.0.0.2:443"),
+                           MakeAddress("ipv4:127.0.0.3:443"),
+                           MakeAddress("ipv4:127.0.0.1:443")});
   EXPECT_TRUE(set1 == set1);
   EXPECT_FALSE(set1 < set1);
   EXPECT_EQ(set1.ToString(), "{127.0.0.1:443, 127.0.0.2:443, 127.0.0.3:443}");
-  EndpointAddressSet set2({
-      MakeAddress("ipv4:127.0.0.4:443"),
-      MakeAddress("ipv4:127.0.0.6:443"),
-      MakeAddress("ipv4:127.0.0.5:443")});
+  EndpointAddressSet set2({MakeAddress("ipv4:127.0.0.4:443"),
+                           MakeAddress("ipv4:127.0.0.6:443"),
+                           MakeAddress("ipv4:127.0.0.5:443")});
   EXPECT_FALSE(set1 == set2);
   EXPECT_TRUE(set1 < set2);
   EXPECT_FALSE(set2 < set1);
@@ -78,14 +82,12 @@ TEST(EndpointAddressSet, Basic) {
 }
 
 TEST(EndpointAddressSet, Subset) {
-  EndpointAddressSet set1({
-      MakeAddress("ipv4:127.0.0.2:443"),
-      MakeAddress("ipv4:127.0.0.3:443"),
-      MakeAddress("ipv4:127.0.0.1:443")});
+  EndpointAddressSet set1({MakeAddress("ipv4:127.0.0.2:443"),
+                           MakeAddress("ipv4:127.0.0.3:443"),
+                           MakeAddress("ipv4:127.0.0.1:443")});
   EXPECT_EQ(set1.ToString(), "{127.0.0.1:443, 127.0.0.2:443, 127.0.0.3:443}");
-  EndpointAddressSet set2({
-      MakeAddress("ipv4:127.0.0.2:443"),
-      MakeAddress("ipv4:127.0.0.1:443")});
+  EndpointAddressSet set2(
+      {MakeAddress("ipv4:127.0.0.2:443"), MakeAddress("ipv4:127.0.0.1:443")});
   EXPECT_EQ(set2.ToString(), "{127.0.0.1:443, 127.0.0.2:443}");
   EXPECT_FALSE(set1 == set2);
   EXPECT_FALSE(set1 < set2);
