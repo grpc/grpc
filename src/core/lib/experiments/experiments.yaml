@@ -222,3 +222,9 @@
   expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: work_serializer_clears_time_cache
+  description:
+    Have the work serializer clear the time cache when it dispatches work.
+  expiry: 2024/01/01
+  owner: ctiller@google.com
+  test_tags: []
