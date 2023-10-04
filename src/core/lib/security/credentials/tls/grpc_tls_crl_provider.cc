@@ -217,8 +217,7 @@ DirectoryReloaderCrlProviderImpl::~DirectoryReloaderCrlProviderImpl() {
 }
 
 bool DirectoryReloaderCrlProviderImpl::OnNextUpdateTimer() {
-  // absl::Status status = Update();
-  absl::Status status = absl::OkStatus();
+  absl::Status status = Update();
   if (!status.ok()) {
     if (reload_error_callback_ != nullptr) {
       reload_error_callback_(status);
@@ -242,14 +241,13 @@ void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
     ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     {
-      if (self.expired()) {
-        return;
-      }
-      auto valid_ptr = self.lock();
-      valid_ptr->callback_count += 1;
-      gpr_log(GPR_ERROR, "GREG: %i;", valid_ptr->callback_count);
-      if (valid_ptr->OnNextUpdateTimer()) {
-        // TODO(gtcooke94)
+      if (std::shared_ptr<DirectoryReloaderCrlProviderImpl> valid_ptr =
+              self.lock()) {
+        valid_ptr->callback_count += 1;
+        gpr_log(GPR_ERROR, "GREG: %i;", valid_ptr->callback_count);
+        if (valid_ptr->OnNextUpdateTimer()) {
+          // TODO(gtcooke94)
+        }
       }
     }
   });
