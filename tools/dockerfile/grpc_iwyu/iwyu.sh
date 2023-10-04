@@ -60,10 +60,6 @@ if [ $? -ne 0 ]; then
 fi
 cd ${IWYU_ROOT}
 
-# patch python shebang for our environment (we need python3, not python)
-sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/iwyu_tool.py
-sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix_includes.py
-
 cat compile_commands.json                            \
   | sed "s/ -DNDEBUG//g"                             \
   | sed "s/ -std=c\\+\\+14/ -std=c++17/g"            \
