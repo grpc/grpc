@@ -220,11 +220,6 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   }
 }
 
-// How many bytes would we like to put on the wire during a single syscall
-static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
-  return 1024 * 1024;
-}
-
 namespace {
 
 class CountDefaultMetadataEncoder {
@@ -295,6 +290,10 @@ class WriteContext {
   }
 
   void FlushPingAcks() {
+    if (t_->ping_ack_count == 0) return;
+    // Limit the size of writes if we include ping acks - to avoid the ack being
+    // delayed by crypto operations.
+    target_write_size_ = 0;
     for (size_t i = 0; i < t_->ping_ack_count; i++) {
       grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
                             grpc_chttp2_ping_create(true, t_->ping_acks[i]));
@@ -321,7 +320,7 @@ class WriteContext {
   }
 
   grpc_chttp2_stream* NextStream() {
-    if (t_->outbuf.c_slice_buffer()->length > target_write_size(t_)) {
+    if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
       result_.partial = true;
       return nullptr;
     }
@@ -350,6 +349,7 @@ class WriteContext {
 
  private:
   grpc_chttp2_transport* const t_;
+  size_t target_write_size_ = 1024 * 1024;
 
   // stats histogram counters: we increment these throughout this function,
   // and at the end publish to the central stats histograms
