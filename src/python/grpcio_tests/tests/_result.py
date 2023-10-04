@@ -23,7 +23,7 @@ from xml.etree import ElementTree
 
 from tests import _loader
 
-# import coverage
+import coverage
 
 
 class CaseResult(
@@ -250,19 +250,17 @@ class CoverageResult(AugmentedResult):
         """See unittest.TestResult.startTest.
 
         Additionally initializes and begins code coverage tracking."""
-        super(CoverageResult, self).startTest(
-            test
-        )  # pylint: disable=useless-super-delegation
-        # self.coverage_context = coverage.Coverage(data_suffix=True)
-        # self.coverage_context.start()
+        super(CoverageResult, self).startTest(test)
+        self.coverage_context = coverage.Coverage(data_suffix=True)
+        self.coverage_context.start()
 
     def stopTest(self, test):
         """See unittest.TestResult.stopTest.
 
         Additionally stops and deinitializes code coverage tracking."""
         super(CoverageResult, self).stopTest(test)
-        # self.coverage_context.stop()
-        # self.coverage_context.save()
+        self.coverage_context.stop()
+        self.coverage_context.save()
         self.coverage_context = None
 
 
