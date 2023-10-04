@@ -122,14 +122,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                                           t->ping_callbacks.pings_inflight()),
       [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
         t->ping_rate_policy.SentPing();
-        const uint64_t id = t->ping_callbacks.StartPing(
-            t->bitgen, t->keepalive_timeout,
-            [t = t->Ref()] {
-              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-              grpc_core::ExecCtx exec_ctx;
-              grpc_chttp2_ping_timeout(t);
-            },
-            t->event_engine.get());
+        const uint64_t id = t->ping_callbacks.StartPing(t->bitgen);
         grpc_slice_buffer_add(t->outbuf.c_slice_buffer(),
                               grpc_chttp2_ping_create(false, id));
         if (t->channelz_socket != nullptr) {
@@ -684,6 +677,18 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
     t->channelz_socket->RecordMessagesSent(t->num_messages_in_next_write);
   }
   t->num_messages_in_next_write = 0;
+
+  if (t->ping_callbacks.started_new_ping_without_setting_timeout() &&
+      t->keepalive_timeout != grpc_core::Duration::Infinity()) {
+    // Set ping timeout after finishing write so we don't measure our own send
+    // time.
+    t->ping_callbacks.OnPingTimeout(
+        t->keepalive_timeout, t->event_engine.get(), [t = t->Ref()] {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          grpc_chttp2_ping_timeout(t);
+        });
+  }
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
     if (s->sending_bytes != 0) {

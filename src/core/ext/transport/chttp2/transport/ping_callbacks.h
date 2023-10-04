@@ -42,9 +42,7 @@ class Chttp2PingCallbacks {
   void OnPing(Callback on_start, Callback on_ack);
   void OnPingAck(Callback on_ack);
 
-  GRPC_MUST_USE_RESULT uint64_t
-  StartPing(absl::BitGenRef bitgen, Duration ping_timeout, Callback on_timeout,
-            grpc_event_engine::experimental::EventEngine* event_engine);
+  GRPC_MUST_USE_RESULT uint64_t StartPing(absl::BitGenRef bitgen);
   bool AckPing(uint64_t id,
                grpc_event_engine::experimental::EventEngine* event_engine);
 
@@ -52,16 +50,25 @@ class Chttp2PingCallbacks {
 
   bool ping_requested() const { return ping_requested_; }
   size_t pings_inflight() const { return inflight_.size(); }
+  bool started_new_ping_without_setting_timeout() const {
+    return started_new_ping_without_setting_timeout_;
+  }
+
+  void OnPingTimeout(Duration ping_timeout,
+                     grpc_event_engine::experimental::EventEngine* event_engine,
+                     Callback callback);
 
  private:
   using CallbackVec = std::vector<Callback>;
   struct InflightPing {
-    grpc_event_engine::experimental::EventEngine::TaskHandle on_timeout;
+    grpc_event_engine::experimental::EventEngine::TaskHandle on_timeout =
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
     CallbackVec on_ack;
   };
   absl::flat_hash_map<uint64_t, InflightPing> inflight_;
   uint64_t most_recent_inflight_ = 0;
   bool ping_requested_ = false;
+  bool started_new_ping_without_setting_timeout_ = false;
   CallbackVec on_start_;
   CallbackVec on_ack_;
 };

@@ -82,9 +82,9 @@ TEST(PingCallbacksTest, PingRoundtrips) {
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 456};
       });
-  auto id = callbacks.StartPing(
-      bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id = callbacks.StartPing(bitgen);
+  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+                          [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_EQ(callbacks.pings_inflight(), 1);
   EXPECT_TRUE(started);
@@ -120,9 +120,7 @@ TEST(PingCallbacksTest, PingRoundtripsWithInfiniteTimeout) {
   EXPECT_EQ(callbacks.pings_inflight(), 0);
   EXPECT_FALSE(started);
   EXPECT_FALSE(acked);
-  auto id = callbacks.StartPing(
-      bitgen, Duration::Infinity(), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id = callbacks.StartPing(bitgen);
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_EQ(callbacks.pings_inflight(), 1);
   EXPECT_TRUE(started);
@@ -164,9 +162,9 @@ TEST(PingCallbacksTest, DuplicatePingIdFlagsError) {
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 456};
       });
-  auto id = callbacks.StartPing(
-      bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id = callbacks.StartPing(bitgen);
+  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+                          [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started);
   EXPECT_FALSE(acked);
@@ -206,9 +204,9 @@ TEST(PingCallbacksTest, OnPingAckCanPiggybackInflightPings) {
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 456};
       });
-  auto id = callbacks.StartPing(
-      bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id = callbacks.StartPing(bitgen);
+  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+                          [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started);
   EXPECT_FALSE(acked_first);
@@ -247,9 +245,9 @@ TEST(PingCallbacksTest, PingAckRoundtrips) {
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 456};
       });
-  auto id = callbacks.StartPing(
-      bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id = callbacks.StartPing(bitgen);
+  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+                          [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_FALSE(acked);
   EXPECT_CALL(event_engine, Cancel(EventEngine::TaskHandle{123, 456}))
@@ -287,9 +285,9 @@ TEST(PingCallbacksTest, MultiPingRoundtrips) {
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 456};
       });
-  auto id1 = callbacks.StartPing(
-      bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id1 = callbacks.StartPing(bitgen);
+  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+                          [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started1);
   EXPECT_FALSE(acked1);
@@ -314,9 +312,9 @@ TEST(PingCallbacksTest, MultiPingRoundtrips) {
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 789};
       });
-  auto id2 = callbacks.StartPing(
-      bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id2 = callbacks.StartPing(bitgen);
+  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+                          [] { Crash("should not reach here"); });
   EXPECT_NE(id1, id2);
   EXPECT_TRUE(started1);
   EXPECT_FALSE(acked1);
@@ -368,9 +366,9 @@ TEST(PingCallbacksTest, MultiPingRoundtripsWithOutOfOrderAcks) {
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 456};
       });
-  auto id1 = callbacks.StartPing(
-      bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id1 = callbacks.StartPing(bitgen);
+  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+                          [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started1);
   EXPECT_FALSE(acked1);
@@ -395,9 +393,9 @@ TEST(PingCallbacksTest, MultiPingRoundtripsWithOutOfOrderAcks) {
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 789};
       });
-  auto id2 = callbacks.StartPing(
-      bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id2 = callbacks.StartPing(bitgen);
+  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+                          [] { Crash("should not reach here"); });
   EXPECT_NE(id1, id2);
   EXPECT_TRUE(started1);
   EXPECT_FALSE(acked1);
@@ -458,9 +456,9 @@ TEST(PingCallbacksTest, CoalescedPingsRoundtrip) {
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 456};
       });
-  auto id = callbacks.StartPing(
-      bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id = callbacks.StartPing(bitgen);
+  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+                          [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started1);
   EXPECT_FALSE(acked1);
@@ -503,9 +501,9 @@ TEST(PingCallbacksTest, CancelAllCancelsCallbacks) {
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 456};
       });
-  auto id = callbacks.StartPing(
-      bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id = callbacks.StartPing(bitgen);
+  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+                          [] { Crash("should not reach here"); });
   EXPECT_FALSE(started);
   EXPECT_FALSE(acked);
   EXPECT_CALL(event_engine, Cancel(EventEngine::TaskHandle{123, 456}))
@@ -540,9 +538,9 @@ TEST(PingCallbacksTest, CancelAllCancelsInflightPings) {
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 456};
       });
-  auto id = callbacks.StartPing(
-      bitgen, Duration::Hours(24), [] { Crash("should not reach here"); },
-      &event_engine);
+  auto id = callbacks.StartPing(bitgen);
+  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+                          [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started);
   EXPECT_FALSE(acked);
