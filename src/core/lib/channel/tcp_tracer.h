@@ -125,6 +125,7 @@ class TcpTracerInterface {
     absl::optional<uint32_t> nic_rx_delay_usec;
   };
 
+  virtual ~TcpTracerInterface() = default;
   virtual void RecordEvent(Type type, absl::Time time, size_t byte_offset,
                            absl::optional<ConnectionMetrics> metrics) = 0;
 };

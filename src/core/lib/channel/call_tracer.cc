@@ -144,7 +144,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
         tracer->RecordAnnotation(annotation);
       }
     }
-    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
     std::string TraceId() override { return tracers_[0]->TraceId(); }

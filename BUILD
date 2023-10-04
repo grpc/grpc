@@ -3964,7 +3964,10 @@ grpc_cc_library(
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/context_list_entry.h",
     ],
-    deps = ["gpr"],
+    deps = [
+        "gpr",
+        "tcp_tracer",
+    ],
 )
 
 grpc_cc_library(

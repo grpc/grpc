@@ -73,10 +73,15 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
     // is being sampled by default.
     default:
       if (IsSampled()) {
-        context_.AddSpanAnnotation(annotation.ToString(), {});
+        context_.AddSpanAnnotation(annotation.ToString());
       }
       break;
   }
+}
+
+std::shared_ptr<grpc_core::TcpTracerInterface>
+PythonOpenCensusCallTracer::StartNewTcpTrace() {
+  return nullptr;
 }
 
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {

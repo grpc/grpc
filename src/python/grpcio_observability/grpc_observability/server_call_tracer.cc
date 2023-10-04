@@ -172,6 +172,10 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
     }
   }
 
+  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+    return nullptr;
+  }
+
  private:
   PythonCensusContext context_;
   // server method
