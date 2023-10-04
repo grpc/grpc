@@ -21,9 +21,9 @@ import traceback
 import unittest
 from xml.etree import ElementTree
 
-# import coverage
-
 from tests import _loader
+
+# import coverage
 
 
 class CaseResult(
@@ -250,7 +250,9 @@ class CoverageResult(AugmentedResult):
         """See unittest.TestResult.startTest.
 
         Additionally initializes and begins code coverage tracking."""
-        super(CoverageResult, self).startTest(test)
+        super(CoverageResult, self).startTest(
+            test
+        )  # pylint: disable=useless-super-delegation
         # self.coverage_context = coverage.Coverage(data_suffix=True)
         # self.coverage_context.start()
 

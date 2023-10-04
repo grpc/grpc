@@ -584,9 +584,13 @@ class TestServer(AioTestBase):
         # Deplete the concurrent quota with 3 times of max RPCs
         rpc_tasks = []
         for _ in range(3 * _MAXIMUM_CONCURRENT_RPCS):
-            task = asyncio.create_task(coro_wrapper(channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST)))
+            task = asyncio.create_task(
+                coro_wrapper(channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
+            )
             rpc_tasks.append(task)
-        await_tasks = asyncio.wait(rpc_tasks, return_when=asyncio.FIRST_EXCEPTION)
+        await_tasks = asyncio.wait(
+            rpc_tasks, return_when=asyncio.FIRST_EXCEPTION
+        )
         # Each batch took test_constants.SHORT_TIMEOUT /2
         start_time = time.time()
         await await_tasks
