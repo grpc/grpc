@@ -723,7 +723,7 @@ then all it needs to do is add the `<Protobuf>` items using the property defined
 in the package for the path to the files. For example, if the NuGet package contained
 the file `greet.proto`, then the project should add:
 
-```XML
+```xml
 <Protobuf Include="$(MyExampleProtos_ProtosPath)/greet.proto" />
 ```
 
