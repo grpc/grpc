@@ -81,10 +81,34 @@ For more examples see the example project files in GitHub: https://github.com/gr
 
 ## Sharing `.proto` files between multiple projects (in the same VS solution)
 
-If you have one or more `.proto` files that you want to use in multiple project then
-you may create a shared class library that compiled the generated the code.
-The other projects in the solution then can reference this shared class library instead of each project having to compile
-the same `.proto` files.
+It's common to want to share `.proto` files between projects. For example, a gRPC client
+and gRPC server share the same contract. It is preferable to share contracts without
+copying `.proto` files because copies can go out of sync over time.
+
+There are a couple of ways to use `.proto` files in multiple projects without duplication:
+
+* Sharing `.proto` files between projects with MSBuild links.
+* Generating code in a class library and sharing the library.
+
+### Sharing `.proto` with MSBuild links
+
+`.proto` files can be placed in a shared location and referenced by multiple projects
+using MSBuild's [`Link` or `LinkBase` settings](https://learn.microsoft.com/visualstudio/msbuild/common-msbuild-item-metadata).
+
+```xml
+<ItemGroup>
+   <Protobuf Include="..\Protos\greet.proto" GrpcServices="None" Link="Protos\greet.proto"/>
+</ItemGroup>
+```
+
+In the example above, `greet.proto` is in a shared `Protos` directory outside 
+the project directory. Multiple projects can reference the proto file.
+
+### Generating code in a class library
+
+Create a class library that references `.proto` files and contains generated code. The other
+projects in the solution can then reference this shared class library instead of each project
+having to compile the same `.proto` files.
 
 The advantages of this are:
 - The `.proto` only need to be compiled once.
