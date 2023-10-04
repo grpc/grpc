@@ -127,6 +127,10 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   void RecordAnnotation(const Annotation& /*annotation*/) override {
     // Not implemented
   }
+  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+    // No TCP trace.
+    return nullptr;
+  }
 
  private:
   absl::string_view MethodForStats() const {

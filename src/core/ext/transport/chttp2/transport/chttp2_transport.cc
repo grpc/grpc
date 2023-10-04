@@ -326,8 +326,8 @@ HttpAnnotation::HttpAnnotation(
           CallTracerAnnotationInterface::AnnotationType::kHttpTransport),
       type_(type),
       time_(time),
-      transport_stats_(std::move(transport_stats)),
-      stream_stats_(std::move(stream_stats)) {}
+      transport_stats_(transport_stats),
+      stream_stats_(stream_stats) {}
 
 std::string HttpAnnotation::ToString() const {
   std::string s = "HttpAnnotation type: ";

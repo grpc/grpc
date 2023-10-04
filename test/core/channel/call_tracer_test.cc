@@ -17,7 +17,6 @@
 //
 
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/tcp_tracer.h"
 
 #include <algorithm>
 #include <memory>
@@ -28,6 +27,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -69,7 +69,7 @@ class FakeClientCallTracer : public ClientCallTracer {
       annotation_logger_->push_back(std::string(annotation));
     }
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
-    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
     std::string TraceId() override { return ""; }
@@ -125,7 +125,7 @@ class FakeServerCallTracer : public ServerCallTracer {
     annotation_logger_->push_back(std::string(annotation));
   }
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
-  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
     return nullptr;
   }
   std::string TraceId() override { return ""; }

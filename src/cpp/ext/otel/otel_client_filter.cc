@@ -225,6 +225,12 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
   // Not implemented
 }
 
+std::shared_ptr<grpc_core::TcpTracerInterface>
+OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::StartNewTcpTrace() {
+  // No TCP trace.
+  return nullptr;
+}
+
 //
 // OpenTelemetryCallTracer
 //

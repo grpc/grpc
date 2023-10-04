@@ -330,7 +330,6 @@ class TransportFlowControl final {
     return stats;
   }
 
-
  private:
   double TargetLogBdp();
   double SmoothLogBdp(double value);

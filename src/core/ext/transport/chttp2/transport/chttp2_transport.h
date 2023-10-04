@@ -103,7 +103,7 @@ void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
 
 class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
  public:
-  enum class Type {
+  enum class Type : uint8_t {
     kUnknown = 0,
     // When the first byte enters the HTTP transport.
     kStart,
@@ -114,7 +114,7 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
   };
 
   HttpAnnotation(
-      Type type, grpc_core::Timestamp time,
+      Type type, Timestamp time,
       absl::optional<chttp2::TransportFlowControl::Stats> transport_stats,
       absl::optional<chttp2::StreamFlowControl::Stats> stream_stats);
 
@@ -122,7 +122,7 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
 
  private:
   const Type type_;
-  const grpc_core::Timestamp time_;
+  const Timestamp time_;
   absl::optional<chttp2::TransportFlowControl::Stats> transport_stats_;
   absl::optional<chttp2::StreamFlowControl::Stats> stream_stats_;
 };
