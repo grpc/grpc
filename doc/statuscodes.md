@@ -24,8 +24,12 @@ statuses are defined as such:
 | UNAUTHENTICATED | 16 | The request does not have valid authentication credentials for the operation. |
 
 All RPCs started at a client return a `status` object composed of an integer
-`code` and a string `message`. The server-side can choose the status it
-returns for a given RPC.
+`code` and a string `message`. The server-side can choose the status it returns
+for a given RPC.  gRPC servers should never return a status whose `code` is
+outside the range of codes defined above; any other value should be converted to
+`UNKNOWN` (2) before being transmitted.  Similarly, gRPC clients that receive
+any value outside the range of codes defined above should convert the error to
+`UNKNOWN` before returning it to the application.
 
 The gRPC client and server-side implementations may also generate and
 return `status` on their own when errors happen. Only a subset of
