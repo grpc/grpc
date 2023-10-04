@@ -105,7 +105,7 @@ static int epoll_create_and_cloexec() {
   int fd = epoll_create(MAX_EPOLL_EVENTS);
   if (fd < 0) {
     gpr_log(GPR_ERROR, "epoll_create unavailable");
-  } else if (fcntl(fd, F_SETFD, FD_CLOEXEC) != 0) {
+  } else if (fcntl(fd, F_SETFD, SOCK_CLOEXEC) != 0) {
     gpr_log(GPR_ERROR, "fcntl following epoll_create failed");
     return -1;
   }

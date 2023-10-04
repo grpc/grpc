@@ -233,7 +233,7 @@ int Accept4(int sockfd,
     if (cloexec) {
       flags = fcntl(fd, F_GETFD, 0);
       if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
+      if (fcntl(fd, F_SETFD, flags | SOCK_CLOEXEC) != 0) goto close_and_error;
     }
   }
   addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
@@ -416,9 +416,9 @@ absl::Status PosixSocketWrapper::SetSocketCloexec(int close_on_exec) {
   }
 
   if (close_on_exec) {
-    oldflags |= FD_CLOEXEC;
+    oldflags |= SOCK_CLOEXEC;
   } else {
-    oldflags &= ~FD_CLOEXEC;
+    oldflags &= ~SOCK_CLOEXEC;
   }
 
   if (fcntl(fd_, F_SETFD, oldflags) != 0) {

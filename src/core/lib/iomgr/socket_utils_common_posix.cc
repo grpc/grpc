@@ -158,9 +158,9 @@ grpc_error_handle grpc_set_socket_cloexec(int fd, int close_on_exec) {
   }
 
   if (close_on_exec) {
-    oldflags |= FD_CLOEXEC;
+    oldflags |= SOCK_CLOEXEC;
   } else {
-    oldflags &= ~FD_CLOEXEC;
+    oldflags &= ~SOCK_CLOEXEC;
   }
 
   if (fcntl(fd, F_SETFD, oldflags) != 0) {

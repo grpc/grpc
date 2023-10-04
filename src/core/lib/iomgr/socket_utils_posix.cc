@@ -134,7 +134,7 @@ int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
     if (cloexec) {
       flags = fcntl(fd, F_GETFD, 0);
       if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
+      if (fcntl(fd, F_SETFD, flags | SOCK_CLOEXEC) != 0) goto close_and_error;
     }
   }
   return fd;
