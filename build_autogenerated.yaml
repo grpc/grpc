@@ -9848,7 +9848,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/scoped_env_var.h
   src:
   - test/core/client_channel/http_proxy_mapper_test.cc
   deps:
