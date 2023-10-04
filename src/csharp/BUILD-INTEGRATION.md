@@ -714,7 +714,7 @@ My.Example.Protos.targets:
 ### Using the NuGet package
 
 The project needs to add the package containing the `.proto` files:
-```XML
+```xml
 <PackageReference Include="My.Example.Protos" Version="1.0.0" />
 ```
 
