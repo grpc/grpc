@@ -286,7 +286,7 @@ def main(
             k8s_api_manager, server_namespace
         )
 
-        neg_name, neg_zones = k8s_namespace.get_service_neg(
+        neg_name, neg_zones = k8s_namespace.parse_service_neg_status(
             server_name, server_port
         )
 

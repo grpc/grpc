@@ -88,7 +88,7 @@ class ChangeBackendServiceTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             (
                 neg_name_alt,
                 neg_zones_alt,
-            ) = self.alternate_k8s_namespace.get_service_neg(
+            ) = self.alternate_k8s_namespace.parse_service_neg_status(
                 self.alternate_server_runner.service_name, self.server_port
             )
             self.td.alternative_backend_service_add_neg_backends(

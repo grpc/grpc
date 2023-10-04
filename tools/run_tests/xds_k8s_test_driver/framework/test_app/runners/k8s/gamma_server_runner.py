@@ -14,6 +14,7 @@
 """
 Run xDS Test Client on Kubernetes using Gamma
 """
+import datetime
 import logging
 from typing import List, Optional
 
@@ -217,7 +218,13 @@ class GammaServerRunner(KubernetesServerRunner):
 
         # The controller will not populate the NEGs until there are
         # endpoint slices.
-        self._wait_service_neg(self.service_name, test_port)
+        # For this reason, we run this check after the servers were created,
+        # and increase the wait time from 1 minute to 3.
+        self._wait_service_neg_status_annotation(
+            self.service_name,
+            test_port,
+            timeout_sec=datetime.timedelta(minutes=3).total_seconds(),
+        )
 
         return servers
 
