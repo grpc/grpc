@@ -21,6 +21,8 @@
 #include "absl/meta/type_traits.h"
 #include "absl/random/distributions.h"
 
+#include <grpc/support/log.h>
+
 namespace grpc_core {
 
 void Chttp2PingCallbacks::OnPing(Callback on_start, Callback on_ack) {
