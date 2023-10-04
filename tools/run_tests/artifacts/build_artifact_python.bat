@@ -65,21 +65,12 @@ pushd tools\distrib\python\grpcio_tools
 python setup.py bdist_wheel || goto :error
 popd
 
-@rem Build xds_protos source distribution
-pushd tools\distrib\python\xds_protos
-python build.py || goto :error
-python setup.py sdist bdist_wheel install || goto :error
-popd
-
 @rem Ensure the generate artifacts are valid.
 python -m pip install packaging==21.3 twine==3.8.0
 python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
 xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error
-xcopy /Y /I /S tools\distrib\python\xds_protos\dist\* %ARTIFACT_DIR% || goto :error
-
-python -m pip install xds-protos --no-index --find-links "file://%ARTIFACT_DIR%"
 
 goto :EOF
 
