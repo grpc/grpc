@@ -166,7 +166,7 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
       // call is being sampled by default.
       default:
         if (IsSampled()) {
-          context_.AddSpanAnnotation(annotation.ToString(), {});
+          context_.AddSpanAnnotation(annotation.ToString());
         }
         break;
     }
