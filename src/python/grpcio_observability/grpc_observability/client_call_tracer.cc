@@ -79,11 +79,6 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
   }
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface>
-PythonOpenCensusCallTracer::StartNewTcpTrace() {
-  return nullptr;
-}
-
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kClientMethod, std::string(method_));
@@ -188,6 +183,11 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordReceivedMessage(const grpc_core::SliceBuffer& /*recv_message*/) {
   ++recv_message_count_;
+}
+
+std::shared_ptr<grpc_core::TcpTracerInterface> PythonOpenCensusCallTracer::
+    PythonOpenCensusCallAttemptTracer::StartNewTcpTrace() {
+  return nullptr;
 }
 
 namespace {
@@ -306,7 +306,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     // is being sampled by default.
     default:
       if (IsSampled()) {
-        context_.AddSpanAnnotation(annotation.ToString(), {});
+        context_.AddSpanAnnotation(annotation.ToString());
       }
       break;
   }
