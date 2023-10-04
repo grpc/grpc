@@ -21,7 +21,7 @@ import re
 import sys
 import unittest
 
-# import coverage
+import coverage
 
 TEST_MODULE_REGEX = r"^.*_test$"
 
@@ -69,8 +69,8 @@ class Loader(object):
         setuptools.setup argument `test_loader`."""
         # ensure that we capture decorators and definitions (else our coverage
         # measure unnecessarily suffers)
-        # coverage_context = coverage.Coverage(data_suffix=True)
-        # coverage_context.start()
+        coverage_context = coverage.Coverage(data_suffix=True)
+        coverage_context.start()
         imported_modules = tuple(
             importlib.import_module(name) for name in names
         )
@@ -82,8 +82,8 @@ class Loader(object):
             except AttributeError:
                 continue
             self.walk_packages(package_paths)
-        # coverage_context.stop()
-        # coverage_context.save()
+        coverage_context.stop()
+        coverage_context.save()
         return self.suite
 
     def walk_packages(self, package_paths):
