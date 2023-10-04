@@ -653,7 +653,7 @@ The NuGet package should:
 For example, for the package `My.Example.Protos`:
 
 My.Example.Protos.nuspec:
-```XML
+```xml
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
