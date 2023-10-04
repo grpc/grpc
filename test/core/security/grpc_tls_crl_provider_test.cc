@@ -20,6 +20,7 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -91,8 +92,11 @@ TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
 
 TEST(CrlProviderTest, DirectoryReloaderCrl) {
   auto result = experimental::DirectoryReloaderCrlProvider::
-      CreateDirectoryReloaderProvider(kCrlDirectory, absl::Seconds(1), nullptr);
+      CreateDirectoryReloaderProvider(kCrlDirectory, std::chrono::seconds(1),
+                                      nullptr);
   ASSERT_TRUE(result.ok());
+  sleep(1);
+  ASSERT_FALSE(true);
 }
 
 }  // namespace testing

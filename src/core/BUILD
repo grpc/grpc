@@ -3074,7 +3074,9 @@ grpc_cc_library(
         "libssl",
     ],
     deps = [
+        "default_event_engine",
         "slice",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
     ],

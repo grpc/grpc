@@ -41,6 +41,7 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -94,28 +95,32 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
     }
   }
 }
-
 }  // namespace
 
 // Defining this here lets us hide implementation details (and includes) from
 // the header in include
 // TODO(gtcooke94) move to same place that CrlImpl header is?
-class DirectoryReloaderCrlProviderImpl : public DirectoryReloaderCrlProvider {
+class DirectoryReloaderCrlProviderImpl
+    : public DirectoryReloaderCrlProvider,
+      std::enable_shared_from_this<DirectoryReloaderCrlProviderImpl> {
  public:
   ~DirectoryReloaderCrlProviderImpl() override;
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
   void ScheduleReload();
+  bool OnNextUpdateTimer();
 
   ::absl::Status Update();
   ::absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_;
   ::std::string crl_directory_;
   ::absl::Mutex mu_;
-  ::std::thread refresh_thread_;
+  // ::std::thread refresh_thread_;
   ::std::chrono::seconds refresh_duration_;
   ::std::function<void(::absl::Status)> reload_error_callback_;
   gpr_event shutdown_event_;
   grpc_event_engine::experimental::EventEngine::TaskHandle refresh_handle_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  int callback_count = 0;
+  // std::shared_ptr<DirectoryReloaderCrlProvider> self_;
 };
 
 CertificateInfoImpl::CertificateInfoImpl(absl::string_view issuer)
@@ -207,24 +212,59 @@ std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
 //       reload_error_callback_(reload_error_callback) {}
 
 DirectoryReloaderCrlProviderImpl::~DirectoryReloaderCrlProviderImpl() {
-  gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
-  refresh_thread_.join();
+  // gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
+  // refresh_thread_.join();
+}
+
+bool DirectoryReloaderCrlProviderImpl::OnNextUpdateTimer() {
+  // absl::Status status = Update();
+  absl::Status status = absl::OkStatus();
+  if (!status.ok()) {
+    if (reload_error_callback_ != nullptr) {
+      reload_error_callback_(status);
+    }
+  }
+  if (callback_count >= 1) {
+    return true;
+  }
+  ScheduleReload();
+  return false;
 }
 
 void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
-  auto thread_lambda = [&]() {
-    absl::Status status = Update();
-    if (!status.ok()) {
-      if (reload_error_callback_ != nullptr) {
-        reload_error_callback_(status);
+  // refresh_handle_.reset();
+  // std::shared_ptr<DirectoryReloaderCrlProviderImpl> self =
+  //     std::shared_ptr<DirectoryReloaderCrlProviderImpl>(this);
+  std::weak_ptr<DirectoryReloaderCrlProviderImpl> self = shared_from_this();
+  gpr_log(GPR_ERROR, "GREG: in ScheduleReload");
+  refresh_handle_ = event_engine_->RunAfter(refresh_duration_, [self]() {
+    gpr_log(GPR_ERROR, "GREG: In RunAfter closure");
+    ApplicationCallbackExecCtx callback_exec_ctx;
+    ExecCtx exec_ctx;
+    {
+      if (self.expired()) {
+        return;
+      }
+      auto valid_ptr = self.lock();
+      valid_ptr->callback_count += 1;
+      gpr_log(GPR_ERROR, "GREG: %i;", valid_ptr->callback_count);
+      if (valid_ptr->OnNextUpdateTimer()) {
+        // TODO(gtcooke94)
       }
     }
-    ScheduleReload();
-  };
-
-  refresh_handle_ = event_engine_->RunAfter(refresh_duration_, thread_lambda);
-  // provider->refresh_thread_ = std::thread(thread_lambda);
+  });
 }
+
+// refresh_handle_ = event_engine_->RunAfter(refresh_duration_, [&]() {
+//   absl::Status status = Update();
+//   if (!status.ok()) {
+//     if (reload_error_callback_ != nullptr) {
+//       reload_error_callback_(status);
+//     }
+//   }
+//   ScheduleReload();
+// });
+// provider->refresh_thread_ = std::thread(thread_lambda);
 
 absl::StatusOr<std::shared_ptr<CrlProvider>>
 DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
@@ -239,10 +279,11 @@ DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
   provider->refresh_duration_ = refresh_duration;
   provider->reload_error_callback_ = std::move(reload_error_callback);
   gpr_event_init(&provider->shutdown_event_);
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+  provider->event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
 
   provider->ScheduleReload();
+  // provider->self_ = provider;
   return provider;
 }
 

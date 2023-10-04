@@ -84,7 +84,6 @@ class StaticCrlProvider : public CrlProvider {
 
 class DirectoryReloaderCrlProvider : public CrlProvider {
  public:
-  std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
   static absl::StatusOr<std::shared_ptr<CrlProvider>>
   CreateDirectoryReloaderProvider(
       absl::string_view directory, std::chrono::seconds refresh_duration,
