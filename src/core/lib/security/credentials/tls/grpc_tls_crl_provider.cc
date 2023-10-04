@@ -121,14 +121,13 @@ class DirectoryReloaderCrlProviderImpl
   ::absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_;
   ::std::string crl_directory_;
   ::absl::Mutex mu_;
-  // ::std::thread refresh_thread_;
   ::std::chrono::seconds refresh_duration_;
   ::std::function<void(::absl::Status)> reload_error_callback_;
   gpr_event shutdown_event_;
-  grpc_event_engine::experimental::EventEngine::TaskHandle refresh_handle_;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      refresh_handle_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   int callback_count = 0;
-  // std::shared_ptr<DirectoryReloaderCrlProvider> self_;
 };
 
 CertificateInfoImpl::CertificateInfoImpl(absl::string_view issuer)
@@ -213,7 +212,10 @@ std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
 }
 
 DirectoryReloaderCrlProviderImpl::~DirectoryReloaderCrlProviderImpl() {
-  event_engine_->Cancel(refresh_handle_);
+  // TODO(gtcooke94) do we need to worry about a race here?
+  if (refresh_handle_.has_value()) {
+    event_engine_->Cancel(refresh_handle_.value());
+  }
 }
 
 absl::StatusOr<std::shared_ptr<CrlProvider>>
@@ -226,21 +228,16 @@ DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
   // constructors
   auto provider = std::make_shared<DirectoryReloaderCrlProviderImpl>(
       directory, refresh_duration, reload_error_callback);
-  // provider->crl_directory_ = std::string(directory);
-  // provider->refresh_duration_ = refresh_duration;
-  // provider->reload_error_callback_ = std::move(reload_error_callback);
-  // provider->event_engine_ =
-  //     grpc_event_engine::experimental::GetDefaultEventEngine();
   gpr_event_init(&provider->shutdown_event_);
-
   provider->ScheduleReload();
-  // provider->self_ = provider;
   return provider;
 }
 
 bool DirectoryReloaderCrlProviderImpl::OnNextUpdateTimer() {
-  absl::Status status = absl::OkStatus();
-  // absl::Status status = Update();
+  // absl::Status status = absl::OkStatus();
+  gpr_log(GPR_ERROR, "GREG: Before Update");
+  absl::Status status = Update();
+  gpr_log(GPR_ERROR, "GREG: After Update");
   if (!status.ok()) {
     if (reload_error_callback_ != nullptr) {
       reload_error_callback_(status);
@@ -251,9 +248,6 @@ bool DirectoryReloaderCrlProviderImpl::OnNextUpdateTimer() {
 }
 
 void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
-  // refresh_handle_.reset();
-  // std::shared_ptr<DirectoryReloaderCrlProviderImpl> self =
-  //     std::shared_ptr<DirectoryReloaderCrlProviderImpl>(this);
   std::weak_ptr<DirectoryReloaderCrlProviderImpl> self = shared_from_this();
   gpr_log(GPR_ERROR, "GREG: in ScheduleReload");
   refresh_handle_ = event_engine_->RunAfter(refresh_duration_, [self]() {
