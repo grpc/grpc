@@ -389,15 +389,15 @@ namespace testing {
 namespace {
 int force_experiments = []() {
   grpc_event_engine::experimental::g_event_engine_supports_fd = false;
-  grpc_core::ForceEnableExperiment("event_engine_client", true);
-  grpc_core::ForceEnableExperiment("event_engine_listener", true);
+  ForceEnableExperiment("event_engine_client", true);
+  ForceEnableExperiment("event_engine_listener", true);
   return 1;
 }();
 }  // namespace
 
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
-  grpc_core::ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine()));
+  ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
@@ -447,12 +447,11 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
     const api_fuzzer::CreateChannel& create_channel) {
   if (channel_ != nullptr) return Result::kComplete;
   // ExecCtx is needed for ChannelArgs destruction.
-  grpc_core::ExecCtx exec_ctx;
-  grpc_core::testing::FuzzingEnvironment fuzzing_env;
+  ExecCtx exec_ctx;
+  testing::FuzzingEnvironment fuzzing_env;
   fuzzing_env.resource_quota = resource_quota();
-  grpc_core::ChannelArgs args =
-      grpc_core::testing::CreateChannelArgsFromFuzzingConfiguration(
-          create_channel.channel_args(), fuzzing_env);
+  ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
+      create_channel.channel_args(), fuzzing_env);
   grpc_channel_credentials* creds =
       create_channel.has_channel_creds()
           ? ReadChannelCreds(create_channel.channel_creds())
@@ -479,12 +478,11 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
     const api_fuzzer::CreateServer& create_server) {
   if (server_ == nullptr) {
     // ExecCtx is needed for ChannelArgs destruction.
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::testing::FuzzingEnvironment fuzzing_env;
+    ExecCtx exec_ctx;
+    testing::FuzzingEnvironment fuzzing_env;
     fuzzing_env.resource_quota = resource_quota();
-    grpc_core::ChannelArgs args =
-        grpc_core::testing::CreateChannelArgsFromFuzzingConfiguration(
-            create_server.channel_args(), fuzzing_env);
+    ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
+        create_server.channel_args(), fuzzing_env);
     server_ = grpc_server_create(args.ToC().get(), nullptr);
     GPR_ASSERT(server_ != nullptr);
     grpc_server_register_completion_queue(server_, cq(), nullptr);

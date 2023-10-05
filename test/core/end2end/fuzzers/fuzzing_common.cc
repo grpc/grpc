@@ -338,8 +338,8 @@ BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
   grpc_timer_manager_set_start_threaded(false);
   grpc_init();
   {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::Executor::SetThreadingAll(false);
+    ExecCtx exec_ctx;
+    Executor::SetThreadingAll(false);
   }
   resource_quota_ = MakeResourceQuota("fuzzer");
   cq_ = grpc_completion_queue_create_for_next(nullptr);
@@ -680,8 +680,8 @@ BasicFuzzer::Result BasicFuzzer::ExecuteAction(
     case api_fuzzer::Action::kResizeResourceQuota:
       return ResizeResourceQuota(action.resize_resource_quota());
     default:
-      grpc_core::Crash(absl::StrCat("Unsupported Fuzzing Action of type: ",
-                                    action.type_case()));
+      Crash(absl::StrCat("Unsupported Fuzzing Action of type: ",
+                         action.type_case()));
   }
   return BasicFuzzer::Result::kComplete;
 }
