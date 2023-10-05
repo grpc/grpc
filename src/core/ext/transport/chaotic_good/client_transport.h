@@ -129,8 +129,8 @@ class ClientTransport {
                           outgoing_frames.Send(ClientFrame(std::move(frame))),
                           [](bool success) -> absl::Status {
                             if (!success) {
-                              return absl::InternalError(
-                                  "Send frame to outgoing_frames failed.");
+                              return absl::UnavailableError(
+                                       "Transport closed due to endpoint write/read failed.");
                             }
                             return absl::OkStatus();
                           });
@@ -182,8 +182,7 @@ class ClientTransport {
                              if (transport_closed) {
                                return ServerMetadataFromStatus(
                                    absl::UnavailableError(
-                                       "Transport closed with endpoint "
-                                       "failures."));
+                                       "Transport closed due to endpoint write/read failed."));
                              }
                              return Continue();
                            }));
@@ -220,6 +219,7 @@ class ClientTransport {
   std::shared_ptr<FrameHeader> frame_header_;
   MemoryAllocator memory_allocator_;
   ScopedArenaPtr arena_;
+  promise_detail::Context<Arena> context_;
   // Use to synchronize writer_ and reader_ activity with outside activities;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };

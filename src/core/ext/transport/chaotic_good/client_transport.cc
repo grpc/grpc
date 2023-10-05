@@ -63,6 +63,7 @@ ClientTransport::ClientTransport(
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "client_transport")),
       arena_(MakeScopedArena(1024, &memory_allocator_)),
+      context_(arena_.get()),
       event_engine_(event_engine) {
   auto write_loop = Loop([this] {
     return TrySeq(
@@ -123,7 +124,6 @@ ClientTransport::ClientTransport(
         GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
                    status.code() == absl::StatusCode::kInternal);
         if (status.code() == absl::StatusCode::kInternal) {
-          // Abort transport when internal errors happened.
           this->AbortWithError();
         }
       },
@@ -193,13 +193,11 @@ ClientTransport::ClientTransport(
         GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
                    status.code() == absl::StatusCode::kInternal);
         if (status.code() == absl::StatusCode::kInternal) {
-          // Abort transport when internal errors happened.
           this->AbortWithError();
         }
       },
       // Hold Arena in activity for GetContext<Arena> usage.
       arena_.get());
-
 }
 
 }  // namespace chaotic_good

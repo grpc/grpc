@@ -117,15 +117,16 @@ class ClientTransportTest : public ::testing::Test {
         pipe_client_to_server_messages_second_(arena_.get()),
         pipe_server_to_client_messages_second_(arena_.get()),
         pipe_server_intial_metadata_second_(arena_.get()) {}
-  // Add expectations of control/data endpoints write/read operations
-  // with test scenarios.
-  void AddExpectations(int num_of_streams, int messages, bool expect_success) {
-    AddWriteExpectations(num_of_streams * messages, expect_success);
+  // Add expectations of control/data endpoints write/read operations.
+  void AddExpectations(int num_of_streams, int successful_write_messages, int successful_read_messages, bool expect_write_failed, bool expect_read_failed) {
+    AddWriteExpectations(num_of_streams * successful_write_messages, expect_write_failed);
     for (int i = 1; i <= num_of_streams; i++) {
-      AddReadExpectations(/*stream_id*/ i, messages, expect_success);
+      AddReadExpectations(/*stream_id*/ i, successful_read_messages, expect_read_failed);
     }
-    // The reader_ is pending for next message.
-    EXPECT_CALL(control_endpoint_, Read).InSequence(control_endpoint_sequence);
+    if (!expect_read_failed) {
+      // reader_ is pending for next read.
+      EXPECT_CALL(control_endpoint_, Read).InSequence(control_endpoint_sequence);
+    }
   }
   void InitialClientTransport() {
     // Read expectaions need to be added before transport initialization since
@@ -182,40 +183,59 @@ class ClientTransportTest : public ::testing::Test {
   Sequence control_endpoint_sequence;
   Sequence data_endpoint_sequence;
 
-  void AddWriteExpectations(int messages, bool success) {
-    if (!success) {
+  void AddWriteExpectations(int successful_messages, bool failed_at_last) {
+    if (successful_messages > 0) {
+      // Transport started writes.
       EXPECT_CALL(control_endpoint_, Write)
-          .WillOnce(
-              WithArgs<0>([](absl::AnyInvocable<void(absl::Status)> on_write) {
-                on_write(absl::InternalError("control endpoint write failed."));
-                return false;
-              }));
+          .Times(successful_messages)
+          .WillRepeatedly(Return(true));
       EXPECT_CALL(data_endpoint_, Write)
-          .WillOnce(
-              WithArgs<0>([](absl::AnyInvocable<void(absl::Status)> on_write) {
-                on_write(absl::InternalError("control endpoint write failed."));
-                return false;
-              }));
-      return;
+          .Times(successful_messages)
+          .WillRepeatedly(Return(true));
+      if (failed_at_last) {
+        EXPECT_CALL(control_endpoint_, Write)
+            .WillOnce(
+                WithArgs<0>([](absl::AnyInvocable<void(absl::Status)> on_write) {
+                  on_write(absl::InternalError("control endpoint write failed."));
+                  return false;
+                }));
+        EXPECT_CALL(data_endpoint_, Write)
+            .WillOnce(
+                WithArgs<0>([](absl::AnyInvocable<void(absl::Status)> on_write) {
+                  on_write(absl::InternalError("data endpoint write failed."));
+                  return false;
+                }));
+      } 
+    } else {
+      if(failed_at_last) {
+        EXPECT_CALL(control_endpoint_, Write)
+            .WillOnce(
+                WithArgs<0>([](absl::AnyInvocable<void(absl::Status)> on_write) {
+                  on_write(absl::InternalError("control endpoint write failed."));
+                  return false;
+                }));
+        EXPECT_CALL(data_endpoint_, Write)
+            .WillOnce(
+                WithArgs<0>([](absl::AnyInvocable<void(absl::Status)> on_write) {
+                  on_write(absl::InternalError("data endpoint write failed."));
+                  return false;
+                }));
+      } else {
+        // Transport failed before first write started.
+      }
     }
-    EXPECT_CALL(control_endpoint_, Write)
-        .Times(messages)
-        .WillRepeatedly(Return(true));
-    EXPECT_CALL(data_endpoint_, Write)
-        .Times(messages)
-        .WillRepeatedly(Return(true));
   }
-  void AddReadExpectations(int stream_id, int messages, bool success) {
-    if (!success) return;
-
-    for (int i = 1; i <= messages; i++) {
+  void AddReadExpectations(int stream_id, int successful_read_messages, bool failed_at_last) {
+    if (successful_read_messages > 0) {
+      // Transport starts read.
+    for (int i = 1; i <= successful_read_messages; i++) {
       bool initial_read = (i == 1);
-      // last message return with trailers.
-      bool has_trailer = (i == messages);
+      // Only last message will return trailer.
+      bool has_trailer = (i == successful_read_messages) && (!failed_at_last);
       EXPECT_CALL(control_endpoint_, Read)
           .InSequence(control_endpoint_sequence)
           .WillOnce(
-              WithArgs<0, 1>([this, stream_id, has_trailer, initial_read, i](
+              WithArgs<0, 1>([this, stream_id, has_trailer, initial_read](
                                  absl::AnyInvocable<void(absl::Status)> on_read,
                                  grpc_event_engine::experimental::SliceBuffer*
                                      buffer) mutable {
@@ -304,6 +324,28 @@ class ClientTransportTest : public ::testing::Test {
                 return true;
               }));
     }
+    if(failed_at_last) {
+      EXPECT_CALL(control_endpoint_, Read)
+          .InSequence(control_endpoint_sequence)
+          .WillOnce(
+              WithArgs<0>([](absl::AnyInvocable<void(absl::Status)> on_read) {
+                // Mock EventEngine enpoint read fails immediately.
+                on_read(absl::InternalError("control endpoint read failed."));
+                return false;
+              }));
+    }
+    } else {
+      // Transport failed before first read started.
+      if(failed_at_last){
+      EXPECT_CALL(control_endpoint_, Read)
+          .InSequence(control_endpoint_sequence)
+          .WillOnce(
+              WithArgs<0>([this](absl::AnyInvocable<void(absl::Status)> on_read) {
+                read_callback.push_back(std::move(on_read));
+                return false;
+              }));
+      } 
+    }
   }
 
  protected:
@@ -326,7 +368,7 @@ class ClientTransportTest : public ::testing::Test {
 };
 
 TEST_F(ClientTransportTest, AddOneStream) {
-  AddExpectations(/*num_of_streams*/ 1, /*messages*/ 1, /*success*/ true);
+  AddExpectations(/*num_of_streams*/ 1, /*successful_write_messages*/ 1, /*successful_read_messages*/ 1, /*expect_write_failed*/ false, /*expect_read_failed*/ false);
   InitialClientTransport();
   auto messages = CreateMessages(1);
   ClientMetadataHandle md;
@@ -412,8 +454,8 @@ TEST_F(ClientTransportTest, AddOneStream) {
   event_engine_->UnsetGlobalHooks();
 }
 
-TEST_F(ClientTransportTest, AddOneStreamWithEndpointFailures) {
-  AddExpectations(/*num_of_streams*/ 1, /*messages*/ 1, /*success*/ false);
+TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
+  AddExpectations(/*num_of_streams*/ 1, /*successful_write_messages*/ 0, /*successful_read_messages*/ 0, /*expect_write_failed*/ true, /*expect_read_failed*/ false);
   InitialClientTransport();
   auto messages = CreateMessages(1);
   ClientMetadataHandle md;
@@ -439,7 +481,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithEndpointFailures) {
                   }),
               // Add first stream with call_args into client transport.
               Seq(client_transport_->AddStream(std::move(args)),
-                  [](absl::StatusOr<ServerMetadataHandle> ret) {
+                  [](absl::StatusOr<ServerMetadataHandle>
+                         ret) {
                     // AddStream will finish with server trailers:
                     // "grpc-status:Unavailable".
                     EXPECT_EQ(ret.value()->get(GrpcStatusMetadata()).value(),
@@ -470,8 +513,74 @@ TEST_F(ClientTransportTest, AddOneStreamWithEndpointFailures) {
   event_engine_->UnsetGlobalHooks();
 }
 
+TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
+  AddExpectations(/*num_of_streams*/ 1, /*successful_write_messages*/ 1, /*successful_read_messages*/ 0, /*expect_write_failed*/ false, /*expect_read_failed*/ true);
+  InitialClientTransport();
+  auto messages = CreateMessages(1);
+  ClientMetadataHandle md;
+  auto args = CallArgs{std::move(md),
+                       ClientInitialMetadataOutstandingToken::Empty(),
+                       nullptr,
+                       &pipe_server_intial_metadata_.sender,
+                       &pipe_client_to_server_messages_.receiver,
+                       &pipe_server_to_client_messages_.sender};
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  auto activity = MakeActivity(
+      Seq(
+          // Concurrently: write and read messages in client transport.
+          Join(
+              // Send messages to call_args.client_to_server_messages pipe,
+              // which will be eventually sent to control/data endpoints.
+              Seq(pipe_client_to_server_messages_.sender.Push(
+                      std::move(messages[0])),
+                  [this] {
+                    pipe_client_to_server_messages_.sender.Close();
+                    return absl::OkStatus();
+                  }),
+              // Add first stream with call_args into client transport.
+              Seq(Join(client_transport_->AddStream(std::move(args)),
+                       [this]() {
+                         // Start read from endpoints.
+                         read_callback[0](absl::InternalError("transport closed."));
+                         return absl::OkStatus();
+                       }),
+                  [](std::tuple<absl::StatusOr<ServerMetadataHandle>,
+                                absl::Status>
+                         ret) {
+                    // AddStream will finish with server trailers:
+                    // "grpc-status:Unavailable".
+                    EXPECT_EQ(std::get<0>(ret).value()->get(GrpcStatusMetadata()).value(),
+                              grpc_status_code::GRPC_STATUS_UNAVAILABLE);
+                    return absl::UnavailableError("transport closed.");
+                  }),
+              // Receive messages from control/data endpoints.
+              Seq(
+                  [this]() {
+                    // Close pipes after receive message.
+                    pipe_server_to_client_messages_.sender.Close();
+                    pipe_server_intial_metadata_.sender.Close();
+                    return absl::OkStatus();
+                  })),
+          // Once complete, verify successful sending and the received value.
+          [](const std::tuple<absl::Status, absl::Status, absl::Status>& ret) {
+            EXPECT_TRUE(std::get<0>(ret).ok());
+            EXPECT_FALSE(std::get<1>(ret).ok());
+            EXPECT_EQ(std::get<1>(ret).message(), "transport closed.");
+            EXPECT_TRUE(std::get<2>(ret).ok());
+            return absl::OkStatus();
+          }),
+      EventEngineWakeupScheduler(
+          std::static_pointer_cast<
+              grpc_event_engine::experimental::EventEngine>(event_engine_)),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+  // Wait until ClientTransport's internal activities to finish.
+  event_engine_->TickUntilIdle();
+  event_engine_->UnsetGlobalHooks();
+}
+
 TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
-  AddExpectations(/*num_of_streams*/ 1, /*messages*/ 3, /*success*/ true);
+  AddExpectations(/*num_of_streams*/ 1, /*successful_write_messages*/ 3, /*successful_read_messages*/ 3, /*expect_write_failed*/ false, /*expect_read_failed*/ false);
   InitialClientTransport();
   auto messages = CreateMessages(3);
   ClientMetadataHandle md;
@@ -598,8 +707,178 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
   event_engine_->UnsetGlobalHooks();
 }
 
+TEST_F(ClientTransportTest, AddOneStreamMultipleMessagesWithWriteFailed) {
+  AddExpectations(/*num_of_streams*/ 1, /*successful_write_messages*/ 2, /*successful_read_messages*/ 0, /*expect_write_failed*/ true, /*expect_read_failed*/ false);
+  InitialClientTransport();
+  auto messages = CreateMessages(3);
+  ClientMetadataHandle md;
+  auto args = CallArgs{std::move(md),
+                       ClientInitialMetadataOutstandingToken::Empty(),
+                       nullptr,
+                       &pipe_server_intial_metadata_.sender,
+                       &pipe_client_to_server_messages_.receiver,
+                       &pipe_server_to_client_messages_.sender};
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  auto activity = MakeActivity(
+      Seq(
+          // Concurrently: write and read messages in client transport.
+          Join(
+              // Send messages to call_args.client_to_server_messages pipe,
+              // which will be eventually sent to control/data endpoints.
+              Seq(pipe_client_to_server_messages_.sender.Push(
+                      std::move(messages[0])),
+                  pipe_client_to_server_messages_.sender.Push(
+                      std::move(messages[1])),
+                  pipe_client_to_server_messages_.sender.Push(
+                      std::move(messages[2])),
+                  [this] {
+                    pipe_client_to_server_messages_.sender.Close();
+                    return absl::OkStatus();
+                  }),
+              // Add first stream with call_args into client transport.
+              Seq(client_transport_->AddStream(std::move(args)),
+                  [](absl::StatusOr<ServerMetadataHandle> ret) {
+                    // AddStream will finish with server trailers:
+                    // "grpc-status:Unavailable".
+                    EXPECT_EQ(ret.value()->get(GrpcStatusMetadata()).value(),
+                              grpc_status_code::GRPC_STATUS_UNAVAILABLE);
+                    return absl::UnavailableError("transport closed.");
+                  }),
+              // Receive messages from control/data endpoints.
+              [this] {
+                // Close pipes after receive message.
+                pipe_server_to_client_messages_.sender.Close();
+                pipe_server_intial_metadata_.sender.Close();
+                return absl::OkStatus();
+              }),
+          // Once complete, verify successful sending and the received value.
+          [](const std::tuple<absl::Status, absl::Status, absl::Status>& ret) {
+            EXPECT_TRUE(std::get<0>(ret).ok());
+            EXPECT_FALSE(std::get<1>(ret).ok());
+            EXPECT_EQ(std::get<1>(ret).message(), "transport closed.");
+            EXPECT_TRUE(std::get<2>(ret).ok());
+            return absl::OkStatus();
+          }),
+      EventEngineWakeupScheduler(
+          std::static_pointer_cast<
+              grpc_event_engine::experimental::EventEngine>(event_engine_)),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+  // Wait until ClientTransport's internal activities to finish.
+  event_engine_->TickUntilIdle();
+  event_engine_->UnsetGlobalHooks();
+}
+
+TEST_F(ClientTransportTest, AddOneStreamMultipleMessagesWithReadFailed) {
+  AddExpectations(/*num_of_streams*/ 1, /*successful_write_messages*/ 3, /*successful_read_messages*/ 2, /*expect_write_failed*/ false, /*expect_read_failed*/ true);
+  InitialClientTransport();
+  auto messages = CreateMessages(3);
+  ClientMetadataHandle md;
+  auto args = CallArgs{std::move(md),
+                       ClientInitialMetadataOutstandingToken::Empty(),
+                       nullptr,
+                       &pipe_server_intial_metadata_.sender,
+                       &pipe_client_to_server_messages_.receiver,
+                       &pipe_server_to_client_messages_.sender};
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  auto activity = MakeActivity(
+      Seq(
+          // Concurrently: write and read messages in client transport.
+          Join(
+              // Send messages to call_args.client_to_server_messages pipe,
+              // which will be eventually sent to control/data endpoints.
+              Seq(pipe_client_to_server_messages_.sender.Push(
+                      std::move(messages[0])),
+                  pipe_client_to_server_messages_.sender.Push(
+                      std::move(messages[1])),
+                  pipe_client_to_server_messages_.sender.Push(
+                      std::move(messages[2])),
+                  [this] {
+                    pipe_client_to_server_messages_.sender.Close();
+                    return absl::OkStatus();
+                  }),
+              // Add first stream with call_args into client transport.
+              Seq(Join(client_transport_->AddStream(std::move(args)),
+                       [this]() {
+                         // Start read from endpoints.
+                         read_callback[0](absl::OkStatus());
+                         return absl::OkStatus();
+                       }),
+                  [](std::tuple<absl::StatusOr<ServerMetadataHandle>,
+                                absl::Status>
+                         ret) {
+                    // AddStream will finish with server trailers:
+                    // "grpc-status:Unavailable".
+                    EXPECT_EQ(std::get<0>(ret).value()->get(GrpcStatusMetadata()).value(),
+                              grpc_status_code::GRPC_STATUS_UNAVAILABLE);
+                    return absl::UnavailableError("transport closed.");
+                  }),
+              // Receive messages from control/data endpoints.
+              Seq(
+                // Receive server initial metadata.
+                  Map(pipe_server_intial_metadata_.receiver.Next(),
+                      [](NextResult<ServerMetadataHandle> r) {
+                        // Expect value: ":path: /demo.Service/Step"
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()
+                                      ->get_pointer(HttpPathMetadata())
+                                      ->as_string_view(),
+                                  "/demo.Service/Step");
+                        return absl::OkStatus();
+                      }),
+                  // Receive server to client messages.
+                  Map(pipe_server_to_client_messages_.receiver.Next(),
+                      [this](NextResult<MessageHandle> r) {
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()->payload()->JoinIntoString(),
+                                  message);
+                        return absl::OkStatus();
+                      }),
+                  // Receive server initial metadata.
+                  Map(pipe_server_intial_metadata_.receiver.Next(),
+                      [](NextResult<ServerMetadataHandle> r) {
+                        // Expect value: ":path: /demo.Service/Step"
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()
+                                      ->get_pointer(HttpPathMetadata())
+                                      ->as_string_view(),
+                                  "/demo.Service/Step");
+                        return absl::OkStatus();
+                      }),
+                  // Receive server to client messages.
+                  Map(pipe_server_to_client_messages_.receiver.Next(),
+                      [this](NextResult<MessageHandle> r) {
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()->payload()->JoinIntoString(),
+                                  message);
+                        return absl::OkStatus();
+                      }),
+                  [this]() {
+                    // Close pipes after receive message.
+                    pipe_server_to_client_messages_.sender.Close();
+                    pipe_server_intial_metadata_.sender.Close();
+                    return absl::OkStatus();
+                  })),
+          // Once complete, verify successful sending and the received value.
+          [](const std::tuple<absl::Status, absl::Status, absl::Status>& ret) {
+            EXPECT_TRUE(std::get<0>(ret).ok());
+            EXPECT_FALSE(std::get<1>(ret).ok());
+            EXPECT_EQ(std::get<1>(ret).message(), "transport closed.");
+            EXPECT_TRUE(std::get<2>(ret).ok());
+            return absl::OkStatus();
+          }),
+      EventEngineWakeupScheduler(
+          std::static_pointer_cast<
+              grpc_event_engine::experimental::EventEngine>(event_engine_)),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+  // Wait until ClientTransport's internal activities to finish.
+  event_engine_->TickUntilIdle();
+  event_engine_->UnsetGlobalHooks();
+}
+
 TEST_F(ClientTransportTest, AddMultipleStreams) {
-  AddExpectations(/*num_of_streams*/ 2, /*messages*/ 1, /*success*/ true);
+  AddExpectations(/*num_of_streams*/ 2, /*successful_write_messages*/ 1, /*successful_read_messages*/ 1, /*expect_write_failed*/ false, /*expect_read_failed*/ false);
   InitialClientTransport();
   auto messages = CreateMessages(2);
   ClientMetadataHandle first_stream_md;
@@ -759,7 +1038,7 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
 }
 
 TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
-  AddExpectations(/*num_of_streams*/ 2, /*messages*/ 3, /*success*/ true);
+  AddExpectations(/*num_of_streams*/ 2, /*successful_write_messages*/ 3, /*successful_read_messages*/ 3, /*expect_write_failed*/ false, /*expect_read_failed*/ false);
   InitialClientTransport();
   auto messages = CreateMessages(6);
   ClientMetadataHandle first_stream_md;
