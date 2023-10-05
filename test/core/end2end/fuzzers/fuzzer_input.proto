@@ -20,9 +20,97 @@ import "test/core/end2end/fuzzers/api_fuzzer.proto";
 import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
 import "test/core/util/fuzz_config_vars.proto";
 
+message H2DataFrame {
+    uint32 stream_id = 1;
+    bool end_of_stream = 2;
+    bytes payload = 3;
+}
+
+message SimpleHeader {
+    string key = 1;
+    string value = 2;
+}
+
+message SimpleHeaders {
+    repeated SimpleHeader headers = 1;
+}
+
+message H2HeaderFrame {
+    uint32 stream_id = 1;
+    bool end_headers =  2;
+    bool end_stream = 3;
+    oneof payload {
+        bytes raw_bytes = 5;
+        SimpleHeaders simple_header = 6;
+    }
+}
+
+message H2ContinuationFrame {
+    uint32 stream_id = 1;
+    bool end_headers =  2;
+    oneof payload {
+        bytes raw_bytes = 5;
+        SimpleHeaders simple_header = 6;
+    }
+}
+
+message H2RstStreamFrame {
+    uint32 stream_id = 1;
+    uint32 error_code = 2;
+}
+
+message H2Setting {
+    uint32 id = 1;
+    uint32 value = 2;
+}
+
+message H2SettingsFrame {
+    bool ack = 1;
+    repeated H2Setting settings = 2;
+}
+
+message H2PingFrame {
+    bool ack = 1;
+    uint64 opaque = 2;
+}
+
+message H2GoawayFrame {
+    uint32 last_stream_id = 1;
+    uint32 error_code = 2;
+    bytes debug_data = 3;
+}
+
+message H2WindowUpdateFrame {
+    uint32 stream_id = 1;
+    uint32 increment = 2;
+}
+
+message H2ClientPrefix {}
+
+message InputSegment {
+    int32 delay_ms = 1;
+    oneof payload {
+        bytes raw_bytes = 2;
+        H2DataFrame data = 3;
+        H2HeaderFrame header = 4;
+        H2ContinuationFrame continuation = 5;
+        H2RstStreamFrame rst_stream = 6;
+        H2SettingsFrame settings = 7;
+        H2PingFrame ping = 8;
+        H2GoawayFrame goaway = 9;
+        H2WindowUpdateFrame window_update = 10;
+        H2ClientPrefix client_prefix = 11;
+    }
+}
+
+message InputSegments {
+    repeated InputSegment segments = 1;
+}
+
 message NetworkInput {
     oneof value {
         bytes single_read_bytes = 1;
+        InputSegments input_segments = 2;
     }
 }
 

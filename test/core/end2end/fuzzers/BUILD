@@ -83,6 +83,18 @@ grpc_proto_library(
     ],
 )
 
+grpc_cc_library(
+    name = "network_input",
+    srcs = ["network_input.cc"],
+    hdrs = ["network_input.h"],
+    deps = [
+        "fuzzer_input_proto",
+        "//:chttp2_frame",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/util:grpc_test_util_base",
+    ],
+)
+
 grpc_proto_fuzzer(
     name = "client_fuzzer",
     srcs = ["client_fuzzer.cc"],
@@ -94,10 +106,12 @@ grpc_proto_fuzzer(
     uses_polling = False,
     deps = [
         "fuzzer_input_proto",
+        "network_input",
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
         "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -114,9 +128,11 @@ grpc_proto_fuzzer(
     uses_polling = False,
     deps = [
         "fuzzer_input_proto",
+        "network_input",
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
