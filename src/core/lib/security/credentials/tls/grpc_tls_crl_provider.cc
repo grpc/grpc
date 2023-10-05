@@ -71,7 +71,9 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
   grpc_slice crl_slice = grpc_empty_slice();
   grpc_error_handle err = grpc_load_file(crl_path.data(), 1, &crl_slice);
   if (!err.ok()) {
+    gpr_log(GPR_ERROR, "Error reading file %s", err.message().data());
     // TODO(gtcooke94) log error
+    return absl::InvalidArgumentError("Could not load file");
   }
   std::string raw_crl = std::string(StringViewFromSlice(crl_slice));
   absl::StatusOr<std::unique_ptr<Crl>> result = Crl::Parse(raw_crl);
@@ -272,6 +274,7 @@ void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
 absl::Status DirectoryReloaderCrlProviderImpl::Update() {
   // for () absl::MutexLock lock(&mu_);
   // TODO(gtcooke94) reading directory in C++ on windows vs. unix
+  gpr_log(GPR_ERROR, "GREG: CRL Directory %s", crl_directory_.c_str());
   DIR* crl_directory;
   if ((crl_directory = opendir(crl_directory_.c_str())) == nullptr) {
     // Try getting full absolute path of crl_directory_
@@ -285,8 +288,11 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
   bool all_files_successful = true;
   while ((directory_entry = readdir(crl_directory)) != nullptr) {
     const char* file_name = directory_entry->d_name;
+    gpr_log(GPR_ERROR, "GREG: reading file %s", file_name);
+
     FileData file_data;
     GetAbsoluteFilePath(crl_directory_.c_str(), file_name, file_data.path);
+    gpr_log(GPR_ERROR, "GREG: reading file full path %s", file_data.path);
     struct stat dir_entry_stat;
     int stat_return = stat(file_data.path, &dir_entry_stat);
     if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
@@ -300,20 +306,20 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
     }
     file_data.size = dir_entry_stat.st_size;
     crl_files.push_back(file_data);
-    closedir(crl_directory);
-    for (const FileData& file : crl_files) {
-      absl::StatusOr<std::shared_ptr<Crl>> result = ReadCrlFromFile(file.path);
-      if (!result.ok()) {
-        all_files_successful = false;
-        // TODO(gtcooke94) error logging
-        continue;
-      }
-      // Now we have a good CRL to update in our map
-      std::shared_ptr<Crl> crl = *result;
-      mu_.Lock();
-      crls_[crl->Issuer()] = std::move(crl);
-      mu_.Unlock();
+  }
+  closedir(crl_directory);
+  for (const FileData& file : crl_files) {
+    absl::StatusOr<std::shared_ptr<Crl>> result = ReadCrlFromFile(file.path);
+    if (!result.ok()) {
+      all_files_successful = false;
+      // TODO(gtcooke94) error logging
+      continue;
     }
+    // Now we have a good CRL to update in our map
+    std::shared_ptr<Crl> crl = *result;
+    mu_.Lock();
+    crls_[crl->Issuer()] = std::move(crl);
+    mu_.Unlock();
   }
   if (!all_files_successful) {
     return absl::UnknownError(
