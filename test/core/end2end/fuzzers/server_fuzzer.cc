@@ -26,6 +26,8 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -36,7 +38,13 @@
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
+#include "test/core/end2end/fuzzers/network_input.h"
+#include "test/core/util/fuzz_config_vars.h"
+#include "test/core/util/fuzzing_channel_args.h"
 #include "test/core/util/mock_endpoint.h"
+
+using ::grpc_event_engine::experimental::FuzzingEventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 bool squelch = true;
 bool leak_check = true;
@@ -48,7 +56,18 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+    gpr_set_log_function(dont_log);
+  }
+  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
+  grpc_event_engine::experimental::SetEventEngineFactory(
+      [actions = msg.event_engine_actions()]() {
+        return std::make_unique<FuzzingEventEngine>(
+            FuzzingEventEngine::Options(), actions);
+      });
+  auto event_engine =
+      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
@@ -56,12 +75,8 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("context_list_test");
     grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
-    if (msg.network_input().has_single_read_bytes()) {
-      grpc_mock_endpoint_put_read(
-          mock_endpoint, grpc_slice_from_copied_buffer(
-                             msg.network_input().single_read_bytes().data(),
-                             msg.network_input().single_read_bytes().size()));
-    }
+    grpc_core::ScheduleReads(msg.network_input(), mock_endpoint,
+                             event_engine.get());
     grpc_server* server = grpc_server_create(nullptr, nullptr);
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
@@ -93,6 +108,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
 
     grpc_event ev;
     while (true) {
+      event_engine->Tick();
       grpc_core::ExecCtx::Get()->Flush();
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
@@ -127,6 +143,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
       // As a solution, we are going to keep performing a cq_next for a
       // liberal period of 5 seconds for the timer thread to complete its work.
       do {
+        event_engine->Tick();
         ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                         nullptr);
         grpc_core::ExecCtx::Get()->InvalidateNow();

@@ -50,6 +50,7 @@
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
+#include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/mock_endpoint.h"
@@ -150,12 +151,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
     int requested_calls = 1;
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    if (msg.network_input().has_single_read_bytes()) {
-      grpc_mock_endpoint_put_read(
-          mock_endpoint, grpc_slice_from_copied_buffer(
-                             msg.network_input().single_read_bytes().data(),
-                             msg.network_input().single_read_bytes().size()));
-    }
+    grpc_core::ScheduleReads(msg.network_input(), mock_endpoint, engine.get());
 
     grpc_event ev;
     while (true) {
