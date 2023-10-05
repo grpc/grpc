@@ -116,7 +116,7 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   socket->NotifyOnRead(&handle_read_event);
   status =
       WSARecv(socket->raw_socket(), wsa_buffers, (DWORD)buffer->Count(),
-              &bytes_read, &flags, socket->read_info()->overlapped(), nullptr);
+              nullptr, &flags, socket->read_info()->overlapped(), nullptr);
   wsa_error = status == 0 ? 0 : WSAGetLastError();
   if (wsa_error != 0 && wsa_error != WSA_IO_PENDING) {
     // The async read attempt returned an error immediately.
