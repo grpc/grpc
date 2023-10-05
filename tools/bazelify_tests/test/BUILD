@@ -378,6 +378,7 @@ test_suite(
 
 grpc_run_distribtest_test(
     name = "distribtest_php_linux_x64_debian10",
+    size = "enormous",
     artifact_deps = [
         "artifact_php_linux_x64",
     ],
