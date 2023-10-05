@@ -36,6 +36,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -49,8 +50,10 @@
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
+#include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/mock_endpoint.h"
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
@@ -69,6 +72,8 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
+  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_event_engine::experimental::SetEventEngineFactory([]() {
     return std::make_unique<FuzzingEventEngine>(
         FuzzingEventEngine::Options(), fuzzing_event_engine::Actions{});
@@ -149,12 +154,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
     int requested_calls = 1;
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    if (msg.network_input().has_single_read_bytes()) {
-      grpc_mock_endpoint_put_read(
-          mock_endpoint, grpc_slice_from_copied_buffer(
-                             msg.network_input().single_read_bytes().data(),
-                             msg.network_input().single_read_bytes().size()));
-    }
+    grpc_core::ScheduleReads(msg.network_input(), mock_endpoint, engine.get());
 
     grpc_event ev;
     while (true) {

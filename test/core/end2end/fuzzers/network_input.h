@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2016 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,18 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#ifndef GRPC_TEST_CORE_UTIL_MOCK_ENDPOINT_H
-#define GRPC_TEST_CORE_UTIL_MOCK_ENDPOINT_H
-
-#include <grpc/slice.h>
+#ifndef GRPC_TEST_CORE_END2END_FUZZERS_NETWORK_INPUT_H
+#define GRPC_TEST_CORE_END2END_FUZZERS_NETWORK_INPUT_H
 
 #include "src/core/lib/iomgr/endpoint.h"
+#include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
-grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice));
-void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice);
-void grpc_mock_endpoint_finish_put_reads(grpc_endpoint* ep);
+namespace grpc_core {
 
-#endif  // GRPC_TEST_CORE_UTIL_MOCK_ENDPOINT_H
+void ScheduleReads(
+    const fuzzer_input::NetworkInput& network_input,
+    grpc_endpoint* mock_endpoint,
+    grpc_event_engine::experimental::FuzzingEventEngine* event_engine);
+
+}
+
+#endif  // GRPC_TEST_CORE_END2END_FUZZERS_NETWORK_INPUT_H
