@@ -40,7 +40,6 @@
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/fuzzing_channel_args.h"
 #include "test/core/util/mock_endpoint.h"
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
