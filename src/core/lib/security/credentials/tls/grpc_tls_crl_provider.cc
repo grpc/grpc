@@ -312,8 +312,8 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
   closedir(crl_directory);
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> new_crls;
   for (const FileData& file : crl_files) {
-    // If all files successful, do a full swap of the map. Otherwise update in
-    // place
+    // Build a map of new_crls to update to. If all files successful, do a full
+    // swap of the map. Otherwise update in place
     absl::StatusOr<std::shared_ptr<Crl>> result = ReadCrlFromFile(file.path);
     if (!result.ok()) {
       all_files_successful = false;
@@ -322,15 +322,7 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
     }
     // Now we have a good CRL to update in our map
     std::shared_ptr<Crl> crl = *result;
-    if (all_files_successful) {
-      // Continue putting CRLs in new_crls to do a swap to
-      new_crls[crl->Issuer()] = std::move(crl);
-    } else {
-      // In place updates of existing map
-      mu_.Lock();
-      crls_[crl->Issuer()] = std::move(crl);
-      mu_.Unlock();
-    }
+    new_crls[crl->Issuer()] = std::move(crl);
   }
   if (!all_files_successful) {
     // Need to make sure CRLs we read successfully into new_crls are still

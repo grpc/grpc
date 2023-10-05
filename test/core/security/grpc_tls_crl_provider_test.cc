@@ -133,12 +133,21 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
   ASSERT_EQ(crl, nullptr);
 }
 
-TEST(CrlProviderTest, DirectoryReloaderReloads) {
+std::string MakeTempDir() {
   char templ[] = "/tmp/tmpdir.XXXXXX";
   std::string dir_path = mkdtemp(templ);
-  gpr_log(GPR_ERROR, "GREG: dir_path %s", dir_path.c_str());
+  return dir_path;
+}
+
+std::string TempDirNameFromPath(absl::string_view dir_path) {
   std::vector<std::string> split = absl::StrSplit(dir_path, "/");
-  std::string dir_name = split[2] + "/";
+  return split[2] + "/";
+}
+
+TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
+  std::string dir_path = MakeTempDir();
+  std::string dir_name = TempDirNameFromPath(dir_path);
+  gpr_log(GPR_ERROR, "GREG: dir_path %s", dir_path.c_str());
   gpr_log(GPR_ERROR, "GREG: dir_name %s", dir_name.c_str());
 
   auto result = experimental::DirectoryReloaderCrlProvider::
@@ -168,6 +177,36 @@ TEST(CrlProviderTest, DirectoryReloaderReloads) {
   ASSERT_EQ(crl_should_be_deleted, nullptr);
 
   rmdir(dir_path.c_str());
+}
+
+TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
+  std::string dir_path = MakeTempDir();
+  std::string dir_name = TempDirNameFromPath(dir_path);
+  gpr_log(GPR_ERROR, "GREG: dir_path %s", dir_path.c_str());
+  gpr_log(GPR_ERROR, "GREG: dir_name %s", dir_name.c_str());
+
+  std::string raw_crl = GetFileContents(CRL_PATH);
+  TmpFile tmp_crl(raw_crl, dir_name);
+  gpr_log(GPR_ERROR, "GREG tmpfile name: %s", tmp_crl.name().c_str());
+
+  auto result = experimental::DirectoryReloaderCrlProvider::
+      CreateDirectoryReloaderProvider(dir_path, std::chrono::seconds(1),
+                                      nullptr);
+  ASSERT_TRUE(result.ok());
+  std::shared_ptr<CrlProvider> provider = std::move(*result);
+
+  CertificateInfoImpl cert = CertificateInfoImpl(CRL_ISSUER);
+  auto crl = provider->GetCrl(cert);
+  ASSERT_NE(crl, nullptr);
+  ASSERT_EQ(crl->Issuer(), CRL_ISSUER);
+
+  // Rewrite the crl file with invalid data for a crl
+  // Should result in the CRL Reloader keeping the old CRL data
+  tmp_crl.RewriteFile("BAD_DATA");
+  sleep(2);
+  auto crl_post_update = provider->GetCrl(cert);
+  ASSERT_NE(crl_post_update, nullptr);
+  ASSERT_EQ(crl_post_update->Issuer(), CRL_ISSUER);
 }
 
 }  // namespace testing
