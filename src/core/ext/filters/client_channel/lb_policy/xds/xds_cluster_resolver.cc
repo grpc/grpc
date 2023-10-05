@@ -69,9 +69,9 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resolver/server_address.h"
 
 #define GRPC_EDS_DEFAULT_FALLBACK_TIMEOUT 10000
 
@@ -390,7 +390,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   absl::Status UpdateChildPolicyLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
-  ServerAddressList CreateChildPolicyAddressesLocked();
+  EndpointAddressesList CreateChildPolicyAddressesLocked();
   std::string CreateChildPolicyResolutionNoteLocked();
   RefCountedPtr<Config> CreateChildPolicyConfigLocked();
   ChannelArgs CreateChildPolicyArgsLocked(const ChannelArgs& args_in);
@@ -768,8 +768,8 @@ void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index,
 // child policy-related methods
 //
 
-ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
-  ServerAddressList addresses;
+EndpointAddressesList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
+  EndpointAddressesList addresses;
   for (const auto& discovery_entry : discovery_mechanisms_) {
     const auto& priority_list =
         GetUpdatePriorityList(*discovery_entry.latest_update);
@@ -790,7 +790,7 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
               locality.lb_weight *
               endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
           addresses.emplace_back(
-              endpoint.address(),
+              endpoint.addresses(),
               endpoint.args()
                   .SetObject(hierarchical_path_attr)
                   .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)

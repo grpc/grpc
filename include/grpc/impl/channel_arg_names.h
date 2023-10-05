@@ -370,6 +370,10 @@
 /** Configure the Differentiated Services Code Point used on outgoing packets.
  *  Integer value ranging from 0 to 63. */
 #define GRPC_ARG_DSCP "grpc.dscp"
+/** Connection Attempt Delay for use in Happy Eyeballs, in milliseconds.
+ *  Defaults to 250ms. */
+#define GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS \
+  "grpc.happy_eyeballs_connection_attempt_delay_ms"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

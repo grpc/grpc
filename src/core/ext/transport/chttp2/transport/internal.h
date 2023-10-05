@@ -50,6 +50,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
+#include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
@@ -144,18 +145,6 @@ typedef enum {
 
 const char* grpc_chttp2_initiate_write_reason_string(
     grpc_chttp2_initiate_write_reason reason);
-
-struct grpc_chttp2_ping_queue {
-  grpc_closure_list lists[GRPC_CHTTP2_PCL_COUNT] = {};
-  uint64_t inflight_id = 0;
-};
-
-struct grpc_chttp2_repeated_ping_state {
-  grpc_core::Timestamp last_ping_sent_time;
-  int pings_before_data_required;
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      delayed_ping_timer_handle;
-};
 
 // deframer state for the overall http2 stream of bytes
 typedef enum {
@@ -311,7 +300,7 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_core::ConnectivityStateTracker state_tracker;
 
   /// data to write now
-  grpc_slice_buffer outbuf;
+  grpc_core::SliceBuffer outbuf;
   /// hpack encoding
   grpc_core::HPackCompressor hpack_compressor;
 
@@ -339,12 +328,11 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   uint32_t last_new_stream_id = 0;
 
   /// ping queues for various ping insertion points
-  grpc_chttp2_ping_queue ping_queue = grpc_chttp2_ping_queue();
   grpc_core::Chttp2PingAbusePolicy ping_abuse_policy;
   grpc_core::Chttp2PingRatePolicy ping_rate_policy;
+  grpc_core::Chttp2PingCallbacks ping_callbacks;
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       delayed_ping_timer_handle;
-  uint64_t ping_ctr = 0;  // unique id for pings
   grpc_closure retry_initiate_ping_locked;
 
   /// ping acks
@@ -425,9 +413,6 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// timer to initiate ping events
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       keepalive_ping_timer_handle;
-  /// watchdog to kill the transport when waiting for the keepalive ping
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      keepalive_watchdog_timer_handle;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
   /// grace period for a ping to complete before watchdog kicks in
@@ -722,6 +707,9 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        grpc_error_handle error,
                                        const char* desc,
                                        grpc_core::DebugLocation whence = {});
+
+void grpc_chttp2_ping_timeout(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define MAX_SIZE_T (~(size_t)0)

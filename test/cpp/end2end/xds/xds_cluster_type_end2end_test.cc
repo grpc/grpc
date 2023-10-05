@@ -29,7 +29,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -55,9 +55,9 @@ class ClusterTypeTest : public XdsEnd2endTest {
     ResetStub(/*failover_timeout_ms=*/0, &args);
   }
 
-  grpc_core::ServerAddressList CreateAddressListFromPortList(
+  grpc_core::EndpointAddressesList CreateAddressListFromPortList(
       const std::vector<int>& ports) {
-    grpc_core::ServerAddressList addresses;
+    grpc_core::EndpointAddressesList addresses;
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));

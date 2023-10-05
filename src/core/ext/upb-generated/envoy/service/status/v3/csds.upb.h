@@ -152,6 +152,17 @@ UPB_INLINE bool envoy_service_status_v3_ClientStatusRequest_has_node(const envoy
   const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
+UPB_INLINE void envoy_service_status_v3_ClientStatusRequest_clear_exclude_resource_contents(envoy_service_status_v3_ClientStatusRequest* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE bool envoy_service_status_v3_ClientStatusRequest_exclude_resource_contents(const envoy_service_status_v3_ClientStatusRequest* msg) {
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE struct envoy_type_matcher_v3_NodeMatcher** envoy_service_status_v3_ClientStatusRequest_mutable_node_matchers(envoy_service_status_v3_ClientStatusRequest* msg, size_t* size) {
   upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -190,6 +201,10 @@ UPB_INLINE struct envoy_config_core_v3_Node* envoy_service_status_v3_ClientStatu
     if (sub) envoy_service_status_v3_ClientStatusRequest_set_node(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void envoy_service_status_v3_ClientStatusRequest_set_exclude_resource_contents(envoy_service_status_v3_ClientStatusRequest *msg, bool value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* envoy.service.status.v3.PerXdsConfig */

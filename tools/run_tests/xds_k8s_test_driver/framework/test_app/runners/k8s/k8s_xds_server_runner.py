@@ -170,7 +170,7 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
                 neg_name=self.gcp_neg_name,
                 test_port=test_port,
             )
-        self._wait_service_neg(self.service_name, test_port)
+        self._wait_service_neg_status_annotation(self.service_name, test_port)
 
         if self.enable_workload_identity:
             # Allow Kubernetes service account to use the GCP service account
