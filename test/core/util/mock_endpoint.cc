@@ -143,6 +143,7 @@ grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice)) {
   m->on_write = on_write;
   m->on_read = nullptr;
   m->put_reads_done = false;
+  m->destroyed = false;
   return &m->base;
 }
 
