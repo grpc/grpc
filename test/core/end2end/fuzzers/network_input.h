@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NETINPUT_H
-#define NETINPUT_H
+#ifndef GRPC_TEST_CORE_END2END_FUZZERS_NETWORK_INPUT_H
+#define GRPC_TEST_CORE_END2END_FUZZERS_NETWORK_INPUT_H
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
@@ -28,4 +28,4 @@ void ScheduleReads(
 
 }
 
-#endif
+#endif  // GRPC_TEST_CORE_END2END_FUZZERS_NETWORK_INPUT_H
