@@ -162,5 +162,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
     grpc_server_destroy(server);
     grpc_completion_queue_destroy(cq);
   }
-  grpc_shutdown();
+  event_engine->TickUntilIdle();
+  grpc_shutdown_blocking();
+  event_engine->UnsetGlobalHooks();
 }
