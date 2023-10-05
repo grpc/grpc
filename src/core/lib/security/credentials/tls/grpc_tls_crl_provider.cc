@@ -243,9 +243,10 @@ bool DirectoryReloaderCrlProviderImpl::OnNextUpdateTimer() {
   absl::Status status = Update();
   gpr_log(GPR_ERROR, "GREG: After Update");
   if (!status.ok()) {
-    if (reload_error_callback_ != nullptr) {
-      reload_error_callback_(status);
-    }
+    // TODO(gtcooke94) log here or just in the Update loop per file?
+    // if (reload_error_callback_ != nullptr) {
+    //   reload_error_callback_(status);
+    // }
   }
   ScheduleReload();
   return false;
@@ -317,7 +318,8 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
     absl::StatusOr<std::shared_ptr<Crl>> result = ReadCrlFromFile(file.path);
     if (!result.ok()) {
       all_files_successful = false;
-      // TODO(gtcooke94) error logging
+      reload_error_callback_(absl::InvalidArgumentError(
+          absl::StrFormat("CRL Reloader failed to read file: %s", file.path)));
       continue;
     }
     // Now we have a good CRL to update in our map

@@ -189,9 +189,13 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   TmpFile tmp_crl(raw_crl, dir_name);
   gpr_log(GPR_ERROR, "GREG tmpfile name: %s", tmp_crl.name().c_str());
 
+  std::vector<absl::Status> reload_errors;
+  std::function<void(absl::Status)> reload_error_callback =
+      [&](const absl::Status& status) { reload_errors.push_back(status); };
+
   auto result = experimental::DirectoryReloaderCrlProvider::
       CreateDirectoryReloaderProvider(dir_path, std::chrono::seconds(1),
-                                      nullptr);
+                                      reload_error_callback);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);
 
@@ -199,6 +203,7 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   auto crl = provider->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
   ASSERT_EQ(crl->Issuer(), CRL_ISSUER);
+  ASSERT_EQ(reload_errors.size(), 0);
 
   // Rewrite the crl file with invalid data for a crl
   // Should result in the CRL Reloader keeping the old CRL data
@@ -207,6 +212,8 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   auto crl_post_update = provider->GetCrl(cert);
   ASSERT_NE(crl_post_update, nullptr);
   ASSERT_EQ(crl_post_update->Issuer(), CRL_ISSUER);
+  ASSERT_EQ(reload_errors.size(), 1);
+  // TODO(gtcooke94) check the actual content of the error
 }
 
 }  // namespace testing
