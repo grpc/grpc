@@ -35,6 +35,7 @@
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
@@ -100,13 +101,28 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     EXPECT_EQ(ApplyUpdate(update, lb_policy()), absl::OkStatus());
   }
 
-  CallAttributes MakeOverrideHostAttribute(absl::string_view address) {
-    CallAttributes override_host_attributes;
-    override_host_attributes.emplace_back(
-        std::make_unique<XdsOverrideHostAttribute>(
-            absl::StripPrefix(address, "ipv4:")));
-    return override_host_attributes;
+  CallAttributes MakeOverrideHostAttribute(
+      absl::Span<const absl::string_view> addresses) {
+    std::vector<absl::string_view> address_list;
+    address_list.reserve(addresses.size());
+    for (absl::string_view address : addresses) {
+      address_list.emplace_back(absl::StripPrefix(address, "ipv4:"));
+    }
+    // Need to store the string in string_storage_, since the
+    // XdsOverrideHostAttribute object only holds a string_view.
+    string_storage_.push_back(absl::StrJoin(address_list, ","));
+    CallAttributes call_attributes;
+    call_attributes.emplace_back(
+        std::make_unique<XdsOverrideHostAttribute>(string_storage_.back()));
+    return call_attributes;
   }
+
+  CallAttributes MakeOverrideHostAttribute(absl::string_view address) {
+    const std::array<absl::string_view, 1> addresses = {address};
+    return MakeOverrideHostAttribute(addresses);
+  }
+
+  std::vector<std::string> string_storage_;
 };
 
 TEST_F(XdsOverrideHostTest, DelegatesToChild) {
@@ -461,6 +477,53 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
             kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]},
                         MakeOverrideHostAttribute(kAddresses[2]));
+}
+
+TEST_F(XdsOverrideHostTest, MultipleAddressesPerEndpoint) {
+  if (!IsRoundRobinDelegateToPickFirstEnabled()) return;
+  constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
+      "ipv4:127.0.0.1:445", "ipv4:127.0.0.1:446"};
+  constexpr std::array<absl::string_view, 2> kEndpoint3Addresses = {
+      "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
+  const std::array<EndpointAddresses, 3> kEndpoints = {
+      MakeEndpointAddresses(kEndpoint1Addresses),
+      MakeEndpointAddresses(kEndpoint2Addresses),
+      MakeEndpointAddresses(kEndpoint3Addresses)};
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kEndpoints, MakeXdsOverrideHostConfig()),
+                        lb_policy()),
+            absl::OkStatus());
+  auto picker = ExpectRoundRobinStartup(kEndpoints);
+  ASSERT_NE(picker, nullptr);
+  // Check that the host is overridden
+  auto endpoint1_attributes = MakeOverrideHostAttribute(kEndpoint1Addresses);
+  auto endpoint2_attributes = MakeOverrideHostAttribute(kEndpoint2Addresses);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), endpoint2_attributes),
+            kEndpoint2Addresses[0]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), endpoint2_attributes),
+            kEndpoint2Addresses[0]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), endpoint1_attributes),
+            kEndpoint1Addresses[0]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), endpoint1_attributes),
+            kEndpoint1Addresses[0]);
+  // Change endpoint 1 to connect to its second address.
+  ExpectEndpointAddressChange(kEndpoint1Addresses, 0, 1, [&]() {
+    WaitForRoundRobinListChange(
+        {kEndpoint1Addresses[0], kEndpoint2Addresses[0],
+         kEndpoint3Addresses[0]},
+        {kEndpoint2Addresses[0], kEndpoint3Addresses[0]});
+  });
+  WaitForRoundRobinListChange(
+      {kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
+      {kEndpoint1Addresses[1], kEndpoint2Addresses[0], kEndpoint3Addresses[0]});
+  // Now the cookie for endpoint 1 should cause us to use the second address.
+  EXPECT_EQ(ExpectPickComplete(picker.get(), endpoint1_attributes),
+            kEndpoint1Addresses[1]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), endpoint1_attributes),
+            kEndpoint1Addresses[1]);
+  EXPECT_EQ(ExpectPickComplete(picker.get(), endpoint1_attributes),
+            kEndpoint1Addresses[1]);
 }
 
 }  // namespace
