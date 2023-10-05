@@ -700,5 +700,43 @@ BasicFuzzer::Result BasicFuzzer::ExecuteAction(
   return BasicFuzzer::Result::kComplete;
 }
 
+void BasicFuzzer::TryShutdown() {
+  engine()->FuzzingDone();
+  if (channel() != nullptr) {
+    DestroyChannel();
+  }
+  if (server() != nullptr) {
+    if (!server_shutdown_called()) {
+      ShutdownServer();
+    }
+    if (server_finished_shutting_down()) {
+      DestroyServer();
+    }
+  }
+  ShutdownCalls();
+
+  grpc_timer_manager_tick();
+  GPR_ASSERT(PollCq() == Result::kPending);
+}
+
+void BasicFuzzer::Run(absl::Span<const api_fuzzer::Action* const> actions) {
+  int action_index = 0;
+  auto no_more_actions = [&]() { action_index = actions.size(); };
+
+  while (action_index < actions.size() || Continue()) {
+    Tick();
+
+    if (action_index == actions.size()) {
+      TryShutdown();
+      continue;
+    }
+
+    auto result = ExecuteAction(*actions[action_index++]);
+    if (result == Result::kFailed) {
+      no_more_actions();
+    }
+  }
+}
+
 }  // namespace testing
 }  // namespace grpc_core

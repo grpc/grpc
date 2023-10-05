@@ -232,7 +232,6 @@ class ApiFuzzer : public BasicFuzzer {
   explicit ApiFuzzer(const fuzzing_event_engine::Actions& actions);
   ~ApiFuzzer();
   bool Continue() override;
-  void TryShutdown();
   void Tick() override;
   grpc_server* Server() { return server_; }
 
@@ -243,6 +242,7 @@ class ApiFuzzer : public BasicFuzzer {
   Result CloseChannel() override;
   Result CreateServer(const api_fuzzer::CreateServer& create_server) override;
   void DestroyServer() override;
+  void DestroyChannel() override;
 
   grpc_server* server() override { return server_; }
   grpc_channel* channel() override { return channel_; }
@@ -404,27 +404,6 @@ bool ApiFuzzer::Continue() {
   return channel_ != nullptr || server_ != nullptr || BasicFuzzer::Continue();
 }
 
-void ApiFuzzer::TryShutdown() {
-  engine()->FuzzingDone();
-  if (channel_ != nullptr) {
-    grpc_channel_destroy(channel_);
-    channel_ = nullptr;
-  }
-  if (server_ != nullptr) {
-    if (!server_shutdown_called()) {
-      ShutdownServer();
-    }
-    if (server_finished_shutting_down()) {
-      grpc_server_destroy(server_);
-      server_ = nullptr;
-    }
-  }
-  ShutdownCalls();
-
-  grpc_timer_manager_tick();
-  GPR_ASSERT(PollCq() == Result::kPending);
-}
-
 ApiFuzzer::~ApiFuzzer() {
   GPR_ASSERT(channel_ == nullptr);
   GPR_ASSERT(server_ == nullptr);
@@ -494,6 +473,11 @@ void ApiFuzzer::DestroyServer() {
   server_ = nullptr;
 }
 
+void ApiFuzzer::DestroyChannel() {
+  grpc_channel_destroy(channel_);
+  channel_ = nullptr;
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
@@ -505,22 +489,5 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-
-  ApiFuzzer api_fuzzer(msg.event_engine_actions());
-  int action_index = 0;
-  auto no_more_actions = [&]() { action_index = msg.actions_size(); };
-
-  while (action_index < msg.actions_size() || api_fuzzer.Continue()) {
-    api_fuzzer.Tick();
-
-    if (action_index == msg.actions_size()) {
-      api_fuzzer.TryShutdown();
-      continue;
-    }
-
-    auto result = api_fuzzer.ExecuteAction(msg.actions(action_index++));
-    if (result == ApiFuzzer::Result::kFailed) {
-      no_more_actions();
-    }
-  }
+  ApiFuzzer(msg.event_engine_actions()).Run(msg.actions());
 }

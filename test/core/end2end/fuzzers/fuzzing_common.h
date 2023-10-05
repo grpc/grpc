@@ -81,6 +81,8 @@ class BasicFuzzer {
   virtual bool Continue();
   virtual void Tick();
 
+  void Run(absl::Span<const api_fuzzer::Action* const> actions);
+
  protected:
   ~BasicFuzzer();
 
@@ -159,9 +161,12 @@ class BasicFuzzer {
   // Change the resource quota limits.
   Result ResizeResourceQuota(uint32_t resize_resource_quota);
 
+  void TryShutdown();
+
   virtual grpc_server* server() = 0;
   virtual grpc_channel* channel() = 0;
   virtual void DestroyServer() = 0;
+  virtual void DestroyChannel() = 0;
 
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> engine_;
   grpc_completion_queue* cq_;
