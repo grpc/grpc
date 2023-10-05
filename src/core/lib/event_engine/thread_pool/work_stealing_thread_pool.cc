@@ -25,6 +25,7 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <ratio>
 #include <utility>
 
 #include "absl/time/clock.h"

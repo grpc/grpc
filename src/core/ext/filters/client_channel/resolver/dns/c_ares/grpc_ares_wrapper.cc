@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
-#include <initializer_list>
 #include <vector>
 
 #include "absl/strings/string_view.h"

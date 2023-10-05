@@ -20,7 +20,6 @@
 
 #include "src/core/lib/config/config_vars.h"
 
-#include <algorithm>
 #include <vector>
 
 #include "absl/flags/flag.h"

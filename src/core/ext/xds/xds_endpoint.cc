@@ -27,6 +27,7 @@
 #include <set>
 #include <vector>
 
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"

@@ -24,7 +24,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <new>
 #include <string>
 #include <utility>

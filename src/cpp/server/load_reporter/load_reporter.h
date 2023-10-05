@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <deque>
 #include <memory>
+#include <ratio>
 #include <string>
 #include <unordered_map>
 #include <utility>

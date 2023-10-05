@@ -15,6 +15,7 @@
 //
 
 #include <array>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"

@@ -14,6 +14,8 @@
 
 #include "src/core/lib/promise/race.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/poll.h"

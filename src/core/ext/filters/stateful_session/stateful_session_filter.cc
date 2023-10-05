@@ -37,7 +37,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
@@ -50,7 +49,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"

@@ -14,8 +14,6 @@
 
 #include <stdint.h>
 
-#include <string>
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>

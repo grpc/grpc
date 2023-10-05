@@ -2339,7 +2339,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3147,7 +3146,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
@@ -3566,7 +3564,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3598,7 +3595,6 @@ grpc_cc_library(
         "//src/core:map",
         "//src/core:percent_encoding",
         "//src/core:pipe",
-        "//src/core:poll",
         "//src/core:prioritized_race",
         "//src/core:race",
         "//src/core:slice",
@@ -3980,7 +3976,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/hash",
-        "absl/meta:type_traits",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",

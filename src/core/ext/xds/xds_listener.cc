@@ -20,7 +20,6 @@
 
 #include <stdint.h>
 
-#include <initializer_list>
 #include <set>
 #include <utility>
 
@@ -37,7 +36,6 @@
 #include "envoy/config/listener/v3/listener.upb.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/listener/v3/listener_components.upb.h"
-#include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
@@ -45,7 +43,6 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/base/string_view.h"
 #include "upb/text/encode.h"
 
 #include <grpc/support/log.h>
@@ -60,6 +57,7 @@
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 

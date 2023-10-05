@@ -196,6 +196,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/strings:str_format",

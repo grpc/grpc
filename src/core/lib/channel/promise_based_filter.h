@@ -25,7 +25,6 @@
 #include <stdlib.h>
 
 #include <atomic>
-#include <initializer_list>
 #include <memory>
 #include <new>
 #include <string>

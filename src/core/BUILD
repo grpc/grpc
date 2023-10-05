@@ -414,7 +414,6 @@ grpc_cc_library(
         "try_seq",
         "//:gpr",
         "//:gpr_platform",
-        "//:grpc_trace",
     ],
 )
 
@@ -443,7 +442,6 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
-        "//:grpc_trace",
         "//:ref_counted_ptr",
     ],
 )
@@ -633,7 +631,6 @@ grpc_cc_library(
         "promise_trace",
         "//:gpr",
         "//:gpr_platform",
-        "//:grpc_trace",
     ],
 )
 
@@ -706,7 +703,6 @@ grpc_cc_library(
         "promise_like",
         "promise_trace",
         "//:gpr",
-        "//:grpc_trace",
     ],
 )
 
@@ -833,7 +829,6 @@ grpc_cc_library(
         "poll",
         "promise_trace",
         "//:gpr",
-        "//:grpc_trace",
     ],
 )
 
@@ -856,7 +851,6 @@ grpc_cc_library(
         "promise_trace",
         "//:debug_location",
         "//:gpr",
-        "//:grpc_trace",
     ],
 )
 
@@ -883,7 +877,6 @@ grpc_cc_library(
         "seq",
         "//:debug_location",
         "//:gpr",
-        "//:grpc_trace",
         "//:ref_counted_ptr",
     ],
 )
@@ -955,7 +948,6 @@ grpc_cc_library(
         "promise_trace",
         "//:gpr",
         "//:gpr_platform",
-        "//:grpc_trace",
     ],
 )
 
@@ -1048,7 +1040,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
-        "absl/strings",
         "absl/types:optional",
     ],
     language = "c++",
@@ -1904,7 +1895,6 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/hash",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2050,7 +2040,6 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/hash",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3716,6 +3705,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -3852,7 +3842,6 @@ grpc_cc_library(
         "json_args",
         "json_object_loader",
         "latch",
-        "poll",
         "race",
         "service_config_parser",
         "slice",
@@ -3881,6 +3870,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -3983,7 +3973,6 @@ grpc_cc_library(
         "json_object_loader",
         "map",
         "pipe",
-        "poll",
         "service_config_parser",
         "slice",
         "time",
@@ -4014,7 +4003,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4046,7 +4034,6 @@ grpc_cc_library(
         "lb_policy_registry",
         "map",
         "pipe",
-        "poll",
         "pollset_set",
         "ref_counted",
         "resolved_address",
@@ -4922,6 +4909,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
     ],
     external_deps = [
+        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -4974,6 +4962,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -5039,6 +5028,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
     ],
     external_deps = [
+        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -5100,6 +5090,7 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
+        "ref_counted_string",
         "time",
         "validation_errors",
         "//:channel_arg_names",
@@ -5124,6 +5115,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -5220,7 +5212,7 @@ grpc_cc_library(
         "//:src/cpp/server/load_reporter/constants.h",
     ],
     external_deps = [
-        "absl/meta:type_traits",
+        "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5321,6 +5313,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:server_address",
         "//:uri_parser",
         "//:work_serializer",
     ],
@@ -6019,7 +6012,6 @@ grpc_cc_library(
         "logging_sink",
         "map",
         "pipe",
-        "poll",
         "slice",
         "slice_buffer",
         "time",

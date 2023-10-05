@@ -18,7 +18,6 @@
 
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
-#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
 #include "src/core/lib/slice/slice.h"

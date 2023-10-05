@@ -28,7 +28,6 @@
 
 #include <algorithm>
 #include <deque>
-#include <initializer_list>
 #include <list>
 #include <map>
 #include <memory>
@@ -94,7 +93,6 @@
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"

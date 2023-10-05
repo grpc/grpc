@@ -18,8 +18,6 @@
 
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 
-#include <string>
-
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>

@@ -22,11 +22,9 @@
 
 #include <functional>
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "absl/base/attributes.h"
-#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -39,7 +37,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"

@@ -17,7 +17,6 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 
 #include <algorithm>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
