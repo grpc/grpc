@@ -154,6 +154,10 @@ void ScheduleReads(
                                           SliceFromSegment(segment));
             });
       }
+      event_engine->RunAfterExactly(
+          std::chrono::milliseconds(delay_ms + 1), [mock_endpoint] {
+            grpc_mock_endpoint_finish_put_reads(mock_endpoint);
+          });
     } break;
     case fuzzer_input::NetworkInput::VALUE_NOT_SET:
       break;

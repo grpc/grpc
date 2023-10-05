@@ -39,6 +39,8 @@ typedef struct mock_endpoint {
   grpc_slice_buffer read_buffer;
   grpc_slice_buffer* on_read_out;
   grpc_closure* on_read;
+  bool put_reads_done;
+  bool destroyed;
 } mock_endpoint;
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
@@ -86,11 +88,26 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   gpr_mu_unlock(&m->mu);
 }
 
-static void me_destroy(grpc_endpoint* ep) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
+static void destroy(mock_endpoint* m) {
   grpc_slice_buffer_destroy(&m->read_buffer);
   gpr_mu_destroy(&m->mu);
   gpr_free(m);
+}
+
+static void me_destroy(grpc_endpoint* ep) {
+  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
+  m->destroyed = true;
+  if (m->put_reads_done) {
+    destroy(m);
+  }
+}
+
+void grpc_mock_endpoint_finish_put_reads(grpc_endpoint* ep) {
+  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
+  m->put_reads_done = true;
+  if (m->destroyed) {
+    destroy(m);
+  }
 }
 
 static absl::string_view me_get_peer(grpc_endpoint* /*ep*/) {
@@ -124,12 +141,14 @@ grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice)) {
   gpr_mu_init(&m->mu);
   m->on_write = on_write;
   m->on_read = nullptr;
+  m->put_reads_done = false;
   return &m->base;
 }
 
 void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
+  GPR_ASSERT(!m->put_reads_done);
   if (m->on_read != nullptr) {
     grpc_slice_buffer_add(m->on_read_out, slice);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read, absl::OkStatus());
