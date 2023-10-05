@@ -37,6 +37,9 @@
 
 #define CRL_PATH "test/core/tsi/test_creds/crl_data/crls/ab06acdd.r0"
 #define CRL_ISSUER "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca"
+#define CRL_INTERMEDIATE_PATH \
+  "test/core/tsi/test_creds/crl_data/crls/intermediate.crl"
+#define CRL_INTERMEDIATE_ISSUER "/CN=intermediatecert.example.com"
 
 namespace grpc_core {
 namespace testing {
@@ -90,12 +93,35 @@ TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
   ASSERT_EQ(crl, nullptr);
 }
 
-TEST(CrlProviderTest, DirectoryReloaderCrl) {
+TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
   auto result = experimental::DirectoryReloaderCrlProvider::
       CreateDirectoryReloaderProvider(kCrlDirectory, std::chrono::seconds(1),
                                       nullptr);
   ASSERT_TRUE(result.ok());
-  sleep(5);
+  std::shared_ptr<CrlProvider> provider = std::move(*result);
+
+  CertificateInfoImpl cert = CertificateInfoImpl(CRL_ISSUER);
+  auto crl = provider->GetCrl(cert);
+  ASSERT_NE(crl, nullptr);
+  ASSERT_EQ(crl->Issuer(), CRL_ISSUER);
+
+  CertificateInfoImpl intermediate =
+      CertificateInfoImpl(CRL_INTERMEDIATE_ISSUER);
+  auto intermediate_crl = provider->GetCrl(intermediate);
+  ASSERT_NE(intermediate_crl, nullptr);
+  ASSERT_EQ(intermediate_crl->Issuer(), CRL_INTERMEDIATE_ISSUER);
+}
+
+TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
+  auto result = experimental::DirectoryReloaderCrlProvider::
+      CreateDirectoryReloaderProvider(kCrlDirectory, std::chrono::seconds(1),
+                                      nullptr);
+  ASSERT_TRUE(result.ok());
+  std::shared_ptr<CrlProvider> provider = std::move(*result);
+
+  CertificateInfoImpl bad_cert = CertificateInfoImpl("BAD CERT");
+  auto crl = provider->GetCrl(bad_cert);
+  ASSERT_EQ(crl, nullptr);
 }
 
 }  // namespace testing

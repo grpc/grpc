@@ -566,6 +566,9 @@ grpc_cc_test(
     srcs = ["grpc_tls_crl_provider_test.cc"],
     data = [
         "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:current.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
     ],
     external_deps = ["gtest"],
     language = "C++",

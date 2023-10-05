@@ -231,6 +231,8 @@ DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
   auto provider = std::make_shared<DirectoryReloaderCrlProviderImpl>(
       directory, refresh_duration, reload_error_callback);
   gpr_event_init(&provider->shutdown_event_);
+  absl::Status initial_status = provider->Update();
+  // Return for bad initial status?
   provider->ScheduleReload();
   return provider;
 }
