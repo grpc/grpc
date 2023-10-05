@@ -1233,9 +1233,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Expects zero or more picker updates, each of which returns
   // round-robin picks for the specified set of addresses.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-  DrainRoundRobinPickerUpdates(
-      absl::Span<const absl::string_view> addresses,
-      SourceLocation location = SourceLocation()) {
+  DrainRoundRobinPickerUpdates(absl::Span<const absl::string_view> addresses,
+                               SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Draining RR picker updates...");
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     while (!helper_->QueueEmpty()) {

@@ -5206,6 +5206,7 @@ grpc_cc_library(
         "lb_policy_registry",
         "match",
         "pollset_set",
+        "ref_counted_string",
         "resolved_address",
         "subchannel_interface",
         "validation_errors",

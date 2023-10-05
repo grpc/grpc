@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <stddef.h>
+
 #include <algorithm>
 #include <array>
 #include <memory>
@@ -23,9 +25,12 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "absl/types/optional.h"
 #include "absl/types/span.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -36,6 +41,7 @@
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
@@ -474,11 +480,11 @@ TEST_F(XdsOverrideHostTest, MultipleAddressesPerEndpoint) {
   ASSERT_NE(picker, nullptr);
   // Check that the host is overridden.
   auto* endpoint1_attribute = MakeOverrideHostAttribute(kEndpoint1Addresses);
-  ExpectOverridePicks(picker.get(), endpoint1_attribute,
-                      kEndpoint1Addresses[0], kEndpoint1Addresses);
+  ExpectOverridePicks(picker.get(), endpoint1_attribute, kEndpoint1Addresses[0],
+                      kEndpoint1Addresses);
   auto* endpoint2_attribute = MakeOverrideHostAttribute(kEndpoint2Addresses);
-  ExpectOverridePicks(picker.get(), endpoint2_attribute,
-                      kEndpoint2Addresses[0], kEndpoint2Addresses);
+  ExpectOverridePicks(picker.get(), endpoint2_attribute, kEndpoint2Addresses[0],
+                      kEndpoint2Addresses);
   // Change endpoint 1 to connect to its second address.
   ExpectEndpointAddressChange(kEndpoint1Addresses, 0, 1, [&]() {
     WaitForRoundRobinListChange(

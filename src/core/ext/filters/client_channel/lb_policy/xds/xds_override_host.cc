@@ -20,7 +20,6 @@
 
 #include <inttypes.h>
 #include <stddef.h>
-#include <string.h>
 
 #include <algorithm>
 #include <atomic>
@@ -61,6 +60,7 @@
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -199,9 +199,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return Match(
           subchannel_,
           [](WeakRefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
-                 subchannel) {
-            return subchannel.get();
-          },
+                 subchannel) { return subchannel.get(); },
           [](RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper> subchannel) {
             return subchannel.get();
           });
@@ -688,7 +686,7 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
                 "[xds_override_host_lb %p] setting address list for %s to %s",
                 this, address.c_str(), address_info.address_list.c_str());
       }
-      it->second.set_address_list(std::move(address_info.address_list));
+      it->second.set_address_list(address_info.address_list);
     }
   }
   return child_addresses;
