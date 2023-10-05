@@ -21,12 +21,10 @@
 #include <chrono>
 #include <sstream>
 
-#include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
-#include "absl/strings/str_split.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -386,11 +384,9 @@ TEST_F(GrpcToolTest, ListCommand) {
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  EXPECT_THAT(absl::StrSplit(output_stream.str(), "\n"),
-              ::testing::UnorderedElementsAre(
-                  "grpc.testing.EchoTestService",
-                  "grpc.reflection.v1alpha.ServerReflection",
-                  "grpc.reflection.v1.ServerReflection", ""));
+  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
+                          "grpc.testing.EchoTestService\n"
+                          "grpc.reflection.v1alpha.ServerReflection\n"));
 
   ShutdownServer();
 }
@@ -1399,11 +1395,9 @@ TEST_F(GrpcToolTest, ListCommandOverrideSslHostName) {
       0 == GrpcToolMainLib(
                ArraySize(argv), argv, TestCliCredentials(true),
                std::bind(PrintStream, &output_stream, std::placeholders::_1)));
-  EXPECT_THAT(
-      absl::StrSplit(output_stream.str(), '\n'),
-      ::testing::UnorderedElementsAre(
-          "grpc.testing.EchoTestService", "grpc.reflection.v1.ServerReflection",
-          "grpc.reflection.v1alpha.ServerReflection", ""));
+  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
+                          "grpc.testing.EchoTestService\n"
+                          "grpc.reflection.v1alpha.ServerReflection\n"));
 
   absl::SetFlag(&FLAGS_channel_creds_type, "");
   absl::SetFlag(&FLAGS_ssl_target, "");
@@ -1426,11 +1420,9 @@ TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
   absl::SetFlag(&FLAGS_default_service_config, "");
-  EXPECT_THAT(
-      absl::StrSplit(output_stream.str().c_str(), '\n'),
-      ::testing::UnorderedElementsAre(
-          "grpc.testing.EchoTestService", "grpc.reflection.v1.ServerReflection",
-          "grpc.reflection.v1alpha.ServerReflection", ""));
+  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
+                          "grpc.testing.EchoTestService\n"
+                          "grpc.reflection.v1alpha.ServerReflection\n"));
   ShutdownServer();
 }
 

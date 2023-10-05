@@ -1842,7 +1842,6 @@
         'grpc++',
       ],
       'sources': [
-        'src/proto/grpc/reflection/v1/reflection.proto',
         'src/proto/grpc/reflection/v1alpha/reflection.proto',
         'src/cpp/ext/proto_server_reflection.cc',
         'src/cpp/ext/proto_server_reflection_plugin.cc',
