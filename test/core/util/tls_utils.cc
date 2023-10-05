@@ -34,7 +34,13 @@ namespace grpc_core {
 
 namespace testing {
 
-TmpFile::TmpFile(absl::string_view data) {
+TmpFile::TmpFile(absl::string_view data) : TmpFile(data, "test") {
+  name_ = CreateTmpFileAndWriteData(data);
+  GPR_ASSERT(!name_.empty());
+}
+
+TmpFile::TmpFile(absl::string_view data, absl::string_view prefix)
+    : prefix_(prefix) {
   name_ = CreateTmpFileAndWriteData(data);
   GPR_ASSERT(!name_.empty());
 }
@@ -58,7 +64,7 @@ void TmpFile::RewriteFile(absl::string_view data) {
 
 std::string TmpFile::CreateTmpFileAndWriteData(absl::string_view data) {
   char* name = nullptr;
-  FILE* file_descriptor = gpr_tmpfile("test", &name);
+  FILE* file_descriptor = gpr_tmpfile(prefix_.c_str(), &name);
   GPR_ASSERT(fwrite(data.data(), 1, data.size(), file_descriptor) ==
              data.size());
   GPR_ASSERT(fclose(file_descriptor) == 0);

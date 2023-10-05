@@ -232,7 +232,7 @@ DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
       directory, refresh_duration, reload_error_callback);
   gpr_event_init(&provider->shutdown_event_);
   absl::Status initial_status = provider->Update();
-  // Return for bad initial status?
+  // TODO(gtcooke94) Return for bad initial status?
   provider->ScheduleReload();
   return provider;
 }

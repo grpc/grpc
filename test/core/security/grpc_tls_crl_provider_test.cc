@@ -20,7 +20,13 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
+#include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #include <chrono>
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
@@ -28,6 +34,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/str_split.h"
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_crl_provider.h>
@@ -45,6 +52,8 @@ namespace grpc_core {
 namespace testing {
 
 const std::string kCrlDirectory = "test/core/tsi/test_creds/crl_data/crls";
+const std::string kCrlDynamicDirectory =
+    "test/core/tsi/test_creds/crl_data/crl_provider_test_dir";
 
 using ::grpc_core::experimental::CertificateInfoImpl;
 using ::grpc_core::experimental::Crl;
@@ -122,6 +131,44 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
   CertificateInfoImpl bad_cert = CertificateInfoImpl("BAD CERT");
   auto crl = provider->GetCrl(bad_cert);
   ASSERT_EQ(crl, nullptr);
+}
+
+TEST(CrlProviderTest, DirectoryReloaderReloads) {
+  char templ[] = "/tmp/tmpdir.XXXXXX";
+  std::string dir_path = mkdtemp(templ);
+  gpr_log(GPR_ERROR, "GREG: dir_path %s", dir_path.c_str());
+  std::vector<std::string> split = absl::StrSplit(dir_path, "/");
+  std::string dir_name = split[2] + "/";
+  gpr_log(GPR_ERROR, "GREG: dir_name %s", dir_name.c_str());
+
+  auto result = experimental::DirectoryReloaderCrlProvider::
+      CreateDirectoryReloaderProvider(dir_path, std::chrono::seconds(1),
+                                      nullptr);
+  ASSERT_TRUE(result.ok());
+  std::shared_ptr<CrlProvider> provider = std::move(*result);
+  CertificateInfoImpl cert = CertificateInfoImpl(CRL_ISSUER);
+  auto should_be_no_crl = provider->GetCrl(cert);
+  ASSERT_EQ(should_be_no_crl, nullptr);
+
+  {
+    std::string raw_crl = GetFileContents(CRL_PATH);
+    TmpFile tmp_crl(raw_crl, dir_name);
+    gpr_log(GPR_ERROR, "GREG tmpfile name: %s", tmp_crl.name().c_str());
+    sleep(2);
+    auto crl = provider->GetCrl(cert);
+    ASSERT_NE(crl, nullptr);
+    ASSERT_EQ(crl->Issuer(), CRL_ISSUER);
+  }
+
+  // After this provider shouldn't give a CRL, because everything should be read
+  // cleanly and there is no CRL because TmpFile went out of scope and was
+  // deleted
+  // TODO(gtcooke94) Enable after implementing this behavior on reload
+  // sleep(2);
+  // auto crl_should_be_deleted = provider->GetCrl(cert);
+  // ASSERT_EQ(crl_should_be_deleted, nullptr);
+
+  rmdir(dir_path.c_str());
 }
 
 }  // namespace testing

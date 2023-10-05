@@ -40,6 +40,7 @@ class TmpFile {
  public:
   // Create a temporary file with |data| written in.
   explicit TmpFile(absl::string_view data);
+  TmpFile(absl::string_view data, absl::string_view prefix);
 
   ~TmpFile();
 
@@ -52,6 +53,7 @@ class TmpFile {
   std::string CreateTmpFileAndWriteData(absl::string_view data);
 
   std::string name_;
+  std::string prefix_;
 };
 
 PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
