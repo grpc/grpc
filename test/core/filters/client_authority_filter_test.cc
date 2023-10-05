@@ -21,7 +21,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 
 #include "test/core/filters/filter_test.h"

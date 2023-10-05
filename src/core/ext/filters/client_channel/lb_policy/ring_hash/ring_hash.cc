@@ -38,6 +38,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include "src/core/lib/iomgr/resolved_address.h"
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 

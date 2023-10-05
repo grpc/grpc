@@ -115,7 +115,6 @@ grpc_cc_test(
     deps = [
         "filter_test",
         "//:channel_arg_names",
-        "//:grpc",
         "//src/core:grpc_client_authority_filter",
     ],
 )

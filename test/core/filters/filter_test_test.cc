@@ -24,7 +24,6 @@
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
-#include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"

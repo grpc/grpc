@@ -48,6 +48,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
