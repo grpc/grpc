@@ -617,7 +617,8 @@ void BasicFuzzer::ShutdownCalls() {
 }
 
 bool BasicFuzzer::Continue() {
-  return pending_channel_watches_ > 0 || pending_pings_ > 0 ||
+  return channel() != nullptr || server() != nullptr ||
+         pending_channel_watches_ > 0 || pending_pings_ > 0 ||
          ActiveCall() != nullptr;
 }
 

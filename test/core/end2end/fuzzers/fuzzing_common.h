@@ -78,7 +78,7 @@ class BasicFuzzer {
   virtual Result ExecuteAction(const api_fuzzer::Action& action);
   Call* ActiveCall();
 
-  virtual bool Continue();
+  bool Continue();
   virtual void Tick();
 
   void Run(absl::Span<const api_fuzzer::Action* const> actions);

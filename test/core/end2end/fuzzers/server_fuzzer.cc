@@ -67,7 +67,7 @@ namespace testing {
 
 class ServerFuzzer : public BasicFuzzer {
  public:
-  ServerFuzzer(const fuzzer_input::Msg& msg)
+  explicit ServerFuzzer(const fuzzer_input::Msg& msg)
       : BasicFuzzer(msg.event_engine_actions()) {
     ExecCtx exec_ctx;
     ScheduleReads(msg.network_input(), mock_endpoint_, engine());
@@ -85,6 +85,8 @@ class ServerFuzzer : public BasicFuzzer {
                               transport, nullptr, channel_args, nullptr)));
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   }
+
+  ~ServerFuzzer() { GPR_ASSERT(server_ == nullptr); }
 
  private:
   Result CreateChannel(

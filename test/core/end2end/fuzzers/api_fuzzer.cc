@@ -231,7 +231,6 @@ class ApiFuzzer : public BasicFuzzer {
  public:
   explicit ApiFuzzer(const fuzzing_event_engine::Actions& actions);
   ~ApiFuzzer();
-  bool Continue() override;
   void Tick() override;
   grpc_server* Server() { return server_; }
 
@@ -398,10 +397,6 @@ ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
 
   GPR_ASSERT(channel_ == nullptr);
   GPR_ASSERT(server_ == nullptr);
-}
-
-bool ApiFuzzer::Continue() {
-  return channel_ != nullptr || server_ != nullptr || BasicFuzzer::Continue();
 }
 
 ApiFuzzer::~ApiFuzzer() {
