@@ -113,6 +113,7 @@ grpc_proto_fuzzer(
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
+        "//test/core/util:fuzz_config_vars",
     ],
 )
 
@@ -134,6 +135,5 @@ grpc_proto_fuzzer(
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
         "//test/core/util:fuzz_config_vars",
-        "//test/core/util:fuzzing_channel_args",
     ],
 )
