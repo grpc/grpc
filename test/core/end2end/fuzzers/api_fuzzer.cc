@@ -739,7 +739,7 @@ int force_experiments = []() {
   grpc_core::ForceEnableExperiment("event_engine_listener", true);
   return 1;
 }();
-}
+}  // namespace
 
 ApiFuzzer::ApiFuzzer()
     : engine_(std::dynamic_pointer_cast<FuzzingEventEngine>(
@@ -850,7 +850,7 @@ ApiFuzzer::Result ApiFuzzer::PollCq() {
 }
 ApiFuzzer::Result ApiFuzzer::CreateChannel(
     const api_fuzzer::CreateChannel& create_channel) {
-  if (channel_ == nullptr) return Result::kComplete;
+  if (channel_ != nullptr) return Result::kComplete;
   // ExecCtx is needed for ChannelArgs destruction.
   grpc_core::ExecCtx exec_ctx;
   grpc_core::testing::FuzzingEnvironment fuzzing_env;
