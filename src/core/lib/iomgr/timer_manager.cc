@@ -41,6 +41,8 @@ extern grpc_core::TraceFlag grpc_timer_check_trace;
 static gpr_mu g_mu;
 // are we multi-threaded
 static bool g_threaded;
+// should we start multi-threaded
+static bool g_start_threaded = true;
 // cv to wait until a thread is needed
 static gpr_cv g_cv_wait;
 // cv for notification when threading ends
@@ -309,7 +311,7 @@ void grpc_timer_manager_init(void) {
   g_has_timed_waiter = false;
   g_timed_waiter_deadline = grpc_core::Timestamp::InfFuture();
 
-  start_threads();
+  if (g_start_threaded) start_threads();
 }
 
 static void stop_threads(void) {
@@ -349,6 +351,10 @@ void grpc_timer_manager_set_threading(bool enabled) {
   } else {
     stop_threads();
   }
+}
+
+void grpc_timer_manager_set_start_threaded(bool enabled) {
+  g_start_threaded = enabled;
 }
 
 void grpc_kick_poller(void) {

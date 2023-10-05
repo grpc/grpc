@@ -118,6 +118,9 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_multiping =
+    "Allow more than one ping to be in flight at a time by default.";
+const char* const additional_constraints_multiping = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
@@ -126,6 +129,10 @@ const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
+    "{}";
+const char* const description_work_serializer_clears_time_cache =
+    "Have the work serializer clear the time cache when it dispatches work.";
+const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
@@ -193,6 +200,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"multiping", description_multiping, additional_constraints_multiping,
+     false, true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
@@ -200,6 +209,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"work_serializer_clears_time_cache",
+     description_work_serializer_clears_time_cache,
+     additional_constraints_work_serializer_clears_time_cache, true, true},
 };
 
 }  // namespace grpc_core
@@ -302,6 +314,9 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_multiping =
+    "Allow more than one ping to be in flight at a time by default.";
+const char* const additional_constraints_multiping = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
@@ -310,6 +325,10 @@ const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
+    "{}";
+const char* const description_work_serializer_clears_time_cache =
+    "Have the work serializer clear the time cache when it dispatches work.";
+const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
@@ -377,6 +396,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"multiping", description_multiping, additional_constraints_multiping,
+     false, true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
@@ -384,6 +405,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"work_serializer_clears_time_cache",
+     description_work_serializer_clears_time_cache,
+     additional_constraints_work_serializer_clears_time_cache, true, true},
 };
 
 }  // namespace grpc_core
@@ -486,6 +510,9 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_multiping =
+    "Allow more than one ping to be in flight at a time by default.";
+const char* const additional_constraints_multiping = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
@@ -494,6 +521,10 @@ const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
+    "{}";
+const char* const description_work_serializer_clears_time_cache =
+    "Have the work serializer clear the time cache when it dispatches work.";
+const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
@@ -561,6 +592,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"multiping", description_multiping, additional_constraints_multiping,
+     false, true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
@@ -568,6 +601,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"work_serializer_clears_time_cache",
+     description_work_serializer_clears_time_cache,
+     additional_constraints_work_serializer_clears_time_cache, true, true},
 };
 
 }  // namespace grpc_core

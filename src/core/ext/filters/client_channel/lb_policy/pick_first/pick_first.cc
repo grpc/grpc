@@ -61,7 +61,7 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -198,8 +198,8 @@ class PickFirst : public LoadBalancingPolicy {
       absl::Status connectivity_status_;
     };
 
-    SubchannelList(RefCountedPtr<PickFirst> policy, ServerAddressList addresses,
-                   const ChannelArgs& args);
+    SubchannelList(RefCountedPtr<PickFirst> policy,
+                   EndpointAddressesList addresses, const ChannelArgs& args);
 
     ~SubchannelList() override;
 
@@ -383,7 +383,7 @@ void PickFirst::ResetBackoffLocked() {
 
 void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // Create a subchannel list from latest_update_args_.
-  ServerAddressList addresses;
+  EndpointAddressesList addresses;
   if (latest_update_args_.addresses.ok()) {
     addresses = *latest_update_args_.addresses;
   }
@@ -439,10 +439,19 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   } else if (args.addresses->empty()) {
     status = absl::UnavailableError("address list must not be empty");
   } else {
+    // Shuffle the list if needed.
     auto config = static_cast<PickFirstConfig*>(args.config.get());
     if (config->shuffle_addresses()) {
       absl::c_shuffle(*args.addresses, bit_gen_);
     }
+    // Flatten the list so that we have one address per endpoint.
+    EndpointAddressesList endpoints;
+    for (const auto& endpoint : *args.addresses) {
+      for (const auto& address : endpoint.addresses()) {
+        endpoints.emplace_back(address, endpoint.args());
+      }
+    }
+    args.addresses = std::move(endpoints);
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
@@ -942,7 +951,7 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
 //
 
 PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
-                                          ServerAddressList addresses,
+                                          EndpointAddressesList addresses,
                                           const ChannelArgs& args)
     : InternallyRefCounted<SubchannelList>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) ? "SubchannelList"
@@ -959,9 +968,11 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
   }
   subchannels_.reserve(addresses.size());
   // Create a subchannel for each address.
-  for (const ServerAddress& address : addresses) {
+  for (const EndpointAddresses& address : addresses) {
+    GPR_ASSERT(address.addresses().size() == 1);
     RefCountedPtr<SubchannelInterface> subchannel =
-        policy_->channel_control_helper()->CreateSubchannel(address, args_);
+        policy_->channel_control_helper()->CreateSubchannel(
+            address.address(), address.args(), args_);
     if (subchannel == nullptr) {
       // Subchannel could not be created.
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
