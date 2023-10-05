@@ -21,9 +21,9 @@ import traceback
 import unittest
 from xml.etree import ElementTree
 
-from tests import _loader
-
 import coverage
+
+from tests import _loader
 
 
 class CaseResult(
