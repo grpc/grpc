@@ -349,7 +349,8 @@ class ProtocArtifact:
                 )
             else:
                 environ["CXXFLAGS"] += (
-                    " -std=c++14 -stdlib=libc++ -Wunguarded-availability %s" % _MACOS_COMPAT_FLAG
+                    " -std=c++14 -stdlib=libc++ -Wunguarded-availability %s" 
+                    % _MACOS_COMPAT_FLAG
                 )
                 environ["MACOSX_DEPLOYMENT_TARGET"] = _MACOS_COMPAT_ENV
                 return create_jobspec(
