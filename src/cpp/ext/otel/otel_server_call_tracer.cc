@@ -16,9 +16,10 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
 
-#include <grpc/support/port_platform.h>
 #include <array>
 #include <initializer_list>
 #include <memory>
@@ -35,8 +36,10 @@
 #include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -44,7 +47,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
-#include "src/core/lib/channel/tcp_tracer.h"
 
 namespace grpc {
 namespace internal {

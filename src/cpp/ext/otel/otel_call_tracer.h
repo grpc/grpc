@@ -20,8 +20,9 @@
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_CALL_TRACER_H
 
 #include <grpc/support/port_platform.h>
+
 #include <stdint.h>
-#include <grpc/support/time.h>
+
 #include <memory>
 #include <string>
 
@@ -29,7 +30,11 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+
+#include <grpc/support/time.h>
+
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -39,7 +44,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/otel/otel_client_filter.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
-#include "src/core/lib/channel/tcp_tracer.h"
 
 namespace grpc {
 namespace internal {
