@@ -389,6 +389,10 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
       if (connectivity_state == GRPC_CHANNEL_READY) {
         // Found a READY subchannel.  Pass back the actual address list
         // and return the subchannel.
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+          gpr_log(GPR_INFO, "Picker override found READY subchannel %s",
+                  std::string(address).c_str());
+        }
         override_host_attr->set_actual_address_list(it->second.address_list());
         return PickResult::Complete(subchannel->wrapped_subchannel());
       } else if (connectivity_state == GRPC_CHANNEL_IDLE) {
@@ -401,13 +405,21 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   // No READY subchannel found.  If we found an IDLE subchannel, trigger
   // a connection attempt and queue the pick until that attempt completes.
   if (idle_subchannel != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO, "Picker override found IDLE subchannel");
+    }
     // Deletes itself after the connection is requested.
     new SubchannelConnectionRequester(std::move(idle_subchannel));
     return PickResult::Queue();
   }
   // No READY or IDLE subchannels.  If we found a CONNECTING subchannel,
   // queue the pick and wait for the connection attempt to complete.
-  if (found_connecting) return PickResult::Queue();
+  if (found_connecting) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO, "Picker override found CONNECTING subchannel");
+    }
+    return PickResult::Queue();
+  }
   // No READY, IDLE, or CONNECTING subchannels found.
   return absl::nullopt;
 }
@@ -627,7 +639,7 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
       std::string end = absl::StrJoin(addresses_span.subspan(i + 1), ",");
       RefCountedStringValue address_list(
           absl::StrCat(addresses[i], (start.empty() ? "" : ","), start,
-                       (start.empty() || end.empty() ? "" : ","), end));
+                       (end.empty() ? "" : ","), end));
       addresses_for_map.emplace(
           std::piecewise_construct, std::forward_as_tuple(addresses[i]),
           std::forward_as_tuple(status, std::move(address_list)));
