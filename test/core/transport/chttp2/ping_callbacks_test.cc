@@ -54,6 +54,45 @@ TEST(PingCallbacksTest, OnPingAckRequestsPing) {
   EXPECT_TRUE(callbacks.ping_requested());
 }
 
+TEST(PingCallbacksTest, PingAckBeforeTimerStarted) {
+  StrictMock<MockEventEngine> event_engine;
+  absl::BitGen bitgen;
+  Chttp2PingCallbacks callbacks;
+  bool started = false;
+  bool acked = false;
+  EXPECT_FALSE(callbacks.ping_requested());
+  EXPECT_FALSE(callbacks.started_new_ping_without_setting_timeout());
+  // Request ping
+  callbacks.OnPing(
+      [&started] {
+        EXPECT_FALSE(started);
+        started = true;
+      },
+      [&acked] {
+        EXPECT_FALSE(acked);
+        acked = true;
+      });
+  EXPECT_TRUE(callbacks.ping_requested());
+  EXPECT_FALSE(callbacks.started_new_ping_without_setting_timeout());
+  EXPECT_EQ(callbacks.pings_inflight(), 0);
+  EXPECT_FALSE(started);
+  EXPECT_FALSE(acked);
+  auto id = callbacks.StartPing(bitgen);
+  EXPECT_TRUE(callbacks.started_new_ping_without_setting_timeout());
+  EXPECT_FALSE(callbacks.ping_requested());
+  EXPECT_EQ(callbacks.pings_inflight(), 1);
+  EXPECT_TRUE(started);
+  EXPECT_FALSE(acked);
+  callbacks.AckPing(id, &event_engine);
+  EXPECT_TRUE(callbacks.started_new_ping_without_setting_timeout());
+  EXPECT_FALSE(callbacks.ping_requested());
+  EXPECT_EQ(callbacks.pings_inflight(), 0);
+  EXPECT_TRUE(started);
+  EXPECT_TRUE(acked);
+  callbacks.OnPingTimeout(Duration::Milliseconds(1), &event_engine,
+                          [] { Crash("should never reach here"); });
+}
+
 TEST(PingCallbacksTest, PingRoundtrips) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
