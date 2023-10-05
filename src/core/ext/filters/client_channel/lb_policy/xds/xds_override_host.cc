@@ -657,7 +657,7 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
         ++it;
       }
     }
-    for (const auto& p : addresses_for_map) {
+    for (auto& p : addresses_for_map) {
       const auto& address = p.first;
       auto& address_info = p.second;
       auto it = subchannel_map_.find(address);
@@ -686,7 +686,7 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
                 "[xds_override_host_lb %p] setting address list for %s to %s",
                 this, address.c_str(), address_info.address_list.c_str());
       }
-      it->second.set_address_list(address_info.address_list);
+      it->second.set_address_list(std::move(address_info.address_list));
     }
   }
   return child_addresses;
