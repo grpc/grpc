@@ -25,7 +25,6 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 
-#include <filesystem>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -40,15 +39,11 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 namespace experimental {
-using ::absl::Mutex;
-using ::std::thread;
 
 namespace {
 std::string IssuerFromCrl(X509_CRL* crl) {
@@ -59,11 +54,6 @@ std::string IssuerFromCrl(X509_CRL* crl) {
   }
   OPENSSL_free(buf);
   return ret;
-}
-
-gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
-  return gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_time_from_seconds(seconds, GPR_TIMESPAN));
 }
 
 absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
