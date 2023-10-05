@@ -61,8 +61,8 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
   grpc_slice crl_slice = grpc_empty_slice();
   grpc_error_handle err = grpc_load_file(crl_path.data(), 1, &crl_slice);
   if (!err.ok()) {
+    // TODO(gtcooke94) log error differently?
     gpr_log(GPR_ERROR, "Error reading file %s", err.message().data());
-    // TODO(gtcooke94) log error
     return absl::InvalidArgumentError("Could not load file");
   }
   std::string raw_crl = std::string(StringViewFromSlice(crl_slice));
@@ -196,9 +196,7 @@ DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
 
 bool DirectoryReloaderCrlProviderImpl::OnNextUpdateTimer() {
   // absl::Status status = absl::OkStatus();
-  gpr_log(GPR_ERROR, "GREG: Before Update");
   absl::Status status = Update();
-  gpr_log(GPR_ERROR, "GREG: After Update");
   if (!status.ok()) {
     // TODO(gtcooke94) log here or just in the Update loop per file?
     // if (reload_error_callback_ != nullptr) {
@@ -211,21 +209,16 @@ bool DirectoryReloaderCrlProviderImpl::OnNextUpdateTimer() {
 
 void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
   std::weak_ptr<DirectoryReloaderCrlProviderImpl> self = shared_from_this();
-  gpr_log(GPR_ERROR, "GREG: in ScheduleReload");
   refresh_handle_ = event_engine_->RunAfter(refresh_duration_, [self]() {
-    gpr_log(GPR_ERROR, "GREG: In RunAfter closure");
     ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     {
       if (std::shared_ptr<DirectoryReloaderCrlProviderImpl> valid_ptr =
               self.lock()) {
-        valid_ptr->callback_count += 1;
-        gpr_log(GPR_ERROR, "GREG: %i;", valid_ptr->callback_count);
         if (valid_ptr->OnNextUpdateTimer()) {
           // TODO(gtcooke94)
         }
       } else {
-        gpr_log(GPR_ERROR, "GREG: weak_ptr no longer valid");
       }
     }
   });
@@ -234,7 +227,6 @@ void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
 absl::Status DirectoryReloaderCrlProviderImpl::Update() {
   // for () absl::MutexLock lock(&mu_);
   // TODO(gtcooke94) reading directory in C++ on windows vs. unix
-  gpr_log(GPR_ERROR, "GREG: CRL Directory %s", crl_directory_.c_str());
   DIR* crl_directory;
   if ((crl_directory = opendir(crl_directory_.c_str())) == nullptr) {
     // Try getting full absolute path of crl_directory_
@@ -248,11 +240,9 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
   bool all_files_successful = true;
   while ((directory_entry = readdir(crl_directory)) != nullptr) {
     const char* file_name = directory_entry->d_name;
-    gpr_log(GPR_ERROR, "GREG: reading file %s", file_name);
 
     FileData file_data;
     GetAbsoluteFilePath(crl_directory_.c_str(), file_name, file_data.path);
-    gpr_log(GPR_ERROR, "GREG: reading file full path %s", file_data.path);
     struct stat dir_entry_stat;
     int stat_return = stat(file_data.path, &dir_entry_stat);
     if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {

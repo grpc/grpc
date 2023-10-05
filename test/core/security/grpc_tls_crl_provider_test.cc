@@ -147,8 +147,6 @@ std::string TempDirNameFromPath(absl::string_view dir_path) {
 TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   std::string dir_path = MakeTempDir();
   std::string dir_name = TempDirNameFromPath(dir_path);
-  gpr_log(GPR_ERROR, "GREG: dir_path %s", dir_path.c_str());
-  gpr_log(GPR_ERROR, "GREG: dir_name %s", dir_name.c_str());
 
   auto result = experimental::DirectoryReloaderCrlProvider::
       CreateDirectoryReloaderProvider(dir_path, std::chrono::seconds(1),
@@ -162,7 +160,6 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   {
     std::string raw_crl = GetFileContents(CRL_PATH);
     TmpFile tmp_crl(raw_crl, dir_name);
-    gpr_log(GPR_ERROR, "GREG tmpfile name: %s", tmp_crl.name().c_str());
     sleep(2);
     auto crl = provider->GetCrl(cert);
     ASSERT_NE(crl, nullptr);
@@ -182,12 +179,9 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
 TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   std::string dir_path = MakeTempDir();
   std::string dir_name = TempDirNameFromPath(dir_path);
-  gpr_log(GPR_ERROR, "GREG: dir_path %s", dir_path.c_str());
-  gpr_log(GPR_ERROR, "GREG: dir_name %s", dir_name.c_str());
 
   std::string raw_crl = GetFileContents(CRL_PATH);
   TmpFile tmp_crl(raw_crl, dir_name);
-  gpr_log(GPR_ERROR, "GREG tmpfile name: %s", tmp_crl.name().c_str());
 
   std::vector<absl::Status> reload_errors;
   std::function<void(absl::Status)> reload_error_callback =

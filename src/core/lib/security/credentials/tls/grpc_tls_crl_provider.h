@@ -93,7 +93,6 @@ class DirectoryReloaderCrlProviderImpl
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       refresh_handle_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
-  int callback_count = 0;
 };
 
 }  // namespace experimental
