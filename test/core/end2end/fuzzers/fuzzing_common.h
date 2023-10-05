@@ -21,72 +21,156 @@
 
 #include <stdint.h>
 
-#include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
-namespace grpc {
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/channel.h"
+#include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+
+namespace grpc_core {
 namespace testing {
+
+class Validator {
+ public:
+  explicit Validator(std::function<void(bool)> impl) : impl_(std::move(impl)) {}
+
+  virtual ~Validator() {}
+  void Run(bool success) {
+    impl_(success);
+    delete this;
+  }
+
+ private:
+  std::function<void(bool)> impl_;
+};
+
+inline Validator* MakeValidator(std::function<void(bool)> impl) {
+  return new Validator(std::move(impl));
+}
+
+inline Validator* AssertSuccessAndDecrement(int* counter) {
+  return MakeValidator([counter](bool success) {
+    GPR_ASSERT(success);
+    --*counter;
+  });
+}
+
+inline Validator* Decrement(int* counter) {
+  return MakeValidator([counter](bool) { --*counter; });
+}
+
+class Call;
 
 class BasicFuzzer {
  public:
+  explicit BasicFuzzer(const fuzzing_event_engine::Actions& actions);
+
   enum Result { kPending = 0, kComplete = 1, kFailed = 2, kNotSupported = 3 };
   virtual Result ExecuteAction(const api_fuzzer::Action& action);
-  virtual ~BasicFuzzer() = default;
+  Call* ActiveCall();
+
+  virtual bool Continue();
+  virtual void Tick();
+
+ protected:
+  ~BasicFuzzer();
+
+  bool server_finished_shutting_down() {
+    return server() != nullptr && server_shutdown_ &&
+           pending_server_shutdowns_ == 0;
+  }
+  bool server_shutdown_called() { return server_shutdown_; }
+
+  void ShutdownCalls();
+  void ResetServerState() {
+    server_shutdown_ = false;
+    GPR_ASSERT(pending_server_shutdowns_ == 0);
+  }
+
+  // Poll any created completion queue to drive the RPC forward.
+  Result PollCq();
+
+  // Shutdown the active server.
+  Result ShutdownServer();
+
+  RefCountedPtr<ResourceQuota> resource_quota() { return resource_quota_; }
+
+  grpc_event_engine::experimental::FuzzingEventEngine* engine() {
+    return engine_.get();
+  }
+
+  grpc_completion_queue* cq() { return cq_; }
 
  private:
-  // Poll any created completion queue to drive the RPC forward.
-  virtual Result PollCq() = 0;
-
   // Channel specific actions.
   // Create an active channel with the specified parameters.
   virtual Result CreateChannel(
       const api_fuzzer::CreateChannel& create_channel) = 0;
-  // Check whether the channel is connected and optionally try to connect if it
-  // is not connected.
-  virtual Result CheckConnectivity(bool try_to_connect) = 0;
-  // Watch whether the channel connects within the specified duration.
-  virtual Result WatchConnectivity(uint32_t duration_us) = 0;
-  // Verify that the channel target can be reliably queried.
-  virtual Result ValidateChannelTarget() = 0;
-  // Send a http ping on the channel.
-  virtual Result SendPingOnChannel() = 0;
   // Close the active channel.
   virtual Result CloseChannel() = 0;
+
+  // Check whether the channel is connected and optionally try to connect if it
+  // is not connected.
+  Result CheckConnectivity(bool try_to_connect);
+  // Watch whether the channel connects within the specified duration.
+  Result WatchConnectivity(uint32_t duration_us);
+  // Verify that the channel target can be reliably queried.
+  Result ValidateChannelTarget();
+  // Send a http ping on the channel.
+  Result SendPingOnChannel();
 
   // Server specific actions
   // Create an active server.
   virtual Result CreateServer(
       const api_fuzzer::CreateServer& create_server) = 0;
-  // Request to be notified of a new RPC on the active server.
-  virtual Result ServerRequestCall() = 0;
-  // Shutdown the active server.
-  virtual Result ShutdownServer() = 0;
   // Destroy the active server.
-  virtual Result DestroyServerIfReady() = 0;
+  Result DestroyServerIfReady();
+
+  // Request to be notified of a new RPC on the active server.
+  Result ServerRequestCall();
+  // Cancel all server calls.
+  Result CancelAllCallsIfShutdown();
 
   // Call specific actions.
   // Create a call on the active channel with the specified parameters. Also add
   // it the list of managed calls.
-  virtual Result CreateCall(const api_fuzzer::CreateCall& create_call) = 0;
+  Result CreateCall(const api_fuzzer::CreateCall& create_call);
   // Choose a different active call from the list of managed calls.
-  virtual Result ChangeActiveCall() = 0;
+  Result ChangeActiveCall();
   // Queue a batch of operations to be executed on the active call.
-  virtual Result QueueBatchForActiveCall(
-      const api_fuzzer::Batch& queue_batch) = 0;
+  Result QueueBatchForActiveCall(const api_fuzzer::Batch& queue_batch);
   // Cancel the active call.
-  virtual Result CancelActiveCall() = 0;
-  // Cancel all managed calls.
-  virtual Result CancelAllCallsIfShutdown() = 0;
+  Result CancelActiveCall();
   // Validate that the peer can be reliably queried for the active call.
-  virtual Result ValidatePeerForActiveCall() = 0;
+  Result ValidatePeerForActiveCall();
   // Cancel and destroy the active call.
-  virtual Result DestroyActiveCall() = 0;
+  Result DestroyActiveCall();
 
   // Other actions.
   // Change the resource quota limits.
-  virtual Result ResizeResourceQuota(uint32_t resize_resource_quota) = 0;
+  Result ResizeResourceQuota(uint32_t resize_resource_quota);
+
+  virtual grpc_server* server() = 0;
+  virtual grpc_channel* channel() = 0;
+  virtual void DestroyServer() = 0;
+
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> engine_;
+  grpc_completion_queue* cq_;
+  bool server_shutdown_ = false;
+  int pending_server_shutdowns_ = 0;
+  int pending_channel_watches_ = 0;
+  int pending_pings_ = 0;
+  std::vector<std::shared_ptr<Call>> calls_;
+  RefCountedPtr<ResourceQuota> resource_quota_;
+  size_t active_call_ = 0;
 };
 
 }  // namespace testing
-}  // namespace grpc
+}  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H
