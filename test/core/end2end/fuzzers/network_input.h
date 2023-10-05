@@ -15,9 +15,9 @@
 #ifndef NETINPUT_H
 #define NETINPUT_H
 
+#include "src/core/lib/iomgr/endpoint.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
-#include "test/core/util/mock_endpoint.h"
 
 namespace grpc_core {
 

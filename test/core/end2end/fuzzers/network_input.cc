@@ -14,11 +14,27 @@
 
 #include "test/core/end2end/fuzzers/network_input.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <algorithm>
 #include <chrono>
+#include <ratio>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/types/span.h"
+
+#include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
+#include "test/core/util/mock_endpoint.h"
 
 namespace grpc_core {
 
