@@ -2108,7 +2108,6 @@ grpc_cc_library(
     deps = [
         "grpc++",
         "grpc++_config_proto",
-        "//src/proto/grpc/reflection/v1:reflection_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
     alwayslink = 1,

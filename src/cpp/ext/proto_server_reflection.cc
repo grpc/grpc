@@ -23,41 +23,58 @@
 
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/interceptor.h>
-#include <grpcpp/support/sync_stream.h>
 
 // IWYU pragma: no_include "google/protobuf/descriptor.h"
 // IWYU pragma: no_include <google/protobuf/descriptor.h>
-// IWYU pragma: no_include "src/proto/grpc/reflection/v1/reflection.pb.h"
-// IWYU pragma: no_include "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
+
+using grpc::reflection::v1alpha::ErrorResponse;
+using grpc::reflection::v1alpha::ExtensionNumberResponse;
+using grpc::reflection::v1alpha::ExtensionRequest;
+using grpc::reflection::v1alpha::ListServiceResponse;
+using grpc::reflection::v1alpha::ServerReflectionRequest;
+using grpc::reflection::v1alpha::ServerReflectionResponse;
+using grpc::reflection::v1alpha::ServiceResponse;
 
 namespace grpc {
 
-template <typename Request, typename Response>
-Status ProtoServerReflectionBackend::ServerReflectionInfo(
-    ServerReaderWriter<Response, Request>* stream) const {
-  Request request;
-  Response response;
+ProtoServerReflection::ProtoServerReflection()
+    : descriptor_pool_(protobuf::DescriptorPool::generated_pool()) {}
+
+void ProtoServerReflection::SetServiceList(
+    const std::vector<std::string>* services) {
+  services_ = services;
+}
+
+Status ProtoServerReflection::ServerReflectionInfo(
+    ServerContext* context,
+    ServerReaderWriter<ServerReflectionResponse, ServerReflectionRequest>*
+        stream) {
+  ServerReflectionRequest request;
+  ServerReflectionResponse response;
   Status status;
   while (stream->Read(&request)) {
     switch (request.message_request_case()) {
-      case Request::MessageRequestCase::kFileByFilename:
-        status = GetFileByName(request.file_by_filename(), &response);
+      case ServerReflectionRequest::MessageRequestCase::kFileByFilename:
+        status = GetFileByName(context, request.file_by_filename(), &response);
         break;
-      case Request::MessageRequestCase::kFileContainingSymbol:
-        status = GetFileContainingSymbol(request.file_containing_symbol(),
-                                         &response);
+      case ServerReflectionRequest::MessageRequestCase::kFileContainingSymbol:
+        status = GetFileContainingSymbol(
+            context, request.file_containing_symbol(), &response);
         break;
-      case Request::MessageRequestCase::kFileContainingExtension:
+      case ServerReflectionRequest::MessageRequestCase::
+          kFileContainingExtension:
         status = GetFileContainingExtension(
-            &request.file_containing_extension(), &response);
+            context, &request.file_containing_extension(), &response);
         break;
-      case Request::MessageRequestCase::kAllExtensionNumbersOfType:
+      case ServerReflectionRequest::MessageRequestCase::
+          kAllExtensionNumbersOfType:
         status = GetAllExtensionNumbers(
-            request.all_extension_numbers_of_type(),
+            context, request.all_extension_numbers_of_type(),
             response.mutable_all_extension_numbers_response());
         break;
-      case Request::MessageRequestCase::kListServices:
-        status = ListService(response.mutable_list_services_response());
+      case ServerReflectionRequest::MessageRequestCase::kListServices:
+        status =
+            ListService(context, response.mutable_list_services_response());
         break;
       default:
         status = Status(StatusCode::UNIMPLEMENTED, "");
@@ -67,34 +84,35 @@ Status ProtoServerReflectionBackend::ServerReflectionInfo(
       FillErrorResponse(status, response.mutable_error_response());
     }
     response.set_valid_host(request.host());
-    response.set_allocated_original_request(new Request(request));
+    response.set_allocated_original_request(
+        new ServerReflectionRequest(request));
     stream->Write(response);
   }
+
   return Status::OK;
 }
 
-template <typename Response>
-void ProtoServerReflectionBackend::FillErrorResponse(
-    const Status& status, Response* error_response) const {
+void ProtoServerReflection::FillErrorResponse(const Status& status,
+                                              ErrorResponse* error_response) {
   error_response->set_error_code(status.error_code());
   error_response->set_error_message(status.error_message());
 }
 
-template <typename Response>
-Status ProtoServerReflectionBackend::ListService(Response* response) const {
+Status ProtoServerReflection::ListService(ServerContext* /*context*/,
+                                          ListServiceResponse* response) {
   if (services_ == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Services not found.");
   }
   for (const auto& value : *services_) {
-    auto* service_response = response->add_service();
+    ServiceResponse* service_response = response->add_service();
     service_response->set_name(value);
   }
   return Status::OK;
 }
 
-template <typename Response>
-Status ProtoServerReflectionBackend::GetFileByName(const std::string& file_name,
-                                                   Response* response) const {
+Status ProtoServerReflection::GetFileByName(
+    ServerContext* /*context*/, const std::string& file_name,
+    ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
@@ -109,9 +127,9 @@ Status ProtoServerReflectionBackend::GetFileByName(const std::string& file_name,
   return Status::OK;
 }
 
-template <typename Response>
-Status ProtoServerReflectionBackend::GetFileContainingSymbol(
-    const std::string& symbol, Response* response) const {
+Status ProtoServerReflection::GetFileContainingSymbol(
+    ServerContext* /*context*/, const std::string& symbol,
+    ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
@@ -126,9 +144,9 @@ Status ProtoServerReflectionBackend::GetFileContainingSymbol(
   return Status::OK;
 }
 
-template <typename Request, typename Response>
-Status ProtoServerReflectionBackend::GetFileContainingExtension(
-    const Request* request, Response* response) const {
+Status ProtoServerReflection::GetFileContainingExtension(
+    ServerContext* /*context*/, const ExtensionRequest* request,
+    ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
@@ -150,9 +168,9 @@ Status ProtoServerReflectionBackend::GetFileContainingExtension(
   return Status::OK;
 }
 
-template <typename Response>
-Status ProtoServerReflectionBackend::GetAllExtensionNumbers(
-    const std::string& type, Response* response) const {
+Status ProtoServerReflection::GetAllExtensionNumbers(
+    ServerContext* /*context*/, const std::string& type,
+    ExtensionNumberResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
@@ -172,10 +190,10 @@ Status ProtoServerReflectionBackend::GetAllExtensionNumbers(
   return Status::OK;
 }
 
-template <typename Response>
-void ProtoServerReflectionBackend::FillFileDescriptorResponse(
-    const protobuf::FileDescriptor* file_desc, Response* response,
-    std::unordered_set<std::string>* seen_files) const {
+void ProtoServerReflection::FillFileDescriptorResponse(
+    const protobuf::FileDescriptor* file_desc,
+    ServerReflectionResponse* response,
+    std::unordered_set<std::string>* seen_files) {
   if (seen_files->find(file_desc->name()) != seen_files->end()) {
     return;
   }
@@ -190,20 +208,6 @@ void ProtoServerReflectionBackend::FillFileDescriptorResponse(
   for (int i = 0; i < file_desc->dependency_count(); ++i) {
     FillFileDescriptorResponse(file_desc->dependency(i), response, seen_files);
   }
-}
-
-Status ProtoServerReflection::ServerReflectionInfo(
-    ServerContext* /* context */,
-    ServerReaderWriter<reflection::v1alpha::ServerReflectionResponse,
-                       reflection::v1alpha::ServerReflectionRequest>* stream) {
-  return backend_->ServerReflectionInfo(stream);
-}
-
-Status ProtoServerReflectionV1::ServerReflectionInfo(
-    ServerContext* /* context */,
-    ServerReaderWriter<reflection::v1::ServerReflectionResponse,
-                       reflection::v1::ServerReflectionRequest>* stream) {
-  return backend_->ServerReflectionInfo(stream);
 }
 
 }  // namespace grpc
