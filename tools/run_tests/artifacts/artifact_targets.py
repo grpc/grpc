@@ -103,6 +103,7 @@ def create_jobspec(
 
 
 _MACOS_COMPAT_FLAG = "-mmacosx-version-min=10.10"
+_MACOS_COMPAT_ENV = "10.10"
 
 _ARCH_FLAG_MAP = {"x86": "-m32", "x64": "-m64"}
 
@@ -348,8 +349,9 @@ class ProtocArtifact:
                 )
             else:
                 environ["CXXFLAGS"] += (
-                    " -std=c++14 -stdlib=libc++ %s" % _MACOS_COMPAT_FLAG
+                    " -std=c++14 -stdlib=libc++ -Wunguarded-availability %s" % _MACOS_COMPAT_FLAG
                 )
+                environ["MACOSX_DEPLOYMENT_TARGET"] = _MACOS_COMPAT_ENV
                 return create_jobspec(
                     self.name,
                     ["tools/run_tests/artifacts/build_artifact_protoc.sh"],
