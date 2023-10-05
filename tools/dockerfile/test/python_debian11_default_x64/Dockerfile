@@ -90,7 +90,7 @@ RUN python3.6 -m ensurepip && \
 #=================
 # Compile CPython 3.7.13 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
 RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
@@ -111,7 +111,7 @@ RUN python3.7 -m ensurepip && \
 #=================
 # Compile CPython 3.8.13 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
 RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
@@ -132,7 +132,7 @@ RUN python3.8 -m ensurepip && \
 #=================
 # Compile CPython 3.10.3 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
 RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
@@ -153,7 +153,7 @@ RUN python3.10 -m ensurepip && \
 #=================
 # Compile CPython 3.11.4 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
 RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
