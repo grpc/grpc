@@ -16,7 +16,6 @@
 //
 //
 
-#include <stdint.h>
 #include <string.h>
 
 #include <algorithm>
@@ -24,7 +23,6 @@
 #include <functional>
 #include <initializer_list>
 #include <memory>
-#include <new>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,16 +32,12 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/byte_buffer.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -61,10 +55,13 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/fuzzing_channel_args.h"
 
@@ -226,8 +223,6 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // globals
-
-class Call;
 
 namespace grpc_core {
 namespace testing {

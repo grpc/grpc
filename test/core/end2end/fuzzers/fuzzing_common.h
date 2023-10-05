@@ -19,15 +19,19 @@
 #ifndef GRPC_TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H
 #define GRPC_TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H
 
+#include <stddef.h>
 #include <stdint.h>
+
+#include <functional>
+#include <memory>
+#include <utility>
+#include <vector>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
