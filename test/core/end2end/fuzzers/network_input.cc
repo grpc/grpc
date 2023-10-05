@@ -143,6 +143,7 @@ void ScheduleReads(
           mock_endpoint, grpc_slice_from_copied_buffer(
                              network_input.single_read_bytes().data(),
                              network_input.single_read_bytes().size()));
+      grpc_mock_endpoint_finish_put_reads(mock_endpoint);
     } break;
     case fuzzer_input::NetworkInput::kInputSegments: {
       int delay_ms = 0;
@@ -160,6 +161,7 @@ void ScheduleReads(
           });
     } break;
     case fuzzer_input::NetworkInput::VALUE_NOT_SET:
+      grpc_mock_endpoint_finish_put_reads(mock_endpoint);
       break;
   }
 }
