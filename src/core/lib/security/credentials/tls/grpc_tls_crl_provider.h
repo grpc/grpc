@@ -30,6 +30,8 @@
 
 #include <grpc/grpc_crl_provider.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
+
 namespace grpc_core {
 namespace experimental {
 
@@ -60,6 +62,38 @@ class CertificateInfoImpl : public CertificateInfo {
 
  private:
   const std::string issuer_;
+};
+
+// Defining this here lets us hide implementation details (and includes) from
+// the header in include
+class DirectoryReloaderCrlProviderImpl
+    : public DirectoryReloaderCrlProvider,
+      public std::enable_shared_from_this<DirectoryReloaderCrlProviderImpl> {
+ public:
+  DirectoryReloaderCrlProviderImpl(::absl::string_view directory,
+                                   ::std::chrono::seconds duration,
+                                   ::std::function<void(absl::Status)> callback)
+      : crl_directory_(directory),
+        refresh_duration_(duration),
+        reload_error_callback_(callback),
+        event_engine_(
+            grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+  ~DirectoryReloaderCrlProviderImpl() override;
+  std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
+  void ScheduleReload();
+  bool OnNextUpdateTimer();
+
+  ::absl::Status Update();
+  ::absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_;
+  ::std::string crl_directory_;
+  ::absl::Mutex mu_;
+  ::std::chrono::seconds refresh_duration_;
+  ::std::function<void(::absl::Status)> reload_error_callback_;
+  gpr_event shutdown_event_;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      refresh_handle_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  int callback_count = 0;
 };
 
 }  // namespace experimental
