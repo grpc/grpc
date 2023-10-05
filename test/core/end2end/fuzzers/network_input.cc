@@ -148,7 +148,7 @@ void ScheduleReads(
     case fuzzer_input::NetworkInput::kInputSegments: {
       int delay_ms = 0;
       for (const auto& segment : network_input.input_segments().segments()) {
-        delay_ms += segment.delay_ms();
+        delay_ms += std::max(0, segment.delay_ms());
         event_engine->RunAfterExactly(
             std::chrono::milliseconds(delay_ms), [mock_endpoint, segment] {
               grpc_mock_endpoint_put_read(mock_endpoint,
