@@ -163,10 +163,9 @@ TEST(CrlProviderTest, DirectoryReloaderReloads) {
   // After this provider shouldn't give a CRL, because everything should be read
   // cleanly and there is no CRL because TmpFile went out of scope and was
   // deleted
-  // TODO(gtcooke94) Enable after implementing this behavior on reload
-  // sleep(2);
-  // auto crl_should_be_deleted = provider->GetCrl(cert);
-  // ASSERT_EQ(crl_should_be_deleted, nullptr);
+  sleep(2);
+  auto crl_should_be_deleted = provider->GetCrl(cert);
+  ASSERT_EQ(crl_should_be_deleted, nullptr);
 
   rmdir(dir_path.c_str());
 }

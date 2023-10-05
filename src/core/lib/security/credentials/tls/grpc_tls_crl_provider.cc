@@ -310,7 +310,10 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
     crl_files.push_back(file_data);
   }
   closedir(crl_directory);
+  absl::flat_hash_map<std::string, std::shared_ptr<Crl>> new_crls;
   for (const FileData& file : crl_files) {
+    // If all files successful, do a full swap of the map. Otherwise update in
+    // place
     absl::StatusOr<std::shared_ptr<Crl>> result = ReadCrlFromFile(file.path);
     if (!result.ok()) {
       all_files_successful = false;
@@ -319,14 +322,30 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
     }
     // Now we have a good CRL to update in our map
     std::shared_ptr<Crl> crl = *result;
-    mu_.Lock();
-    crls_[crl->Issuer()] = std::move(crl);
-    mu_.Unlock();
+    if (all_files_successful) {
+      // Continue putting CRLs in new_crls to do a swap to
+      new_crls[crl->Issuer()] = std::move(crl);
+    } else {
+      // In place updates of existing map
+      mu_.Lock();
+      crls_[crl->Issuer()] = std::move(crl);
+      mu_.Unlock();
+    }
   }
   if (!all_files_successful) {
+    // Need to make sure CRLs we read successfully into new_crls are still
+    // in-place updated in crls_
+    for (auto& kv : new_crls) {
+      std::shared_ptr<Crl> crl = kv.second;
+      mu_.Lock();
+      crls_[crl->Issuer()] = std::move(crl);
+      mu_.Unlock();
+    }
     return absl::UnknownError(
         "Not all files in CRL directory read successfully during async "
         "update.");
+  } else {
+    crls_ = std::move(new_crls);
   }
   return absl::OkStatus();
 }
