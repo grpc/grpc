@@ -612,6 +612,15 @@ BasicFuzzer::Result BasicFuzzer::ResizeResourceQuota(
   return Result::kComplete;
 }
 
+BasicFuzzer::Result BasicFuzzer::CloseChannel() {
+  if (channel() != nullptr) {
+    DestroyChannel();
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
 Call* BasicFuzzer::ActiveCall() {
   while (!calls_.empty()) {
     if (active_call_ >= calls_.size()) {

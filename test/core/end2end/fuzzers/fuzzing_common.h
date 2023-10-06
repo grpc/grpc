@@ -119,9 +119,9 @@ class BasicFuzzer {
   // Create an active channel with the specified parameters.
   virtual Result CreateChannel(
       const api_fuzzer::CreateChannel& create_channel) = 0;
-  // Close the active channel.
-  virtual Result CloseChannel() = 0;
 
+  // Close the active channel.
+  Result CloseChannel();
   // Check whether the channel is connected and optionally try to connect if it
   // is not connected.
   Result CheckConnectivity(bool try_to_connect);

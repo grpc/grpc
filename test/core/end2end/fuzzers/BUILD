@@ -107,6 +107,7 @@ grpc_proto_fuzzer(
     uses_polling = False,
     deps = [
         "fuzzer_input_proto",
+        "fuzzing_common",
         "network_input",
         "//:gpr",
         "//:grpc",

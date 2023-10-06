@@ -237,7 +237,6 @@ class ApiFuzzer final : public BasicFuzzer {
   Result CreateChannel(
       const api_fuzzer::CreateChannel& create_channel) override;
 
-  Result CloseChannel() override;
   Result CreateServer(const api_fuzzer::CreateServer& create_server) override;
   void DestroyServer() override;
   void DestroyChannel() override;
@@ -414,16 +413,6 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(channel_ != nullptr);
   channel_force_delete_ = false;
-  return Result::kComplete;
-}
-
-ApiFuzzer::Result ApiFuzzer::CloseChannel() {
-  if (channel_ != nullptr) {
-    grpc_channel_destroy(channel_);
-    channel_ = nullptr;
-  } else {
-    return Result::kFailed;
-  }
   return Result::kComplete;
 }
 

@@ -78,7 +78,6 @@ class ServerFuzzer final : public BasicFuzzer {
       const api_fuzzer::CreateChannel& create_channel) override {
     return Result::kFailed;
   }
-  Result CloseChannel() override { return Result::kFailed; }
   Result CreateServer(const api_fuzzer::CreateServer& create_server) override {
     return Result::kFailed;
   }
