@@ -38,6 +38,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include "src/core/lib/iomgr/resolved_address.h"
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
@@ -654,7 +656,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
                                      weight_arg + prev_weight_arg));
         ++num_skipped;
       } else {
-        endpoints_.push_back(std::move(endpoint));
+        endpoints_.push_back(endpoint);
       }
     }
   } else {

@@ -4907,6 +4907,7 @@ grpc_cc_library(
         "lb_policy_registry",
         "pollset_set",
         "ref_counted",
+        "resolved_address",
         "unique_type_name",
         "validation_errors",
         "//:channel_arg_names",
