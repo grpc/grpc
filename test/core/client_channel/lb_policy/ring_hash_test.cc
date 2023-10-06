@@ -80,6 +80,7 @@ TEST_F(RingHashTest, Basic) {
   auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
   ExpectPickQueued(picker.get(), {address0_attribute});
   WaitForWorkSerializerToFlush();
+  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -101,6 +102,7 @@ TEST_F(RingHashTest, SameAddressListedMultipleTimes) {
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
   ExpectPickQueued(picker.get(), {address0_attribute});
+  WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
@@ -130,6 +132,7 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
   auto* address0_attribute = MakeHashAttribute(kEndpoint1Addresses[0]);
   ExpectPickQueued(picker.get(), {address0_attribute});
   WaitForWorkSerializerToFlush();
+  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kEndpoint1Addresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -151,6 +154,7 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The LB policy will try to reconnect when it gets another pick.
   ExpectPickQueued(picker.get(), {address0_attribute});
+  WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
