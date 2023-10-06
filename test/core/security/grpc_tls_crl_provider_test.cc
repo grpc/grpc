@@ -34,8 +34,9 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
-#define CRL_PATH "test/core/tsi/test_creds/crl_data/crls/ab06acdd.r0"
-#define CRL_ISSUER "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca"
+const char* kCrlPath = "test/core/tsi/test_creds/crl_data/crls/ab06acdd.r0";
+const char* kCrlIssuer =
+    "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca";
 
 namespace grpc_core {
 namespace testing {
@@ -47,12 +48,12 @@ using ::grpc_core::experimental::CrlProvider;
 using ::grpc_core::experimental::StaticCrlProvider;
 
 TEST(CrlProviderTest, CanParseCrl) {
-  std::string crl_string = GetFileContents(CRL_PATH);
+  std::string crl_string = GetFileContents(kCrlPath);
   absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
   ASSERT_TRUE(result.ok());
   ASSERT_NE(*result, nullptr);
   auto* crl = static_cast<CrlImpl*>(result->get());
-  EXPECT_STREQ(crl->Issuer().data(), CRL_ISSUER);
+  EXPECT_STREQ(crl->Issuer().data(), kCrlIssuer);
 }
 
 TEST(CrlProviderTest, InvalidFile) {
@@ -64,20 +65,20 @@ TEST(CrlProviderTest, InvalidFile) {
 }
 
 TEST(CrlProviderTest, StaticCrlProviderLookup) {
-  std::vector<std::string> crl_strings = {GetFileContents(CRL_PATH)};
+  std::vector<std::string> crl_strings = {GetFileContents(kCrlPath)};
   absl::StatusOr<std::shared_ptr<CrlProvider>> result =
       StaticCrlProvider::Create(crl_strings);
   std::shared_ptr<CrlProvider> provider = std::move(*result);
 
-  CertificateInfoImpl cert = CertificateInfoImpl(CRL_ISSUER);
+  CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
 
   auto crl = provider->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
-  ASSERT_EQ(crl->Issuer(), CRL_ISSUER);
+  ASSERT_EQ(crl->Issuer(), kCrlIssuer);
 }
 
 TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
-  std::vector<std::string> crl_strings = {GetFileContents(CRL_PATH)};
+  std::vector<std::string> crl_strings = {GetFileContents(kCrlPath)};
   absl::StatusOr<std::shared_ptr<CrlProvider>> result =
       StaticCrlProvider::Create(crl_strings);
   std::shared_ptr<CrlProvider> provider = std::move(*result);
