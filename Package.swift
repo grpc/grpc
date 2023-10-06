@@ -325,6 +325,8 @@ let package = Package(
         "src/core/ext/transport/inproc/inproc_plugin.cc",
         "src/core/ext/transport/inproc/inproc_transport.cc",
         "src/core/ext/transport/inproc/inproc_transport.h",
+        "src/core/ext/transport/inproc/legacy_inproc_transport.cc",
+        "src/core/ext/transport/inproc/legacy_inproc_transport.h",
         "src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c",
         "src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h",
         "src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c",

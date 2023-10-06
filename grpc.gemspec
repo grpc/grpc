@@ -331,6 +331,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/inproc/inproc_plugin.cc )
   s.files += %w( src/core/ext/transport/inproc/inproc_transport.cc )
   s.files += %w( src/core/ext/transport/inproc/inproc_transport.h )
+  s.files += %w( src/core/ext/transport/inproc/legacy_inproc_transport.cc )
+  s.files += %w( src/core/ext/transport/inproc/legacy_inproc_transport.h )
   s.files += %w( src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c )
