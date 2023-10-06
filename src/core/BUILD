@@ -3974,7 +3974,6 @@ grpc_cc_library(
         "json_object_loader",
         "map",
         "pipe",
-        "poll",
         "ref_counted_string",
         "service_config_parser",
         "slice",
