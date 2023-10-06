@@ -79,7 +79,6 @@ WindowsEndpoint::~WindowsEndpoint() {
 void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", endpoint);
   if (socket->IsShutdown()) {
-    socket->UnregisterReadCallback();
     socket->read_info()->SetErrorStatus(
         absl::UnavailableError("Socket is shutting down."));
     thread_pool->Run(&handle_read_event);
