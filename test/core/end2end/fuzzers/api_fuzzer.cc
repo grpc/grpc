@@ -53,7 +53,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
