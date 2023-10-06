@@ -35,7 +35,7 @@ namespace experimental {
 
 class CrlImpl : public Crl {
  public:
-  static absl::StatusOr<CrlImpl> Create(X509_CRL* crl);
+  static absl::StatusOr<std::unique_ptr<CrlImpl>> Create(X509_CRL* crl);
   // Takes ownership of the X509_CRL pointer.
   CrlImpl(X509_CRL* crl, const std::string& issuer)
       : crl_(crl), issuer_(issuer) {}

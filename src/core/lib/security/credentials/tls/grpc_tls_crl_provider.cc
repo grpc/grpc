@@ -69,19 +69,15 @@ absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to X509 CRL failed.");
   }
-  absl::StatusOr<CrlImpl> result = CrlImpl::Create(crl);
-  if (!result.ok()) {
-    return result.status();
-  }
-  return std::make_unique<CrlImpl>(std::move(*result));
+  return CrlImpl::Create(crl);
 }
 
-absl::StatusOr<CrlImpl> CrlImpl::Create(X509_CRL* crl) {
+absl::StatusOr<std::unique_ptr<CrlImpl>> CrlImpl::Create(X509_CRL* crl) {
   std::string issuer = IssuerFromCrl(crl);
   if (issuer.empty()) {
     return absl::InvalidArgumentError("Issuer of crl cannot be empty");
   }
-  return CrlImpl(crl, issuer);
+  return std::make_unique<CrlImpl>(crl, issuer);
 }
 
 // Copy constructor needs to duplicate the X509_CRL* since the destructor frees
