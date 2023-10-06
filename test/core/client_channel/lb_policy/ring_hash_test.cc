@@ -94,8 +94,31 @@ TEST_F(RingHashTest, Basic) {
   EXPECT_EQ(address, kAddresses[0]);
 }
 
+TEST_F(RingHashTest, SameAddressListedMultipleTimes) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:441"};
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, MakeRingHashConfig()),
+                        lb_policy()),
+            absl::OkStatus());
+  auto picker = ExpectState(GRPC_CHANNEL_IDLE);
+  auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
+  ExpectPickQueued(picker.get(), {address0_attribute});
+  WaitForWorkSerializerToFlush();
+  auto* subchannel = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  ExpectPickQueued(picker.get(), {address0_attribute});
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  auto address =
+      ExpectPickComplete(picker.get(), {MakeHashAttribute(kAddresses[0])});
+  EXPECT_EQ(address, kAddresses[0]);
+}
+
+
 // FIXME: add multiple addresses per endpoint test
-// FIXME: add test with the same address multiple times in the address list
 
 }  // namespace
 }  // namespace testing
