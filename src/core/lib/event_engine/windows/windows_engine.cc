@@ -337,12 +337,12 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
       if (!Cancel(connection_state->timer_handle)) {
         return EventEngine::ConnectionHandle::kInvalid;
       }
+      connection_state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
       Run([connection_state = std::move(connection_state),
            status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
         grpc_core::MutexLock lock(&connection_state->mu);
         connection_state->on_connected_user_callback(status);
       });
-      connection_state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
       return EventEngine::ConnectionHandle::kInvalid;
     }
   }
