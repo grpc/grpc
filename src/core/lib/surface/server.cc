@@ -829,7 +829,7 @@ Server::RegisteredMethod* Server::RegisterMethod(
     const char* method, const char* host,
     grpc_server_register_method_payload_handling payload_handling,
     uint32_t flags) {
-  if (grpc_core::IsRegisteredMethodsMapEnabled() && started_) {
+  if (IsRegisteredMethodsMapEnabled() && started_) {
     Crash("Attempting to register method after server started");
   }
 
@@ -1168,8 +1168,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   // Build a lookup table phrased in terms of mdstr's in this channels context
   // to quickly find registered methods.
   size_t num_registered_methods = server_->registered_methods_.size();
-  if (!grpc_core::IsRegisteredMethodsMapEnabled() &&
-      num_registered_methods > 0) {
+  if (!IsRegisteredMethodsMapEnabled() && num_registered_methods > 0) {
     uint32_t max_probes = 0;
     size_t slots = 2 * num_registered_methods;
     old_registered_methods_ =
@@ -1200,7 +1199,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     }
     GPR_ASSERT(slots <= UINT32_MAX);
     registered_method_max_probes_ = max_probes;
-  } else if (grpc_core::IsRegisteredMethodsMapEnabled()) {
+  } else if (IsRegisteredMethodsMapEnabled()) {
     for (std::unique_ptr<RegisteredMethod>& rm : server_->registered_methods_) {
       auto key = std::make_pair(!rm->host.empty() ? rm->host : "", rm->method);
       registered_methods_.emplace(
@@ -1293,7 +1292,7 @@ void Server::ChannelData::SetRegisteredMethodOnMetadata(
     return;
   }
   ChannelRegisteredMethod* method;
-  if (!grpc_core::IsRegisteredMethodsMapEnabled()) {
+  if (!IsRegisteredMethodsMapEnabled()) {
     method = chand->GetRegisteredMethod(authority->c_slice(), path->c_slice());
   } else {
     method = chand->GetRegisteredMethod(authority->as_string_view(),
@@ -1375,7 +1374,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
         call_args.client_initial_metadata->get(GrpcRegisteredMethod())
             .value_or(nullptr));
   } else {
-    if (!grpc_core::IsRegisteredMethodsMapEnabled()) {
+    if (!IsRegisteredMethodsMapEnabled()) {
       rm = chand->GetRegisteredMethod(host_ptr->c_slice(), path->c_slice());
     } else {
       rm = chand->GetRegisteredMethod(host_ptr->as_string_view(),
@@ -1646,7 +1645,7 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
           recv_initial_metadata_->get(GrpcRegisteredMethod())
               .value_or(nullptr));
     } else {
-      if (!grpc_core::IsRegisteredMethodsMapEnabled()) {
+      if (!IsRegisteredMethodsMapEnabled()) {
         rm = chand->GetRegisteredMethod(host_->c_slice(), path_->c_slice());
       } else {
         rm = chand->GetRegisteredMethod(host_->as_string_view(),
