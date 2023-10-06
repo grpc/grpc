@@ -42,6 +42,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/health_check_client.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -445,13 +446,49 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       absl::c_shuffle(*args.addresses, bit_gen_);
     }
     // Flatten the list so that we have one address per endpoint.
+    // While we're iterating, also determine the desired address family
+    // order and the index of the first element of each family, for use in
+    // the interleaving below.
+    auto get_address_family = [](const grpc_resolved_address& address) {
+      const char* uri_scheme = grpc_sockaddr_get_uri_scheme(&address);
+      return absl::string_view(uri_scheme == nullptr ? "other" : uri_scheme);
+    };
+    std::vector<absl::string_view> address_family_order;
+    std::map<absl::string_view, size_t> address_family_indexes;
     EndpointAddressesList endpoints;
     for (const auto& endpoint : *args.addresses) {
       for (const auto& address : endpoint.addresses()) {
         endpoints.emplace_back(address, endpoint.args());
+        if (IsPickFirstHappyEyeballsEnabled()) {
+          absl::string_view scheme = get_address_family(address);
+          bool inserted =
+              address_family_indexes.emplace(scheme, endpoints.size() - 1)
+              .second;
+          if (inserted) address_family_order.push_back(scheme);
+        }
       }
     }
-    args.addresses = std::move(endpoints);
+    // Interleave addresses as per RFC-8305 section 4.
+    if (IsPickFirstHappyEyeballsEnabled()) {
+      EndpointAddressesList interleaved_endpoints;
+      for (size_t i = 0; i < endpoints.size(); ++i) {
+        absl::string_view scheme_to_use =
+            address_family_order[i % address_family_order.size()];
+        size_t& next_index = address_family_indexes[scheme_to_use];
+        for (; next_index < endpoints.size(); ++next_index) {
+          if (get_address_family(endpoints[next_index].address()) ==
+              scheme_to_use) {
+            break;
+          }
+        }
+        if (next_index == endpoints.size()) continue;
+        interleaved_endpoints.emplace_back(std::move(endpoints[next_index]));
+        next_index++;
+      }
+      args.addresses = std::move(interleaved_endpoints);
+    } else {
+      args.addresses = std::move(endpoints);
+    }
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.

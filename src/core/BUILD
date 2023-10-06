@@ -4870,6 +4870,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:sockaddr_utils",
         "//:work_serializer",
     ],
 )
