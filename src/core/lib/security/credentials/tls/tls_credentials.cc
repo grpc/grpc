@@ -69,7 +69,11 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
         grpc_core::MakeRefCounted<grpc_core::HostNameCertificateVerifier>());
   }
   if (!options->crl_directory().empty() && options->crl_provider() != nullptr) {
-    gpr_log(GPR_ERROR, "Cannot set both crl_directory and crl_provider");
+    // TODO(gtcooke94) - the way this is structured makes it not work to return
+    // false here for client and server
+    gpr_log(GPR_ERROR,
+            "Cannot set both crl_directory and crl_provider. crl_provider will "
+            "take precedence.");
     return false;
   }
   return true;
