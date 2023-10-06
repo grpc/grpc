@@ -253,7 +253,8 @@ ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
   }
   // Set override host attribute.
   auto* override_host_attribute =
-      GetContext<Arena>()->New<XdsOverrideHostAttribute>(cookie_address_list);
+      GetContext<Arena>()->ManagedNew<XdsOverrideHostAttribute>(
+          cookie_address_list);
   service_config_call_data->SetCallAttribute(override_host_attribute);
   // Check if the cluster override is valid, and apply it if necessary.
   // Note that cluster_name will point to an arena-allocated string
