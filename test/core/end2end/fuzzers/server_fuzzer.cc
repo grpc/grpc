@@ -63,13 +63,13 @@ class ServerFuzzer : public BasicFuzzer {
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server_, "/reg", nullptr, {}, 0);
     grpc_server_start(server_);
-    grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
-                                              .channel_args_preconditioning()
-                                              .PreconditionChannelArgs(nullptr);
+    ChannelArgs channel_args = CoreConfiguration::Get()
+                                   .channel_args_preconditioning()
+                                   .PreconditionChannelArgs(nullptr);
     grpc_transport* transport =
         grpc_create_chttp2_transport(channel_args, mock_endpoint_, false);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "SetupTransport", grpc_core::Server::FromC(server_)->SetupTransport(
+        "SetupTransport", Server::FromC(server_)->SetupTransport(
                               transport, nullptr, channel_args, nullptr)));
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   }
