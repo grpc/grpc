@@ -178,7 +178,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlProvider) {
   std::vector<std::string> crls;
-  auto result = experimental::StaticCrlProvider::FromVector(crls);
+  auto result = experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   auto crl_provider = std::move(*result);
   auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
@@ -191,7 +191,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithCrlProvider) {
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlProviderAndDirectory) {
   std::vector<std::string> crls;
-  auto result = experimental::StaticCrlProvider::FromVector(crls);
+  auto result = experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   auto crl_provider = std::move(*result);
   auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(

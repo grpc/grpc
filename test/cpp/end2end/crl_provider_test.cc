@@ -178,7 +178,7 @@ TEST_F(CrlProviderTest, CrlProviderValid) {
   std::vector<std::string> crls = {root_crl};
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
-      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+      grpc_core::experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
       std::move(*result);
@@ -223,7 +223,7 @@ TEST_F(CrlProviderTest, CrlProviderRevokedServer) {
   std::vector<std::string> crls = {root_crl};
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
-      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+      grpc_core::experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
       std::move(*result);

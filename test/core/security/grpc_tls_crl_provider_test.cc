@@ -66,7 +66,7 @@ TEST(CrlProviderTest, InvalidFile) {
 TEST(CrlProviderTest, StaticCrlProviderLookup) {
   std::vector<std::string> crl_strings = {GetFileContents(CRL_PATH)};
   absl::StatusOr<std::shared_ptr<CrlProvider>> result =
-      StaticCrlProvider::FromVector(crl_strings);
+      StaticCrlProvider::Create(crl_strings);
   std::shared_ptr<CrlProvider> provider = std::move(*result);
 
   CertificateInfoImpl cert = CertificateInfoImpl(CRL_ISSUER);
@@ -79,7 +79,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookup) {
 TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
   std::vector<std::string> crl_strings = {GetFileContents(CRL_PATH)};
   absl::StatusOr<std::shared_ptr<CrlProvider>> result =
-      StaticCrlProvider::FromVector(crl_strings);
+      StaticCrlProvider::Create(crl_strings);
   std::shared_ptr<CrlProvider> provider = std::move(*result);
 
   CertificateInfoImpl bad_cert = CertificateInfoImpl("BAD CERT");

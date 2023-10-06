@@ -327,7 +327,7 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderValidCerts) {
   std::vector<std::string> crls = {root_crl, intermediate_crl};
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
-      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+      grpc_core::experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
       std::move(*result);
@@ -344,7 +344,7 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedServer) {
   std::vector<std::string> crls = {root_crl, intermediate_crl};
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
-      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+      grpc_core::experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
       std::move(*result);
@@ -361,7 +361,7 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedClient) {
   std::vector<std::string> crls = {root_crl, intermediate_crl};
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
-      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+      grpc_core::experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
       std::move(*result);
@@ -378,7 +378,7 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedIntermediateValidCrl) {
   std::vector<std::string> crls = {root_crl, intermediate_crl};
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
-      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+      grpc_core::experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
       std::move(*result);
@@ -395,7 +395,7 @@ TEST_P(CrlSslTransportSecurityTest,
   std::vector<std::string> crls = {root_crl};
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
-      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+      grpc_core::experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
       std::move(*result);
@@ -412,7 +412,7 @@ TEST_P(CrlSslTransportSecurityTest,
   std::vector<std::string> crls = {intermediate_crl};
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
-      grpc_core::experimental::StaticCrlProvider::FromVector(crls);
+      grpc_core::experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
       std::move(*result);

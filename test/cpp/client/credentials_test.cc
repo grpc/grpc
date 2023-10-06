@@ -399,7 +399,7 @@ TEST(CredentialsTest, TlsChannelCredentialsWithCrlDirectory) {
 
 TEST(CredentialsTest, TlsChannelCredentialsWithCrlProvider) {
   std::vector<std::string> crls;
-  auto result = experimental::StaticCrlProvider::FromVector(crls);
+  auto result = experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   auto crl_provider = std::move(*result);
   grpc::experimental::TlsChannelCredentialsOptions options;
@@ -410,7 +410,7 @@ TEST(CredentialsTest, TlsChannelCredentialsWithCrlProvider) {
 
 TEST(CredentialsTest, TlsChannelCredentialsWithCrlProviderAndDirectory) {
   std::vector<std::string> crls;
-  auto result = experimental::StaticCrlProvider::FromVector(crls);
+  auto result = experimental::StaticCrlProvider::Create(crls);
   ASSERT_TRUE(result.ok());
   auto crl_provider = std::move(*result);
   grpc::experimental::TlsChannelCredentialsOptions options;

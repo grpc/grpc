@@ -107,7 +107,7 @@ StaticCrlProvider::StaticCrlProvider(
     const absl::flat_hash_map<std::string, std::shared_ptr<Crl>>& crls)
     : crls_(crls) {}
 
-absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::FromVector(
+absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::Create(
     const std::vector<std::string> crls) {
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crl_map;
   for (const auto& raw_crl : crls) {
