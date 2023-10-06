@@ -226,7 +226,7 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 namespace grpc_core {
 namespace testing {
 
-class ApiFuzzer : public BasicFuzzer {
+class ApiFuzzer final : public BasicFuzzer {
  public:
   explicit ApiFuzzer(const fuzzing_event_engine::Actions& actions);
   ~ApiFuzzer();
