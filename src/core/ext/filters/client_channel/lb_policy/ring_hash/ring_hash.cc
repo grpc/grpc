@@ -640,7 +640,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
     std::map<EndpointAddressSet, size_t> endpoint_indices;
     size_t num_skipped = 0;
     for (size_t i = 0; i < args.addresses->size(); ++i) {
-      const EndpointAddresses& endpoint = (*args.addresses)[i];
+      EndpointAddresses& endpoint = (*args.addresses)[i];
       const EndpointAddressSet key(endpoint.addresses());
       auto p = endpoint_indices.emplace(key, i - num_skipped);
       if (!p.second) {
@@ -650,13 +650,19 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
             endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
         int prev_weight_arg =
             prev_endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+          gpr_log(GPR_INFO,
+                  "[RH %p] merging duplicate endpoint for %s, combined "
+                  "weight %d",
+                  this, key.ToString().c_str(), weight_arg + prev_weight_arg);
+        }
         prev_endpoint = EndpointAddresses(
             prev_endpoint.addresses(),
             prev_endpoint.args().Set(GRPC_ARG_ADDRESS_WEIGHT,
                                      weight_arg + prev_weight_arg));
         ++num_skipped;
       } else {
-        endpoints_.push_back(endpoint);
+        endpoints_.push_back(std::move(endpoint));
       }
     }
   } else {
