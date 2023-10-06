@@ -112,8 +112,7 @@ class WinSocket {
   SOCKET raw_socket();
 
  private:
-  void NotifyOnReady(OpState& info, EventEngine::Closure* closure)
-      ABSL_LOCKS_EXCLUDED(info.ready_mu_);
+  void NotifyOnReady(OpState& info, EventEngine::Closure* closure);
 
   SOCKET socket_;
   std::atomic<bool> is_shutdown_{false};
