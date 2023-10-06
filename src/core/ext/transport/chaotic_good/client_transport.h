@@ -41,6 +41,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
@@ -130,7 +131,8 @@ class ClientTransport {
                           [](bool success) -> absl::Status {
                             if (!success) {
                               return absl::UnavailableError(
-                                       "Transport closed due to endpoint write/read failed.");
+                                  "Transport closed due to endpoint write/read "
+                                  "failed.");
                             }
                             return absl::OkStatus();
                           });
@@ -182,7 +184,8 @@ class ClientTransport {
                              if (transport_closed) {
                                return ServerMetadataFromStatus(
                                    absl::UnavailableError(
-                                       "Transport closed due to endpoint write/read failed."));
+                                       "Transport closed due to endpoint "
+                                       "write/read failed."));
                              }
                              return Continue();
                            }));

@@ -6087,6 +6087,7 @@ grpc_cc_library(
         "arena",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "context",
         "event_engine_wakeup_scheduler",
         "for_each",
         "grpc_promise_endpoint",
