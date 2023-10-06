@@ -255,7 +255,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     _api: KubernetesApiManager
     _name: str
 
-    NEG_STATUS_META = "cloud.google.com/neg-status"
+    NEG_STATUS_ANNOTATION = "cloud.google.com/neg-status"
     DELETE_GRACE_PERIOD_SEC: int = 5
     WAIT_SHORT_TIMEOUT_SEC: int = 60
     WAIT_SHORT_SLEEP_SEC: int = 1
@@ -771,7 +771,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         )
         retryer(self.get)
 
-    def wait_for_service_neg(
+    def wait_for_service_neg_status_annotation(
         self,
         name: str,
         timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
@@ -781,29 +781,36 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         retryer = retryers.constant_retryer(
             wait_fixed=_timedelta(seconds=wait_sec),
             timeout=timeout,
-            check_result=self._check_service_neg_annotation,
+            check_result=self._check_service_neg_status_annotation,
         )
         try:
             retryer(self.get_service, name)
         except retryers.RetryError as retry_err:
             result = retry_err.result()
             note = framework.errors.FrameworkError.note_blanket_error_info_below(
-                "A k8s service wasn't assigned a NEG (Network Endpoint Group).",
+                "A Kubernetes Service wasn't assigned a NEG (Network Endpoint"
+                " Group) status annotation.",
                 info_below=(
-                    f"Timeout {timeout} (h:mm:ss) waiting for service {name}"
-                    f" to report NEG status. Last service status:\n"
+                    f"Timeout {timeout} (h:mm:ss) waiting for Kubernetes"
+                    f" Service {name} in the namespace {self.name} to report"
+                    f" the '{self.NEG_STATUS_ANNOTATION}' metadata annotation."
+                    f"\nThis indicates the NEG wasn't created OR"
+                    f" the NEG creation event hasn't propagated to Kubernetes."
+                    f" Service metadata:\n"
+                    f"{self._pretty_format_metadata(result, highlight=False)}"
+                    f"Service status:\n"
                     f"{self._pretty_format_status(result, highlight=False)}"
                 ),
             )
             retry_err.add_note(note)
             raise
 
-    def get_service_neg(
+    def parse_service_neg_status(
         self, service_name: str, service_port: int
     ) -> Tuple[str, List[str]]:
         service = self.get_service(service_name)
         neg_info: dict = json.loads(
-            service.metadata.annotations[self.NEG_STATUS_META]
+            service.metadata.annotations[self.NEG_STATUS_ANNOTATION]
         )
         neg_name: str = neg_info["network_endpoint_groups"][str(service_port)]
         neg_zones: List[str] = neg_info["zones"]
@@ -1027,6 +1034,37 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         # Return the name of k8s object, and its pretty-printed status.
         return f"{name}:\n{status}\n"
 
+    def _pretty_format_metadata(
+        self,
+        k8s_object: Optional[object],
+        *,
+        highlight: bool = True,
+        managed_fields: bool = False,
+    ) -> str:
+        if k8s_object is None:
+            return "No data"
+
+        # Parse the name if present.
+        if not hasattr(k8s_object, "metadata"):
+            return "Object metadata missing"
+
+        name = k8s_object.metadata.name or "Can't parse resource name"
+
+        # Pretty-print metadata.
+        try:
+            metadata_dict: dict = k8s_object.metadata.to_dict()
+            # Don't print manged fields by default. Lots of noise with no value.
+            if not managed_fields:
+                metadata_dict.pop("managed_fields", None)
+            metadata = self._pretty_format(metadata_dict, highlight=highlight)
+        except Exception as e:  # pylint: disable=broad-except
+            # Catching all exceptions because not printing the metadata
+            # isn't as important as the system under test.
+            metadata = f"Can't parse resource metadata: {e}"
+
+        # Return the name of k8s object, and its pretty-printed status.
+        return f"{name}:\n{metadata}\n"
+
     def _pretty_format(
         self,
         data: dict,
@@ -1038,12 +1076,12 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         return self._highlighter.highlight(yaml_out) if highlight else yaml_out
 
     @classmethod
-    def _check_service_neg_annotation(
+    def _check_service_neg_status_annotation(
         cls, service: Optional[V1Service]
     ) -> bool:
         return (
             isinstance(service, V1Service)
-            and cls.NEG_STATUS_META in service.metadata.annotations
+            and cls.NEG_STATUS_ANNOTATION in service.metadata.annotations
         )
 
     @classmethod

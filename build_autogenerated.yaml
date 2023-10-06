@@ -310,6 +310,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
+  - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -879,6 +880,7 @@ libs:
   - src/core/lib/promise/sleep.h
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/resolver/endpoint_addresses.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -1135,6 +1137,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
+  - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -1655,9 +1658,9 @@ libs:
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
   - src/core/lib/promise/trace.cc
+  - src/core/lib/resolver/endpoint_addresses.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
-  - src/core/lib/resolver/server_address.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -2048,6 +2051,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
+  - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -2290,6 +2294,7 @@ libs:
   - src/core/lib/promise/sleep.h
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/resolver/endpoint_addresses.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -2485,6 +2490,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
+  - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -2682,9 +2688,9 @@ libs:
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
   - src/core/lib/promise/trace.cc
+  - src/core/lib/resolver/endpoint_addresses.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
-  - src/core/lib/resolver/server_address.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -4297,6 +4303,7 @@ libs:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/resolver/endpoint_addresses.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -4572,9 +4579,9 @@ libs:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/trace.cc
+  - src/core/lib/resolver/endpoint_addresses.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
-  - src/core/lib/resolver/server_address.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -7658,6 +7665,17 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: endpoint_addresses_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/resolver/endpoint_addresses_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: endpoint_binder_pool_test
   gtest: true
   build: test
@@ -11691,6 +11709,18 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
+- name: ping_callbacks_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/mock_event_engine.h
+  src:
+  - test/core/transport/chttp2/ping_callbacks_test.cc
+  deps:
+  - gtest
+  - grpc
   uses_polling: false
 - name: ping_configuration_test
   gtest: true
@@ -15860,6 +15890,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/resolver/endpoint_addresses.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -16117,9 +16148,9 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/trace.cc
+  - src/core/lib/resolver/endpoint_addresses.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
-  - src/core/lib/resolver/server_address.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -17415,6 +17446,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -17816,7 +17848,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/scoped_env_var.h
   src:
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/base.proto
@@ -18613,12 +18646,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: 6fd3496c82919a433219733819a93b56699519a193126959e9c4fedc25e70663
+  hash: fff067a5d6d776fc88549b5dd4773a6f8f0187b26a859de8b29bd4226a28ee63
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-e53e7bbd012f81965f2e79848ad9a58ceb67201f
+  strip_prefix: data-plane-api-9d6ffa70677c4dbf23f6ed569676206c4e2edff4
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/9d6ffa70677c4dbf23f6ed569676206c4e2edff4.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/9d6ffa70677c4dbf23f6ed569676206c4e2edff4.tar.gz
 - destination: third_party/googleapis
   hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
   proto_prefix: third_party/googleapis/

@@ -14,8 +14,12 @@
 
 #include <stdint.h>
 
-#include <string>
+#include <memory>
 
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -26,17 +30,28 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/config.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/surface/event_string.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
+#include "test/core/end2end/fuzzers/network_input.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/mock_endpoint.h"
+
+using ::grpc_event_engine::experimental::FuzzingEventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 bool squelch = true;
 bool leak_check = true;
@@ -48,7 +63,18 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+    gpr_set_log_function(dont_log);
+  }
+  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
+  grpc_event_engine::experimental::SetEventEngineFactory(
+      [actions = msg.event_engine_actions()]() {
+        return std::make_unique<FuzzingEventEngine>(
+            FuzzingEventEngine::Options(), actions);
+      });
+  auto event_engine =
+      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
@@ -56,12 +82,8 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("context_list_test");
     grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
-    if (msg.network_input().has_single_read_bytes()) {
-      grpc_mock_endpoint_put_read(
-          mock_endpoint, grpc_slice_from_copied_buffer(
-                             msg.network_input().single_read_bytes().data(),
-                             msg.network_input().single_read_bytes().size()));
-    }
+    grpc_core::ScheduleReads(msg.network_input(), mock_endpoint,
+                             event_engine.get());
     grpc_server* server = grpc_server_create(nullptr, nullptr);
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
@@ -93,6 +115,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
 
     grpc_event ev;
     while (true) {
+      event_engine->Tick();
       grpc_core::ExecCtx::Get()->Flush();
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
@@ -112,42 +135,41 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
 
   done:
     if (call1 != nullptr) grpc_call_unref(call1);
-    grpc_call_details_destroy(&call_details1);
-    grpc_metadata_array_destroy(&request_metadata1);
     grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
-    grpc_core::Timestamp deadline =
-        grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(5);
-    for (int i = 0; i <= requested_calls; i++) {
-      // A single grpc_completion_queue_next might not be sufficient for getting
-      // the tag from shutdown, because we might potentially get blocked by
-      // an operation happening on the timer thread.
-      // For example, the deadline timer might expire, leading to the timer
-      // thread trying to cancel the RPC and thereby acquiring a few references
-      // to the call. This will prevent the shutdown to complete till the timer
-      // thread releases those references.
-      // As a solution, we are going to keep performing a cq_next for a
-      // liberal period of 5 seconds for the timer thread to complete its work.
-      do {
-        ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
-                                        nullptr);
-        grpc_core::ExecCtx::Get()->InvalidateNow();
-      } while (ev.type != GRPC_OP_COMPLETE &&
-               grpc_core::Timestamp::Now() < deadline);
-      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+    bool got_dead = false;
+    while (requested_calls > 0 && !got_dead) {
+      event_engine->Tick();
+      ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                      nullptr);
+      if (ev.type == GRPC_OP_COMPLETE) {
+        switch (reinterpret_cast<uintptr_t>(ev.tag)) {
+          case 1:
+            requested_calls--;
+            break;
+          case 0xdead:
+            got_dead = true;
+            break;
+        }
+      } else if (ev.type != GRPC_QUEUE_TIMEOUT) {
+        grpc_core::Crash(
+            absl::StrCat("Unexpected cq event: ", grpc_event_string(&ev)));
+      }
+      grpc_core::ExecCtx::Get()->InvalidateNow();
     }
     grpc_completion_queue_shutdown(cq);
-    for (int i = 0; i <= requested_calls; i++) {
-      do {
-        ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
-                                        nullptr);
-        grpc_core::ExecCtx::Get()->InvalidateNow();
-      } while (ev.type != GRPC_QUEUE_SHUTDOWN &&
-               grpc_core::Timestamp::Now() < deadline);
-      GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
-    }
+    do {
+      ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                      nullptr);
+      grpc_core::ExecCtx::Get()->InvalidateNow();
+    } while (ev.type != GRPC_QUEUE_SHUTDOWN);
+    GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
+    grpc_call_details_destroy(&call_details1);
+    grpc_metadata_array_destroy(&request_metadata1);
     grpc_server_destroy(server);
     grpc_completion_queue_destroy(cq);
   }
-  grpc_shutdown();
+  event_engine->TickUntilIdle();
+  grpc_shutdown_blocking();
+  event_engine->UnsetGlobalHooks();
 }

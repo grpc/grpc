@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import datetime
 import logging
 from typing import Optional
 
@@ -29,16 +30,13 @@ XdsTestServer = server_app.XdsTestServer
 
 logger = logging.getLogger(__name__)
 
-# We never actually hit this timeout under normal circumstances, so this large
-# value is acceptable.
-_TERMINATION_GRACE_PERIOD_SECONDS = 600
-
 
 # TODO(sergiitk): [GAMMA] Move into framework/test_cases
 class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     server_runner: GammaServerRunner
     frontend_service_name: str
     pre_stop_hook: Optional[bool] = None
+    termination_grace_period_seconds: int = 0
 
     def setUp(self):
         """Hook method for setting up the test fixture before exercising it."""
@@ -112,7 +110,7 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             enable_workload_identity=self.enable_workload_identity,
-            termination_grace_period_seconds=_TERMINATION_GRACE_PERIOD_SECONDS,
+            termination_grace_period_seconds=self.termination_grace_period_seconds,
             pre_stop_hook=self.pre_stop_hook,
         )
 
@@ -125,4 +123,13 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             f":{test_server.rpc_port}"
         )
         kwargs.setdefault("generate_mesh_id", True)
-        return self._start_test_client(server_target=server_target, **kwargs)
+        # Waiting for an active channel takes less time in non-gamma
+        # test suites because they only start waiting after already waited for
+        # the TD backends to be created and report healthy.
+        # In GAMMA, these resources are created asynchronously by Kubernetes.
+        # To compensate for this, we double the timeout for GAMMA tests.
+        return self._start_test_client(
+            server_target,
+            wait_for_active_channel_timeout=datetime.timedelta(minutes=10),
+            **kwargs,
+        )
