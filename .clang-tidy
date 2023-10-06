@@ -1,6 +1,9 @@
 ---
 # Note on checks are disabled on purpose
 #
+# - abseil-cleanup-ctad
+#   Requires C++17 and higher.
+#
 # - abseil-no-namespace
 #   https://bugs.llvm.org/show_bug.cgi?id=47947
 #
@@ -9,6 +12,9 @@
 #
 # - modernize-redundant-void-arg
 #   Some source should be strictly C99 and func(void) should be used.
+#
+# - google-readability-casting
+#   https://github.com/llvm/llvm-project/issues/57959
 #
 # Note on checks which will be enabled in future. These are good to have but
 # it's not activated yet due to the existing issues with the checks.
@@ -51,6 +57,7 @@
 #
 Checks: '-*,
   abseil-*,
+  -abseil-cleanup-ctad,
   -abseil-no-namespace,
   bugprone-*,
   -bugprone-assignment-in-if-condition,
@@ -66,6 +73,7 @@ Checks: '-*,
   -bugprone-too-small-loop-variable,
   -bugprone-unchecked-optional-access,
   google-*,
+  -google-readability-casting,
   -google-runtime-int,
   -google-runtime-references,
   performance-*,
