@@ -27,7 +27,6 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
@@ -37,6 +36,10 @@
 namespace grpc_core {
 namespace testing {
 namespace {
+
+// TODO(roth): I created this file when I fixed a bug and wrote only a
+// very basic test and the test needed for that bug.  When we have time,
+// we need a lot more tests here to cover all of the policy's functionality.
 
 class RingHashTest : public LoadBalancingPolicyTest {
  protected:
@@ -67,10 +70,6 @@ class RingHashTest : public LoadBalancingPolicyTest {
   std::vector<std::unique_ptr<RequestHashAttribute>> attribute_storage_;
 };
 
-// TODO(roth): I created this file when I fixed a bug and wrote only the
-// test needed for that bug.  When we have time, we need a lot more
-// tests here to cover all of the policy's functionality.
-
 TEST_F(RingHashTest, Basic) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -89,8 +88,7 @@ TEST_F(RingHashTest, Basic) {
   ExpectPickQueued(picker.get(), {address0_attribute});
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
-  auto address =
-      ExpectPickComplete(picker.get(), {MakeHashAttribute(kAddresses[0])});
+  auto address = ExpectPickComplete(picker.get(), {address0_attribute});
   EXPECT_EQ(address, kAddresses[0]);
 }
 
@@ -112,13 +110,66 @@ TEST_F(RingHashTest, SameAddressListedMultipleTimes) {
   ExpectPickQueued(picker.get(), {address0_attribute});
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
-  auto address =
-      ExpectPickComplete(picker.get(), {MakeHashAttribute(kAddresses[0])});
+  auto address = ExpectPickComplete(picker.get(), {address0_attribute});
   EXPECT_EQ(address, kAddresses[0]);
 }
 
-
-// FIXME: add multiple addresses per endpoint test
+TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
+  constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
+      "ipv4:127.0.0.1:445", "ipv4:127.0.0.1:446"};
+  const std::array<EndpointAddresses, 2> kEndpoints = {
+      MakeEndpointAddresses(kEndpoint1Addresses),
+      MakeEndpointAddresses(kEndpoint2Addresses)};
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kEndpoints, MakeRingHashConfig()),
+                        lb_policy()),
+            absl::OkStatus());
+  auto picker = ExpectState(GRPC_CHANNEL_IDLE);
+  // Normal connection to first address of the first endpoint.
+  auto* address0_attribute = MakeHashAttribute(kEndpoint1Addresses[0]);
+  ExpectPickQueued(picker.get(), {address0_attribute});
+  WaitForWorkSerializerToFlush();
+  auto* subchannel = FindSubchannel(kEndpoint1Addresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  auto* subchannel2 = FindSubchannel(kEndpoint1Addresses[1]);
+  ASSERT_NE(subchannel2, nullptr);
+  EXPECT_FALSE(subchannel2->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  ExpectPickQueued(picker.get(), {address0_attribute});
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  auto address = ExpectPickComplete(picker.get(), {address0_attribute});
+  EXPECT_EQ(address, kEndpoint1Addresses[0]);
+  // Now that connection fails.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  picker = ExpectState(GRPC_CHANNEL_IDLE);
+  EXPECT_FALSE(subchannel->ConnectionRequested());
+  EXPECT_FALSE(subchannel2->ConnectionRequested());
+  // The LB policy will try to reconnect when it gets another pick.
+  ExpectPickQueued(picker.get(), {address0_attribute});
+  WaitForWorkSerializerToFlush();
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  ExpectPickQueued(picker.get(), {address0_attribute});
+  // The connection attempt fails.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                   absl::UnavailableError("ugh"));
+  // The PF child policy will try to connect to the second address for the
+  // endpoint.
+  EXPECT_TRUE(subchannel2->ConnectionRequested());
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  ExpectPickQueued(picker.get(), {address0_attribute});
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  address = ExpectPickComplete(picker.get(), {address0_attribute});
+  EXPECT_EQ(address, kEndpoint1Addresses[1]);
+}
 
 }  // namespace
 }  // namespace testing
