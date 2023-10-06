@@ -564,8 +564,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest, CrlProvider) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  std::vector<std::string> crls;
-  auto result = experimental::StaticCrlProvider::Create(crls);
+  auto result = experimental::StaticCrlProvider::Create({});
   ASSERT_TRUE(result.ok());
   auto crl_provider = std::move(*result);
   options->set_crl_provider(crl_provider);

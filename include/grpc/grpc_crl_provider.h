@@ -72,7 +72,7 @@ class StaticCrlProvider : public CrlProvider {
   // Each element of the input vector is expected to be the raw contents of a
   // CRL file.
   static absl::StatusOr<std::shared_ptr<CrlProvider>> Create(
-      const std::vector<std::string> crls);
+      absl::Span<const std::string> crls);
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
 
  private:
