@@ -25,7 +25,6 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
-#include <ratio>
 #include <utility>
 
 #include "absl/time/clock.h"
@@ -42,6 +41,8 @@
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
+
+// IWYU pragma: no_include <ratio>
 
 // ## Thread Pool Fork-handling
 //

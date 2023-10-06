@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <string>
 
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
