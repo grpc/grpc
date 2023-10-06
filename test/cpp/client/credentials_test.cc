@@ -397,6 +397,30 @@ TEST(CredentialsTest, TlsChannelCredentialsWithCrlDirectory) {
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
+TEST(CredentialsTest, TlsChannelCredentialsWithCrlProvider) {
+  std::vector<std::string> crls;
+  auto result = experimental::StaticCrlProvider::FromVector(crls);
+  ASSERT_TRUE(result.ok());
+  auto crl_provider = std::move(*result);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  // options.set_crl_directory(CRL_DIR_PATH);
+  options.set_crl_provider(crl_provider);
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  GPR_ASSERT(channel_credentials.get() != nullptr);
+}
+
+TEST(CredentialsTest, TlsChannelCredentialsWithCrlProviderAndDirectory) {
+  std::vector<std::string> crls;
+  auto result = experimental::StaticCrlProvider::FromVector(crls);
+  ASSERT_TRUE(result.ok());
+  auto crl_provider = std::move(*result);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_crl_directory(CRL_DIR_PATH);
+  options.set_crl_provider(crl_provider);
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  GPR_ASSERT(channel_credentials.get() == nullptr);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

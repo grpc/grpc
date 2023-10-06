@@ -68,6 +68,10 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     options->set_certificate_verifier(
         grpc_core::MakeRefCounted<grpc_core::HostNameCertificateVerifier>());
   }
+  if (!options->crl_directory().empty() && options->crl_provider() != nullptr) {
+    gpr_log(GPR_ERROR, "Cannot set both crl_directory and crl_provider");
+    return false;
+  }
   return true;
 }
 

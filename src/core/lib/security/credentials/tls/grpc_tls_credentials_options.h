@@ -71,6 +71,9 @@ struct grpc_tls_credentials_options
   }
   const std::string& crl_directory() const { return crl_directory_; }
   bool send_client_ca_list() const { return send_client_ca_list_; }
+  std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider() const {
+    return crl_provider_;
+  }
 
   // Setters for member fields.
   void set_cert_request_type(

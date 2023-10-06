@@ -98,7 +98,7 @@ void grpc_tls_credentials_options_set_crl_directory(
   options->set_crl_directory(crl_directory);
 }
 
-void grpc_tls_credentials_options_set_crl_directory(
+void grpc_tls_credentials_options_set_crl_provider(
     grpc_tls_credentials_options* options,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider) {
   options->set_crl_provider(crl_provider);

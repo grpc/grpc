@@ -562,6 +562,24 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
+TEST_F(GrpcTlsCredentialsOptionsTest, CrlProvider) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  std::vector<std::string> crls;
+  auto result = experimental::StaticCrlProvider::FromVector(crls);
+  ASSERT_TRUE(result.ok());
+  auto crl_provider = std::move(*result);
+  options->set_crl_provider(crl_provider);
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  ChannelArgs new_args;
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", &new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+}
+
 }  // namespace testing
 
 }  // namespace grpc_core

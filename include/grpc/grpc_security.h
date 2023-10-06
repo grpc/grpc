@@ -23,6 +23,8 @@
 
 #include <stdbool.h>
 
+#include <memory>
+
 #include "grpc_crl_provider.h"
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
@@ -894,10 +896,11 @@ GRPCAPI void grpc_tls_credentials_options_set_crl_directory(
  * EXPERIMENTAL API - Subject to change
  *
  * Sets the crl provider in the options.
+ * The |options| will implicitly take a new ref to the |provider|.
  */
 GRPCAPI void grpc_tls_credentials_options_set_crl_provider(
     grpc_tls_credentials_options* options,
-    grpc_core::experimental::CrlProvider* provider);
+    std::shared_ptr<grpc_core::experimental::CrlProvider> provider);
 
 /**
  * EXPERIMENTAL API - Subject to change
