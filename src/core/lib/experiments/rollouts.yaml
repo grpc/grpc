@@ -108,4 +108,3 @@
   default: true
 - name: registered_methods_map
   default: debug
-  
