@@ -27,6 +27,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/types/span.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
