@@ -1,5 +1,4 @@
-#!/bin/sh
-# Copyright 2017 gRPC authors.
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,17 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-set -e
+grpc_package(name = "test/core/resolver")
 
-export TEST=true
+licenses(["notice"])
 
-cd "$(dirname "$0")/../../.."
-
-owners=.github/CODEOWNERS
-want_owners=$(mktemp /tmp/submXXXXXX)
-
-tools/mkowners/mkowners.py -o "$want_owners"
-diff -u "$owners" "$want_owners"
-
-rm "$want_owners"
+grpc_cc_test(
+    name = "endpoint_addresses_test",
+    srcs = ["endpoint_addresses_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:endpoint_addresses",
+        "//:parse_address",
+        "//:sockaddr_utils",
+        "//test/core/util:grpc_test_util",
+    ],
+)

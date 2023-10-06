@@ -104,5 +104,7 @@
   default: true
 - name: call_status_override_on_cancellation
   default: debug
+- name: work_serializer_clears_time_cache
+  default: true
 - name: registered_methods_map
   default: debug

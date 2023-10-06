@@ -7660,6 +7660,17 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: endpoint_addresses_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/resolver/endpoint_addresses_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: endpoint_binder_pool_test
   gtest: true
   build: test

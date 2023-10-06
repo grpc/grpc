@@ -103,6 +103,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHODS_MAP
 #endif
@@ -161,6 +163,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHODS_MAP
 #endif
@@ -219,6 +223,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHODS_MAP
 #endif
@@ -262,6 +268,7 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
+  kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdRegisteredMethodsMap,
   kNumExperiments
 };
@@ -380,6 +387,10 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() {
+  return IsExperimentEnabled(kExperimentIdWorkSerializerClearsTimeCache);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHODS_MAP
 inline bool IsRegisteredMethodsMapEnabled() {
