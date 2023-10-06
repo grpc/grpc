@@ -134,6 +134,9 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -212,6 +215,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport, false, true},
 };
 
 }  // namespace grpc_core
@@ -330,6 +336,9 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -408,6 +417,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport, false, true},
 };
 
 }  // namespace grpc_core
@@ -526,6 +538,9 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -604,6 +619,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport, false, true},
 };
 
 }  // namespace grpc_core

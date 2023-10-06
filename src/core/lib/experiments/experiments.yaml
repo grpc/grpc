@@ -228,3 +228,9 @@
   expiry: 2024/01/01
   owner: ctiller@google.com
   test_tags: []
+- name: promise_based_inproc_transport
+  description:
+    Use promises for the in-process transport.
+  expiry: 2024/06/06
+  owner: ctiller@google.com
+  test_tags: []
