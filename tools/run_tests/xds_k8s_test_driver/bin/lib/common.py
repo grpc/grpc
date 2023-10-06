@@ -52,8 +52,10 @@ def make_client_namespace(
 def make_client_runner(
     namespace: k8s.KubernetesNamespace,
     gcp_api_manager: gcp.api.GcpApiManager,
+    *,
     port_forwarding: bool = False,
     reuse_namespace: bool = True,
+    enable_workload_identity: bool = True,
     mode: str = "default",
 ) -> KubernetesClientRunner:
     # KubernetesClientRunner arguments.
@@ -69,6 +71,7 @@ def make_client_runner(
         stats_port=xds_flags.CLIENT_PORT.value,
         reuse_namespace=reuse_namespace,
         debug_use_port_forwarding=port_forwarding,
+        enable_workload_identity=enable_workload_identity,
     )
 
     if mode == "secure":
@@ -91,9 +94,11 @@ def make_server_namespace(
 def make_server_runner(
     namespace: k8s.KubernetesNamespace,
     gcp_api_manager: gcp.api.GcpApiManager,
+    *,
     port_forwarding: bool = False,
     reuse_namespace: bool = True,
     reuse_service: bool = False,
+    enable_workload_identity: bool = True,
     mode: str = "default",
 ) -> KubernetesServerRunner:
     # KubernetesServerRunner arguments.
@@ -109,6 +114,7 @@ def make_server_runner(
         reuse_namespace=reuse_namespace,
         reuse_service=reuse_service,
         debug_use_port_forwarding=port_forwarding,
+        enable_workload_identity=enable_workload_identity,
     )
 
     server_runner = KubernetesServerRunner
