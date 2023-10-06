@@ -270,7 +270,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     };
 
     absl::optional<LoadBalancingPolicy::PickResult> PickOverridenHost(
-        const PickArgs& args,
         XdsOverrideHostAttribute* override_host_attr) const;
 
     RefCountedPtr<XdsOverrideHostLb> policy_;
@@ -351,7 +350,7 @@ XdsOverrideHostLb::Picker::Picker(
 
 absl::optional<LoadBalancingPolicy::PickResult>
 XdsOverrideHostLb::Picker::PickOverridenHost(
-    const PickArgs& args, XdsOverrideHostAttribute* override_host_attr) const {
+    XdsOverrideHostAttribute* override_host_attr) const {
   GPR_ASSERT(override_host_attr != nullptr);
   auto cookie_address_list = override_host_attr->cookie_address_list();
   if (cookie_address_list.empty()) return absl::nullopt;
@@ -427,7 +426,7 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
   auto* override_host_attr = static_cast<XdsOverrideHostAttribute*>(
       call_state->GetCallAttribute(XdsOverrideHostAttribute::TypeName()));
   if (override_host_attr != nullptr) {
-    auto overridden_host_pick = PickOverridenHost(args, override_host_attr);
+    auto overridden_host_pick = PickOverridenHost(override_host_attr);
     if (overridden_host_pick.has_value()) {
       return std::move(*overridden_host_pick);
     }
