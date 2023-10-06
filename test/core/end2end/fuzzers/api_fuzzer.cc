@@ -53,7 +53,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -371,23 +370,8 @@ static grpc_channel_credentials* ReadChannelCreds(
   }
 }
 
-namespace grpc_event_engine {
-namespace experimental {
-extern bool g_event_engine_supports_fd;
-}
-}  // namespace grpc_event_engine
-
 namespace grpc_core {
 namespace testing {
-
-namespace {
-int force_experiments = []() {
-  grpc_event_engine::experimental::g_event_engine_supports_fd = false;
-  ForceEnableExperiment("event_engine_client", true);
-  ForceEnableExperiment("event_engine_listener", true);
-  return 1;
-}();
-}  // namespace
 
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {

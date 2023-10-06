@@ -12,18 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdint.h>
-
-#include <memory>
-
-#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -32,14 +25,10 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/resource_quota/api.h"
-#include "src/core/lib/surface/event_string.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -48,7 +37,6 @@
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
-#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/mock_endpoint.h"
 

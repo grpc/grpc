@@ -46,7 +46,23 @@
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 
+namespace grpc_event_engine {
+namespace experimental {
+extern bool g_event_engine_supports_fd;
+}
+}  // namespace grpc_event_engine
+
 namespace grpc_core {
+
+namespace {
+int force_experiments = []() {
+  grpc_event_engine::experimental::g_event_engine_supports_fd = false;
+  ForceEnableExperiment("event_engine_client", true);
+  ForceEnableExperiment("event_engine_listener", true);
+  return 1;
+}();
+}  // namespace
+
 namespace testing {
 
 static void free_non_null(void* p) {

@@ -167,12 +167,14 @@ void ScheduleReads(
         delay_ms += Clamp(segment.delay_ms(), 0, 1000);
         event_engine->RunAfterExactly(
             std::chrono::milliseconds(delay_ms), [mock_endpoint, segment] {
+              ExecCtx exec_ctx;
               grpc_mock_endpoint_put_read(mock_endpoint,
                                           SliceFromSegment(segment));
             });
       }
       event_engine->RunAfterExactly(
           std::chrono::milliseconds(delay_ms + 1), [mock_endpoint] {
+            ExecCtx exec_ctx;
             grpc_mock_endpoint_finish_put_reads(mock_endpoint);
           });
     } break;
