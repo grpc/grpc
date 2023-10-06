@@ -349,7 +349,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   connection_state->connection_handle =
       ConnectionHandle{reinterpret_cast<intptr_t>(connection_state.get()),
                        aba_token_.fetch_add(1)};
-  grpc_core::MutexLock lock(&connection_mu_);
+  grpc_core::MutexLock connection_handle_lock(&connection_mu_);
   known_connection_handles_.insert(connection_state->connection_handle);
   return connection_state->connection_handle;
 }
