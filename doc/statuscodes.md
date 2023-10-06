@@ -25,11 +25,9 @@ statuses are defined as such:
 
 All RPCs started at a client return a `status` object composed of an integer
 `code` and a string `message`. The server-side can choose the status it returns
-for a given RPC.  gRPC servers should never return a status whose `code` is
-outside the range of codes defined above; any other value should be converted to
-`UNKNOWN` (2) before being transmitted.  Similarly, gRPC clients that receive
-any value outside the range of codes defined above should convert the error to
-`UNKNOWN` before returning it to the application.
+for a given RPC. Applications should only use values defined above. gRPC libraries
+that encounter values outside this range must either propagate them directly or
+convert them to UNKNOWN.
 
 The gRPC client and server-side implementations may also generate and
 return `status` on their own when errors happen. Only a subset of
