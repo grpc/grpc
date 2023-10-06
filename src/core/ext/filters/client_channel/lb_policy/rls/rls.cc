@@ -900,7 +900,7 @@ std::map<std::string, std::string> BuildKeyMap(
   auto it = key_builder_map.find(std::string(path));
   if (it == key_builder_map.end()) {
     // Didn't find exact match, try method wildcard.
-    last_slash_pos = path.rfind("/");
+    last_slash_pos = path.rfind('/');
     GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
     if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     std::string service(path.substr(0, last_slash_pos + 1));
@@ -934,7 +934,7 @@ std::map<std::string, std::string> BuildKeyMap(
   // Add service key.
   if (!key_builder->service_key.empty()) {
     if (last_slash_pos == path.npos) {
-      last_slash_pos = path.rfind("/");
+      last_slash_pos = path.rfind('/');
       GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
@@ -944,7 +944,7 @@ std::map<std::string, std::string> BuildKeyMap(
   // Add method key.
   if (!key_builder->method_key.empty()) {
     if (last_slash_pos == path.npos) {
-      last_slash_pos = path.rfind("/");
+      last_slash_pos = path.rfind('/');
       GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
