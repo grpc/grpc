@@ -972,7 +972,7 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
 // must return 0 on failure and 1 on success. If no function to get the issuer
 // is provided, the internal default function will be used instead.
 static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
-                              X509* x) {
+                              X509* cert) {
   ERR_clear_error();
   int ssl_index = SSL_get_ex_data_X509_STORE_CTX_idx();
   if (ssl_index < 0) {
@@ -996,7 +996,7 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
       static_cast<grpc_core::experimental::CrlProvider*>(
           SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_crl_provider_index));
 
-  char* buf = X509_NAME_oneline(X509_get_issuer_name(x), nullptr, 0);
+  char* buf = X509_NAME_oneline(X509_get_issuer_name(cert), nullptr, 0);
   if (buf == nullptr) {
     gpr_log(GPR_ERROR, "Certificate has null issuer, cannot do CRL lookup");
     return 0;
