@@ -100,12 +100,12 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::Create(
     std::unique_ptr<Crl> crl = std::move(*result);
     crl_map[crl->Issuer()] = std::move(crl);
   }
-  StaticCrlProvider provider = StaticCrlProvider(crl_map);
+  StaticCrlProvider provider = StaticCrlProvider(std::move(crl_map));
   return std::make_shared<StaticCrlProvider>(std::move(provider));
 }
 
 StaticCrlProvider::StaticCrlProvider(
-    const absl::flat_hash_map<std::string, std::shared_ptr<Crl>>& crls)
+    absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls)
     : crls_(crls) {}
 
 std::shared_ptr<Crl> StaticCrlProvider::GetCrl(

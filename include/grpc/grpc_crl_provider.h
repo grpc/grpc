@@ -77,7 +77,7 @@ class StaticCrlProvider : public CrlProvider {
 
  private:
   explicit StaticCrlProvider(
-      const absl::flat_hash_map<std::string, std::shared_ptr<Crl>>& crls);
+      absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls);
   const absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls_;
 };
 
