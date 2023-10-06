@@ -1232,17 +1232,26 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Expects zero or more picker updates, each of which returns
   // round-robin picks for the specified set of addresses.
-  void DrainRoundRobinPickerUpdates(
-      absl::Span<const absl::string_view> addresses,
-      SourceLocation location = SourceLocation()) {
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
+  DrainRoundRobinPickerUpdates(absl::Span<const absl::string_view> addresses,
+                               SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Draining RR picker updates...");
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     while (!helper_->QueueEmpty()) {
       auto update = helper_->GetNextStateUpdate(location);
-      ASSERT_TRUE(update.has_value());
-      ASSERT_EQ(update->state, GRPC_CHANNEL_READY);
-      ExpectRoundRobinPicks(update->picker.get(), addresses);
+      EXPECT_TRUE(update.has_value())
+          << location.file() << ":" << location.line();
+      if (!update.has_value()) return nullptr;
+      EXPECT_EQ(update->state, GRPC_CHANNEL_READY)
+          << location.file() << ":" << location.line();
+      if (update->state != GRPC_CHANNEL_READY) return nullptr;
+      ExpectRoundRobinPicks(update->picker.get(), addresses,
+                            /*call_attributes=*/{}, /*num_iterations=*/3,
+                            location);
+      picker = std::move(update->picker);
     }
     gpr_log(GPR_INFO, "Done draining RR picker updates");
+    return picker;
   }
 
   // Expects zero or more CONNECTING updates.
