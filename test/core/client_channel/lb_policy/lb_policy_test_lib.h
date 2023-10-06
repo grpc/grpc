@@ -630,8 +630,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   class FakeCallState : public ClientChannelLbCallState {
    public:
     explicit FakeCallState(const CallAttributes& attributes) {
-      for (const auto& p : attributes) {
-        attributes_.emplace(p->type(), p);
+      for (const auto& attribute : attributes) {
+        attributes_.emplace(attribute->type(), attribute);
       }
     }
 
