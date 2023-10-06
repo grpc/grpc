@@ -50,7 +50,7 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 namespace grpc_core {
 namespace testing {
 
-class ServerFuzzer : public BasicFuzzer {
+class ServerFuzzer final : public BasicFuzzer {
  public:
   explicit ServerFuzzer(const fuzzer_input::Msg& msg)
       : BasicFuzzer(msg.event_engine_actions()) {
