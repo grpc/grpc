@@ -16,13 +16,8 @@
 //
 //
 
-#ifndef GRPCPP_SECURITY_CRL_PROVIDER_H
-#define GRPCPP_SECURITY_CRL_PROVIDER_H
-
-#include <map>
-#include <memory>
-#include <string>
-#include <utility>
+#ifndef GRPCPP_SECURITY_TLS_CRL_PROVIDER_H
+#define GRPCPP_SECURITY_TLS_CRL_PROVIDER_H
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpcpp/impl/sync.h>
@@ -41,4 +36,4 @@ using grpc_core::experimental::
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPCPP_SECURITY_CRL_PROVIDER_H
+#endif  // GRPCPP_SECURITY_TLS_CRL_PROVIDER_H

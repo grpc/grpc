@@ -424,7 +424,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/sync.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/security/audit_logging.h",
-    "include/grpcpp/security/crl_provider.h",
+    "include/grpcpp/security/tls_crl_provider.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
     "include/grpcpp/security/credentials.h",

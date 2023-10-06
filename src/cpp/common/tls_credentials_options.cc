@@ -43,6 +43,15 @@ void TlsCredentialsOptions::set_certificate_provider(
   }
 }
 
+void TlsCredentialsOptions::set_crl_provider(
+    std::shared_ptr<CrlProvider> crl_provider) {
+  crl_provider_ = std::move(crl_provider);
+  if (crl_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_crl_provider(c_credentials_options_,
+                                                  crl_provider_);
+  }
+}
+
 void TlsCredentialsOptions::watch_root_certs() {
   grpc_tls_credentials_options_watch_root_certs(c_credentials_options_);
 }

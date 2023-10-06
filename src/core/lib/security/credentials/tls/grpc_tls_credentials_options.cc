@@ -20,6 +20,8 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
+#include <memory>
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -94,6 +96,12 @@ void grpc_tls_credentials_options_set_crl_directory(
     grpc_tls_credentials_options* options, const char* crl_directory) {
   GPR_ASSERT(options != nullptr);
   options->set_crl_directory(crl_directory);
+}
+
+void grpc_tls_credentials_options_set_crl_directory(
+    grpc_tls_credentials_options* options,
+    std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider) {
+  options->set_crl_provider(crl_provider);
 }
 
 void grpc_tls_credentials_options_set_check_call_host(
