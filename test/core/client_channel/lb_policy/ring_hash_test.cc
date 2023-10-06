@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <array>
 #include <memory>
@@ -27,12 +29,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
-
 #define XXH_INLINE_ALL
-#include <stdint.h>
-
 #include "xxhash.h"
 
 #include <grpc/grpc.h>
@@ -40,6 +37,8 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
