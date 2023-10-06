@@ -40,9 +40,6 @@
 #include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/mock_endpoint.h"
 
-using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-
 bool squelch = true;
 bool leak_check = true;
 
