@@ -64,7 +64,9 @@ class SecureServerCredentials final : public ServerCredentials {
   explicit SecureServerCredentials(grpc_server_credentials* creds)
       : creds_(creds) {}
   ~SecureServerCredentials() override {
-    grpc_server_credentials_release(creds_);
+    if (creds_ != nullptr) {
+      grpc_server_credentials_release(creds_);
+    }
   }
 
   int AddPortToServer(const std::string& addr, grpc_server* server) override;

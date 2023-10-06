@@ -53,22 +53,18 @@ const char* kSslTsiTestCrlSupportedCrlDirMissingIntermediate =
 const char* kSslTsiTestCrlSupportedCrlDirMissingRoot =
     "test/core/tsi/test_creds/crl_data/crls_missing_root/";
 const char* kSslTsiTestFaultyCrlsDir = "bad_path/";
-const std::string kRevokedKeyPath =
-    absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "revoked.key");
-const std::string kRevokedCertPath =
-    absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "revoked.pem");
-const std::string kValidKeyPath =
-    absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "valid.key");
-const std::string kValidCertPath =
-    absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "valid.pem");
-const std::string kRevokedIntermediateKeyPath = absl::StrCat(
-    kSslTsiTestCrlSupportedCredentialsDir, "leaf_signed_by_intermediate.key");
-const std::string kRevokedIntermediateCertPath = absl::StrCat(
-    kSslTsiTestCrlSupportedCredentialsDir, "leaf_and_intermediate_chain.pem");
-const std::string kRootCrlPath =
-    absl::StrCat(kSslTsiTestCrlSupportedCrlDir, "current.crl");
-const std::string kIntermediateCrlPath =
-    absl::StrCat(kSslTsiTestCrlSupportedCrlDir, "intermediate.crl");
+const char* kRevokedKeyPath = "test/core/tsi/test_creds/crl_data/revoked.key";
+const char* kRevokedCertPath = "test/core/tsi/test_creds/crl_data/revoked.pem";
+const char* kValidKeyPath = "test/core/tsi/test_creds/crl_data/valid.key";
+const char* kValidCertPath = "test/core/tsi/test_creds/crl_data/valid.pem";
+
+const char* kRevokedIntermediateKeyPath =
+    "test/core/tsi/test_creds/crl_data/leaf_signed_by_intermediate.key";
+const char* kRevokedIntermediateCertPath =
+    "test/core/tsi/test_creds/crl_data/leaf_and_intermediate_chain.pem";
+const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
+const char* kIntermediateCrlPath =
+    "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
 
 std::string LoadFile(absl::string_view file_path) {
   grpc_slice slice;
