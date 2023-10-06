@@ -595,7 +595,7 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   // IPv6 addresses.
   constexpr std::array<absl::string_view, 6> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
-      "ipv6:[::1]:443", "ipv6:[::1]:444", "ipv6:[::1]:445"};
+      "ipv6:[::1]:443",     "ipv6:[::1]:444",     "ipv6:[::1]:445"};
   absl::Status status = ApplyUpdate(
       BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;

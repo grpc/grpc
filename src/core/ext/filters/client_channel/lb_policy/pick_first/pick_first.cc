@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -56,6 +57,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -463,7 +465,7 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
           absl::string_view scheme = get_address_family(address);
           bool inserted =
               address_family_indexes.emplace(scheme, endpoints.size() - 1)
-              .second;
+                  .second;
           if (inserted) address_family_order.push_back(scheme);
         }
       }
