@@ -308,15 +308,11 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto* hash_attribute = static_cast<RequestHashAttribute*>(
       call_state->GetCallAttribute(RequestHashAttribute::TypeName()));
-  absl::string_view hash;
-  if (hash_attribute != nullptr) {
-    hash = hash_attribute->request_hash();
-  }
-  uint64_t h;
-  if (!absl::SimpleAtoi(hash, &h)) {
+  if (hash_attribute == nullptr) {
     return PickResult::Fail(
-        absl::InternalError("ring hash value is not a number"));
+        absl::InternalError("hash attribute not present"));
   }
+  uint64_t request_hash = hash_attribute->request_hash();
   const auto& ring = ring_->ring();
   // Find the index in the ring to use for this RPC.
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
@@ -333,10 +329,10 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     }
     uint64_t midval = ring[index].hash;
     uint64_t midval1 = index == 0 ? 0 : ring[index - 1].hash;
-    if (h <= midval && h > midval1) {
+    if (request_hash <= midval && request_hash > midval1) {
       break;
     }
-    if (midval < h) {
+    if (midval < request_hash) {
       lowp = index + 1;
     } else {
       highp = index - 1;

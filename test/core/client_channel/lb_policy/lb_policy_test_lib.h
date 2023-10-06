@@ -95,8 +95,8 @@ namespace testing {
 
 class LoadBalancingPolicyTest : public ::testing::Test {
  protected:
-  using CallAttributes = std::vector<
-      std::unique_ptr<ServiceConfigCallData::CallAttributeInterface>>;
+  using CallAttributes =
+      std::vector<ServiceConfigCallData::CallAttributeInterface*>;
 
   // Channel-level subchannel state for a specific address and channel args.
   // This is analogous to the real subchannel in the ClientChannel code.
@@ -630,8 +630,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   class FakeCallState : public ClientChannelLbCallState {
    public:
     explicit FakeCallState(const CallAttributes& attributes) {
-      for (const auto& p : attributes) {
-        attributes_.emplace(p->type(), p.get());
+      for (const auto& attribute : attributes) {
+        attributes_.emplace(attribute->type(), attribute);
       }
     }
 
