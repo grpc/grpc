@@ -39,6 +39,7 @@ grpc_cc_library(
         "api_fuzzer_proto",
         "//:gpr",
         "//:grpc",
+        "//test/core/event_engine/fuzzing_event_engine",
     ],
 )
 
