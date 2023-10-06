@@ -14,20 +14,31 @@
 // limitations under the License.
 //
 
+#include <algorithm>
 #include <array>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/span.h"
+#include "absl/strings/strip.h"
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+
 #define XXH_INLINE_ALL
+#include <stdint.h>
+
 #include "xxhash.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/json.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
@@ -73,9 +84,9 @@ class RingHashTest : public LoadBalancingPolicyTest {
 TEST_F(RingHashTest, Basic) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, MakeRingHashConfig()),
-                        lb_policy()),
-            absl::OkStatus());
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kAddresses, MakeRingHashConfig()), lb_policy()),
+      absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
   ExpectPickQueued(picker.get(), {address0_attribute});
@@ -96,9 +107,9 @@ TEST_F(RingHashTest, Basic) {
 TEST_F(RingHashTest, SameAddressListedMultipleTimes) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:441"};
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, MakeRingHashConfig()),
-                        lb_policy()),
-            absl::OkStatus());
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kAddresses, MakeRingHashConfig()), lb_policy()),
+      absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   auto* address0_attribute = MakeHashAttribute(kAddresses[0]);
   ExpectPickQueued(picker.get(), {address0_attribute});
@@ -124,9 +135,9 @@ TEST_F(RingHashTest, MultipleAddressesPerEndpoint) {
   const std::array<EndpointAddresses, 2> kEndpoints = {
       MakeEndpointAddresses(kEndpoint1Addresses),
       MakeEndpointAddresses(kEndpoint2Addresses)};
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kEndpoints, MakeRingHashConfig()),
-                        lb_policy()),
-            absl::OkStatus());
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kEndpoints, MakeRingHashConfig()), lb_policy()),
+      absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   // Normal connection to first address of the first endpoint.
   auto* address0_attribute = MakeHashAttribute(kEndpoint1Addresses[0]);

@@ -33,7 +33,6 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -309,8 +308,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   auto* hash_attribute = static_cast<RequestHashAttribute*>(
       call_state->GetCallAttribute(RequestHashAttribute::TypeName()));
   if (hash_attribute == nullptr) {
-    return PickResult::Fail(
-        absl::InternalError("hash attribute not present"));
+    return PickResult::Fail(absl::InternalError("hash attribute not present"));
   }
   uint64_t request_hash = hash_attribute->request_hash();
   const auto& ring = ring_->ring();

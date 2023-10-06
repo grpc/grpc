@@ -21,8 +21,6 @@
 
 #include <stdint.h>
 
-#include "absl/strings/string_view.h"
-
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
