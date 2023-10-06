@@ -632,7 +632,31 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[RH %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-    endpoints_ = *std::move(args.addresses);
+    // De-dup endpoints, taking weight into account.
+    endpoints_.clear();
+    endpoints_.reserve(args.addresses->size());
+    std::map<EndpointAddressSet, size_t> endpoint_indices;
+    size_t num_skipped = 0;
+    for (size_t i = 0; i < args.addresses->size(); ++i) {
+      const EndpointAddresses& endpoint = (*args.addresses)[i];
+      const EndpointAddressSet key(endpoint.addresses());
+      auto p = endpoint_indices.emplace(key, i - num_skipped);
+      if (!p.second) {
+        // Duplicate endpoint.  Combine weights and skip the dup.
+        EndpointAddresses& prev_endpoint = endpoints_[p.first->second];
+        int weight_arg =
+            endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        int prev_weight_arg =
+            prev_endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        prev_endpoint = EndpointAddresses(
+            prev_endpoint.addresses(),
+            prev_endpoint.args().Set(GRPC_ARG_ADDRESS_WEIGHT,
+                                     weight_arg + prev_weight_arg));
+        ++num_skipped;
+      } else {
+        endpoints_.push_back(std::move(endpoint));
+      }
+    }
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
