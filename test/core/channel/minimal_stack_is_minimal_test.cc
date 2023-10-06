@@ -48,8 +48,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
 #include "test/core/util/test_config.h"
 
 std::vector<std::string> MakeStack(const char* transport_name,
@@ -61,7 +61,7 @@ std::vector<std::string> MakeStack(const char* transport_name,
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = transport_name;
-  grpc_transport fake_transport = {&fake_transport_vtable};
+  grpc_core::Transport fake_transport = {&fake_transport_vtable};
   builder.SetTarget("foo.test.google.fr");
   if (transport_name != nullptr) {
     builder.SetTransport(&fake_transport);

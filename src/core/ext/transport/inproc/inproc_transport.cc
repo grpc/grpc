@@ -66,7 +66,6 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 #define INPROC_LOG(...)                               \
   do {                                                \
@@ -102,14 +101,13 @@ struct shared_mu {
   gpr_refcount refs;
 };
 
-struct inproc_transport {
-  inproc_transport(const grpc_transport_vtable* vtable, shared_mu* mu,
-                   bool is_client)
+struct inproc_transport final : public grpc_core::Transport,
+                                public grpc_core::FilterStackTransport {
+  inproc_transport(shared_mu* mu, bool is_client)
       : mu(mu),
         is_client(is_client),
         state_tracker(is_client ? "inproc_client" : "inproc_server",
                       GRPC_CHANNEL_READY) {
-    base.vtable = vtable;
     // Start each side of transport with 2 refs since they each have a ref
     // to the other
     gpr_ref_init(&refs, 2);
@@ -121,6 +119,33 @@ struct inproc_transport {
       gpr_free(mu);
     }
   }
+
+  grpc_core::FilterStackTransport* filter_stack_transport() override {
+    return this;
+  }
+
+  grpc_core::PromiseTransport* promise_transport() override { return nullptr; }
+
+  absl::string_view GetTransportName() const override;
+  void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
+                  const void* server_data, grpc_core::Arena* arena) override;
+  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override;
+  void SetPollsetSet(grpc_stream* stream,
+                     grpc_pollset_set* pollset_set) override;
+  void PerformOp(grpc_transport_op* op) override;
+  grpc_endpoint* GetEndpoint() override;
+
+  size_t SizeOfStream() const override;
+  bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override {
+    return true;
+  }
+
+  void PerformStreamOp(grpc_stream* gs,
+                       grpc_transport_stream_op_batch* op) override;
+  void DestroyStream(grpc_stream* gs,
+                     grpc_closure* then_schedule_closure) override;
+
+  void Orphan() override;
 
   void ref() {
     INPROC_LOG(GPR_INFO, "ref_transport %p", this);
@@ -137,12 +162,11 @@ struct inproc_transport {
     gpr_free(this);
   }
 
-  grpc_transport base;
   shared_mu* mu;
   gpr_refcount refs;
   bool is_client;
   grpc_core::ConnectivityStateTracker state_tracker;
-  void (*accept_stream_cb)(void* user_data, grpc_transport* transport,
+  void (*accept_stream_cb)(void* user_data, grpc_core::Transport* transport,
                            const void* server_data);
   void (*registered_method_matcher_cb)(
       void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
@@ -179,7 +203,7 @@ struct inproc_stream {
                                       // side to avoid destruction
       INPROC_LOG(GPR_INFO, "calling accept stream cb %p %p",
                  st->accept_stream_cb, st->accept_stream_data);
-      (*st->accept_stream_cb)(st->accept_stream_data, &st->base, this);
+      (*st->accept_stream_cb)(st->accept_stream_data, t, this);
     } else {
       // This is the server-side and is being called through accept_stream_cb
       inproc_stream* cs = const_cast<inproc_stream*>(
@@ -344,13 +368,12 @@ void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
   metadata->Encode(&sink);
 }
 
-int init_stream(grpc_transport* gt, grpc_stream* gs,
-                grpc_stream_refcount* refcount, const void* server_data,
-                grpc_core::Arena* arena) {
-  INPROC_LOG(GPR_INFO, "init_stream %p %p %p", gt, gs, server_data);
-  inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
-  new (gs) inproc_stream(t, refcount, server_data, arena);
-  return 0;  // return value is not important
+void inproc_transport::InitStream(grpc_stream* gs,
+                                  grpc_stream_refcount* refcount,
+                                  const void* server_data,
+                                  grpc_core::Arena* arena) {
+  INPROC_LOG(GPR_INFO, "init_stream %p %p %p", this, gs, server_data);
+  new (gs) inproc_stream(this, refcount, server_data, arena);
 }
 
 void close_stream_locked(inproc_stream* s) {
@@ -918,9 +941,9 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
   return ret;
 }
 
-void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
-                       grpc_transport_stream_op_batch* op) {
-  INPROC_LOG(GPR_INFO, "perform_stream_op %p %p %p", gt, gs, op);
+void inproc_transport::PerformStreamOp(grpc_stream* gs,
+                                       grpc_transport_stream_op_batch* op) {
+  INPROC_LOG(GPR_INFO, "perform_stream_op %p %p %p", this, gs, op);
   inproc_stream* s = reinterpret_cast<inproc_stream*>(gs);
   gpr_mu* mu = &s->t->mu->mu;  // save aside in case s gets closed
   gpr_mu_lock(mu);
@@ -1115,21 +1138,20 @@ void close_transport_locked(inproc_transport* t) {
   }
 }
 
-void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
-  inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
-  INPROC_LOG(GPR_INFO, "perform_transport_op %p %p", t, op);
-  gpr_mu_lock(&t->mu->mu);
+void inproc_transport::PerformOp(grpc_transport_op* op) {
+  INPROC_LOG(GPR_INFO, "perform_transport_op %p %p", this, op);
+  gpr_mu_lock(&mu->mu);
   if (op->start_connectivity_watch != nullptr) {
-    t->state_tracker.AddWatcher(op->start_connectivity_watch_state,
-                                std::move(op->start_connectivity_watch));
+    state_tracker.AddWatcher(op->start_connectivity_watch_state,
+                             std::move(op->start_connectivity_watch));
   }
   if (op->stop_connectivity_watch != nullptr) {
-    t->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
+    state_tracker.RemoveWatcher(op->stop_connectivity_watch);
   }
   if (op->set_accept_stream) {
-    t->accept_stream_cb = op->set_accept_stream_fn;
-    t->registered_method_matcher_cb = op->set_registered_method_matcher_fn;
-    t->accept_stream_data = op->set_accept_stream_user_data;
+    accept_stream_cb = op->set_accept_stream_fn;
+    registered_method_matcher_cb = op->set_registered_method_matcher_fn;
+    accept_stream_data = op->set_accept_stream_user_data;
   }
   if (op->on_consumed) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
@@ -1144,78 +1166,69 @@ void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   }
 
   if (do_close) {
-    close_transport_locked(t);
+    close_transport_locked(this);
   }
-  gpr_mu_unlock(&t->mu->mu);
+  gpr_mu_unlock(&mu->mu);
 }
 
-void destroy_stream(grpc_transport* gt, grpc_stream* gs,
-                    grpc_closure* then_schedule_closure) {
+void inproc_transport::DestroyStream(grpc_stream* gs,
+                                     grpc_closure* then_schedule_closure) {
   INPROC_LOG(GPR_INFO, "destroy_stream %p %p", gs, then_schedule_closure);
-  inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
   inproc_stream* s = reinterpret_cast<inproc_stream*>(gs);
-  gpr_mu_lock(&t->mu->mu);
+  gpr_mu_lock(&mu->mu);
   close_stream_locked(s);
-  gpr_mu_unlock(&t->mu->mu);
+  gpr_mu_unlock(&mu->mu);
   s->~inproc_stream();
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure,
                           absl::OkStatus());
 }
 
-void destroy_transport(grpc_transport* gt) {
-  inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
-  INPROC_LOG(GPR_INFO, "destroy_transport %p", t);
-  gpr_mu_lock(&t->mu->mu);
-  close_transport_locked(t);
-  gpr_mu_unlock(&t->mu->mu);
-  t->other_side->unref();
-  t->unref();
+void inproc_transport::Orphan() {
+  INPROC_LOG(GPR_INFO, "destroy_transport %p", this);
+  gpr_mu_lock(&mu->mu);
+  close_transport_locked(this);
+  gpr_mu_unlock(&mu->mu);
+  other_side->unref();
+  unref();
 }
 
 //******************************************************************************
 // INTEGRATION GLUE
 //
 
-void set_pollset(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
-                 grpc_pollset* /*pollset*/) {
+size_t inproc_transport::SizeOfStream() const { return sizeof(inproc_stream); }
+
+absl::string_view inproc_transport::GetTransportName() const {
+  return "inproc";
+}
+
+void inproc_transport::SetPollset(grpc_stream* /*gs*/,
+                                  grpc_pollset* /*pollset*/) {
   // Nothing to do here
 }
 
-void set_pollset_set(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
-                     grpc_pollset_set* /*pollset_set*/) {
+void inproc_transport::SetPollsetSet(grpc_stream* /*gs*/,
+                                     grpc_pollset_set* /*pollset_set*/) {
   // Nothing to do here
 }
 
-grpc_endpoint* get_endpoint(grpc_transport* /*t*/) { return nullptr; }
-
-const grpc_transport_vtable inproc_vtable = {sizeof(inproc_stream),
-                                             true,
-                                             "inproc",
-                                             init_stream,
-                                             nullptr,
-                                             set_pollset,
-                                             set_pollset_set,
-                                             perform_stream_op,
-                                             perform_transport_op,
-                                             destroy_stream,
-                                             destroy_transport,
-                                             get_endpoint};
+grpc_endpoint* inproc_transport::GetEndpoint() { return nullptr; }
 
 //******************************************************************************
 // Main inproc transport functions
 //
-void inproc_transports_create(grpc_transport** server_transport,
-                              grpc_transport** client_transport) {
+void inproc_transports_create(grpc_core::Transport** server_transport,
+                              grpc_core::Transport** client_transport) {
   INPROC_LOG(GPR_INFO, "inproc_transports_create");
   shared_mu* mu = new (gpr_malloc(sizeof(*mu))) shared_mu();
-  inproc_transport* st = new (gpr_malloc(sizeof(*st)))
-      inproc_transport(&inproc_vtable, mu, /*is_client=*/false);
-  inproc_transport* ct = new (gpr_malloc(sizeof(*ct)))
-      inproc_transport(&inproc_vtable, mu, /*is_client=*/true);
+  inproc_transport* st =
+      new (gpr_malloc(sizeof(*st))) inproc_transport(mu, /*is_client=*/false);
+  inproc_transport* ct =
+      new (gpr_malloc(sizeof(*ct))) inproc_transport(mu, /*is_client=*/true);
   st->other_side = ct;
   ct->other_side = st;
-  *server_transport = reinterpret_cast<grpc_transport*>(st);
-  *client_transport = reinterpret_cast<grpc_transport*>(ct);
+  *server_transport = reinterpret_cast<grpc_core::Transport*>(st);
+  *client_transport = reinterpret_cast<grpc_core::Transport*>(ct);
 }
 }  // namespace
 
@@ -1241,8 +1254,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
           .Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority");
-  grpc_transport* server_transport;
-  grpc_transport* client_transport;
+  grpc_core::Transport* server_transport;
+  grpc_core::Transport* client_transport;
   inproc_transports_create(&server_transport, &client_transport);
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
@@ -1264,7 +1277,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       }
       // client_transport was destroyed when grpc_channel_create_internal saw an
       // error.
-      grpc_transport_destroy(server_transport);
+      server_transport->Orphan();
       channel = grpc_lame_client_channel_create(
           nullptr, status, "Failed to create client channel");
     } else {
@@ -1280,8 +1293,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                            &integer)) {
       status = static_cast<grpc_status_code>(integer);
     }
-    grpc_transport_destroy(client_transport);
-    grpc_transport_destroy(server_transport);
+    client_transport->Orphan();
+    server_transport->Orphan();
     channel = grpc_lame_client_channel_create(
         nullptr, status, "Failed to create server channel");
   }

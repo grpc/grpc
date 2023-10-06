@@ -144,18 +144,18 @@ class Fixture {
 
   void FlushExecCtx() { grpc_core::ExecCtx::Get()->Flush(); }
 
-  ~Fixture() { grpc_transport_destroy(t_); }
+  ~Fixture() { t_->Orphan(); }
 
   grpc_chttp2_transport* chttp2_transport() {
     return reinterpret_cast<grpc_chttp2_transport*>(t_);
   }
-  grpc_transport* transport() { return t_; }
+  grpc_core::Transport* transport() { return t_; }
 
   void PushInput(grpc_slice slice) { ep_->PushInput(slice); }
 
  private:
   PhonyEndpoint* ep_;
-  grpc_transport* t_;
+  grpc_core::Transport* t_;
 };
 
 class TestClosure : public grpc_closure {

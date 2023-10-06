@@ -176,7 +176,7 @@ const grpc_arg_pointer_vtable channelz_node_arg_vtable = {
 absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
     const char* target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type,
-    grpc_transport* optional_transport) {
+    Transport* optional_transport) {
   if (!args.GetString(GRPC_ARG_DEFAULT_AUTHORITY).has_value()) {
     auto ssl_override = args.GetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
     if (ssl_override.has_value()) {

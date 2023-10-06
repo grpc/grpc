@@ -410,7 +410,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
       grpc_fd_create(fd, "client", true),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(final_args),
       "fd-client");
-  grpc_transport* transport =
+  grpc_core::Transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);
   auto channel = grpc_core::Channel::Create(
@@ -420,7 +420,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
     grpc_core::ExecCtx::Get()->Flush();
     return channel->release()->c_ptr();
   } else {
-    grpc_transport_destroy(transport);
+    transport->Orphan();
     return grpc_lame_client_channel_create(
         target, static_cast<grpc_status_code>(channel.status().code()),
         "Failed to create client channel");

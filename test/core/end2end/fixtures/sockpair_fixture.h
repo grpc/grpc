@@ -70,7 +70,7 @@ class SockpairFixture : public CoreTestFixture {
                           grpc_completion_queue* cq) override {
     auto args = MutateServerArgs(in_args);
     ExecCtx exec_ctx;
-    grpc_transport* transport;
+    Transport* transport;
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_start(server);
@@ -88,7 +88,7 @@ class SockpairFixture : public CoreTestFixture {
     if (error.ok()) {
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     } else {
-      grpc_transport_destroy(transport);
+      transport->Orphan();
     }
     return server;
   }
@@ -102,7 +102,7 @@ class SockpairFixture : public CoreTestFixture {
                             .Set(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority")
                             .ToC()
                             .get());
-    grpc_transport* transport;
+    Transport* transport;
     auto* client_endpoint = std::exchange(ep_.client, nullptr);
     EXPECT_NE(client_endpoint, nullptr);
     transport = grpc_create_chttp2_transport(args, client_endpoint, true);
@@ -116,7 +116,7 @@ class SockpairFixture : public CoreTestFixture {
       client = grpc_lame_client_channel_create(
           nullptr, static_cast<grpc_status_code>(channel.status().code()),
           "lame channel");
-      grpc_transport_destroy(transport);
+      transport->Orphan();
     }
     GPR_ASSERT(client);
     return client;

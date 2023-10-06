@@ -58,7 +58,7 @@ class BinderTransportTest : public ::testing::Test {
 
   ~BinderTransportTest() override {
     grpc_core::ExecCtx exec_ctx;
-    grpc_transport_destroy(transport_);
+    transport_->Orphan();
     grpc_core::ExecCtx::Get()->Flush();
     for (grpc_binder_stream* gbs : stream_buffer_) {
       gbs->~grpc_binder_stream();
@@ -101,7 +101,7 @@ class BinderTransportTest : public ::testing::Test {
                                      ->CreateMemoryAllocator("test"));
   grpc_core::Arena* arena_ =
       grpc_core::Arena::Create(/* initial_size = */ 1, &memory_allocator_);
-  grpc_transport* transport_;
+  grpc_core::Transport* transport_;
   grpc_stream_refcount ref_;
   std::vector<grpc_binder_stream*> stream_buffer_;
 };

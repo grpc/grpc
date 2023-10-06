@@ -28,13 +28,13 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 static bool is_building_http_like_transport(
     grpc_core::ChannelStackBuilder* builder) {
-  grpc_transport* t = builder->transport();
-  return t != nullptr && strstr(t->vtable->name, "http");
+  grpc_core::Transport* t = builder->transport();
+  return t != nullptr && absl::StrContains(t->GetTransportName(), "http");
 }
 
 namespace grpc_core {

@@ -81,10 +81,9 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 typedef struct connected_channel_channel_data {
-  grpc_transport* transport;
+  grpc_core::Transport* transport;
 } channel_data;
 
 struct callback_state {
@@ -183,15 +182,15 @@ static void connected_channel_start_transport_stream_op_batch(
     callback_state* state = get_state_for_batch(calld, batch);
     intercept_callback(calld, state, false, "on_complete", &batch->on_complete);
   }
-  grpc_transport_perform_stream_op(
-      chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld), batch);
+  chand->transport->filter_stack_transport()->PerformStreamOp(
+      TRANSPORT_STREAM_FROM_CALL_DATA(calld), batch);
   GRPC_CALL_COMBINER_STOP(calld->call_combiner, "passed batch to transport");
 }
 
 static void connected_channel_start_transport_op(grpc_channel_element* elem,
                                                  grpc_transport_op* op) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  grpc_transport_perform_op(chand->transport, op);
+  chand->transport->PerformOp(op);
 }
 
 // Constructor for call_data
@@ -231,7 +230,7 @@ static grpc_error_handle connected_channel_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(args->is_last);
-  cd->transport = args->channel_args.GetObject<grpc_transport>();
+  cd->transport = args->channel_args.GetObject<grpc_core::Transport>();
   return absl::OkStatus();
 }
 
@@ -239,7 +238,7 @@ static grpc_error_handle connected_channel_init_channel_elem(
 static void connected_channel_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   if (cd->transport) {
-    grpc_transport_destroy(cd->transport);
+    cd->transport->Orphan();
   }
 }
 
@@ -255,7 +254,7 @@ namespace {
     defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL)
 class ConnectedChannelStream : public Orphanable {
  public:
-  explicit ConnectedChannelStream(grpc_transport* transport)
+  explicit ConnectedChannelStream(Transport* transport)
       : transport_(transport), stream_(nullptr, StreamDeleter(this)) {
     GRPC_STREAM_REF_INIT(
         &stream_refcount_, 1,
@@ -265,7 +264,7 @@ class ConnectedChannelStream : public Orphanable {
         this, "ConnectedChannelStream");
   }
 
-  grpc_transport* transport() { return transport_; }
+  Transport* transport() { return transport_; }
   grpc_closure* stream_destroyed_closure() { return &stream_destroyed_; }
 
   BatchBuilder::Target batch_target() {
@@ -359,7 +358,7 @@ class ConnectedChannelStream : public Orphanable {
     }
   }
 
-  grpc_transport* const transport_;
+  Transport* const transport_;
   RefCountedPtr<CallContext> const call_context_{
       GetContext<CallContext>()->Ref()};
   grpc_closure stream_destroyed_ =
@@ -437,15 +436,15 @@ auto ConnectedChannelStream::SendMessages(
         // defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL)
 
 #ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
-ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
-    grpc_transport* transport, CallArgs call_args, NextPromiseFactory) {
+ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(Transport* transport,
+                                                         CallArgs call_args,
+                                                         NextPromiseFactory) {
   OrphanablePtr<ConnectedChannelStream> stream(
       GetContext<Arena>()->New<ConnectedChannelStream>(transport));
-  stream->SetStream(static_cast<grpc_stream*>(
-      GetContext<Arena>()->Alloc(transport->vtable->sizeof_stream)));
-  grpc_transport_init_stream(transport, stream->stream(),
-                             stream->stream_refcount(), nullptr,
-                             GetContext<Arena>());
+  stream->SetStream(static_cast<grpc_stream*>(GetContext<Arena>()->Alloc(
+      transport->filter_stack_transport()->SizeOfStream())));
+  transport->InitStream(stream->stream(), stream->stream_refcount(), nullptr,
+                        GetContext<Arena>());
   auto* party = static_cast<Party*>(Activity::current());
   party->Spawn(
       "set_polling_entity", call_args.polling_entity->Wait(),
@@ -574,15 +573,14 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
 
 #ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
-    grpc_transport* transport, CallArgs,
-    NextPromiseFactory next_promise_factory) {
+    Transport* transport, CallArgs, NextPromiseFactory next_promise_factory) {
   OrphanablePtr<ConnectedChannelStream> stream(
       GetContext<Arena>()->New<ConnectedChannelStream>(transport));
 
-  stream->SetStream(static_cast<grpc_stream*>(
-      GetContext<Arena>()->Alloc(transport->vtable->sizeof_stream)));
-  grpc_transport_init_stream(
-      transport, stream->stream(), stream->stream_refcount(),
+  stream->SetStream(static_cast<grpc_stream*>(GetContext<Arena>()->Alloc(
+      transport->filter_stack_transport()->SizeOfStream())));
+  transport->InitStream(
+      stream->stream(), stream->stream_refcount(),
       GetContext<CallContext>()->server_call_context()->server_stream_data(),
       GetContext<Arena>());
   auto* party = static_cast<Party*>(Activity::current());
@@ -847,7 +845,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
 #endif
 
 template <ArenaPromise<ServerMetadataHandle> (*make_call_promise)(
-    grpc_transport*, CallArgs, NextPromiseFactory)>
+    Transport*, CallArgs, NextPromiseFactory)>
 grpc_channel_filter MakeConnectedFilter() {
   // Create a vtable that contains both the legacy call methods (for filter
   // stack based calls) and the new promise based method for creating
@@ -857,7 +855,7 @@ grpc_channel_filter MakeConnectedFilter() {
   // call be promise based.
   auto make_call_wrapper = +[](grpc_channel_element* elem, CallArgs call_args,
                                NextPromiseFactory next) {
-    grpc_transport* transport =
+    Transport* transport =
         static_cast<channel_data*>(elem->channel_data)->transport;
     return make_call_promise(transport, std::move(call_args), std::move(next));
   };
@@ -887,8 +885,8 @@ grpc_channel_filter MakeConnectedFilter() {
 }
 
 ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
-    grpc_transport* transport, CallArgs call_args, NextPromiseFactory) {
-  return transport->vtable->make_call_promise(transport, std::move(call_args));
+    Transport* transport, CallArgs call_args, NextPromiseFactory) {
+  return transport->promise_transport()->MakeCallPromise(std::move(call_args));
 }
 
 const grpc_channel_filter kPromiseBasedTransportFilter =
@@ -914,7 +912,7 @@ const grpc_channel_filter kServerEmulatedFilter =
 }  // namespace grpc_core
 
 bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder) {
-  grpc_transport* t = builder->transport();
+  grpc_core::Transport* t = builder->transport();
   GPR_ASSERT(t != nullptr);
   // Choose the right vtable for the connected filter.
   // We can't know promise based call or not here (that decision needs the
@@ -922,7 +920,7 @@ bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder) {
   // ordering constraints on when we add filters).
   // We can know if this results in a promise based call how we'll create
   // our promise (if indeed we can), and so that is the choice made here.
-  if (t->vtable->make_call_promise != nullptr) {
+  if (t->promise_transport() != nullptr) {
     // Option 1, and our ideal: the transport supports promise based calls,
     // and so we simply use the transport directly.
     builder->AppendFilter(&grpc_core::kPromiseBasedTransportFilter);

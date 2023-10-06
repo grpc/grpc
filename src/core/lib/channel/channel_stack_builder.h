@@ -54,14 +54,14 @@ class ChannelStackBuilder {
   absl::string_view target() const { return target_; }
 
   // Set the transport.
-  ChannelStackBuilder& SetTransport(grpc_transport* transport) {
+  ChannelStackBuilder& SetTransport(Transport* transport) {
     GPR_ASSERT(transport_ == nullptr);
     transport_ = transport;
     return *this;
   }
 
   // Query the transport.
-  grpc_transport* transport() const { return transport_; }
+  Transport* transport() const { return transport_; }
 
   // Query the channel args.
   const ChannelArgs& channel_args() const { return args_; }
@@ -108,7 +108,7 @@ class ChannelStackBuilder {
   // The target
   std::string target_{unknown_target()};
   // The transport
-  grpc_transport* transport_ = nullptr;
+  Transport* transport_ = nullptr;
   // Channel args
   ChannelArgs args_;
   // The in-progress stack

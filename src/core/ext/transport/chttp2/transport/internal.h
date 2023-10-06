@@ -73,7 +73,6 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 // Flag that this closure barrier may be covering a write in a pollset, and so
 //   we should not complete this closure until we can prove that the write got
@@ -230,26 +229,39 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
+struct grpc_chttp2_transport final
+    : public grpc_core::Transport,
+      public grpc_core::FilterStackTransport,
+      public grpc_core::RefCounted<grpc_chttp2_transport,
+                                   grpc_core::NonPolymorphicRefCount>,
+      public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
 
-  // Make this be able to be contained in RefCountedPtr<>
-  // Can't yet make this derive from RefCounted because we need to keep
-  // `grpc_transport base` first.
-  // TODO(ctiller): Make a transport interface.
-  void IncrementRefCount() { refs.Ref(); }
-  void Unref() {
-    if (refs.Unref()) delete this;
-  }
-  grpc_core::RefCountedPtr<grpc_chttp2_transport> Ref() {
-    IncrementRefCount();
-    return grpc_core::RefCountedPtr<grpc_chttp2_transport>(this);
-  }
+  void Orphan() override;
 
-  grpc_transport base;  // must be first
-  grpc_core::RefCount refs;
+  size_t SizeOfStream() const override;
+  bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override;
+  void PerformStreamOp(grpc_stream* stream,
+                       grpc_transport_stream_op_batch* op) override;
+  void DestroyStream(grpc_stream* stream,
+                     grpc_closure* then_schedule_closure) override;
+
+  grpc_core::FilterStackTransport* filter_stack_transport() override {
+    return this;
+  }
+  grpc_core::PromiseTransport* promise_transport() override { return nullptr; }
+
+  absl::string_view GetTransportName() const override;
+  void InitStream(grpc_stream* stream, grpc_stream_refcount* refcount,
+                  const void* server_data, grpc_core::Arena* arena) override;
+  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override;
+  void SetPollsetSet(grpc_stream* stream,
+                     grpc_pollset_set* pollset_set) override;
+  void PerformOp(grpc_transport_op* op) override;
+  grpc_endpoint* GetEndpoint() override;
+
   grpc_endpoint* ep;
   grpc_core::Slice peer_string;
 
@@ -288,7 +300,7 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_stream** accepting_stream = nullptr;
 
   // accept stream callback
-  void (*accept_stream_cb)(void* user_data, grpc_transport* transport,
+  void (*accept_stream_cb)(void* user_data, grpc_core::Transport* transport,
                            const void* server_data);
   // registered_method_matcher_cb is called before invoking the recv initial
   // metadata callback.

@@ -33,12 +33,12 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 // Cronet transport object
 typedef struct cronet_transport {
-  grpc_transport base;  // must be first element in this structure
+  grpc_core::Transport base;  // must be first element in this structure
   void* engine;
   char* host;
 } cronet_transport;
@@ -58,7 +58,7 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
                           .PreconditionChannelArgs(args)
                           .Set(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER, 1);
 
-  grpc_transport* ct = grpc_create_cronet_transport(
+  grpc_core::Transport* ct = grpc_create_cronet_transport(
       engine, target, channel_args.ToC().get(), reserved);
 
   grpc_core::ExecCtx exec_ctx;

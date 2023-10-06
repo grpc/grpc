@@ -46,7 +46,7 @@
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/transport_impl.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -385,45 +385,45 @@ size_t sizeof_stream;  // = sizeof(transport stream)
 const char* name;
 
 // implementation of grpc_transport_init_stream
-int InitStream(grpc_transport* /*self*/, grpc_stream* /*stream*/,
+int InitStream(grpc_core::Transport* /*self*/, grpc_stream* /*stream*/,
                grpc_stream_refcount* /*refcount*/, const void* /*server_data*/,
                grpc_core::Arena* /*arena*/) {
   return 0;
 }
 
 // implementation of grpc_transport_set_pollset
-void SetPollset(grpc_transport* /*self*/, grpc_stream* /*stream*/,
+void SetPollset(grpc_core::Transport* /*self*/, grpc_stream* /*stream*/,
                 grpc_pollset* /*pollset*/) {}
 
 // implementation of grpc_transport_set_pollset
-void SetPollsetSet(grpc_transport* /*self*/, grpc_stream* /*stream*/,
+void SetPollsetSet(grpc_core::Transport* /*self*/, grpc_stream* /*stream*/,
                    grpc_pollset_set* /*pollset_set*/) {}
 
 // implementation of grpc_transport_perform_stream_op
-void PerformStreamOp(grpc_transport* /*self*/, grpc_stream* /*stream*/,
+void PerformStreamOp(grpc_core::Transport* /*self*/, grpc_stream* /*stream*/,
                      grpc_transport_stream_op_batch* op) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete, absl::OkStatus());
 }
 
 // implementation of grpc_transport_perform_op
-void PerformOp(grpc_transport* /*self*/, grpc_transport_op* /*op*/) {}
+void PerformOp(grpc_core::Transport* /*self*/, grpc_transport_op* /*op*/) {}
 
 // implementation of grpc_transport_destroy_stream
-void DestroyStream(grpc_transport* /*self*/, grpc_stream* /*stream*/,
+void DestroyStream(grpc_core::Transport* /*self*/, grpc_stream* /*stream*/,
                    grpc_closure* /*then_sched_closure*/) {}
 
 // implementation of grpc_transport_destroy
-void Destroy(grpc_transport* /*self*/) {}
+void Destroy(grpc_core::Transport* /*self*/) {}
 
 // implementation of grpc_transport_get_endpoint
-grpc_endpoint* GetEndpoint(grpc_transport* /*self*/) { return nullptr; }
+grpc_endpoint* GetEndpoint(grpc_core::Transport* /*self*/) { return nullptr; }
 
 static const grpc_transport_vtable phony_transport_vtable = {
     0,         false,         "phony_http2", InitStream,
     nullptr,   SetPollset,    SetPollsetSet, PerformStreamOp,
     PerformOp, DestroyStream, Destroy,       GetEndpoint};
 
-static grpc_transport phony_transport = {&phony_transport_vtable};
+static grpc_core::Transport phony_transport = {&phony_transport_vtable};
 
 grpc_arg Arg() {
   static const grpc_arg_pointer_vtable vtable = {

@@ -157,7 +157,7 @@ class Server : public InternallyRefCounted<Server>,
   // the server.  Called from the listener when a new connection is accepted.
   // Takes ownership of a ref on resource_user from the caller.
   grpc_error_handle SetupTransport(
-      grpc_transport* transport, grpc_pollset* accepting_pollset,
+      Transport* transport, grpc_pollset* accepting_pollset,
       const ChannelArgs& args,
       const RefCountedPtr<channelz::SocketNode>& socket_node);
 
@@ -222,7 +222,7 @@ class Server : public InternallyRefCounted<Server>,
 
     void InitTransport(RefCountedPtr<Server> server,
                        RefCountedPtr<Channel> channel, size_t cq_idx,
-                       grpc_transport* transport,
+                       Transport* transport,
                        intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
@@ -241,7 +241,7 @@ class Server : public InternallyRefCounted<Server>,
    private:
     class ConnectivityWatcher;
 
-    static void AcceptStream(void* arg, grpc_transport* /*transport*/,
+    static void AcceptStream(void* arg, Transport* /*transport*/,
                              const void* transport_server_data);
     static void SetRegisteredMethodOnMetadata(void* arg,
                                               ServerMetadata* metadata);

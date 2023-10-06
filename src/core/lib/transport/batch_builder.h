@@ -67,7 +67,7 @@ class BatchBuilder {
   }
 
   struct Target {
-    grpc_transport* transport;
+    Transport* transport;
     grpc_stream* stream;
     grpc_stream_refcount* stream_refcount;
   };

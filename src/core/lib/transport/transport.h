@@ -518,12 +518,12 @@ typedef struct grpc_transport_op {
   /// Error contract: the transport that gets this op must cause
   ///                goaway_error to be unref'ed after processing it
   grpc_error_handle goaway_error;
-  void (*set_accept_stream_fn)(void* user_data, grpc_transport* transport,
+  void (*set_accept_stream_fn)(void* user_data, grpc_core::Transport* transport,
                                const void* server_data) = nullptr;
   void (*set_registered_method_matcher_fn)(
       void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* set_accept_stream_user_data = nullptr;
-  void (*set_make_promise_fn)(void* user_data, grpc_transport* transport,
+  void (*set_make_promise_fn)(void* user_data, grpc_core::Transport* transport,
                               const void* server_data) = nullptr;
   void* set_make_promise_user_data = nullptr;
   /// add this transport to a pollset
@@ -569,7 +569,7 @@ typedef struct grpc_transport_op {
 
 // Returns the amount of memory required to store a grpc_stream for this
 // transport
-size_t grpc_transport_stream_size(grpc_transport* transport);
+size_t grpc_transport_stream_size(grpc_core::Transport* transport);
 
 // Initialize transport data for a stream.
 
@@ -581,13 +581,14 @@ size_t grpc_transport_stream_size(grpc_transport* transport);
 //   stream      - a pointer to uninitialized memory to initialize
 //   server_data - either NULL for a client initiated stream, or a pointer
 //                 supplied from the accept_stream callback function
-int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
+int grpc_transport_init_stream(grpc_core::Transport* transport,
+                               grpc_stream* stream,
                                grpc_stream_refcount* refcount,
                                const void* server_data,
                                grpc_core::Arena* arena);
 
-void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
-                             grpc_polling_entity* pollent);
+void grpc_transport_set_pops(grpc_core::Transport* transport,
+                             grpc_stream* stream, grpc_polling_entity* pollent);
 
 // Destroy transport data for a stream.
 
@@ -599,7 +600,7 @@ void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
 //   transport - the transport on which to create this stream
 //   stream    - the grpc_stream to destroy (memory is still owned by the
 //               caller, but any child memory must be cleaned up)
-void grpc_transport_destroy_stream(grpc_transport* transport,
+void grpc_transport_destroy_stream(grpc_core::Transport* transport,
                                    grpc_stream* stream,
                                    grpc_closure* then_schedule_closure);
 
@@ -618,37 +619,90 @@ std::string grpc_transport_stream_op_batch_string(
     grpc_transport_stream_op_batch* op, bool truncate);
 std::string grpc_transport_op_string(grpc_transport_op* op);
 
-// Send a batch of operations on a transport
+namespace grpc_core {
 
-// Takes ownership of any objects contained in ops.
+class FilterStackTransport {
+ public:
+  // Memory required for a single stream element - this is allocated by upper
+  // layers and initialized by the transport
+  // TODO(ctiller): not used for promises, remove
+  virtual size_t SizeOfStream() const = 0;
 
-// Arguments:
-//   transport - the transport on which to initiate the stream
-//   stream    - the stream on which to send the operations. This must be
-//               non-NULL and previously initialized by the same transport.
-//   op        - a grpc_transport_stream_op_batch specifying the op to perform
-//
-void grpc_transport_perform_stream_op(grpc_transport* transport,
-                                      grpc_stream* stream,
-                                      grpc_transport_stream_op_batch* op);
+  // HACK: inproc does not handle stream op batch callbacks correctly (receive
+  // ops are required to complete prior to on_complete triggering).
+  // This flag is used to disable coalescing of batches in connected_channel for
+  // that specific transport.
+  // TODO(ctiller): This ought not be necessary once we have promises complete.
+  virtual bool HackyDisableStreamOpBatchCoalescingInConnectedChannel()
+      const = 0;
 
-void grpc_transport_perform_op(grpc_transport* transport,
-                               grpc_transport_op* op);
+  // implementation of grpc_transport_perform_stream_op
+  virtual void PerformStreamOp(grpc_stream* stream,
+                               grpc_transport_stream_op_batch* op) = 0;
 
-// Send a ping on a transport
+  // implementation of grpc_transport_destroy_stream
+  virtual void DestroyStream(grpc_stream* stream,
+                             grpc_closure* then_schedule_closure) = 0;
+};
 
-// Calls cb with user data when a response is received.
-void grpc_transport_ping(grpc_transport* transport, grpc_closure* cb);
+class PromiseTransport {
+ public:
+  // Create a promise to execute one client call.
+  // If this is non-null, it may be used in preference to
+  // perform_stream_op.
+  // If this is used in preference to perform_stream_op, the
+  // following can be omitted also:
+  //   - calling init_stream, destroy_stream, set_pollset, set_pollset_set
+  //   - allocation of memory for call data (sizeof_stream may be ignored)
+  // There is an on-going migration to move all filters to providing this, and
+  // then to drop perform_stream_op.
+  virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args) = 0;
+};
 
-// Advise peer of pending connection termination.
-void grpc_transport_goaway(grpc_transport* transport, grpc_status_code status,
-                           grpc_slice debug_data);
+class Transport : public Orphanable {
+ public:
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
 
-// Destroy the transport
-void grpc_transport_destroy(grpc_transport* transport);
+  virtual FilterStackTransport* filter_stack_transport() = 0;
+  virtual PromiseTransport* promise_transport() = 0;
 
-// Get the endpoint used by \a transport
-grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport);
+  // name of this transport implementation
+  virtual absl::string_view GetTransportName() const = 0;
+
+  // implementation of grpc_transport_init_stream
+  // TODO(ctiller): Remove post-promises.
+  virtual void InitStream(grpc_stream* stream, grpc_stream_refcount* refcount,
+                          const void* server_data, Arena* arena) = 0;
+
+  // implementation of grpc_transport_set_pollset
+  virtual void SetPollset(grpc_stream* stream, grpc_pollset* pollset) = 0;
+
+  // implementation of grpc_transport_set_pollset
+  virtual void SetPollsetSet(grpc_stream* stream,
+                             grpc_pollset_set* pollset_set) = 0;
+
+  void SetPollingEntity(grpc_stream* stream,
+                        grpc_polling_entity* pollset_or_pollset_set) {
+    if (auto* pollset = grpc_polling_entity_pollset(pollset_or_pollset_set)) {
+      SetPollset(stream, pollset);
+    } else if (auto* pollset_set =
+                   grpc_polling_entity_pollset_set(pollset_or_pollset_set)) {
+      SetPollsetSet(stream, pollset_set);
+    } else {
+      GPR_ASSERT(false);
+    }
+  }
+
+  // implementation of grpc_transport_perform_op
+  virtual void PerformOp(grpc_transport_op* op) = 0;
+
+  // implementation of grpc_transport_get_endpoint
+  virtual grpc_endpoint* GetEndpoint() = 0;
+};
+
+}  // namespace grpc_core
 
 // Allocate a grpc_transport_op, and preconfigure the on_complete closure to
 // \a on_complete and then delete the returned transport op

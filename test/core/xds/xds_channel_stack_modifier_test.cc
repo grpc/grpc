@@ -34,8 +34,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -96,7 +96,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = "fake";
-  grpc_transport fake_transport = {&fake_transport_vtable};
+  Transport fake_transport = {&fake_transport_vtable};
   builder.SetTransport(&fake_transport);
   // Construct channel stack and verify that the test filters were successfully
   // added

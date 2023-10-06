@@ -93,7 +93,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
     grpc_core::ChannelArgs args = grpc_core::CoreConfiguration::Get()
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr);
-    grpc_transport* transport =
+    grpc_core::Transport* transport =
         grpc_create_chttp2_transport(args, mock_endpoint, true);
     grpc_resource_quota_unref(resource_quota);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);

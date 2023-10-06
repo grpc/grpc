@@ -79,14 +79,14 @@ class End2EndBinderTransportTest
 }  // namespace
 
 TEST_P(End2EndBinderTransportTest, SetupTransport) {
-  grpc_transport *client_transport, *server_transport;
+  grpc_core::Transport *client_transport, *server_transport;
   std::tie(client_transport, server_transport) =
       end2end_testing::CreateClientServerBindersPairForTesting();
   EXPECT_NE(client_transport, nullptr);
   EXPECT_NE(server_transport, nullptr);
 
-  grpc_transport_destroy(client_transport);
-  grpc_transport_destroy(server_transport);
+  client_transport->Orphan();
+  server_transport->Orphan();
 }
 
 TEST_P(End2EndBinderTransportTest, UnaryCall) {

@@ -112,7 +112,7 @@ class Channel : public RefCounted<Channel>,
   static absl::StatusOr<RefCountedPtr<Channel>> Create(
       const char* target, ChannelArgs args,
       grpc_channel_stack_type channel_stack_type,
-      grpc_transport* optional_transport);
+      Transport* optional_transport);
 
   static absl::StatusOr<RefCountedPtr<Channel>> CreateWithBuilder(
       ChannelStackBuilder* builder);
