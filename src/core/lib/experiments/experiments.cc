@@ -130,6 +130,9 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_registered_methods_map =
+    "Use absl::flat_hash_map for registered methods.";
+const char* const additional_constraints_registered_methods_map = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -205,6 +208,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"registered_methods_map", description_registered_methods_map,
+     additional_constraints_registered_methods_map, kDefaultForDebugOnly, true},
 };
 
 }  // namespace grpc_core
@@ -319,6 +324,9 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_registered_methods_map =
+    "Use absl::flat_hash_map for registered methods.";
+const char* const additional_constraints_registered_methods_map = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -394,6 +402,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"registered_methods_map", description_registered_methods_map,
+     additional_constraints_registered_methods_map, kDefaultForDebugOnly, true},
 };
 
 }  // namespace grpc_core
@@ -508,6 +518,9 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_registered_methods_map =
+    "Use absl::flat_hash_map for registered methods.";
+const char* const additional_constraints_registered_methods_map = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -583,6 +596,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"registered_methods_map", description_registered_methods_map,
+     additional_constraints_registered_methods_map, kDefaultForDebugOnly, true},
 };
 
 }  // namespace grpc_core

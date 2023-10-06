@@ -103,6 +103,16 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#ifndef NDEBUG
+#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHODS_MAP
+#endif
+inline bool IsRegisteredMethodsMapEnabled() {
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -151,6 +161,16 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#ifndef NDEBUG
+#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHODS_MAP
+#endif
+inline bool IsRegisteredMethodsMapEnabled() {
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -199,6 +219,16 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#ifndef NDEBUG
+#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHODS_MAP
+#endif
+inline bool IsRegisteredMethodsMapEnabled() {
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
 #endif
 
 #else
@@ -232,6 +262,7 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
+  kExperimentIdRegisteredMethodsMap,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -349,6 +380,10 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHODS_MAP
+inline bool IsRegisteredMethodsMapEnabled() {
+  return IsExperimentEnabled(kExperimentIdRegisteredMethodsMap);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
