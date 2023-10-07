@@ -625,6 +625,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/lookup/v1/rls_config.proto src/proto/grpc/lookup/v1/rls_config.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  src/proto/grpc/reflection/v1/reflection.proto src/proto/grpc/reflection/v1/reflection.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/reflection/v1alpha/reflection.proto src/proto/grpc/reflection/v1alpha/reflection.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -4280,6 +4283,10 @@ endif()
 if(gRPC_BUILD_CODEGEN)
 
 add_library(grpc++_reflection
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
