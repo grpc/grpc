@@ -164,17 +164,36 @@ void ScheduleReads(
     } break;
     case fuzzer_input::NetworkInput::kInputSegments: {
       int delay_ms = 0;
+      SliceBuffer building;
       for (const auto& segment : network_input.input_segments().segments()) {
-        delay_ms += Clamp(segment.delay_ms(), 0, 1000);
+        const int segment_delay = Clamp(segment.delay_ms(), 0, 1000);
+        if (segment_delay != 0) {
+          delay_ms += segment_delay;
+          if (building.Length() != 0) {
+            event_engine->RunAfterExactly(
+                std::chrono::milliseconds(delay_ms),
+                [mock_endpoint, slice = building.JoinIntoSlice()]() mutable {
+                  ExecCtx exec_ctx;
+                  grpc_mock_endpoint_put_read(mock_endpoint,
+                                              slice.TakeCSlice());
+                });
+          }
+          building.Clear();
+        }
+        building.Append(Slice(SliceFromSegment(segment)));
+      }
+      if (building.Length() != 0) {
+        ++delay_ms;
         event_engine->RunAfterExactly(
-            std::chrono::milliseconds(delay_ms), [mock_endpoint, segment] {
+            std::chrono::milliseconds(delay_ms),
+            [mock_endpoint, slice = building.JoinIntoSlice()]() mutable {
               ExecCtx exec_ctx;
-              grpc_mock_endpoint_put_read(mock_endpoint,
-                                          SliceFromSegment(segment));
+              grpc_mock_endpoint_put_read(mock_endpoint, slice.TakeCSlice());
             });
       }
+      ++delay_ms;
       event_engine->RunAfterExactly(
-          std::chrono::milliseconds(delay_ms + 1), [mock_endpoint] {
+          std::chrono::milliseconds(delay_ms), [mock_endpoint] {
             ExecCtx exec_ctx;
             grpc_mock_endpoint_finish_put_reads(mock_endpoint);
           });
