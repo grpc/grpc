@@ -12,25 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdint.h>
-#include <string.h>
-
-#include <initializer_list>
-#include <memory>
-#include <string>
-
 #include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 
-#include <grpc/byte_buffer.h>
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
-#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -38,23 +26,19 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/surface/event_string.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
-#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/mock_endpoint.h"
 
@@ -77,15 +61,15 @@ class ClientFuzzer final : public BasicFuzzer {
       : BasicFuzzer(msg.event_engine_actions()) {
     ExecCtx exec_ctx;
     ScheduleReads(msg.network_input(), mock_endpoint_, engine());
-    grpc_core::ChannelArgs args =
-        grpc_core::CoreConfiguration::Get()
+    ChannelArgs args =
+        CoreConfiguration::Get()
             .channel_args_preconditioning()
             .PreconditionChannelArgs(nullptr)
             .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
     grpc_transport* transport =
         grpc_create_chttp2_transport(args, mock_endpoint_, true);
-    channel_ = grpc_core::Channel::Create("test-target", args,
-                                          GRPC_CLIENT_DIRECT_CHANNEL, transport)
+    channel_ = Channel::Create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                               transport)
                    ->release()
                    ->c_ptr();
   }
