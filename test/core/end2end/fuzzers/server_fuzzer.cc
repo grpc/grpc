@@ -38,6 +38,7 @@
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/util/fuzz_config_vars.h"
+#include "test/core/util/fuzzing_channel_args.h"
 #include "test/core/util/mock_endpoint.h"
 
 bool squelch = true;
@@ -60,9 +61,8 @@ class ServerFuzzer final : public BasicFuzzer {
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server_, "/reg", nullptr, {}, 0);
     grpc_server_start(server_);
-    ChannelArgs channel_args = CoreConfiguration::Get()
-                                   .channel_args_preconditioning()
-                                   .PreconditionChannelArgs(nullptr);
+    ChannelArgs channel_args = CreateChannelArgsFromFuzzingConfiguration(
+        msg.channel_args(), FuzzingEnvironment{resource_quota()});
     grpc_transport* transport =
         grpc_create_chttp2_transport(channel_args, mock_endpoint_, false);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
