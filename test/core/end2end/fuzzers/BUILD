@@ -81,6 +81,7 @@ grpc_proto_library(
         "api_fuzzer_proto",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "//test/core/util:fuzz_config_vars_proto",
+        "//test/core/util:fuzzing_channel_args_proto",
     ],
 )
 
@@ -135,8 +136,8 @@ grpc_proto_fuzzer(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:fuzzing_channel_args",
         "//test/core/util:fuzz_config_vars",
+        "//test/core/util:fuzzing_channel_args",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
