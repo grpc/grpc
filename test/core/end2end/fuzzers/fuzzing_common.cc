@@ -608,6 +608,7 @@ BasicFuzzer::Result BasicFuzzer::ValidateChannelTarget() {
 
 BasicFuzzer::Result BasicFuzzer::ResizeResourceQuota(
     uint32_t resize_resource_quota) {
+  ExecCtx exec_ctx;
   resource_quota_->memory_quota()->SetSize(resize_resource_quota);
   return Result::kComplete;
 }
