@@ -2869,9 +2869,15 @@ libs:
   - third_party/googletest/googletest/src/gtest-typed-test.cc
   - third_party/googletest/googletest/src/gtest.cc
   deps:
+  - re2
+  - absl/container:flat_hash_set
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
+  - absl/flags:flag
+  - absl/flags:parse
+  - absl/flags:reflection
+  - absl/flags:usage
   - absl/strings:strings
   - absl/types:any
   - absl/types:optional
@@ -4883,7 +4889,6 @@ targets:
   - test/core/promise/activity_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_set
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -6823,7 +6828,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8636,7 +8640,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8753,7 +8756,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10154,7 +10156,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10729,7 +10730,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11114,7 +11114,6 @@ targets:
   - test/core/promise/mpsc_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_set
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -12517,7 +12516,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/flags:parse
   - grpc_test_util
   args:
   - --resolver=ares
@@ -12591,7 +12589,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/flags:parse
   - grpc_test_util
   args:
   - --resolver=native
@@ -15473,7 +15470,6 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_set
   - absl/hash:hash
   - absl/status:statusor
   - absl/utility:utility
@@ -16232,7 +16228,6 @@ targets:
   - z
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
