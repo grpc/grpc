@@ -7,6 +7,9 @@
 # - abseil-no-namespace
 #   https://bugs.llvm.org/show_bug.cgi?id=47947
 #
+# - bugprone-exception-escape
+#   https://github.com/llvm/llvm-project/issues/54668 (seems to be fixed in LLVM17)
+#
 # - bugprone-reserved-identifier
 #   Some macros need to be defined for portability purpose; e.g. _BSD_SOURCE.
 #
@@ -66,6 +69,7 @@ Checks: '-*,
   -bugprone-assignment-in-if-condition,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
   -bugprone-implicit-widening-of-multiplication-result,
   -bugprone-infinite-loop,
   -bugprone-narrowing-conversions,
