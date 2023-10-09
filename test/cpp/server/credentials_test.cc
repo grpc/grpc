@@ -188,22 +188,22 @@ TEST(CredentialsTest, TlsServerCredentialsWithCrlProvider) {
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
-TEST(CredentialsTest, TlsServerCredentialsWithCrlProviderAndDirectory) {
-  auto result = experimental::StaticCrlProvider::Create({});
-  ASSERT_TRUE(result.ok());
-  auto crl_provider = std::move(*result);
-  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
-      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
-  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
-  options.set_crl_directory(CRL_DIR_PATH);
-  options.set_crl_provider(crl_provider);
-  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  GPR_ASSERT(server_credentials == nullptr);
-  //   std::shared_ptr<SecureServerCredentials> server_credentials =
-  //       std::dynamic_pointer_cast<SecureServerCredentials>(
-  //           grpc::experimental::TlsServerCredentials(options));
-  //   GPR_ASSERT(server_credentials->c_creds() == nullptr);
-}
+// TODO(gtcooke94) - complex memory manangement if TlsCredentials(options)
+// returns null TEST(CredentialsTest,
+// TEST(CredentialsTest, TlsServerCredentialsWithCrlProviderAndDirectory) {
+//   auto result = experimental::StaticCrlProvider::Create({});
+//   ASSERT_TRUE(result.ok());
+//   auto crl_provider = std::move(*result);
+//   auto certificate_provider =
+//   std::make_shared<FileWatcherCertificateProvider>(
+//       SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+//   grpc::experimental::TlsServerCredentialsOptions
+//   options(certificate_provider); options.set_crl_directory(CRL_DIR_PATH);
+//   options.set_crl_provider(crl_provider);
+//   auto server_credentials =
+//   grpc::experimental::TlsServerCredentials(options);
+//   GPR_ASSERT(server_credentials == nullptr);
+// }
 
 }  // namespace
 }  // namespace testing

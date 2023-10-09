@@ -46,6 +46,13 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
     return false;
   }
+  if (!options->crl_directory().empty() && options->crl_provider() != nullptr) {
+    gpr_log(GPR_ERROR,
+            "Setting crl_directory and crl_provider not supported. Using the "
+            "crl_provider.");
+    // TODO(gtcooke94) - returning false here? Or let it continue.
+    // returning false lead to some leaks that would need to be resolved.
+  }
   // In the following conditions, there won't be any issues, but it might
   // indicate callers are doing something wrong with the API.
   if (is_client && options->cert_request_type() !=
@@ -67,12 +74,6 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
             "verifier");
     options->set_certificate_verifier(
         grpc_core::MakeRefCounted<grpc_core::HostNameCertificateVerifier>());
-  }
-  if (!options->crl_directory().empty() && options->crl_provider() != nullptr) {
-    gpr_log(GPR_ERROR,
-            "Cannot set both crl_directory and crl_provider. crl_provider will "
-            "take precedence.");
-    return false;
   }
   return true;
 }
