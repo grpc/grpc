@@ -188,18 +188,24 @@ output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 
-#if grpc_config == 'opt'
-#  File.open('Makefile.new', 'w') do |o|
-#    o.puts 'hijack: all strip'
-#    o.puts
-#    o.write(File.read('Makefile'))
-#    o.puts
-#    o.puts 'strip: $(DLLIB)'
-#    o.puts "\t$(ECHO) Stripping $(DLLIB)"
-#    o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
-#  end
-#  File.rename('Makefile.new', 'Makefile')
-#end
+# See https://stackoverflow.com/questions/866721/how-to-generate-gcc-debug-symbol-outside-the-build-target
+# and https://stackoverflow.com/questions/30281766/need-to-load-debugging-symbols-for-shared-library-in-gdb
+# TODO(apolcyn): figure out how to extract $(DLLIB).dbg and put it in its own gem. debuginfo files should
+# probably mirror the structure of pre-compiled gem packages.
+if grpc_config == 'opt'
+  File.open('Makefile.new', 'w') do |o|
+    o.puts 'hijack: all strip'
+    o.puts
+    o.write(File.read('Makefile'))
+    o.puts
+    o.puts 'strip: $(DLLIB)'
+    o.puts "\t$(ECHO) Generating debug file $(DLLIB).dbg"
+    o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) $(DLLIB).dbg"
+    o.puts "\t$(ECHO) Stripping $(DLLIB)"
+    o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
+  end
+  File.rename('Makefile.new', 'Makefile')
+end
 
 if ENV['GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG']
   # Note: this env var setting is intended to work around a problem observed
