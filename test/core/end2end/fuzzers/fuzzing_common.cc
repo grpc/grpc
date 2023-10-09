@@ -35,6 +35,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -44,7 +45,23 @@
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 
+namespace grpc_event_engine {
+namespace experimental {
+extern bool g_event_engine_supports_fd;
+}
+}  // namespace grpc_event_engine
+
 namespace grpc_core {
+
+namespace {
+int force_experiments = []() {
+  grpc_event_engine::experimental::g_event_engine_supports_fd = false;
+  ForceEnableExperiment("event_engine_client", true);
+  ForceEnableExperiment("event_engine_listener", true);
+  return 1;
+}();
+}  // namespace
+
 namespace testing {
 
 static void free_non_null(void* p) {
@@ -547,6 +564,12 @@ BasicFuzzer::Result BasicFuzzer::SendPingOnChannel() {
   return Result::kComplete;
 }
 
+BasicFuzzer::Result BasicFuzzer::Pause(Duration duration) {
+  ++paused_;
+  engine()->RunAfterExactly(duration, [this]() { --paused_; });
+  return Result::kComplete;
+}
+
 BasicFuzzer::Result BasicFuzzer::ServerRequestCall() {
   if (server() == nullptr) {
     return Result::kFailed;
@@ -589,7 +612,17 @@ BasicFuzzer::Result BasicFuzzer::ValidateChannelTarget() {
 
 BasicFuzzer::Result BasicFuzzer::ResizeResourceQuota(
     uint32_t resize_resource_quota) {
+  ExecCtx exec_ctx;
   resource_quota_->memory_quota()->SetSize(resize_resource_quota);
+  return Result::kComplete;
+}
+
+BasicFuzzer::Result BasicFuzzer::CloseChannel() {
+  if (channel() != nullptr) {
+    DestroyChannel();
+  } else {
+    return Result::kFailed;
+  }
   return Result::kComplete;
 }
 
@@ -615,8 +648,9 @@ void BasicFuzzer::ShutdownCalls() {
 }
 
 bool BasicFuzzer::Continue() {
-  return pending_channel_watches_ > 0 || pending_pings_ > 0 ||
-         ActiveCall() != nullptr;
+  return channel() != nullptr || server() != nullptr ||
+         pending_channel_watches_ > 0 || pending_pings_ > 0 ||
+         ActiveCall() != nullptr || paused_;
 }
 
 BasicFuzzer::Result BasicFuzzer::ExecuteAction(
@@ -691,11 +725,59 @@ BasicFuzzer::Result BasicFuzzer::ExecuteAction(
     // resize the buffer pool
     case api_fuzzer::Action::kResizeResourceQuota:
       return ResizeResourceQuota(action.resize_resource_quota());
+    case api_fuzzer::Action::kSleepMs:
+      return Pause(std::min(Duration::Milliseconds(action.sleep_ms()),
+                            Duration::Minutes(1)));
     default:
       Crash(absl::StrCat("Unsupported Fuzzing Action of type: ",
                          action.type_case()));
   }
   return BasicFuzzer::Result::kComplete;
+}
+
+void BasicFuzzer::TryShutdown() {
+  engine()->FuzzingDone();
+  if (channel() != nullptr) {
+    DestroyChannel();
+  }
+  if (server() != nullptr) {
+    if (!server_shutdown_called()) {
+      ShutdownServer();
+    }
+    if (server_finished_shutting_down()) {
+      DestroyServer();
+    }
+  }
+  ShutdownCalls();
+
+  grpc_timer_manager_tick();
+  GPR_ASSERT(PollCq() == Result::kPending);
+}
+
+void BasicFuzzer::Run(absl::Span<const api_fuzzer::Action* const> actions) {
+  int action_index = 0;
+  auto allow_forced_shutdown = std::make_shared<bool>(false);
+  auto no_more_actions = [&]() { action_index = actions.size(); };
+
+  engine()->RunAfterExactly(minimum_run_time_, [allow_forced_shutdown] {
+    *allow_forced_shutdown = true;
+  });
+
+  while (action_index < actions.size() || Continue()) {
+    Tick();
+
+    if (paused_) continue;
+
+    if (action_index == actions.size()) {
+      if (*allow_forced_shutdown) TryShutdown();
+      continue;
+    }
+
+    auto result = ExecuteAction(*actions[action_index++]);
+    if (result == Result::kFailed) {
+      no_more_actions();
+    }
+  }
 }
 
 }  // namespace testing
