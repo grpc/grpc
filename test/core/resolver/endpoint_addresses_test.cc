@@ -19,6 +19,7 @@
 #include "src/core/lib/resolver/endpoint_addresses.h"
 
 #include <set>
+#include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"

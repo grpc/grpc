@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <string>
+
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 

@@ -16,6 +16,8 @@
 
 #include <time.h>
 
+#include <string>
+
 #include "gtest/gtest.h"
 
 #include <grpc/support/atm.h>

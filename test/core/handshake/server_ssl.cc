@@ -16,6 +16,8 @@
 //
 //
 
+#include <string>
+
 #include "gtest/gtest.h"
 
 #include "test/core/handshake/server_ssl_common.h"

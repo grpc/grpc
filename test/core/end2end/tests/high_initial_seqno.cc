@@ -16,6 +16,8 @@
 //
 //
 
+#include <string>
+
 #include "gtest/gtest.h"
 
 #include <grpc/impl/channel_arg_names.h>

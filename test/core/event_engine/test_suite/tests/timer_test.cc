@@ -19,6 +19,7 @@
 #include <memory>
 #include <random>
 #include <ratio>
+#include <string>
 #include <thread>
 #include <utility>
 #include <vector>

@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
 #include "gtest/gtest.h"
 
 #include <grpc/support/time.h>
