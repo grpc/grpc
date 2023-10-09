@@ -758,11 +758,11 @@ void BasicFuzzer::TryShutdown() {
 
 void BasicFuzzer::Run(absl::Span<const api_fuzzer::Action* const> actions) {
   int action_index = 0;
-  bool allow_forced_shutdown = false;
+  auto allow_forced_shutdown = std::make_shared<bool>(false);
   auto no_more_actions = [&]() { action_index = actions.size(); };
 
-  engine()->RunAfterExactly(minimum_run_time_, [&allow_forced_shutdown] {
-    allow_forced_shutdown = true;
+  engine()->RunAfterExactly(minimum_run_time_, [allow_forced_shutdown] {
+    *allow_forced_shutdown = true;
   });
 
   while (action_index < actions.size() || Continue()) {
@@ -771,7 +771,7 @@ void BasicFuzzer::Run(absl::Span<const api_fuzzer::Action* const> actions) {
     if (paused_) continue;
 
     if (action_index == actions.size()) {
-      if (allow_forced_shutdown) TryShutdown();
+      if (*allow_forced_shutdown) TryShutdown();
       continue;
     }
 
