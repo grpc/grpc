@@ -2189,8 +2189,7 @@
     "ci_platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -2202,8 +2201,7 @@
     "platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "uses_polling": false
   },
@@ -3730,26 +3728,6 @@
       "windows"
     ],
     "uses_polling": true
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "posix"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": true,
-    "language": "c++",
-    "name": "fuzzing_event_engine_test",
-    "platforms": [
-      "linux",
-      "posix"
-    ],
-    "uses_polling": false
   },
   {
     "args": [],
@@ -8284,6 +8262,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "ring_hash_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "rls_lb_config_parser_test",
     "platforms": [
       "linux",
@@ -9862,6 +9864,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "test_core_event_engine_fuzzing_event_engine_fuzzing_event_engine_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "test_core_event_engine_posix_timer_heap_test",
     "platforms": [
       "linux",
@@ -9918,6 +9944,26 @@
       "windows"
     ],
     "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "posix"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "test_core_event_engine_test_suite_fuzzing_event_engine_test",
+    "platforms": [
+      "linux",
+      "posix"
+    ],
+    "uses_polling": false
   },
   {
     "args": [],

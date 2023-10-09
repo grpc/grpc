@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
 #include <grpc/slice.h>
@@ -31,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
@@ -61,12 +63,101 @@ void AppendLength(size_t length, std::vector<uint8_t>* bytes) {
 SliceBuffer SliceBufferFromSimpleHeaders(
     const fuzzer_input::SimpleHeaders& headers) {
   std::vector<uint8_t> temp;
-  for (const auto& header : headers.headers()) {
+  auto add_header = [&temp](absl::string_view key, absl::string_view value) {
     temp.push_back(0);
-    AppendLength(header.key().length(), &temp);
-    temp.insert(temp.end(), header.key().begin(), header.key().end());
-    AppendLength(header.value().length(), &temp);
-    temp.insert(temp.end(), header.value().begin(), header.value().end());
+    AppendLength(key.length(), &temp);
+    temp.insert(temp.end(), key.begin(), key.end());
+    AppendLength(value.length(), &temp);
+    temp.insert(temp.end(), value.begin(), value.end());
+  };
+  if (headers.has_status()) {
+    add_header(":status", headers.status());
+  }
+  if (headers.has_scheme()) {
+    add_header(":scheme", headers.scheme());
+  }
+  if (headers.has_method()) {
+    add_header(":method", headers.method());
+  }
+  if (headers.has_authority()) {
+    add_header(":authority", headers.authority());
+  }
+  if (headers.has_path()) {
+    add_header(":path", headers.path());
+  }
+  for (const auto& header : headers.headers()) {
+    if (header.has_key() && header.has_value()) {
+      add_header(header.key(), header.value());
+      ;
+    }
+    if (header.has_raw_bytes()) {
+      for (auto c : header.raw_bytes()) {
+        temp.push_back(static_cast<uint8_t>(c));
+      }
+    }
+  }
+  if (headers.has_grpc_timeout()) {
+    add_header("grpc-timeout", headers.grpc_timeout());
+  }
+  if (headers.has_te()) {
+    add_header("te", headers.te());
+  }
+  if (headers.has_content_type()) {
+    add_header("content-type", headers.content_type());
+  }
+  if (headers.has_grpc_encoding()) {
+    add_header("grpc-encoding", headers.grpc_encoding());
+  }
+  if (headers.has_grpc_internal_encoding_request()) {
+    add_header("grpc-internal-encoding-request",
+               headers.grpc_internal_encoding_request());
+  }
+  if (headers.has_grpc_accept_encoding()) {
+    add_header("grpc-accept-encoding", headers.grpc_accept_encoding());
+  }
+  if (headers.has_user_agent()) {
+    add_header("user-agent", headers.user_agent());
+  }
+  if (headers.has_grpc_message()) {
+    add_header("grpc-message", headers.grpc_message());
+  }
+  if (headers.has_host()) {
+    add_header("host", headers.host());
+  }
+  if (headers.has_endpoint_load_metrics_bin()) {
+    add_header("endpoint-load-metrics-bin",
+               headers.endpoint_load_metrics_bin());
+  }
+  if (headers.has_grpc_server_stats_bin()) {
+    add_header("grpc-server-stats-bin", headers.grpc_server_stats_bin());
+  }
+  if (headers.has_grpc_trace_bin()) {
+    add_header("grpc-trace-bin", headers.grpc_trace_bin());
+  }
+  if (headers.has_grpc_tags_bin()) {
+    add_header("grpc-tags-bin", headers.grpc_tags_bin());
+  }
+  if (headers.has_x_envoy_peer_metadata()) {
+    add_header("x-envoy-peer-metadata", headers.x_envoy_peer_metadata());
+  }
+  if (headers.has_grpc_status()) {
+    add_header("grpc-status", headers.grpc_status());
+  }
+  if (headers.has_grpc_previous_rpc_attempts()) {
+    add_header("grpc-previous-rpc-attempts",
+               headers.grpc_previous_rpc_attempts());
+  }
+  if (headers.has_grpc_retry_pushback_ms()) {
+    add_header("grpc-retry-pushback-ms", headers.grpc_retry_pushback_ms());
+  }
+  if (headers.has_grpclb_client_stats()) {
+    add_header("grpclb_client_stats", headers.grpclb_client_stats());
+  }
+  if (headers.has_lb_token()) {
+    add_header("lb-token", headers.lb_token());
+  }
+  if (headers.has_lb_cost_bin()) {
+    add_header("lb-cost-bin", headers.lb_cost_bin());
   }
   SliceBuffer buffer;
   buffer.Append(Slice::FromCopiedBuffer(temp.data(), temp.size()));
@@ -142,6 +233,11 @@ grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
       });
     case fuzzer_input::InputSegment::kClientPrefix:
       return grpc_slice_from_static_string("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n");
+    case fuzzer_input::InputSegment::kRepeatedZeros: {
+      std::vector<char> zeros;
+      zeros.resize(std::min<size_t>(segment.repeated_zeros(), 128 * 1024), 0);
+      return grpc_slice_from_copied_buffer(zeros.data(), zeros.size());
+    }
     case fuzzer_input::InputSegment::PAYLOAD_NOT_SET:
       break;
   }
@@ -149,7 +245,7 @@ grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
 }
 }  // namespace
 
-void ScheduleReads(
+Duration ScheduleReads(
     const fuzzer_input::NetworkInput& network_input,
     grpc_endpoint* mock_endpoint,
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
@@ -160,26 +256,50 @@ void ScheduleReads(
                              network_input.single_read_bytes().data(),
                              network_input.single_read_bytes().size()));
       grpc_mock_endpoint_finish_put_reads(mock_endpoint);
-    } break;
+      return Duration::Milliseconds(1);
+    }
     case fuzzer_input::NetworkInput::kInputSegments: {
       int delay_ms = 0;
+      SliceBuffer building;
       for (const auto& segment : network_input.input_segments().segments()) {
-        delay_ms += Clamp(segment.delay_ms(), 0, 1000);
+        const int segment_delay = Clamp(segment.delay_ms(), 0, 1000);
+        if (segment_delay != 0) {
+          delay_ms += segment_delay;
+          if (building.Length() != 0) {
+            event_engine->RunAfterExactly(
+                std::chrono::milliseconds(delay_ms),
+                [mock_endpoint, slice = building.JoinIntoSlice()]() mutable {
+                  ExecCtx exec_ctx;
+                  grpc_mock_endpoint_put_read(mock_endpoint,
+                                              slice.TakeCSlice());
+                });
+          }
+          building.Clear();
+        }
+        building.Append(Slice(SliceFromSegment(segment)));
+      }
+      if (building.Length() != 0) {
+        ++delay_ms;
         event_engine->RunAfterExactly(
-            std::chrono::milliseconds(delay_ms), [mock_endpoint, segment] {
-              grpc_mock_endpoint_put_read(mock_endpoint,
-                                          SliceFromSegment(segment));
+            std::chrono::milliseconds(delay_ms),
+            [mock_endpoint, slice = building.JoinIntoSlice()]() mutable {
+              ExecCtx exec_ctx;
+              grpc_mock_endpoint_put_read(mock_endpoint, slice.TakeCSlice());
             });
       }
+      ++delay_ms;
       event_engine->RunAfterExactly(
-          std::chrono::milliseconds(delay_ms + 1), [mock_endpoint] {
+          std::chrono::milliseconds(delay_ms), [mock_endpoint] {
+            ExecCtx exec_ctx;
             grpc_mock_endpoint_finish_put_reads(mock_endpoint);
           });
-    } break;
+      return Duration::Milliseconds(delay_ms + 1);
+    }
     case fuzzer_input::NetworkInput::VALUE_NOT_SET:
       grpc_mock_endpoint_finish_put_reads(mock_endpoint);
-      break;
+      return Duration::Milliseconds(1);
   }
+  GPR_UNREACHABLE_CODE(return Duration::Milliseconds(1));
 }
 
 }  // namespace grpc_core
