@@ -7053,12 +7053,13 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.h
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/promise/test_wakeup_schedulers.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chaotic_good/client_transport.cc
@@ -7071,6 +7072,10 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
   uses_polling: false
 - name: cmdline_test
   gtest: true

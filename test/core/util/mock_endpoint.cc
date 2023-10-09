@@ -52,6 +52,9 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
+  } else if (m->put_reads_done) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
+                            absl::UnavailableError("reads done"));
   } else {
     m->on_read = cb;
     m->on_read_out = slices;
