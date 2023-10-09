@@ -22,15 +22,19 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "absl/types/span.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -78,8 +82,10 @@ class BasicFuzzer {
   virtual Result ExecuteAction(const api_fuzzer::Action& action);
   Call* ActiveCall();
 
-  virtual bool Continue();
+  bool Continue();
   virtual void Tick();
+
+  void Run(absl::Span<const api_fuzzer::Action* const> actions);
 
  protected:
   ~BasicFuzzer();
@@ -110,14 +116,18 @@ class BasicFuzzer {
 
   grpc_completion_queue* cq() { return cq_; }
 
+  void UpdateMinimumRunTime(Duration minimum_run_time) {
+    minimum_run_time_ = std::max(minimum_run_time, minimum_run_time_);
+  }
+
  private:
   // Channel specific actions.
   // Create an active channel with the specified parameters.
   virtual Result CreateChannel(
       const api_fuzzer::CreateChannel& create_channel) = 0;
-  // Close the active channel.
-  virtual Result CloseChannel() = 0;
 
+  // Close the active channel.
+  Result CloseChannel();
   // Check whether the channel is connected and optionally try to connect if it
   // is not connected.
   Result CheckConnectivity(bool try_to_connect);
@@ -154,14 +164,19 @@ class BasicFuzzer {
   Result ValidatePeerForActiveCall();
   // Cancel and destroy the active call.
   Result DestroyActiveCall();
+  // Pause the run loop for some time
+  Result Pause(Duration duration);
 
   // Other actions.
   // Change the resource quota limits.
   Result ResizeResourceQuota(uint32_t resize_resource_quota);
 
+  void TryShutdown();
+
   virtual grpc_server* server() = 0;
   virtual grpc_channel* channel() = 0;
   virtual void DestroyServer() = 0;
+  virtual void DestroyChannel() = 0;
 
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> engine_;
   grpc_completion_queue* cq_;
@@ -169,9 +184,11 @@ class BasicFuzzer {
   int pending_server_shutdowns_ = 0;
   int pending_channel_watches_ = 0;
   int pending_pings_ = 0;
+  int paused_ = 0;
   std::vector<std::shared_ptr<Call>> calls_;
   RefCountedPtr<ResourceQuota> resource_quota_;
   size_t active_call_ = 0;
+  Duration minimum_run_time_ = Duration::Zero();
 };
 
 }  // namespace testing
