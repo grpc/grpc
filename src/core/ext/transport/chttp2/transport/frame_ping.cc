@@ -20,6 +20,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 
+#include <inttypes.h>
 #include <string.h>
 
 #include <algorithm>

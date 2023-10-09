@@ -21,13 +21,13 @@
 #include <stdint.h>
 
 #include <algorithm>
-#include <cstdint>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
 #include "absl/random/bit_gen_ref.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 

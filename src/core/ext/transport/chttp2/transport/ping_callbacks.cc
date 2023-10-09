@@ -16,9 +16,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 
-#include <inttypes.h>
-
-#include <cstdint>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
@@ -26,7 +23,7 @@
 
 #include <grpc/support/log.h>
 
-grpc_core::TraceFlag grpc_ping_trace(false, "ping");
+grpc_core::TraceFlag grpc_ping_trace(false, "http2_ping");
 
 namespace grpc_core {
 

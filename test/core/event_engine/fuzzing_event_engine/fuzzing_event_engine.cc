@@ -42,8 +42,8 @@
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
-static grpc_core::TraceFlag trace_writes(false, "fee_writes");
-static grpc_core::TraceFlag trace_timers(false, "fee_timers");
+static grpc_core::TraceFlag trace_writes(false, "fuzzing_ee_writes");
+static grpc_core::TraceFlag trace_timers(false, "fuzzing_ee_timers");
 
 using namespace std::chrono_literals;
 
