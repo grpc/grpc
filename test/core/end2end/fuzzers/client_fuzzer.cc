@@ -55,8 +55,7 @@ class ClientFuzzer final : public BasicFuzzer {
   explicit ClientFuzzer(const fuzzer_input::Msg& msg)
       : BasicFuzzer(msg.event_engine_actions()) {
     ExecCtx exec_ctx;
-    SetEarliestShutdownTime(
-        Timestamp::Now() +
+    UpdateMinimumRunTime(
         ScheduleReads(msg.network_input(), mock_endpoint_, engine()));
     ChannelArgs args =
         CoreConfiguration::Get()

@@ -114,9 +114,8 @@ class BasicFuzzer {
 
   grpc_completion_queue* cq() { return cq_; }
 
-  void SetEarliestShutdownTime(Timestamp earliest_shutdown_time) {
-    earliest_shutdown_time_ =
-        std::max(earliest_shutdown_time, earliest_shutdown_time_);
+  void UpdateMinimumRunTime(Duration minimum_run_time) {
+    minimum_run_time_ = std::max(minimum_run_time, minimum_run_time_);
   }
 
  private:
@@ -187,7 +186,7 @@ class BasicFuzzer {
   std::vector<std::shared_ptr<Call>> calls_;
   RefCountedPtr<ResourceQuota> resource_quota_;
   size_t active_call_ = 0;
-  Timestamp earliest_shutdown_time_ = Timestamp::ProcessEpoch();
+  Duration minimum_run_time_ = Duration::Zero();
 };
 
 }  // namespace testing
