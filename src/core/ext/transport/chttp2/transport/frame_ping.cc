@@ -29,6 +29,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "ping_callbacks.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -96,18 +97,26 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
   if (p->byte == 8) {
     GPR_ASSERT(is_last);
     if (p->is_ack) {
+      if (grpc_ping_trace.enabled()) {
+        gpr_log(GPR_INFO, "%s[%p]: received ping ack %" PRIx64,
+                t->is_client ? "CLIENT" : "SERVER", t, p->opaque_8bytes);
+      }
       grpc_chttp2_ack_ping(t, p->opaque_8bytes);
     } else {
       if (!t->is_client) {
         const bool transport_idle =
             t->keepalive_permit_without_calls == 0 && t->stream_map.empty();
         if (grpc_keepalive_trace.enabled() || grpc_http_trace.enabled()) {
-          gpr_log(GPR_INFO, "t=%p received ping: %s", t,
+          gpr_log(GPR_INFO, "SERVER[%p]: received ping %" PRIx64 ": %s", t,
+                  p->opaque_8bytes,
                   t->ping_abuse_policy.GetDebugString(transport_idle).c_str());
         }
         if (t->ping_abuse_policy.ReceivedOnePing(transport_idle)) {
           grpc_chttp2_exceeded_ping_strikes(t);
         }
+      } else if (grpc_ping_trace.enabled()) {
+        gpr_log(GPR_INFO, "CLIENT[%p]: received ping %" PRIx64, t,
+                p->opaque_8bytes);
       }
       if (t->ack_pings) {
         if (t->ping_ack_count == t->ping_ack_capacity) {
