@@ -826,11 +826,16 @@ class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
         self,
         server_target: str,
         *,
+        wait_for_active_ads_timeout: Optional[_timedelta] = None,
         wait_for_active_channel_timeout: Optional[_timedelta] = None,
         **kwargs,
     ) -> XdsTestClient:
         test_client = self.client_runner.run(
             server_target=server_target, **kwargs
+        )
+        test_client.wait_for_active_ads_channel(
+            xds_server_uri=self.xds_server_uri,
+            timeout=wait_for_active_ads_timeout,
         )
         test_client.wait_for_active_server_channel(
             timeout=wait_for_active_channel_timeout,
