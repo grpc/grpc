@@ -118,3 +118,38 @@ grpc_cc_test(
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
     ],
 )
+
+grpc_cc_test(
+    name = "server_transport_test",
+    srcs = ["server_transport_test.cc"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status:statusor",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//:iomgr_timer",
+        "//:ref_counted_ptr",
+        "//src/core:activity",
+        "//src/core:arena",
+        "//src/core:chaotic_good_client_transport",
+        "//src/core:event_engine_wakeup_scheduler",
+        "//src/core:join",
+        "//src/core:map",
+        "//src/core:memory_quota",
+        "//src/core:pipe",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+    ],
+)
