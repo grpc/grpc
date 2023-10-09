@@ -163,6 +163,8 @@ class BasicFuzzer {
   Result ValidatePeerForActiveCall();
   // Cancel and destroy the active call.
   Result DestroyActiveCall();
+  // Pause the run loop for some time
+  Result Pause(Duration duration);
 
   // Other actions.
   // Change the resource quota limits.
@@ -181,6 +183,7 @@ class BasicFuzzer {
   int pending_server_shutdowns_ = 0;
   int pending_channel_watches_ = 0;
   int pending_pings_ = 0;
+  int paused_ = 0;
   std::vector<std::shared_ptr<Call>> calls_;
   RefCountedPtr<ResourceQuota> resource_quota_;
   size_t active_call_ = 0;

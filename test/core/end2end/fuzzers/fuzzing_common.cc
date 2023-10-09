@@ -45,6 +45,7 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/event_string.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 
 namespace grpc_event_engine {
@@ -566,6 +567,12 @@ BasicFuzzer::Result BasicFuzzer::SendPingOnChannel() {
   return Result::kComplete;
 }
 
+BasicFuzzer::Result BasicFuzzer::Pause(Duration duration) {
+  ++paused_;
+  engine()->RunAfterExactly(duration, [this]() { --paused_; });
+  return Result::kComplete;
+}
+
 BasicFuzzer::Result BasicFuzzer::ServerRequestCall() {
   if (server() == nullptr) {
     return Result::kFailed;
@@ -721,6 +728,9 @@ BasicFuzzer::Result BasicFuzzer::ExecuteAction(
     // resize the buffer pool
     case api_fuzzer::Action::kResizeResourceQuota:
       return ResizeResourceQuota(action.resize_resource_quota());
+    case api_fuzzer::Action::kSleepMs:
+      return Pause(std::min(Duration::Milliseconds(action.sleep_ms()),
+                            Duration::Minutes(1)));
     default:
       Crash(absl::StrCat("Unsupported Fuzzing Action of type: ",
                          action.type_case()));
@@ -753,6 +763,8 @@ void BasicFuzzer::Run(absl::Span<const api_fuzzer::Action* const> actions) {
 
   while (action_index < actions.size() || Continue()) {
     Tick();
+
+    if (paused_) continue;
 
     if (action_index == actions.size()) {
       if (Timestamp::Now() >= earliest_shutdown_time_) TryShutdown();
