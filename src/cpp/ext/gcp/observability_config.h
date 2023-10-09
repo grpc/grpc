@@ -84,7 +84,8 @@ struct GcpObservabilityConfig {
   };
 
   struct CloudTrace {
-    float sampling_rate = 0;
+    CloudTrace() : sampling_rate(0) {}
+    float sampling_rate;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
