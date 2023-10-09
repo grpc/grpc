@@ -757,7 +757,7 @@ void BasicFuzzer::TryShutdown() {
 }
 
 void BasicFuzzer::Run(absl::Span<const api_fuzzer::Action* const> actions) {
-  int action_index = 0;
+  size_t action_index = 0;
   auto allow_forced_shutdown = std::make_shared<bool>(false);
   auto no_more_actions = [&]() { action_index = actions.size(); };
 
