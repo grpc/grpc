@@ -8859,34 +8859,6 @@ targets:
   - gtest
   - absl/status:status
   - absl/status:statusor
-- name: fuzzing_event_engine_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/event_engine/test_suite/event_engine_test_framework.h
-  - test/core/event_engine/test_suite/tests/client_test.h
-  - test/core/event_engine/test_suite/tests/server_test.h
-  - test/core/event_engine/test_suite/tests/timer_test.h
-  src:
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/event_engine/test_suite/event_engine_test_framework.cc
-  - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
-  - test/core/event_engine/test_suite/tests/client_test.cc
-  - test/core/event_engine/test_suite/tests/server_test.cc
-  - test/core/event_engine/test_suite/tests/timer_test.cc
-  deps:
-  - gtest
-  - protobuf
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -15409,6 +15381,20 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: test_core_event_engine_fuzzing_event_engine_fuzzing_event_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
 - name: test_core_event_engine_posix_timer_heap_test
   gtest: true
   build: test
@@ -15483,6 +15469,34 @@ targets:
   - absl/status:statusor
   - absl/utility:utility
   - gpr
+- name: test_core_event_engine_test_suite_fuzzing_event_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: test_core_gpr_time_test
   gtest: true
   build: test
