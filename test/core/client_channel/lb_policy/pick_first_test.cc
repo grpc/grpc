@@ -640,8 +640,6 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   EXPECT_FALSE(subchannel_ipv6_3->ConnectionRequested());
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
-  // FIXME: why is this needed?
-  IncrementTimeBy(Duration::Milliseconds(2));
   // This causes the LB policy to start connecting to the second IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_2->ConnectionRequested());
