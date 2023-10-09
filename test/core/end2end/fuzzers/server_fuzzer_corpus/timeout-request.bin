@@ -17,7 +17,7 @@ network_input {
                     authority: "foo"
                     path: "/reg"
                     te: "trailers"
-                    grpc_timeout: "1m"
+                    grpc_timeout: "100m"
                 }
             }
         }
@@ -33,12 +33,12 @@ network_input {
                     authority: "foo"
                     path: "/reg"
                     te: "trailers"
-                    grpc_timeout: "1m"
+                    grpc_timeout: "100m"
                 }
             }
         }
         segments {
-            delay_ms: 100
+            delay_ms: 1000
             ping {
                 opaque: 1
             }

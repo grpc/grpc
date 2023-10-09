@@ -755,7 +755,7 @@ void BasicFuzzer::Run(absl::Span<const api_fuzzer::Action* const> actions) {
     Tick();
 
     if (action_index == actions.size()) {
-      TryShutdown();
+      if (Timestamp::Now() >= earliest_shutdown_time_) TryShutdown();
       continue;
     }
 

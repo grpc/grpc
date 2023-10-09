@@ -114,6 +114,11 @@ class BasicFuzzer {
 
   grpc_completion_queue* cq() { return cq_; }
 
+  void SetEarliestShutdownTime(Timestamp earliest_shutdown_time) {
+    earliest_shutdown_time_ =
+        std::max(earliest_shutdown_time, earliest_shutdown_time_);
+  }
+
  private:
   // Channel specific actions.
   // Create an active channel with the specified parameters.
@@ -179,6 +184,7 @@ class BasicFuzzer {
   std::vector<std::shared_ptr<Call>> calls_;
   RefCountedPtr<ResourceQuota> resource_quota_;
   size_t active_call_ = 0;
+  Timestamp earliest_shutdown_time_ = Timestamp::ProcessEpoch();
 };
 
 }  // namespace testing

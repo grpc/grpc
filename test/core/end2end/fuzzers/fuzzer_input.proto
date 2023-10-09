@@ -130,6 +130,7 @@ message InputSegment {
         H2GoawayFrame goaway = 9;
         H2WindowUpdateFrame window_update = 10;
         H2ClientPrefix client_prefix = 11;
+        uint32 repeated_zeros = 12;
     }
 }
 

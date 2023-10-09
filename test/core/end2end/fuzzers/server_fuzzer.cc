@@ -55,7 +55,9 @@ class ServerFuzzer final : public BasicFuzzer {
   explicit ServerFuzzer(const fuzzer_input::Msg& msg)
       : BasicFuzzer(msg.event_engine_actions()) {
     ExecCtx exec_ctx;
-    ScheduleReads(msg.network_input(), mock_endpoint_, engine());
+    SetEarliestShutdownTime(
+        Timestamp::Now() +
+        ScheduleReads(msg.network_input(), mock_endpoint_, engine()));
     grpc_server_register_completion_queue(server_, cq(), nullptr);
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server_, "/reg", nullptr, {}, 0);

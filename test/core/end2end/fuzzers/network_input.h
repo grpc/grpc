@@ -21,7 +21,7 @@
 
 namespace grpc_core {
 
-void ScheduleReads(
+Duration ScheduleReads(
     const fuzzer_input::NetworkInput& network_input,
     grpc_endpoint* mock_endpoint,
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine);

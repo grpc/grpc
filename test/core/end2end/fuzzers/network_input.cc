@@ -233,6 +233,11 @@ grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
       });
     case fuzzer_input::InputSegment::kClientPrefix:
       return grpc_slice_from_static_string("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n");
+    case fuzzer_input::InputSegment::kRepeatedZeros: {
+      std::vector<char> zeros;
+      zeros.resize(std::min<size_t>(segment.repeated_zeros(), 128 * 1024), 0);
+      return grpc_slice_from_copied_buffer(zeros.data(), zeros.size());
+    }
     case fuzzer_input::InputSegment::PAYLOAD_NOT_SET:
       break;
   }
@@ -240,7 +245,7 @@ grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
 }
 }  // namespace
 
-void ScheduleReads(
+Duration ScheduleReads(
     const fuzzer_input::NetworkInput& network_input,
     grpc_endpoint* mock_endpoint,
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
@@ -251,7 +256,8 @@ void ScheduleReads(
                              network_input.single_read_bytes().data(),
                              network_input.single_read_bytes().size()));
       grpc_mock_endpoint_finish_put_reads(mock_endpoint);
-    } break;
+      return Duration::Milliseconds(1);
+    }
     case fuzzer_input::NetworkInput::kInputSegments: {
       int delay_ms = 0;
       SliceBuffer building;
@@ -287,11 +293,13 @@ void ScheduleReads(
             ExecCtx exec_ctx;
             grpc_mock_endpoint_finish_put_reads(mock_endpoint);
           });
-    } break;
+      return Duration::Milliseconds(delay_ms + 1);
+    }
     case fuzzer_input::NetworkInput::VALUE_NOT_SET:
       grpc_mock_endpoint_finish_put_reads(mock_endpoint);
-      break;
+      return Duration::Milliseconds(1);
   }
+  GPR_UNREACHABLE_CODE(return Duration::Milliseconds(1));
 }
 
 }  // namespace grpc_core
