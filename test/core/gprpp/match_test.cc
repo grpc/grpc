@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 
+#include <string>
 #include <utility>
 
 #include "gtest/gtest.h"

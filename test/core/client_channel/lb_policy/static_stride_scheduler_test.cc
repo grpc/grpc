@@ -17,6 +17,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h"
 
 #include <limits>
+#include <string>
 #include <vector>
 
 #include "absl/types/optional.h"

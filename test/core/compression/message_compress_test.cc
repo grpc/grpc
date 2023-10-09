@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <string>
+
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>

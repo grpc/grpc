@@ -15,6 +15,7 @@
 
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 
+#include <string>
 #include <thread>
 #include <vector>
 

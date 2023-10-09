@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <string>
 #include <thread>
 #include <utility>
 #include <vector>

@@ -17,6 +17,7 @@
 #include <stdlib.h>
 
 #include <memory>
+#include <string>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"

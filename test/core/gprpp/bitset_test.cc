@@ -16,6 +16,7 @@
 
 #include <random>
 #include <set>
+#include <string>
 
 #include "gtest/gtest.h"
 

@@ -18,6 +18,8 @@
 
 #include "src/core/lib/transport/connectivity_state.h"
 
+#include <string>
+
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 

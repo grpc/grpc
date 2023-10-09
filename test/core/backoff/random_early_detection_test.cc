@@ -14,6 +14,8 @@
 
 #include "src/core/lib/backoff/random_early_detection.h"
 
+#include <string>
+
 #include "absl/random/random.h"
 #include "gtest/gtest.h"
 

@@ -16,6 +16,8 @@
 //
 //
 
+#include <string>
+
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
