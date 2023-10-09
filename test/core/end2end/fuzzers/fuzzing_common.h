@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -33,6 +34,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"

@@ -15,6 +15,7 @@
 #ifndef GRPC_TEST_CORE_END2END_FUZZERS_NETWORK_INPUT_H
 #define GRPC_TEST_CORE_END2END_FUZZERS_NETWORK_INPUT_H
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"

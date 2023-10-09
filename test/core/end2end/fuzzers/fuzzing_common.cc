@@ -45,7 +45,6 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/event_string.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 
 namespace grpc_event_engine {
