@@ -153,7 +153,7 @@ def debug_security_setup_negative(test_client):
 
 def debug_security_setup_positive(test_client, test_server):
     """Debug positive cases: mTLS, TLS, Plaintext."""
-    test_client.wait_for_active_server_channel()
+    test_client.wait_for_server_channel_ready()
     client_sock: _Socket = test_client.get_active_server_channel_socket()
     server_sock: _Socket = test_server.get_server_socket_matching_client(
         client_sock
@@ -181,7 +181,7 @@ def debug_security_setup_positive(test_client, test_server):
 
 def debug_basic_setup(test_client, test_server):
     """Show channel and server socket pair"""
-    test_client.wait_for_active_server_channel()
+    test_client.wait_for_server_channel_ready()
     client_sock: _Socket = test_client.get_active_server_channel_socket()
     server_sock: _Socket = test_server.get_server_socket_matching_client(
         client_sock
