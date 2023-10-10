@@ -45,7 +45,6 @@ using ::grpc_core::experimental::CertificateInfoImpl;
 using ::grpc_core::experimental::Crl;
 using ::grpc_core::experimental::CrlImpl;
 using ::grpc_core::experimental::CrlProvider;
-using ::grpc_core::experimental::StaticCrlProvider;
 
 TEST(CrlProviderTest, CanParseCrl) {
   std::string crl_string = GetFileContents(kCrlPath);
@@ -66,7 +65,7 @@ TEST(CrlProviderTest, InvalidFile) {
 TEST(CrlProviderTest, StaticCrlProviderLookup) {
   std::vector<std::string> crl_strings = {GetFileContents(kCrlPath)};
   absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
-      CreateStaticCrlProvider(crl_strings);
+      experimental::CreateStaticCrlProvider(crl_strings);
   ASSERT_TRUE(provider.ok()) << provider.status();
   CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);
@@ -77,7 +76,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookup) {
 TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
   std::vector<std::string> crl_strings = {GetFileContents(kCrlPath)};
   absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
-      CreateStaticCrlProvider(crl_strings);
+      experimental::CreateStaticCrlProvider(crl_strings);
   ASSERT_TRUE(provider.ok()) << provider.status();
   CertificateInfoImpl bad_cert = CertificateInfoImpl("BAD CERT");
   auto crl = (*provider)->GetCrl(bad_cert);
