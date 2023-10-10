@@ -64,6 +64,9 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
@@ -134,6 +137,9 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
@@ -214,6 +220,9 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",

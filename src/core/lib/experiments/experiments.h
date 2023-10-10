@@ -103,6 +103,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RFC_MAX_CONCURRENT_STREAMS
+inline bool IsRfcMaxConcurrentStreamsEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -151,6 +153,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RFC_MAX_CONCURRENT_STREAMS
+inline bool IsRfcMaxConcurrentStreamsEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -199,6 +203,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RFC_MAX_CONCURRENT_STREAMS
+inline bool IsRfcMaxConcurrentStreamsEnabled() { return true; }
 #endif
 
 #else
@@ -232,6 +238,7 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
+  kExperimentIdRfcMaxConcurrentStreams,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -349,6 +356,10 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RFC_MAX_CONCURRENT_STREAMS
+inline bool IsRfcMaxConcurrentStreamsEnabled() {
+  return IsExperimentEnabled(kExperimentIdRfcMaxConcurrentStreams);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
