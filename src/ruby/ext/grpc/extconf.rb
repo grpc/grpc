@@ -188,6 +188,8 @@ output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 
+debug_symbols = File.join(ENV['GRPC_DEBUG_SYMBOL_DIR'], "grpc.ruby-#{RUBY_VERSION}.dbg")
+
 # See https://stackoverflow.com/questions/866721/how-to-generate-gcc-debug-symbol-outside-the-build-target
 # and https://stackoverflow.com/questions/30281766/need-to-load-debugging-symbols-for-shared-library-in-gdb
 # TODO(apolcyn): figure out how to extract $(DLLIB).dbg and put it in its own gem. debuginfo files should
@@ -199,8 +201,8 @@ if grpc_config == 'opt'
     o.write(File.read('Makefile'))
     o.puts
     o.puts 'strip: $(DLLIB)'
-    o.puts "\t$(ECHO) Generating debug file $(DLLIB).dbg"
-    o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) $(DLLIB).dbg"
+    o.puts "\t$(ECHO) Generating debug symbols #{debug_symbols}"
+    o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols}"
     o.puts "\t$(ECHO) Stripping $(DLLIB)"
     o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
   end
