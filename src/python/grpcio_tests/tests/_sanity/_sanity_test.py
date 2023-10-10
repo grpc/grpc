@@ -41,7 +41,8 @@ class SanityTest(unittest.TestCase):
         tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, "tests.json")
         tests_json = json.loads(tests_json_string.decode())
 
-        self.assertListEqual(tests_json, test_suite_names)
+        self.assertSequenceEqual(tests_json, test_suite_names)
+        self.assertGreater(len(test_suite_names), 0)
 
 
 if __name__ == "__main__":
