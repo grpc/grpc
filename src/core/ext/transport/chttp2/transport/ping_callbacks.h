@@ -84,9 +84,17 @@ class Chttp2PingCallbacks {
   // Add a ping timeout for the most recently started ping.
   // started_new_ping_without_setting_timeout must be set.
   // Clears started_new_ping_without_setting_timeout.
-  void OnPingTimeout(Duration ping_timeout,
-                     grpc_event_engine::experimental::EventEngine* event_engine,
+  void OnPingTimeout(grpc_event_engine::experimental::EventEngine* event_engine,
                      Callback callback);
+
+  // Received some data, so next ping needn't be a keepalive
+  void ReceivedData() { next_ping_is_keepalive_ = false; }
+
+  // Set timeouts
+  void SetTimeouts(Duration keepalive_timeout, Duration ping_timeout) {
+    keepalive_timeout_ = keepalive_timeout;
+    ping_timeout_ = ping_timeout;
+  }
 
  private:
   using CallbackVec = std::vector<Callback>;
@@ -99,6 +107,9 @@ class Chttp2PingCallbacks {
   uint64_t most_recent_inflight_ = 0;
   bool ping_requested_ = false;
   bool started_new_ping_without_setting_timeout_ = false;
+  bool next_ping_is_keepalive_ = false;
+  Duration keepalive_timeout_ = Duration::Seconds(20);
+  Duration ping_timeout_ = Duration::Minutes(1);
   CallbackVec on_start_;
   CallbackVec on_ack_;
 };

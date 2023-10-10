@@ -58,6 +58,7 @@ TEST(PingCallbacksTest, PingAckBeforeTimerStarted) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Milliseconds(1), Duration::Milliseconds(1));
   bool started = false;
   bool acked = false;
   EXPECT_FALSE(callbacks.ping_requested());
@@ -89,7 +90,7 @@ TEST(PingCallbacksTest, PingAckBeforeTimerStarted) {
   EXPECT_EQ(callbacks.pings_inflight(), 0);
   EXPECT_TRUE(started);
   EXPECT_TRUE(acked);
-  callbacks.OnPingTimeout(Duration::Milliseconds(1), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should never reach here"); });
 }
 
@@ -97,6 +98,7 @@ TEST(PingCallbacksTest, PingRoundtrips) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Hours(12), Duration::Hours(24));
   bool started = false;
   bool acked = false;
   EXPECT_FALSE(callbacks.ping_requested());
@@ -122,7 +124,7 @@ TEST(PingCallbacksTest, PingRoundtrips) {
         return EventEngine::TaskHandle{123, 456};
       });
   auto id = callbacks.StartPing(bitgen);
-  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_EQ(callbacks.pings_inflight(), 1);
@@ -142,6 +144,7 @@ TEST(PingCallbacksTest, PingRoundtripsWithInfiniteTimeout) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Hours(12), Duration::Hours(24));
   bool started = false;
   bool acked = false;
   EXPECT_FALSE(callbacks.ping_requested());
@@ -174,6 +177,7 @@ TEST(PingCallbacksTest, PingRoundtripsWithInfiniteTimeout) {
 TEST(PingCallbacksTest, InvalidPingIdFlagsError) {
   StrictMock<MockEventEngine> event_engine;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Hours(12), Duration::Hours(24));
   EXPECT_FALSE(callbacks.AckPing(1234, &event_engine));
 }
 
@@ -181,6 +185,7 @@ TEST(PingCallbacksTest, DuplicatePingIdFlagsError) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Hours(12), Duration::Hours(24));
   bool started = false;
   bool acked = false;
   EXPECT_FALSE(callbacks.ping_requested());
@@ -202,7 +207,7 @@ TEST(PingCallbacksTest, DuplicatePingIdFlagsError) {
         return EventEngine::TaskHandle{123, 456};
       });
   auto id = callbacks.StartPing(bitgen);
-  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started);
@@ -221,6 +226,7 @@ TEST(PingCallbacksTest, OnPingAckCanPiggybackInflightPings) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Hours(12), Duration::Hours(24));
   bool started = false;
   bool acked_first = false;
   bool acked_second = false;
@@ -244,7 +250,7 @@ TEST(PingCallbacksTest, OnPingAckCanPiggybackInflightPings) {
         return EventEngine::TaskHandle{123, 456};
       });
   auto id = callbacks.StartPing(bitgen);
-  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started);
@@ -271,6 +277,7 @@ TEST(PingCallbacksTest, PingAckRoundtrips) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Hours(12), Duration::Hours(24));
   bool acked = false;
   EXPECT_FALSE(callbacks.ping_requested());
   callbacks.OnPingAck([&acked] {
@@ -279,13 +286,13 @@ TEST(PingCallbacksTest, PingAckRoundtrips) {
   });
   EXPECT_TRUE(callbacks.ping_requested());
   EXPECT_FALSE(acked);
-  EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
+  EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(12)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
       .WillOnce([]() {
         return EventEngine::TaskHandle{123, 456};
       });
   auto id = callbacks.StartPing(bitgen);
-  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_FALSE(acked);
@@ -300,6 +307,7 @@ TEST(PingCallbacksTest, MultiPingRoundtrips) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Hours(12), Duration::Hours(24));
   bool started1 = false;
   bool acked1 = false;
   bool started2 = false;
@@ -325,7 +333,7 @@ TEST(PingCallbacksTest, MultiPingRoundtrips) {
         return EventEngine::TaskHandle{123, 456};
       });
   auto id1 = callbacks.StartPing(bitgen);
-  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started1);
@@ -352,7 +360,7 @@ TEST(PingCallbacksTest, MultiPingRoundtrips) {
         return EventEngine::TaskHandle{123, 789};
       });
   auto id2 = callbacks.StartPing(bitgen);
-  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should not reach here"); });
   EXPECT_NE(id1, id2);
   EXPECT_TRUE(started1);
@@ -381,6 +389,7 @@ TEST(PingCallbacksTest, MultiPingRoundtripsWithOutOfOrderAcks) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Hours(12), Duration::Hours(24));
   bool started1 = false;
   bool acked1 = false;
   bool started2 = false;
@@ -406,7 +415,7 @@ TEST(PingCallbacksTest, MultiPingRoundtripsWithOutOfOrderAcks) {
         return EventEngine::TaskHandle{123, 456};
       });
   auto id1 = callbacks.StartPing(bitgen);
-  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started1);
@@ -433,7 +442,7 @@ TEST(PingCallbacksTest, MultiPingRoundtripsWithOutOfOrderAcks) {
         return EventEngine::TaskHandle{123, 789};
       });
   auto id2 = callbacks.StartPing(bitgen);
-  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should not reach here"); });
   EXPECT_NE(id1, id2);
   EXPECT_TRUE(started1);
@@ -462,6 +471,7 @@ TEST(PingCallbacksTest, CoalescedPingsRoundtrip) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Hours(12), Duration::Hours(24));
   bool started1 = false;
   bool acked1 = false;
   bool started2 = false;
@@ -496,7 +506,7 @@ TEST(PingCallbacksTest, CoalescedPingsRoundtrip) {
         return EventEngine::TaskHandle{123, 456};
       });
   auto id = callbacks.StartPing(bitgen);
-  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started1);
@@ -517,6 +527,7 @@ TEST(PingCallbacksTest, CancelAllCancelsCallbacks) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Hours(12), Duration::Hours(24));
   bool started = false;
   bool acked = false;
   EXPECT_FALSE(callbacks.ping_requested());
@@ -541,7 +552,7 @@ TEST(PingCallbacksTest, CancelAllCancelsCallbacks) {
         return EventEngine::TaskHandle{123, 456};
       });
   auto id = callbacks.StartPing(bitgen);
-  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should not reach here"); });
   EXPECT_FALSE(started);
   EXPECT_FALSE(acked);
@@ -557,6 +568,7 @@ TEST(PingCallbacksTest, CancelAllCancelsInflightPings) {
   StrictMock<MockEventEngine> event_engine;
   absl::BitGen bitgen;
   Chttp2PingCallbacks callbacks;
+  callbacks.SetTimeouts(Duration::Hours(12), Duration::Hours(24));
   bool started = false;
   bool acked = false;
   EXPECT_FALSE(callbacks.ping_requested());
@@ -578,7 +590,7 @@ TEST(PingCallbacksTest, CancelAllCancelsInflightPings) {
         return EventEngine::TaskHandle{123, 456};
       });
   auto id = callbacks.StartPing(bitgen);
-  callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
+  callbacks.OnPingTimeout(&event_engine,
                           [] { Crash("should not reach here"); });
   EXPECT_FALSE(callbacks.ping_requested());
   EXPECT_TRUE(started);

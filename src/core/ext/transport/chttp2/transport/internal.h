@@ -415,8 +415,6 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
       keepalive_ping_timer_handle;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
-  /// grace period for a ping to complete before watchdog kicks in
-  grpc_core::Duration keepalive_timeout;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.

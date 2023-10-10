@@ -383,13 +383,14 @@ static void read_channel_args(grpc_chttp2_transport* t,
                channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
                    .value_or(t->is_client ? g_default_client_keepalive_time
                                           : g_default_server_keepalive_time));
-  t->keepalive_timeout = std::max(
+  const auto keepalive_timeout = std::max(
       grpc_core::Duration::Zero(),
       channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
           .value_or(t->keepalive_time == grpc_core::Duration::Infinity()
                         ? grpc_core::Duration::Infinity()
                         : (t->is_client ? g_default_client_keepalive_timeout
                                         : g_default_server_keepalive_timeout)));
+  t->ping_callbacks.SetTimeouts(keepalive_timeout, keepalive_timeout * 3);
   if (t->is_client) {
     t->keepalive_permit_without_calls =
         channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
@@ -1728,8 +1729,8 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
   explicit GracefulGoaway(grpc_chttp2_transport* t) : t_(t->Ref()) {
     t->sent_goaway_state = GRPC_CHTTP2_GRACEFUL_GOAWAY;
     grpc_chttp2_goaway_append((1u << 31) - 1, 0, grpc_empty_slice(), &t->qbuf);
-    t->keepalive_timeout =
-        std::min(t->keepalive_timeout, grpc_core::Duration::Seconds(20));
+    t->ping_callbacks.SetTimeouts(grpc_core::Duration::Seconds(20),
+                                  grpc_core::Duration::Seconds(20));
     send_ping_locked(
         t, nullptr, GRPC_CLOSURE_INIT(&on_ping_ack_, OnPingAck, this, nullptr));
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);

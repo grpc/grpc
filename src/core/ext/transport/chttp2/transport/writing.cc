@@ -678,16 +678,14 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
   }
   t->num_messages_in_next_write = 0;
 
-  if (t->ping_callbacks.started_new_ping_without_setting_timeout() &&
-      t->keepalive_timeout != grpc_core::Duration::Infinity()) {
+  if (t->ping_callbacks.started_new_ping_without_setting_timeout()) {
     // Set ping timeout after finishing write so we don't measure our own send
     // time.
-    t->ping_callbacks.OnPingTimeout(
-        t->keepalive_timeout, t->event_engine.get(), [t = t->Ref()] {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-          grpc_core::ExecCtx exec_ctx;
-          grpc_chttp2_ping_timeout(t);
-        });
+    t->ping_callbacks.OnPingTimeout(t->event_engine.get(), [t = t->Ref()] {
+      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
+      grpc_chttp2_ping_timeout(t);
+    });
   }
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {

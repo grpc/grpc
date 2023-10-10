@@ -203,6 +203,8 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
 
   if (cur == end) return absl::OkStatus();
 
+  t->ping_callbacks.ReceivedData();
+
   switch (t->deframe_state) {
     case GRPC_DTS_CLIENT_PREFIX_0:
     case GRPC_DTS_CLIENT_PREFIX_1:

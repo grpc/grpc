@@ -32,6 +32,7 @@ void Chttp2PingCallbacks::OnPing(Callback on_start, Callback on_ack) {
 }
 
 void Chttp2PingCallbacks::OnPingAck(Callback on_ack) {
+  next_ping_is_keepalive_ = true;
   auto it = inflight_.find(most_recent_inflight_);
   if (it != inflight_.end()) {
     it->second.on_ack.emplace_back(std::move(on_ack));
@@ -91,13 +92,16 @@ void Chttp2PingCallbacks::CancelAll(
 }
 
 void Chttp2PingCallbacks::OnPingTimeout(
-    Duration ping_timeout,
     grpc_event_engine::experimental::EventEngine* event_engine,
     Callback callback) {
   GPR_ASSERT(started_new_ping_without_setting_timeout_);
   started_new_ping_without_setting_timeout_ = false;
   auto it = inflight_.find(most_recent_inflight_);
   if (it == inflight_.end()) return;
+  const auto ping_timeout = std::exchange(next_ping_is_keepalive_, false)
+                                ? keepalive_timeout_
+                                : ping_timeout_;
+  if (ping_timeout == Duration::Infinity()) return;
   it->second.on_timeout =
       event_engine->RunAfter(ping_timeout, std::move(callback));
 }
