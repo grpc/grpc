@@ -3077,7 +3077,6 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_tls_credentials",
     ],
 )
 

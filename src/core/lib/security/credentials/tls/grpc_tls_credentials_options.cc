@@ -130,3 +130,15 @@ void grpc_tls_credentials_options_set_send_client_ca_list(
   }
   options->set_send_client_ca_list(send_client_ca_list);
 }
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets the crl provider in the options.
+ * The |options| will implicitly take a new ref to the |provider|.
+ */
+void grpc_tls_credentials_options_set_crl_provider(
+    grpc_tls_credentials_options* options,
+    std::shared_ptr<grpc_core::experimental::CrlProvider> provider) {
+  options->set_crl_provider(std::move(provider));
+}
