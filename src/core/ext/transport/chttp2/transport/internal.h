@@ -329,6 +329,9 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// last new stream id
   uint32_t last_new_stream_id = 0;
 
+  /// Number of incoming streams allowed before a settings ACK is required
+  uint32_t num_incoming_streams_before_settings_ack = 0;
+
   /// ping queues for various ping insertion points
   grpc_core::Chttp2PingAbusePolicy ping_abuse_policy;
   grpc_core::Chttp2PingRatePolicy ping_rate_policy;
@@ -479,6 +482,10 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   bool bdp_ping_started = false;
   // True if pings should be acked
   bool ack_pings = true;
+
+  // What percentage of rst_stream frames on the server should cause a ping
+  // frame to be generated.
+  uint8_t ping_on_rst_stream_percent;
 
   /// write execution state of the transport
   grpc_chttp2_write_state write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;

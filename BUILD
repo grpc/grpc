@@ -2109,6 +2109,7 @@ grpc_cc_library(
     deps = [
         "grpc++",
         "grpc++_config_proto",
+        "//src/proto/grpc/reflection/v1:reflection_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
     alwayslink = 1,
@@ -4017,6 +4018,7 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/random",
         "absl/random:bit_gen_ref",
+        "absl/random:distributions",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",

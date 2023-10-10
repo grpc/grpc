@@ -130,6 +130,18 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_work_serializer_clears_time_cache =
+    "Have the work serializer clear the time cache when it dispatches work.";
+const char* const additional_constraints_work_serializer_clears_time_cache =
+    "{}";
+const char* const description_block_excessive_requests_before_settings_ack =
+    "If set, block excessive requests before receiving SETTINGS ACK.";
+const char* const
+    additional_constraints_block_excessive_requests_before_settings_ack = "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -205,6 +217,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"work_serializer_clears_time_cache",
+     description_work_serializer_clears_time_cache,
+     additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"block_excessive_requests_before_settings_ack",
+     description_block_excessive_requests_before_settings_ack,
+     additional_constraints_block_excessive_requests_before_settings_ack, true,
+     true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core
@@ -319,6 +340,18 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_work_serializer_clears_time_cache =
+    "Have the work serializer clear the time cache when it dispatches work.";
+const char* const additional_constraints_work_serializer_clears_time_cache =
+    "{}";
+const char* const description_block_excessive_requests_before_settings_ack =
+    "If set, block excessive requests before receiving SETTINGS ACK.";
+const char* const
+    additional_constraints_block_excessive_requests_before_settings_ack = "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -394,6 +427,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"work_serializer_clears_time_cache",
+     description_work_serializer_clears_time_cache,
+     additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"block_excessive_requests_before_settings_ack",
+     description_block_excessive_requests_before_settings_ack,
+     additional_constraints_block_excessive_requests_before_settings_ack, true,
+     true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core
@@ -508,6 +550,18 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_work_serializer_clears_time_cache =
+    "Have the work serializer clear the time cache when it dispatches work.";
+const char* const additional_constraints_work_serializer_clears_time_cache =
+    "{}";
+const char* const description_block_excessive_requests_before_settings_ack =
+    "If set, block excessive requests before receiving SETTINGS ACK.";
+const char* const
+    additional_constraints_block_excessive_requests_before_settings_ack = "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -583,6 +637,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"work_serializer_clears_time_cache",
+     description_work_serializer_clears_time_cache,
+     additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"block_excessive_requests_before_settings_ack",
+     description_block_excessive_requests_before_settings_ack,
+     additional_constraints_block_excessive_requests_before_settings_ack, true,
+     true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core

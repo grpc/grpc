@@ -769,14 +769,35 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         self.pod_log_collectors.append(pod_log_collector)
         return pod_log_collector
 
-    def _wait_service_neg(self, name, service_port, **kwargs):
-        logger.info("Waiting for NEG for service %s", name)
-        self.k8s_namespace.wait_for_service_neg(name, **kwargs)
-        neg_name, neg_zones = self.k8s_namespace.get_service_neg(
-            name, service_port
+    def _wait_service_neg_status_annotation(
+        self,
+        service_name: str,
+        service_port: int,
+        **kwargs,
+    ) -> None:
+        logger.info(
+            "Waiting for '%s' annotation for a NEG at port %s to be assigned to"
+            " Kubernetes Service %s in namespace %s",
+            self.k8s_namespace.NEG_STATUS_ANNOTATION,
+            service_port,
+            service_name,
+            self.k8s_namespace.name,
+        )
+        self.k8s_namespace.wait_for_service_neg_status_annotation(
+            service_name, **kwargs
+        )
+        neg_name, neg_zones = self.k8s_namespace.parse_service_neg_status(
+            service_name, service_port
         )
         logger.info(
-            "Service %s: detected NEG=%s in zones=%s", name, neg_name, neg_zones
+            "Detected '%s' annotation for Kubernetes Service %s, namespace %s:"
+            " neg_name=%s, port=%s, zones=%s",
+            self.k8s_namespace.NEG_STATUS_ANNOTATION,
+            service_name,
+            self.k8s_namespace.name,
+            neg_name,
+            service_port,
+            neg_zones,
         )
 
     def logs_explorer_link(self):

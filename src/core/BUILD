@@ -3985,6 +3985,7 @@ grpc_cc_library(
         "map",
         "pipe",
         "poll",
+        "ref_counted_string",
         "service_config_parser",
         "slice",
         "time",
@@ -4907,6 +4908,7 @@ grpc_cc_library(
         "lb_policy_registry",
         "pollset_set",
         "ref_counted",
+        "resolved_address",
         "unique_type_name",
         "validation_errors",
         "//:channel_arg_names",
@@ -5050,6 +5052,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -5184,6 +5187,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
+        "absl/types:span",
         "absl/types:variant",
     ],
     language = "c++",
@@ -5204,6 +5208,7 @@ grpc_cc_library(
         "lb_policy_registry",
         "match",
         "pollset_set",
+        "ref_counted_string",
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
@@ -5703,6 +5708,7 @@ grpc_cc_library(
     deps = [
         "time",
         "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )

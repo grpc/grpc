@@ -3675,6 +3675,7 @@ libs:
   headers:
   - src/cpp/ext/proto_server_reflection.h
   src:
+  - src/proto/grpc/reflection/v1/reflection.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/cpp/ext/proto_server_reflection.cc
   - src/cpp/ext/proto_server_reflection_plugin.cc
@@ -7663,6 +7664,17 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: endpoint_addresses_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/resolver/endpoint_addresses_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: endpoint_binder_pool_test
   gtest: true
   build: test
@@ -13932,6 +13944,24 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: ring_hash_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/client_channel/lb_policy/ring_hash_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: rls_end2end_test
   gtest: true
   build: test
@@ -18191,6 +18221,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
