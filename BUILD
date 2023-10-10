@@ -4047,6 +4047,7 @@ grpc_cc_library(
         "//src/core:ping_callbacks",
         "//src/core:ping_rate_policy",
         "//src/core:poll",
+        "//src/core:random_early_detection",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:resource_quota_trace",
