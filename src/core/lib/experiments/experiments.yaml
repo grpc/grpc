@@ -228,3 +228,12 @@
   expiry: 2024/01/01
   owner: ctiller@google.com
   test_tags: []
+- name: separate_ping_from_keepalive
+  description:
+    Keep a different keepalive timeout (resolution is seeing data after sending a ping)
+    from a ping timeout (resolution is getting a ping ack after sending a ping)
+    The first can be short and determines liveness.
+    The second can be longer and determines protocol correctness.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: []

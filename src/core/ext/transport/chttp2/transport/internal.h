@@ -415,7 +415,8 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
       keepalive_ping_timer_handle;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
-  /// grace period for a ping to complete before watchdog kicks in
+  /// grace period to wait for data after sending a ping before keepalives
+  /// timeout
   grpc_core::Duration keepalive_timeout;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
@@ -431,6 +432,12 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// thereby reducing the number of induced frames.
   uint32_t num_pending_induced_frames = 0;
   uint32_t incoming_stream_id = 0;
+
+  /// grace period after sending a ping to wait for the ping ack
+  grpc_core::Duration ping_timeout;
+  grpc_event_engine::experimental::EventEngine::TaskHandle
+      keepalive_ping_timeout_handle =
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
 
   /// how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
   ///
@@ -477,6 +484,8 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   bool bdp_ping_started = false;
   // True if pings should be acked
   bool ack_pings = true;
+  /// True if the keepalive system wants to see some data incoming
+  bool keepalive_incoming_data_wanted = false;
 
   /// write execution state of the transport
   grpc_chttp2_write_state write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
@@ -708,6 +717,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        const char* desc,
                                        grpc_core::DebugLocation whence = {});
 
+void grpc_chttp2_keepalive_timeout(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 void grpc_chttp2_ping_timeout(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 

@@ -105,6 +105,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
+inline bool IsSeparatePingFromKeepaliveEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -155,6 +156,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
+inline bool IsSeparatePingFromKeepaliveEnabled() { return false; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -205,6 +207,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
+inline bool IsSeparatePingFromKeepaliveEnabled() { return false; }
 #endif
 
 #else
@@ -239,6 +242,7 @@ enum ExperimentIds {
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdWorkSerializerClearsTimeCache,
+  kExperimentIdSeparatePingFromKeepalive,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -360,6 +364,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() {
   return IsExperimentEnabled(kExperimentIdWorkSerializerClearsTimeCache);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() {
+  return IsExperimentEnabled(kExperimentIdSeparatePingFromKeepalive);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

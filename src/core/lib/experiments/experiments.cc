@@ -134,6 +134,12 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -212,6 +218,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, false, true},
 };
 
 }  // namespace grpc_core
@@ -330,6 +338,12 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -408,6 +422,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, false, true},
 };
 
 }  // namespace grpc_core
@@ -526,6 +542,12 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -604,6 +626,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, false, true},
 };
 
 }  // namespace grpc_core

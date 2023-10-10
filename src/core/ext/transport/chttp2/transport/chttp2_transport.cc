@@ -117,6 +117,8 @@
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
+#define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
+
 static grpc_core::Duration g_default_client_keepalive_time =
     grpc_core::Duration::Infinity();
 static grpc_core::Duration g_default_client_keepalive_timeout =
@@ -390,6 +392,12 @@ static void read_channel_args(grpc_chttp2_transport* t,
                         ? grpc_core::Duration::Infinity()
                         : (t->is_client ? g_default_client_keepalive_timeout
                                         : g_default_server_keepalive_timeout)));
+  t->ping_timeout = std::max(
+      grpc_core::Duration::Zero(),
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
+          .value_or(t->keepalive_time == grpc_core::Duration::Infinity()
+                        ? grpc_core::Duration::Infinity()
+                        : grpc_core::Duration::Minutes(1)));
   if (t->is_client) {
     t->keepalive_permit_without_calls =
         channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
@@ -2503,6 +2511,14 @@ static void read_action(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 static void read_action_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
+  // got an incoming read, cancel any pending keepalive timers
+  t->keepalive_incoming_data_wanted = false;
+  if (t->keepalive_ping_timeout_handle !=
+      grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
+    t->event_engine->Cancel(std::exchange(
+        t->keepalive_ping_timeout_handle,
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
+  }
   grpc_error_handle err = error;
   if (!err.ok()) {
     err = grpc_error_set_int(
