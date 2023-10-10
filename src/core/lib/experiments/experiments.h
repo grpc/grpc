@@ -103,7 +103,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsTarpitEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 
@@ -154,7 +155,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsTarpitEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 
@@ -205,7 +207,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsTarpitEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #endif

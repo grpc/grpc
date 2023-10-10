@@ -21,9 +21,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "bad_client_test": [
-                "tarpit",
-            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -67,6 +64,9 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "bad_client_test": [
+                "tarpit",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
@@ -94,9 +94,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "bad_client_test": [
-                "tarpit",
-            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -140,6 +137,9 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "bad_client_test": [
+                "tarpit",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
@@ -167,9 +167,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "bad_client_test": [
-                "tarpit",
-            ],
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
@@ -223,6 +220,9 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "bad_client_test": [
+                "tarpit",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",

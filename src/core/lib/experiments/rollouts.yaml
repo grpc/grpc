@@ -106,3 +106,5 @@
   default: debug
 - name: work_serializer_clears_time_cache
   default: true
+- name: tarpit
+  default: true
