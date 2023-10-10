@@ -2381,13 +2381,14 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
   GPR_ASSERT(grpc_status >= 0 && (int)grpc_status < 100);
 
+  auto remove_stream_handle = grpc_chttp2_mark_stream_closed(t, s, 1, 1, error);
   grpc_core::MaybeTarpit(
       t, tarpit,
       [error = std::move(error),
        sent_initial_metadata = s->sent_initial_metadata, id = s->id,
        grpc_status, message = std::move(message),
-       remove_stream_handle = grpc_chttp2_mark_stream_closed(
-           t, s, 1, 1, error)](grpc_chttp2_transport* t) mutable {
+       remove_stream_handle =
+           std::move(remove_stream_handle)](grpc_chttp2_transport* t) mutable {
         grpc_slice hdr;
         grpc_slice status_hdr;
         grpc_slice http_status_hdr;
