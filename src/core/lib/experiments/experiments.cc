@@ -134,6 +134,10 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_block_excessive_requests_before_settings_ack =
+    "If set, block excessive requests before receiving SETTINGS ACK.";
+const char* const
+    additional_constraints_block_excessive_requests_before_settings_ack = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -212,6 +216,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"block_excessive_requests_before_settings_ack",
+     description_block_excessive_requests_before_settings_ack,
+     additional_constraints_block_excessive_requests_before_settings_ack, false,
+     true},
 };
 
 }  // namespace grpc_core
@@ -330,6 +338,10 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_block_excessive_requests_before_settings_ack =
+    "If set, block excessive requests before receiving SETTINGS ACK.";
+const char* const
+    additional_constraints_block_excessive_requests_before_settings_ack = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -408,6 +420,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"block_excessive_requests_before_settings_ack",
+     description_block_excessive_requests_before_settings_ack,
+     additional_constraints_block_excessive_requests_before_settings_ack, false,
+     true},
 };
 
 }  // namespace grpc_core
@@ -526,6 +542,10 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_block_excessive_requests_before_settings_ack =
+    "If set, block excessive requests before receiving SETTINGS ACK.";
+const char* const
+    additional_constraints_block_excessive_requests_before_settings_ack = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -604,6 +624,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"block_excessive_requests_before_settings_ack",
+     description_block_excessive_requests_before_settings_ack,
+     additional_constraints_block_excessive_requests_before_settings_ack, false,
+     true},
 };
 
 }  // namespace grpc_core
