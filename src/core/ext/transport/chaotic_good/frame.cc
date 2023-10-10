@@ -31,6 +31,8 @@
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -116,7 +118,9 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
     absl::BitGenRef bitsrc) {
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
-  Arena::PoolPtr<Metadata> metadata;
+  auto arena = GetContext<Arena>();
+  GPR_ASSERT(arena != nullptr);
+  Arena::PoolPtr<Metadata> metadata = arena->MakePooled<Metadata>(arena);
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),
@@ -212,11 +216,18 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
         ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveHeaders(),
                                      header.stream_id, true, false, bitsrc);
     if (!r.ok()) return r.status();
+    if (r.value() != nullptr) {
+      headers = std::move(r.value());
+    }
   }
   if (header.flags.is_set(1)) {
     auto r =
         ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveTrailers(),
                                      header.stream_id, false, false, bitsrc);
+    if (!r.ok()) return r.status();
+    if (r.value() != nullptr) {
+      trailers = std::move(r.value());
+    }
   }
   return deserializer.Finish();
 }

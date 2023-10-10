@@ -29,6 +29,11 @@ import "google/protobuf/wrappers.proto";
 
 // Upstream host identifier.
 message Endpoint {
+  message AdditionalAddress {
+    // Additional address that is associated with the endpoint.
+    core.v3.Address address = 1;
+  }
+
   // The upstream host address.
   //
   // .. attention::
@@ -39,6 +44,13 @@ message Endpoint {
   //   in the Address). For LOGICAL or STRICT DNS, it is expected to be hostname,
   //   and will be resolved via DNS.
   core.v3.Address address = 1;
+
+  // An ordered list of addresses that together with `address` comprise the
+  // list of addresses for an endpoint. The address given in the `address` is
+  // prepended to this list. It is assumed that the list must already be
+  // sorted by preference order of the addresses. This will only be supported
+  // for STATIC and EDS clusters.
+  repeated AdditionalAddress additional_addresses = 4;
 }
 
 // An Endpoint that Envoy can route traffic to.

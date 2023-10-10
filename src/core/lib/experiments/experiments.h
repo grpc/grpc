@@ -103,7 +103,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsSettingsTimeoutEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
+inline bool IsSettingsTimeoutEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -152,7 +155,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsSettingsTimeoutEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
+inline bool IsSettingsTimeoutEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -201,7 +207,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsSettingsTimeoutEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
+inline bool IsSettingsTimeoutEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #endif
 
 #else
@@ -236,6 +245,7 @@ enum ExperimentIds {
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdSettingsTimeout,
+  kExperimentIdWorkSerializerClearsTimeCache,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -357,6 +367,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() {
   return IsExperimentEnabled(kExperimentIdSettingsTimeout);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() {
+  return IsExperimentEnabled(kExperimentIdWorkSerializerClearsTimeCache);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
