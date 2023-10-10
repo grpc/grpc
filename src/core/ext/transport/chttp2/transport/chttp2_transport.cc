@@ -413,7 +413,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
   t->settings_timeout =
       channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
           .value_or(std::max(t->keepalive_timeout * 2,
-                             grpc_core::Duration::Seconds(40)));
+                             grpc_core::Duration::Minutes(1)));
 
   // Only send the prefered rx frame size http2 setting if we are instructed
   // to auto size the buffers allocated at tcp level and we also can adjust
