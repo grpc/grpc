@@ -100,3 +100,5 @@
   default: true
 - name: registered_method_lookup_in_transport
   default: true
+- name: ping_on_rst_stream
+  default: true

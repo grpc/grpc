@@ -122,6 +122,10 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -186,6 +190,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core
@@ -292,6 +298,10 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -356,6 +366,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core
@@ -462,6 +474,10 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -526,6 +542,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core

@@ -91,6 +91,8 @@ inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
+inline bool IsPingOnRstStreamEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -127,6 +129,8 @@ inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
+inline bool IsPingOnRstStreamEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -163,6 +167,8 @@ inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
+inline bool IsPingOnRstStreamEnabled() { return true; }
 #endif
 
 #else
@@ -194,6 +200,7 @@ enum ExperimentIds {
   kExperimentIdCombinerOffloadToEventEngine,
   kExperimentIdMultiping,
   kExperimentIdRegisteredMethodLookupInTransport,
+  kExperimentIdPingOnRstStream,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -303,6 +310,10 @@ inline bool IsMultipingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() {
   return IsExperimentEnabled(kExperimentIdRegisteredMethodLookupInTransport);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
+inline bool IsPingOnRstStreamEnabled() {
+  return IsExperimentEnabled(kExperimentIdPingOnRstStream);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

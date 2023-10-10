@@ -3983,6 +3983,7 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/random",
         "absl/random:bit_gen_ref",
+        "absl/random:distributions",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",
