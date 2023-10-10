@@ -72,10 +72,6 @@ class CrlProviderTest : public ::testing::Test {
   void RunServer(absl::Notification* notification, absl::string_view server_key,
                  absl::string_view server_cert) {
     experimental::IdentityKeyCertPair key_cert_pair;
-    // std::string server_key =
-    // grpc_core::testing::GetFileContents(kValidKeyPath); std::string
-    // server_cert =
-    //     grpc_core::testing::GetFileContents(kValidCertPath);
     std::string root = grpc_core::testing::GetFileContents(kRootPath);
     key_cert_pair.private_key = server_key.data();
     key_cert_pair.certificate_chain = server_cert.data();
