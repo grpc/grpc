@@ -2117,7 +2117,8 @@ void MaybeTarpit(grpc_chttp2_transport* t, bool tarpit, F fn) {
 void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                                grpc_error_handle due_to_error, bool tarpit) {
   if (!t->is_client && !s->sent_trailing_metadata &&
-      grpc_error_has_clear_grpc_status(due_to_error)) {
+      grpc_error_has_clear_grpc_status(due_to_error) &&
+      !(s->read_closed && s->write_closed)) {
     close_from_api(t, s, due_to_error, tarpit);
     return;
   }
