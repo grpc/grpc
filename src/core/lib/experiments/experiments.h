@@ -104,6 +104,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsTarpitEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -153,6 +155,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsTarpitEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -202,6 +206,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsTarpitEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #endif
 
 #else
@@ -236,6 +242,7 @@ enum ExperimentIds {
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdTarpit,
+  kExperimentIdWorkSerializerClearsTimeCache,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -357,6 +364,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
 inline bool IsTarpitEnabled() {
   return IsExperimentEnabled(kExperimentIdTarpit);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
+inline bool IsWorkSerializerClearsTimeCacheEnabled() {
+  return IsExperimentEnabled(kExperimentIdWorkSerializerClearsTimeCache);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

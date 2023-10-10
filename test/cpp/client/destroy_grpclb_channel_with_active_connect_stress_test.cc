@@ -45,7 +45,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -67,7 +67,7 @@ void TryConnectAndDestroy() {
   ASSERT_TRUE(lb_uri.ok());
   grpc_resolved_address address;
   ASSERT_TRUE(grpc_parse_uri(*lb_uri, &address));
-  grpc_core::ServerAddressList addresses;
+  grpc_core::EndpointAddressesList addresses;
   addresses.emplace_back(address, grpc_core::ChannelArgs());
   grpc_core::Resolver::Result lb_address_result;
   lb_address_result.service_config = grpc_core::ServiceConfigImpl::Create(

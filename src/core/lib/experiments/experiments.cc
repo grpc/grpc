@@ -133,6 +133,10 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_tarpit =
     "If set, tarpit invalid requests for some amount of time";
 const char* const additional_constraints_tarpit = "{}";
+const char* const description_work_serializer_clears_time_cache =
+    "Have the work serializer clear the time cache when it dispatches work.";
+const char* const additional_constraints_work_serializer_clears_time_cache =
+    "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -209,6 +213,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
     {"tarpit", description_tarpit, additional_constraints_tarpit, false, true},
+    {"work_serializer_clears_time_cache",
+     description_work_serializer_clears_time_cache,
+     additional_constraints_work_serializer_clears_time_cache, true, true},
 };
 
 }  // namespace grpc_core
@@ -326,6 +333,10 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_tarpit =
     "If set, tarpit invalid requests for some amount of time";
 const char* const additional_constraints_tarpit = "{}";
+const char* const description_work_serializer_clears_time_cache =
+    "Have the work serializer clear the time cache when it dispatches work.";
+const char* const additional_constraints_work_serializer_clears_time_cache =
+    "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -402,6 +413,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
     {"tarpit", description_tarpit, additional_constraints_tarpit, false, true},
+    {"work_serializer_clears_time_cache",
+     description_work_serializer_clears_time_cache,
+     additional_constraints_work_serializer_clears_time_cache, true, true},
 };
 
 }  // namespace grpc_core
@@ -519,6 +533,10 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_tarpit =
     "If set, tarpit invalid requests for some amount of time";
 const char* const additional_constraints_tarpit = "{}";
+const char* const description_work_serializer_clears_time_cache =
+    "Have the work serializer clear the time cache when it dispatches work.";
+const char* const additional_constraints_work_serializer_clears_time_cache =
+    "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -595,6 +613,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
     {"tarpit", description_tarpit, additional_constraints_tarpit, false, true},
+    {"work_serializer_clears_time_cache",
+     description_work_serializer_clears_time_cache,
+     additional_constraints_work_serializer_clears_time_cache, true, true},
 };
 
 }  // namespace grpc_core

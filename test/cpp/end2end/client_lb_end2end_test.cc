@@ -65,7 +65,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
@@ -251,7 +251,7 @@ class FakeResolverResponseGeneratorWrapper {
       const grpc_core::ChannelArgs& per_address_args =
           grpc_core::ChannelArgs()) {
     grpc_core::Resolver::Result result;
-    result.addresses = grpc_core::ServerAddressList();
+    result.addresses = grpc_core::EndpointAddressesList();
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));
@@ -1945,6 +1945,9 @@ TEST_F(RoundRobinTest, HealthChecking) {
   gpr_log(GPR_INFO, "*** server 0 healthy");
   servers_[0]->SetServingStatus("health_check_service_name", true);
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  // New channel state may be reported before the picker is updated, so
+  // wait for the server before proceeding.
+  WaitForServer(DEBUG_LOCATION, stub, 0);
   for (int i = 0; i < 10; ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
@@ -1990,15 +1993,23 @@ TEST_F(RoundRobinTest, HealthChecking) {
   servers_[1]->SetServingStatus("health_check_service_name", false);
   servers_[2]->SetServingStatus("health_check_service_name", false);
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-      grpc_core::IsRoundRobinDelegateToPickFirstEnabled()
-          ? "connections to all backends failing; last error: "
-            "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-            "backend unhealthy"
-          : "connections to all backends failing; last error: "
-            "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-            "backend unhealthy");
+  // New channel state may be reported before the picker is updated, so
+  // one or two more RPCs may succeed before we see a failure.
+  SendRpcsUntil(DEBUG_LOCATION, stub, [&](const Status& status) {
+    if (status.ok()) return true;
+    EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
+    EXPECT_THAT(
+        status.error_message(),
+        ::testing::MatchesRegex(
+            grpc_core::IsRoundRobinDelegateToPickFirstEnabled()
+                ? "connections to all backends failing; last error: "
+                  "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                  "backend unhealthy"
+                : "connections to all backends failing; last error: "
+                  "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                  "backend unhealthy"));
+    return false;
+  });
   // Clean up.
   EnableDefaultHealthCheckService(false);
 }
@@ -2792,7 +2803,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   }
 
  private:
-  static void SaveAddress(const grpc_core::ServerAddress& address) {
+  static void SaveAddress(const grpc_core::EndpointAddresses& address) {
     ClientLbAddressTest* self = current_test_instance_;
     grpc_core::MutexLock lock(&self->mu_);
     self->addresses_seen_.emplace_back(address.ToString());
@@ -2821,8 +2832,9 @@ TEST_F(ClientLbAddressTest, Basic) {
   // Make sure that the attributes wind up on the subchannels.
   std::vector<std::string> expected;
   for (const int port : GetServersPorts()) {
-    expected.emplace_back(absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:",
-                                       port, " args={test_key=test_value}"));
+    expected.emplace_back(
+        absl::StrCat("addrs=[", ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
+                     "] args={test_key=test_value}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }
@@ -2865,7 +2877,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
 
  private:
   static void BackendMetricCallback(
-      const grpc_core::ServerAddress& address,
+      const grpc_core::EndpointAddresses& address,
       const grpc_core::BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
     int port = grpc_sockaddr_get_port(&address.address());
