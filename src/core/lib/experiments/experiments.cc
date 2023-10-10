@@ -73,6 +73,9 @@ const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
+const char* const description_client_idleness =
+    "If enabled, client channel idleness is enabled by default.";
+const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_canary_client_privacy =
@@ -192,6 +195,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_trace_record_callops, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
+    {"client_idleness", description_client_idleness,
+     additional_constraints_client_idleness, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -299,6 +304,9 @@ const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
+const char* const description_client_idleness =
+    "If enabled, client channel idleness is enabled by default.";
+const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_canary_client_privacy =
@@ -418,6 +426,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_trace_record_callops, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
+    {"client_idleness", description_client_idleness,
+     additional_constraints_client_idleness, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -525,6 +535,9 @@ const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
+const char* const description_client_idleness =
+    "If enabled, client channel idleness is enabled by default.";
+const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_canary_client_privacy =
@@ -644,6 +657,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_trace_record_callops, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
+    {"client_idleness", description_client_idleness,
+     additional_constraints_client_idleness, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,

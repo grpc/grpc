@@ -60,9 +60,8 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(ctiller): The idle filter was disabled in client channel by default
-// due to b/143502997. Now the bug is fixed enable the filter by default.
-const auto kDefaultIdleTimeout = Duration::Infinity();
+const auto kDefaultIdleTimeout =
+    IsClientIdlenessEnabled() ? Duration::Minutes(30) : Duration::Infinity();
 
 // If these settings change, make sure that we are not sending a GOAWAY for
 // inproc transport, since a GOAWAY to inproc ends up destroying the transport.
