@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>

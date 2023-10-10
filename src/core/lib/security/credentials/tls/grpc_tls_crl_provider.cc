@@ -16,22 +16,27 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
-#include <grpc/support/port_platform.h>
 #include <limits.h>
+
+#include <memory>
+#include <utility>
+
 #include <openssl/bio.h>
 #include <openssl/mem.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
-#include <memory>
-#include <utility>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/span.h"
+
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
 namespace grpc_core {
 namespace experimental {
@@ -103,7 +108,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::Create(
 
 StaticCrlProvider::StaticCrlProvider(
     absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls)
-    : crls_(crls) {}
+    : crls_(std::move(crls)) {}
 
 std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
     const CertificateInfo& certificate_info) {
@@ -112,6 +117,18 @@ std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
     return nullptr;
   }
   return it->second;
+}
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets the crl provider in the options.
+ * The |options| will implicitly take a new ref to the |provider|.
+ */
+void grpc_tls_credentials_options_set_crl_provider(
+    grpc_tls_credentials_options* options,
+    std::shared_ptr<grpc_core::experimental::CrlProvider> provider) {
+  options->set_crl_provider(std::move(provider));
 }
 
 }  // namespace experimental

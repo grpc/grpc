@@ -116,7 +116,6 @@ class TlsCredentialsOptions {
  private:
   std::shared_ptr<CertificateProviderInterface> certificate_provider_;
   std::shared_ptr<CertificateVerifier> certificate_verifier_;
-  std::shared_ptr<CrlProvider> crl_provider_;
   grpc_tls_credentials_options* c_credentials_options_ = nullptr;
 };
 
