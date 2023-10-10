@@ -526,7 +526,7 @@ struct GrpcTarPit {
   static absl::string_view DebugKey() { return "GrpcTarPit"; }
   static constexpr bool kRepeatable = false;
   using ValueType = Empty;
-  static absl::string_view DisplayValue(Empty x) { return "tarpit"; }
+  static absl::string_view DisplayValue(Empty) { return "tarpit"; }
 };
 
 namespace metadata_detail {

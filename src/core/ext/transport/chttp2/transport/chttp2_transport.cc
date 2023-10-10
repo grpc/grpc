@@ -2168,19 +2168,19 @@ void MaybeTarpit(grpc_chttp2_transport* t, bool tarpit, F fn) {
     return;
   }
   const auto duration = TarpitDuration(t);
-  t->event_engine->RunAfter(duration, [t = t->Ref(),
-                                       fn = std::move(fn)]() mutable {
-    ApplicationCallbackExecCtx app_exec_ctx;
-    ExecCtx exec_ctx;
-    t->combiner->Run(
-        NewClosure([t, fn = std::move(fn)](grpc_error_handle error) mutable {
-          // TODO(ctiller): this can result in not sending RST_STREAMS if a
-          // request gets tarpit behind a transport close.
-          if (!t->closed_with_error.ok()) return;
-          fn(t.get());
-        }),
-        absl::OkStatus());
-  });
+  t->event_engine->RunAfter(
+      duration, [t = t->Ref(), fn = std::move(fn)]() mutable {
+        ApplicationCallbackExecCtx app_exec_ctx;
+        ExecCtx exec_ctx;
+        t->combiner->Run(
+            NewClosure([t, fn = std::move(fn)](grpc_error_handle) mutable {
+              // TODO(ctiller): this can result in not sending RST_STREAMS if a
+              // request gets tarpit behind a transport close.
+              if (!t->closed_with_error.ok()) return;
+              fn(t.get());
+            }),
+            absl::OkStatus());
+      });
 }
 
 }  // namespace
