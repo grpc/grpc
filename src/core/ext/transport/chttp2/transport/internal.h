@@ -324,6 +324,10 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// settings values
   uint32_t settings[GRPC_NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
 
+  grpc_event_engine::experimental::EventEngine::TaskHandle
+      settings_ack_watchdog =
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
+
   /// what is the next stream id to be allocated by this peer?
   /// copied to next_stream_id in parsing when parsing commences
   uint32_t next_stream_id = 0;
@@ -438,6 +442,9 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// thereby reducing the number of induced frames.
   uint32_t num_pending_induced_frames = 0;
   uint32_t incoming_stream_id = 0;
+
+  /// grace period before settings timeout expires
+  grpc_core::Duration settings_timeout;
 
   /// how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
   ///
@@ -724,6 +731,9 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        grpc_core::DebugLocation whence = {});
 
 void grpc_chttp2_ping_timeout(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
+
+void grpc_chttp2_settings_timeout(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5

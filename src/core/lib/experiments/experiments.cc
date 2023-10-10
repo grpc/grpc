@@ -122,6 +122,9 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_settings_timeout =
+    "If set, use the settings timeout to send settings frame to the peer.";
+const char* const additional_constraints_settings_timeout = "{}";
 const char* const description_chttp2_batch_requests =
     "Cap the number of requests received by one transport read prior to "
     "offload.";
@@ -201,6 +204,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"settings_timeout", description_settings_timeout,
+     additional_constraints_settings_timeout, true, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
@@ -317,6 +322,9 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_settings_timeout =
+    "If set, use the settings timeout to send settings frame to the peer.";
+const char* const additional_constraints_settings_timeout = "{}";
 const char* const description_chttp2_batch_requests =
     "Cap the number of requests received by one transport read prior to "
     "offload.";
@@ -396,6 +404,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"settings_timeout", description_settings_timeout,
+     additional_constraints_settings_timeout, true, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
@@ -512,6 +522,9 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_settings_timeout =
+    "If set, use the settings timeout to send settings frame to the peer.";
+const char* const additional_constraints_settings_timeout = "{}";
 const char* const description_chttp2_batch_requests =
     "Cap the number of requests received by one transport read prior to "
     "offload.";
@@ -591,6 +604,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"settings_timeout", description_settings_timeout,
+     additional_constraints_settings_timeout, true, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,

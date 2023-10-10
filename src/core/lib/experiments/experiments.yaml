@@ -209,6 +209,12 @@
   expiry: 2024/03/31
   owner: yashkt@google.com
   test_tags: ["surface_registered_method_lookup"]
+- name: settings_timeout
+  description:
+    If set, use the settings timeout to send settings frame to the peer.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: []
 - name: chttp2_batch_requests
   description:
     Cap the number of requests received by one transport read prior to offload.
