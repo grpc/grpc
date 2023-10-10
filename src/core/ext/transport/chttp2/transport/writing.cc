@@ -270,9 +270,7 @@ class WriteContext {
         // We base settings timeout on keepalive timeout, but double it to allow
         // for implementations taking some more time about acking a setting.
         t_->settings_ack_watchdog = t_->event_engine->RunAfter(
-            std::max(t_->keepalive_timeout * 2,
-                     grpc_core::Duration::Seconds(40)),
-            [t = t_->Ref()]() mutable {
+            t_->settings_timeout, [t = t_->Ref()]() mutable {
               grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
               grpc_core::ExecCtx exec_ctx;
               grpc_chttp2_settings_timeout(std::move(t));

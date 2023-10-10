@@ -212,6 +212,9 @@ static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t);
 static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
                         bool immediate_disconnect_hint);
 
+// Timeout for getting an ack back on settings changes
+#define GRPC_ARG_SETTINGS_TIMEOUT "grpc.http2.settings_timeout"
+
 namespace {
 grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
   if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
@@ -406,6 +409,11 @@ static void read_channel_args(grpc_chttp2_transport* t,
                           ? g_default_server_keepalive_permit_without_calls
                           : false);
   }
+
+  t->settings_timeout =
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
+          .value_or(std::max(t->keepalive_timeout * 2,
+                             grpc_core::Duration::Seconds(40)));
 
   // Only send the prefered rx frame size http2 setting if we are instructed
   // to auto size the buffers allocated at tcp level and we also can adjust

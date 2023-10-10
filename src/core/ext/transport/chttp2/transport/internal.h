@@ -436,6 +436,9 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   uint32_t num_pending_induced_frames = 0;
   uint32_t incoming_stream_id = 0;
 
+  /// grace period before settings timeout expires
+  grpc_core::Duration settings_timeout;
+
   /// how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
   ///
   uint32_t write_buffer_size = grpc_core::chttp2::kDefaultWindow;
