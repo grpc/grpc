@@ -592,12 +592,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       explicit Endpoint(int port,
                         ::envoy::config::core::v3::HealthStatus health_status =
                             ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        int lb_weight = 1)
-          : port(port), health_status(health_status), lb_weight(lb_weight) {}
+                        int lb_weight = 1,
+                        std::vector<int> additional_ports = {})
+          : port(port),
+            health_status(health_status),
+            lb_weight(lb_weight),
+            additional_ports(std::move(additional_ports)) {}
 
       int port;
       ::envoy::config::core::v3::HealthStatus health_status;
       int lb_weight;
+      std::vector<int> additional_ports;
     };
 
     // A locality.
@@ -632,9 +637,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       size_t backend_idx,
       ::envoy::config::core::v3::HealthStatus health_status =
           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-      int lb_weight = 1) {
+      int lb_weight = 1, std::vector<size_t> additional_backend_indxees = {}) {
+    std::vector<int> additional_ports;
+    additional_ports.reserve(additional_backend_indxees.size());
+    for (size_t idx : additional_backend_indxees) {
+      additional_ports.push_back(backends_[idx]->port());
+    }
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
-                                     health_status, lb_weight);
+                                     health_status, lb_weight,
+                                     additional_ports);
   }
 
   // Creates a vector of endpoints for a specified range of backends,

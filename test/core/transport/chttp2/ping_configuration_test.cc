@@ -41,6 +41,7 @@ class ConfigurationTest : public ::testing::Test {
  protected:
   ConfigurationTest() {
     mock_endpoint_ = grpc_mock_endpoint_create(DiscardWrite);
+    grpc_mock_endpoint_finish_put_reads(mock_endpoint_);
     args_ = args_.SetObject(ResourceQuota::Default());
     args_ = args_.SetObject(
         grpc_event_engine::experimental::GetDefaultEventEngine());
