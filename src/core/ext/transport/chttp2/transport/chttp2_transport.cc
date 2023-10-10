@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <initializer_list>
+#include <limits>
 #include <memory>
 #include <new>
 #include <string>
@@ -42,6 +43,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>

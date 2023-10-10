@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <initializer_list>
+#include <limits>
 #include <string>
 
 #include "absl/base/attributes.h"
@@ -31,6 +32,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -53,6 +55,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
