@@ -171,6 +171,7 @@ message Action {
         Empty request_call = 20;
         Empty destroy_call = 21;
         uint32 resize_resource_quota = 22;
+        uint32 sleep_ms = 23;
     }
 }
 

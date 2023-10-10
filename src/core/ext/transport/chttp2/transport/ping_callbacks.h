@@ -36,32 +36,69 @@ namespace grpc_core {
 
 class Chttp2PingCallbacks {
  public:
+  // One callback from OnPing/OnPingAck or the timeout.
   using Callback = absl::AnyInvocable<void()>;
 
+  // Request a ping (but one we don't need any notification for when it begins
+  // or ends).
   void RequestPing() { ping_requested_ = true; }
+
+  // Request a ping, and specify callbacks for when it begins and ends.
+  // on_start is invoked during the call to StartPing.
+  // on_ack is invoked during the call to AckPing.
   void OnPing(Callback on_start, Callback on_ack);
+
+  // Request a notification when *some* ping is acked:
+  // If there is no ping in flight, one will be scheduled and the callback
+  // will be invoked when it is acked. (ie as per OnPing([]{}, on_ack)).
+  // If there is a ping in flight, the callback will be invoked when the most
+  // recently sent ping is acked.
+  // on_ack is invoked during the call to AckPing.
   void OnPingAck(Callback on_ack);
 
-  GRPC_MUST_USE_RESULT uint64_t
-  StartPing(absl::BitGenRef bitgen, Duration ping_timeout, Callback on_timeout,
-            grpc_event_engine::experimental::EventEngine* event_engine);
+  // Write path: begin a ping.
+  // Uses bitgen to generate a randomized id for the ping.
+  // Sets started_new_ping_without_setting_timeout.
+  GRPC_MUST_USE_RESULT uint64_t StartPing(absl::BitGenRef bitgen);
   bool AckPing(uint64_t id,
                grpc_event_engine::experimental::EventEngine* event_engine);
 
+  // Cancel all the ping callbacks.
+  // Sufficient state is maintained such that AckPing will still return true
+  // if a ping is acked after this call.
+  // No timeouts or start or ack callbacks previously scheduled will be invoked.
   void CancelAll(grpc_event_engine::experimental::EventEngine* event_engine);
 
+  // Return true if a ping needs to be started due to
+  // RequestPing/OnPing/OnPingAck.
   bool ping_requested() const { return ping_requested_; }
+
+  // Returns the number of pings currently in flight.
   size_t pings_inflight() const { return inflight_.size(); }
+
+  // Returns true if a ping was started without setting a timeout yet.
+  bool started_new_ping_without_setting_timeout() const {
+    return started_new_ping_without_setting_timeout_;
+  }
+
+  // Add a ping timeout for the most recently started ping.
+  // started_new_ping_without_setting_timeout must be set.
+  // Clears started_new_ping_without_setting_timeout.
+  void OnPingTimeout(Duration ping_timeout,
+                     grpc_event_engine::experimental::EventEngine* event_engine,
+                     Callback callback);
 
  private:
   using CallbackVec = std::vector<Callback>;
   struct InflightPing {
-    grpc_event_engine::experimental::EventEngine::TaskHandle on_timeout;
+    grpc_event_engine::experimental::EventEngine::TaskHandle on_timeout =
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
     CallbackVec on_ack;
   };
   absl::flat_hash_map<uint64_t, InflightPing> inflight_;
   uint64_t most_recent_inflight_ = 0;
   bool ping_requested_ = false;
+  bool started_new_ping_without_setting_timeout_ = false;
   CallbackVec on_start_;
   CallbackVec on_ack_;
 };
