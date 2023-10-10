@@ -16,8 +16,6 @@
 //
 //
 
-#include <string>
-
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
