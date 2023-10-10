@@ -618,6 +618,12 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 
   read_channel_args(this, channel_args, is_client);
 
+  // Initially allow *UP TO* MAX_CONCURRENT_STREAMS incoming before we start
+  // blanket cancelling them.
+  num_incoming_streams_before_settings_ack =
+      settings[GRPC_LOCAL_SETTINGS]
+              [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS];
+
   grpc_core::ExecCtx exec_ctx;
   combiner->Run(
       grpc_core::InitTransportClosure<init_keepalive_pings_if_enabled_locked>(

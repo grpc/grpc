@@ -64,6 +64,9 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "bad_client_test": [
+                "block_excessive_requests_before_settings_ack",
+            ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
@@ -131,6 +134,9 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "bad_client_test": [
+                "block_excessive_requests_before_settings_ack",
+            ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
@@ -208,6 +214,9 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "bad_client_test": [
+                "block_excessive_requests_before_settings_ack",
+            ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
