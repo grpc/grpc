@@ -134,6 +134,13 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_chttp2_batch_requests =
+    "Cap the number of requests received by one transport read prior to "
+    "offload.";
+const char* const additional_constraints_chttp2_batch_requests = "{}";
+const char* const description_chttp2_offload_on_rst_stream =
+    "Offload work on RST_STREAM.";
+const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -212,6 +219,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"chttp2_batch_requests", description_chttp2_batch_requests,
+     additional_constraints_chttp2_batch_requests, false, true},
+    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
+     additional_constraints_chttp2_offload_on_rst_stream, false, true},
 };
 
 }  // namespace grpc_core
@@ -330,6 +341,13 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_chttp2_batch_requests =
+    "Cap the number of requests received by one transport read prior to "
+    "offload.";
+const char* const additional_constraints_chttp2_batch_requests = "{}";
+const char* const description_chttp2_offload_on_rst_stream =
+    "Offload work on RST_STREAM.";
+const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -408,6 +426,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"chttp2_batch_requests", description_chttp2_batch_requests,
+     additional_constraints_chttp2_batch_requests, false, true},
+    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
+     additional_constraints_chttp2_offload_on_rst_stream, false, true},
 };
 
 }  // namespace grpc_core
@@ -526,6 +548,13 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_chttp2_batch_requests =
+    "Cap the number of requests received by one transport read prior to "
+    "offload.";
+const char* const additional_constraints_chttp2_batch_requests = "{}";
+const char* const description_chttp2_offload_on_rst_stream =
+    "Offload work on RST_STREAM.";
+const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -604,6 +633,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"chttp2_batch_requests", description_chttp2_batch_requests,
+     additional_constraints_chttp2_batch_requests, false, true},
+    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
+     additional_constraints_chttp2_offload_on_rst_stream, false, true},
 };
 
 }  // namespace grpc_core
