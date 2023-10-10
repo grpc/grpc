@@ -710,11 +710,12 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
   if (grpc_core::IsSeparatePingFromKeepaliveEnabled() &&
       t->keepalive_incoming_data_wanted &&
       t->keepalive_timeout < t->ping_timeout) {
-    t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
-      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-      grpc_core::ExecCtx exec_ctx;
-      grpc_chttp2_keepalive_timeout(t);
-    });
+    t->keepalive_ping_timeout_handle =
+        t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          grpc_chttp2_keepalive_timeout(t);
+        });
   }
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {

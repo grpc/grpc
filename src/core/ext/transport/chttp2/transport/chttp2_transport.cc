@@ -119,15 +119,12 @@
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
-<<<<<<< HEAD
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
-    =======
 #define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
   "grpc.http2.ping_on_rst_stream_percent"
-    >>>>>>> 385583b28a00fa88004b2a167f1d8617c614d1fb
 
-    static grpc_core::Duration g_default_client_keepalive_time =
-        grpc_core::Duration::Infinity();
+static grpc_core::Duration g_default_client_keepalive_time =
+    grpc_core::Duration::Infinity();
 static grpc_core::Duration g_default_client_keepalive_timeout =
     grpc_core::Duration::Seconds(20);
 static grpc_core::Duration g_default_server_keepalive_time =
@@ -1746,6 +1743,27 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
   if (t->ping_callbacks.ping_requested()) {
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_CONTINUE_PINGS);
   }
+}
+
+void grpc_chttp2_keepalive_timeout(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+  t->combiner->Run(
+      grpc_core::NewClosure([t](grpc_error_handle) {
+        gpr_log(GPR_INFO, "%s: Keepalive timeout. Closing transport.",
+                std::string(t->peer_string.as_string_view()).c_str());
+        send_goaway(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("keepalive_timeout"),
+                               grpc_core::StatusIntProperty::kHttp2Error,
+                               GRPC_HTTP2_ENHANCE_YOUR_CALM),
+            /*immediate_disconnect_hint=*/true);
+        close_transport_locked(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("keepalive timeout"),
+                               grpc_core::StatusIntProperty::kRpcStatus,
+                               GRPC_STATUS_UNAVAILABLE));
+      }),
+      absl::OkStatus());
 }
 
 void grpc_chttp2_ping_timeout(
