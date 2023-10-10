@@ -14,8 +14,6 @@
 # limitations under the License.
 set -ex
 
-base=$(pwd)
-
 # the platform for which we wanna build the native gem
 GEM_PLATFORM="$1"
 
@@ -49,8 +47,6 @@ gem list || true
 export BUNDLE_PATH=bundle_local_gems
 tools/run_tests/helper_scripts/bundle_install_wrapper.sh
 
-mkdir -p debug-symbols
-export GRPC_RUBY_DEBUG_SYMBOL_DIR="$(pwd)/debug-symbols"
 bundle exec rake "gem:native[${GEM_PLATFORM}]"
 
 if [ "$SYSTEM" == "Darwin" ] ; then
@@ -59,14 +55,6 @@ if [ "$SYSTEM" == "Darwin" ] ; then
   rm $(ls pkg/*.gem | grep -v darwin)
 fi
 
-# Build native debug symbol packages (which depend on artifacts
-# emitted by the previous grpc gem builds).
-cd "${base}/src/ruby/nativedebug"
-cp "${GRPC_RUBY_DEBUG_SYMBOL_DIR}/*.dbg" symbols/
-gem build grpc-native-debug.gemspec
-cd -
-
 mkdir -p "${ARTIFACTS_OUT}"
 
 cp pkg/*.gem "${ARTIFACTS_OUT}"/
-cp "${base}/src/ruby/nativedebug/*.gem" "${ARTIFACTS_OUT}"/

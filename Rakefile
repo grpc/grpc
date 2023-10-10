@@ -214,6 +214,8 @@ task 'gem:native', [:plat] do |t, args|
         GRPC_RUBY_BUILD_PROCS=#{nproc_override}
     EOT
   end
+  if ENV['GRPC_RUBY_DEBUG_SYMBOLS_DIR']
+  end
 end
 
 # Define dependencies between the suites.
