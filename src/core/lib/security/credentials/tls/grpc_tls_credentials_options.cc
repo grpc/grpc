@@ -101,7 +101,8 @@ void grpc_tls_credentials_options_set_crl_directory(
 void grpc_tls_credentials_options_set_crl_provider(
     grpc_tls_credentials_options* options,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider) {
-  options->set_crl_provider(crl_provider);
+  GPR_ASSERT(options != nullptr);
+  options->set_crl_provider(std::move(crl_provider));
 }
 
 void grpc_tls_credentials_options_set_check_call_host(
