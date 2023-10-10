@@ -49,6 +49,8 @@ gem list || true
 export BUNDLE_PATH=bundle_local_gems
 tools/run_tests/helper_scripts/bundle_install_wrapper.sh
 
+mkdir -p debug-symbols
+export GRPC_RUBY_DEBUG_SYMBOL_DIR="$(pwd)/debug-symbols"
 bundle exec rake "gem:native[${GEM_PLATFORM}]"
 
 if [ "$SYSTEM" == "Darwin" ] ; then
@@ -60,6 +62,7 @@ fi
 # Build native debug symbol packages (which depend on artifacts
 # emitted by the previous grpc gem builds).
 cd "${base}/src/ruby/nativedebug"
+cp "${GRPC_RUBY_DEBUG_SYMBOL_DIR}/*.dbg" symbols/
 gem build grpc-native-debug.gemspec
 cd -
 
