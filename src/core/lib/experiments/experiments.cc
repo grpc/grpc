@@ -97,11 +97,6 @@ const char* const description_lazier_stream_updates =
     "Allow streams to consume up to 50% of the incoming window before we force "
     "send a flow control update.";
 const char* const additional_constraints_lazier_stream_updates = "{}";
-const char* const description_jitter_max_idle =
-    "Enable jitter on connection max idle times. Historically this jitter was "
-    "only on max connection age, but it seems like this could smooth out some "
-    "herding problems.";
-const char* const additional_constraints_jitter_max_idle = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -188,8 +183,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
      additional_constraints_lazier_stream_updates, true, true},
-    {"jitter_max_idle", description_jitter_max_idle,
-     additional_constraints_jitter_max_idle, true, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -293,11 +286,6 @@ const char* const description_lazier_stream_updates =
     "Allow streams to consume up to 50% of the incoming window before we force "
     "send a flow control update.";
 const char* const additional_constraints_lazier_stream_updates = "{}";
-const char* const description_jitter_max_idle =
-    "Enable jitter on connection max idle times. Historically this jitter was "
-    "only on max connection age, but it seems like this could smooth out some "
-    "herding problems.";
-const char* const additional_constraints_jitter_max_idle = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -384,8 +372,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
      additional_constraints_lazier_stream_updates, true, true},
-    {"jitter_max_idle", description_jitter_max_idle,
-     additional_constraints_jitter_max_idle, true, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -489,11 +475,6 @@ const char* const description_lazier_stream_updates =
     "Allow streams to consume up to 50% of the incoming window before we force "
     "send a flow control update.";
 const char* const additional_constraints_lazier_stream_updates = "{}";
-const char* const description_jitter_max_idle =
-    "Enable jitter on connection max idle times. Historically this jitter was "
-    "only on max connection age, but it seems like this could smooth out some "
-    "herding problems.";
-const char* const additional_constraints_jitter_max_idle = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -580,8 +561,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
      additional_constraints_lazier_stream_updates, true, true},
-    {"jitter_max_idle", description_jitter_max_idle,
-     additional_constraints_jitter_max_idle, true, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},

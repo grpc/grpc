@@ -127,8 +127,7 @@ struct MaxAgeFilter::Config {
         1.0 - kMaxConnectionAgeJitter, 1.0 + kMaxConnectionAgeJitter);
     // GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
     // will not be cast to int implicitly before the comparison.
-    return Config{args_max_age * multiplier,
-                  args_max_idle * (IsJitterMaxIdleEnabled() ? multiplier : 1.0),
+    return Config{args_max_age * multiplier, args_max_idle * multiplier,
                   args_max_age_grace};
   }
 };

@@ -168,15 +168,6 @@
   expiry: 2024/01/23
   owner: ctiller@google.com
   test_tags: [flow_control_test]
-- name: jitter_max_idle
-  description:
-    Enable jitter on connection max idle times.
-    Historically this jitter was only on max connection age, but it seems like
-    this could smooth out some herding problems.
-  expiry: 2023/11/21
-  owner: ctiller@google.com
-  test_tags: []
-  allow_in_fuzzing_config: true
 - name: round_robin_delegate_to_pick_first
   description:
     Change round_robin code to delegate to pick_first as per dualstack

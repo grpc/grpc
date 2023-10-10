@@ -80,8 +80,6 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
-inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
@@ -130,8 +128,6 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
-inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
@@ -180,8 +176,6 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
-inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
@@ -230,7 +224,6 @@ enum ExperimentIds {
   kExperimentIdKeepaliveServerFix,
   kExperimentIdWorkSerializerDispatch,
   kExperimentIdLazierStreamUpdates,
-  kExperimentIdJitterMaxIdle,
   kExperimentIdRoundRobinDelegateToPickFirst,
   kExperimentIdWrrDelegateToPickFirst,
   kExperimentIdPickFirstHappyEyeballs,
@@ -324,10 +317,6 @@ inline bool IsWorkSerializerDispatchEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
 inline bool IsLazierStreamUpdatesEnabled() {
   return IsExperimentEnabled(kExperimentIdLazierStreamUpdates);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
-inline bool IsJitterMaxIdleEnabled() {
-  return IsExperimentEnabled(kExperimentIdJitterMaxIdle);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() {
