@@ -119,6 +119,7 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         secure_mode: bool = False,
         replica_count: int = 1,
         log_to_stdout: bool = False,
+        bootstrap_version: Optional[str] = None,
     ) -> List[XdsTestServer]:
         if not maintenance_port:
             maintenance_port = self._get_default_maintenance_port(secure_mode)
@@ -169,7 +170,7 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
                 neg_name=self.gcp_neg_name,
                 test_port=test_port,
             )
-        self._wait_service_neg(self.service_name, test_port)
+        self._wait_service_neg_status_annotation(self.service_name, test_port)
 
         if self.enable_workload_identity:
             # Allow Kubernetes service account to use the GCP service account
@@ -202,8 +203,26 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             test_port=test_port,
             maintenance_port=maintenance_port,
             secure_mode=secure_mode,
+            bootstrap_version=bootstrap_version,
         )
 
+        return self._make_servers_for_deployment(
+            replica_count,
+            test_port=test_port,
+            maintenance_port=maintenance_port,
+            log_to_stdout=log_to_stdout,
+            secure_mode=secure_mode,
+        )
+
+    def _make_servers_for_deployment(
+        self,
+        replica_count,
+        *,
+        test_port: int,
+        maintenance_port: int,
+        log_to_stdout: bool,
+        secure_mode: bool = False,
+    ) -> List[XdsTestServer]:
         pod_names = self._wait_deployment_pod_count(
             self.deployment, replica_count
         )

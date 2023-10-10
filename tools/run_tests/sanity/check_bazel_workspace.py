@@ -59,6 +59,8 @@ _GRPC_DEP_NAMES = [
     "com_google_fuzztest",
     "io_opencensus_cpp",
     "io_opentelemetry_cpp",
+    # TODO(stanleycheung): remove when prometheus-cpp has new release
+    "com_github_jupp0r_prometheus_cpp",
     "envoy_api",
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
@@ -71,7 +73,6 @@ _GRPC_DEP_NAMES = [
     "io_bazel_rules_go",
     "build_bazel_rules_apple",
     "build_bazel_apple_support",
-    "com_github_libuv_libuv",
     "com_googlesource_code_re2",
     "bazel_gazelle",
     "opencensus_proto",
@@ -79,6 +80,7 @@ _GRPC_DEP_NAMES = [
     "com_google_googleapis",
     "com_google_libprotobuf_mutator",
     "com_github_cncf_udpa",
+    "google_cloud_cpp",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -88,6 +90,8 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "com_google_fuzztest",
     "io_opencensus_cpp",
     "io_opentelemetry_cpp",
+    # TODO(stanleycheung): remove when prometheus-cpp has new release
+    "com_github_jupp0r_prometheus_cpp",
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _BAZEL_COMPDB_DEP_NAME,
@@ -105,6 +109,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "com_envoyproxy_protoc_gen_validate",
     "com_google_googleapis",
     "com_google_libprotobuf_mutator",
+    "google_cloud_cpp",
 ]
 
 
@@ -166,6 +171,7 @@ build_rules = {
     "load": lambda a, b: None,
     "git_repository": lambda **args: eval_state.git_repository(**args),
     "grpc_python_deps": lambda: None,
+    "Label": lambda a: None,
 }
 exec((bazel_file), build_rules)
 for name in _GRPC_DEP_NAMES:
@@ -214,6 +220,7 @@ for name in _GRPC_DEP_NAMES:
         "load": lambda a, b: None,
         "git_repository": lambda **args: state.git_repository(**args),
         "grpc_python_deps": lambda *args, **kwargs: None,
+        "Label": lambda a: None,
     }
     exec((bazel_file), rules)
     assert name not in list(names_and_urls_with_overridden_name.keys())

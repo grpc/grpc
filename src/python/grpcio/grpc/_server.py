@@ -569,7 +569,14 @@ def _call_behavior(
                         details = (
                             "Calling application raised unprintable Exception!"
                         )
-                        traceback.print_exc()
+                        _LOGGER.exception(
+                            traceback.format_exception(
+                                type(exception),
+                                exception,
+                                exception.__traceback__,
+                            )
+                        )
+                    traceback.print_exc()
                     _LOGGER.exception(details)
                     _abort(
                         state,
@@ -1251,7 +1258,6 @@ def _start(state: _ServerState) -> None:
         state.server.start()
         state.stage = _ServerStage.STARTED
         _request_call(state)
-
         thread = threading.Thread(target=_serve, args=(state,))
         thread.daemon = True
         thread.start()

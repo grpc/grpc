@@ -53,6 +53,15 @@ RUN apt-get update && apt-get install -y \
   zip \
   && apt-get clean
 
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
+
 
 RUN mkdir /var/local/jenkins
 
@@ -141,12 +150,37 @@ RUN cd /tmp && \
 RUN python3.10 -m ensurepip && \
     python3.10 -m pip install coverage
 
+#=================
+# Compile CPython 3.11.4 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tgz && \
+    tar xzvf Python-3.11.4.tgz && \
+    cd Python-3.11.4 && \
+    ./configure && \
+    make -j4 && \
+    make install
+
+
+RUN cd /tmp && \
+    echo "bf6ec50f2f3bfa6ffbdb385286f2c628  Python-3.11.4.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.11 -m ensurepip && \
+    python3.11 -m pip install coverage
+
 
 # 3.9 is the default python3 version on debian11
 RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip
 
 # for Python test coverage reporting
 RUN python3.9 -m pip install coverage
+
+# six is required by the run_tests.py test harness
+RUN python3.9 -m pip install six
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
@@ -164,12 +198,12 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
     && tar -zxf ccache.tar.gz \
-    && cd ccache-4.5.1 \
+    && cd ccache-4.7.5 \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
     && make -j4 && make install \
     && cd ../.. \
-    && rm -rf ccache-4.5.1 ccache.tar.gz
+    && rm -rf ccache-4.7.5 ccache.tar.gz
 

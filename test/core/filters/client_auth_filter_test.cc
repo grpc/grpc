@@ -139,8 +139,5 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
-  int retval = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return retval;
+  return RUN_ALL_TESTS();
 }

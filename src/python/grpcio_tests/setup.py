@@ -47,6 +47,7 @@ INSTALL_REQUIRES = (
     "protobuf>=4.21.6rc1,!=4.22.0.*",
     "google-auth>=1.17.2",
     "requests>=2.14.2",
+    "absl-py>=1.4.0",
 )
 
 COMMAND_CLASS = {

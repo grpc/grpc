@@ -33,7 +33,7 @@
 #include "upb/hash/common.h"
 #include "upb/message/accessors.h"
 #include "upb/message/message.h"
-#include "upb/mini_table/field_internal.h"
+#include "upb/mini_table/field.h"
 #include "upb/reflection/def.h"
 #include "upb/reflection/def_pool.h"
 #include "upb/reflection/def_type.h"
@@ -121,7 +121,7 @@ void upb_Message_ClearFieldByDef(upb_Message* msg, const upb_FieldDef* f) {
 }
 
 void upb_Message_ClearByDef(upb_Message* msg, const upb_MessageDef* m) {
-  _upb_Message_Clear(msg, upb_MessageDef_MiniTable(m));
+  upb_Message_Clear(msg, upb_MessageDef_MiniTable(m));
 }
 
 bool upb_Message_Next(const upb_Message* msg, const upb_MessageDef* m,

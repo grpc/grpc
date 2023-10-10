@@ -71,7 +71,7 @@ class HPackTable {
   }
 
   // add a table entry to the index
-  bool Add(Memento md) GRPC_MUST_USE_RESULT;
+  GRPC_MUST_USE_RESULT bool Add(Memento md);
   void AddLargerThanCurrentTableSize();
 
   // Current entry count in the table.

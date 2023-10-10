@@ -157,7 +157,7 @@ end
 ext_export_file = File.join(grpc_root, 'src', 'ruby', 'ext', 'grpc', ext_export_filename())
 $LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if linux
 if apple_toolchain
-  $LDFLAGS << ' -weak_framework CoreFoundation' if RUBY_PLATFORM =~ /arm64/
+  $LDFLAGS << ' -weak_framework CoreFoundation'
   $LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"'
 end
 
@@ -187,20 +187,6 @@ output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 
-if grpc_config == 'opt'
-  File.open('Makefile.new', 'w') do |o|
-    o.puts 'hijack: all strip'
-    o.puts
-    File.foreach('Makefile') do |i|
-      o.puts i
-    end
-    o.puts
-    o.puts 'strip: $(DLLIB)'
-    o.puts "\t$(ECHO) Stripping $(DLLIB)"
-    o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
-  end
-  File.rename('Makefile.new', 'Makefile')
-end
 if ENV['GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG']
   # Note: this env var setting is intended to work around a problem observed
   # with the ginstall command on grpc's macos automated test infrastructure,

@@ -16,6 +16,7 @@
   description: Test Experiment 1
   expiry: 2023/08/01
   owner: blah@abc.com
+  test_tags: [experiments_tag_test]
 - name: test_experiment_2
   description: Test Experiment 2
   expiry: 2023/01/01

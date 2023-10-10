@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from distutils import errors
 import os
 import os.path
 import shutil
 import sys
 import tempfile
+
+from setuptools import errors
 
 import commands
 
@@ -116,11 +117,11 @@ def diagnose_build_ext_error(build_ext, error, formatted):
     diagnostic = _ERROR_DIAGNOSES.get(type(error))
     if diagnostic is None:
         raise commands.CommandError(
-            "\n\nWe could not diagnose your build failure. If you are unable to"
+            "\n\nWe could not diagnose your build failure with type {}. If you are unable to"
             " proceed, please file an issue at http://www.github.com/grpc/grpc"
             " with `[Python install]` in the title; please attach the whole log"
             " (including everything that may have appeared above the Python"
-            " backtrace).\n\n{}".format(formatted)
+            " backtrace).\n\n{}".format(type(error), formatted)
         )
     else:
         diagnostic(build_ext, error)

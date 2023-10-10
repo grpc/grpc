@@ -40,7 +40,7 @@ bool GetExperimentTestExperiment3ExpectedValue() {
 bool GetExperimentTestExperiment4ExpectedValue() { return true; }
 
 #elif defined(GPR_WINDOWS)
-bool GetExperimentTestExperiment1ExpectedValue() { return true; }
+bool GetExperimentTestExperiment1ExpectedValue() { return false; }
 
 bool GetExperimentTestExperiment2ExpectedValue() { return false; }
 
@@ -56,7 +56,14 @@ bool GetExperimentTestExperiment3ExpectedValue() {
 bool GetExperimentTestExperiment4ExpectedValue() { return true; }
 
 #else
-bool GetExperimentTestExperiment1ExpectedValue() { return true; }
+bool GetExperimentTestExperiment1ExpectedValue() {
+
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
 
 bool GetExperimentTestExperiment2ExpectedValue() {
 

@@ -16,8 +16,6 @@
 
 #include "src/core/ext/xds/xds_common_types.h"
 
-#include <stdint.h>
-
 #include <initializer_list>
 #include <memory>
 #include <string>

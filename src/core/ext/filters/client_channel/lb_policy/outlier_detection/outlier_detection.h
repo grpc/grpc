@@ -28,7 +28,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
-#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 
@@ -89,12 +88,6 @@ struct OutlierDetectionConfig {
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
 };
-
-// TODO(roth): This is a horrible hack used to disable outlier detection
-// when used with the pick_first policy.  Remove this as part of
-// implementing the dualstack backend design.
-#define GRPC_ARG_OUTLIER_DETECTION_DISABLE \
-  GRPC_ARG_NO_SUBCHANNEL_PREFIX "outlier_detection_disable"
 
 }  // namespace grpc_core
 

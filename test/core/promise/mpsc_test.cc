@@ -147,6 +147,32 @@ TEST(MpscTest, ClosureIsVisibleToSenders) {
   EXPECT_EQ(NowOrNever(sender.Send(MakePayload(1))), false);
 }
 
+TEST(MpscTest, ImmediateSendWorks) {
+  StrictMock<MockActivity> activity;
+  MpscReceiver<Payload> receiver(1);
+  MpscSender<Payload> sender = receiver.MakeSender();
+
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(6)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(7)), true);
+
+  activity.Activate();
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(1));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(2));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(3));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(4));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(5));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(6));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(7));
+  auto receive2 = receiver.Next();
+  EXPECT_EQ(receive2(), Poll<Payload>(Pending{}));
+  activity.Deactivate();
+}
+
 }  // namespace
 }  // namespace grpc_core
 

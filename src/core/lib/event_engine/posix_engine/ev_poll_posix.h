@@ -60,6 +60,8 @@ class PollPoller : public PosixEventPoller, public Forkable {
   void PostforkParent() override;
   void PostforkChild() override;
 
+  void Close();
+
  private:
   void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
   void Unref() {
@@ -89,6 +91,7 @@ class PollPoller : public PosixEventPoller, public Forkable {
   int num_poll_handles_ ABSL_GUARDED_BY(mu_);
   PollEventHandle* poll_handles_list_head_ ABSL_GUARDED_BY(mu_) = nullptr;
   std::unique_ptr<WakeupFd> wakeup_fd_;
+  bool closed_ ABSL_GUARDED_BY(mu_);
 };
 
 // Return an instance of a poll based poller tied to the specified scheduler.

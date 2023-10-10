@@ -38,6 +38,9 @@ load("@rules_pkg//:mappings.bzl", "pkg_files")
 licenses(["notice"])
 
 package(
+    # begin:google_only
+#     default_applicable_licenses = ["//:license"],
+    # end:google_only
     default_visibility = ["//python/dist:__pkg__"],
 )
 
@@ -241,6 +244,7 @@ py_extension(
         "//:descriptor_upb_proto_reflection",
         "//:eps_copy_input_stream",
         "//:hash",
+        "//:message_copy",
         "//:port",
         "//:reflection",
         "//:textformat",

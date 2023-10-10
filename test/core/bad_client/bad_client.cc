@@ -245,7 +245,7 @@ void grpc_run_bad_client_test(
                                    &sfd, client_cq);
   }
   // Wait for server thread to finish
-  GPR_ASSERT(gpr_event_wait(&a.done_thd, grpc_timeout_seconds_to_deadline(1)));
+  GPR_ASSERT(gpr_event_wait(&a.done_thd, grpc_timeout_seconds_to_deadline(5)));
 
   // Shutdown.
   shutdown_client(&sfd.client);

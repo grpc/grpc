@@ -15,6 +15,8 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_APPLE
+#include <AvailabilityMacros.h>
+#ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
 #include "src/core/lib/event_engine/trace.h"
@@ -96,8 +98,8 @@ void CFStreamEndpointImpl::Connect(
   std::string host_string;
   std::string port_string;
   grpc_core::SplitHostPort(host_port.value(), &host_string, &port_string);
-  CFStringRef host = CFStringCreateWithCString(NULL, host_string.c_str(),
-                                               kCFStringEncodingUTF8);
+  CFTypeUniqueRef<CFStringRef> host = CFStringCreateWithCString(
+      NULL, host_string.c_str(), kCFStringEncodingUTF8);
   int port = ResolvedAddressGetPort(peer_address_);
   CFStreamCreatePairWithSocketToHost(NULL, host, port, &cf_read_stream_,
                                      &cf_write_stream_);
@@ -351,4 +353,5 @@ void CFStreamEndpointImpl::DoWrite(
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
+#endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

@@ -16,7 +16,7 @@
 
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -49,7 +49,7 @@ CORE_END2END_TEST(RetryTest, RetrySendRecvBatch) {
       "  } ]\n"
       "}"));
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   // Client starts batch with send_initial_metadata and recv_initial_metadata.
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1).SendInitialMetadata({}).RecvInitialMetadata(

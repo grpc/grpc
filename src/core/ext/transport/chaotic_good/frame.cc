@@ -31,6 +31,8 @@
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -112,10 +114,13 @@ class FrameDeserializer {
 template <typename Metadata>
 absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
     HPackParser* parser, absl::StatusOr<SliceBuffer> maybe_slices,
-    uint32_t stream_id, bool is_header, bool is_client) {
+    uint32_t stream_id, bool is_header, bool is_client,
+    absl::BitGenRef bitsrc) {
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
-  Arena::PoolPtr<Metadata> metadata;
+  auto arena = GetContext<Arena>();
+  GPR_ASSERT(arena != nullptr);
+  Arena::PoolPtr<Metadata> metadata = arena->MakePooled<Metadata>(arena);
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),
@@ -127,8 +132,9 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
                                      : HPackParser::LogInfo::Type::kTrailers,
                            is_client});
   for (size_t i = 0; i < slices.Count(); i++) {
-    GRPC_RETURN_IF_ERROR(
-        parser->Parse(slices.c_slice_at(i), i == slices.Count() - 1));
+    GRPC_RETURN_IF_ERROR(parser->Parse(slices.c_slice_at(i),
+                                       i == slices.Count() - 1, bitsrc,
+                                       /*call_tracer=*/nullptr));
   }
   parser->FinishFrame();
   return std::move(metadata);
@@ -136,6 +142,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
 }  // namespace
 
 absl::Status SettingsFrame::Deserialize(HPackParser*, const FrameHeader& header,
+                                        absl::BitGenRef,
                                         SliceBuffer& slice_buffer) {
   if (header.type != FrameType::kSettings) {
     return absl::InvalidArgumentError("Expected settings frame");
@@ -154,6 +161,7 @@ SliceBuffer SettingsFrame::Serialize(HPackCompressor*) const {
 
 absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
                                               const FrameHeader& header,
+                                              absl::BitGenRef bitsrc,
                                               SliceBuffer& slice_buffer) {
   if (header.stream_id == 0) {
     return absl::InvalidArgumentError("Expected non-zero stream id");
@@ -165,7 +173,7 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
     auto r = ReadMetadata<ClientMetadata>(parser, deserializer.ReceiveHeaders(),
-                                          header.stream_id, true, true);
+                                          header.stream_id, true, true, bitsrc);
     if (!r.ok()) return r.status();
   }
   if (header.flags.is_set(1)) {
@@ -193,6 +201,7 @@ SliceBuffer ClientFragmentFrame::Serialize(HPackCompressor* encoder) const {
 
 absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
                                               const FrameHeader& header,
+                                              absl::BitGenRef bitsrc,
                                               SliceBuffer& slice_buffer) {
   if (header.stream_id == 0) {
     return absl::InvalidArgumentError("Expected non-zero stream id");
@@ -203,13 +212,22 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
   }
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
-    auto r = ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveHeaders(),
-                                          header.stream_id, true, false);
+    auto r =
+        ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveHeaders(),
+                                     header.stream_id, true, false, bitsrc);
     if (!r.ok()) return r.status();
+    if (r.value() != nullptr) {
+      headers = std::move(r.value());
+    }
   }
   if (header.flags.is_set(1)) {
-    auto r = ReadMetadata<ServerMetadata>(
-        parser, deserializer.ReceiveTrailers(), header.stream_id, false, false);
+    auto r =
+        ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveTrailers(),
+                                     header.stream_id, false, false, bitsrc);
+    if (!r.ok()) return r.status();
+    if (r.value() != nullptr) {
+      trailers = std::move(r.value());
+    }
   }
   return deserializer.Finish();
 }
@@ -227,6 +245,7 @@ SliceBuffer ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
 }
 
 absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
+                                      absl::BitGenRef,
                                       SliceBuffer& slice_buffer) {
   if (header.type != FrameType::kCancel) {
     return absl::InvalidArgumentError("Expected cancel frame");

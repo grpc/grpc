@@ -63,7 +63,7 @@ class ThreadyEventEngine final : public EventEngine {
 
   bool IsWorkerThread() override;
 
-  std::unique_ptr<DNSResolver> GetDNSResolver(
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;
 
   void Run(Closure* closure) override;

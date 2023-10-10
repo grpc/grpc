@@ -44,6 +44,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/lib/gpr/subprocess.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"
@@ -53,7 +54,6 @@
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
-#include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -241,7 +241,7 @@ TEST_F(HttpRequestTest, Post) {
 
 int g_fake_non_responsive_dns_server_port;
 
-void InjectNonResponsiveDNSServer(ares_channel channel) {
+void InjectNonResponsiveDNSServer(ares_channel* channel) {
   gpr_log(GPR_DEBUG,
           "Injecting broken nameserver list. Bad server address:|[::1]:%d|.",
           g_fake_non_responsive_dns_server_port);
@@ -253,7 +253,8 @@ void InjectNonResponsiveDNSServer(ares_channel channel) {
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].next = nullptr;
-  GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
+  GPR_ASSERT(ares_set_servers_ports(*channel, dns_server_addrs) ==
+             ARES_SUCCESS);
 }
 
 TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
@@ -263,7 +264,7 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   g_fake_non_responsive_dns_server_port = fake_dns_server.port();
-  void (*prev_test_only_inject_config)(ares_channel channel) =
+  void (*prev_test_only_inject_config)(ares_channel * channel) =
       grpc_ares_test_only_inject_config;
   grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the same test on several threads in parallel to try to trigger races

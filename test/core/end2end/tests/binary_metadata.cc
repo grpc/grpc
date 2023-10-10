@@ -18,7 +18,7 @@
 
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -117,6 +117,7 @@ CORE_END2END_TEST(CoreEnd2endTest,
 
 CORE_END2END_TEST(CoreEnd2endTest,
                   BinaryMetadataServerHttp2FallbackClientHttp2Fallback) {
+  // TODO(vigneshbabu): re-enable these before release
   SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   BinaryMetadata(*this, false, false);
 }

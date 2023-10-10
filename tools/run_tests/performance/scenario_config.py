@@ -18,6 +18,7 @@ import math
 
 WARMUP_SECONDS = 5
 JAVA_WARMUP_SECONDS = 15  # Java needs more warmup time for JIT to kick in.
+CXX_WARMUP_SECONDS = 30  # Core needs more warmup time for the thread pool to scale appropriately.
 BENCHMARK_SECONDS = 30
 
 SMOKETEST = "smoketest"
@@ -25,6 +26,9 @@ SCALABLE = "scalable"
 INPROC = "inproc"
 SWEEP = "sweep"
 PSM = "psm"
+# A small superset of the benchmarks required to produce
+# https://grafana-dot-grpc-testing.appspot.com/
+DASHBOARD = "dashboard"
 DEFAULT_CATEGORIES = (SCALABLE, SMOKETEST)
 
 SECURE_SECARGS = {
@@ -275,6 +279,7 @@ class CXXLanguage(Language):
             secure=False,
             async_server_threads=1,
             categories=[PSM],
+            warmup_seconds=CXX_WARMUP_SECONDS,
         )
 
         # TODO(ctiller): add 70% load latency test
@@ -291,6 +296,7 @@ class CXXLanguage(Language):
             num_clients=1,
             secure=False,
             categories=[SWEEP],
+            warmup_seconds=CXX_WARMUP_SECONDS,
         )
 
         yield _ping_pong_scenario(
@@ -306,6 +312,7 @@ class CXXLanguage(Language):
             num_clients=1,
             secure=False,
             categories=[SWEEP],
+            warmup_seconds=CXX_WARMUP_SECONDS,
         )
 
         # Scenario was added in https://github.com/grpc/grpc/pull/12987, but its purpose is unclear
@@ -325,6 +332,7 @@ class CXXLanguage(Language):
             async_server_threads=16,
             server_threads_per_cq=1,
             categories=[SCALABLE],
+            warmup_seconds=CXX_WARMUP_SECONDS,
         )
 
         for secure in [True, False]:
@@ -343,6 +351,7 @@ class CXXLanguage(Language):
                 categories=smoketest_categories
                 + inproc_categories
                 + [SCALABLE],
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             yield _ping_pong_scenario(
@@ -359,6 +368,7 @@ class CXXLanguage(Language):
                 categories=smoketest_categories
                 + inproc_categories
                 + [SCALABLE],
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             for mps in geometric_progression(10, 20, 10):
@@ -376,6 +386,7 @@ class CXXLanguage(Language):
                     categories=smoketest_categories
                     + inproc_categories
                     + [SCALABLE],
+                    warmup_seconds=CXX_WARMUP_SECONDS,
                 )
 
             for mps in geometric_progression(1, 200, math.sqrt(10)):
@@ -391,6 +402,7 @@ class CXXLanguage(Language):
                     messages_per_stream=mps,
                     minimal_stack=not secure,
                     categories=[SWEEP],
+                    warmup_seconds=CXX_WARMUP_SECONDS,
                 )
 
             yield _ping_pong_scenario(
@@ -407,6 +419,7 @@ class CXXLanguage(Language):
                 categories=inproc_categories + [SCALABLE],
                 channels=1,
                 outstanding=100,
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             yield _ping_pong_scenario(
@@ -422,6 +435,7 @@ class CXXLanguage(Language):
                 secure=secure,
                 minimal_stack=not secure,
                 categories=inproc_categories + [SCALABLE],
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             yield _ping_pong_scenario(
@@ -435,6 +449,7 @@ class CXXLanguage(Language):
                 client_threads_per_cq=1000000,
                 server_threads_per_cq=1000000,
                 categories=[SWEEP],
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             yield _ping_pong_scenario(
@@ -448,6 +463,7 @@ class CXXLanguage(Language):
                 client_threads_per_cq=1000000,
                 server_threads_per_cq=1000000,
                 categories=inproc_categories + [SCALABLE],
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             yield _ping_pong_scenario(
@@ -460,6 +476,7 @@ class CXXLanguage(Language):
                 client_threads_per_cq=1000000,
                 server_threads_per_cq=1000000,
                 categories=inproc_categories + [SCALABLE],
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             yield _ping_pong_scenario(
@@ -473,6 +490,7 @@ class CXXLanguage(Language):
                 minimal_stack=not secure,
                 secure=secure,
                 categories=[SWEEP],
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             yield _ping_pong_scenario(
@@ -487,6 +505,7 @@ class CXXLanguage(Language):
                 categories=smoketest_categories
                 + inproc_categories
                 + [SCALABLE],
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             yield _ping_pong_scenario(
@@ -502,6 +521,7 @@ class CXXLanguage(Language):
                 secure=secure,
                 minimal_stack=not secure,
                 categories=inproc_categories + [SCALABLE],
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             yield _ping_pong_scenario(
@@ -514,6 +534,7 @@ class CXXLanguage(Language):
                 secure=secure,
                 minimal_stack=not secure,
                 categories=[SWEEP],
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             yield _ping_pong_scenario(
@@ -527,7 +548,8 @@ class CXXLanguage(Language):
                 minimal_stack=not secure,
                 categories=smoketest_categories
                 + inproc_categories
-                + [SCALABLE],
+                + [SCALABLE, DASHBOARD],
+                warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
             for rpc_type in [
@@ -536,6 +558,9 @@ class CXXLanguage(Language):
                 "streaming_from_client",
                 "streaming_from_server",
             ]:
+                maybe_dashboard = (
+                    [DASHBOARD] if rpc_type in ("unary", "streaming") else []
+                )
                 for synchronicity in ["sync", "async"]:
                     yield _ping_pong_scenario(
                         "cpp_protobuf_%s_%s_ping_pong_%s"
@@ -546,6 +571,8 @@ class CXXLanguage(Language):
                         async_server_threads=1,
                         minimal_stack=not secure,
                         secure=secure,
+                        categories=list(DEFAULT_CATEGORIES) + maybe_dashboard,
+                        warmup_seconds=CXX_WARMUP_SECONDS,
                     )
 
                     for size in geometric_progression(
@@ -563,6 +590,7 @@ class CXXLanguage(Language):
                             secure=secure,
                             minimal_stack=not secure,
                             categories=[SWEEP],
+                            warmup_seconds=CXX_WARMUP_SECONDS,
                         )
 
                     maybe_scalable = [SCALABLE]
@@ -576,6 +604,11 @@ class CXXLanguage(Language):
                         # see b/198275705
                         maybe_scalable = [SWEEP]
 
+                    maybe_dashboard = (
+                        [DASHBOARD]
+                        if rpc_type in ("unary", "streaming")
+                        else []
+                    )
                     yield _ping_pong_scenario(
                         "cpp_protobuf_%s_%s_qps_unconstrained_%s"
                         % (synchronicity, rpc_type, secstr),
@@ -587,7 +620,10 @@ class CXXLanguage(Language):
                         minimal_stack=not secure,
                         server_threads_per_cq=2,
                         client_threads_per_cq=2,
-                        categories=inproc_categories + maybe_scalable,
+                        categories=inproc_categories
+                        + maybe_scalable
+                        + maybe_dashboard,
+                        warmup_seconds=CXX_WARMUP_SECONDS,
                     )
 
                     # TODO(vjpai): Re-enable this test. It has a lot of timeouts
@@ -601,6 +637,7 @@ class CXXLanguage(Language):
                     #     unconstrained_client=synchronicity,
                     #     secure=secure,
                     #     categories=smoketest_categories+[SCALABLE],
+                    #     warmup_seconds=CXX_WARMUP_SECONDS,
                     #     resource_quota_size=500*1024)
 
                     if rpc_type == "streaming":
@@ -616,6 +653,7 @@ class CXXLanguage(Language):
                                 messages_per_stream=mps,
                                 minimal_stack=not secure,
                                 categories=inproc_categories + [SCALABLE],
+                                warmup_seconds=CXX_WARMUP_SECONDS,
                             )
 
                         for mps in geometric_progression(1, 200, math.sqrt(10)):
@@ -630,6 +668,7 @@ class CXXLanguage(Language):
                                 messages_per_stream=mps,
                                 minimal_stack=not secure,
                                 categories=[SWEEP],
+                                warmup_seconds=CXX_WARMUP_SECONDS,
                             )
 
                     for channels in geometric_progression(
@@ -660,6 +699,7 @@ class CXXLanguage(Language):
                                 categories=[SWEEP],
                                 channels=channels,
                                 outstanding=outstanding,
+                                warmup_seconds=CXX_WARMUP_SECONDS,
                             )
 
     def __str__(self):
@@ -1619,12 +1659,8 @@ class GoLanguage(Language):
 
 
 class NodeLanguage(Language):
-    def __init__(self, node_purejs=False):
-        super().__init__()
-        self.node_purejs = node_purejs
-
     def worker_cmdline(self):
-        fixture = "native_js" if self.node_purejs else "native_native"
+        fixture = "js_js"
         return [
             "tools/run_tests/performance/run_worker_node.sh",
             fixture,
@@ -1632,20 +1668,14 @@ class NodeLanguage(Language):
         ]
 
     def worker_port_offset(self):
-        if self.node_purejs:
-            return 1100
-        return 1000
+        return 1100
 
     def scenarios(self):
-        node_implementation = "node_purejs" if self.node_purejs else "node"
-
         yield _ping_pong_scenario(
-            "%s_to_node_protobuf_async_unary_5000rpcs_1KB_psm"
-            % (node_implementation),
+            "node_to_node_protobuf_async_unary_5000rpcs_1KB_psm",
             rpc_type="UNARY",
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
-            server_language="node",
             req_size=1024,
             resp_size=1024,
             outstanding=5000,
@@ -1661,12 +1691,10 @@ class NodeLanguage(Language):
             smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
 
             yield _ping_pong_scenario(
-                "%s_to_node_generic_async_streaming_ping_pong_%s"
-                % (node_implementation, secstr),
+                "node_to_node_generic_async_streaming_ping_pong_%s" % secstr,
                 rpc_type="STREAMING",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_GENERIC_SERVER",
-                server_language="node",
                 use_generic_payload=True,
                 async_server_threads=1,
                 secure=secure,
@@ -1674,59 +1702,52 @@ class NodeLanguage(Language):
             )
 
             yield _ping_pong_scenario(
-                "%s_to_node_protobuf_async_streaming_ping_pong_%s"
-                % (node_implementation, secstr),
+                "node_to_node_protobuf_async_streaming_ping_pong_%s" % secstr,
                 rpc_type="STREAMING",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_SERVER",
-                server_language="node",
                 async_server_threads=1,
                 secure=secure,
             )
 
             yield _ping_pong_scenario(
-                "%s_to_node_protobuf_async_unary_ping_pong_%s"
-                % (node_implementation, secstr),
+                "node_to_node_protobuf_async_unary_ping_pong_%s" % secstr,
                 rpc_type="UNARY",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_SERVER",
-                server_language="node",
                 async_server_threads=1,
                 secure=secure,
                 categories=smoketest_categories,
             )
 
             yield _ping_pong_scenario(
-                "%s_to_node_protobuf_async_unary_qps_unconstrained_%s"
-                % (node_implementation, secstr),
+                "node_to_node_protobuf_async_unary_qps_unconstrained_%s"
+                % secstr,
                 rpc_type="UNARY",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_SERVER",
-                server_language="node",
                 unconstrained_client="async",
                 secure=secure,
                 categories=smoketest_categories + [SCALABLE],
             )
 
             yield _ping_pong_scenario(
-                "%s_to_node_protobuf_async_streaming_qps_unconstrained_%s"
-                % (node_implementation, secstr),
+                "node_to_node_protobuf_async_streaming_qps_unconstrained_%s"
+                % secstr,
                 rpc_type="STREAMING",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_SERVER",
-                server_language="node",
                 unconstrained_client="async",
                 secure=secure,
                 categories=[SCALABLE],
             )
 
             yield _ping_pong_scenario(
-                "%s_to_node_generic_async_streaming_qps_unconstrained_%s"
-                % (node_implementation, secstr),
+                "node_to_node_generic_async_streaming_qps_unconstrained_%s"
+                % secstr,
                 rpc_type="STREAMING",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_GENERIC_SERVER",
-                server_language="node",
                 unconstrained_client="async",
                 use_generic_payload=True,
                 secure=secure,
@@ -1736,8 +1757,6 @@ class NodeLanguage(Language):
             # TODO(murgatroid99): add scenarios node vs C++
 
     def __str__(self):
-        if self.node_purejs:
-            return "node_purejs"
         return "node"
 
 
@@ -1752,6 +1771,5 @@ LANGUAGES = {
     "python": PythonLanguage(),
     "python_asyncio": PythonAsyncIOLanguage(),
     "go": GoLanguage(),
-    "node": NodeLanguage(),
-    "node_purejs": NodeLanguage(node_purejs=True),
+    "node": NodeLanguage(),  # 'node' means 'node_purejs'.
 }

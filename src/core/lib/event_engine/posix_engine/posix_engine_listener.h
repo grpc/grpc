@@ -110,6 +110,8 @@ class PosixEngineListenerImpl
     }
     ListenerSocketsContainer::ListenerSocket& Socket() { return socket_; }
     ~AsyncConnectionAcceptor() {
+      // If uds socket, unlink it so that the corresponding file is deleted.
+      UnlinkIfUnixDomainSocket(*socket_.sock.LocalAddress());
       handle_->OrphanHandle(nullptr, nullptr, "");
       delete notify_on_accept_;
     }

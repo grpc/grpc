@@ -73,7 +73,7 @@ namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
     {"test_experiment_1", description_test_experiment_1,
-     additional_constraints_test_experiment_1, true, true},
+     additional_constraints_test_experiment_1, false, true},
     {"test_experiment_2", description_test_experiment_2,
      additional_constraints_test_experiment_2, false, true},
     {"test_experiment_3", description_test_experiment_3,
@@ -105,7 +105,7 @@ namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
     {"test_experiment_1", description_test_experiment_1,
-     additional_constraints_test_experiment_1, true, true},
+     additional_constraints_test_experiment_1, kDefaultForDebugOnly, true},
     {"test_experiment_2", description_test_experiment_2,
      additional_constraints_test_experiment_2, kDefaultForDebugOnly, true},
     {"test_experiment_3", description_test_experiment_3,

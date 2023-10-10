@@ -1,0 +1,22 @@
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: ${route_name}
+  namespace: ${namespace_name}
+  labels:
+    owner: xds-k8s-interop-test
+spec:
+  parentRefs:
+  - name: ${mesh_name}
+    namespace: ${namespace_name}
+    group: net.gke.io
+    kind: TDMesh
+  hostnames:
+  - ${xds_server_uri}
+  rules:
+  - backendRefs:
+    - name: ${service_name}
+      port: ${test_port}
+      namespace: ${namespace_name}
+...

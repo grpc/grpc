@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "envoy/type/matcher/v3/http_inputs.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
@@ -18,7 +16,7 @@
 #include "upb/port/def.inc"
 
 static const upb_MiniTableField envoy_type_matcher_v3_HttpRequestHeaderMatchInput__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_type_matcher_v3_HttpRequestHeaderMatchInput_msg_init = {
@@ -32,7 +30,7 @@ const upb_MiniTable envoy_type_matcher_v3_HttpRequestHeaderMatchInput_msg_init =
 };
 
 static const upb_MiniTableField envoy_type_matcher_v3_HttpRequestTrailerMatchInput__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_type_matcher_v3_HttpRequestTrailerMatchInput_msg_init = {
@@ -46,7 +44,7 @@ const upb_MiniTable envoy_type_matcher_v3_HttpRequestTrailerMatchInput_msg_init 
 };
 
 static const upb_MiniTableField envoy_type_matcher_v3_HttpResponseHeaderMatchInput__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_type_matcher_v3_HttpResponseHeaderMatchInput_msg_init = {
@@ -60,7 +58,7 @@ const upb_MiniTable envoy_type_matcher_v3_HttpResponseHeaderMatchInput_msg_init 
 };
 
 static const upb_MiniTableField envoy_type_matcher_v3_HttpResponseTrailerMatchInput__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_type_matcher_v3_HttpResponseTrailerMatchInput_msg_init = {
@@ -74,7 +72,7 @@ const upb_MiniTable envoy_type_matcher_v3_HttpResponseTrailerMatchInput_msg_init
 };
 
 static const upb_MiniTableField envoy_type_matcher_v3_HttpRequestQueryParamMatchInput__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_type_matcher_v3_HttpRequestQueryParamMatchInput_msg_init = {

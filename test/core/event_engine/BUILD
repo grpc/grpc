@@ -58,7 +58,9 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:gpr",
         "//:grpc",
+        "//src/core:event_engine_thread_count",
         "//src/core:event_engine_thread_pool",
         "//src/core:notification",
         "//test/core/util:grpc_test_util_unsecure",
@@ -219,9 +221,10 @@ grpc_cc_library(
         "absl/time",
     ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc_unsecure",
         "//src/core:channel_args_endpoint_config",
+        "//src/core:event_engine_common",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:memory_quota",
         "//src/core:notification",

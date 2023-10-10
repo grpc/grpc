@@ -20,6 +20,7 @@ A module to assist in generating experiment related code and artifacts.
 from __future__ import print_function
 
 import collections
+from copy import deepcopy
 import ctypes
 import datetime
 import json
@@ -369,7 +370,6 @@ class ExperimentsCompiler(object):
             print(file=H)
             print("#include <grpc/support/port_platform.h>", file=H)
             print(file=H)
-            print("#include <stddef.h>", file=H)
             print('#include "src/core/lib/experiments/config.h"', file=H)
             print(file=H)
             print("namespace grpc_core {", file=H)
@@ -390,34 +390,33 @@ class ExperimentsCompiler(object):
             self._GenerateExperimentsHdrForPlatform("posix", H)
             print("#endif", file=H)
             print("\n#else", file=H)
-            for i, (_, exp) in enumerate(self._experiment_definitions.items()):
-                print(
-                    "#define GRPC_EXPERIMENT_IS_INCLUDED_%s" % exp.name.upper(),
-                    file=H,
-                )
-                print(
-                    "inline bool Is%sEnabled() { return"
-                    " Is%sExperimentEnabled(%d); }"
-                    % (
-                        SnakeToPascal(exp.name),
-                        "Test" if mode == "test" else "",
-                        i,
-                    ),
-                    file=H,
-                )
-            print(file=H)
-
             if mode == "test":
                 num_experiments_var_name = "kNumTestExperiments"
                 experiments_metadata_var_name = "g_test_experiment_metadata"
             else:
                 num_experiments_var_name = "kNumExperiments"
                 experiments_metadata_var_name = "g_experiment_metadata"
-            print(
-                f"constexpr const size_t {num_experiments_var_name} = "
-                f"{len(self._experiment_definitions.keys())};",
-                file=H,
-            )
+            print("enum ExperimentIds {", file=H)
+            for exp in self._experiment_definitions.values():
+                print(f"  kExperimentId{SnakeToPascal(exp.name)},", file=H)
+            print(f"  {num_experiments_var_name}", file=H)
+            print("};", file=H)
+            for exp in self._experiment_definitions.values():
+                print(
+                    "#define GRPC_EXPERIMENT_IS_INCLUDED_%s" % exp.name.upper(),
+                    file=H,
+                )
+                print(
+                    "inline bool Is%sEnabled() { return"
+                    " Is%sExperimentEnabled(kExperimentId%s); }"
+                    % (
+                        SnakeToPascal(exp.name),
+                        "Test" if mode == "test" else "",
+                        SnakeToPascal(exp.name),
+                    ),
+                    file=H,
+                )
+            print(file=H)
             print(
                 (
                     "extern const ExperimentMetadata"
@@ -552,37 +551,33 @@ class ExperimentsCompiler(object):
                 test_body += _EXPERIMENT_CHECK_TEXT(SnakeToPascal(exp.name))
             print(_EXPERIMENTS_TEST_SKELETON(defs, test_body), file=C)
 
-    def GenExperimentsBzl(self, output_file):
+    def GenExperimentsBzl(self, mode, output_file):
         if self._bzl_list_for_defaults is None:
             return
 
-        bzl_to_tags_to_experiments = dict(
+        defaults = dict(
             (key, collections.defaultdict(list))
             for key in self._bzl_list_for_defaults.keys()
             if key is not None
         )
 
-        for _, exp in self._experiment_definitions.items():
-            for tag in exp.test_tags:
-                default = False
-                # Search through default values for all platforms.
-                for platform in self._platforms_define.keys():
-                    platform_default = exp.default(platform)
-                    # if the experiment is disabled on any platform, only
-                    # add it to the "off" list.
-                    if not platform_default or platform_default == "broken":
-                        default = platform_default
-                        break
-                    elif platform_default == "debug":
-                        # Only add the experiment to the "dbg" list if it is
-                        # debug in atleast one platform and true in every other
-                        # platform.
-                        default = "debug"
-                    elif platform_default and default != "debug":
-                        # Only add the experiment to the "on" list if it is
-                        # enabled in every platform.
+        bzl_to_tags_to_experiments = dict(
+            (platform, deepcopy(defaults))
+            for platform in self._platforms_define.keys()
+        )
+
+        for platform in self._platforms_define.keys():
+            for _, exp in self._experiment_definitions.items():
+                for tag in exp.test_tags:
+                    # Search through default values for all platforms.
+                    default = exp.default(platform)
+                    # Interpret the debug default value as True to switch the
+                    # experiment to the "on" mode.
+                    if default == "debug":
                         default = True
-                bzl_to_tags_to_experiments[default][tag].append(exp.name)
+                    bzl_to_tags_to_experiments[platform][default][tag].append(
+                        exp.name
+                    )
 
         with open(output_file, "w") as B:
             PutCopyright(B, "#")
@@ -600,20 +595,31 @@ class ExperimentsCompiler(object):
                 file=B,
             )
 
-            bzl_to_tags_to_experiments = sorted(
-                (self._bzl_list_for_defaults[default], tags_to_experiments)
-                for default, tags_to_experiments in bzl_to_tags_to_experiments.items()
-                if self._bzl_list_for_defaults[default] is not None
-            )
-
             print(file=B)
-            print("EXPERIMENTS = {", file=B)
-            for key, tags_to_experiments in bzl_to_tags_to_experiments:
-                print('    "%s": {' % key, file=B)
-                for tag, experiments in sorted(tags_to_experiments.items()):
-                    print('        "%s": [' % tag, file=B)
-                    for experiment in sorted(experiments):
-                        print('            "%s",' % experiment, file=B)
-                    print("        ],", file=B)
+            if mode == "test":
+                print("TEST_EXPERIMENTS = {", file=B)
+            else:
+                print("EXPERIMENTS = {", file=B)
+
+            for platform in self._platforms_define.keys():
+                bzl_to_tags_to_experiments_platform = sorted(
+                    (self._bzl_list_for_defaults[default], tags_to_experiments)
+                    for default, tags_to_experiments in bzl_to_tags_to_experiments[
+                        platform
+                    ].items()
+                    if self._bzl_list_for_defaults[default] is not None
+                )
+                print('    "%s": {' % platform, file=B)
+                for (
+                    key,
+                    tags_to_experiments,
+                ) in bzl_to_tags_to_experiments_platform:
+                    print('        "%s": {' % key, file=B)
+                    for tag, experiments in sorted(tags_to_experiments.items()):
+                        print('            "%s": [' % tag, file=B)
+                        for experiment in sorted(experiments):
+                            print('                "%s",' % experiment, file=B)
+                        print("            ],", file=B)
+                    print("        },", file=B)
                 print("    },", file=B)
             print("}", file=B)

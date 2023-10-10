@@ -16,7 +16,6 @@
 
 #include <functional>
 #include <tuple>
-#include <utility>
 
 #include "absl/utility/utility.h"
 #include "gtest/gtest.h"
@@ -75,6 +74,12 @@ TEST(TryJoinTest, Join2Fail1P) {
 
 TEST(TryJoinTest, Join2Fail2P) {
   EXPECT_EQ(TryJoin(instant_fail<int>(), pending<int>())(), (fail<int, int>()));
+}
+
+TEST(TryJoinTest, JoinStatus) {
+  EXPECT_EQ(TryJoin([]() { return absl::OkStatus(); },
+                    []() { return absl::OkStatus(); })(),
+            ok(Empty{}, Empty{}));
 }
 
 }  // namespace grpc_core

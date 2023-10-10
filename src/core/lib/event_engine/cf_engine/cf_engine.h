@@ -16,6 +16,8 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_APPLE
+#include <AvailabilityMacros.h>
+#ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -51,7 +53,7 @@ class CFEventEngine : public EventEngine,
                            Duration timeout) override;
   bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
-  std::unique_ptr<DNSResolver> GetDNSResolver(
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;
   void Run(Closure* closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;
@@ -81,6 +83,7 @@ class CFEventEngine : public EventEngine,
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
+#endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_CF_ENGINE_CF_ENGINE_H

@@ -50,6 +50,14 @@ activate_gke_cluster() {
       GKE_CLUSTER_NAME="psm-interop-security"
       GKE_CLUSTER_ZONE="us-central1-a"
       ;;
+    GKE_CLUSTER_PSM_CSM)
+      GKE_CLUSTER_NAME="psm-interop-csm"
+      GKE_CLUSTER_ZONE="us-east7-c"
+      ;;
+    GKE_CLUSTER_PSM_GAMMA)
+      GKE_CLUSTER_NAME="psm-interop-gamma"
+      GKE_CLUSTER_ZONE="us-central1-a"
+      ;;
     GKE_CLUSTER_PSM_BASIC)
       GKE_CLUSTER_NAME="interop-test-psm-basic"
       GKE_CLUSTER_ZONE="us-central1-c"

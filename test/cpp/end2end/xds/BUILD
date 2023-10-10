@@ -156,6 +156,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/end2end:connection_attempt_injector",
     ],
 )
@@ -440,8 +441,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:stateful_session_cookie_proto",
         "//src/proto/grpc/testing/xds/v3:stateful_session_proto",
         "//test/core/util:grpc_test_util",

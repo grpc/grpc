@@ -9,15 +9,7 @@
 #ifndef XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H_
 #define XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
-
+#include "upb/generated_code_support.h"
 // Must be last. 
 #include "upb/port/def.inc"
 

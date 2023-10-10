@@ -15,12 +15,36 @@
 
 set -ex
 
-if [ "$#" != "1" ] ; then
+if [ "$#" == "0" ] ; then
     echo "Must supply bazel version to be tested." >/dev/stderr
     exit 1
 fi
 
 VERSION="$1"
+shift 1
+
+# directories under test/distrib/bazel/ to test.
+TEST_DIRECTORIES=(
+  "cpp"
+  "python"
+)
+# construct list of all supported test shards
+ALL_TEST_SHARDS=("buildtest")
+for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"
+do
+  ALL_TEST_SHARDS+=("distribtest_${TEST_DIRECTORY}")
+done
+
+# Read list of shards to run from the commandline args.
+# If ther are no args, run all the shards.
+if [ "$#" != "0" ]
+then
+  # Use remaining commandline args as test shard names.
+  TEST_SHARDS=("$@")
+else
+  # Run all supported shards.
+  TEST_SHARDS=("${ALL_TEST_SHARDS[@]}")
+fi
 
 cd "$(dirname "$0")"/../../..
 
@@ -37,18 +61,16 @@ EXCLUDED_TARGETS=(
   # This could be a legitmate failure due to bitrot.
   "-//src/proto/grpc/testing:test_gen_proto"
 
-  # This appears to be a legitimately broken BUILD file. There's a reference to
-  # a non-existent "link_dynamic_library.sh".
-  "-//third_party/toolchains/rbe_windows_bazel_5.2.0_vs2019:all"
+  # Analyzing windows toolchains when running on linux results in an error.
+  # Since bazel distribtests are run on linux, we exclude the windows RBE toolchains.
+  "-//third_party/toolchains/rbe_windows_bazel_6.3.2_vs2019/..."
   "-//third_party/toolchains:rbe_windows_default_toolchain_suite"
 
   # TODO(jtattermusch): add back once fixed
   "-//examples/android/binder/..."
-)
 
-TEST_DIRECTORIES=(
-  "cpp"
-  "python"
+  # Exclude bazelified tests as they contain some bazel hackery
+  "-//tools/bazelify_tests/..."
 )
 
 FAILED_TESTS=""
@@ -59,17 +81,31 @@ export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
 
 ACTION_ENV_FLAG="--action_env=bazel_cache_invalidate=version_${VERSION}"
 
-tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
-tools/bazel build "${ACTION_ENV_FLAG}" -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
-tools/bazel build "${ACTION_ENV_FLAG}" --config fuzztest -- //fuzztest/... || FAILED_TESTS="${FAILED_TESTS}fuzztest_buildtest "
+for TEST_SHARD in "${TEST_SHARDS[@]}"
+do
+  SHARD_RAN=""
+  if [ "${TEST_SHARD}" == "buildtest" ] ; then
+    tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
+    tools/bazel build "${ACTION_ENV_FLAG}" -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
+    tools/bazel build "${ACTION_ENV_FLAG}" --config fuzztest -- //fuzztest/... || FAILED_TESTS="${FAILED_TESTS}fuzztest_buildtest "
+    SHARD_RAN="true"
+  fi
 
-for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
-  pushd "test/distrib/bazel/$TEST_DIRECTORY/"
+  for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"
+  do
+    pushd "test/distrib/bazel/${TEST_DIRECTORY}/"
+    if [ "${TEST_SHARD}" == "distribtest_${TEST_DIRECTORY}" ] ; then
+      tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
+      tools/bazel test "${ACTION_ENV_FLAG}" --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}distribtest_${TEST_DIRECTORY} "
+      SHARD_RAN="true"
+    fi
+    popd
+  done
 
-  tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
-  tools/bazel test "${ACTION_ENV_FLAG}" --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}distribtest_${TEST_DIRECTORY} "
-
-  popd
+  if [ "${SHARD_RAN}" == "" ]; then
+    echo "Unknown shard '${TEST_SHARD}'"
+    exit 1
+  fi
 done
 
 if [ "$FAILED_TESTS" != "" ]

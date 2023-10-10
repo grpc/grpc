@@ -46,8 +46,7 @@ typedef absl::Status grpc_error_handle;
 
 absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
                                 const grpc_core::DebugLocation& location,
-                                size_t children_count,
-                                absl::Status* children) GRPC_MUST_USE_RESULT;
+                                size_t children_count, absl::Status* children);
 
 // Create an error that references some other errors.
 #define GRPC_ERROR_CREATE_REFERENCING(desc, errs, count)                      \
@@ -73,7 +72,7 @@ static absl::Status grpc_status_create_from_vector(
   grpc_status_create_from_vector(DEBUG_LOCATION, desc, error_list)
 
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
-                           const char* call_name) GRPC_MUST_USE_RESULT;
+                           const char* call_name);
 
 inline absl::Status grpc_assert_never_ok(absl::Status error) {
   GPR_ASSERT(!error.ok());
@@ -85,7 +84,7 @@ inline absl::Status grpc_assert_never_ok(absl::Status error) {
   grpc_assert_never_ok(grpc_os_error(DEBUG_LOCATION, err, call_name))
 
 absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
-                            absl::string_view call_name) GRPC_MUST_USE_RESULT;
+                            absl::string_view call_name);
 
 /// windows only: create an error associated with WSAGetLastError()!=0
 #define GRPC_WSA_ERROR(err, call_name) \
@@ -93,14 +92,14 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_core::StatusIntProperty which,
-                                     intptr_t value) GRPC_MUST_USE_RESULT;
+                                     intptr_t value);
 /// It is an error to pass nullptr as `p`. Caller should allocate a phony
 /// intptr_t for `p`, even if the value of `p` is not used.
 bool grpc_error_get_int(grpc_error_handle error,
                         grpc_core::StatusIntProperty which, intptr_t* p);
-grpc_error_handle grpc_error_set_str(
-    grpc_error_handle src, grpc_core::StatusStrProperty which,
-    absl::string_view str) GRPC_MUST_USE_RESULT;
+grpc_error_handle grpc_error_set_str(grpc_error_handle src,
+                                     grpc_core::StatusStrProperty which,
+                                     absl::string_view str);
 /// Returns false if the specified string is not set.
 bool grpc_error_get_str(grpc_error_handle error,
                         grpc_core::StatusStrProperty which, std::string* str);
@@ -116,8 +115,8 @@ bool grpc_error_get_str(grpc_error_handle error,
 /// returns absl::OkStatus(). 3) If \a src and \a child point to the same error,
 /// returns a single reference. (Note that, 2 references should have been
 /// received to the error in this case.)
-grpc_error_handle grpc_error_add_child(
-    grpc_error_handle src, grpc_error_handle child) GRPC_MUST_USE_RESULT;
+grpc_error_handle grpc_error_add_child(grpc_error_handle src,
+                                       grpc_error_handle child);
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line);

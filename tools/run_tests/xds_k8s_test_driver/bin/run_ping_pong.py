@@ -28,13 +28,11 @@ from framework.test_app import client_app
 from framework.test_app import server_app
 
 # Flags
-_SECURE = flags.DEFINE_bool(
-    "secure",
-    default=False,
-    help=(
-        "Set to True if the the client/server were started "
-        "with the PSM security enabled."
-    ),
+_MODE = flags.DEFINE_enum(
+    "mode",
+    default="default",
+    enum_values=["default", "secure", "gamma"],
+    help="Select a deployment of the client/server",
 )
 _NUM_RPCS = flags.DEFINE_integer(
     "num_rpcs",
@@ -105,7 +103,6 @@ def main(argv):
 
     # Flags.
     should_port_forward: bool = xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
-    is_secure: bool = _SECURE.value
 
     # Setup.
     gcp_api_manager = gcp.api.GcpApiManager()
@@ -117,7 +114,7 @@ def main(argv):
         server_namespace,
         gcp_api_manager,
         port_forwarding=should_port_forward,
-        secure=is_secure,
+        mode=_MODE.value,
     )
     # Find server pod.
     server_pod: k8s.V1Pod = common.get_server_pod(
@@ -130,7 +127,7 @@ def main(argv):
         client_namespace,
         gcp_api_manager,
         port_forwarding=should_port_forward,
-        secure=is_secure,
+        mode=_MODE.value,
     )
     # Find client pod.
     client_pod: k8s.V1Pod = common.get_client_pod(
@@ -145,7 +142,7 @@ def main(argv):
         server_runner,
         server_pod,
         test_port=xds_flags.SERVER_PORT.value,
-        secure_mode=is_secure,
+        secure_mode=_MODE.value == "secure",
     )
     test_server.set_xds_address(
         xds_flags.SERVER_XDS_HOST.value, xds_flags.SERVER_XDS_PORT.value

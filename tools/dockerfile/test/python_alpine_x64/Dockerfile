@@ -17,6 +17,15 @@ FROM alpine:3.15
 # Install Git and basic packages.
 RUN apk update && apk add   autoconf   automake   bzip2   build-base   cmake   ccache   curl   gcc   git   libtool   linux-headers   make   perl   strace   python3-dev   py3-pip   unzip   wget   zip
 
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
+
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Install Python packages from PyPI
@@ -31,21 +40,15 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
     && tar -zxf ccache.tar.gz \
-    && cd ccache-4.5.1 \
+    && cd ccache-4.7.5 \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
     && make -j4 && make install \
     && cd ../.. \
-    && rm -rf ccache-4.5.1 ccache.tar.gz
+    && rm -rf ccache-4.7.5 ccache.tar.gz
 
 
 RUN mkdir /var/local/jenkins
-
-#=================
-# Setup git to access working directory across docker boundary
-
-RUN git config --global --add safe.directory /var/local/jenkins/grpc
-RUN git config --global protocol.file.allow always
 

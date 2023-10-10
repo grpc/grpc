@@ -19,11 +19,16 @@ from typing import Any, Dict, List, Optional, Set
 
 from googleapiclient import discovery
 import googleapiclient.errors
+import httplib2
 
+import framework.errors
 from framework.helpers import retryers
 from framework.infrastructure import gcp
 
 logger = logging.getLogger(__name__)
+
+DEBUG_HEADER_IN_RESPONSE = "x-encrypted-debug-headers"
+DEBUG_HEADER_KEY = "X-Return-Encrypted-Headers"
 
 
 class ComputeV1(
@@ -33,6 +38,7 @@ class ComputeV1(
     _WAIT_FOR_BACKEND_SEC = 60 * 10
     _WAIT_FOR_BACKEND_SLEEP_SEC = 4
     _WAIT_FOR_OPERATION_SEC = 60 * 10
+    gfe_debug_header: Optional[str]
 
     @dataclasses.dataclass(frozen=True)
     class GcpResource:
@@ -47,9 +53,11 @@ class ComputeV1(
         self,
         api_manager: gcp.api.GcpApiManager,
         project: str,
+        gfe_debug_header: Optional[str] = None,
         version: str = "v1",
     ):
         super().__init__(api_manager.compute(version), project)
+        self.gfe_debug_header = gfe_debug_header
 
     class HealthCheckProtocol(enum.Enum):
         TCP = enum.auto()
@@ -347,7 +355,7 @@ class ComputeV1(
             check_result=lambda neg: neg and neg.get("size", 0) > 0,
         )
         network_endpoint_group = retryer(
-            self._retry_network_endpoint_group_ready, name, zone
+            self._retry_load_network_endpoint_group, name, zone
         )
         # TODO(sergiitk): dataclass
         return self.ZonalGcpResource(
@@ -356,7 +364,7 @@ class ComputeV1(
             zone,
         )
 
-    def _retry_network_endpoint_group_ready(self, name: str, zone: str):
+    def _retry_load_network_endpoint_group(self, name: str, zone: str):
         try:
             neg = self.get_network_endpoint_group(name, zone)
             logger.debug(
@@ -392,14 +400,67 @@ class ComputeV1(
         *,
         timeout_sec: int = _WAIT_FOR_BACKEND_SEC,
         wait_sec: int = _WAIT_FOR_BACKEND_SLEEP_SEC,
-    ):
+    ) -> None:
+        if not backends:
+            raise ValueError("The list of backends to wait on is empty")
+
+        timeout = datetime.timedelta(seconds=timeout_sec)
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=wait_sec),
-            timeout=datetime.timedelta(seconds=timeout_sec),
+            timeout=timeout,
             check_result=lambda result: result,
         )
         pending = set(backends)
-        retryer(self._retry_backends_health, backend_service, pending)
+        try:
+            retryer(self._retry_backends_health, backend_service, pending)
+        except retryers.RetryError as retry_err:
+            unhealthy_backends: str = ",".join(
+                [backend.name for backend in pending]
+            )
+
+            # Attempt to load backend health info for better debug info.
+            try:
+                unhealthy = []
+                # Everything left in pending was unhealthy on the last retry.
+                for backend in pending:
+                    # It's possible the health status has changed since we
+                    # gave up retrying, but this should be very rare.
+                    health_status = self.get_backend_service_backend_health(
+                        backend_service,
+                        backend,
+                    )
+                    unhealthy.append(
+                        {"name": backend.name, "health_status": health_status}
+                    )
+
+                # Override the plain list of unhealthy backend name with
+                # the one showing the latest backend statuses.
+                unhealthy_backends = self.resources_pretty_format(
+                    unhealthy,
+                    highlight=False,
+                )
+            except Exception as error:  # noqa pylint: disable=broad-except
+                logger.debug(
+                    "Couldn't load backend health info, plain list name"
+                    "will be printed instead. Error: %r",
+                    error,
+                )
+
+            retry_err.add_note(
+                framework.errors.FrameworkError.note_blanket_error_info_below(
+                    "One or several NEGs (Network Endpoint Groups) didn't"
+                    " report HEALTHY status within expected timeout.",
+                    info_below=(
+                        f"Timeout {timeout} (h:mm:ss) waiting for backend"
+                        f" service '{backend_service.name}' to report all NEGs"
+                        " in the HEALTHY status:"
+                        f" {[backend.name for backend in backends]}."
+                        f"\nUnhealthy backends:\n{unhealthy_backends}"
+                    ),
+                )
+            )
+
+            raise
 
     def _retry_backends_health(
         self, backend_service: GcpResource, pending: Set[ZonalGcpResource]
@@ -522,9 +583,21 @@ class ComputeV1(
     def _operation_status_done(operation):
         return "status" in operation and operation["status"] == "DONE"
 
+    @staticmethod
+    def _log_debug_header(resp: httplib2.Response):
+        if DEBUG_HEADER_IN_RESPONSE in resp:
+            logger.info(
+                "Received GCP debug headers: %s",
+                resp[DEBUG_HEADER_IN_RESPONSE],
+            )
+
     def _execute(  # pylint: disable=arguments-differ
         self, request, *, timeout_sec=_WAIT_FOR_OPERATION_SEC
     ):
+        if self.gfe_debug_header:
+            logger.info("Adding debug headers for method: %s", request.methodId)
+            request.headers[DEBUG_HEADER_KEY] = self.gfe_debug_header
+            request.add_response_callback(self._log_debug_header)
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
         logger.debug("Operation %s", operation)
         return self._wait(operation["name"], timeout_sec)

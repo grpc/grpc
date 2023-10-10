@@ -18,11 +18,10 @@
 
 #include "test/cpp/interop/xds_interop_server_lib.h"
 
-#include <sstream>
+#include <memory>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "absl/synchronization/mutex.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -34,13 +33,11 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/transport/transport.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/end2end/test_health_check_service_impl.h"
+#include "test/cpp/interop/pre_stop_hook_server.h"
 
 namespace grpc {
 namespace testing {
@@ -62,8 +59,8 @@ constexpr absl::string_view kRpcBehaviorMetadataKey = "rpc-behavior";
 constexpr absl::string_view kErrorCodeRpcBehavior = "error-code-";
 constexpr absl::string_view kHostnameRpcBehaviorFilter = "hostname=";
 
-std::set<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
-  std::set<std::string> rpc_behaviors;
+std::vector<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
+  std::vector<std::string> rpc_behaviors;
   auto rpc_behavior_metadata =
       context->client_metadata().equal_range(grpc::string_ref(
           kRpcBehaviorMetadataKey.data(), kRpcBehaviorMetadataKey.length()));
@@ -72,7 +69,7 @@ std::set<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
     auto value = metadata->second;
     for (auto behavior :
          absl::StrSplit(absl::string_view(value.data(), value.length()), ',')) {
-      rpc_behaviors.emplace(behavior);
+      rpc_behaviors.emplace_back(behavior);
     }
   }
   return rpc_behaviors;
@@ -113,8 +110,10 @@ class TestServiceImpl : public TestService::Service {
 class XdsUpdateHealthServiceImpl : public XdsUpdateHealthService::Service {
  public:
   explicit XdsUpdateHealthServiceImpl(
-      HealthCheckServiceImpl* health_check_service)
-      : health_check_service_(health_check_service) {}
+      HealthCheckServiceImpl* health_check_service,
+      std::unique_ptr<PreStopHookServerManager> pre_stop_hook_server)
+      : health_check_service_(health_check_service),
+        pre_stop_hook_server_(std::move(pre_stop_hook_server)) {}
 
   Status SetServing(ServerContext* /* context */, const Empty* /* request */,
                     Empty* /* response */) override {
@@ -130,8 +129,61 @@ class XdsUpdateHealthServiceImpl : public XdsUpdateHealthService::Service {
     return Status::OK;
   }
 
+  Status SendHookRequest(ServerContext* /* context */,
+                         const HookRequest* request,
+                         HookResponse* /* response */) override {
+    switch (request->command()) {
+      case HookRequest::START:
+        return pre_stop_hook_server_->Start(request->server_port(), 30 /* s */);
+      case HookRequest::STOP:
+        return pre_stop_hook_server_->Stop();
+      case HookRequest::RETURN:
+        pre_stop_hook_server_->Return(
+            static_cast<StatusCode>(request->grpc_code_to_return()),
+            request->grpc_status_description());
+        return Status::OK;
+      default:
+        return Status(
+            StatusCode::INVALID_ARGUMENT,
+            absl::StrFormat("Invalid command %d", request->command()));
+    }
+  }
+
  private:
   HealthCheckServiceImpl* const health_check_service_;
+  std::unique_ptr<PreStopHookServerManager> pre_stop_hook_server_;
+};
+
+class MaintenanceServices {
+ public:
+  MaintenanceServices()
+      : update_health_service_(&health_check_service_,
+                               std::make_unique<PreStopHookServerManager>()) {
+    health_check_service_.SetStatus(
+        "", grpc::health::v1::HealthCheckResponse::SERVING);
+    health_check_service_.SetStatus(
+        "grpc.testing.TestService",
+        grpc::health::v1::HealthCheckResponse::SERVING);
+    health_check_service_.SetStatus(
+        "grpc.testing.XdsUpdateHealthService",
+        grpc::health::v1::HealthCheckResponse::SERVING);
+  }
+
+  std::unique_ptr<ServerBuilder> InitializeServerBuilder(int port) {
+    auto builder = std::make_unique<ServerBuilder>();
+    builder->RegisterService(&health_check_service_);
+    builder->RegisterService(&update_health_service_);
+    builder->RegisterService(&hook_service_);
+    grpc::AddAdminServices(builder.get());
+    builder->AddListeningPort(absl::StrCat("0.0.0.0:", port),
+                              grpc::InsecureServerCredentials());
+    return builder;
+  }
+
+ private:
+  HealthCheckServiceImpl health_check_service_;
+  XdsUpdateHealthServiceImpl update_health_service_;
+  HookServiceImpl hook_service_;
 };
 }  // namespace
 
@@ -176,22 +228,14 @@ absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
 }
 
 void RunServer(bool secure_mode, const int port, const int maintenance_port,
-               absl::string_view hostname, absl::string_view server_id) {
+               absl::string_view hostname, absl::string_view server_id,
+               const std::function<void(Server*)>& server_callback) {
   std::unique_ptr<Server> xds_enabled_server;
   std::unique_ptr<Server> server;
   TestServiceImpl service(hostname, server_id);
-  HealthCheckServiceImpl health_check_service;
-  health_check_service.SetStatus(
-      "", grpc::health::v1::HealthCheckResponse::SERVING);
-  health_check_service.SetStatus(
-      "grpc.testing.TestService",
-      grpc::health::v1::HealthCheckResponse::SERVING);
-  health_check_service.SetStatus(
-      "grpc.testing.XdsUpdateHealthService",
-      grpc::health::v1::HealthCheckResponse::SERVING);
-  XdsUpdateHealthServiceImpl update_health_service(&health_check_service);
 
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
+  MaintenanceServices maintenance_services;
   ServerBuilder builder;
   if (secure_mode) {
     XdsServerBuilder xds_builder;
@@ -201,25 +245,16 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
         grpc::XdsServerCredentials(grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
     gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
-    builder.RegisterService(&health_check_service);
-    builder.RegisterService(&update_health_service);
-    grpc::AddAdminServices(&builder);
-    builder.AddListeningPort(absl::StrCat("0.0.0.0:", maintenance_port),
-                             grpc::InsecureServerCredentials());
-    server = builder.BuildAndStart();
+    server = maintenance_services.InitializeServerBuilder(maintenance_port)
+                 ->BuildAndStart();
     gpr_log(GPR_INFO, "Maintenance server listening on 0.0.0.0:%d",
             maintenance_port);
   } else {
-    builder.RegisterService(&service);
-    builder.RegisterService(&health_check_service);
-    builder.RegisterService(&update_health_service);
-    grpc::AddAdminServices(&builder);
-    builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
-                             grpc::InsecureServerCredentials());
-    server = builder.BuildAndStart();
+    auto builder = maintenance_services.InitializeServerBuilder(port);
+    server = builder->RegisterService(&service).BuildAndStart();
     gpr_log(GPR_INFO, "Server listening on 0.0.0.0:%d", port);
   }
-
+  server_callback(server.get());
   server->Wait();
 }
 

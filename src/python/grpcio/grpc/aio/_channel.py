@@ -188,12 +188,11 @@ class UnaryStreamMultiCallable(
         compression: Optional[grpc.Compression] = None,
     ) -> _base_call.UnaryStreamCall[RequestType, ResponseType]:
         metadata = self._init_metadata(metadata, compression)
-        deadline = _timeout_to_deadline(timeout)
 
         if not self._interceptors:
             call = UnaryStreamCall(
                 request,
-                deadline,
+                _timeout_to_deadline(timeout),
                 metadata,
                 credentials,
                 wait_for_ready,
@@ -207,7 +206,7 @@ class UnaryStreamMultiCallable(
             call = InterceptedUnaryStreamCall(
                 self._interceptors,
                 request,
-                deadline,
+                timeout,
                 metadata,
                 credentials,
                 wait_for_ready,
@@ -234,12 +233,11 @@ class StreamUnaryMultiCallable(
         compression: Optional[grpc.Compression] = None,
     ) -> _base_call.StreamUnaryCall:
         metadata = self._init_metadata(metadata, compression)
-        deadline = _timeout_to_deadline(timeout)
 
         if not self._interceptors:
             call = StreamUnaryCall(
                 request_iterator,
-                deadline,
+                _timeout_to_deadline(timeout),
                 metadata,
                 credentials,
                 wait_for_ready,
@@ -253,7 +251,7 @@ class StreamUnaryMultiCallable(
             call = InterceptedStreamUnaryCall(
                 self._interceptors,
                 request_iterator,
-                deadline,
+                timeout,
                 metadata,
                 credentials,
                 wait_for_ready,
@@ -280,12 +278,11 @@ class StreamStreamMultiCallable(
         compression: Optional[grpc.Compression] = None,
     ) -> _base_call.StreamStreamCall:
         metadata = self._init_metadata(metadata, compression)
-        deadline = _timeout_to_deadline(timeout)
 
         if not self._interceptors:
             call = StreamStreamCall(
                 request_iterator,
-                deadline,
+                _timeout_to_deadline(timeout),
                 metadata,
                 credentials,
                 wait_for_ready,
@@ -299,7 +296,7 @@ class StreamStreamMultiCallable(
             call = InterceptedStreamStreamCall(
                 self._interceptors,
                 request_iterator,
-                deadline,
+                timeout,
                 metadata,
                 credentials,
                 wait_for_ready,

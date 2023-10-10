@@ -104,7 +104,10 @@ class BootstrapGeneratorClientTest(
         )
 
         # Load backends.
-        neg_name, neg_zones = cls.server_runner.k8s_namespace.get_service_neg(
+        (
+            neg_name,
+            neg_zones,
+        ) = cls.server_runner.k8s_namespace.parse_service_neg_status(
             cls.server_runner.service_name, cls.server_port
         )
 
@@ -116,7 +119,10 @@ class BootstrapGeneratorClientTest(
     def tearDownClass(cls):
         # Remove backends from the Backend Service before closing the server
         # runner.
-        neg_name, neg_zones = cls.server_runner.k8s_namespace.get_service_neg(
+        (
+            neg_name,
+            neg_zones,
+        ) = cls.server_runner.k8s_namespace.parse_service_neg_status(
             cls.server_runner.service_name, cls.server_port
         )
         cls.td.backend_service_remove_neg_backends(neg_name, neg_zones)
@@ -205,10 +211,14 @@ class BootstrapGeneratorServerTest(
             maintenance_port=self.server_maintenance_port,
             xds_host=self.server_xds_host,
             xds_port=self.server_xds_port,
+            bootstrap_version=version,
         )
 
         # Load backends.
-        neg_name, neg_zones = self.server_runner.k8s_namespace.get_service_neg(
+        (
+            neg_name,
+            neg_zones,
+        ) = self.server_runner.k8s_namespace.parse_service_neg_status(
             self.server_runner.service_name, self.server_port
         )
 

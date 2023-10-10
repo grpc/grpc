@@ -100,12 +100,11 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   nullptr is treated as insecure credentials.
   //   TODO(yihuaz): disallow nullptr as a value after unsecure builds
   //   are removed.
-  static OrphanablePtr<HttpRequest> Get(
+  GRPC_MUST_USE_RESULT static OrphanablePtr<HttpRequest> Get(
       URI uri, const grpc_channel_args* args, grpc_polling_entity* pollent,
       const grpc_http_request* request, Timestamp deadline,
       grpc_closure* on_done, grpc_http_response* response,
-      RefCountedPtr<grpc_channel_credentials> channel_creds)
-      GRPC_MUST_USE_RESULT;
+      RefCountedPtr<grpc_channel_credentials> channel_creds);
 
   // Asynchronously perform a HTTP POST.
   // 'uri' is the target to make the request to. The scheme field is used to
@@ -126,12 +125,11 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   TODO(apolcyn): disallow nullptr as a value after unsecure builds
   //   are removed.
   // Does not support ?var1=val1&var2=val2 in the path.
-  static OrphanablePtr<HttpRequest> Post(
+  GRPC_MUST_USE_RESULT static OrphanablePtr<HttpRequest> Post(
       URI uri, const grpc_channel_args* args, grpc_polling_entity* pollent,
       const grpc_http_request* request, Timestamp deadline,
       grpc_closure* on_done, grpc_http_response* response,
-      RefCountedPtr<grpc_channel_credentials> channel_creds)
-      GRPC_MUST_USE_RESULT;
+      RefCountedPtr<grpc_channel_credentials> channel_creds);
 
   // Asynchronously perform a HTTP PUT.
   // 'uri' is the target to make the request to. The scheme field is used to
@@ -152,12 +150,11 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   TODO(apolcyn): disallow nullptr as a value after unsecure builds
   //   are removed.
   // Does not support ?var1=val1&var2=val2 in the path.
-  static OrphanablePtr<HttpRequest> Put(
+  GRPC_MUST_USE_RESULT static OrphanablePtr<HttpRequest> Put(
       URI uri, const grpc_channel_args* args, grpc_polling_entity* pollent,
       const grpc_http_request* request, Timestamp deadline,
       grpc_closure* on_done, grpc_http_response* response,
-      RefCountedPtr<grpc_channel_credentials> channel_creds)
-      GRPC_MUST_USE_RESULT;
+      RefCountedPtr<grpc_channel_credentials> channel_creds);
 
   HttpRequest(URI uri, const grpc_slice& request_text,
               grpc_http_response* response, Timestamp deadline,

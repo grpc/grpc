@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <map>
 #include <string>
 #include <utility>
 
@@ -27,6 +28,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 #include <grpc/support/log.h>
 
@@ -64,6 +66,19 @@ class TestExperiments {
         enabled_[i] = (*g_check_constraints_cb)(experiment_metadata[i]);
       } else {
         enabled_[i] = experiment_metadata[i].default_value;
+      }
+    }
+    // For each comma-separated experiment in the global config:
+    for (auto experiment : absl::StrSplit(ConfigVars::Get().Experiments(), ',',
+                                          absl::SkipWhitespace())) {
+      // Enable unless prefixed with '-' (=> disable).
+      bool enable = !absl::ConsumePrefix(&experiment, "-");
+      // See if we can find the experiment in the list in this binary.
+      for (size_t i = 0; i < num_experiments; i++) {
+        if (experiment == experiment_metadata[i].name) {
+          enabled_[i] = enable;
+          break;
+        }
       }
     }
   }
@@ -152,11 +167,18 @@ bool IsTestExperimentEnabled(size_t experiment_id) {
 
 void PrintExperimentsList() {
   size_t max_experiment_length = 0;
+  // Populate visitation order into a std::map so that iteration results in a
+  // lexical ordering of experiment names.
+  // The lexical ordering makes it nice and easy to find the experiment you're
+  // looking for in the output spam that we generate.
+  std::map<absl::string_view, size_t> visitation_order;
   for (size_t i = 0; i < kNumExperiments; i++) {
     max_experiment_length =
         std::max(max_experiment_length, strlen(g_experiment_metadata[i].name));
+    visitation_order[g_experiment_metadata[i].name] = i;
   }
-  for (size_t i = 0; i < kNumExperiments; i++) {
+  for (auto name_index : visitation_order) {
+    const size_t i = name_index.second;
     gpr_log(
         GPR_DEBUG, "%s",
         absl::StrCat(

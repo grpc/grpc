@@ -45,7 +45,7 @@ namespace testing {
 namespace {
 constexpr int kResourceQuotaSizeBytes = 1024 * 1024;
 constexpr int kPayloadSizeBytes = 1024 * 1024;
-constexpr int kNumParallelChannels = 1024;
+constexpr int kNumParallelChannels = 10;
 }  // namespace
 
 class EchoClientUnaryReactor : public grpc::ClientUnaryReactor {
