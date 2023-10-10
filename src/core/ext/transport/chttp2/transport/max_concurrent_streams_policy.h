@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_MAX_CONCURRENT_STREAMS_POLICY_H
-#define GRPC_MAX_CONCURRENT_STREAMS_POLICY_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_MAX_CONCURRENT_STREAMS_POLICY_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_MAX_CONCURRENT_STREAMS_POLICY_H
 
 #include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <cstdint>
 #include <limits>
@@ -64,4 +65,4 @@ class Chttp2MaxConcurrentStreamsPolicy {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_MAX_CONCURRENT_STREAMS_POLICY_H
