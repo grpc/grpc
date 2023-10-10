@@ -106,3 +106,5 @@
   default: debug
 - name: work_serializer_clears_time_cache
   default: true
+- name: separate_ping_from_keepalive
+  default: false
