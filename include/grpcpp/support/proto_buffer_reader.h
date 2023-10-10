@@ -128,7 +128,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   //  doesn't have ReadCord method)
   // NOLINTNEXTLINE(modernize-use-override)
   virtual bool ReadCord(absl::Cord* cord, int count)
-#if PROTOBUF_VERSION >= 4022000
+#if GOOGLE_PROTOBUF_VERSION >= 4022000
       override
 #endif
   {
