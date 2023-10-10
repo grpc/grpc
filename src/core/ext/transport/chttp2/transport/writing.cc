@@ -252,6 +252,13 @@ class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
     grpc_core::global_stats().IncrementHttp2WritesBegun();
+    if (grpc_core::IsBandwidthLimitWritesEnabled()) {
+      auto bw_est = t_->flow_control.bdp_estimator()->EstimateBandwidth();
+      if (bw_est.has_value()) {
+        // Try not to exceed 1 seconds worth of writes
+        target_write_size_ = std::min<size_t>(target_write_size_, *bw_est);
+      }
+    }
   }
 
   void FlushSettings() {

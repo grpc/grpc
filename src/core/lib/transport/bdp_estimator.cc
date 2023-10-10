@@ -36,7 +36,7 @@ BdpEstimator::BdpEstimator(absl::string_view name)
       ping_start_time_(gpr_time_0(GPR_CLOCK_MONOTONIC)),
       inter_ping_delay_(Duration::Milliseconds(100)),  // start at 100ms
       stable_estimate_count_(0),
-      bw_est_(0),
+      bw_upper_est_(0),
       name_(name) {}
 
 Timestamp BdpEstimator::CompletePing() {
@@ -51,12 +51,17 @@ Timestamp BdpEstimator::CompletePing() {
             "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64
             " dt=%lf bw=%lfMbs bw_est=%lfMbs",
             std::string(name_).c_str(), accumulator_, estimate_, dt,
-            bw / 125000.0, bw_est_ / 125000.0);
+            bw / 125000.0, bw_upper_est_ / 125000.0);
   }
   GPR_ASSERT(ping_state_ == PingState::STARTED);
-  if (accumulator_ > 2 * estimate_ / 3 && bw > bw_est_) {
-    estimate_ = std::max(accumulator_, estimate_ * 2);
+  if (!bw_est_.has_value()) {
     bw_est_ = bw;
+  } else {
+    bw_est_ = 0.9 * bw_est_.value() + 0.1 * bw;
+  }
+  if (accumulator_ > 2 * estimate_ / 3 && bw > bw_upper_est_) {
+    estimate_ = std::max(accumulator_, estimate_ * 2);
+    bw_upper_est_ = bw;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_INFO, "bdp[%s]: estimate increased to %" PRId64,
               std::string(name_).c_str(), estimate_);

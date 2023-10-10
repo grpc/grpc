@@ -134,6 +134,9 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_bandwidth_limit_writes =
+    "Limit writes by observing bandwidth";
+const char* const additional_constraints_bandwidth_limit_writes = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -212,6 +215,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"bandwidth_limit_writes", description_bandwidth_limit_writes,
+     additional_constraints_bandwidth_limit_writes, false, true},
 };
 
 }  // namespace grpc_core
@@ -330,6 +335,9 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_bandwidth_limit_writes =
+    "Limit writes by observing bandwidth";
+const char* const additional_constraints_bandwidth_limit_writes = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -408,6 +416,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"bandwidth_limit_writes", description_bandwidth_limit_writes,
+     additional_constraints_bandwidth_limit_writes, false, true},
 };
 
 }  // namespace grpc_core
@@ -526,6 +536,9 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_bandwidth_limit_writes =
+    "Limit writes by observing bandwidth";
+const char* const additional_constraints_bandwidth_limit_writes = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -604,6 +617,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"bandwidth_limit_writes", description_bandwidth_limit_writes,
+     additional_constraints_bandwidth_limit_writes, false, true},
 };
 
 }  // namespace grpc_core

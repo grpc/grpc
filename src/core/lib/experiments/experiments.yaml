@@ -228,3 +228,9 @@
   expiry: 2024/01/01
   owner: ctiller@google.com
   test_tags: []
+- name: bandwidth_limit_writes
+  description:
+    Limit writes by observing bandwidth
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: []

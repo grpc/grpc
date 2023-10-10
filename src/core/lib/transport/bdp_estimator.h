@@ -43,7 +43,7 @@ class BdpEstimator {
   ~BdpEstimator() {}
 
   int64_t EstimateBdp() const { return estimate_; }
-  double EstimateBandwidth() const { return bw_est_; }
+  absl::optional<double> EstimateBandwidth() const { return bw_est_; }
 
   void AddIncomingBytes(int64_t num_bytes) { accumulator_ += num_bytes; }
 
@@ -88,7 +88,8 @@ class BdpEstimator {
   gpr_timespec ping_start_time_;
   Duration inter_ping_delay_;
   int stable_estimate_count_;
-  double bw_est_;
+  double bw_upper_est_;
+  absl::optional<double> bw_est_;
   absl::string_view name_;
 };
 
