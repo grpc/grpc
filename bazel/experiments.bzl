@@ -64,14 +64,12 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-<<<<<<< HEAD
+            "bad_client_test": [
+                "block_excessive_requests_before_settings_ack",
+            ],
             "cpp_end2end_test": [
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
-=======
-            "bad_client_test": [
-                "block_excessive_requests_before_settings_ack",
->>>>>>> 954b285dd203c95cd22f6db8797c62ae7a4dcc6c
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
@@ -145,14 +143,12 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-<<<<<<< HEAD
+            "bad_client_test": [
+                "block_excessive_requests_before_settings_ack",
+            ],
             "cpp_end2end_test": [
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
-=======
-            "bad_client_test": [
-                "block_excessive_requests_before_settings_ack",
->>>>>>> 954b285dd203c95cd22f6db8797c62ae7a4dcc6c
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
@@ -236,14 +232,12 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-<<<<<<< HEAD
+            "bad_client_test": [
+                "block_excessive_requests_before_settings_ack",
+            ],
             "cpp_end2end_test": [
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
-=======
-            "bad_client_test": [
-                "block_excessive_requests_before_settings_ack",
->>>>>>> 954b285dd203c95cd22f6db8797c62ae7a4dcc6c
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",

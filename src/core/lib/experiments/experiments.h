@@ -105,17 +105,14 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-<<<<<<< HEAD
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
-=======
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
 inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
 inline bool IsPingOnRstStreamEnabled() { return true; }
->>>>>>> 954b285dd203c95cd22f6db8797c62ae7a4dcc6c
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -166,17 +163,14 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-<<<<<<< HEAD
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
-=======
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
 inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
 inline bool IsPingOnRstStreamEnabled() { return true; }
->>>>>>> 954b285dd203c95cd22f6db8797c62ae7a4dcc6c
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -227,17 +221,14 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-<<<<<<< HEAD
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
-=======
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
 inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
 inline bool IsPingOnRstStreamEnabled() { return true; }
->>>>>>> 954b285dd203c95cd22f6db8797c62ae7a4dcc6c
 #endif
 
 #else
@@ -272,13 +263,10 @@ enum ExperimentIds {
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdWorkSerializerClearsTimeCache,
-<<<<<<< HEAD
   kExperimentIdChttp2BatchRequests,
   kExperimentIdChttp2OffloadOnRstStream,
-=======
   kExperimentIdBlockExcessiveRequestsBeforeSettingsAck,
   kExperimentIdPingOnRstStream,
->>>>>>> 954b285dd203c95cd22f6db8797c62ae7a4dcc6c
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -401,7 +389,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 inline bool IsWorkSerializerClearsTimeCacheEnabled() {
   return IsExperimentEnabled(kExperimentIdWorkSerializerClearsTimeCache);
 }
-<<<<<<< HEAD
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() {
   return IsExperimentEnabled(kExperimentIdChttp2BatchRequests);
@@ -409,7 +396,7 @@ inline bool IsChttp2BatchRequestsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() {
   return IsExperimentEnabled(kExperimentIdChttp2OffloadOnRstStream);
-=======
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
 inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() {
   return IsExperimentEnabled(
@@ -418,7 +405,6 @@ inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
 inline bool IsPingOnRstStreamEnabled() {
   return IsExperimentEnabled(kExperimentIdPingOnRstStream);
->>>>>>> 954b285dd203c95cd22f6db8797c62ae7a4dcc6c
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
