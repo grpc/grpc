@@ -3,7 +3,7 @@
 require_relative 'version.rb'
 Gem::Specification.new do |s|
   s.name = 'grpc-native-debug'
-  s.version = GRPC::Tools::VERSION
+  s.version = GRPC::NativeDebug::VERSION
   s.authors = ['grpc Authors']
   s.email = 'grpc-io@googlegroups.com'
   s.homepage = 'https://github.com/google/grpc/tree/master/src/ruby/nativedebug'
