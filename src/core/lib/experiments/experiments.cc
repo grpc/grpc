@@ -218,7 +218,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"block_excessive_requests_before_settings_ack",
      description_block_excessive_requests_before_settings_ack,
-     additional_constraints_block_excessive_requests_before_settings_ack, false,
+     additional_constraints_block_excessive_requests_before_settings_ack, true,
      true},
 };
 
@@ -422,7 +422,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"block_excessive_requests_before_settings_ack",
      description_block_excessive_requests_before_settings_ack,
-     additional_constraints_block_excessive_requests_before_settings_ack, false,
+     additional_constraints_block_excessive_requests_before_settings_ack, true,
      true},
 };
 
@@ -626,7 +626,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"block_excessive_requests_before_settings_ack",
      description_block_excessive_requests_before_settings_ack,
-     additional_constraints_block_excessive_requests_before_settings_ack, false,
+     additional_constraints_block_excessive_requests_before_settings_ack, true,
      true},
 };
 
