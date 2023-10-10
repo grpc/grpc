@@ -130,6 +130,9 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_tarpit =
+    "If set, tarpit invalid requests for some amount of time";
+const char* const additional_constraints_tarpit = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -205,6 +208,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, false, true},
 };
 
 }  // namespace grpc_core
@@ -319,6 +323,9 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_tarpit =
+    "If set, tarpit invalid requests for some amount of time";
+const char* const additional_constraints_tarpit = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -394,6 +401,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, false, true},
 };
 
 }  // namespace grpc_core
@@ -508,6 +516,9 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_tarpit =
+    "If set, tarpit invalid requests for some amount of time";
+const char* const additional_constraints_tarpit = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -583,6 +594,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, false, true},
 };
 
 }  // namespace grpc_core

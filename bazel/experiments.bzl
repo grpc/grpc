@@ -21,6 +21,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "tarpit",
+            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -91,6 +94,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "tarpit",
+            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -161,6 +167,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "tarpit",
+            ],
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
