@@ -134,6 +134,10 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -212,6 +216,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core
@@ -330,6 +336,10 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -408,6 +418,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core
@@ -526,6 +538,10 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -604,6 +620,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core

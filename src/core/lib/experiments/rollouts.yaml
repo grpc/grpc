@@ -106,3 +106,5 @@
   default: debug
 - name: work_serializer_clears_time_cache
   default: true
+- name: ping_on_rst_stream
+  default: true
