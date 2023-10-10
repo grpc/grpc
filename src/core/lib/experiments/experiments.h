@@ -105,6 +105,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
 inline bool IsTarpitEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
+inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
@@ -165,6 +167,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
 inline bool IsTarpitEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
+inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
@@ -225,6 +229,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
 inline bool IsTarpitEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
+inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
@@ -269,6 +275,7 @@ enum ExperimentIds {
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdTarpit,
+  kExperimentIdSettingsTimeout,
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdChttp2BatchRequests,
   kExperimentIdChttp2OffloadOnRstStream,
@@ -395,6 +402,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
 inline bool IsTarpitEnabled() {
   return IsExperimentEnabled(kExperimentIdTarpit);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
+inline bool IsSettingsTimeoutEnabled() {
+  return IsExperimentEnabled(kExperimentIdSettingsTimeout);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() {

@@ -108,6 +108,8 @@
   default: true
 - name: tarpit
   default: true
+- name: settings_timeout
+  default: true
 - name: chttp2_batch_requests
   default: true
 - name: chttp2_offload_on_rst_stream
