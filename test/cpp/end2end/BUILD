@@ -198,7 +198,7 @@ grpc_cc_binary(
 
 grpc_cc_test(
     name = "client_fork_test",
-    size = "small",
+    size = "enormous",
     srcs = ["client_fork_test.cc"],
     external_deps = [
         "absl/strings",
