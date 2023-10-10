@@ -27,20 +27,23 @@
 
 #include "absl/base/attributes.h"
 #include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/call_trace.h"
@@ -64,7 +67,7 @@ ServerMetadataHandle MalformedRequest(absl::string_view explanation) {
   auto* arena = GetContext<Arena>();
   auto hdl = arena->MakePooled<ServerMetadata>(arena);
   hdl->Set(GrpcStatusMetadata(), GRPC_STATUS_UNKNOWN);
-  hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(explanation));
+  hdl->Set(GrpcMessageMetadata(), Slice::FromStaticString(explanation));
   hdl->Set(GrpcTarPit(), Empty());
   return hdl;
 }

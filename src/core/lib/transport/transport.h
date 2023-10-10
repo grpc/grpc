@@ -495,6 +495,11 @@ struct grpc_transport_stream_op_batch_payload {
     // Error contract: the transport that gets this op must cause cancel_error
     //                 to be unref'ed after processing it
     grpc_error_handle cancel_error;
+    // If true the transport should endeavor to delay sending the cancellation
+    // notification for some small amount of time, in order to foil certain
+    // exploits.
+    // This should be set for cancellations that result from malformed client
+    // initial metadata.
     bool tarpit = false;
   } cancel_stream;
 
