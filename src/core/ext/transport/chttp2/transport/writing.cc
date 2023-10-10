@@ -255,8 +255,11 @@ class WriteContext {
     if (grpc_core::IsBandwidthLimitWritesEnabled()) {
       auto bw_est = t_->flow_control.bdp_estimator()->EstimateBandwidth();
       if (bw_est.has_value()) {
-        // Try not to exceed 1 seconds worth of writes
-        target_write_size_ = std::min<size_t>(target_write_size_, *bw_est);
+        // Try not to exceed 1 seconds worth of writes, unless that would have
+        // us writing less than 64kb.
+        if (target_write_size_ < *bw_est) {
+          target_write_size_ = std::max<size_t>(*bw_est, 65536);
+        }
       }
     }
   }
