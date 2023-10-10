@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <initializer_list>
+#include <limits>
 #include <memory>
 #include <new>
 #include <string>
@@ -42,6 +43,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -117,10 +119,15 @@
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
+<<<<<<< HEAD
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
+    =======
+#define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
+  "grpc.http2.ping_on_rst_stream_percent"
+    >>>>>>> 385583b28a00fa88004b2a167f1d8617c614d1fb
 
-static grpc_core::Duration g_default_client_keepalive_time =
-    grpc_core::Duration::Infinity();
+    static grpc_core::Duration g_default_client_keepalive_time =
+        grpc_core::Duration::Infinity();
 static grpc_core::Duration g_default_client_keepalive_timeout =
     grpc_core::Duration::Seconds(20);
 static grpc_core::Duration g_default_server_keepalive_time =
@@ -210,6 +217,12 @@ static void finish_keepalive_ping(
 static void finish_keepalive_ping_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t, grpc_error_handle error);
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t);
+
+static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
+                        bool immediate_disconnect_hint);
+
+// Timeout for getting an ack back on settings changes
+#define GRPC_ARG_SETTINGS_TIMEOUT "grpc.http2.settings_timeout"
 
 namespace {
 grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
@@ -412,6 +425,11 @@ static void read_channel_args(grpc_chttp2_transport* t,
                           : false);
   }
 
+  t->settings_timeout =
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
+          .value_or(std::max(t->keepalive_timeout * 2,
+                             grpc_core::Duration::Minutes(1)));
+
   // Only send the prefered rx frame size http2 setting if we are instructed
   // to auto size the buffers allocated at tcp level and we also can adjust
   // sending frame size.
@@ -419,6 +437,17 @@ static void read_channel_args(grpc_chttp2_transport* t,
       channel_args
           .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
           .value_or(false);
+
+  const auto max_requests_per_read =
+      channel_args.GetInt("grpc.http2.max_requests_per_read");
+  if (max_requests_per_read.has_value()) {
+    t->max_requests_per_read =
+        grpc_core::Clamp(*max_requests_per_read, 1, 10000);
+  } else if (grpc_core::IsChttp2BatchRequestsEnabled()) {
+    t->max_requests_per_read = 32;
+  } else {
+    t->max_requests_per_read = std::numeric_limits<size_t>::max();
+  }
 
   if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
@@ -533,6 +562,11 @@ static void read_channel_args(grpc_chttp2_transport* t,
         grpc_core::Clamp(INT_MAX, static_cast<int>(sp->min_value),
                          static_cast<int>(sp->max_value)));
   }
+
+  t->ping_on_rst_stream_percent = grpc_core::Clamp(
+      channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
+          .value_or(1),
+      0, 100);
 }
 
 static void init_keepalive_pings_if_enabled_locked(
@@ -618,6 +652,12 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 
   read_channel_args(this, channel_args, is_client);
 
+  // Initially allow *UP TO* MAX_CONCURRENT_STREAMS incoming before we start
+  // blanket cancelling them.
+  num_incoming_streams_before_settings_ack =
+      settings[GRPC_LOCAL_SETTINGS]
+              [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS];
+
   grpc_core::ExecCtx exec_ctx;
   combiner->Run(
       grpc_core::InitTransportClosure<init_keepalive_pings_if_enabled_locked>(
@@ -686,6 +726,12 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     t->closed_with_error = error;
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
+    if (t->settings_ack_watchdog !=
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
+      t->event_engine->Cancel(std::exchange(
+          t->settings_ack_watchdog,
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
+    }
     if (t->delayed_ping_timer_handle.has_value()) {
       if (t->event_engine->Cancel(*t->delayed_ping_timer_handle)) {
         t->delayed_ping_timer_handle.reset();
@@ -1708,9 +1754,36 @@ void grpc_chttp2_ping_timeout(
       grpc_core::NewClosure([t](grpc_error_handle) {
         gpr_log(GPR_INFO, "%s: Ping timeout. Closing transport.",
                 std::string(t->peer_string.as_string_view()).c_str());
+        send_goaway(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("ping_timeout"),
+                               grpc_core::StatusIntProperty::kHttp2Error,
+                               GRPC_HTTP2_ENHANCE_YOUR_CALM),
+            /*immediate_disconnect_hint=*/true);
         close_transport_locked(
             t.get(),
             grpc_error_set_int(GRPC_ERROR_CREATE("ping timeout"),
+                               grpc_core::StatusIntProperty::kRpcStatus,
+                               GRPC_STATUS_UNAVAILABLE));
+      }),
+      absl::OkStatus());
+}
+
+void grpc_chttp2_settings_timeout(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+  t->combiner->Run(
+      grpc_core::NewClosure([t](grpc_error_handle) {
+        gpr_log(GPR_INFO, "%s: Settings timeout. Closing transport.",
+                std::string(t->peer_string.as_string_view()).c_str());
+        send_goaway(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("settings_timeout"),
+                               grpc_core::StatusIntProperty::kHttp2Error,
+                               GRPC_HTTP2_SETTINGS_TIMEOUT),
+            /*immediate_disconnect_hint=*/true);
+        close_transport_locked(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("settings timeout"),
                                grpc_core::StatusIntProperty::kRpcStatus,
                                GRPC_STATUS_UNAVAILABLE));
       }),
@@ -2508,29 +2581,34 @@ static void read_action(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
                     error);
 }
 
-static void read_action_locked(
+static void read_action_parse_loop_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
-  // got an incoming read, cancel any pending keepalive timers
-  t->keepalive_incoming_data_wanted = false;
-  if (t->keepalive_ping_timeout_handle !=
-      grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
-    t->event_engine->Cancel(std::exchange(
-        t->keepalive_ping_timeout_handle,
-        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
-  }
-  grpc_error_handle err = error;
-  if (!err.ok()) {
-    err = grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING("Endpoint read failed", &err, 1),
-        grpc_core::StatusIntProperty::kOccurredDuringWrite, t->write_state);
-  }
-  std::swap(err, error);
   if (t->closed_with_error.ok()) {
-    size_t i = 0;
     grpc_error_handle errors[3] = {error, absl::OkStatus(), absl::OkStatus()};
-    for (; i < t->read_buffer.count && errors[1] == absl::OkStatus(); i++) {
-      errors[1] = grpc_chttp2_perform_read(t.get(), t->read_buffer.slices[i]);
+    size_t requests_started = 0;
+    for (size_t i = 0;
+         i < t->read_buffer.count && errors[1] == absl::OkStatus(); i++) {
+      auto r = grpc_chttp2_perform_read(t.get(), t->read_buffer.slices[i],
+                                        requests_started);
+      if (auto* partial_read_size = absl::get_if<size_t>(&r)) {
+        for (size_t j = 0; j < i; j++) {
+          grpc_core::CSliceUnref(grpc_slice_buffer_take_first(&t->read_buffer));
+        }
+        grpc_slice_buffer_sub_first(
+            &t->read_buffer, *partial_read_size,
+            GRPC_SLICE_LENGTH(t->read_buffer.slices[0]));
+        t->combiner->ForceOffload();
+        auto* tp = t.get();
+        tp->combiner->Run(
+            grpc_core::InitTransportClosure<read_action_parse_loop_locked>(
+                std::move(t), &tp->read_action_locked),
+            std::move(errors[0]));
+        // Early return: we queued to retry later.
+        return;
+      } else {
+        errors[1] = std::move(absl::get<absl::Status>(r));
+      }
     }
     if (errors[1] != absl::OkStatus()) {
       errors[2] = try_http_parsing(t.get());
@@ -2587,6 +2665,27 @@ static void read_action_locked(
       continue_read_action_locked(std::move(t));
     }
   }
+}
+
+static void read_action_locked(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_error_handle error) {
+  // got an incoming read, cancel any pending keepalive timers
+  t->keepalive_incoming_data_wanted = false;
+  if (t->keepalive_ping_timeout_handle !=
+      grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
+    t->event_engine->Cancel(std::exchange(
+        t->keepalive_ping_timeout_handle,
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
+  }
+  grpc_error_handle err = error;
+  if (!err.ok()) {
+    err = grpc_error_set_int(
+        GRPC_ERROR_CREATE_REFERENCING("Endpoint read failed", &err, 1),
+        grpc_core::StatusIntProperty::kOccurredDuringWrite, t->write_state);
+  }
+  std::swap(err, error);
+  read_action_parse_loop_locked(std::move(t), std::move(err));
 }
 
 static void continue_read_action_locked(
