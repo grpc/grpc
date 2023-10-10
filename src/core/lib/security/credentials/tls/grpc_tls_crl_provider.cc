@@ -77,6 +77,13 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
   return crl;
 }
 
+struct FileData {
+  char path[MAXPATHLEN];
+  off_t size;
+};
+
+#if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
+    defined(GPR_APPLE)
 void GetAbsoluteFilePath(const char* valid_file_dir,
                          const char* file_entry_name, char* path_buffer) {
   if (valid_file_dir != nullptr && file_entry_name != nullptr) {
@@ -88,6 +95,129 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
     }
   }
 }
+
+std::vector<FileData> GetFilesInDirectory(
+    const std::string& crl_directory_path) {
+  DIR* crl_directory;
+  if ((crl_directory = opendir(crl_directory_path.c_str())) == nullptr) {
+    // Try getting full absolute path of crl_directory_path
+  }
+  std::vector<FileData> crl_files;
+  struct dirent* directory_entry;
+  // bool all_files_successful = true;
+  while ((directory_entry = readdir(crl_directory)) != nullptr) {
+    const char* file_name = directory_entry->d_name;
+
+    FileData file_data;
+    GetAbsoluteFilePath(crl_directory_path.c_str(), file_name, file_data.path);
+    struct stat dir_entry_stat;
+    int stat_return = stat(file_data.path, &dir_entry_stat);
+    if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
+      // TODO(gtcooke94) More checks here
+      // no subdirectories.
+      if (stat_return == -1) {
+        // TODO(gtcooke94) does this constitute a failure to read? What cases
+        // will this fail on?
+        // all_files_successful = false;
+        gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
+      }
+      continue;
+    }
+    file_data.size = dir_entry_stat.st_size;
+    crl_files.push_back(file_data);
+  }
+  closedir(crl_directory);
+  return crl_files;
+}
+#elif defined(GPR_WINDOWS)
+
+// TODO(gtcooke94) How to best test this?
+#include <windows.h>
+
+void GetAbsoluteFilePath(const char* valid_file_dir,
+                         const char* file_entry_name, char* path_buffer) {
+  if (valid_file_dir != nullptr && file_entry_name != nullptr) {
+    int path_len = snprintf(path_buffer, MAXPATHLEN, "%s\%s", valid_file_dir,
+                            file_entry_name);
+    if (path_len == 0) {
+      gpr_log(GPR_ERROR, "failed to get absolute path for file: %s",
+              file_entry_name);
+    }
+  }
+}
+
+// Reference for reading directory in Windows:
+// https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
+// https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
+std::vector<FileData> GetFilesInDirectory(
+    const std::string& crl_directory_path) {
+  std::string search_path = crl_directory_path + "/*.*";
+  std::vector<FileData> crl_files;
+  windows::WIN32_FIND_DATA find_data;
+  HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
+  if (hFind != windows::INVALID_HANDLE_VALUE) {
+    do {
+      if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        FileData file_data;
+        GetAbsoluteFilePath(crl_directory_path.c_str(), find_data.cFileName,
+                            file_data.path);
+        crl_files.push_back(file_data);
+      }
+    } while (::FindNextFile(hFind, &find_data));
+    ::FindClose(hFind);
+  }
+  return crl_files;
+
+  vector<string> names;
+  string search_path = folder + "/*.*";
+  WIN32_FIND_DATA fd;
+  HANDLE hFind = ::FindFirstFile(search_path.c_str(), &fd);
+  if (hFind != INVALID_HANDLE_VALUE) {
+    do {
+      // read all (real) files in current folder
+      // , delete '!' read other 2 default folder . and ..
+      if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        names.push_back(fd.cFileName);
+      }
+    } while (::FindNextFile(hFind, &fd));
+    ::FindClose(hFind);
+  }
+  return names;
+
+  DIR* crl_directory;
+  if ((crl_directory = opendir(crl_directory_.c_str())) == nullptr) {
+    // Try getting full absolute path of crl_directory_
+  }
+  std::vector<FileData> crl_files;
+  struct dirent* directory_entry;
+  // bool all_files_successful = true;
+  while ((directory_entry = readdir(crl_directory)) != nullptr) {
+    const char* file_name = directory_entry->d_name;
+
+    FileData file_data;
+    GetAbsoluteFilePath(crl_directory_.c_str(), file_name, file_data.path);
+    struct stat dir_entry_stat;
+    int stat_return = stat(file_data.path, &dir_entry_stat);
+    if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
+      // TODO(gtcooke94) More checks here
+      // no subdirectories.
+      if (stat_return == -1) {
+        // TODO(gtcooke94) does this constitute a failure to read? What cases
+        // will this fail on?
+        // all_files_successful = false;
+        gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
+      }
+      continue;
+    }
+    file_data.size = dir_entry_stat.st_size;
+    crl_files.push_back(file_data);
+  }
+  closedir(crl_directory);
+  return crl_files;
+}
+
+#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE
+
 }  // namespace
 
 absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
@@ -212,37 +342,9 @@ void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
 absl::Status DirectoryReloaderCrlProviderImpl::Update() {
   // for () absl::MutexLock lock(&mu_);
   // TODO(gtcooke94) reading directory in C++ on windows vs. unix
-  DIR* crl_directory;
-  if ((crl_directory = opendir(crl_directory_.c_str())) == nullptr) {
-    // Try getting full absolute path of crl_directory_
-  }
-  struct FileData {
-    char path[MAXPATHLEN];
-    off_t size;
-  };
-  std::vector<FileData> crl_files;
-  struct dirent* directory_entry;
+  std::vector<FileData> crl_files = GetFilesInDirectory(crl_directory_);
   bool all_files_successful = true;
-  while ((directory_entry = readdir(crl_directory)) != nullptr) {
-    const char* file_name = directory_entry->d_name;
 
-    FileData file_data;
-    GetAbsoluteFilePath(crl_directory_.c_str(), file_name, file_data.path);
-    struct stat dir_entry_stat;
-    int stat_return = stat(file_data.path, &dir_entry_stat);
-    if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
-      // TODO(gtcooke94) More checks here
-      // no subdirectories.
-      if (stat_return == -1) {
-        all_files_successful = false;
-        gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
-      }
-      continue;
-    }
-    file_data.size = dir_entry_stat.st_size;
-    crl_files.push_back(file_data);
-  }
-  closedir(crl_directory);
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> new_crls;
   for (const FileData& file : crl_files) {
     // Build a map of new_crls to update to. If all files successful, do a full
