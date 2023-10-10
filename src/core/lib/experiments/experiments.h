@@ -105,6 +105,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
+inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
 inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
@@ -159,6 +163,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
+inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
 inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
@@ -213,6 +221,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
+inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
 inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
@@ -251,6 +263,8 @@ enum ExperimentIds {
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdWorkSerializerClearsTimeCache,
+  kExperimentIdChttp2BatchRequests,
+  kExperimentIdChttp2OffloadOnRstStream,
   kExperimentIdBlockExcessiveRequestsBeforeSettingsAck,
   kExperimentIdPingOnRstStream,
   kNumExperiments
@@ -374,6 +388,14 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() {
   return IsExperimentEnabled(kExperimentIdWorkSerializerClearsTimeCache);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() {
+  return IsExperimentEnabled(kExperimentIdChttp2BatchRequests);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
+inline bool IsChttp2OffloadOnRstStreamEnabled() {
+  return IsExperimentEnabled(kExperimentIdChttp2OffloadOnRstStream);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
 inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() {

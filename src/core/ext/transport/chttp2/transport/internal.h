@@ -29,8 +29,10 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -306,6 +308,8 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
 
   /// data to write next write
   grpc_slice_buffer qbuf;
+
+  size_t max_requests_per_read;
 
   /// Set to a grpc_error object if a goaway frame is received. By default, set
   /// to absl::OkStatus()
@@ -637,10 +641,14 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t);
 void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error);
 
-/// Process one slice of incoming data; return 1 if the connection is still
-/// viable after reading, or 0 if the connection should be torn down
-grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
-                                           const grpc_slice& slice);
+/// Process one slice of incoming data
+/// Returns:
+///  - a count of parsed bytes in the event of a partial read: the caller should
+///    offload responsibilities to another thread to continue parsing.
+///  - or a status in the case of a completed read
+absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
+    grpc_chttp2_transport* t, const grpc_slice& slice,
+    size_t& requests_started);
 
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s);
