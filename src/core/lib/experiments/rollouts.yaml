@@ -106,3 +106,7 @@
   default: debug
 - name: work_serializer_clears_time_cache
   default: true
+- name: rstpit
+  default: false
+- name: red_max_concurrent_streams
+  default: false
