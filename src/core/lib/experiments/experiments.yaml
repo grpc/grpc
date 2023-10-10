@@ -234,3 +234,28 @@
   expiry: 2024/01/01
   owner: ctiller@google.com
   test_tags: []
+- name: chttp2_batch_requests
+  description:
+    Cap the number of requests received by one transport read prior to offload.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: ["cpp_end2end_test", "flow_control_test"]
+- name: chttp2_offload_on_rst_stream
+  description:
+    Offload work on RST_STREAM.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: ["cpp_end2end_test", "flow_control_test"]
+- name: block_excessive_requests_before_settings_ack
+  description:
+    If set, block excessive requests before receiving SETTINGS ACK.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: [bad_client_test]
+- name: ping_on_rst_stream
+  description:
+    Send a ping on receiving some RST_STREAM frames on the server
+    (proportion configurable via grpc.http2.ping_on_rst_stream_percent channel arg).
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: []
