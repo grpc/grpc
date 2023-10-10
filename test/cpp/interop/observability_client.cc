@@ -213,6 +213,7 @@ int main(int argc, char** argv) {
   int ret = 0;
 
   if (absl::GetFlag(FLAGS_enable_observability)) {
+    // TODO(someone): remove deprecated usage
     // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
     auto status = grpc::experimental::GcpObservabilityInit();
     gpr_log(GPR_DEBUG, "GcpObservabilityInit() status_code: %d", status.code());
@@ -394,6 +395,7 @@ int main(int argc, char** argv) {
   }
 
   if (absl::GetFlag(FLAGS_enable_observability)) {
+    // TODO(someone): remove deprecated usage
     // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
     grpc::experimental::GcpObservabilityClose();
   }
