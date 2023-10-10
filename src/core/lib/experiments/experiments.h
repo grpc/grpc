@@ -105,7 +105,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsPingOnRstStreamEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
+inline bool IsPingOnRstStreamEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -156,7 +157,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsPingOnRstStreamEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
+inline bool IsPingOnRstStreamEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -207,7 +209,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsPingOnRstStreamEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
+inline bool IsPingOnRstStreamEnabled() { return true; }
 #endif
 
 #else
