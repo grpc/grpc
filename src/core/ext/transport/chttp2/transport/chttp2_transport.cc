@@ -117,6 +117,9 @@
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
+#define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
+  "grpc.http2.ping_on_rst_stream_percent"
+
 static grpc_core::Duration g_default_client_keepalive_time =
     grpc_core::Duration::Infinity();
 static grpc_core::Duration g_default_client_keepalive_timeout =
@@ -525,6 +528,11 @@ static void read_channel_args(grpc_chttp2_transport* t,
         grpc_core::Clamp(INT_MAX, static_cast<int>(sp->min_value),
                          static_cast<int>(sp->max_value)));
   }
+
+  t->ping_on_rst_stream_percent = grpc_core::Clamp(
+      channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
+          .value_or(1),
+      0, 100);
 }
 
 static void init_keepalive_pings_if_enabled_locked(

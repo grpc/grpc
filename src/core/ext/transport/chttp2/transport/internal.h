@@ -481,6 +481,10 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   // True if pings should be acked
   bool ack_pings = true;
 
+  // What percentage of rst_stream frames on the server should cause a ping
+  // frame to be generated.
+  uint8_t ping_on_rst_stream_percent;
+
   /// write execution state of the transport
   grpc_chttp2_write_state write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
 };
