@@ -228,3 +228,10 @@
   expiry: 2024/01/01
   owner: ctiller@google.com
   test_tags: []
+- name: ping_on_rst_stream
+  description:
+    Send a ping on receiving some RST_STREAM frames on the server
+    (proportion configurable via grpc.http2.ping_on_rst_stream_percent channel arg).
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: []
