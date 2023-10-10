@@ -159,7 +159,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
   // NOLINTBEGIN(modernize-use-override,
   // clang-diagnostic-inconsistent-missing-override)
   virtual bool WriteCord(const absl::Cord& cord)
-#if PROTOBUF_VERSION >= 4022000
+#if GOOGLE_PROTOBUF_VERSION >= 4022000
       override
 #endif
   // NOLINTEND(modernize-use-override,

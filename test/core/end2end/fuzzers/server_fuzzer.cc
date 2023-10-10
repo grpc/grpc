@@ -82,10 +82,11 @@ class ServerFuzzer final : public BasicFuzzer {
 
  private:
   Result CreateChannel(
-      const api_fuzzer::CreateChannel& create_channel) override {
+      const api_fuzzer::CreateChannel& /* create_channel */) override {
     return Result::kFailed;
   }
-  Result CreateServer(const api_fuzzer::CreateServer& create_server) override {
+  Result CreateServer(
+      const api_fuzzer::CreateServer& /* create_server */) override {
     return Result::kFailed;
   }
   void DestroyServer() override {

@@ -129,7 +129,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   // NOLINTBEGIN(modernize-use-override,
   // clang-diagnostic-inconsistent-missing-override)
   virtual bool ReadCord(absl::Cord* cord, int count)
-#if PROTOBUF_VERSION >= 4022000
+#if GOOGLE_PROTOBUF_VERSION >= 4022000
       override
 #endif
   // NOLINTEND(modernize-use-override,
