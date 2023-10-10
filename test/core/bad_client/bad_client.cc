@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -28,6 +29,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"

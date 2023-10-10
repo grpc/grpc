@@ -34,6 +34,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -54,6 +55,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
