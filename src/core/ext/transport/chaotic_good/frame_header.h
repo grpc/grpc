@@ -17,8 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
 #include <cstdint>
 
 #include "absl/status/statusor.h"
@@ -57,8 +55,6 @@ struct FrameHeader {
            message_padding == h.message_padding &&
            trailer_length == h.trailer_length;
   }
-  // Frame header size is fixed to 24 bytes.
-  static constexpr size_t frame_header_size_ = 24;
 };
 
 }  // namespace chaotic_good
