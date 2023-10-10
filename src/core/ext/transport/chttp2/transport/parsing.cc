@@ -646,10 +646,9 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       // setting, but are over the next value that will be advertised.
       // Apply some backpressure by randomly not accepting new streams.
       ++t->num_pending_induced_frames;
-      grpc_slice_buffer_add(
-          &t->qbuf,
-          grpc_chttp2_rst_stream_create(t->incoming_stream_id,
-                                        GRPC_HTTP2_ENHANCE_YOUR_CALM, nullptr));
+      grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_rst_stream_create(
+                                          t->incoming_stream_id,
+                                          GRPC_HTTP2_REFUSED_STREAM, nullptr));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT ||
