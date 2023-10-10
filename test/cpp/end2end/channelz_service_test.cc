@@ -225,7 +225,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
   }
 
   absl::string_view LocalIp() const {
-    return ipv6_only_ ? "127.0.0.1" : "[::1]";
+    return ipv6_only_ ? "[::1]" : "127.0.0.1";
   }
 
   // Sets the proxy up to have an arbitrary number of backends.

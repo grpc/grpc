@@ -112,6 +112,9 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_) override;
   bool Cancel(TaskHandle handle) ABSL_LOCKS_EXCLUDED(mu_) override;
 
+  TaskHandle RunAfterExactly(Duration when, absl::AnyInvocable<void()> closure)
+      ABSL_LOCKS_EXCLUDED(mu_);
+
   Time Now() ABSL_LOCKS_EXCLUDED(mu_);
 
   // Clear any global hooks installed by this event engine. Call prior to
@@ -123,6 +126,7 @@ class FuzzingEventEngine : public EventEngine {
   enum class RunType {
     kWrite,
     kRunAfter,
+    kExact,
   };
 
   // One pending task to be run.

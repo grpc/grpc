@@ -526,11 +526,19 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
                         std::move(closure));
 }
 
+EventEngine::TaskHandle FuzzingEventEngine::RunAfterExactly(
+    Duration when, absl::AnyInvocable<void()> closure) {
+  grpc_core::MutexLock lock(&*mu_);
+  // (b/258949216): Cap it to one year to avoid integer overflow errors.
+  return RunAfterLocked(RunType::kExact, std::min(when, kOneYear),
+                        std::move(closure));
+}
+
 EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
     RunType run_type, Duration when, absl::AnyInvocable<void()> closure) {
   const intptr_t id = next_task_id_;
   ++next_task_id_;
-  if (!task_delays_.empty()) {
+  if (run_type != RunType::kExact && !task_delays_.empty()) {
     when += grpc_core::Clamp(task_delays_.front(), Duration::zero(),
                              max_delay_[static_cast<int>(run_type)]);
     task_delays_.pop();
