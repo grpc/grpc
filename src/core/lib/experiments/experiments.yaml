@@ -222,6 +222,12 @@
   expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: settings_timeout
+  description:
+    If set, use the settings timeout to send settings frame to the peer.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: []
 - name: work_serializer_clears_time_cache
   description:
     Have the work serializer clear the time cache when it dispatches work.
