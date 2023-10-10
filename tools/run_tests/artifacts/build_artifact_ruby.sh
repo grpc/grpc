@@ -14,6 +14,8 @@
 # limitations under the License.
 set -ex
 
+base=$(pwd)
+
 # the platform for which we wanna build the native gem
 GEM_PLATFORM="$1"
 
@@ -55,6 +57,13 @@ if [ "$SYSTEM" == "Darwin" ] ; then
   rm $(ls pkg/*.gem | grep -v darwin)
 fi
 
+# Build native debug symbol packages (which depend on artifacts
+# emitted by the previous grpc gem builds).
+cd "${base}/src/ruby/nativedebug"
+gem build grpc-native-debug.gemspec
+cd -
+
 mkdir -p "${ARTIFACTS_OUT}"
 
 cp pkg/*.gem "${ARTIFACTS_OUT}"/
+cp "${base}/src/ruby/nativedebug/*.gem" "${ARTIFACTS_OUT}"/
