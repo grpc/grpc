@@ -19,9 +19,6 @@
 # - google-readability-casting
 #   https://github.com/llvm/llvm-project/issues/57959
 #
-# - readability-redundant-string-cstr
-#   This is good to have, but needs a large refactor across the codebase.
-#
 # Note on checks which will be enabled in future. These are good to have but
 # it's not activated yet due to the existing issues with the checks.
 # Once those issues are clear, these checks can be enabled later.
@@ -60,6 +57,7 @@
 # - readability-else-after-return
 # - readability-implicit-bool-conversion
 # - readability-redundant-declaration
+# - readability-redundant-string-cstr
 #
 Checks: '-*,
   abseil-*,

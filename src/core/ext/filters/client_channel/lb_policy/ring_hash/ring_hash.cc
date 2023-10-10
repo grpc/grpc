@@ -37,8 +37,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include "src/core/lib/iomgr/resolved_address.h"
-
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
@@ -64,6 +62,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
