@@ -272,7 +272,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         retryer = retryers.exponential_retryer_with_timeout(
             wait_min=_timedelta(seconds=10),
             wait_max=_timedelta(seconds=25),
-            timeout=_timedelta(seconds=30) if timeout is None else timeout,
+            timeout=_timedelta(minutes=5) if timeout is None else timeout,
         )
 
         logger.info(
@@ -416,7 +416,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
     ) -> _ChannelzChannel:
         """Checks if the channel is active.
 
-        We consider the channel is active if channel is in desired state () and calls_started is
+        We consider the channel is active if channel is in READY state and calls_started is
         greater than calls_failed.
         """
         if (
@@ -426,7 +426,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             return channel
 
         raise self.NotFound(
-            f"[{self.hostname}] Not found " f"an active XDS channel."
+            f"[{self.hostname}] Not found an active XDS channel."
         )
 
     class ChannelNotFound(framework.rpc.grpc.GrpcApp.NotFound):
