@@ -833,11 +833,11 @@ class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
         test_client = self.client_runner.run(
             server_target=server_target, **kwargs
         )
-        test_client.wait_for_active_ads_channel(
+        test_client.wait_for_active_xds_channel(
             xds_server_uri=self.xds_server_uri,
             timeout=wait_for_active_ads_timeout,
         )
-        test_client.wait_for_active_server_channel(
+        test_client.wait_for_server_channel_ready(
             timeout=wait_for_active_channel_timeout,
         )
         return test_client
@@ -961,14 +961,14 @@ class SecurityXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
         self,
         test_server: XdsTestServer,
         *,
-        wait_for_active_server_channel=True,
+        wait_for_server_channel_ready=True,
         **kwargs,
     ) -> XdsTestClient:
         test_client = self.client_runner.run(
             server_target=test_server.xds_uri, secure_mode=True, **kwargs
         )
-        if wait_for_active_server_channel:
-            test_client.wait_for_active_server_channel()
+        if wait_for_server_channel_ready:
+            test_client.wait_for_server_channel_ready()
         return test_client
 
     def assertTestAppSecurity(

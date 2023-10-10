@@ -129,7 +129,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             timeout_sec=timeout_sec
         )
 
-    def wait_for_active_server_channel(
+    def wait_for_server_channel_ready(
         self,
         *,
         timeout: Optional[_timedelta] = None,
@@ -155,7 +155,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                 )
             raise
 
-    def wait_for_active_ads_channel(
+    def wait_for_active_xds_channel(
         self,
         *,
         xds_server_uri: Optional[str] = None,
@@ -177,7 +177,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             if isinstance(retry_err.exception(), self.ChannelNotFound):
                 retry_err.add_note(
                     framework.errors.FrameworkError.note_blanket_error(
-                        "The client couldn't connect to traffic director."
+                        "The client couldn't connect to the xDS control plane."
                     )
                 )
             raise
@@ -317,7 +317,6 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                 )
             except self.NotFound as e:
                 # Otherwise, keep searching.
-                logger.info(e.message)
                 continue
 
             return channel
