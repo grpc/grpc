@@ -67,11 +67,17 @@ EXPERIMENTS = {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
             ],
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
+            ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
@@ -137,11 +143,17 @@ EXPERIMENTS = {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
             ],
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
+            ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
@@ -217,11 +229,17 @@ EXPERIMENTS = {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
             ],
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
+            ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
