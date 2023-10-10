@@ -45,6 +45,10 @@
 const char* kCrlPath = "test/core/tsi/test_creds/crl_data/crls/ab06acdd.r0";
 const absl::string_view kCrlIssuer =
     "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca";
+const char* kIntermediateCrlPath =
+    "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
+const absl::string_view kCrlIntermediateIssuer =
+    "/CN=intermediatecert.example.com";
 
 namespace grpc_core {
 namespace testing {
@@ -107,16 +111,16 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);
 
-  CertificateInfoImpl cert = CertificateInfoImpl(CRL_ISSUER);
+  CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
   auto crl = provider->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
-  ASSERT_EQ(crl->Issuer(), CRL_ISSUER);
+  ASSERT_EQ(crl->Issuer(), kCrlIssuer);
 
   CertificateInfoImpl intermediate =
-      CertificateInfoImpl(CRL_INTERMEDIATE_ISSUER);
+      CertificateInfoImpl(kCrlIntermediateIssuer);
   auto intermediate_crl = provider->GetCrl(intermediate);
   ASSERT_NE(intermediate_crl, nullptr);
-  ASSERT_EQ(intermediate_crl->Issuer(), CRL_INTERMEDIATE_ISSUER);
+  ASSERT_EQ(intermediate_crl->Issuer(), kCrlIntermediateIssuer);
 }
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
@@ -151,22 +155,22 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
                                       nullptr);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);
-  CertificateInfoImpl cert = CertificateInfoImpl(CRL_ISSUER);
+  CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
   auto should_be_no_crl = provider->GetCrl(cert);
   ASSERT_EQ(should_be_no_crl, nullptr);
 
   {
-    std::string raw_crl = GetFileContents(CRL_PATH);
+    std::string raw_crl = GetFileContents(kCrlPath);
     TmpFile tmp_crl(raw_crl, dir_name);
     sleep(2);
     auto crl = provider->GetCrl(cert);
     ASSERT_NE(crl, nullptr);
-    ASSERT_EQ(crl->Issuer(), CRL_ISSUER);
+    ASSERT_EQ(crl->Issuer(), kCrlIssuer);
   }
 
-  // After this provider shouldn't give a CRL, because everything should be read
-  // cleanly and there is no CRL because TmpFile went out of scope and was
-  // deleted
+  // After this provider shouldn't give a CRL, because everything should be
+  // read cleanly and there is no CRL because TmpFile went out of scope and
+  // was deleted
   sleep(2);
   auto crl_should_be_deleted = provider->GetCrl(cert);
   ASSERT_EQ(crl_should_be_deleted, nullptr);
@@ -178,7 +182,7 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   std::string dir_path = MakeTempDir();
   std::string dir_name = TempDirNameFromPath(dir_path);
 
-  std::string raw_crl = GetFileContents(CRL_PATH);
+  std::string raw_crl = GetFileContents(kCrlPath);
   TmpFile tmp_crl(raw_crl, dir_name);
 
   std::vector<absl::Status> reload_errors;
@@ -191,10 +195,10 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);
 
-  CertificateInfoImpl cert = CertificateInfoImpl(CRL_ISSUER);
+  CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
   auto crl = provider->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
-  ASSERT_EQ(crl->Issuer(), CRL_ISSUER);
+  ASSERT_EQ(crl->Issuer(), kCrlIssuer);
   ASSERT_EQ(reload_errors.size(), 0);
 
   // Rewrite the crl file with invalid data for a crl
@@ -203,7 +207,7 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   sleep(2);
   auto crl_post_update = provider->GetCrl(cert);
   ASSERT_NE(crl_post_update, nullptr);
-  ASSERT_EQ(crl_post_update->Issuer(), CRL_ISSUER);
+  ASSERT_EQ(crl_post_update->Issuer(), kCrlIssuer);
   ASSERT_EQ(reload_errors.size(), 1);
   // TODO(gtcooke94) check the actual content of the error
 }
