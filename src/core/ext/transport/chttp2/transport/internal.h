@@ -281,7 +281,7 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
     RemovedStreamHandle() = default;
     explicit RemovedStreamHandle(
         grpc_core::RefCountedPtr<grpc_chttp2_transport> t)
-        : transport_(t) {
+        : transport_(std::move(t)) {
       ++t->extra_streams;
     }
     ~RemovedStreamHandle() {
