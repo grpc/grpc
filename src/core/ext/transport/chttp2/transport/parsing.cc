@@ -35,6 +35,7 @@
 #include "absl/types/variant.h"
 
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -655,7 +656,25 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           t, std::string(t->peer_string.as_string_view()).c_str(),
           t->incoming_stream_id, t->last_new_stream_id));
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
+    } else if (grpc_core::IsBlockExcessiveRequestsBeforeSettingsAckEnabled() &&
+               t->num_incoming_streams_before_settings_ack == 0) {
+      GRPC_CHTTP2_IF_TRACING(gpr_log(
+          GPR_ERROR,
+          "transport:%p SERVER peer:%s rejecting grpc_chttp2_stream id=%d, "
+          "last grpc_chttp2_stream id=%d before settings have been "
+          "acknowledged",
+          t, std::string(t->peer_string.as_string_view()).c_str(),
+          t->incoming_stream_id, t->last_new_stream_id));
+      ++t->num_pending_induced_frames;
+      grpc_slice_buffer_add(
+          &t->qbuf,
+          grpc_chttp2_rst_stream_create(t->incoming_stream_id,
+                                        GRPC_HTTP2_ENHANCE_YOUR_CALM, nullptr));
+      grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
+      t->last_new_stream_id = t->incoming_stream_id;
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
     }
+    --t->num_incoming_streams_before_settings_ack;
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
         grpc_chttp2_parsing_accept_stream(t, t->incoming_stream_id);
@@ -667,9 +686,12 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_new_stream)) {
-      gpr_log(GPR_INFO, "[t:%p fd:%d peer:%s] Accepting new stream", t,
-              grpc_endpoint_get_fd(t->ep),
-              std::string(t->peer_string.as_string_view()).c_str());
+      gpr_log(GPR_INFO,
+              "[t:%p fd:%d peer:%s] Accepting new stream; "
+              "num_incoming_streams_before_settings_ack=%u",
+              t, grpc_endpoint_get_fd(t->ep),
+              std::string(t->peer_string.as_string_view()).c_str(),
+              t->num_incoming_streams_before_settings_ack);
     }
     if (t->channelz_socket != nullptr) {
       t->channelz_socket->RecordStreamStartedFromRemote();
@@ -815,6 +837,10 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
                        [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
         t, nullptr);
     t->sent_local_settings = false;
+    // This is more streams than can be started in http2, so setting this
+    // effictively removes the limit for the rest of the connection.
+    t->num_incoming_streams_before_settings_ack =
+        std::numeric_limits<uint32_t>::max();
   }
   t->parser = grpc_chttp2_transport::Parser{
       "settings", grpc_chttp2_settings_parser_parse, &t->simple.settings};

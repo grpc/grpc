@@ -119,6 +119,9 @@
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
+#define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
+  "grpc.http2.ping_on_rst_stream_percent"
+
 static grpc_core::Duration g_default_client_keepalive_time =
     grpc_core::Duration::Infinity();
 static grpc_core::Duration g_default_client_keepalive_timeout =
@@ -538,6 +541,11 @@ static void read_channel_args(grpc_chttp2_transport* t,
         grpc_core::Clamp(INT_MAX, static_cast<int>(sp->min_value),
                          static_cast<int>(sp->max_value)));
   }
+
+  t->ping_on_rst_stream_percent = grpc_core::Clamp(
+      channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
+          .value_or(1),
+      0, 100);
 }
 
 static void init_keepalive_pings_if_enabled_locked(
@@ -622,6 +630,12 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                        GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA, 1);
 
   read_channel_args(this, channel_args, is_client);
+
+  // Initially allow *UP TO* MAX_CONCURRENT_STREAMS incoming before we start
+  // blanket cancelling them.
+  num_incoming_streams_before_settings_ack =
+      settings[GRPC_LOCAL_SETTINGS]
+              [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS];
 
   grpc_core::ExecCtx exec_ctx;
   combiner->Run(
