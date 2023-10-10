@@ -180,6 +180,8 @@ static void offload(void* arg, grpc_error_handle /*error*/) {
 
 static void queue_offload(grpc_core::Combiner* lock) {
   move_next();
+  // Make the combiner look uncontended by storing a non-null value here, so
+  // that we don't immediately offload again.
   gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 1);
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
   if (grpc_core::IsCombinerOffloadToEventEngineEnabled()) {
@@ -292,7 +294,7 @@ bool grpc_combiner_continue_exec_ctx() {
 // Define a macro to ease readability of the following switch statement.
 #define OLD_STATE_WAS(orphaned, elem_count) \
   (((orphaned) ? 0 : STATE_UNORPHANED) |    \
-   ((elem_count)*STATE_ELEM_COUNT_LOW_BIT))
+   ((elem_count) * STATE_ELEM_COUNT_LOW_BIT))
   // Depending on what the previous state was, we need to perform different
   // actions.
   switch (old_state) {

@@ -106,3 +106,7 @@
   default: debug
 - name: work_serializer_clears_time_cache
   default: true
+- name: chttp2_batch_requests
+  default: true
+- name: chttp2_offload_on_rst_stream
+  default: true

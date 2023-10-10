@@ -220,9 +220,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
-     additional_constraints_chttp2_batch_requests, false, true},
+     additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
-     additional_constraints_chttp2_offload_on_rst_stream, false, true},
+     additional_constraints_chttp2_offload_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core
@@ -427,9 +427,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
-     additional_constraints_chttp2_batch_requests, false, true},
+     additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
-     additional_constraints_chttp2_offload_on_rst_stream, false, true},
+     additional_constraints_chttp2_offload_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core
@@ -634,9 +634,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
-     additional_constraints_chttp2_batch_requests, false, true},
+     additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
-     additional_constraints_chttp2_offload_on_rst_stream, false, true},
+     additional_constraints_chttp2_offload_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core

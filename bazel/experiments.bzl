@@ -28,8 +28,6 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
-                "chttp2_batch_requests",
-                "chttp2_offload_on_rst_stream",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -41,8 +39,6 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
-                "chttp2_batch_requests",
-                "chttp2_offload_on_rst_stream",
                 "multiping",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",
@@ -68,12 +64,18 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
@@ -102,8 +104,6 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
-                "chttp2_batch_requests",
-                "chttp2_offload_on_rst_stream",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -115,8 +115,6 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
-                "chttp2_batch_requests",
-                "chttp2_offload_on_rst_stream",
                 "multiping",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",
@@ -142,12 +140,18 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
@@ -180,8 +184,6 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
-                "chttp2_batch_requests",
-                "chttp2_offload_on_rst_stream",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -196,8 +198,6 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
-                "chttp2_batch_requests",
-                "chttp2_offload_on_rst_stream",
                 "multiping",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",
@@ -226,12 +226,18 @@ EXPERIMENTS = {
             ],
         },
         "on": {
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
