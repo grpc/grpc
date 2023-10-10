@@ -399,22 +399,20 @@ TEST(CredentialsTest, TlsChannelCredentialsWithCrlDirectory) {
 }
 
 TEST(CredentialsTest, TlsChannelCredentialsWithCrlProvider) {
-  auto result = experimental::StaticCrlProvider::Create({});
-  ASSERT_TRUE(result.ok());
-  auto crl_provider = std::move(*result);
+  auto provider = experimental::StaticCrlProvider::Create({});
+  ASSERT_TRUE(provider.ok());
   grpc::experimental::TlsChannelCredentialsOptions options;
-  options.set_crl_provider(crl_provider);
+  options.set_crl_provider(*provider);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
 TEST(CredentialsTest, TlsChannelCredentialsWithCrlProviderAndDirectory) {
-  auto result = experimental::StaticCrlProvider::Create({});
-  ASSERT_TRUE(result.ok());
-  auto crl_provider = std::move(*result);
+  auto provider = experimental::StaticCrlProvider::Create({});
+  ASSERT_TRUE(provider.ok());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_crl_directory(CRL_DIR_PATH);
-  options.set_crl_provider(crl_provider);
+  options.set_crl_provider(*provider);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   // TODO(gtcooke94) - behavior might change to make this return nullptr in the
   // future

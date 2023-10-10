@@ -49,42 +49,38 @@ using ::grpc_core::experimental::StaticCrlProvider;
 
 TEST(CrlProviderTest, CanParseCrl) {
   std::string crl_string = GetFileContents(kCrlPath);
-  absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
-  ASSERT_TRUE(result.ok());
-  ASSERT_NE(*result, nullptr);
-  auto* crl = static_cast<CrlImpl*>(result->get());
-  EXPECT_EQ(crl->Issuer(), kCrlIssuer);
+  absl::StatusOr<std::shared_ptr<Crl>> crl = Crl::Parse(crl_string);
+  ASSERT_TRUE(crl.ok());
+  ASSERT_NE(*crl, nullptr);
+  EXPECT_EQ((*crl)->Issuer(), kCrlIssuer);
 }
 
 TEST(CrlProviderTest, InvalidFile) {
   std::string crl_string = "INVALID CRL FILE";
-  absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
-  EXPECT_EQ(result.status(),
+  absl::StatusOr<std::shared_ptr<Crl>> provider = Crl::Parse(crl_string);
+  EXPECT_EQ(provider.status(),
             absl::InvalidArgumentError(
                 "Conversion from PEM string to X509 CRL failed."));
 }
 
 TEST(CrlProviderTest, StaticCrlProviderLookup) {
   std::vector<std::string> crl_strings = {GetFileContents(kCrlPath)};
-  absl::StatusOr<std::shared_ptr<CrlProvider>> result =
+  absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
       StaticCrlProvider::Create(crl_strings);
-  ASSERT_TRUE(result.ok()) << result.status();
-  std::shared_ptr<CrlProvider> provider = std::move(*result);
+  ASSERT_TRUE(provider.ok()) << provider.status();
   CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
-  auto crl = provider->GetCrl(cert);
+  auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
   EXPECT_EQ(crl->Issuer(), kCrlIssuer);
 }
 
 TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
   std::vector<std::string> crl_strings = {GetFileContents(kCrlPath)};
-  absl::StatusOr<std::shared_ptr<CrlProvider>> result =
+  absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
       StaticCrlProvider::Create(crl_strings);
-  ASSERT_TRUE(result.ok()) << result.status();
-  std::shared_ptr<CrlProvider> provider = std::move(*result);
-
+  ASSERT_TRUE(provider.ok()) << provider.status();
   CertificateInfoImpl bad_cert = CertificateInfoImpl("BAD CERT");
-  auto crl = provider->GetCrl(bad_cert);
+  auto crl = (*provider)->GetCrl(bad_cert);
   EXPECT_EQ(crl, nullptr);
 }
 
