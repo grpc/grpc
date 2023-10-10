@@ -26,19 +26,15 @@
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 
 TEST(FuzzingEventEngine, RunAfterAndTickForDuration) {
-  auto fuzzing_ee =
-      std::make_shared<FuzzingEventEngine>(FuzzingEventEngine::Options(),
-                                           fuzzing_event_engine::Actions());
+  auto fuzzing_ee = std::make_shared<FuzzingEventEngine>(
+      FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
   absl::Notification notification1;
   absl::Notification notification2;
-  fuzzing_ee->RunAfter(
-      grpc_core::Duration::Milliseconds(250),
-      [&]() {
-        notification1.Notify();
-        fuzzing_ee->RunAfter(
-            grpc_core::Duration::Milliseconds(250),
-            [&]() { notification2.Notify(); });
-      });
+  fuzzing_ee->RunAfter(grpc_core::Duration::Milliseconds(250), [&]() {
+    notification1.Notify();
+    fuzzing_ee->RunAfter(grpc_core::Duration::Milliseconds(250),
+                         [&]() { notification2.Notify(); });
+  });
   EXPECT_FALSE(notification1.HasBeenNotified());
   fuzzing_ee->TickForDuration(grpc_core::Duration::Milliseconds(250));
   EXPECT_TRUE(notification1.HasBeenNotified());

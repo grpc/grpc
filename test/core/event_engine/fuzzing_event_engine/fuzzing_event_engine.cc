@@ -188,9 +188,7 @@ void FuzzingEventEngine::TickUntil(Time t) {
   }
 }
 
-void FuzzingEventEngine::TickForDuration(Duration d) {
-  TickUntil(Now() + d);
-}
+void FuzzingEventEngine::TickForDuration(Duration d) { TickUntil(Now() + d); }
 
 void FuzzingEventEngine::SetRunAfterDurationCallback(
     absl::AnyInvocable<void(Duration)> callback) {

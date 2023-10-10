@@ -41,8 +41,8 @@ grpc_proto_library(
 )
 
 grpc_cc_test(
-    name = "fuzzing_event_engine_test",
-    srcs = ["fuzzing_event_engine_test.cc"],
+    name = "fuzzing_event_engine_unittest",
+    srcs = ["fuzzing_event_engine_unittest.cc"],
     external_deps = [
         "gtest",
     ],
