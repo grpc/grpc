@@ -22,7 +22,7 @@
 #include <string.h>
 
 #include <initializer_list>
-#include <limits>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -34,6 +34,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
