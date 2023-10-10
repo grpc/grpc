@@ -221,6 +221,26 @@ _DATA_MEMBERS = [
         test_value_2='"crl_directory_2"',
     ),
     DataMember(
+        name="crl_provider",
+        type="std::shared_ptr<grpc_core::experimental::CrlProvider>",
+        getter_comment=(
+            "Returns the CRL Provider"
+        ),
+        setter_move_semantics=True,
+        special_comparator=(
+            "(crl_provider_ == other.crl_provider_ ||"
+            " (crl_provider_ != nullptr && other.crl_provider_"
+            " != nullptr))"
+        ),
+        test_name="DifferentCrlProvider",
+        test_value_1=(
+            'experimental::StaticCrlProvider::Create({})",'
+        ),
+        test_value_2=(
+            'experimental::StaticCrlProvider::Create({})'
+        ),
+    ),
+    DataMember(
         name="send_client_ca_list",
         type="bool",
         default_initializer="false",
