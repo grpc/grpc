@@ -20,13 +20,16 @@
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CRL_PROVIDER_H
 
 #include <grpc/support/port_platform.h>
-#include <openssl/crypto.h>
-#include <grpc/grpc_crl_provider.h>
-#include <string>
+
 #include <memory>
+#include <string>
+
+#include <openssl/crypto.h>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/grpc_crl_provider.h>
 
 namespace grpc_core {
 namespace experimental {
@@ -37,8 +40,6 @@ class CrlImpl : public Crl {
   // Takes ownership of the X509_CRL pointer.
   CrlImpl(X509_CRL* crl, absl::string_view issuer)
       : crl_(crl), issuer_(issuer) {}
-  // Makes a copy of the X509_CRL
-  CrlImpl(const CrlImpl& other);
   ~CrlImpl() override;
   // Returns a string view representation of the issuer pulled from the CRL.
   absl::string_view Issuer() override { return issuer_; }

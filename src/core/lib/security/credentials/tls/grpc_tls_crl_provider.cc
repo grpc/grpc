@@ -36,6 +36,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/span.h"
 
+#include <grpc/support/log.h>
+
 namespace grpc_core {
 namespace experimental {
 
@@ -80,11 +82,6 @@ absl::StatusOr<std::unique_ptr<CrlImpl>> CrlImpl::Create(X509_CRL* crl) {
   return std::make_unique<CrlImpl>(crl, issuer);
 }
 
-// Copy constructor needs to duplicate the X509_CRL* since the destructor frees
-// it
-CrlImpl::CrlImpl(const CrlImpl& other)
-    : crl_(X509_CRL_dup(other.crl())), issuer_(other.issuer_) {}
-
 CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
 
 absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::Create(
@@ -98,6 +95,11 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::Create(
                        result.status().ToString()));
     }
     std::unique_ptr<Crl> crl = std::move(*result);
+    if (crl_map.contains(crl->Issuer())) {
+      gpr_log(GPR_ERROR,
+              "StaticCrlProvider received multiple CRLs with the same issuer. "
+              "The last one in the span will be used.");
+    }
     crl_map[crl->Issuer()] = std::move(crl);
   }
   StaticCrlProvider provider = StaticCrlProvider(std::move(crl_map));
