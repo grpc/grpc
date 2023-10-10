@@ -399,7 +399,7 @@ TEST(CredentialsTest, TlsChannelCredentialsWithCrlDirectory) {
 }
 
 TEST(CredentialsTest, TlsChannelCredentialsWithCrlProvider) {
-  auto provider = experimental::StaticCrlProvider::Create({});
+  auto provider = experimental::CreateStaticCrlProvider({});
   ASSERT_TRUE(provider.ok());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_crl_provider(*provider);
@@ -408,7 +408,7 @@ TEST(CredentialsTest, TlsChannelCredentialsWithCrlProvider) {
 }
 
 TEST(CredentialsTest, TlsChannelCredentialsWithCrlProviderAndDirectory) {
-  auto provider = experimental::StaticCrlProvider::Create({});
+  auto provider = experimental::CreateStaticCrlProvider({});
   ASSERT_TRUE(provider.ok());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_crl_directory(CRL_DIR_PATH);

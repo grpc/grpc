@@ -25,7 +25,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -67,19 +66,8 @@ class CrlProvider {
       const CertificateInfo& certificate_info) = 0;
 };
 
-class StaticCrlProvider : public CrlProvider {
- public:
-  // Each element of the input vector is expected to be the raw contents of a
-  // CRL file.
-  static absl::StatusOr<std::shared_ptr<CrlProvider>> Create(
-      absl::Span<const std::string> crls);
-  std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
-
- private:
-  explicit StaticCrlProvider(
-      absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls);
-  const absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls_;
-};
+absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
+    absl::Span<const std::string> crls);
 
 }  // namespace experimental
 }  // namespace grpc_core

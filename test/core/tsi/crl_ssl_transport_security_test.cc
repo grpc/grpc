@@ -320,7 +320,7 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderValidCerts) {
       grpc_core::testing::GetFileContents(kIntermediateCrlPath);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
-      provider = grpc_core::experimental::StaticCrlProvider::Create(
+      provider = grpc_core::experimental::CreateStaticCrlProvider(
           {root_crl, intermediate_crl});
   ASSERT_TRUE(provider.ok());
 
@@ -336,7 +336,7 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedServer) {
       grpc_core::testing::GetFileContents(kIntermediateCrlPath);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
-      provider = grpc_core::experimental::StaticCrlProvider::Create(
+      provider = grpc_core::experimental::CreateStaticCrlProvider(
           {root_crl, intermediate_crl});
   ASSERT_TRUE(provider.ok());
 
@@ -352,7 +352,7 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedClient) {
       grpc_core::testing::GetFileContents(kIntermediateCrlPath);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
-      provider = grpc_core::experimental::StaticCrlProvider::Create(
+      provider = grpc_core::experimental::CreateStaticCrlProvider(
           {root_crl, intermediate_crl});
   ASSERT_TRUE(provider.ok());
 
@@ -368,7 +368,7 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderRevokedIntermediateValidCrl) {
       grpc_core::testing::GetFileContents(kIntermediateCrlPath);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
-      provider = grpc_core::experimental::StaticCrlProvider::Create(
+      provider = grpc_core::experimental::CreateStaticCrlProvider(
           {root_crl, intermediate_crl});
   ASSERT_TRUE(provider.ok());
 
@@ -383,7 +383,7 @@ TEST_P(CrlSslTransportSecurityTest,
   std::string root_crl = grpc_core::testing::GetFileContents(kRootCrlPath);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
-      provider = grpc_core::experimental::StaticCrlProvider::Create({root_crl});
+      provider = grpc_core::experimental::CreateStaticCrlProvider({root_crl});
   ASSERT_TRUE(provider.ok());
 
   auto* fixture = new SslTsiTestFixture(
@@ -398,8 +398,8 @@ TEST_P(CrlSslTransportSecurityTest,
       grpc_core::testing::GetFileContents(kIntermediateCrlPath);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
-      provider = grpc_core::experimental::StaticCrlProvider::Create(
-          {intermediate_crl});
+      provider =
+          grpc_core::experimental::CreateStaticCrlProvider({intermediate_crl});
   ASSERT_TRUE(provider.ok());
 
   auto* fixture = new SslTsiTestFixture(

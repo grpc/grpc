@@ -234,10 +234,10 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentCrlProvider",
         test_value_1=(
-            'experimental::StaticCrlProvider::Create({})",'
+            '*experimental::CreateStaticCrlProvider({})'
         ),
         test_value_2=(
-            'experimental::StaticCrlProvider::Create({})'
+            '*experimental::CreateStaticCrlProvider({})'
         ),
     ),
     DataMember(

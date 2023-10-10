@@ -173,7 +173,7 @@ TEST_F(CrlProviderTest, CrlProviderValid) {
   std::string root_crl = grpc_core::testing::GetFileContents(kRootCrlPath);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
-      provider = grpc_core::experimental::StaticCrlProvider::Create({root_crl});
+      provider = grpc_core::experimental::CreateStaticCrlProvider({root_crl});
   ASSERT_TRUE(provider.ok());
 
   options.set_crl_provider(*provider);
@@ -215,7 +215,7 @@ TEST_F(CrlProviderTest, CrlProviderRevokedServer) {
   std::string root_crl = grpc_core::testing::GetFileContents(kRootCrlPath);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
-      provider = grpc_core::experimental::StaticCrlProvider::Create({root_crl});
+      provider = grpc_core::experimental::CreateStaticCrlProvider({root_crl});
   ASSERT_TRUE(provider.ok());
 
   options.set_crl_provider(*provider);

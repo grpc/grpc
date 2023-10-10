@@ -84,7 +84,7 @@ absl::StatusOr<std::unique_ptr<CrlImpl>> CrlImpl::Create(X509_CRL* crl) {
 
 CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
 
-absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::Create(
+absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
     absl::Span<const std::string> crls) {
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crl_map;
   for (const auto& raw_crl : crls) {

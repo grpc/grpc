@@ -26,6 +26,7 @@
 
 #include <openssl/crypto.h>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -33,6 +34,18 @@
 
 namespace grpc_core {
 namespace experimental {
+
+class StaticCrlProvider : public CrlProvider {
+ public:
+  // Each element of the input vector is expected to be the raw contents of a
+  // CRL file.
+  explicit StaticCrlProvider(
+      absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls);
+  std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
+
+ private:
+  const absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls_;
+};
 
 class CrlImpl : public Crl {
  public:

@@ -164,8 +164,8 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentCrlDirectory) {
 TEST(TlsCredentialsOptionsComparatorTest, DifferentCrlProvider) {
   auto* options_1 = grpc_tls_credentials_options_create();
   auto* options_2 = grpc_tls_credentials_options_create();
-  options_1->set_crl_provider(experimental::StaticCrlProvider::Create({})",);
-  options_2->set_crl_provider(experimental::StaticCrlProvider::Create({}));
+  options_1->set_crl_provider(*experimental::CreateStaticCrlProvider({}));
+  options_2->set_crl_provider(*experimental::CreateStaticCrlProvider({}));
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;

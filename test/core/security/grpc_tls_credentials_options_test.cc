@@ -564,7 +564,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest, CrlProvider) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = experimental::StaticCrlProvider::Create({});
+  auto provider = experimental::CreateStaticCrlProvider({});
   ASSERT_TRUE(provider.ok());
   options->set_crl_provider(std::move(*provider));
   auto credentials = MakeRefCounted<TlsCredentials>(options);
@@ -587,7 +587,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest, CrlProviderWithServerCredentials) {
   options->set_watch_identity_pair(true);
   options->set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
-  auto crl_provider = experimental::StaticCrlProvider::Create({});
+  auto crl_provider = experimental::CreateStaticCrlProvider({});
   ASSERT_TRUE(crl_provider.ok());
   options->set_crl_provider(std::move(*crl_provider));
 
