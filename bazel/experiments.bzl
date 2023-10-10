@@ -41,6 +41,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -111,6 +113,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -188,6 +192,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
