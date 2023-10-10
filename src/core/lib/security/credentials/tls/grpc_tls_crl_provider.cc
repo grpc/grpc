@@ -38,6 +38,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/types/span.h"
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -89,33 +90,6 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
 }
 }  // namespace
 
-CertificateInfoImpl::CertificateInfoImpl(absl::string_view issuer)
-    : issuer_(issuer) {}
-
-absl::string_view CertificateInfoImpl::Issuer() const { return issuer_; }
-
-CrlImpl::CrlImpl(X509_CRL* crl, const std::string& issuer)
-    : crl_(crl), issuer_(issuer) {}
-
-// Copy constructor needs to duplicate the X509_CRL* since the destructor frees
-// it
-CrlImpl::CrlImpl(const CrlImpl& other)
-    : crl_(X509_CRL_dup(other.crl())), issuer_(other.issuer_) {}
-
-absl::StatusOr<CrlImpl> CrlImpl::Create(X509_CRL* crl) {
-  std::string issuer = IssuerFromCrl(crl);
-  if (issuer.empty()) {
-    return absl::InvalidArgumentError("Issuer of crl cannot be empty");
-  }
-  return CrlImpl(crl, issuer);
-}
-
-CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
-
-X509_CRL* CrlImpl::crl() const { return crl_; }
-
-absl::string_view CrlImpl::Issuer() { return issuer_; }
-
 absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
   if (crl_string.size() >= INT_MAX) {
     return absl::InvalidArgumentError("crl_string cannot be of size INT_MAX");
@@ -133,19 +107,26 @@ absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to X509 CRL failed.");
   }
-  absl::StatusOr<CrlImpl> result = CrlImpl::Create(crl);
-  if (!result.ok()) {
-    return result.status();
-  }
-  return std::make_unique<CrlImpl>(std::move(*result));
+  return CrlImpl::Create(crl);
 }
 
-StaticCrlProvider::StaticCrlProvider(
-    const absl::flat_hash_map<std::string, std::shared_ptr<Crl>>& crls)
-    : crls_(crls) {}
+absl::StatusOr<std::unique_ptr<CrlImpl>> CrlImpl::Create(X509_CRL* crl) {
+  std::string issuer = IssuerFromCrl(crl);
+  if (issuer.empty()) {
+    return absl::InvalidArgumentError("Issuer of crl cannot be empty");
+  }
+  return std::make_unique<CrlImpl>(crl, issuer);
+}
 
-absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::FromVector(
-    const std::vector<std::string> crls) {
+// Copy constructor needs to duplicate the X509_CRL* since the destructor frees
+// it
+CrlImpl::CrlImpl(const CrlImpl& other)
+    : crl_(X509_CRL_dup(other.crl())), issuer_(other.issuer_) {}
+
+CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
+
+absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::Create(
+    absl::Span<const std::string> crls) {
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crl_map;
   for (const auto& raw_crl : crls) {
     absl::StatusOr<std::unique_ptr<Crl>> result = Crl::Parse(raw_crl);
@@ -157,9 +138,13 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> StaticCrlProvider::FromVector(
     std::unique_ptr<Crl> crl = std::move(*result);
     crl_map[crl->Issuer()] = std::move(crl);
   }
-  StaticCrlProvider provider = StaticCrlProvider(crl_map);
+  StaticCrlProvider provider = StaticCrlProvider(std::move(crl_map));
   return std::make_shared<StaticCrlProvider>(std::move(provider));
 }
+
+StaticCrlProvider::StaticCrlProvider(
+    absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls)
+    : crls_(crls) {}
 
 std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
     const CertificateInfo& certificate_info) {

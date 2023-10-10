@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
+#include <grpcpp/security/tls_crl_provider.h>
 #include <grpcpp/support/config.h>
 
 namespace grpc {
@@ -104,6 +105,8 @@ class TlsCredentialsOptions {
   // version > 1.1.
   void set_crl_directory(const std::string& path);
 
+  void set_crl_provider(std::shared_ptr<CrlProvider> crl_provider);
+
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.
   grpc_tls_credentials_options* c_credentials_options() const {
@@ -113,6 +116,7 @@ class TlsCredentialsOptions {
  private:
   std::shared_ptr<CertificateProviderInterface> certificate_provider_;
   std::shared_ptr<CertificateVerifier> certificate_verifier_;
+  std::shared_ptr<CrlProvider> crl_provider_;
   grpc_tls_credentials_options* c_credentials_options_ = nullptr;
 };
 

@@ -397,6 +397,32 @@ TEST(CredentialsTest, TlsChannelCredentialsWithCrlDirectory) {
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
+TEST(CredentialsTest, TlsChannelCredentialsWithCrlProvider) {
+  auto result = experimental::StaticCrlProvider::Create({});
+  ASSERT_TRUE(result.ok());
+  auto crl_provider = std::move(*result);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_crl_provider(crl_provider);
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  GPR_ASSERT(channel_credentials.get() != nullptr);
+}
+
+TEST(CredentialsTest, TlsChannelCredentialsWithCrlProviderAndDirectory) {
+  auto result = experimental::StaticCrlProvider::Create({});
+  ASSERT_TRUE(result.ok());
+  auto crl_provider = std::move(*result);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_crl_directory(CRL_DIR_PATH);
+  options.set_crl_provider(crl_provider);
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  // TODO(gtcooke94) - behavior might change to make this return nullptr in the
+  // future
+  GPR_ASSERT(channel_credentials.get() != nullptr);
+}
+
+// TODO(gtcooke94) - Add test to make sure Tls*CredentialsOptions does not leak
+// when not moved into TlsCredentials
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

@@ -16,16 +16,17 @@
 //
 //
 
-#include <memory>
-#include <string>
-#include <utility>
-
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/log.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/security/tls_credentials_options.h>
+#include <grpc/grpc_crl_provider.h>
+#include <grpcpp/security/tls_crl_provider.h>
+#include <memory>
+#include <string>
+#include <utility>
 
 namespace grpc {
 namespace experimental {
@@ -40,6 +41,15 @@ void TlsCredentialsOptions::set_certificate_provider(
   if (certificate_provider_ != nullptr) {
     grpc_tls_credentials_options_set_certificate_provider(
         c_credentials_options_, certificate_provider_->c_provider());
+  }
+}
+
+void TlsCredentialsOptions::set_crl_provider(
+    std::shared_ptr<CrlProvider> crl_provider) {
+  crl_provider_ = std::move(crl_provider);
+  if (crl_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_crl_provider(c_credentials_options_,
+                                                  crl_provider_);
   }
 }
 

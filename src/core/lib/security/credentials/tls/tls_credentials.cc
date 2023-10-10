@@ -16,21 +16,19 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 
-#include <string>
-#include <utility>
-
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
+#include <grpc/support/port_platform.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
+#include <string>
+#include <utility>
+#include <memory>
 
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
@@ -45,6 +43,14 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
   if (options == nullptr) {
     gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
     return false;
+  }
+  if (!options->crl_directory().empty() && options->crl_provider() != nullptr) {
+    gpr_log(GPR_ERROR,
+            "Setting crl_directory and crl_provider not supported. Using the "
+            "crl_provider.");
+    // TODO(gtcooke94) - Maybe return false here. Right now object lifetime of
+    // this options struct is leaky if false is returned and represents a more
+    // complex fix to handle in another PR.
   }
   // In the following conditions, there won't be any issues, but it might
   // indicate callers are doing something wrong with the API.
