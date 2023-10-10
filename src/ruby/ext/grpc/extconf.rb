@@ -188,7 +188,11 @@ output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 
-debug_symbols = File.join(ENV['GRPC_DEBUG_SYMBOL_DIR'], "grpc.ruby-#{RUBY_VERSION}.dbg")
+debug_symbols_dir = ENV['GRPC_DEBUG_SYMBOL_DIR']
+debug_symbols = nil
+if debug_symbols_dir
+  debug_symbols = File.join(debug_symbols_dir, "grpc.ruby-#{RUBY_VERSION}.dbg")
+end
 
 # See https://stackoverflow.com/questions/866721/how-to-generate-gcc-debug-symbol-outside-the-build-target
 # and https://stackoverflow.com/questions/30281766/need-to-load-debugging-symbols-for-shared-library-in-gdb
@@ -201,8 +205,10 @@ if grpc_config == 'opt'
     o.write(File.read('Makefile'))
     o.puts
     o.puts 'strip: $(DLLIB)'
-    o.puts "\t$(ECHO) Generating debug symbols #{debug_symbols}"
-    o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols}"
+    if debug_symbols
+      o.puts "\t$(ECHO) Generating debug symbols #{debug_symbols}"
+      o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols}"
+    end
     o.puts "\t$(ECHO) Stripping $(DLLIB)"
     o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
   end
