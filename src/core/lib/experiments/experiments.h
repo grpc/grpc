@@ -109,7 +109,8 @@ inline bool IsTarpitEnabled() { return true; }
 inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsSeparatePingFromKeepaliveEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
@@ -174,7 +175,8 @@ inline bool IsTarpitEnabled() { return true; }
 inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsSeparatePingFromKeepaliveEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
@@ -239,7 +241,8 @@ inline bool IsTarpitEnabled() { return true; }
 inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsSeparatePingFromKeepaliveEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
