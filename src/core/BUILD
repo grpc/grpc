@@ -5704,12 +5704,14 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/random:bit_gen_ref",
         "absl/random:distributions",
+        "absl/types:optional",
     ],
     deps = [
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -5732,6 +5734,20 @@ grpc_cc_library(
         "match",
         "time",
         "//:channel_arg_names",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "max_concurrent_streams_policy",
+    srcs = [
+        "ext/transport/chttp2/transport/max_concurrent_streams_policy.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/max_concurrent_streams_policy.h",
+    ],
+    deps = [
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -5948,7 +5964,6 @@ grpc_cc_library(
         "arena",
         "bitset",
         "chaotic_good_frame_header",
-        "context",
         "no_destruct",
         "slice",
         "slice_buffer",
@@ -6117,42 +6132,30 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/random",
-        "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
-        "absl/types:optional",
         "absl/types:variant",
     ],
     language = "c++",
     deps = [
         "activity",
-        "arena",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "event_engine_wakeup_scheduler",
         "for_each",
         "grpc_promise_endpoint",
-        "if",
-        "inter_activity_pipe",
+        "join",
         "loop",
         "match",
-        "memory_quota",
         "mpsc",
         "pipe",
-        "poll",
-        "resource_quota",
+        "seq",
         "slice",
         "slice_buffer",
-        "try_join",
-        "try_seq",
-        "//:exec_ctx",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
         "//:hpack_encoder",
-        "//:hpack_parser",
-        "//:ref_counted_ptr",
     ],
 )
 
