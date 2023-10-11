@@ -192,7 +192,7 @@ create_makefile(output)
 debug_symbols_dir = ENV['GRPC_RUBY_DEBUG_SYMBOLS_DIR']
 if debug_symbols_dir
   ruby_major_minor = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
-  debug_symbols = "grpc-#{GRPC::VERSION}-#{RUBY_PLATFORM}-ruby-version-#{ruby_major_minor}.dbg"
+  debug_symbols = "grpc-#{GRPC::VERSION}-#{RUBY_PLATFORM}-ruby-#{ruby_major_minor}.dbg"
 end
 
 # See https://stackoverflow.com/questions/866721/how-to-generate-gcc-debug-symbol-outside-the-build-target
