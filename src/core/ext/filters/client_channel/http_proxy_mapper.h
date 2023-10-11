@@ -35,14 +35,13 @@ namespace grpc_core {
 
 class HttpProxyMapper : public ProxyMapperInterface {
  public:
+  static constexpr char const* ADDRESS_PROXY_ENV_VAR = "grpc_address_proxy";
+
   absl::optional<std::string> MapName(absl::string_view server_uri,
                                       ChannelArgs* args) override;
 
   absl::optional<grpc_resolved_address> MapAddress(
-      const grpc_resolved_address& /*address*/,
-      ChannelArgs* /*args*/) override {
-    return absl::nullopt;
-  }
+      const grpc_resolved_address& address, ChannelArgs* args) override;
 };
 
 void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder);

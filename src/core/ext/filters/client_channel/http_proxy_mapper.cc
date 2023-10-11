@@ -142,7 +142,7 @@ absl::optional<std::string> GetHttpProxyServer(
   for (size_t i = 0; i < authority_nstrs; i++) {
     gpr_free(authority_strs[i]);
   }
-  gpr_free(authority_strs);
+  gpr_free(reinterpret_cast<void*>(authority_strs));
   return proxy_name;
 }
 
@@ -155,6 +155,24 @@ std::string MaybeAddDefaultPort(absl::string_view target) {
     return JoinHostPort(host, kDefaultSecurePortInt);
   }
   return std::string(target);
+}
+
+absl::optional<grpc_resolved_address> GetAddressProxyServer(ChannelArgs* args) {
+  auto address_value = args->GetOwnedString(GRPC_ARG_ADDRESS_PROXY);
+  if (!address_value.has_value()) {
+    address_value = GetEnv(HttpProxyMapper::ADDRESS_PROXY_ENV_VAR);
+  }
+  if (!address_value.has_value()) {
+    return absl::nullopt;
+  }
+  auto address = StringToSockaddr(*address_value);
+  if (!address.ok()) {
+    gpr_log(GPR_ERROR, "cannot parse value of '%s' env var. Error: %s",
+            HttpProxyMapper::ADDRESS_PROXY_ENV_VAR,
+            address.status().ToString().c_str());
+    return absl::nullopt;
+  }
+  return *address;
 }
 
 }  // namespace
@@ -227,6 +245,22 @@ absl::optional<std::string> HttpProxyMapper::MapName(
         absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred.get()));
   }
   return name_to_resolve;
+}
+
+absl::optional<grpc_resolved_address> HttpProxyMapper::MapAddress(
+    const grpc_resolved_address& address, ChannelArgs* args) {
+  auto proxy_address = GetAddressProxyServer(args);
+  if (!proxy_address.has_value()) {
+    return absl::nullopt;
+  }
+  auto address_string = grpc_sockaddr_to_string(&address, true);
+  if (!address_string.ok()) {
+    gpr_log(GPR_ERROR, "Unable to convert address to string: %s",
+            std::string(address_string.status().message()).c_str());
+  } else {
+    *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER, *address_string);
+  }
+  return proxy_address;
 }
 
 void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder) {

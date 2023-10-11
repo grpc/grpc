@@ -18,31 +18,29 @@
 
 #include "src/core/ext/filters/client_channel/http_proxy_mapper.h"
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/impl/channel_arg_names.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/transport/http_connect_handshaker.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
 
-class ScopedSetEnv {
- public:
-  explicit ScopedSetEnv(const char* value) { SetEnv("no_proxy", value); }
-  ScopedSetEnv(const ScopedSetEnv&) = delete;
-  ScopedSetEnv& operator=(const ScopedSetEnv&) = delete;
-  ~ScopedSetEnv() { UnsetEnv("no_proxy"); }
-};
+const char* NO_PROXY_VAR_NAME = "no_proxy";
 
 // Test that an empty no_proxy works as expected, i.e., proxy is used.
 TEST(NoProxyTest, EmptyList) {
-  ScopedSetEnv no_proxy("");
+  ScopedEnvVar no_proxy(NO_PROXY_VAR_NAME, "");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
             "proxy.google.com");
@@ -52,7 +50,7 @@ TEST(NoProxyTest, EmptyList) {
 
 // Test basic usage of 'no_proxy' to avoid using proxy for certain domain names.
 TEST(NoProxyTest, Basic) {
-  ScopedSetEnv no_proxy("google.com");
+  ScopedEnvVar no_proxy(NO_PROXY_VAR_NAME, "google.com");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
             absl::nullopt);
@@ -61,7 +59,7 @@ TEST(NoProxyTest, Basic) {
 
 // Test empty entries in 'no_proxy' list.
 TEST(NoProxyTest, EmptyEntries) {
-  ScopedSetEnv no_proxy("foo.com,,google.com,,");
+  ScopedEnvVar no_proxy(NO_PROXY_VAR_NAME, "foo.com,,google.com,,");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
             absl::nullopt);
@@ -70,7 +68,7 @@ TEST(NoProxyTest, EmptyEntries) {
 
 // Test entries with CIDR blocks (Class A) in 'no_proxy' list.
 TEST(NoProxyTest, CIDRClassAEntries) {
-  ScopedSetEnv no_proxy("foo.com,192.168.0.255/8");
+  ScopedEnvVar no_proxy(NO_PROXY_VAR_NAME, "foo.com,192.168.0.255/8");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.0.1.1:443", &args),
@@ -84,7 +82,7 @@ TEST(NoProxyTest, CIDRClassAEntries) {
 
 // Test entries with CIDR blocks (Class B) in 'no_proxy' list.
 TEST(NoProxyTest, CIDRClassBEntries) {
-  ScopedSetEnv no_proxy("foo.com,192.168.0.255/16");
+  ScopedEnvVar no_proxy(NO_PROXY_VAR_NAME, "foo.com,192.168.0.255/16");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.1.5:443", &args),
@@ -98,7 +96,7 @@ TEST(NoProxyTest, CIDRClassBEntries) {
 
 // Test entries with CIDR blocks (Class C) in 'no_proxy' list.
 TEST(NoProxyTest, CIDRClassCEntries) {
-  ScopedSetEnv no_proxy("foo.com,192.168.0.255/24");
+  ScopedEnvVar no_proxy(NO_PROXY_VAR_NAME, "foo.com,192.168.0.255/24");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.0.5:443", &args),
@@ -112,7 +110,7 @@ TEST(NoProxyTest, CIDRClassCEntries) {
 
 // Test entries with CIDR blocks (exact match) in 'no_proxy' list.
 TEST(NoProxyTest, CIDREntriesExactMatch) {
-  ScopedSetEnv no_proxy("foo.com,192.168.0.4/32");
+  ScopedEnvVar no_proxy(NO_PROXY_VAR_NAME, "foo.com,192.168.0.4/32");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.0.4:443", &args),
@@ -126,7 +124,7 @@ TEST(NoProxyTest, CIDREntriesExactMatch) {
 
 // Test entries with IPv6 CIDR blocks in 'no_proxy' list.
 TEST(NoProxyTest, CIDREntriesIPv6ExactMatch) {
-  ScopedSetEnv no_proxy("foo.com,2002:db8:a::45/64");
+  ScopedEnvVar no_proxy(NO_PROXY_VAR_NAME, "foo.com,2002:db8:a::45/64");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName(
@@ -143,7 +141,7 @@ TEST(NoProxyTest, CIDREntriesIPv6ExactMatch) {
 
 // Test entries with whitespaced CIDR blocks in 'no_proxy' list.
 TEST(NoProxyTest, WhitespacedEntries) {
-  ScopedSetEnv no_proxy("foo.com, 192.168.0.255/24");
+  ScopedEnvVar no_proxy(NO_PROXY_VAR_NAME, "foo.com, 192.168.0.255/24");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   // address matching no_proxy cidr block
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.0.5:443", &args),
@@ -157,11 +155,53 @@ TEST(NoProxyTest, WhitespacedEntries) {
 
 // Test entries with invalid CIDR blocks in 'no_proxy' list.
 TEST(NoProxyTest, InvalidCIDREntries) {
-  ScopedSetEnv no_proxy("foo.com, 192.168.0.255/33");
+  ScopedEnvVar no_proxy(NO_PROXY_VAR_NAME, "foo.com, 192.168.0.255/33");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   EXPECT_EQ(HttpProxyMapper().MapName("dns:///192.168.1.0:443", &args),
             "proxy.google.com");
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), "192.168.1.0:443");
+}
+
+TEST(ProxyForAddressTest, SetByEnvVar) {
+  ScopedEnvVar address_proxy(HttpProxyMapper::ADDRESS_PROXY_ENV_VAR,
+                             "192.168.0.100:2020");
+  auto args = ChannelArgs();
+  auto address = StringToSockaddr("192.168.0.1:3333");
+  ASSERT_EQ(address.status().code(), absl::StatusCode::kOk);
+  auto mapped = HttpProxyMapper().MapAddress(*address, &args);
+  ASSERT_TRUE(mapped.has_value());
+  EXPECT_EQ(grpc_sockaddr_to_string(&mapped.value(), true),
+            absl::StatusOr<std::string>("192.168.0.100:2020"));
+  EXPECT_EQ(
+      std::string(
+          args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER).value_or("<empty>")),
+      "192.168.0.1:3333");
+}
+
+TEST(ProxyForAddressTest, ChannelArgPreferred) {
+  ScopedEnvVar address_proxy(HttpProxyMapper::ADDRESS_PROXY_ENV_VAR,
+                             "192.168.0.100:2020");
+  auto args = ChannelArgs().Set(GRPC_ARG_ADDRESS_PROXY, "192.168.0.101:2020");
+  auto address = StringToSockaddr("192.168.0.1:3333");
+  ASSERT_EQ(address.status().code(), absl::StatusCode::kOk);
+  auto mapped = HttpProxyMapper().MapAddress(*address, &args);
+  ASSERT_TRUE(mapped.has_value());
+  auto address_string = grpc_sockaddr_to_string(&mapped.value(), true);
+  EXPECT_EQ(address_string.status().code(), absl::StatusCode::kOk);
+  EXPECT_EQ(*address_string, "192.168.0.101:2020");
+  EXPECT_EQ(
+      std::string(
+          args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER).value_or("<empty>")),
+      "192.168.0.1:3333");
+}
+
+TEST(ProxyForAddressTest, BadProxy) {
+  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "192.168.0.0.100:2020");
+  auto address = StringToSockaddr("192.168.0.1:3333");
+  ASSERT_EQ(address.status().code(), absl::StatusCode::kOk);
+  auto mapped = HttpProxyMapper().MapAddress(*address, &args);
+  EXPECT_FALSE(mapped.has_value());
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
 }
 }  // namespace
 }  // namespace testing
