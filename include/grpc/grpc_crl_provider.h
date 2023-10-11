@@ -76,7 +76,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
  *
  * Sets the crl provider in the options.
  */
-GRPCAPI void grpc_tls_credentials_options_set_crl_provider(
+void grpc_tls_credentials_options_set_crl_provider(
     grpc_tls_credentials_options* options,
     std::shared_ptr<grpc_core::experimental::CrlProvider> provider);
 
