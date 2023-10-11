@@ -40,7 +40,8 @@ class StaticCrlProvider : public CrlProvider {
   // Each element of the input vector is expected to be the raw contents of a
   // CRL file.
   explicit StaticCrlProvider(
-      absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls);
+      absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls)
+      : crls_(std::move(crls)) {}
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
 
  private:

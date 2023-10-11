@@ -104,10 +104,6 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
   return std::make_shared<StaticCrlProvider>(std::move(provider));
 }
 
-StaticCrlProvider::StaticCrlProvider(
-    absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls)
-    : crls_(std::move(crls)) {}
-
 std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
     const CertificateInfo& certificate_info) {
   auto it = crls_.find(certificate_info.Issuer());
