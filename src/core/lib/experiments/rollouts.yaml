@@ -110,3 +110,15 @@
   default: false
 - name: red_max_concurrent_streams
   default: false
+- name: tarpit
+  default: true
+- name: settings_timeout
+  default: true
+- name: chttp2_batch_requests
+  default: true
+- name: chttp2_offload_on_rst_stream
+  default: true
+- name: block_excessive_requests_before_settings_ack
+  default: true
+- name: ping_on_rst_stream
+  default: true
