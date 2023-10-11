@@ -645,7 +645,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           t->incoming_stream_id));
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
-                   t->stream_map.size() >=
+                   t->stream_map.size() + t->extra_streams >=
                    t->settings[GRPC_ACKED_SETTINGS]
                               [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])) {
       return GRPC_ERROR_CREATE("Max stream count exceeded");
@@ -880,7 +880,7 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
                          &unused)) {
     grpc_chttp2_parsing_become_skip_parser(t);
     if (s) {
-      grpc_chttp2_cancel_stream(t, s, err);
+      grpc_chttp2_cancel_stream(t, s, err, true);
     }
     return absl::OkStatus();
   }

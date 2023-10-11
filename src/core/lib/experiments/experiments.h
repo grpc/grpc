@@ -91,6 +91,8 @@ inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
@@ -137,6 +139,8 @@ inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
@@ -183,6 +187,8 @@ inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
@@ -224,6 +230,7 @@ enum ExperimentIds {
   kExperimentIdCombinerOffloadToEventEngine,
   kExperimentIdMultiping,
   kExperimentIdRegisteredMethodLookupInTransport,
+  kExperimentIdTarpit,
   kExperimentIdSettingsTimeout,
   kExperimentIdChttp2BatchRequests,
   kExperimentIdChttp2OffloadOnRstStream,
@@ -338,6 +345,10 @@ inline bool IsMultipingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() {
   return IsExperimentEnabled(kExperimentIdRegisteredMethodLookupInTransport);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() {
+  return IsExperimentEnabled(kExperimentIdTarpit);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() {

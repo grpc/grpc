@@ -25,6 +25,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <utility>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/meta/type_traits.h"
@@ -274,6 +275,31 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
 
   /// maps stream id to grpc_chttp2_stream objects
   absl::flat_hash_map<uint32_t, grpc_chttp2_stream*> stream_map;
+  // Count of streams that should be counted against max concurrent streams but
+  // are not in stream_map (due to tarpitting).
+  size_t extra_streams = 0;
+
+  class RemovedStreamHandle {
+   public:
+    RemovedStreamHandle() = default;
+    explicit RemovedStreamHandle(
+        grpc_core::RefCountedPtr<grpc_chttp2_transport> t)
+        : transport_(std::move(t)) {
+      ++transport_->extra_streams;
+    }
+    ~RemovedStreamHandle() {
+      if (transport_ != nullptr) {
+        --transport_->extra_streams;
+      }
+    }
+    RemovedStreamHandle(const RemovedStreamHandle&) = delete;
+    RemovedStreamHandle& operator=(const RemovedStreamHandle&) = delete;
+    RemovedStreamHandle(RemovedStreamHandle&&) = default;
+    RemovedStreamHandle& operator=(RemovedStreamHandle&&) = default;
+
+   private:
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> transport_;
+  };
 
   grpc_closure write_action_begin_locked;
   grpc_closure write_action;
@@ -377,6 +403,10 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   bool is_first_frame = true;
   uint32_t expect_continuation_stream_id = 0;
   uint32_t incoming_frame_size = 0;
+
+  int min_tarpit_duration_ms;
+  int max_tarpit_duration_ms;
+  bool allow_tarpit;
 
   grpc_chttp2_stream* incoming_stream = nullptr;
   // active parser
@@ -755,9 +785,9 @@ void grpc_chttp2_settings_timeout(
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t,
                              grpc_chttp2_stream* stream,
                              grpc_error_handle error);
-void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
-                                    grpc_chttp2_stream* s, int close_reads,
-                                    int close_writes, grpc_error_handle error);
+grpc_chttp2_transport::RemovedStreamHandle grpc_chttp2_mark_stream_closed(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s, int close_reads,
+    int close_writes, grpc_error_handle error);
 void grpc_chttp2_start_writing(grpc_chttp2_transport* t);
 
 #ifndef NDEBUG
@@ -793,7 +823,7 @@ void grpc_chttp2_mark_stream_writable(grpc_chttp2_transport* t,
                                       grpc_chttp2_stream* s);
 
 void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                               grpc_error_handle due_to_error);
+                               grpc_error_handle due_to_error, bool tarpit);
 
 void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
                                                       grpc_chttp2_stream* s);
