@@ -53,6 +53,9 @@ $ rm *.rsa
 $ rm *.csr
 $ rm ca.srl
 
+Name the ca.pem file something different so it doesn't have issues when being flattened by the CI
+$ cp ca.pem ca_crls.pem
+
 demoCA folder:
 ----------------------------------------------------------------------------
 

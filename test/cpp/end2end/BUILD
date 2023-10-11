@@ -1066,7 +1066,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:client.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
-        "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:ca_crls.pem",
         "//test/core/tsi/test_creds/crl_data:intermediate_ca.key",
         "//test/core/tsi/test_creds/crl_data:intermediate_ca.pem",
         "//test/core/tsi/test_creds/crl_data:leaf_and_intermediate_chain.pem",
