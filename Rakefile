@@ -4,6 +4,7 @@ require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 require 'bundler/gem_tasks'
 require 'fileutils'
+require 'tmpdir'
 
 require_relative 'build_config.rb'
 
