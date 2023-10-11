@@ -533,6 +533,7 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:orphanable",
         "//src/core:default_event_engine",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:notification",

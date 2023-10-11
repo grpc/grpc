@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <string>
+#include <memory>
 
 #include "gtest/gtest.h"
 

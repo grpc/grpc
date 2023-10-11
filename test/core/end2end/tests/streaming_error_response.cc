@@ -19,7 +19,7 @@
 /// \file Verify that status ordering rules are obeyed.
 /// \ref doc/status_ordering.md
 
-#include <string>
+#include <memory>
 
 #include "gtest/gtest.h"
 

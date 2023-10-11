@@ -16,6 +16,7 @@
 //
 //
 
+#include <memory>
 #include <new>
 #include <string>
 

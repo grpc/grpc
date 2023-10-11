@@ -18,7 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
-#include <string>
+#include <memory>
 
 #include "gtest/gtest.h"
 

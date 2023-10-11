@@ -14,7 +14,7 @@
 
 #include "src/core/lib/resource_quota/thread_quota.h"
 
-#include <string>
+#include <memory>
 
 #include "gtest/gtest.h"
 

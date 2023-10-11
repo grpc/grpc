@@ -13,7 +13,6 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
 #include <stdlib.h>
 
 #include <grpc/event_engine/slice.h>
@@ -32,9 +31,7 @@
 //    //test/core/event_engine/test_suite/tools:my_event_engine_echo_client
 
 #include <chrono>
-#include <initializer_list>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <utility>
 
@@ -44,7 +41,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>

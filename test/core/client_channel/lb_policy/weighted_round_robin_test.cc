@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>

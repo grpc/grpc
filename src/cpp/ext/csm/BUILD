@@ -42,7 +42,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/meta:type_traits",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -63,7 +62,6 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:env",
         "//src/core:error",
-        "//src/core:json",
         "//src/core:json_args",
         "//src/core:json_object_loader",
         "//src/core:json_reader",

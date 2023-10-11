@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <memory>
 #include <new>
-#include <string>
 #include <utility>
 
 #include "absl/status/statusor.h"

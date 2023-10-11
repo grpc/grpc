@@ -16,7 +16,7 @@
 
 #include <time.h>
 
-#include <string>
+#include <memory>
 
 #include "gtest/gtest.h"
 

@@ -95,7 +95,7 @@ DOCKERIMAGE_CURRENT_VERSIONS = {
     "tools/dockerfile/test/csharp_debian11_arm64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/csharp_debian11_arm64@sha256:4d4bc5f15e03f3d3d8fd889670ecde2c66a2e4d2dd9db80733c05c1d90c8a248",
     "tools/dockerfile/test/csharp_debian11_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/csharp_debian11_x64@sha256:b2e5c47d986312ea0850e2f2e696b45d23ee0aabceea161d31e28559e19ec4a5",
     "tools/dockerfile/test/cxx_alpine_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_alpine_x64@sha256:f2019edf9f2afd5042567f11afb1aa78a789fc9acdcce5ee0c14cc11f6830ed7",
-    "tools/dockerfile/test/cxx_clang_15_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_clang_15_x64@sha256:c41629b44bfcdbc644ac90c3de4ca9f4d5a4fbc7daea8be2c5d6e4942acf6743",
+    "tools/dockerfile/test/cxx_clang_16_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_clang_16_x64@sha256:7559d2743aa03e3247e6c80b412aec06b56a1a3aaa45ac174c07ea94afe62e1d",
     "tools/dockerfile/test/cxx_clang_6_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_clang_6_x64@sha256:8e9ddd6c0f3d04c1bf9370cc59712a4e5883f68f307643a9b6dcb2dbd678b579",
     "tools/dockerfile/test/cxx_debian11_openssl102_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_debian11_openssl102_x64@sha256:3bae65e56c756c491dfc4b02cff554ae3c4edd9d366d0d05d27e429b59a01b0f",
     "tools/dockerfile/test/cxx_debian11_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_debian11_x64@sha256:ecd1fbc04423ac9c667a3fbd985a9530e9a4387db372e22229a4d9d77034f4c3",
@@ -112,5 +112,5 @@ DOCKERIMAGE_CURRENT_VERSIONS = {
     "tools/dockerfile/test/rbe_ubuntu2204.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_ubuntu2204@sha256:a193b5d481ddd24cffbbe31d81c95f97e5a9f417fdd6ba8b7be972c28dfaa9e7",
     "tools/dockerfile/test/ruby_debian11_arm64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/ruby_debian11_arm64@sha256:7e77cf17e2e8657f4cc23ac9f93630bf13213fff961799e0f16dae17cd45cf6d",
     "tools/dockerfile/test/ruby_debian11_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/ruby_debian11_x64@sha256:e4cb502caccf2db733268ce2ddc951fda8a9df2f7f53d6b74523c33d40c83006",
-    "tools/dockerfile/test/sanity.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/sanity@sha256:697961d9bc7e8b61598b707fade0b1a5d2e4e8c12e7ed66b07ab35eb619f0722",
+    "tools/dockerfile/test/sanity.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/sanity@sha256:49745399fdef994b033fd8a5cad293d822ac25289770b7c342e34e781ff41590",
 }

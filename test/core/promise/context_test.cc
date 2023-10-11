@@ -14,7 +14,7 @@
 
 #include "src/core/lib/promise/context.h"
 
-#include <string>
+#include <memory>
 
 #include "gtest/gtest.h"
 

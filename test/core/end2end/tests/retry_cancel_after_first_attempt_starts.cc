@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <memory>
+
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>

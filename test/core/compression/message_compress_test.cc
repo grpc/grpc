@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <string>
+#include <memory>
 
 #include "gtest/gtest.h"
 

@@ -18,7 +18,7 @@
 
 #include <string.h>
 
-#include <string>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"

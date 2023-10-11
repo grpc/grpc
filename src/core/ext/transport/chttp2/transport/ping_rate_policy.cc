@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <ostream>
-#include <utility>
 
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"

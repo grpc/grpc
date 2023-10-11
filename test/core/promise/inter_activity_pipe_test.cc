@@ -14,7 +14,7 @@
 
 #include "src/core/lib/promise/inter_activity_pipe.h"
 
-#include <string>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"

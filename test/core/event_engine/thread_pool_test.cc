@@ -14,7 +14,6 @@
 
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 
-#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cmath>

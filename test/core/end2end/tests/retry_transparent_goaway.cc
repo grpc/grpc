@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+#include <memory>
 #include <new>
 #include <string>
 

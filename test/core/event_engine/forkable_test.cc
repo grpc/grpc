@@ -23,7 +23,7 @@
 #include <unistd.h>
 #endif  // GPR_POSIX_SUBPROCESS
 
-#include <string>
+#include <memory>
 
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"

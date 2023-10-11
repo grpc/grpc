@@ -23,7 +23,6 @@
 
 #include <atomic>
 #include <cstdint>
-#include <initializer_list>
 #include <map>
 #include <string>
 #include <utility>
