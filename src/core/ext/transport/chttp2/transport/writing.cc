@@ -412,17 +412,15 @@ class DataSendContext {
   }
 
   uint32_t max_outgoing() const {
-    uint32_t limit = grpc_core::Clamp<uint32_t>(
-        std::min<int64_t>({t_->settings[GRPC_PEER_SETTINGS]
-                                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-                           stream_remote_window(),
-                           t_->flow_control.remote_window()}),
+    return grpc_core::Clamp<uint32_t>(
+        std::min<int64_t>(
+            {t_->settings[GRPC_PEER_SETTINGS]
+                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+             stream_remote_window(), t_->flow_control.remote_window(),
+             grpc_core::IsWriteSizeCapEnabled()
+                 ? static_cast<int64_t>(write_context_->target_write_size())
+                 : std::numeric_limits<uint32_t>::max()}),
         0, std::numeric_limits<uint32_t>::max());
-    if (grpc_core::IsWriteSizeCapEnabled()) {
-      limit =
-          std::min<uint32_t>(limit, 2 * write_context_->target_write_size());
-    }
-    return limit;
   }
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }
