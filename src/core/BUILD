@@ -3732,7 +3732,6 @@ grpc_cc_library(
         "closure",
         "error",
         "exec_ctx_wakeup_scheduler",
-        "experiments",
         "http2_errors",
         "idle_filter_state",
         "loop",
@@ -3985,6 +3984,7 @@ grpc_cc_library(
         "map",
         "pipe",
         "poll",
+        "ref_counted_string",
         "service_config_parser",
         "slice",
         "time",
@@ -4907,6 +4907,7 @@ grpc_cc_library(
         "lb_policy_registry",
         "pollset_set",
         "ref_counted",
+        "resolved_address",
         "unique_type_name",
         "validation_errors",
         "//:channel_arg_names",
@@ -5185,6 +5186,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
+        "absl/types:span",
         "absl/types:variant",
     ],
     language = "c++",
@@ -5205,6 +5207,7 @@ grpc_cc_library(
         "lb_policy_registry",
         "match",
         "pollset_set",
+        "ref_counted_string",
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
@@ -5700,12 +5703,14 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/random:bit_gen_ref",
         "absl/random:distributions",
+        "absl/types:optional",
     ],
     deps = [
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -5728,6 +5733,20 @@ grpc_cc_library(
         "match",
         "time",
         "//:channel_arg_names",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "max_concurrent_streams_policy",
+    srcs = [
+        "ext/transport/chttp2/transport/max_concurrent_streams_policy.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/max_concurrent_streams_policy.h",
+    ],
+    deps = [
+        "//:gpr",
         "//:gpr_platform",
     ],
 )

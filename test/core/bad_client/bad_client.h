@@ -47,6 +47,7 @@ struct grpc_bad_client_arg {
 // Flags for grpc_run_bad_client_test
 #define GRPC_BAD_CLIENT_DISCONNECT 1
 #define GRPC_BAD_CLIENT_LARGE_REQUEST 2
+#define GRPC_BAD_CLIENT_MAX_CONCURRENT_REQUESTS_OF_ONE 4
 
 // Test runner.
 //
