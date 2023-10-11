@@ -526,4 +526,8 @@ void AwsExternalAccountCredentials::FinishRetrieveSubjectToken(
   }
 }
 
+std::string AwsExternalAccountCredentials::CredentialSourceType(){
+  return "aws";
+}
+
 }  // namespace grpc_core

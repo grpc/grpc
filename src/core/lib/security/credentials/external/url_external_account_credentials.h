@@ -48,6 +48,8 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) override;
 
+  std::string CredentialSourceType() override;
+
   static void OnRetrieveSubjectToken(void* arg, grpc_error_handle error);
   void OnRetrieveSubjectTokenInternal(grpc_error_handle error);
 

@@ -273,6 +273,20 @@ std::string ExternalAccountCredentials::debug_string() {
                          grpc_oauth2_token_fetcher_credentials::debug_string());
 }
 
+std::string ExternalAccountCredentials::MetricsHeaderValue() {
+  return absl::StrFormat("gl-cpp/%s auth/%s google-byoid-sdk source/%s sa-impersonation/%v config-lifetime/%v",
+      "unknown",
+      grpc_version_string(),
+      CredentialSourceType(),
+      !options_.service_account_impersonation_url.empty(),
+      options_.service_account_impersonation.token_lifetime_seconds != IMPERSONATED_CRED_DEFAULT_LIFETIME_IN_SECONDS);
+}
+
+std::string ExternalAccountCredentials::CredentialSourceType() {
+  return "unknown";
+}
+
+
 // The token fetching flow:
 // 1. Retrieve subject token - Subclass's RetrieveSubjectToken() gets called
 // and the subject token is received in OnRetrieveSubjectTokenInternal().
@@ -321,7 +335,7 @@ void ExternalAccountCredentials::ExchangeToken(
   memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_header* headers = nullptr;
   if (!options_.client_id.empty() && !options_.client_secret.empty()) {
-    request.hdr_count = 2;
+    request.hdr_count = 3;
     headers = static_cast<grpc_http_header*>(
         gpr_malloc(sizeof(grpc_http_header) * request.hdr_count));
     headers[0].key = gpr_strdup("Content-Type");
@@ -334,12 +348,16 @@ void ExternalAccountCredentials::ExchangeToken(
     headers[1].key = gpr_strdup("Authorization");
     headers[1].value = gpr_strdup(str.c_str());
     gpr_free(encoded_cred);
+    headers[2].key = gpr_strdup("x-goog-api-client");
+    headers[2].value = gpr_strdup(MetricsHeaderValue().c_str());
   } else {
-    request.hdr_count = 1;
+    request.hdr_count = 2;
     headers = static_cast<grpc_http_header*>(
         gpr_malloc(sizeof(grpc_http_header) * request.hdr_count));
     headers[0].key = gpr_strdup("Content-Type");
     headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
+    headers[1].key = gpr_strdup("x-goog-api-client");
+    headers[1].value = gpr_strdup(MetricsHeaderValue().c_str());
   }
   request.hdrs = headers;
   std::vector<std::string> body_parts;

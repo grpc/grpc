@@ -242,4 +242,8 @@ void UrlExternalAccountCredentials::FinishRetrieveSubjectToken(
   }
 }
 
+std::string UrlExternalAccountCredentials::CredentialSourceType(){
+  return "url";
+}
+
 }  // namespace grpc_core
