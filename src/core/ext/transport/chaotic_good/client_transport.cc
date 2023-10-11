@@ -12,39 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/ext/transport/chaotic_good/client_transport.h"
-
-#include <memory>
-#include <string>
-#include <tuple>
-
-#include "absl/random/bit_gen_ref.h"
-#include "absl/random/random.h"
-#include "absl/status/statusor.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-
-#include "src/core/ext/transport/chaotic_good/frame.h"
-#include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
-#include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/try_join.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/promise_endpoint.h"
-
 namespace grpc_core {
 namespace chaotic_good {
 
