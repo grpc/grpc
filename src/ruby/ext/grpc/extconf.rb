@@ -195,10 +195,6 @@ if debug_symbols_dir
   debug_symbols = "grpc-#{GRPC::VERSION}-#{RUBY_PLATFORM}-ruby-#{ruby_major_minor}.dbg"
 end
 
-# See https://stackoverflow.com/questions/866721/how-to-generate-gcc-debug-symbol-outside-the-build-target
-# and https://stackoverflow.com/questions/30281766/need-to-load-debugging-symbols-for-shared-library-in-gdb
-# TODO(apolcyn): figure out how to extract $(DLLIB).dbg and put it in its own gem. debuginfo files should
-# probably mirror the structure of pre-compiled gem packages.
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
     o.puts 'hijack: all strip'
