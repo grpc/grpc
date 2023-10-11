@@ -132,7 +132,8 @@ const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
 const char* const description_rfc_max_concurrent_streams =
     "If set, enable rfc-compliant behavior (cancellation) in the advent that "
-    "max concurrent streams are exceeded in chttp2.";
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
 const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
@@ -327,7 +328,8 @@ const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
 const char* const description_rfc_max_concurrent_streams =
     "If set, enable rfc-compliant behavior (cancellation) in the advent that "
-    "max concurrent streams are exceeded in chttp2.";
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
 const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
@@ -522,7 +524,8 @@ const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
 const char* const description_rfc_max_concurrent_streams =
     "If set, enable rfc-compliant behavior (cancellation) in the advent that "
-    "max concurrent streams are exceeded in chttp2.";
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
 const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
