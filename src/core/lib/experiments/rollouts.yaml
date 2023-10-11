@@ -100,6 +100,10 @@
   default: true
 - name: registered_method_lookup_in_transport
   default: true
+- name: rstpit
+  default: false
+- name: red_max_concurrent_streams
+  default: false
 - name: tarpit
   default: true
 - name: settings_timeout

@@ -95,6 +95,8 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
+inline bool IsRstpitEnabled() { return false; }
+inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
@@ -143,6 +145,8 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
+inline bool IsRstpitEnabled() { return false; }
+inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
@@ -191,6 +195,8 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
+inline bool IsRstpitEnabled() { return false; }
+inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
@@ -232,6 +238,8 @@ enum ExperimentIds {
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdTarpit,
   kExperimentIdSettingsTimeout,
+  kExperimentIdRstpit,
+  kExperimentIdRedMaxConcurrentStreams,
   kExperimentIdChttp2BatchRequests,
   kExperimentIdChttp2OffloadOnRstStream,
   kExperimentIdBlockExcessiveRequestsBeforeSettingsAck,
@@ -353,6 +361,14 @@ inline bool IsTarpitEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() {
   return IsExperimentEnabled(kExperimentIdSettingsTimeout);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
+inline bool IsRstpitEnabled() {
+  return IsExperimentEnabled(kExperimentIdRstpit);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RED_MAX_CONCURRENT_STREAMS
+inline bool IsRedMaxConcurrentStreamsEnabled() {
+  return IsExperimentEnabled(kExperimentIdRedMaxConcurrentStreams);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() {

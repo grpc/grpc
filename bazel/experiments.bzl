@@ -41,6 +41,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -69,7 +71,6 @@ EXPERIMENTS = {
                 "tarpit",
             ],
             "cpp_end2end_test": [
-                "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
             ],
             "cpp_lb_end2end_test": [
@@ -77,7 +78,6 @@ EXPERIMENTS = {
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
-                "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
             ],
@@ -118,6 +118,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -146,7 +148,6 @@ EXPERIMENTS = {
                 "tarpit",
             ],
             "cpp_end2end_test": [
-                "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
             ],
             "cpp_lb_end2end_test": [
@@ -154,7 +155,6 @@ EXPERIMENTS = {
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
-                "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
             ],
@@ -202,6 +202,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -233,7 +235,6 @@ EXPERIMENTS = {
                 "tarpit",
             ],
             "cpp_end2end_test": [
-                "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
             ],
             "cpp_lb_end2end_test": [
@@ -241,7 +242,6 @@ EXPERIMENTS = {
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
-                "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
             ],
