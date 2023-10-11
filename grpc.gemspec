@@ -1279,6 +1279,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/windows/thd.cc )
   s.files += %w( src/core/lib/gprpp/work_serializer.cc )
   s.files += %w( src/core/lib/gprpp/work_serializer.h )
+  s.files += %w( src/core/lib/gprpp/xxhash_inline.h )
   s.files += %w( src/core/lib/handshaker/proxy_mapper.h )
   s.files += %w( src/core/lib/handshaker/proxy_mapper_registry.cc )
   s.files += %w( src/core/lib/handshaker/proxy_mapper_registry.h )

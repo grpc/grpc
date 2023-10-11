@@ -1261,6 +1261,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/windows/thd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/xxhash_inline.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/handshaker/proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/handshaker/proxy_mapper_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/handshaker/proxy_mapper_registry.h" role="src" />
