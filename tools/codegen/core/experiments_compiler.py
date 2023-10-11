@@ -156,8 +156,10 @@ def AreExperimentsOrdered(experiments):
     # Check that the experiments are ordered by name
     for i in range(1, len(experiments)):
         if experiments[i - 1]["name"] >= experiments[i]["name"]:
-            print("Experiments are unordered: %s should be after %s" % (
-                experiments[i - 1]["name"], experiments[i]["name"]))
+            print(
+                "Experiments are unordered: %s should be after %s"
+                % (experiments[i - 1]["name"], experiments[i]["name"])
+            )
             return False
     return True
 
