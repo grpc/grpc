@@ -8886,6 +8886,20 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: fuzzing_event_engine_unittest
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine_unittest.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
 - name: generic_end2end_test
   gtest: true
   build: test
