@@ -40,7 +40,6 @@
 
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/port.h"
 
@@ -71,12 +70,8 @@ class FuzzingEventEngine : public EventEngine {
   void TickUntilIdle() ABSL_LOCKS_EXCLUDED(mu_);
   // Tick until some time
   void TickUntil(Time t) ABSL_LOCKS_EXCLUDED(mu_);
-  // Tick until some gpr_timespec
-  void TickUntilTimespec(gpr_timespec t) ABSL_LOCKS_EXCLUDED(mu_);
-  // Tick until some grpc_core::Timestamp
-  void TickUntilTimestamp(grpc_core::Timestamp t) ABSL_LOCKS_EXCLUDED(mu_);
-  // Tick for some grpc_core::Duration
-  void TickForDuration(grpc_core::Duration d) ABSL_LOCKS_EXCLUDED(mu_);
+  // Tick for some duration
+  void TickForDuration(Duration d) ABSL_LOCKS_EXCLUDED(mu_);
 
   // Sets a callback to be invoked any time RunAfter() is called.
   // Allows tests to verify the specified duration.

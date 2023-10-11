@@ -47,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
+#include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channelz.h"
@@ -129,9 +130,10 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         grpc_core::global_stats().IncrementHttp2PingsSent();
         if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-          gpr_log(GPR_INFO, "%s: Ping sent [%s]: %s",
-                  t->is_client ? "CLIENT" : "SERVER",
+            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
+            GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
+          gpr_log(GPR_INFO, "%s[%p]: Ping %" PRIx64 " sent [%s]: %s",
+                  t->is_client ? "CLIENT" : "SERVER", t, id,
                   std::string(t->peer_string.as_string_view()).c_str(),
                   t->ping_rate_policy.GetDebugString().c_str());
         }
@@ -140,9 +142,11 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         // need to receive something of substance before sending a ping again
         if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
+            GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
           gpr_log(GPR_INFO,
-                  "CLIENT: Ping delayed [%s]: too many recent pings: %s",
+                  "%s[%p]: Ping delayed [%s]: too many recent pings: %s",
+                  t->is_client ? "CLIENT" : "SERVER", t,
                   std::string(t->peer_string.as_string_view()).c_str(),
                   t->ping_rate_policy.GetDebugString().c_str());
         }
@@ -151,16 +155,17 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         // not enough elapsed time between successive pings
         if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-          gpr_log(GPR_INFO,
-                  "%s: Ping delayed [%s]: not enough time elapsed since last "
-                  "ping. "
-                  " Last ping:%s, minimum wait:%s need to wait:%s",
-                  t->is_client ? "CLIENT" : "SERVER",
-                  std::string(t->peer_string.as_string_view()).c_str(),
-                  too_soon.last_ping.ToString().c_str(),
-                  too_soon.next_allowed_ping_interval.ToString().c_str(),
-                  too_soon.wait.ToString().c_str());
+            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
+            GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
+          gpr_log(
+              GPR_INFO,
+              "%s[%p]: Ping delayed [%s]: not enough time elapsed since last "
+              "ping. Last ping:%s, minimum wait:%s need to wait:%s",
+              t->is_client ? "CLIENT" : "SERVER", t,
+              std::string(t->peer_string.as_string_view()).c_str(),
+              too_soon.last_ping.ToString().c_str(),
+              too_soon.next_allowed_ping_interval.ToString().c_str(),
+              too_soon.wait.ToString().c_str());
         }
         if (!t->delayed_ping_timer_handle.has_value()) {
           t->delayed_ping_timer_handle = t->event_engine->RunAfter(
@@ -253,7 +258,15 @@ class WriteContext {
   }
 
   void FlushSettings() {
-    if (t_->dirtied_local_settings && !t_->sent_local_settings) {
+    const bool dirty =
+        t_->dirtied_local_settings ||
+        t_->settings[GRPC_SENT_SETTINGS]
+                    [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] !=
+            t_->max_concurrent_streams_policy.AdvertiseValue();
+    if (dirty && !t_->sent_local_settings) {
+      t_->settings[GRPC_LOCAL_SETTINGS]
+                  [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] =
+          t_->max_concurrent_streams_policy.AdvertiseValue();
       grpc_slice_buffer_add(
           t_->outbuf.c_slice_buffer(),
           grpc_chttp2_settings_create(t_->settings[GRPC_SENT_SETTINGS],
@@ -278,6 +291,7 @@ class WriteContext {
       t_->dirtied_local_settings = false;
       t_->sent_local_settings = true;
       t_->flow_control.FlushedSettings();
+      t_->max_concurrent_streams_policy.FlushedSettings();
       grpc_core::global_stats().IncrementHttp2SettingsWrites();
     }
   }
@@ -694,12 +708,18 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
       t->keepalive_timeout != grpc_core::Duration::Infinity()) {
     // Set ping timeout after finishing write so we don't measure our own send
     // time.
-    t->ping_callbacks.OnPingTimeout(
+    auto id = t->ping_callbacks.OnPingTimeout(
         t->keepalive_timeout, t->event_engine.get(), [t = t->Ref()] {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
           grpc_chttp2_ping_timeout(t);
         });
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace) && id.has_value()) {
+      gpr_log(GPR_INFO,
+              "%s[%p]: Set ping timeout timer of %s for ping id %" PRIx64,
+              t->is_client ? "CLIENT" : "SERVER", t,
+              t->keepalive_timeout.ToString().c_str(), id.value());
+    }
   }
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
