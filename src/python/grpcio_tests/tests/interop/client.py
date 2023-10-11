@@ -216,7 +216,6 @@ def _test_case_from_arg(test_case_arg):
 
 
 def test_interoperability(args):
-    args = parse_interop_client_args()
     channel = _create_channel(args)
     stub = create_stub(channel, args)
     test_case = _test_case_from_arg(args.test_case)
