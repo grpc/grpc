@@ -202,7 +202,8 @@ task 'gem:native', [:plat] do |t, args|
   File.truncate('grpc_c.64-msvcrt.ruby', 0)
   File.truncate('grpc_c.64-ucrt.ruby', 0)
 
-  debug_symbols_dir = Dir.mktmpdir
+  `mkdir -p src/ruby/nativedebug/symbols`
+  debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/lib/nativedebug/symbols')
   unix_platforms.each do |plat|
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
@@ -219,7 +220,7 @@ task 'gem:native', [:plat] do |t, args|
   end
   # Generate debug symbol packages to complement the native libraries we just built
   unix_platforms.each do |plat|
-    `bash src/ruby/nativedebug/build_package.sh #{debug_symbols_dir} #{Dir.pwd}/pkg #{plat}`
+    `bash src/ruby/nativedebug/build_package.sh #{plat}`
   end
 end
 
