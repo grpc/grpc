@@ -1,6 +1,7 @@
 # -*- ruby -*-
 # encoding: utf-8
 require_relative 'version.rb'
+require_relative 'platform.rb'
 Gem::Specification.new do |s|
   s.name = 'grpc-native-debug'
   s.version = GRPC::NativeDebug::VERSION
@@ -11,8 +12,8 @@ Gem::Specification.new do |s|
   s.description = 'Debug symbols to compliment the native libraries in pre-compiled Ruby gRPC binary gems'
   s.license = 'Apache-2.0'
 
-  s.files = %w( README.md )
+  s.files = %w( platform.rb version.rb README.md )
   s.files += Dir.glob('symbols/**/*')
 
-  s.platform = Gem::Platform::RUBY
+  s.platform = GRPC::NativeDebug::PLATFORM
 end
