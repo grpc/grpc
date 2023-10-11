@@ -3,38 +3,26 @@ set -ex
 
 cd "$(dirname $0)"
 
-# parse arguments
-SYMBOLS_DIR="$1"
-OUTPUT_DIR="$2"
-PLATFORM="$3"
-if [[ "$SYMBOLS_DIR" == "" ]]; then
-  echo "first argument must be directory containing symbol files"
-  exit 1
-fi
-if [[ "$OUTPUT_DIR" == "" ]]; then
-  echo "second argument must be output directory"
-  exit 1
-fi
-if ! test -d "$OUTPUT_DIR"; then
-  echo "second argument is not a directory"
-  exit 1
-fi
+PLATFORM="$1"
 if [[ "$PLATFORM" == "" ]]; then
-  echo "third argument must be a ruby gem platform"
+  echo "first argument must be a ruby gem platform"
   exit 1
 fi
 
 # sanity check the contents of ./symbols, which at this point
 # should be populated with symbol files
 for f in "$(ls symbols)"; do
+  echo "checking symbol file: $f"
   if [[ "$f" != *"$PLATFORM"*.dbg ]]; then
     echo "symbol file names should contain the ruby platform: $PLATFORM, and end in .dbg"
     exit 1
   fi
 done
 
-# we need to generate some package contents dynamically
 mkdir -p tmp
+mkdir -p pkg
+
+# we need to generate some package contents dynamically
 cp -p grpc-native-debug.gemspec tmp
 cp -p README.md tmp
 cp -p version.rb tmp
@@ -44,7 +32,6 @@ mkdir -p tmp/symbols
 cp -p symbols/* tmp/symbols
 
 # build
-mkdir -p pkg
 cd tmp
 gem build grpc-native-debug.gemspec
 cp grpc-native-debug*.gem ../pkg
