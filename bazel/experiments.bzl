@@ -66,6 +66,7 @@ EXPERIMENTS = {
         "on": {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
+                "tarpit",
             ],
             "cpp_end2end_test": [
                 "chttp2_batch_requests",
@@ -145,6 +146,7 @@ EXPERIMENTS = {
         "on": {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
+                "tarpit",
             ],
             "cpp_end2end_test": [
                 "chttp2_batch_requests",
@@ -234,6 +236,7 @@ EXPERIMENTS = {
         "on": {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
+                "tarpit",
             ],
             "cpp_end2end_test": [
                 "chttp2_batch_requests",

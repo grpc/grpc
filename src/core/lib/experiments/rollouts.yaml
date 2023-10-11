@@ -106,6 +106,8 @@
   default: debug
 - name: work_serializer_clears_time_cache
   default: true
+- name: tarpit
+  default: true
 - name: settings_timeout
   default: true
 - name: chttp2_batch_requests
