@@ -88,19 +88,17 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
     absl::Span<const std::string> crls) {
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crl_map;
   for (const auto& raw_crl : crls) {
-    absl::StatusOr<std::unique_ptr<Crl>> result = Crl::Parse(raw_crl);
-    if (!result.ok()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("Parsing crl string failed with result ",
-                       result.status().ToString()));
+    absl::StatusOr<std::unique_ptr<Crl>> crl = Crl::Parse(raw_crl);
+    if (!crl.ok()) {
+      return absl::InvalidArgumentError(absl::StrCat(
+          "Parsing crl string failed with result ", crl.status().ToString()));
     }
-    std::unique_ptr<Crl> crl = std::move(*result);
-    if (crl_map.contains(crl->Issuer())) {
+    bool inserted = crl_map.emplace((*crl)->Issuer(), std::move(*crl)).second;
+    if (!inserted) {
       gpr_log(GPR_ERROR,
               "StaticCrlProvider received multiple CRLs with the same issuer. "
-              "The last one in the span will be used.");
+              "The first one in the span will be used.");
     }
-    crl_map[crl->Issuer()] = std::move(crl);
   }
   StaticCrlProvider provider = StaticCrlProvider(std::move(crl_map));
   return std::make_shared<StaticCrlProvider>(std::move(provider));
