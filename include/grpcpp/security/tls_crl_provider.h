@@ -32,8 +32,6 @@ using grpc_core::experimental::
     CreateStaticCrlProvider;                 // NOLINT(misc-unused-using-decls)
 using grpc_core::experimental::Crl;          // NOLINT(misc-unused-using-decls)
 using grpc_core::experimental::CrlProvider;  // NOLINT(misc-unused-using-decls)
-using grpc_core::experimental::
-    grpc_tls_credentials_options_set_crl_provider;  // NOLINT(misc-unused-using-decls)
 
 }  // namespace experimental
 }  // namespace grpc
