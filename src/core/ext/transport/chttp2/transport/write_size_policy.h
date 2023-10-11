@@ -27,7 +27,7 @@ namespace grpc_core {
 class Chttp2WriteSizePolicy {
  public:
   static constexpr size_t MinTarget() { return 32 * 1024; }
-  static constexpr size_t MaxTarget() { return 256 * 1024 * 1024; }
+  static constexpr size_t MaxTarget() { return 16 * 1024 * 1024; }
   static constexpr Duration FastWrite() { return Duration::Milliseconds(100); }
   static constexpr Duration SlowWrite() { return Duration::Seconds(1); }
 
