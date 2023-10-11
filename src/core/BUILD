@@ -4879,6 +4879,7 @@ grpc_cc_library(
     hdrs = ["lib/gprpp/xxhash_inline.h"],
     external_deps = ["xxhash"],
     language = "c++",
+    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
