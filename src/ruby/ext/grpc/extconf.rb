@@ -188,10 +188,11 @@ output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 
-debug_symbols_dir = ENV['GRPC_DEBUG_SYMBOL_DIR']
-debug_symbols = nil
-if debug_symbols_dir
-  debug_symbols = File.join(debug_symbols_dir, "grpc.ruby-#{RUBY_VERSION}.dbg")
+debug_symbols_base = ENV['GRPC_RUBY_DEBUG_SYMBOL_DIR']
+if debug_symbols_base
+  target_platform = ENV['GRPC_RUBY_TARGET_PLATFORM']
+  ruby_version_dirname = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
+  debug_symbols_dir = File.join(debug_symbols_base, target_platform, ruby_version_dirname)
 end
 
 # See https://stackoverflow.com/questions/866721/how-to-generate-gcc-debug-symbol-outside-the-build-target
@@ -205,9 +206,10 @@ if grpc_config == 'opt'
     o.write(File.read('Makefile'))
     o.puts
     o.puts 'strip: $(DLLIB)'
-    if debug_symbols
-      o.puts "\t$(ECHO) Generating debug symbols #{debug_symbols}"
-      o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols}"
+    if debug_symbols_dir
+      o.puts "\t$(ECHO) Generating debug symbols #{debug_symbols_dir}"
+      o.puts "\t$(Q) mkdir -p #{debug_symbols_dir}"
+      o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols_dir}/grpc_c.dbg"
     end
     o.puts "\t$(ECHO) Stripping $(DLLIB)"
     o.puts "\t$(Q) #{strip_tool} $(DLLIB)"

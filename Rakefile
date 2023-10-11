@@ -29,7 +29,7 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.cross_compile = true
   ext.cross_platform = [
     'x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt',
-    'x86_64-linux', 'x86-linux', 'aarch64-linux', 
+    'x86_64-linux', 'x86-linux', 'aarch64-linux',
     'x86_64-darwin', 'arm64-darwin',
     'universal-darwin'
   ]
@@ -201,6 +201,7 @@ task 'gem:native', [:plat] do |t, args|
   File.truncate('grpc_c.64-msvcrt.ruby', 0)
   File.truncate('grpc_c.64-ucrt.ruby', 0)
 
+  debug_symbols_dir = Dir.mktempdir
   unix_platforms.each do |plat|
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
@@ -208,6 +209,7 @@ task 'gem:native', [:plat] do |t, args|
       bundle && \
       bundle exec rake clean && \
       export GRPC_RUBY_TARGET_PLATFORM=#{plat} && \
+      export GRPC_RUBY_DEBUG_SYMBOLS_DIR=#{debug_symbols_dir} && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{ruby_cc_versions} \
         V=#{verbose} \
@@ -216,14 +218,8 @@ task 'gem:native', [:plat] do |t, args|
     EOT
   end
   # Generate complementary debug symbol packages
-  if ENV['GRPC_RUBY_DEBUG_SYMBOLS_DIR']
-    for unix_platforms.each do |plat|
-      tmp_dir = Dir.mktmpdir
-      `cp -r src/ruby/nativedebug/** #{tmp_dir}`
-      `cp #{ENV['GRPC_RUBY_DEBUG_SYMBOLS_DIR']}/grpc_c-#{plat}.dbg #{tmp_dir}`
-      `echo #{plat} > #{tmp_dir}/platform.rb`
-      `cd #{tmp_dir} && gem build grpc-native-debug.gem && cp #{tmp_dir}/grpc-native-debug-#{platform}.gem`
-    end
+  for unix_platforms.each do |plat|
+    `bash src/ruby/nativedebug/build_package.sh #{debug_symbols_dir} #{Dir.pwd}/pkg #{plat}`
   end
 end
 
