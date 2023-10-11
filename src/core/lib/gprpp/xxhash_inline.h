@@ -14,8 +14,10 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_THIRD_PARTY_XXHASH_XXHASH_INLINE_H
-#define GRPC_THIRD_PARTY_XXHASH_XXHASH_INLINE_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_XXHASH_INLINE_H
+#define GRPC_SRC_CORE_LIB_GPRPP_XXHASH_INLINE_H
+
+#include <grpc/support/port_platform.h>
 
 // This header is a simple wrapper around the third-party xxhash
 // library, so that we don't need to define XXH_INLINE_ALL in every file
@@ -24,4 +26,4 @@
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
-#endif  // GRPC_THIRD_PARTY_XXHASH_XXHASH_INLINE_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_XXHASH_INLINE_H
