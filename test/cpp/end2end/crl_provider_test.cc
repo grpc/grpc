@@ -51,7 +51,7 @@ const char* kSslTsiTestCrlSupportedCrlDirMissingIntermediate =
 const char* kSslTsiTestCrlSupportedCrlDirMissingRoot =
     "test/core/tsi/test_creds/crl_data/crls_missing_root/";
 const char* kSslTsiTestFaultyCrlsDir = "bad_path/";
-const char* kRootPath = "test/core/tsi/test_creds/crl_data/ca_crls.pem";
+const char* kRootPath = "test/core/tsi/test_creds/crl_data/ca.pem";
 const char* kRevokedKeyPath = "test/core/tsi/test_creds/crl_data/revoked.key";
 const char* kRevokedCertPath = "test/core/tsi/test_creds/crl_data/revoked.pem";
 const char* kValidKeyPath = "test/core/tsi/test_creds/crl_data/valid.key";

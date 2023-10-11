@@ -15,7 +15,7 @@
 licenses(["notice"])
 
 exports_files([
-    "ca_crls.pem",
+    "ca.pem",
     "revoked.key",
     "revoked.pem",
     "valid.key",
