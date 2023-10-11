@@ -22,6 +22,7 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -375,9 +376,13 @@ class WriteContext {
     return result_;
   }
 
+  size_t target_write_size() const { return target_write_size_; }
+
  private:
   grpc_chttp2_transport* const t_;
-  size_t target_write_size_ = 1024 * 1024;
+  size_t target_write_size_ = grpc_core::IsWriteSizePolicyEnabled()
+                                  ? t_->write_size_policy.WriteTargetSize()
+                                  : 1024 * 1024;
 
   // stats histogram counters: we increment these throughout this function,
   // and at the end publish to the central stats histograms
@@ -407,11 +412,17 @@ class DataSendContext {
   }
 
   uint32_t max_outgoing() const {
-    return static_cast<uint32_t>(std::min(
-        t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-        static_cast<uint32_t>(
-            std::min(static_cast<int64_t>(stream_remote_window()),
-                     t_->flow_control.remote_window()))));
+    uint32_t limit = grpc_core::Clamp<uint32_t>(
+        std::min<int64_t>({t_->settings[GRPC_PEER_SETTINGS]
+                                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+                           stream_remote_window(),
+                           t_->flow_control.remote_window()}),
+        0, std::numeric_limits<uint32_t>::max());
+    if (grpc_core::IsWriteSizeCapEnabled()) {
+      limit =
+          std::min<uint32_t>(limit, 2 * write_context_->target_write_size());
+    }
+    return limit;
   }
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }

@@ -1075,6 +1075,7 @@ static void write_action(grpc_chttp2_transport* t) {
     gpr_log(GPR_INFO, "%s[%p]: Write %" PRIdPTR " bytes",
             t->is_client ? "CLIENT" : "SERVER", t, t->outbuf.Length());
   }
+  t->write_size_policy.BeginWrite(t->outbuf.Length());
   grpc_endpoint_write(t->ep, t->outbuf.c_slice_buffer(),
                       grpc_core::InitTransportClosure<write_action_end>(
                           t->Ref(), &t->write_action_end_locked),
@@ -1098,6 +1099,8 @@ static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 static void write_action_end_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
+  t->write_size_policy.EndWrite(error.ok());
+
   bool closed = false;
   if (!error.ok()) {
     close_transport_locked(t.get(), error);

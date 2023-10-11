@@ -5715,6 +5715,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "write_size_policy",
+    srcs = [
+        "ext/transport/chttp2/transport/write_size_policy.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/write_size_policy.h",
+    ],
+    deps = [
+        "time",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "ping_rate_policy",
     srcs = [
         "ext/transport/chttp2/transport/ping_rate_policy.cc",

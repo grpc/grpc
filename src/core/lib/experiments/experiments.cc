@@ -154,6 +154,12 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const char* const description_write_size_policy =
+    "Try to size writes such that they don't create too large of a backlog";
+const char* const additional_constraints_write_size_policy = "{}";
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -248,6 +254,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, true, true},
+    {"write_size_policy", description_write_size_policy,
+     additional_constraints_write_size_policy, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
 };
@@ -388,6 +398,12 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const char* const description_write_size_policy =
+    "Try to size writes such that they don't create too large of a backlog";
+const char* const additional_constraints_write_size_policy = "{}";
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -482,6 +498,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, true, true},
+    {"write_size_policy", description_write_size_policy,
+     additional_constraints_write_size_policy, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
 };
@@ -622,6 +642,12 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const char* const description_write_size_policy =
+    "Try to size writes such that they don't create too large of a backlog";
+const char* const additional_constraints_write_size_policy = "{}";
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -716,6 +742,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, true, true},
+    {"write_size_policy", description_write_size_policy,
+     additional_constraints_write_size_policy, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
 };

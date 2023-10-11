@@ -120,5 +120,9 @@
   default: true
 - name: work_serializer_dispatch
   default: false
+- name: write_size_cap
+  default: true
+- name: write_size_policy
+  default: true
 - name: wrr_delegate_to_pick_first
   default: true

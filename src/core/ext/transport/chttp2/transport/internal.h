@@ -56,6 +56,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
@@ -480,8 +481,10 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_core::Duration settings_timeout;
 
   /// how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
-  ///
   uint32_t write_buffer_size = grpc_core::chttp2::kDefaultWindow;
+
+  /// policy for how much data we're willing to put into one http2 write
+  grpc_core::Chttp2WriteSizePolicy write_size_policy;
 
   bool reading_paused_on_pending_induced_frames = false;
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
