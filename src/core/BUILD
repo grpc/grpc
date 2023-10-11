@@ -5724,6 +5724,7 @@ grpc_cc_library(
     ],
     deps = [
         "time",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )

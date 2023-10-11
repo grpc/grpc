@@ -14,9 +14,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 
-#include <chrono>
-#include <thread>
-
 #include "gtest/gtest.h"
 
 namespace grpc_core {
