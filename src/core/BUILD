@@ -3732,6 +3732,7 @@ grpc_cc_library(
         "closure",
         "error",
         "exec_ctx_wakeup_scheduler",
+        "experiments",
         "http2_errors",
         "idle_filter_state",
         "loop",
