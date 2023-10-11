@@ -21,8 +21,8 @@ for f in "$(ls symbols)"; do
   fi
 done
 
-rm -r tmp
-rm -r pkg
+rm -r tmp || true
+rm -r pkg || true
 mkdir -p tmp
 mkdir -p pkg
 
