@@ -208,7 +208,6 @@ task 'gem:native', [:plat] do |t, args|
       gem update --system --no-document && \
       bundle && \
       bundle exec rake clean && \
-      export GRPC_RUBY_TARGET_PLATFORM=#{plat} && \
       export GRPC_RUBY_DEBUG_SYMBOLS_DIR=#{debug_symbols_dir} && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{ruby_cc_versions} \
@@ -217,7 +216,7 @@ task 'gem:native', [:plat] do |t, args|
         GRPC_RUBY_BUILD_PROCS=#{nproc_override}
     EOT
   end
-  # Generate complementary debug symbol packages
+  # Generate debug symbol packages to complement the native libraries we just built
   for unix_platforms.each do |plat|
     `bash src/ruby/nativedebug/build_package.sh #{debug_symbols_dir} #{Dir.pwd}/pkg #{plat}`
   end

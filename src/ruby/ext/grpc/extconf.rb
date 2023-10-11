@@ -190,9 +190,8 @@ create_makefile(output)
 
 debug_symbols_base = ENV['GRPC_RUBY_DEBUG_SYMBOL_DIR']
 if debug_symbols_base
-  target_platform = ENV['GRPC_RUBY_TARGET_PLATFORM']
   ruby_version_dirname = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
-  debug_symbols_dir = File.join(debug_symbols_base, target_platform, ruby_version_dirname)
+  debug_symbols_dir = File.join(debug_symbols_base, RUBY_PLATFORM, ruby_version_dirname)
 end
 
 # See https://stackoverflow.com/questions/866721/how-to-generate-gcc-debug-symbol-outside-the-build-target
