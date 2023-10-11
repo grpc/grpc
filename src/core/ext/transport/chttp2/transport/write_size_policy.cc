@@ -16,13 +16,6 @@
 
 namespace grpc_core {
 
-namespace {
-static constexpr size_t kMinTarget = 32 * 1024;
-static constexpr const size_t kMaxTarget = 256 * 1024 * 1024;
-static constexpr Duration kFastWrite = Duration::Milliseconds(100);
-static constexpr Duration kSlowWrite = Duration::Seconds(1);
-}  // namespace
-
 size_t Chttp2WriteSizePolicy::WriteTargetSize() { return current_target_; }
 
 void Chttp2WriteSizePolicy::BeginWrite(size_t size) {
@@ -36,17 +29,17 @@ void Chttp2WriteSizePolicy::EndWrite(bool success) {
   const auto elapsed = Timestamp::Now() - experiment_start_time_;
   experiment_start_time_ = Timestamp::InfFuture();
   if (!success) return;
-  if (elapsed < kFastWrite) {
+  if (elapsed < FastWrite()) {
     --state_;
     if (state_ == -2) {
       state_ = 0;
-      current_target_ = std::min(current_target_ * 3 / 2, kMaxTarget);
+      current_target_ = std::min(current_target_ * 3 / 2, MaxTarget());
     }
-  } else if (elapsed > kSlowWrite) {
+  } else if (elapsed > SlowWrite()) {
     ++state_;
     if (state_ == 2) {
       state_ = 0;
-      current_target_ = std::max(current_target_ - kMinTarget, kMinTarget);
+      current_target_ = std::max(current_target_ - MinTarget(), MinTarget());
     }
   } else {
     state_ = 0;
