@@ -73,11 +73,10 @@ class ClientFuzzer final : public BasicFuzzer {
   ~ClientFuzzer() { GPR_ASSERT(channel_ == nullptr); }
 
  private:
-  Result CreateChannel(
-      const api_fuzzer::CreateChannel& create_channel) override {
+  Result CreateChannel(const api_fuzzer::CreateChannel&) override {
     return Result::kFailed;
   }
-  Result CreateServer(const api_fuzzer::CreateServer& create_server) override {
+  Result CreateServer(const api_fuzzer::CreateServer&) override {
     return Result::kFailed;
   }
   void DestroyServer() override {}
