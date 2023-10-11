@@ -590,7 +590,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest, CrlProviderWithServerCredentials) {
   auto crl_provider = experimental::CreateStaticCrlProvider({});
   ASSERT_TRUE(crl_provider.ok());
   options->set_crl_provider(std::move(*crl_provider));
-
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;
