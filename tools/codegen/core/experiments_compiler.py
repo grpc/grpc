@@ -152,6 +152,18 @@ def PutCopyright(file, prefix):
         PutBanner([file], [line[2:].rstrip() for line in copyright], prefix)
 
 
+def AreExperimentsOrdered(experiments):
+    # Check that the experiments are ordered by name
+    for i in range(1, len(experiments)):
+        if experiments[i - 1]["name"] >= experiments[i]["name"]:
+            print(
+                "Experiments are unordered: %s should be after %s"
+                % (experiments[i - 1]["name"], experiments[i]["name"])
+            )
+            return False
+    return True
+
+
 class ExperimentDefinition(object):
     def __init__(self, attributes):
         self._error = False
