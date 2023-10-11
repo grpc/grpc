@@ -203,8 +203,7 @@ task 'gem:native', [:plat] do |t, args|
   File.truncate('grpc_c.64-ucrt.ruby', 0)
 
   `mkdir -p src/ruby/nativedebug/symbols`
-  `chmod a+w src/ruby/nativedebug/symbols`
-  debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/lib/nativedebug/symbols')
+  debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/nativedebug/symbols')
   unix_platforms.each do |plat|
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
