@@ -29,7 +29,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include "grpc_security.h"
+#include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
 
 namespace grpc_core {
