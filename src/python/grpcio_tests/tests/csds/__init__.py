@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,15 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-py_test(
-    name = "csds_test",
-    size = "small",
-    srcs = ["csds_test.py"],
-    main = "csds_test.py",
-    python_version = "PY3",
-    deps = [
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_csds/grpc_csds",
-    ],
-)

@@ -59,11 +59,6 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
-const char* const description_jitter_max_idle =
-    "Enable jitter on connection max idle times. Historically this jitter was "
-    "only on max connection age, but it seems like this could smooth out some "
-    "herding problems.";
-const char* const additional_constraints_jitter_max_idle = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -200,8 +195,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, false, true},
-    {"jitter_max_idle", description_jitter_max_idle,
-     additional_constraints_jitter_max_idle, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -300,11 +293,6 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
-const char* const description_jitter_max_idle =
-    "Enable jitter on connection max idle times. Historically this jitter was "
-    "only on max connection age, but it seems like this could smooth out some "
-    "herding problems.";
-const char* const additional_constraints_jitter_max_idle = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -441,8 +429,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, false, true},
-    {"jitter_max_idle", description_jitter_max_idle,
-     additional_constraints_jitter_max_idle, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -541,11 +527,6 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
-const char* const description_jitter_max_idle =
-    "Enable jitter on connection max idle times. Historically this jitter was "
-    "only on max connection age, but it seems like this could smooth out some "
-    "herding problems.";
-const char* const additional_constraints_jitter_max_idle = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -682,8 +663,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, false, true},
-    {"jitter_max_idle", description_jitter_max_idle,
-     additional_constraints_jitter_max_idle, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
