@@ -1869,6 +1869,8 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     grpc_chttp2_goaway_append((1u << 31) - 1, 0, grpc_empty_slice(), &t->qbuf);
     t->keepalive_timeout =
         std::min(t->keepalive_timeout, grpc_core::Duration::Seconds(20));
+    t->ping_timeout =
+        std::min(t->ping_timeout, grpc_core::Duration::Seconds(20));
     send_ping_locked(
         t, nullptr, GRPC_CLOSURE_INIT(&on_ping_ack_, OnPingAck, this, nullptr));
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
