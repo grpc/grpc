@@ -29,6 +29,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include "grpc_security.h"
 #include <grpc/support/sync.h>
 
 namespace grpc_core {
@@ -68,6 +69,15 @@ class CrlProvider {
 
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
     absl::Span<const std::string> crls);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets the crl provider in the options.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_crl_provider(
+    grpc_tls_credentials_options* options,
+    std::shared_ptr<grpc_core::experimental::CrlProvider> provider);
 
 }  // namespace experimental
 }  // namespace grpc_core
