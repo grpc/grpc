@@ -201,7 +201,7 @@ task 'gem:native', [:plat] do |t, args|
   File.truncate('grpc_c.64-msvcrt.ruby', 0)
   File.truncate('grpc_c.64-ucrt.ruby', 0)
 
-  debug_symbols_dir = Dir.mktempdir
+  debug_symbols_dir = Dir.mktmpdir
   unix_platforms.each do |plat|
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
