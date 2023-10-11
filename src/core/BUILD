@@ -5704,12 +5704,14 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/random:bit_gen_ref",
         "absl/random:distributions",
+        "absl/types:optional",
     ],
     deps = [
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
