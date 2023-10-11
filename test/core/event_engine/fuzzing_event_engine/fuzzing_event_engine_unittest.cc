@@ -18,6 +18,8 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
+#include <string>
+
 #include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
 
