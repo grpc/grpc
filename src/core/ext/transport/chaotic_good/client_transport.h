@@ -39,6 +39,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 

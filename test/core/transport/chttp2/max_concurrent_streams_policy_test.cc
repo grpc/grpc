@@ -14,6 +14,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 namespace grpc_core {

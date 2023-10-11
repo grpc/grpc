@@ -32,7 +32,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>

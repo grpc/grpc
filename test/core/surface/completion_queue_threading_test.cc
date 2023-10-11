@@ -19,6 +19,8 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include <memory>
+
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 

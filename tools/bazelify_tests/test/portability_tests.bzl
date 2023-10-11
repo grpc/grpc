@@ -58,7 +58,7 @@ def generate_run_tests_portability_tests(name):
             ["gcc_12_openssl309", "--cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian12_openssl309_x64.current_version"],
             ["gcc_musl", "", "tools/dockerfile/test/cxx_alpine_x64.current_version"],
             ["clang_6", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++", "tools/dockerfile/test/cxx_clang_6_x64.current_version"],
-            ["clang_15", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++", "tools/dockerfile/test/cxx_clang_15_x64.current_version"],
+            ["clang_16", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++", "tools/dockerfile/test/cxx_clang_16_x64.current_version"],
         ]
 
         for compiler_name, args, docker_image_version in compiler_configs:
