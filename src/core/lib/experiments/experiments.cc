@@ -140,6 +140,14 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
 const char* const description_chttp2_batch_requests =
     "Cap the number of requests received by one transport read prior to "
     "offload.";
@@ -236,6 +244,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, false, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
@@ -370,6 +381,14 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
 const char* const description_chttp2_batch_requests =
     "Cap the number of requests received by one transport read prior to "
     "offload.";
@@ -466,6 +485,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, false, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
@@ -600,6 +622,14 @@ const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
 const char* const description_chttp2_batch_requests =
     "Cap the number of requests received by one transport read prior to "
     "offload.";
@@ -696,6 +726,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, false, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,

@@ -66,6 +66,7 @@
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
+#include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
@@ -537,8 +538,12 @@ static void read_channel_args(grpc_chttp2_transport* t,
       const int value = channel_args.GetInt(setting.channel_arg_name)
                             .value_or(setting.default_value);
       if (value >= 0) {
-        queue_setting_update(t, setting.setting_id,
-                             grpc_core::Clamp(value, setting.min, setting.max));
+        const int clamped_value =
+            grpc_core::Clamp(value, setting.min, setting.max);
+        queue_setting_update(t, setting.setting_id, clamped_value);
+        if (setting.setting_id == GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS) {
+          t->max_concurrent_streams_policy.SetTarget(clamped_value);
+        }
       } else if (setting.setting_id ==
                  GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE) {
         // Set value to 1.25 * soft limit if this is larger than
