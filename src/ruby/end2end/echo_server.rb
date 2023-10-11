@@ -53,8 +53,7 @@ def main
   end
   server_port = server_runner.run
   p server_port
-  sleep 1000000
-  #STDIN.read
+  STDIN.read
   server_runner.stop
 end
 
