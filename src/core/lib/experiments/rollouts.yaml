@@ -108,6 +108,12 @@
   default: true
 - name: separate_ping_from_keepalive
   default: false
+- name: rstpit
+  default: false
+- name: red_max_concurrent_streams
+  default: false
+- name: tarpit
+  default: true
 - name: settings_timeout
   default: true
 - name: chttp2_batch_requests

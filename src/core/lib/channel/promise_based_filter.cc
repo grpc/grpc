@@ -2047,7 +2047,8 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_initial_metadata && !batch->recv_message &&
                !batch->recv_trailing_metadata);
     PollContext poll_ctx(this, &flusher);
-    Completed(batch->payload->cancel_stream.cancel_error, &flusher);
+    Completed(batch->payload->cancel_stream.cancel_error,
+              batch->payload->cancel_stream.tarpit, &flusher);
     if (is_last()) {
       batch.CompleteWith(&flusher);
     } else {
@@ -2166,7 +2167,8 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 }
 
 // Handle cancellation.
-void ServerCallData::Completed(grpc_error_handle error, Flusher* flusher) {
+void ServerCallData::Completed(grpc_error_handle error,
+                               bool tarpit_cancellation, Flusher* flusher) {
   if (grpc_trace_channel.enabled()) {
     gpr_log(
         GPR_DEBUG,
@@ -2196,6 +2198,7 @@ void ServerCallData::Completed(grpc_error_handle error, Flusher* flusher) {
             }));
         batch->cancel_stream = true;
         batch->payload->cancel_stream.cancel_error = error;
+        batch->payload->cancel_stream.tarpit = tarpit_cancellation;
         flusher->Resume(batch);
       }
       break;
@@ -2331,7 +2334,8 @@ void ServerCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   }
   Flusher flusher(this);
   PollContext poll_ctx(this, &flusher);
-  Completed(error, &flusher);
+  Completed(error, recv_trailing_metadata_->get(GrpcTarPit()).has_value(),
+            &flusher);
   flusher.AddClosure(original_recv_trailing_metadata_ready_, std::move(error),
                      "continue recv trailing");
 }
@@ -2551,7 +2555,8 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          Completed(StatusFromMetadata(*md), flusher);
+          Completed(StatusFromMetadata(*md), md->get(GrpcTarPit()).has_value(),
+                    flusher);
         } break;
         case SendTrailingState::kCancelled:
           // Nothing to do.

@@ -103,11 +103,15 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsSeparatePingFromKeepaliveEnabled() { return false; }
+inline bool IsRstpitEnabled() { return false; }
+inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
@@ -164,11 +168,15 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsSeparatePingFromKeepaliveEnabled() { return false; }
+inline bool IsRstpitEnabled() { return false; }
+inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
@@ -225,11 +233,15 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsSeparatePingFromKeepaliveEnabled() { return false; }
+inline bool IsRstpitEnabled() { return false; }
+inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
@@ -271,9 +283,12 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdCallStatusOverrideOnCancellation,
+  kExperimentIdTarpit,
   kExperimentIdSettingsTimeout,
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdSeparatePingFromKeepalive,
+  kExperimentIdRstpit,
+  kExperimentIdRedMaxConcurrentStreams,
   kExperimentIdChttp2BatchRequests,
   kExperimentIdChttp2OffloadOnRstStream,
   kExperimentIdBlockExcessiveRequestsBeforeSettingsAck,
@@ -396,6 +411,10 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() {
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() {
+  return IsExperimentEnabled(kExperimentIdTarpit);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() {
   return IsExperimentEnabled(kExperimentIdSettingsTimeout);
@@ -407,6 +426,14 @@ inline bool IsWorkSerializerClearsTimeCacheEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
 inline bool IsSeparatePingFromKeepaliveEnabled() {
   return IsExperimentEnabled(kExperimentIdSeparatePingFromKeepalive);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
+inline bool IsRstpitEnabled() {
+  return IsExperimentEnabled(kExperimentIdRstpit);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RED_MAX_CONCURRENT_STREAMS
+inline bool IsRedMaxConcurrentStreamsEnabled() {
+  return IsExperimentEnabled(kExperimentIdRedMaxConcurrentStreams);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() {

@@ -5452,6 +5452,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "max_concurrent_streams_policy_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "max_concurrent_streams_test",
     "platforms": [
       "linux",

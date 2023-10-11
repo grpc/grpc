@@ -130,6 +130,9 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_tarpit =
+    "If set, tarpit invalid requests for some amount of time";
+const char* const additional_constraints_tarpit = "{}";
 const char* const description_settings_timeout =
     "If set, use the settings timeout to send settings frame to the peer.";
 const char* const additional_constraints_settings_timeout = "{}";
@@ -143,6 +146,14 @@ const char* const description_separate_ping_from_keepalive =
     "after sending a ping) The first can be short and determines liveness. The "
     "second can be longer and determines protocol correctness.";
 const char* const additional_constraints_separate_ping_from_keepalive = "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
 const char* const description_chttp2_batch_requests =
     "Cap the number of requests received by one transport read prior to "
     "offload.";
@@ -233,6 +244,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, true, true},
     {"settings_timeout", description_settings_timeout,
      additional_constraints_settings_timeout, true, true},
     {"work_serializer_clears_time_cache",
@@ -240,6 +252,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
      additional_constraints_separate_ping_from_keepalive, false, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, false, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
@@ -364,6 +379,9 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_tarpit =
+    "If set, tarpit invalid requests for some amount of time";
+const char* const additional_constraints_tarpit = "{}";
 const char* const description_settings_timeout =
     "If set, use the settings timeout to send settings frame to the peer.";
 const char* const additional_constraints_settings_timeout = "{}";
@@ -377,6 +395,14 @@ const char* const description_separate_ping_from_keepalive =
     "after sending a ping) The first can be short and determines liveness. The "
     "second can be longer and determines protocol correctness.";
 const char* const additional_constraints_separate_ping_from_keepalive = "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
 const char* const description_chttp2_batch_requests =
     "Cap the number of requests received by one transport read prior to "
     "offload.";
@@ -467,6 +493,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, true, true},
     {"settings_timeout", description_settings_timeout,
      additional_constraints_settings_timeout, true, true},
     {"work_serializer_clears_time_cache",
@@ -474,6 +501,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
      additional_constraints_separate_ping_from_keepalive, false, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, false, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
@@ -598,6 +628,9 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_tarpit =
+    "If set, tarpit invalid requests for some amount of time";
+const char* const additional_constraints_tarpit = "{}";
 const char* const description_settings_timeout =
     "If set, use the settings timeout to send settings frame to the peer.";
 const char* const additional_constraints_settings_timeout = "{}";
@@ -611,6 +644,14 @@ const char* const description_separate_ping_from_keepalive =
     "after sending a ping) The first can be short and determines liveness. The "
     "second can be longer and determines protocol correctness.";
 const char* const additional_constraints_separate_ping_from_keepalive = "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
 const char* const description_chttp2_batch_requests =
     "Cap the number of requests received by one transport read prior to "
     "offload.";
@@ -701,6 +742,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation,
      kDefaultForDebugOnly, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, true, true},
     {"settings_timeout", description_settings_timeout,
      additional_constraints_settings_timeout, true, true},
     {"work_serializer_clears_time_cache",
@@ -708,6 +750,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
      additional_constraints_separate_ping_from_keepalive, false, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, false, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,

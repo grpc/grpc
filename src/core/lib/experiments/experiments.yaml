@@ -222,6 +222,12 @@
   expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: tarpit
+  description:
+    If set, tarpit invalid requests for some amount of time
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: [bad_client_test]
 - name: settings_timeout
   description:
     If set, use the settings timeout to send settings frame to the peer.
@@ -243,6 +249,19 @@
   expiry: 2024/03/03
   owner: ctiller@google.com
   test_tags: []
+- name: rstpit
+  description:
+    On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: [flow_control_test]
+- name: red_max_concurrent_streams
+  description:
+    Perform random early rejection of requests that would exceed a newly reduced
+    MAX_CONCURRENT_STREAMS but are allowed by the current.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: [flow_control_test]
 - name: chttp2_batch_requests
   description:
     Cap the number of requests received by one transport read prior to offload.
