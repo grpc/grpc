@@ -662,6 +662,8 @@ struct grpc_chttp2_stream {
   bool traced = false;
 };
 
+#define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
+
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to
 /// go out on the wire.

@@ -121,7 +121,6 @@
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
-#define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
 #define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
   "grpc.http2.ping_on_rst_stream_percent"
 
