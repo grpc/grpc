@@ -41,6 +41,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -66,6 +68,7 @@ EXPERIMENTS = {
         "on": {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
+                "tarpit",
             ],
             "cpp_end2end_test": [
                 "chttp2_batch_requests",
@@ -120,6 +123,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -145,6 +150,7 @@ EXPERIMENTS = {
         "on": {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
+                "tarpit",
             ],
             "cpp_end2end_test": [
                 "chttp2_batch_requests",
@@ -206,6 +212,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -234,6 +242,7 @@ EXPERIMENTS = {
         "on": {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
+                "tarpit",
             ],
             "cpp_end2end_test": [
                 "chttp2_batch_requests",
