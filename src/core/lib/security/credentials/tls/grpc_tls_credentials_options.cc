@@ -22,6 +22,7 @@
 
 #include <memory>
 
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
