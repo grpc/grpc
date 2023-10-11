@@ -53,10 +53,20 @@ class Chttp2PingRatePolicy {
   using RequestSendPingResult =
       absl::variant<SendGranted, TooManyRecentPings, TooSoon>;
 
+  // Request that one ping be sent.
+  // Returns:
+  //  - SendGranted if a ping can be sent.
+  //  - TooManyRecentPings if too many pings have been sent recently and we
+  //    should wait for some future write.
+  //  - TooSoon if we should wait for some time before sending the ping.
   RequestSendPingResult RequestSendPing(Duration next_allowed_ping_interval,
                                         size_t inflight_pings) const;
+  // Notify the policy that one ping has been sent.
   void SentPing();
+  // Notify the policy that some data has been sent and so we should no longer
+  // block pings on that basis.
   void ResetPingsBeforeDataRequired();
+  // Notify the policy that we've received some data.
   void ReceivedDataFrame();
   std::string GetDebugString() const;
 
