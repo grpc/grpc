@@ -725,17 +725,26 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
               t->is_client ? "CLIENT" : "SERVER", t,
               t->keepalive_timeout.ToString().c_str(), id.value());
     }
-  }
 
-  if (grpc_core::IsSeparatePingFromKeepaliveEnabled() &&
-      t->keepalive_incoming_data_wanted &&
-      t->keepalive_timeout < t->ping_timeout) {
-    t->keepalive_ping_timeout_handle =
-        t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
-          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-          grpc_core::ExecCtx exec_ctx;
-          grpc_chttp2_keepalive_timeout(t);
-        });
+    if (grpc_core::IsSeparatePingFromKeepaliveEnabled() &&
+        t->keepalive_incoming_data_wanted &&
+        t->keepalive_timeout < t->ping_timeout &&
+        t->keepalive_ping_timeout_handle !=
+            grpc_event_engine::experimental::EventEngine::TaskHandle::
+                kInvalid) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace) ||
+          GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+        gpr_log(GPR_INFO, "%s[%p]: Set keepalive ping timeout timer of %s",
+                t->is_client ? "CLIENT" : "SERVER", t,
+                t->keepalive_timeout.ToString().c_str());
+      }
+      t->keepalive_ping_timeout_handle =
+          t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            grpc_chttp2_keepalive_timeout(t);
+          });
+    }
   }
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {

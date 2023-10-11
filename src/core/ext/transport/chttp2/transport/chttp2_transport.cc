@@ -747,6 +747,12 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     t->closed_with_error = error;
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
+    if (t->keepalive_ping_timeout_handle !=
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
+      t->event_engine->Cancel(std::exchange(
+          t->keepalive_ping_timeout_handle,
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
+    }
     if (t->settings_ack_watchdog !=
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
       t->event_engine->Cancel(std::exchange(
@@ -2787,6 +2793,12 @@ static void read_action_locked(
   t->keepalive_incoming_data_wanted = false;
   if (t->keepalive_ping_timeout_handle !=
       grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+      gpr_log(GPR_INFO,
+              "%s[%p]: Clear keepalive timer because data was received",
+              t->is_client ? "CLIENT" : "SERVER", t.get());
+    }
     t->event_engine->Cancel(std::exchange(
         t->keepalive_ping_timeout_handle,
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
@@ -3053,9 +3065,9 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
                                    grpc_connectivity_state state,
                                    const absl::Status& status,
                                    const char* reason) {
-  GRPC_CHTTP2_IF_TRACING(gpr_log(
-      GPR_INFO, "transport %p set connectivity_state=%d; status=%s; reason=%s",
-      t, state, status.ToString().c_str(), reason));
+  (gpr_log(GPR_INFO,
+           "transport %p set connectivity_state=%d; status=%s; reason=%s", t,
+           state, status.ToString().c_str(), reason));
   t->state_tracker.SetState(state, status, reason);
 }
 
