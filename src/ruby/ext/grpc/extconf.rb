@@ -14,6 +14,7 @@
 
 require 'etc'
 require 'mkmf'
+require_relative '../../lib/grpc/version.rb'
 
 windows = RUBY_PLATFORM =~ /mingw|mswin/
 windows_ucrt = RUBY_PLATFORM =~ /(mingw|mswin).*ucrt/
@@ -188,10 +189,10 @@ output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 
-debug_symbols_base = ENV['GRPC_RUBY_DEBUG_SYMBOL_DIR']
-if debug_symbols_base
-  ruby_version_dirname = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
-  debug_symbols_dir = File.join(debug_symbols_base, RUBY_PLATFORM, ruby_version_dirname)
+debug_symbols_dir = ENV['GRPC_RUBY_DEBUG_SYMBOLS_DIR']
+if debug_symbols_dir
+  ruby_major_minor = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
+  debug_symbols = "grpc-#{GRPC::VERSION}-#{RUBY_PLATFORM}-ruby-version-#{ruby_major_minor}.dbg"
 end
 
 # See https://stackoverflow.com/questions/866721/how-to-generate-gcc-debug-symbol-outside-the-build-target
@@ -206,9 +207,9 @@ if grpc_config == 'opt'
     o.puts
     o.puts 'strip: $(DLLIB)'
     if debug_symbols_dir
-      o.puts "\t$(ECHO) Generating debug symbols #{debug_symbols_dir}"
-      o.puts "\t$(Q) mkdir -p #{debug_symbols_dir}"
-      o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols_dir}/grpc_c.dbg"
+      # Save debug symbols before stripping. These can be distributed separately and used when needed.
+      o.puts "\t$(ECHO) Generating debug symbols #{debug_symbols_dir}/#{debug_symbols}"
+      o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols_dir}/#{debug_symbols}"
     end
     o.puts "\t$(ECHO) Stripping $(DLLIB)"
     o.puts "\t$(Q) #{strip_tool} $(DLLIB)"

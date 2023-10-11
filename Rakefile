@@ -217,7 +217,7 @@ task 'gem:native', [:plat] do |t, args|
     EOT
   end
   # Generate debug symbol packages to complement the native libraries we just built
-  for unix_platforms.each do |plat|
+  unix_platforms.each do |plat|
     `bash src/ruby/nativedebug/build_package.sh #{debug_symbols_dir} #{Dir.pwd}/pkg #{plat}`
   end
 end
