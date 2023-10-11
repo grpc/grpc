@@ -3065,9 +3065,9 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
                                    grpc_connectivity_state state,
                                    const absl::Status& status,
                                    const char* reason) {
-  (gpr_log(GPR_INFO,
-           "transport %p set connectivity_state=%d; status=%s; reason=%s", t,
-           state, status.ToString().c_str(), reason));
+  GRPC_CHTTP2_IF_TRACING(gpr_log(
+      GPR_INFO, "transport %p set connectivity_state=%d; status=%s; reason=%s",
+      t, state, status.ToString().c_str(), reason));
   t->state_tracker.SetState(state, status, reason);
 }
 
