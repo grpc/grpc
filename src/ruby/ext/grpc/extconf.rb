@@ -210,6 +210,7 @@ if grpc_config == 'opt'
       # Save debug symbols before stripping. These can be distributed separately and used when needed.
       o.puts "\t$(ECHO) Generating debug symbols #{debug_symbols_dir}/#{debug_symbols}"
       o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols_dir}/#{debug_symbols}"
+      o.puts "\t$(Q) chmod a+x #{debug_symbols_dir}/#{debug_symbols}"
     end
     o.puts "\t$(ECHO) Stripping $(DLLIB)"
     o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
