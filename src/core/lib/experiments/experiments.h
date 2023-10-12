@@ -103,6 +103,8 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsServerPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
@@ -165,6 +167,8 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsServerPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
@@ -227,6 +231,8 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsServerPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
@@ -272,6 +278,7 @@ enum ExperimentIds {
   kExperimentIdRoundRobinDelegateToPickFirst,
   kExperimentIdRstpit,
   kExperimentIdScheduleCancellationOverWrite,
+  kExperimentIdSeparatePingFromKeepalive,
   kExperimentIdServerPrivacy,
   kExperimentIdSettingsTimeout,
   kExperimentIdTarpit,
@@ -392,6 +399,10 @@ inline bool IsRstpitEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
   return IsExperimentEnabled(kExperimentIdScheduleCancellationOverWrite);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() {
+  return IsExperimentEnabled(kExperimentIdSeparatePingFromKeepalive);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_PRIVACY
 inline bool IsServerPrivacyEnabled() {
