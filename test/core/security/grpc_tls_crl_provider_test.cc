@@ -43,7 +43,6 @@ namespace testing {
 
 using ::grpc_core::experimental::CertificateInfoImpl;
 using ::grpc_core::experimental::Crl;
-using ::grpc_core::experimental::CrlImpl;
 using ::grpc_core::experimental::CrlProvider;
 
 TEST(CrlProviderTest, CanParseCrl) {

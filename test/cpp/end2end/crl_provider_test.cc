@@ -42,29 +42,12 @@ namespace grpc {
 namespace testing {
 namespace {
 
-const char* kSslTsiTestCrlSupportedCredentialsDir =
-    "test/core/tsi/test_creds/crl_data/";
-const char* kSslTsiTestCrlSupportedCrlDir =
-    "test/core/tsi/test_creds/crl_data/crls/";
-const char* kSslTsiTestCrlSupportedCrlDirMissingIntermediate =
-    "test/core/tsi/test_creds/crl_data/crls_missing_intermediate/";
-const char* kSslTsiTestCrlSupportedCrlDirMissingRoot =
-    "test/core/tsi/test_creds/crl_data/crls_missing_root/";
-const char* kSslTsiTestFaultyCrlsDir = "bad_path/";
 const char* kRootPath = "test/core/tsi/test_creds/crl_data/ca.pem";
 const char* kRevokedKeyPath = "test/core/tsi/test_creds/crl_data/revoked.key";
 const char* kRevokedCertPath = "test/core/tsi/test_creds/crl_data/revoked.pem";
 const char* kValidKeyPath = "test/core/tsi/test_creds/crl_data/valid.key";
 const char* kValidCertPath = "test/core/tsi/test_creds/crl_data/valid.pem";
-
-const char* kRevokedIntermediateKeyPath =
-    "test/core/tsi/test_creds/crl_data/leaf_signed_by_intermediate.key";
-const char* kRevokedIntermediateCertPath =
-    "test/core/tsi/test_creds/crl_data/leaf_and_intermediate_chain.pem";
 const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
-const char* kIntermediateCrlPath =
-    "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
-
 constexpr char kMessage[] = "Hello";
 
 class CrlProviderTest : public ::testing::Test {
