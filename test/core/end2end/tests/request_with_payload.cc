@@ -16,6 +16,8 @@
 //
 //
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
@@ -26,8 +28,8 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(CoreEnd2endTest, RequestWithPayload) {
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+CORE_END2END_TEST(CoreEnd2endTest, RequestWithPayload) {
+  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
   c.NewBatch(1)

@@ -22,7 +22,6 @@
 
 #include <stdint.h>
 
-#include <initializer_list>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -33,7 +32,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
-#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>

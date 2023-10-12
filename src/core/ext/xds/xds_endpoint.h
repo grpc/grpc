@@ -23,7 +23,6 @@
 
 #include <algorithm>
 #include <map>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -41,7 +40,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -50,7 +49,7 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
     struct Locality {
       RefCountedPtr<XdsLocalityName> name;
       uint32_t lb_weight;
-      ServerAddressList endpoints;
+      EndpointAddressesList endpoints;
 
       bool operator==(const Locality& other) const {
         return *name == *other.name && lb_weight == other.lb_weight &&

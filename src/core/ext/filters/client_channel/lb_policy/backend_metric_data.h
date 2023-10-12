@@ -32,6 +32,9 @@ struct BackendMetricData {
   /// Memory utilization expressed as a fraction of available memory
   /// resources.
   double mem_utilization = -1;
+  /// Application specific utilization expressed as a fraction of available
+  /// resources.
+  double application_utilization = -1;
   /// Total queries per second being served by the backend across all services.
   double qps = -1;
   /// Total errors per second reported by the backend across all services.

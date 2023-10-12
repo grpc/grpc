@@ -20,13 +20,15 @@ from grpc._cython import cygrpc
 
 
 class ClientStatusDiscoveryServiceServicer(
-        csds_pb2_grpc.ClientStatusDiscoveryServiceServicer):
+    csds_pb2_grpc.ClientStatusDiscoveryServiceServicer
+):
     """CSDS Servicer works for both the sync API and asyncio API."""
 
     @staticmethod
     def FetchClientStatus(request, unused_context):
         client_config = csds_pb2.ClientConfig.FromString(
-            cygrpc.dump_xds_configs())
+            cygrpc.dump_xds_configs()
+        )
         response = csds_pb2.ClientStatusResponse()
         response.config.append(client_config)
         return response
@@ -35,7 +37,8 @@ class ClientStatusDiscoveryServiceServicer(
     def StreamClientStatus(request_iterator, context):
         for request in request_iterator:
             yield ClientStatusDiscoveryServiceServicer.FetchClientStatus(
-                request, context)
+                request, context
+            )
 
 
 def add_csds_servicer(server):
@@ -50,7 +53,8 @@ def add_csds_servicer(server):
         server: A gRPC server to which the CSDS service will be added.
     """
     csds_pb2_grpc.add_ClientStatusDiscoveryServiceServicer_to_server(
-        ClientStatusDiscoveryServiceServicer(), server)
+        ClientStatusDiscoveryServiceServicer(), server
+    )
 
 
-__all__ = ['ClientStatusDiscoveryServiceServicer', 'add_csds_servicer']
+__all__ = ["ClientStatusDiscoveryServiceServicer", "add_csds_servicer"]

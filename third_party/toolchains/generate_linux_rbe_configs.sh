@@ -39,16 +39,10 @@ LINUX_RBE_DOCKERFILE_DIR=tools/dockerfile/test/rbe_ubuntu2004
 # Use the "current version" of the above dockerfile.
 LINUX_RBE_DOCKER_IMAGE=$(cat ${LINUX_RBE_DOCKERFILE_DIR}.current_version)
 
-# RBE currently has problems pulling images for Google Artifact Registry ("us-docker.pkg.dev/grpc-testing")
-# so to workaround this, the original image was manually pushed to Google Container Registry ("gcr.io/grpc-testing")
-# as well and RBE will use the mirrored image instead. See b/275571385
-# TODO(jtattermusch): get rid of this hack.
-LINUX_RBE_DOCKER_IMAGE_IN_GCR=$(echo -n "${LINUX_RBE_DOCKER_IMAGE}" | sed 's|^us-docker.pkg.dev/grpc-testing/testing-images-public/|gcr.io/grpc-testing/rbe_images_mirror/|')
-
 # Bazel version used for configuring
 # Needs to be one of the versions from bazel/supported_versions.txt chosen so that the result is compatible
 # with other supported bazel versions.
-BAZEL_VERSION=5.4.0
+BAZEL_VERSION=6.1.2
 
 # TODO(jtattermusch): experiment with --cpp_env_json to simplify bazel build configuration.
 
@@ -60,7 +54,7 @@ rm -rf "${REPO_ROOT}/${CONFIG_OUTPUT_PATH}"
 
 ${RBE_CONFIGS_GEN_TOOL_PATH} \
     --bazel_version="${BAZEL_VERSION}" \
-    --toolchain_container="${LINUX_RBE_DOCKER_IMAGE_IN_GCR}" \
+    --toolchain_container="${LINUX_RBE_DOCKER_IMAGE}" \
     --output_src_root="${REPO_ROOT}" \
     --output_config_path="${CONFIG_OUTPUT_PATH}" \
     --exec_os=linux \

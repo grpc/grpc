@@ -32,6 +32,12 @@
 namespace grpc_core {
 
 void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
+#ifdef GRPC_IOS_EVENT_ENGINE_CLIENT
+  gpr_log(GPR_DEBUG, "Using EventEngine dns resolver");
+  builder->resolver_registry()->RegisterResolverFactory(
+      std::make_unique<EventEngineClientChannelDNSResolverFactory>());
+  return;
+#endif
   if (IsEventEngineDnsEnabled()) {
     gpr_log(GPR_DEBUG, "Using EventEngine dns resolver");
     builder->resolver_registry()->RegisterResolverFactory(

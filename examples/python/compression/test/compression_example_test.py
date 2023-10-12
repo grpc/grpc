@@ -20,9 +20,10 @@ import subprocess
 import unittest
 
 _BINARY_DIR = os.path.realpath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-_SERVER_PATH = os.path.join(_BINARY_DIR, 'server')
-_CLIENT_PATH = os.path.join(_BINARY_DIR, 'client')
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+)
+_SERVER_PATH = os.path.join(_BINARY_DIR, "server")
+_CLIENT_PATH = os.path.join(_BINARY_DIR, "client")
 
 
 @contextlib.contextmanager
@@ -31,7 +32,7 @@ def _get_port():
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT) == 0:
         raise RuntimeError("Failed to set SO_REUSEPORT.")
-    sock.bind(('', 0))
+    sock.bind(("", 0))
     try:
         yield sock.getsockname()[1]
     finally:
@@ -39,17 +40,28 @@ def _get_port():
 
 
 class CompressionExampleTest(unittest.TestCase):
-
     def test_compression_example(self):
         with _get_port() as test_port:
             server_process = subprocess.Popen(
-                (_SERVER_PATH, '--port', str(test_port), '--server_compression',
-                 'gzip'))
+                (
+                    _SERVER_PATH,
+                    "--port",
+                    str(test_port),
+                    "--server_compression",
+                    "gzip",
+                )
+            )
             try:
-                server_target = 'localhost:{}'.format(test_port)
+                server_target = "localhost:{}".format(test_port)
                 client_process = subprocess.Popen(
-                    (_CLIENT_PATH, '--server', server_target,
-                     '--channel_compression', 'gzip'))
+                    (
+                        _CLIENT_PATH,
+                        "--server",
+                        server_target,
+                        "--channel_compression",
+                        "gzip",
+                    )
+                )
                 client_return_code = client_process.wait()
                 self.assertEqual(0, client_return_code)
                 self.assertIsNone(server_process.poll())
@@ -58,5 +70,5 @@ class CompressionExampleTest(unittest.TestCase):
                 server_process.wait()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

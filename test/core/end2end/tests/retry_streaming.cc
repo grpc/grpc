@@ -22,7 +22,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -45,7 +45,7 @@ namespace {
 // replayed ops happen under the hood -- they are not surfaced to the
 // C-core API, and therefore we have no way to inject the commit at the
 // right point.
-TEST_P(RetryTest, RetryStreaming) {
+CORE_END2END_TEST(RetryTest, RetryStreaming) {
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

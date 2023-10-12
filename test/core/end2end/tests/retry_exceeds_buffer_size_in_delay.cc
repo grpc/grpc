@@ -19,7 +19,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -36,7 +36,7 @@ namespace {
 // - server sends ABORTED, client goes into backoff delay
 // - client sends a 100 KiB message, thus exceeding the buffer size limit
 // - retry attempt gets ABORTED but is not retried
-TEST_P(RetryTest, RetryExceedsBufferSizeInDelay) {
+CORE_END2END_TEST(RetryTest, RetryExceedsBufferSizeInDelay) {
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

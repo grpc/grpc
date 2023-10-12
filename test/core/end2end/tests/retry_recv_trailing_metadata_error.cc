@@ -14,13 +14,14 @@
 // limitations under the License.
 //
 
+#include <memory>
 #include <new>
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -122,7 +123,7 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
 // - 1 retry allowed for ABORTED status
 // - server returns ABORTED, but filter overwrites to INVALID_ARGUMENT,
 //   so no retry is done
-TEST_P(RetryTest, RetryRecvTrailingMetadataError) {
+CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()
         ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,

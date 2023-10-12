@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "envoy/config/overload/v3/overload.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/any.upb.h"
@@ -26,8 +24,8 @@ static const upb_MiniTableSub envoy_config_overload_v3_ResourceMonitor_submsgs[1
 };
 
 static const upb_MiniTableField envoy_config_overload_v3_ResourceMonitor__fields[2] = {
-  {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(4, 24), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_overload_v3_ResourceMonitor_msg_init = {
@@ -43,7 +41,7 @@ const upb_MiniTable envoy_config_overload_v3_ResourceMonitor_msg_init = {
 };
 
 static const upb_MiniTableField envoy_config_overload_v3_ThresholdTrigger__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_overload_v3_ThresholdTrigger_msg_init = {
@@ -57,8 +55,8 @@ const upb_MiniTable envoy_config_overload_v3_ThresholdTrigger_msg_init = {
 };
 
 static const upb_MiniTableField envoy_config_overload_v3_ScaledTrigger__fields[2] = {
-  {1, 0, 0, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
-  {2, 8, 0, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {2, 8, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_overload_v3_ScaledTrigger_msg_init = {
@@ -79,9 +77,9 @@ static const upb_MiniTableSub envoy_config_overload_v3_Trigger_submsgs[2] = {
 };
 
 static const upb_MiniTableField envoy_config_overload_v3_Trigger__fields[3] = {
-  {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(4, 24), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(4, 24), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(4, 24), -1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_overload_v3_Trigger_msg_init = {
@@ -101,7 +99,7 @@ static const upb_MiniTableSub envoy_config_overload_v3_ScaleTimersOverloadAction
 };
 
 static const upb_MiniTableField envoy_config_overload_v3_ScaleTimersOverloadActionConfig__fields[1] = {
-  {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msg_init = {
@@ -120,9 +118,9 @@ static const upb_MiniTableSub envoy_config_overload_v3_ScaleTimersOverloadAction
 };
 
 static const upb_MiniTableField envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer__fields[3] = {
-  {1, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {2, 8, -5, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, 8, -5, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, 8, -5, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, 8, -5, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msg_init = {
@@ -143,9 +141,9 @@ static const upb_MiniTableSub envoy_config_overload_v3_OverloadAction_submsgs[2]
 };
 
 static const upb_MiniTableField envoy_config_overload_v3_OverloadAction__fields[3] = {
-  {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(4, 24), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(8, 32), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 32), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_overload_v3_OverloadAction_msg_init = {
@@ -160,8 +158,29 @@ const upb_MiniTable envoy_config_overload_v3_OverloadAction_msg_init = {
   })
 };
 
+static const upb_MiniTableSub envoy_config_overload_v3_LoadShedPoint_submsgs[1] = {
+  {.submsg = &envoy_config_overload_v3_Trigger_msg_init},
+};
+
+static const upb_MiniTableField envoy_config_overload_v3_LoadShedPoint__fields[2] = {
+  {1, UPB_SIZE(4, 0), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(0, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy_config_overload_v3_LoadShedPoint_msg_init = {
+  &envoy_config_overload_v3_LoadShedPoint_submsgs[0],
+  &envoy_config_overload_v3_LoadShedPoint__fields[0],
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000000003f00000a, &upb_pss_1bt},
+    {0x001000003f000012, &upb_prm_1bt_max64b},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
 static const upb_MiniTableField envoy_config_overload_v3_BufferFactoryConfig__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_overload_v3_BufferFactoryConfig_msg_init = {
@@ -174,37 +193,39 @@ const upb_MiniTable envoy_config_overload_v3_BufferFactoryConfig_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_overload_v3_OverloadManager_submsgs[4] = {
+static const upb_MiniTableSub envoy_config_overload_v3_OverloadManager_submsgs[5] = {
   {.submsg = &google_protobuf_Duration_msg_init},
   {.submsg = &envoy_config_overload_v3_ResourceMonitor_msg_init},
   {.submsg = &envoy_config_overload_v3_OverloadAction_msg_init},
   {.submsg = &envoy_config_overload_v3_BufferFactoryConfig_msg_init},
+  {.submsg = &envoy_config_overload_v3_LoadShedPoint_msg_init},
 };
 
-static const upb_MiniTableField envoy_config_overload_v3_OverloadManager__fields[4] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 24), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(16, 32), 2, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_config_overload_v3_OverloadManager__fields[5] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 32), 2, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 40), 0, 4, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_overload_v3_OverloadManager_msg_init = {
   &envoy_config_overload_v3_OverloadManager_submsgs[0],
   &envoy_config_overload_v3_OverloadManager__fields[0],
-  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(24, 48), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800000100000a, &upb_psm_1bt_maxmaxb},
     {0x001000003f010012, &upb_prm_1bt_max64b},
     {0x001800003f02001a, &upb_prm_1bt_max64b},
     {0x0020000002030022, &upb_psm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002800003f04002a, &upb_prm_1bt_max64b},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-static const upb_MiniTable *messages_layout[9] = {
+static const upb_MiniTable *messages_layout[10] = {
   &envoy_config_overload_v3_ResourceMonitor_msg_init,
   &envoy_config_overload_v3_ThresholdTrigger_msg_init,
   &envoy_config_overload_v3_ScaledTrigger_msg_init,
@@ -212,6 +233,7 @@ static const upb_MiniTable *messages_layout[9] = {
   &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msg_init,
   &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msg_init,
   &envoy_config_overload_v3_OverloadAction_msg_init,
+  &envoy_config_overload_v3_LoadShedPoint_msg_init,
   &envoy_config_overload_v3_BufferFactoryConfig_msg_init,
   &envoy_config_overload_v3_OverloadManager_msg_init,
 };
@@ -220,7 +242,7 @@ const upb_MiniTableFile envoy_config_overload_v3_overload_proto_upb_file_layout 
   messages_layout,
   NULL,
   NULL,
-  9,
+  10,
   0,
   0,
 };

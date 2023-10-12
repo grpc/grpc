@@ -63,9 +63,11 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     def GetServerSockets(request, context):
         try:
             return json_format.Parse(
-                cygrpc.channelz_get_server_sockets(request.server_id,
-                                                   request.start_socket_id,
-                                                   request.max_results),
+                cygrpc.channelz_get_server_sockets(
+                    request.server_id,
+                    request.start_socket_id,
+                    request.max_results,
+                ),
                 _channelz_pb2.GetServerSocketsResponse(),
             )
         except ValueError as e:

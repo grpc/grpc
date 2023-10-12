@@ -45,9 +45,9 @@ class CancelledError(Exception):
 class Future(abc.ABC):
     """A representation of a computation in another control flow.
 
-  Computations represented by a Future may be yet to be begun, may be ongoing,
-  or may have already completed.
-  """
+    Computations represented by a Future may be yet to be begun, may be ongoing,
+    or may have already completed.
+    """
 
     # NOTE(nathaniel): This isn't the return type that I would want to have if it
     # were up to me. Were this interface being written from scratch, the return
@@ -63,17 +63,17 @@ class Future(abc.ABC):
     def cancel(self):
         """Attempts to cancel the computation.
 
-    This method does not block.
+        This method does not block.
 
-    Returns:
-      True if the computation has not yet begun, will not be allowed to take
-        place, and determination of both was possible without blocking. False
-        under all other circumstances including but not limited to the
-        computation's already having begun, the computation's already having
-        finished, and the computation's having been scheduled for execution on a
-        remote system for which a determination of whether or not it commenced
-        before being cancelled cannot be made without blocking.
-    """
+        Returns:
+          True if the computation has not yet begun, will not be allowed to take
+            place, and determination of both was possible without blocking. False
+            under all other circumstances including but not limited to the
+            computation's already having begun, the computation's already having
+            finished, and the computation's having been scheduled for execution on a
+            remote system for which a determination of whether or not it commenced
+            before being cancelled cannot be made without blocking.
+        """
         raise NotImplementedError()
 
     # NOTE(nathaniel): Here too this isn't the return type that I'd want this
@@ -94,27 +94,27 @@ class Future(abc.ABC):
     def cancelled(self):
         """Describes whether the computation was cancelled.
 
-    This method does not block.
+        This method does not block.
 
-    Returns:
-      True if the computation was cancelled any time before its result became
-        immediately available. False under all other circumstances including but
-        not limited to this object's cancel method not having been called and
-        the computation's result having become immediately available.
-    """
+        Returns:
+          True if the computation was cancelled any time before its result became
+            immediately available. False under all other circumstances including but
+            not limited to this object's cancel method not having been called and
+            the computation's result having become immediately available.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def running(self):
         """Describes whether the computation is taking place.
 
-    This method does not block.
+        This method does not block.
 
-    Returns:
-      True if the computation is scheduled to take place in the future or is
-        taking place now, or False if the computation took place in the past or
-        was cancelled.
-    """
+        Returns:
+          True if the computation is scheduled to take place in the future or is
+            taking place now, or False if the computation took place in the past or
+            was cancelled.
+        """
         raise NotImplementedError()
 
     # NOTE(nathaniel): These aren't quite the semantics I'd like here either. I
@@ -125,95 +125,95 @@ class Future(abc.ABC):
     def done(self):
         """Describes whether the computation has taken place.
 
-    This method does not block.
+        This method does not block.
 
-    Returns:
-      True if the computation is known to have either completed or have been
-        unscheduled or interrupted. False if the computation may possibly be
-        executing or scheduled to execute later.
-    """
+        Returns:
+          True if the computation is known to have either completed or have been
+            unscheduled or interrupted. False if the computation may possibly be
+            executing or scheduled to execute later.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def result(self, timeout=None):
         """Accesses the outcome of the computation or raises its exception.
 
-    This method may return immediately or may block.
+        This method may return immediately or may block.
 
-    Args:
-      timeout: The length of time in seconds to wait for the computation to
-        finish or be cancelled, or None if this method should block until the
-        computation has finished or is cancelled no matter how long that takes.
+        Args:
+          timeout: The length of time in seconds to wait for the computation to
+            finish or be cancelled, or None if this method should block until the
+            computation has finished or is cancelled no matter how long that takes.
 
-    Returns:
-      The return value of the computation.
+        Returns:
+          The return value of the computation.
 
-    Raises:
-      TimeoutError: If a timeout value is passed and the computation does not
-        terminate within the allotted time.
-      CancelledError: If the computation was cancelled.
-      Exception: If the computation raised an exception, this call will raise
-        the same exception.
-    """
+        Raises:
+          TimeoutError: If a timeout value is passed and the computation does not
+            terminate within the allotted time.
+          CancelledError: If the computation was cancelled.
+          Exception: If the computation raised an exception, this call will raise
+            the same exception.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def exception(self, timeout=None):
         """Return the exception raised by the computation.
 
-    This method may return immediately or may block.
+        This method may return immediately or may block.
 
-    Args:
-      timeout: The length of time in seconds to wait for the computation to
-        terminate or be cancelled, or None if this method should block until
-        the computation is terminated or is cancelled no matter how long that
-        takes.
+        Args:
+          timeout: The length of time in seconds to wait for the computation to
+            terminate or be cancelled, or None if this method should block until
+            the computation is terminated or is cancelled no matter how long that
+            takes.
 
-    Returns:
-      The exception raised by the computation, or None if the computation did
-        not raise an exception.
+        Returns:
+          The exception raised by the computation, or None if the computation did
+            not raise an exception.
 
-    Raises:
-      TimeoutError: If a timeout value is passed and the computation does not
-        terminate within the allotted time.
-      CancelledError: If the computation was cancelled.
-    """
+        Raises:
+          TimeoutError: If a timeout value is passed and the computation does not
+            terminate within the allotted time.
+          CancelledError: If the computation was cancelled.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def traceback(self, timeout=None):
         """Access the traceback of the exception raised by the computation.
 
-    This method may return immediately or may block.
+        This method may return immediately or may block.
 
-    Args:
-      timeout: The length of time in seconds to wait for the computation to
-        terminate or be cancelled, or None if this method should block until
-        the computation is terminated or is cancelled no matter how long that
-        takes.
+        Args:
+          timeout: The length of time in seconds to wait for the computation to
+            terminate or be cancelled, or None if this method should block until
+            the computation is terminated or is cancelled no matter how long that
+            takes.
 
-    Returns:
-      The traceback of the exception raised by the computation, or None if the
-        computation did not raise an exception.
+        Returns:
+          The traceback of the exception raised by the computation, or None if the
+            computation did not raise an exception.
 
-    Raises:
-      TimeoutError: If a timeout value is passed and the computation does not
-        terminate within the allotted time.
-      CancelledError: If the computation was cancelled.
-    """
+        Raises:
+          TimeoutError: If a timeout value is passed and the computation does not
+            terminate within the allotted time.
+          CancelledError: If the computation was cancelled.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def add_done_callback(self, fn):
         """Adds a function to be called at completion of the computation.
 
-    The callback will be passed this Future object describing the outcome of
-    the computation.
+        The callback will be passed this Future object describing the outcome of
+        the computation.
 
-    If the computation has already completed, the callback will be called
-    immediately.
+        If the computation has already completed, the callback will be called
+        immediately.
 
-    Args:
-      fn: A callable taking this Future object as its single parameter.
-    """
+        Args:
+          fn: A callable taking this Future object as its single parameter.
+        """
         raise NotImplementedError()

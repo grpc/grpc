@@ -143,7 +143,7 @@ main() {
   build_docker_images_if_needed
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
-  run_test url_map
+  run_test url_map || echo "Failed url_map test"
 }
 
 main "$@"

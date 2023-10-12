@@ -21,7 +21,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>
@@ -324,11 +323,17 @@ absl::Status XdsApi::ParseAdsResponse(absl::string_view encoded_response,
       const auto* resource_wrapper = envoy_service_discovery_v3_Resource_parse(
           serialized_resource.data(), serialized_resource.size(), arena.ptr());
       if (resource_wrapper == nullptr) {
-        parser->ResourceWrapperParsingFailed(i);
+        parser->ResourceWrapperParsingFailed(
+            i, "Can't decode Resource proto wrapper");
         continue;
       }
       const auto* resource =
           envoy_service_discovery_v3_Resource_resource(resource_wrapper);
+      if (resource == nullptr) {
+        parser->ResourceWrapperParsingFailed(
+            i, "No resource present in Resource proto wrapper");
+        continue;
+      }
       type_url = absl::StripPrefix(
           UpbStringToAbsl(google_protobuf_Any_type_url(resource)),
           "type.googleapis.com/");

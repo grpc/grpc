@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "google/api/annotations.upb.h"
 #include "google/api/http.upb.h"
 #include "google/protobuf/descriptor.upb.h"
@@ -20,7 +18,7 @@
 extern const upb_MiniTable google_api_HttpRule_msg_init;
 extern const upb_MiniTable google_protobuf_MethodOptions_msg_init;
 const upb_MiniTableExtension google_api_http_ext = {
-  {72295728, 0, 0, 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {72295728, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   &google_protobuf_MethodOptions_msg_init,
   {.submsg = &google_api_HttpRule_msg_init},
 

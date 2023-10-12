@@ -28,7 +28,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/synchronization/mutex.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -36,6 +35,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -110,6 +110,8 @@ class PosixEngineListenerImpl
     }
     ListenerSocketsContainer::ListenerSocket& Socket() { return socket_; }
     ~AsyncConnectionAcceptor() {
+      // If uds socket, unlink it so that the corresponding file is deleted.
+      UnlinkIfUnixDomainSocket(*socket_.sock.LocalAddress());
       handle_->OrphanHandle(nullptr, nullptr, "");
       delete notify_on_accept_;
     }
@@ -121,6 +123,9 @@ class PosixEngineListenerImpl
     ListenerSocketsContainer::ListenerSocket socket_;
     EventHandle* handle_;
     PosixEngineClosure* notify_on_accept_;
+    // Tracks the status of a backup timer to retry accept4 calls after file
+    // descriptor exhaustion.
+    std::atomic<bool> retry_timer_armed_{false};
   };
   class ListenerAsyncAcceptors : public ListenerSocketsContainer {
    public:
@@ -171,7 +176,7 @@ class PosixEngineListenerImpl
   friend class AsyncConnectionAcceptor;
   // The mutex ensures thread safety when multiple threads try to call Bind
   // and Start in parallel.
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   PosixEventPoller* poller_;
   PosixTcpOptions options_;
   std::shared_ptr<EventEngine> engine_;

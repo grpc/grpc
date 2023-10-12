@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.56.0-dev
+PROJECT_NUMBER         = 1.60.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -788,6 +788,7 @@ doc/interop-test-descriptions.md \
 doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
+doc/qos-dscp.md \
 doc/security_audit.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
@@ -894,6 +895,7 @@ include/grpc/grpc_audit_logging.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
 include/grpc/grpc_security_constants.h \
+include/grpc/impl/channel_arg_names.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -1105,13 +1107,15 @@ src/core/ext/filters/client_channel/dynamic_filters.cc \
 src/core/ext/filters/client_channel/dynamic_filters.h \
 src/core/ext/filters/client_channel/global_subchannel_pool.cc \
 src/core/ext/filters/client_channel/global_subchannel_pool.h \
-src/core/ext/filters/client_channel/http_proxy.cc \
-src/core/ext/filters/client_channel/http_proxy.h \
+src/core/ext/filters/client_channel/http_proxy_mapper.cc \
+src/core/ext/filters/client_channel/http_proxy_mapper.h \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.h \
 src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h \
 src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
 src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h \
+src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
+src/core/ext/filters/client_channel/lb_policy/endpoint_list.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
@@ -1131,6 +1135,7 @@ src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h \
 src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc \
 src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h \
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
+src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h \
 src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
 src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
 src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h \
@@ -1142,8 +1147,6 @@ src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride
 src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
@@ -1181,6 +1184,8 @@ src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h \
 src/core/ext/filters/client_channel/retry_filter.cc \
 src/core/ext/filters/client_channel/retry_filter.h \
+src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
+src/core/ext/filters/client_channel/retry_filter_legacy_call_data.h \
 src/core/ext/filters/client_channel/retry_service_config.cc \
 src/core/ext/filters/client_channel/retry_service_config.h \
 src/core/ext/filters/client_channel/retry_throttle.cc \
@@ -1278,7 +1283,6 @@ src/core/ext/transport/chttp2/transport/decode_huff.cc \
 src/core/ext/transport/chttp2/transport/decode_huff.h \
 src/core/ext/transport/chttp2/transport/flow_control.cc \
 src/core/ext/transport/chttp2/transport/flow_control.h \
-src/core/ext/transport/chttp2/transport/frame.h \
 src/core/ext/transport/chttp2/transport/frame_data.cc \
 src/core/ext/transport/chttp2/transport/frame_data.h \
 src/core/ext/transport/chttp2/transport/frame_goaway.cc \
@@ -1296,6 +1300,8 @@ src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
 src/core/ext/transport/chttp2/transport/hpack_encoder.h \
 src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
 src/core/ext/transport/chttp2/transport/hpack_encoder_table.h \
+src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \
+src/core/ext/transport/chttp2/transport/hpack_parse_result.h \
 src/core/ext/transport/chttp2/transport/hpack_parser.cc \
 src/core/ext/transport/chttp2/transport/hpack_parser.h \
 src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
@@ -1307,10 +1313,17 @@ src/core/ext/transport/chttp2/transport/http_trace.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
+src/core/ext/transport/chttp2/transport/legacy_frame.h \
+src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc \
+src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h \
 src/core/ext/transport/chttp2/transport/parsing.cc \
+src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
+src/core/ext/transport/chttp2/transport/ping_abuse_policy.h \
+src/core/ext/transport/chttp2/transport/ping_callbacks.cc \
+src/core/ext/transport/chttp2/transport/ping_callbacks.h \
+src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
+src/core/ext/transport/chttp2/transport/ping_rate_policy.h \
 src/core/ext/transport/chttp2/transport/stream_lists.cc \
-src/core/ext/transport/chttp2/transport/stream_map.cc \
-src/core/ext/transport/chttp2/transport/stream_map.h \
 src/core/ext/transport/chttp2/transport/varint.cc \
 src/core/ext/transport/chttp2/transport/varint.h \
 src/core/ext/transport/chttp2/transport/writing.cc \
@@ -1443,6 +1456,8 @@ src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c \
 src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.h \
 src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c \
 src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.h \
+src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c \
+src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.h \
 src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c \
 src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h \
 src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c \
@@ -1463,6 +1478,8 @@ src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h \
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c \
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.h \
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c \
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h \
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h \
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
@@ -1765,6 +1782,8 @@ src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
@@ -1967,6 +1986,7 @@ src/core/ext/xds/xds_cluster_specifier_plugin.cc \
 src/core/ext/xds/xds_cluster_specifier_plugin.h \
 src/core/ext/xds/xds_common_types.cc \
 src/core/ext/xds/xds_common_types.h \
+src/core/ext/xds/xds_enabled_server.h \
 src/core/ext/xds/xds_endpoint.cc \
 src/core/ext/xds/xds_endpoint.h \
 src/core/ext/xds/xds_health_status.cc \
@@ -2054,6 +2074,15 @@ src/core/lib/debug/stats_data.cc \
 src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
+src/core/lib/event_engine/ares_resolver.cc \
+src/core/lib/event_engine/ares_resolver.h \
+src/core/lib/event_engine/cf_engine/cf_engine.cc \
+src/core/lib/event_engine/cf_engine/cf_engine.h \
+src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
+src/core/lib/event_engine/cf_engine/cfstream_endpoint.h \
+src/core/lib/event_engine/cf_engine/cftype_unique_ref.h \
+src/core/lib/event_engine/cf_engine/dns_service_resolver.cc \
+src/core/lib/event_engine/cf_engine/dns_service_resolver.h \
 src/core/lib/event_engine/channel_args_endpoint_config.cc \
 src/core/lib/event_engine/channel_args_endpoint_config.h \
 src/core/lib/event_engine/common_closures.h \
@@ -2064,9 +2093,11 @@ src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
+src/core/lib/event_engine/grpc_polled_fd.h \
 src/core/lib/event_engine/handle_containers.h \
 src/core/lib/event_engine/memory_allocator.cc \
 src/core/lib/event_engine/memory_allocator_factory.h \
+src/core/lib/event_engine/nameser.h \
 src/core/lib/event_engine/poller.h \
 src/core/lib/event_engine/posix.h \
 src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
@@ -2076,6 +2107,7 @@ src/core/lib/event_engine/posix_engine/ev_poll_posix.h \
 src/core/lib/event_engine/posix_engine/event_poller.h \
 src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
 src/core/lib/event_engine/posix_engine/event_poller_posix_default.h \
+src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h \
 src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
 src/core/lib/event_engine/posix_engine/internal_errqueue.h \
 src/core/lib/event_engine/posix_engine/lockfree_event.cc \
@@ -2116,12 +2148,14 @@ src/core/lib/event_engine/tcp_socket_utils.cc \
 src/core/lib/event_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/thread_local.cc \
 src/core/lib/event_engine/thread_local.h \
-src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
-src/core/lib/event_engine/thread_pool/original_thread_pool.h \
+src/core/lib/event_engine/thread_pool/thread_count.cc \
+src/core/lib/event_engine/thread_pool/thread_count.h \
 src/core/lib/event_engine/thread_pool/thread_pool.h \
 src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
 src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
 src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h \
+src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
+src/core/lib/event_engine/thready_event_engine/thready_event_engine.h \
 src/core/lib/event_engine/time_util.cc \
 src/core/lib/event_engine/time_util.h \
 src/core/lib/event_engine/trace.cc \
@@ -2153,6 +2187,7 @@ src/core/lib/gpr/iphone/cpu.cc \
 src/core/lib/gpr/linux/cpu.cc \
 src/core/lib/gpr/linux/log.cc \
 src/core/lib/gpr/log.cc \
+src/core/lib/gpr/log_internal.h \
 src/core/lib/gpr/msys/tmpfile.cc \
 src/core/lib/gpr/posix/cpu.cc \
 src/core/lib/gpr/posix/log.cc \
@@ -2194,6 +2229,7 @@ src/core/lib/gprpp/fork.cc \
 src/core/lib/gprpp/fork.h \
 src/core/lib/gprpp/host_port.cc \
 src/core/lib/gprpp/host_port.h \
+src/core/lib/gprpp/if_list.h \
 src/core/lib/gprpp/linux/env.cc \
 src/core/lib/gprpp/load_file.cc \
 src/core/lib/gprpp/load_file.h \
@@ -2207,12 +2243,15 @@ src/core/lib/gprpp/notification.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/packed_table.h \
+src/core/lib/gprpp/per_cpu.cc \
 src/core/lib/gprpp/per_cpu.h \
 src/core/lib/gprpp/posix/env.cc \
 src/core/lib/gprpp/posix/stat.cc \
 src/core/lib/gprpp/posix/thd.cc \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
+src/core/lib/gprpp/ref_counted_string.cc \
+src/core/lib/gprpp/ref_counted_string.h \
 src/core/lib/gprpp/single_set_ptr.h \
 src/core/lib/gprpp/sorted_pack.h \
 src/core/lib/gprpp/stat.h \
@@ -2231,6 +2270,7 @@ src/core/lib/gprpp/time_averaged_stats.cc \
 src/core/lib/gprpp/time_averaged_stats.h \
 src/core/lib/gprpp/time_util.cc \
 src/core/lib/gprpp/time_util.h \
+src/core/lib/gprpp/type_list.h \
 src/core/lib/gprpp/unique_type_name.h \
 src/core/lib/gprpp/validation_errors.cc \
 src/core/lib/gprpp/validation_errors.h \
@@ -2386,6 +2426,8 @@ src/core/lib/iomgr/timer_manager.h \
 src/core/lib/iomgr/unix_sockets_posix.cc \
 src/core/lib/iomgr/unix_sockets_posix.h \
 src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+src/core/lib/iomgr/vsock.cc \
+src/core/lib/iomgr/vsock.h \
 src/core/lib/iomgr/wakeup_fd_eventfd.cc \
 src/core/lib/iomgr/wakeup_fd_nospecial.cc \
 src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -2403,6 +2445,7 @@ src/core/lib/json/json_util.cc \
 src/core/lib/json/json_util.h \
 src/core/lib/json/json_writer.cc \
 src/core/lib/json/json_writer.h \
+src/core/lib/load_balancing/delegating_helper.h \
 src/core/lib/load_balancing/lb_policy.cc \
 src/core/lib/load_balancing/lb_policy.h \
 src/core/lib/load_balancing/lb_policy_factory.h \
@@ -2416,12 +2459,11 @@ src/core/lib/promise/activity.h \
 src/core/lib/promise/arena_promise.h \
 src/core/lib/promise/cancel_callback.h \
 src/core/lib/promise/context.h \
-src/core/lib/promise/detail/basic_join.h \
 src/core/lib/promise/detail/basic_seq.h \
 src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
+src/core/lib/promise/detail/seq_state.h \
 src/core/lib/promise/detail/status.h \
-src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
 src/core/lib/promise/for_each.h \
 src/core/lib/promise/if.h \
@@ -2441,14 +2483,14 @@ src/core/lib/promise/sleep.cc \
 src/core/lib/promise/sleep.h \
 src/core/lib/promise/trace.cc \
 src/core/lib/promise/trace.h \
-src/core/lib/promise/try_join.h \
 src/core/lib/promise/try_seq.h \
+src/core/lib/resolver/endpoint_addresses.cc \
+src/core/lib/resolver/endpoint_addresses.h \
 src/core/lib/resolver/resolver.cc \
 src/core/lib/resolver/resolver.h \
 src/core/lib/resolver/resolver_factory.h \
 src/core/lib/resolver/resolver_registry.cc \
 src/core/lib/resolver/resolver_registry.h \
-src/core/lib/resolver/server_address.cc \
 src/core/lib/resolver/server_address.h \
 src/core/lib/resource_quota/api.cc \
 src/core/lib/resource_quota/api.h \
@@ -2479,6 +2521,8 @@ src/core/lib/security/authorization/matchers.cc \
 src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/rbac_policy.cc \
 src/core/lib/security/authorization/rbac_policy.h \
+src/core/lib/security/authorization/stdout_logger.cc \
+src/core/lib/security/authorization/stdout_logger.h \
 src/core/lib/security/certificate_provider/certificate_provider_factory.h \
 src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
 src/core/lib/security/certificate_provider/certificate_provider_registry.h \
@@ -2538,6 +2582,7 @@ src/core/lib/security/credentials/ssl/ssl_credentials.cc \
 src/core/lib/security/credentials/ssl/ssl_credentials.h \
 src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
 src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h \
+src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc \
 src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
 src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h \
 src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
@@ -2754,8 +2799,6 @@ src/cpp/client/xds_credentials.cc \
 src/cpp/common/alarm.cc \
 src/cpp/common/auth_property_iterator.cc \
 src/cpp/common/channel_arguments.cc \
-src/cpp/common/channel_filter.cc \
-src/cpp/common/channel_filter.h \
 src/cpp/common/completion_queue_cc.cc \
 src/cpp/common/resource_quota_cc.cc \
 src/cpp/common/rpc_method.cc \
@@ -2796,6 +2839,9 @@ src/cpp/util/byte_buffer_cc.cc \
 src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
 src/cpp/util/time_cc.cc \
+third_party/upb/upb/generated_code_support.h \
+third_party/upb/upb/port/def.inc \
+third_party/upb/upb/port/undef.inc \
 third_party/xxhash/xxhash.h
 
 # This tag can be used to specify the character encoding of the source files

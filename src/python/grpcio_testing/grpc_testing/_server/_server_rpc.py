@@ -16,7 +16,6 @@ import grpc_testing
 
 
 class UnaryUnaryServerRpc(grpc_testing.UnaryUnaryServerRpc):
-
     def __init__(self, handler):
         self._handler = handler
 
@@ -31,7 +30,6 @@ class UnaryUnaryServerRpc(grpc_testing.UnaryUnaryServerRpc):
 
 
 class UnaryStreamServerRpc(grpc_testing.UnaryStreamServerRpc):
-
     def __init__(self, handler):
         self._handler = handler
 
@@ -49,7 +47,6 @@ class UnaryStreamServerRpc(grpc_testing.UnaryStreamServerRpc):
 
 
 class StreamUnaryServerRpc(grpc_testing.StreamUnaryServerRpc):
-
     def __init__(self, handler):
         self._handler = handler
 
@@ -70,7 +67,6 @@ class StreamUnaryServerRpc(grpc_testing.StreamUnaryServerRpc):
 
 
 class StreamStreamServerRpc(grpc_testing.StreamStreamServerRpc):
-
     def __init__(self, handler):
         self._handler = handler
 

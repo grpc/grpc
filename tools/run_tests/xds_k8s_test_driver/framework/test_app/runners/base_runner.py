@@ -28,7 +28,7 @@ from framework import xds_flags
 from framework.helpers import logs
 
 flags.adopt_module_key_flags(logs)
-_LOGS_SUBDIR = 'test_app_logs'
+_LOGS_SUBDIR = "test_app_logs"
 
 
 class RunnerError(Exception):
@@ -53,13 +53,13 @@ class BaseRunner(metaclass=ABCMeta):
     @functools.lru_cache(None)
     def logs_subdir(self) -> pathlib.Path:
         if not self.should_collect_logs:
-            raise FileNotFoundError('Log collection is not enabled.')
+            raise FileNotFoundError("Log collection is not enabled.")
         return self._logs_subdir
 
     @property
     def log_stop_event(self) -> threading.Event:
         if not self.should_collect_logs:
-            raise ValueError('Log collection is not enabled.')
+            raise ValueError("Log collection is not enabled.")
         return self._log_stop_event
 
     def maybe_stop_logging(self):
@@ -76,28 +76,30 @@ class BaseRunner(metaclass=ABCMeta):
 
     @classmethod
     def _logs_explorer_link_from_params(
-            cls,
-            *,
-            gcp_ui_url: str,
-            gcp_project: str,
-            query: Dict[str, str],
-            request: Optional[Dict[str, str]] = None) -> str:
-        req_merged = {'query': cls._logs_explorer_query(query)}
+        cls,
+        *,
+        gcp_ui_url: str,
+        gcp_project: str,
+        query: Dict[str, str],
+        request: Optional[Dict[str, str]] = None,
+    ) -> str:
+        req_merged = {"query": cls._logs_explorer_query(query)}
         if request is not None:
             req_merged.update(request)
 
         req = cls._logs_explorer_request(req_merged)
-        return f'https://{gcp_ui_url}/logs/query;{req}?project={gcp_project}'
+        return f"https://{gcp_ui_url}/logs/query;{req}?project={gcp_project}"
 
     @classmethod
     def _logs_explorer_query(cls, query: Dict[str, str]) -> str:
-        return '\n'.join(f'{k}="{v}"' for k, v in query.items())
+        return "\n".join(f'{k}="{v}"' for k, v in query.items())
 
     @classmethod
     def _logs_explorer_request(cls, req: Dict[str, str]) -> str:
-        return ';'.join(
-            f'{k}={cls._logs_explorer_quote(v)}' for k, v in req.items())
+        return ";".join(
+            f"{k}={cls._logs_explorer_quote(v)}" for k, v in req.items()
+        )
 
     @classmethod
     def _logs_explorer_quote(cls, value: str) -> str:
-        return urllib.parse.quote_plus(value, safe=':')
+        return urllib.parse.quote_plus(value, safe=":")

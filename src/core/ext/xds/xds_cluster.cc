@@ -20,10 +20,13 @@
 
 #include <stddef.h>
 
+#include <algorithm>
+#include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/strip.h"
@@ -56,8 +59,6 @@
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -68,15 +69,6 @@
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
-
-// TODO(eostroukhov): Remove once this feature is no longer experimental.
-bool XdsOverrideHostEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
 
 //
 // XdsClusterResource
@@ -187,23 +179,32 @@ XdsClusterResource::Eds EdsConfigParse(
   if (eds_cluster_config == nullptr) {
     errors->AddError("field not present");
   } else {
-    ValidationErrors::ScopedField field(errors, ".eds_config");
-    const envoy_config_core_v3_ConfigSource* eds_config =
-        envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
-            eds_cluster_config);
-    if (eds_config == nullptr) {
-      errors->AddError("field not present");
-    } else {
-      if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config) &&
-          !envoy_config_core_v3_ConfigSource_has_self(eds_config)) {
-        errors->AddError("ConfigSource is not ads or self");
-      }
-      // Record EDS service_name (if any).
-      upb_StringView service_name =
-          envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
+    // Validate ConfigSource.
+    {
+      ValidationErrors::ScopedField field(errors, ".eds_config");
+      const envoy_config_core_v3_ConfigSource* eds_config =
+          envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
               eds_cluster_config);
-      if (service_name.size != 0) {
-        eds.eds_service_name = UpbStringToStdString(service_name);
+      if (eds_config == nullptr) {
+        errors->AddError("field not present");
+      } else {
+        if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config) &&
+            !envoy_config_core_v3_ConfigSource_has_self(eds_config)) {
+          errors->AddError("ConfigSource is not ads or self");
+        }
+      }
+    }
+    // Record EDS service_name (if any).
+    // This field is required if the CDS resource has an xdstp name.
+    eds.eds_service_name = UpbStringToStdString(
+        envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
+            eds_cluster_config));
+    if (eds.eds_service_name.empty()) {
+      absl::string_view cluster_name =
+          UpbStringToAbsl(envoy_config_cluster_v3_Cluster_name(cluster));
+      if (absl::StartsWith(cluster_name, "xdstp:")) {
+        ValidationErrors::ScopedField field(errors, ".service_name");
+        errors->AddError("must be set if Cluster resource has an xdstp name");
       }
     }
   }
@@ -406,18 +407,18 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
   }
 }
 
-absl::StatusOr<XdsClusterResource> CdsResourceParse(
+absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_cluster_v3_Cluster* cluster) {
-  XdsClusterResource cds_update;
+  auto cds_update = std::make_shared<XdsClusterResource>();
   ValidationErrors errors;
   // Check the cluster discovery type.
   if (envoy_config_cluster_v3_Cluster_type(cluster) ==
       envoy_config_cluster_v3_Cluster_EDS) {
-    cds_update.type = EdsConfigParse(cluster, &errors);
+    cds_update->type = EdsConfigParse(cluster, &errors);
   } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
              envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
-    cds_update.type = LogicalDnsParse(cluster, &errors);
+    cds_update->type = LogicalDnsParse(cluster, &errors);
   } else if (envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
     ValidationErrors::ScopedField field(&errors, ".cluster_type");
     const auto* custom_cluster_type =
@@ -444,7 +445,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
             ".value[envoy.extensions.clusters.aggregate.v3.ClusterConfig]");
         absl::string_view serialized_config =
             UpbStringToAbsl(google_protobuf_Any_value(typed_config));
-        cds_update.type =
+        cds_update->type =
             AggregateClusterParse(context, serialized_config, &errors);
       }
     }
@@ -453,13 +454,13 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     errors.AddError("unknown discovery type");
   }
   // Check the LB policy.
-  ParseLbPolicyConfig(context, cluster, &cds_update, &errors);
+  ParseLbPolicyConfig(context, cluster, cds_update.get(), &errors);
   // transport_socket
   auto* transport_socket =
       envoy_config_cluster_v3_Cluster_transport_socket(cluster);
   if (transport_socket != nullptr) {
     ValidationErrors::ScopedField field(&errors, ".transport_socket");
-    cds_update.common_tls_context =
+    cds_update->common_tls_context =
         UpstreamTlsContextParse(context, transport_socket, &errors);
   }
   // Record LRS server name (if any).
@@ -470,7 +471,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       ValidationErrors::ScopedField field(&errors, ".lrs_server");
       errors.AddError("ConfigSource is not self");
     }
-    cds_update.lrs_load_reporting_server.emplace(
+    cds_update->lrs_load_reporting_server.emplace(
         static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(context.server));
   }
   // The Cluster resource encodes the circuit breaking parameters in a list of
@@ -492,7 +493,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
             envoy_config_cluster_v3_CircuitBreakers_Thresholds_max_requests(
                 threshold);
         if (max_requests != nullptr) {
-          cds_update.max_concurrent_requests =
+          cds_update->max_concurrent_requests =
               google_protobuf_UInt32Value_value(max_requests);
         }
         break;
@@ -619,27 +620,25 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
             failure_percentage_ejection;
       }
     }
-    cds_update.outlier_detection = outlier_detection_update;
+    cds_update->outlier_detection = outlier_detection_update;
   }
   // Validate override host status.
-  if (XdsOverrideHostEnabled()) {
-    const auto* common_lb_config =
-        envoy_config_cluster_v3_Cluster_common_lb_config(cluster);
-    if (common_lb_config != nullptr) {
-      ValidationErrors::ScopedField field(&errors, ".common_lb_config");
-      const auto* override_host_status =
-          envoy_config_cluster_v3_Cluster_CommonLbConfig_override_host_status(
-              common_lb_config);
-      if (override_host_status != nullptr) {
-        ValidationErrors::ScopedField field(&errors, ".override_host_status");
-        size_t size;
-        const int32_t* statuses = envoy_config_core_v3_HealthStatusSet_statuses(
-            override_host_status, &size);
-        for (size_t i = 0; i < size; ++i) {
-          auto status = XdsHealthStatus::FromUpb(statuses[i]);
-          if (status.has_value()) {
-            cds_update.override_host_statuses.insert(*status);
-          }
+  const auto* common_lb_config =
+      envoy_config_cluster_v3_Cluster_common_lb_config(cluster);
+  if (common_lb_config != nullptr) {
+    ValidationErrors::ScopedField field(&errors, ".common_lb_config");
+    const auto* override_host_status =
+        envoy_config_cluster_v3_Cluster_CommonLbConfig_override_host_status(
+            common_lb_config);
+    if (override_host_status != nullptr) {
+      ValidationErrors::ScopedField field(&errors, ".override_host_status");
+      size_t size;
+      const int32_t* statuses = envoy_config_core_v3_HealthStatusSet_statuses(
+          override_host_status, &size);
+      for (size_t i = 0; i < size; ++i) {
+        auto status = XdsHealthStatus::FromUpb(statuses[i]);
+        if (status.has_value()) {
+          cds_update->override_host_statuses.insert(*status);
         }
       }
     }
@@ -693,10 +692,9 @@ XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed Cluster %s: %s", context.client,
-              result.name->c_str(), cds_resource->ToString().c_str());
+              result.name->c_str(), (*cds_resource)->ToString().c_str());
     }
-    result.resource =
-        std::make_unique<XdsClusterResource>(std::move(*cds_resource));
+    result.resource = std::move(*cds_resource);
   }
   return result;
 }

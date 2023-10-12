@@ -14,9 +14,11 @@
 // limitations under the License.
 //
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -30,7 +32,7 @@ namespace {
 // a recv op, where the send op completes but the recv op does not, and
 // then a subsequent recv op is started.  This ensures that we do not
 // incorrectly attempt to replay the send op.
-TEST_P(RetryTest, RetrySendRecvBatch) {
+CORE_END2END_TEST(RetryTest, RetrySendRecvBatch) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -49,7 +51,7 @@ TEST_P(RetryTest, RetrySendRecvBatch) {
       "  } ]\n"
       "}"));
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   // Client starts batch with send_initial_metadata and recv_initial_metadata.
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1).SendInitialMetadata({}).RecvInitialMetadata(

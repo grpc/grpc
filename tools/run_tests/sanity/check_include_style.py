@@ -18,14 +18,14 @@ import os
 import re
 import sys
 
-os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
+os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
 BAD_REGEXES = [
-    (r'\n#include "include/(.*)"', r'\n#include <\1>'),
-    (r'\n#include "grpc(.*)"', r'\n#include <grpc\1>'),
+    (r'\n#include "include/(.*)"', r"\n#include <\1>"),
+    (r'\n#include "grpc(.*)"', r"\n#include <grpc\1>"),
 ]
 
-fix = sys.argv[1:] == ['--fix']
+fix = sys.argv[1:] == ["--fix"]
 if fix:
     print("FIXING!")
 
@@ -35,14 +35,17 @@ def check_include_style(directory_root):
     for root, dirs, files in os.walk(directory_root):
         for filename in files:
             path = os.path.join(root, filename)
-            if os.path.splitext(path)[1] not in ['.c', '.cc', '.h']:
+            if os.path.splitext(path)[1] not in [".c", ".cc", ".h"]:
                 continue
-            if filename.endswith('.pb.h') or filename.endswith('.pb.c'):
+            if filename.endswith(".pb.h") or filename.endswith(".pb.c"):
                 continue
             # Skip check for upb generated code.
-            if (filename.endswith('.upb.h') or filename.endswith('.upb.c') or
-                    filename.endswith('.upbdefs.h') or
-                    filename.endswith('.upbdefs.c')):
+            if (
+                filename.endswith(".upb.h")
+                or filename.endswith(".upb.c")
+                or filename.endswith(".upbdefs.h")
+                or filename.endswith(".upbdefs.c")
+            ):
                 continue
             with open(path) as f:
                 text = f.read()
@@ -52,18 +55,18 @@ def check_include_style(directory_root):
             if text != original:
                 bad_files.append(path)
                 if fix:
-                    with open(path, 'w') as f:
+                    with open(path, "w") as f:
                         f.write(text)
     return bad_files
 
 
 all_bad_files = []
-all_bad_files += check_include_style(os.path.join('src', 'core'))
-all_bad_files += check_include_style(os.path.join('src', 'cpp'))
-all_bad_files += check_include_style(os.path.join('test', 'core'))
-all_bad_files += check_include_style(os.path.join('test', 'cpp'))
-all_bad_files += check_include_style(os.path.join('include', 'grpc'))
-all_bad_files += check_include_style(os.path.join('include', 'grpcpp'))
+all_bad_files += check_include_style(os.path.join("src", "core"))
+all_bad_files += check_include_style(os.path.join("src", "cpp"))
+all_bad_files += check_include_style(os.path.join("test", "core"))
+all_bad_files += check_include_style(os.path.join("test", "cpp"))
+all_bad_files += check_include_style(os.path.join("include", "grpc"))
+all_bad_files += check_include_style(os.path.join("include", "grpcpp"))
 
 if all_bad_files:
     for f in all_bad_files:

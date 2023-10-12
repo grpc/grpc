@@ -75,7 +75,7 @@ std::string GetNextSendMessage() {
   return tmp_s;
 }
 
-void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
+void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
   while (engine.use_count() > 1) {
     GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
                          engine.use_count());

@@ -22,15 +22,19 @@ import sys
 
 # where do we run
 _TARGET_DIRS = [
-    'include/grpc', 'include/grpc++', 'src/core', 'src/cpp', 'test/core',
-    'test/cpp'
+    "include/grpc",
+    "include/grpc++",
+    "src/core",
+    "src/cpp",
+    "test/core",
+    "test/cpp",
 ]
 
 # which file extensions do we care about
-_INTERESTING_EXTENSIONS = ['.c', '.h', '.cc']
+_INTERESTING_EXTENSIONS = [".c", ".h", ".cc"]
 
 # find our home
-_ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 os.chdir(_ROOT)
 
 errors = 0
@@ -39,10 +43,10 @@ errors = 0
 printed_banner = False
 for target_dir in _TARGET_DIRS:
     for root, dirs, filenames in os.walk(target_dir):
-        if 'README.md' not in filenames:
+        if "README.md" not in filenames:
             if not printed_banner:
-                print('Missing README.md')
-                print('=================')
+                print("Missing README.md")
+                print("=================")
                 printed_banner = True
             print(root)
             errors += 1
@@ -57,12 +61,12 @@ for target_dir in _TARGET_DIRS:
             path = os.path.join(root, filename)
             with open(path) as f:
                 contents = f.read()
-            if '\\file' not in contents:
+            if "\\file" not in contents:
                 if not printed_banner:
-                    print('Missing \\file comment')
-                    print('======================')
+                    print("Missing \\file comment")
+                    print("======================")
                     printed_banner = True
                 print(path)
                 errors += 1
 
-assert errors == 0, 'error count = %d' % errors
+assert errors == 0, "error count = %d" % errors

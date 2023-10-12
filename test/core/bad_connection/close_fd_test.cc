@@ -23,11 +23,10 @@
 //
 #include <stdint.h>
 
-#include <initializer_list>
-
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>

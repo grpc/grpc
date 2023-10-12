@@ -25,11 +25,14 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
@@ -62,13 +65,26 @@ class CqVerifier {
   using ExpectedResult =
       absl::variant<bool, Maybe, AnyStatus, PerformAction, MaybePerformAction>;
 
+  // Captures information about one failure
   struct Failure {
     SourceLocation location;
     std::string message;
     std::vector<std::string> expected;
+    std::vector<std::string> message_details;
+  };
+
+  // Produces a string upon the successful (but unexpected) completion of an
+  // expectation.
+  class SuccessfulStateString {
+   public:
+    virtual std::string GetSuccessfulStateString() = 0;
+
+   protected:
+    ~SuccessfulStateString() = default;
   };
 
   static void FailUsingGprCrash(const Failure& failure);
+  static void FailUsingGprCrashWithStdio(const Failure& failure);
   static void FailUsingGtestFail(const Failure& failure);
 
   // Allow customizing the failure handler
@@ -77,7 +93,10 @@ class CqVerifier {
   // will produce nicer failure messages.
   explicit CqVerifier(
       grpc_completion_queue* cq,
-      absl::AnyInvocable<void(Failure)> fail = FailUsingGprCrash);
+      absl::AnyInvocable<void(Failure) const> fail = FailUsingGprCrash,
+      absl::AnyInvocable<
+          void(grpc_event_engine::experimental::EventEngine::Duration) const>
+          step_fn = nullptr);
   ~CqVerifier();
 
   CqVerifier(const CqVerifier&) = delete;
@@ -92,6 +111,10 @@ class CqVerifier {
   void VerifyEmpty(Duration timeout = Duration::Seconds(1),
                    SourceLocation location = SourceLocation());
 
+  void ClearSuccessfulStateStrings(void* tag);
+  void AddSuccessfulStateString(void* tag,
+                                SuccessfulStateString* successful_state_string);
+
   // Match an expectation about a status.
   // location must be DEBUG_LOCATION.
   // result can be any of the types in ExpectedResult - a plain bool means
@@ -101,6 +124,15 @@ class CqVerifier {
 
   std::string ToString() const;
   std::vector<std::string> ToStrings() const;
+  std::string ToShortString() const;
+  std::vector<std::string> ToShortStrings() const;
+
+  // Logging verifications helps debug CI problems a lot.
+  // Only disable if the logging prevents a stress test like scenario from
+  // passing.
+  void SetLogVerifications(bool log_verifications) {
+    log_verifications_ = log_verifications;
+  }
 
   static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -111,16 +143,24 @@ class CqVerifier {
     ExpectedResult result;
 
     std::string ToString() const;
+    std::string ToShortString() const;
   };
 
   void FailNoEventReceived(const SourceLocation& location) const;
   void FailUnexpectedEvent(grpc_event* ev,
                            const SourceLocation& location) const;
   bool AllMaybes() const;
+  grpc_event Step(gpr_timespec deadline);
 
   grpc_completion_queue* const cq_;
   std::vector<Expectation> expectations_;
-  mutable absl::AnyInvocable<void(Failure)> fail_;
+  absl::AnyInvocable<void(Failure) const> fail_;
+  absl::AnyInvocable<void(
+      grpc_event_engine::experimental::EventEngine::Duration) const>
+      step_fn_;
+  absl::flat_hash_map<void*, std::vector<SuccessfulStateString*>>
+      successful_state_strings_;
+  bool log_verifications_ = true;
 };
 
 }  // namespace grpc_core

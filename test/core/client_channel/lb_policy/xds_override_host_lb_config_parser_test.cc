@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <memory>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
@@ -193,7 +195,7 @@ TEST(XdsOverrideHostConfigParsingTest, ReportsChildPolicyShouldBeArray) {
       "  \"loadBalancingConfig\":[{\n"
       "    \"xds_override_host_experimental\":{\n"
       "      \"childPolicy\":{\n"
-      "        \"grpclb\":{},\n"
+      "        \"grpclb\":{}\n"
       "      }\n"
       "    }\n"
       "  }]\n"

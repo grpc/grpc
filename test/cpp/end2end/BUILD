@@ -340,6 +340,7 @@ grpc_cc_test(
     tags = [
         "cpp_end2end_test",
         "no_test_ios",
+        "surface_registered_method_lookup",
     ],
     deps = [
         ":end2end_test_lib",
@@ -361,25 +362,6 @@ grpc_cc_test(
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "filter_end2end_test",
-    srcs = ["filter_end2end_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    tags = ["cpp_end2end_test"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//src/proto/grpc/testing:echo_messages_proto",
-        "//src/proto/grpc/testing:echo_proto",
-        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -513,6 +495,7 @@ grpc_cc_test(
     flaky = True,  # TODO(b/151315347)
     tags = [
         "cpp_end2end_test",
+        "cpp_lb_end2end_test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
@@ -595,8 +578,10 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,  # TODO(b/150567713)
+    shard_count = 20,
     tags = [
         "cpp_end2end_test",
+        "cpp_lb_end2end_test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
@@ -943,8 +928,8 @@ grpc_cc_test(
     srcs = ["grpc_authz_end2end_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:client.key",
-        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:client-with-spiffe.key",
+        "//src/core/tsi/test_creds:client-with-spiffe.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
@@ -960,6 +945,7 @@ grpc_cc_test(
         "//:grpc++_authorization_provider",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:audit_logging_utils",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -1003,6 +989,50 @@ grpc_cc_test(
         "//:grpcpp_call_metric_recorder",
         "//:grpcpp_orca_service",
         "//src/proto/grpc/testing/xds/v3:orca_service_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "resource_quota_end2end_stress_test",
+    srcs = ["resource_quota_end2end_stress_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+        "absl/time",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/core:experiments",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ssl_credentials_test",
+    srcs = ["ssl_credentials_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["ssl_credentials_test"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

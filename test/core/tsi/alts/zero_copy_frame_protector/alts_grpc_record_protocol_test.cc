@@ -24,7 +24,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h"
@@ -244,12 +243,10 @@ static void alts_grpc_record_protocol_test_fixture_destroy(
   if (fixture == nullptr) {
     return;
   }
-  grpc_core::ExecCtx exec_ctx;
   alts_grpc_record_protocol_destroy(fixture->client_protect);
   alts_grpc_record_protocol_destroy(fixture->client_unprotect);
   alts_grpc_record_protocol_destroy(fixture->server_protect);
   alts_grpc_record_protocol_destroy(fixture->server_unprotect);
-  grpc_core::ExecCtx::Get()->Flush();
   gpr_free(fixture);
 }
 
@@ -290,7 +287,6 @@ static void alts_grpc_record_protocol_test_var_destroy(
 
 static void random_seal_unseal(alts_grpc_record_protocol* sender,
                                alts_grpc_record_protocol* receiver) {
-  grpc_core::ExecCtx exec_ctx;
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     alts_grpc_record_protocol_test_var* var =
         alts_grpc_record_protocol_test_var_create();
@@ -308,12 +304,10 @@ static void random_seal_unseal(alts_grpc_record_protocol* sender,
         are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
     alts_grpc_record_protocol_test_var_destroy(var);
   }
-  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void empty_seal_unseal(alts_grpc_record_protocol* sender,
                               alts_grpc_record_protocol* receiver) {
-  grpc_core::ExecCtx exec_ctx;
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     alts_grpc_record_protocol_test_var* var =
         alts_grpc_record_protocol_test_var_create();
@@ -331,12 +325,10 @@ static void empty_seal_unseal(alts_grpc_record_protocol* sender,
         are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
     alts_grpc_record_protocol_test_var_destroy(var);
   }
-  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void unsync_seal_unseal(alts_grpc_record_protocol* sender,
                                alts_grpc_record_protocol* receiver) {
-  grpc_core::ExecCtx exec_ctx;
   tsi_result status;
   alts_grpc_record_protocol_test_var* var =
       alts_grpc_record_protocol_test_var_create();
@@ -354,12 +346,10 @@ static void unsync_seal_unseal(alts_grpc_record_protocol* sender,
                                                &var->unprotected_sb);
   ASSERT_EQ(status, TSI_INTERNAL_ERROR);
   alts_grpc_record_protocol_test_var_destroy(var);
-  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void corrupted_data(alts_grpc_record_protocol* sender,
                            alts_grpc_record_protocol* receiver) {
-  grpc_core::ExecCtx exec_ctx;
   tsi_result status;
   alts_grpc_record_protocol_test_var* var =
       alts_grpc_record_protocol_test_var_create();
@@ -373,11 +363,9 @@ static void corrupted_data(alts_grpc_record_protocol* sender,
                                                &var->unprotected_sb);
   ASSERT_EQ(status, TSI_INTERNAL_ERROR);
   alts_grpc_record_protocol_test_var_destroy(var);
-  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void input_check(alts_grpc_record_protocol* rp) {
-  grpc_core::ExecCtx exec_ctx;
   tsi_result status;
   alts_grpc_record_protocol_test_var* var =
       alts_grpc_record_protocol_test_var_create();
@@ -406,7 +394,6 @@ static void input_check(alts_grpc_record_protocol* rp) {
   ASSERT_EQ(status, TSI_INVALID_ARGUMENT);
   grpc_slice_buffer_destroy(&temp_sb);
   alts_grpc_record_protocol_test_var_destroy(var);
-  grpc_core::ExecCtx::Get()->Flush();
 }
 
 // --- Test cases. ---

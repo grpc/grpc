@@ -263,8 +263,7 @@ tsi_result alts_zero_copy_grpc_protector_create(
     bool is_integrity_only, bool enable_extra_copy,
     size_t* max_protected_frame_size,
     tsi_zero_copy_grpc_protector** protector) {
-  if (grpc_core::ExecCtx::Get() == nullptr || key == nullptr ||
-      protector == nullptr) {
+  if (key == nullptr || protector == nullptr) {
     gpr_log(
         GPR_ERROR,
         "Invalid nullptr arguments to alts_zero_copy_grpc_protector create.");

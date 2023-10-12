@@ -37,20 +37,25 @@ _RESPONSE_PAYLOAD_SIZE = 42
 
 
 async def _perform_unary_unary(stub, wait_for_ready):
-    await stub.UnaryCall(messages_pb2.SimpleRequest(),
-                         timeout=test_constants.LONG_TIMEOUT,
-                         wait_for_ready=wait_for_ready)
+    await stub.UnaryCall(
+        messages_pb2.SimpleRequest(),
+        timeout=test_constants.LONG_TIMEOUT,
+        wait_for_ready=wait_for_ready,
+    )
 
 
 async def _perform_unary_stream(stub, wait_for_ready):
     request = messages_pb2.StreamingOutputCallRequest()
     for _ in range(_NUM_STREAM_RESPONSES):
         request.response_parameters.append(
-            messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
+            messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+        )
 
-    call = stub.StreamingOutputCall(request,
-                                    timeout=test_constants.LONG_TIMEOUT,
-                                    wait_for_ready=wait_for_ready)
+    call = stub.StreamingOutputCall(
+        request,
+        timeout=test_constants.LONG_TIMEOUT,
+        wait_for_ready=wait_for_ready,
+    )
 
     for _ in range(_NUM_STREAM_RESPONSES):
         await call.read()
@@ -58,25 +63,29 @@ async def _perform_unary_stream(stub, wait_for_ready):
 
 
 async def _perform_stream_unary(stub, wait_for_ready):
-    payload = messages_pb2.Payload(body=b'\0' * _REQUEST_PAYLOAD_SIZE)
+    payload = messages_pb2.Payload(body=b"\0" * _REQUEST_PAYLOAD_SIZE)
     request = messages_pb2.StreamingInputCallRequest(payload=payload)
 
     async def gen():
         for _ in range(_NUM_STREAM_RESPONSES):
             yield request
 
-    await stub.StreamingInputCall(gen(),
-                                  timeout=test_constants.LONG_TIMEOUT,
-                                  wait_for_ready=wait_for_ready)
+    await stub.StreamingInputCall(
+        gen(),
+        timeout=test_constants.LONG_TIMEOUT,
+        wait_for_ready=wait_for_ready,
+    )
 
 
 async def _perform_stream_stream(stub, wait_for_ready):
-    call = stub.FullDuplexCall(timeout=test_constants.LONG_TIMEOUT,
-                               wait_for_ready=wait_for_ready)
+    call = stub.FullDuplexCall(
+        timeout=test_constants.LONG_TIMEOUT, wait_for_ready=wait_for_ready
+    )
 
     request = messages_pb2.StreamingOutputCallRequest()
     request.response_parameters.append(
-        messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
+        messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+    )
 
     for _ in range(_NUM_STREAM_RESPONSES):
         await call.write(request)
@@ -96,7 +105,6 @@ _RPC_ACTIONS = (
 
 
 class TestWaitForReady(AioTestBase):
-
     async def setUp(self):
         address, self._port, self._socket = get_socket(listen=False)
         self._channel = aio.insecure_channel(f"{address}:{self._port}")
@@ -122,8 +130,10 @@ class TestWaitForReady(AioTestBase):
         """RPC should fail immediately after connection failed."""
         await self._connection_fails_fast(False)
 
-    @unittest.skipIf(platform.system() == 'Windows',
-                     'https://github.com/grpc/grpc/pull/26729')
+    @unittest.skipIf(
+        platform.system() == "Windows",
+        "https://github.com/grpc/grpc/pull/26729",
+    )
     async def test_call_wait_for_ready_enabled(self):
         """RPC will wait until the connection is ready."""
         for action in _RPC_ACTIONS:
@@ -133,7 +143,8 @@ class TestWaitForReady(AioTestBase):
 
                 # Wait for TRANSIENT_FAILURE, and RPC is not aborting
                 await _common.block_until_certain_state(
-                    self._channel, grpc.ChannelConnectivity.TRANSIENT_FAILURE)
+                    self._channel, grpc.ChannelConnectivity.TRANSIENT_FAILURE
+                )
 
                 try:
                     # Start the server
@@ -146,6 +157,6 @@ class TestWaitForReady(AioTestBase):
                         await server.stop(None)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

@@ -147,10 +147,11 @@ class Fuzzer {
         : resource_name_(std::move(resource_name)) {}
 
     void OnResourceChanged(
-        typename ResourceType::ResourceType resource) override {
+        std::shared_ptr<const typename ResourceType::ResourceType> resource)
+        override {
       gpr_log(GPR_INFO, "==> OnResourceChanged(%s %s): %s",
               std::string(ResourceType::Get()->type_url()).c_str(),
-              resource_name_.c_str(), resource.ToString().c_str());
+              resource_name_.c_str(), resource->ToString().c_str());
     }
 
     void OnError(absl::Status status) override {

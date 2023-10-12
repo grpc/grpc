@@ -19,6 +19,8 @@
 /// \file Verify that status ordering rules are obeyed.
 /// \ref doc/status_ordering.md
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
@@ -33,7 +35,7 @@ namespace {
 // server reads and streams responses. The client cancels the RPC to get an
 // error status. (Server sending a non-OK status is not considered an error
 // status.)
-TEST_P(CoreEnd2endTest, StreamingErrorResponse) {
+CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponse) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingMessage response_payload1_recv;
@@ -77,7 +79,7 @@ TEST_P(CoreEnd2endTest, StreamingErrorResponse) {
   EXPECT_TRUE(client_close.was_cancelled());
 }
 
-TEST_P(CoreEnd2endTest, StreamingErrorResponseRequestStatusEarly) {
+CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponseRequestStatusEarly) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingMessage response_payload1_recv;
@@ -112,8 +114,9 @@ TEST_P(CoreEnd2endTest, StreamingErrorResponseRequestStatusEarly) {
   EXPECT_TRUE(client_close.was_cancelled());
 }
 
-TEST_P(CoreEnd2endTest,
-       StreamingErrorResponseRequestStatusEarlyAndRecvMessageSeparately) {
+CORE_END2END_TEST(
+    CoreEnd2endTest,
+    StreamingErrorResponseRequestStatusEarlyAndRecvMessageSeparately) {
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingStatusOnClient server_status;

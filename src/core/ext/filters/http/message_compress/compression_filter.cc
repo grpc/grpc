@@ -19,12 +19,9 @@
 #include <inttypes.h>
 
 #include <functional>
-#include <initializer_list>
 #include <memory>
-#include <string>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -32,6 +29,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/log.h>
 
@@ -48,7 +46,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/prioritized_race.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"

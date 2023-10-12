@@ -18,7 +18,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <initializer_list>
 #include <limits>
 #include <string>
 #include <utility>
@@ -229,6 +228,7 @@ Duration::operator grpc_event_engine::experimental::EventEngine::Duration()
 void TestOnlySetProcessEpoch(gpr_timespec epoch) {
   g_process_epoch_seconds.store(
       gpr_convert_clock_type(epoch, GPR_CLOCK_MONOTONIC).tv_sec);
+  g_process_epoch_cycles.store(gpr_get_cycle_counter());
 }
 
 std::ostream& operator<<(std::ostream& out, Timestamp timestamp) {

@@ -22,9 +22,11 @@ if len(sys.argv) < 2:
     sys.exit()
 
 for file_name in sys.argv[1:]:
-
-    print("Modifying format of {file} comments in place...".format(
-        file=file_name,))
+    print(
+        "Modifying format of {file} comments in place...".format(
+            file=file_name,
+        )
+    )
 
     # Input
 
@@ -54,7 +56,7 @@ for file_name in sys.argv[1:]:
 
     # Pattern matching
 
-    comment_regex = r'^(\s*)//\s(.*)$'
+    comment_regex = r"^(\s*)//\s(.*)$"
 
     def is_comment(line):
         return re.search(comment_regex, line)
@@ -84,8 +86,11 @@ for file_name in sys.argv[1:]:
         if len(comment_block) == 1:
             return [indent + "/** " + content(comment_block[0]) + " */\n"]
 
-        block = ["/**"] + [" * " + content(line) for line in comment_block
-                          ] + [" */"]
+        block = (
+            ["/**"]
+            + [" * " + content(line) for line in comment_block]
+            + [" */"]
+        )
         return [indent + line.rstrip() + "\n" for line in block]
 
     # Main algorithm
@@ -97,7 +102,7 @@ for file_name in sys.argv[1:]:
         comment_block = []
         # Get all lines in the same comment block. We could restrict the indentation
         # to be the same as the first line of the block, but it's probably ok.
-        while (next_line(is_comment)):
+        while next_line(is_comment):
             comment_block.append(read_line())
 
         for line in format_as_block(comment_block):

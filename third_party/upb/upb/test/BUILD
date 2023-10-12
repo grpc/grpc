@@ -33,6 +33,10 @@ load(
     "upb_proto_reflection_library",
 )
 
+# begin:google_only
+# package(default_applicable_licenses = ["//:license"])
+# end:google_only
+
 cc_library(
     name = "parse_text_proto",
     testonly = 1,
@@ -135,8 +139,10 @@ cc_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//:upb",
+        "//:mini_table",
         "//:mini_table_internal",
         "//:port",
+        "//upb/mini_descriptor",
     ],
 )
 
@@ -165,6 +171,7 @@ cc_test(
         "//:json",
         "//:port",
         "//:reflection",
+        "//upb/json",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -196,8 +203,55 @@ cc_test(
         ":test_messages_proto3_upb_proto",
         ":test_upb_proto",
         "//:upb",
+        "//:mini_table",
         "//:mini_table_internal",
         "//:port",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+proto_library(
+    name = "empty_srcs_proto",
+    testonly = 1,
+    srcs = [],
+    deps = [":test_proto"],
+)
+
+proto_library(
+    name = "empty_srcs_2_proto",
+    testonly = 1,
+    srcs = [],
+    deps = [":test_cpp_proto"],
+)
+
+proto_library(
+    name = "empty_srcs_3_proto",
+    testonly = 1,
+    srcs = [],
+    deps = [
+        ":empty_srcs_2_proto",
+        ":empty_srcs_proto",
+    ],
+)
+
+proto_library(
+    name = "test_import_empty_srcs_proto",
+    testonly = 1,
+    srcs = ["test_import_empty_srcs.proto"],
+    deps = [":empty_srcs_3_proto"],
+)
+
+upb_proto_library(
+    name = "test_import_empty_srcs_upb_proto",
+    testonly = 1,
+    deps = [":test_import_empty_srcs_proto"],
+)
+
+cc_test(
+    name = "test_import_empty_srcs",
+    srcs = ["test_import_empty_srcs.cc"],
+    deps = [
+        ":test_import_empty_srcs_upb_proto",
         "@com_google_googletest//:gtest_main",
     ],
 )

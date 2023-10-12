@@ -145,9 +145,7 @@ void JsonWriter::EscapeString(const std::string& string) {
   OutputChar('"');
   for (size_t idx = 0; idx < string.size(); ++idx) {
     uint8_t c = static_cast<uint8_t>(string[idx]);
-    if (c == 0) {
-      break;
-    } else if (c >= 32 && c <= 126) {
+    if (c >= 32 && c <= 126) {
       if (c == '\\' || c == '"') OutputChar('\\');
       OutputChar(static_cast<char>(c));
     } else if (c < 32 || c == 127) {

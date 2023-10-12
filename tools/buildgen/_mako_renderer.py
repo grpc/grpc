@@ -32,10 +32,11 @@ from mako.runtime import Context
 from mako.template import Template
 import yaml
 
-PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
-                            "..")
+PROJECT_ROOT = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", ".."
+)
 # TODO(lidiz) find a better way for plugins to reference each other
-sys.path.append(os.path.join(PROJECT_ROOT, 'tools', 'buildgen', 'plugins'))
+sys.path.append(os.path.join(PROJECT_ROOT, "tools", "buildgen", "plugins"))
 
 
 def out(msg: str) -> None:
@@ -43,8 +44,10 @@ def out(msg: str) -> None:
 
 
 def showhelp() -> None:
-    out('mako-renderer.py [-o out] [-m cache] [-P preprocessed_input] [-d dict] [-d dict...]'
-        ' [-t template] [-w preprocessed_output]')
+    out(
+        "mako-renderer.py [-o out] [-m cache] [-P preprocessed_input] [-d dict]"
+        " [-d dict...] [-t template] [-w preprocessed_output]"
+    )
 
 
 def render_template(template: Template, context: Context) -> None:
@@ -72,40 +75,40 @@ def main(argv: List[str]) -> None:
     output_merged = None
 
     try:
-        opts, args = getopt.getopt(argv, 'hM:m:o:t:P:')
+        opts, args = getopt.getopt(argv, "hM:m:o:t:P:")
     except getopt.GetoptError:
-        out('Unknown option')
+        out("Unknown option")
         showhelp()
         sys.exit(2)
 
     for opt, arg in opts:
-        if opt == '-h':
-            out('Displaying showhelp')
+        if opt == "-h":
+            out("Displaying showhelp")
             showhelp()
             sys.exit()
-        elif opt == '-o':
+        elif opt == "-o":
             if got_output:
-                out('Got more than one output')
+                out("Got more than one output")
                 showhelp()
                 sys.exit(3)
             got_output = True
             output_name = arg
-        elif opt == '-m':
+        elif opt == "-m":
             if module_directory is not None:
-                out('Got more than one cache directory')
+                out("Got more than one cache directory")
                 showhelp()
                 sys.exit(4)
             module_directory = arg
-        elif opt == '-M':
+        elif opt == "-M":
             if output_merged is not None:
-                out('Got more than one output merged path')
+                out("Got more than one output merged path")
                 showhelp()
                 sys.exit(5)
             output_merged = arg
-        elif opt == '-P':
+        elif opt == "-P":
             assert not got_preprocessed_input
             assert json_dict == {}
-            with open(arg, 'rb') as dict_file:
+            with open(arg, "rb") as dict_file:
                 dictionary = pickle.load(dict_file)
             got_preprocessed_input = True
 
@@ -117,13 +120,16 @@ def main(argv: List[str]) -> None:
         for src in srcs:
             if isinstance(src, str):
                 assert len(srcs) == 1
-                template = Template(src,
-                                    filename=arg,
-                                    module_directory=module_directory,
-                                    lookup=TemplateLookup(directories=['.']))
-                with open(output_name, 'w') as output_file:
-                    render_template(template, Context(output_file,
-                                                      **dictionary))
+                template = Template(
+                    src,
+                    filename=arg,
+                    module_directory=module_directory,
+                    lookup=TemplateLookup(directories=["."]),
+                )
+                with open(output_name, "w") as output_file:
+                    render_template(
+                        template, Context(output_file, **dictionary)
+                    )
             else:
                 # we have optional control data: this template represents
                 # a directory
@@ -136,12 +142,12 @@ def main(argv: List[str]) -> None:
                         shutil.rmtree(output_name, ignore_errors=True)
                     cleared_dir = True
                 items = []
-                if 'foreach' in src:
-                    for el in dictionary[src['foreach']]:
-                        if 'cond' in src:
+                if "foreach" in src:
+                    for el in dictionary[src["foreach"]]:
+                        if "cond" in src:
                             args = dict(dictionary)
-                            args['selected'] = el
-                            if not eval(src['cond'], {}, args):
+                            args["selected"] = el
+                            if not eval(src["cond"], {}, args):
                                 continue
                         items.append(el)
                     assert items
@@ -149,24 +155,25 @@ def main(argv: List[str]) -> None:
                     items = [None]
                 for item in items:
                     args = dict(dictionary)
-                    args['selected'] = item
+                    args["selected"] = item
                     item_output_name = os.path.join(
-                        output_name,
-                        Template(src['output_name']).render(**args))
+                        output_name, Template(src["output_name"]).render(**args)
+                    )
                     if not os.path.exists(os.path.dirname(item_output_name)):
                         os.makedirs(os.path.dirname(item_output_name))
                     template = Template(
-                        src['template'],
+                        src["template"],
                         filename=arg,
                         module_directory=module_directory,
-                        lookup=TemplateLookup(directories=['.']))
-                    with open(item_output_name, 'w') as output_file:
+                        lookup=TemplateLookup(directories=["."]),
+                    )
+                    with open(item_output_name, "w") as output_file:
                         render_template(template, Context(output_file, **args))
 
     if not got_input and not preprocessed_output:
-        out('Got nothing to do')
+        out("Got nothing to do")
         showhelp()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

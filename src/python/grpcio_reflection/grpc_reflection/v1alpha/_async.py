@@ -24,31 +24,39 @@ class ReflectionServicer(BaseReflectionServicer):
     """Servicer handling RPCs for service statuses."""
 
     async def ServerReflectionInfo(
-        self, request_iterator: AsyncIterable[
-            _reflection_pb2.ServerReflectionRequest], unused_context
+        self,
+        request_iterator: AsyncIterable[
+            _reflection_pb2.ServerReflectionRequest
+        ],
+        unused_context,
     ) -> AsyncIterable[_reflection_pb2.ServerReflectionResponse]:
         async for request in request_iterator:
-            if request.HasField('file_by_filename'):
+            if request.HasField("file_by_filename"):
                 yield self._file_by_filename(request.file_by_filename)
-            elif request.HasField('file_containing_symbol'):
+            elif request.HasField("file_containing_symbol"):
                 yield self._file_containing_symbol(
-                    request.file_containing_symbol)
-            elif request.HasField('file_containing_extension'):
+                    request.file_containing_symbol
+                )
+            elif request.HasField("file_containing_extension"):
                 yield self._file_containing_extension(
                     request.file_containing_extension.containing_type,
-                    request.file_containing_extension.extension_number)
-            elif request.HasField('all_extension_numbers_of_type'):
+                    request.file_containing_extension.extension_number,
+                )
+            elif request.HasField("all_extension_numbers_of_type"):
                 yield self._all_extension_numbers_of_type(
-                    request.all_extension_numbers_of_type)
-            elif request.HasField('list_services'):
+                    request.all_extension_numbers_of_type
+                )
+            elif request.HasField("list_services"):
                 yield self._list_services()
             else:
                 yield _reflection_pb2.ServerReflectionResponse(
                     error_response=_reflection_pb2.ErrorResponse(
                         error_code=grpc.StatusCode.INVALID_ARGUMENT.value[0],
-                        error_message=grpc.StatusCode.INVALID_ARGUMENT.value[1].
-                        encode(),
-                    ))
+                        error_message=grpc.StatusCode.INVALID_ARGUMENT.value[
+                            1
+                        ].encode(),
+                    )
+                )
 
 
 __all__ = [

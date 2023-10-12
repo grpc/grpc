@@ -35,6 +35,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -143,6 +144,8 @@ struct inproc_transport {
   grpc_core::ConnectivityStateTracker state_tracker;
   void (*accept_stream_cb)(void* user_data, grpc_transport* transport,
                            const void* server_data);
+  void (*registered_method_matcher_cb)(
+      void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* accept_stream_data;
   bool is_closed = false;
   struct inproc_transport* other_side;
@@ -695,6 +698,12 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
       }
       s->to_read_initial_md.Clear();
       s->to_read_initial_md_filled = false;
+      if (s->t->registered_method_matcher_cb != nullptr) {
+        s->t->registered_method_matcher_cb(
+            s->t->accept_stream_data,
+            s->recv_initial_md_op->payload->recv_initial_metadata
+                .recv_initial_metadata);
+      }
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           std::exchange(s->recv_initial_md_op->payload->recv_initial_metadata
@@ -1119,6 +1128,7 @@ void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   }
   if (op->set_accept_stream) {
     t->accept_stream_cb = op->set_accept_stream_fn;
+    t->registered_method_matcher_cb = op->set_registered_method_matcher_fn;
     t->accept_stream_data = op->set_accept_stream_user_data;
   }
   if (op->on_consumed) {

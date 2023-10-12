@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package memory_quota_fuzzer;
 
+import "test/core/util/fuzz_config_vars.proto";
+
 message Empty {}
 
 message Reclaimer {
@@ -54,4 +56,5 @@ message Action {
 
 message Msg {
     repeated Action actions = 2;
+    grpc.testing.FuzzConfigVars config_vars = 3;
 }

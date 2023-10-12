@@ -20,7 +20,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -36,6 +35,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -169,7 +169,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
 
   void StartTimer(Timestamp deadline) {
     const Duration timeout = deadline - Timestamp::Now();
-    absl::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     timer_handle_ = channel_->channel_stack()->EventEngine()->RunAfter(
         timeout, [self = Ref()]() mutable {
           ApplicationCallbackExecCtx callback_exec_ctx;
@@ -186,7 +186,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
       GRPC_LOG_IF_ERROR("watch_completion_error", error);
     }
     {
-      absl::MutexLock lock(&self->mu_);
+      MutexLock lock(&self->mu_);
       if (self->timer_handle_.has_value()) {
         self->channel_->channel_stack()->EventEngine()->Cancel(
             *self->timer_handle_);
@@ -238,7 +238,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   // timer_handle_ might be accessed in parallel from multiple threads, e.g.
   // timer callback fired immediately on an EventEngine thread before
   // RunAfter() returns.
-  absl::Mutex mu_;
+  Mutex mu_;
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       timer_handle_ ABSL_GUARDED_BY(mu_);
   bool timer_fired_ = false;

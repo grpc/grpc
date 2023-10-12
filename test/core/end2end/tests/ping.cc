@@ -20,6 +20,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
@@ -28,7 +29,7 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(RetryHttp2Test, Ping) {
+CORE_END2END_TEST(RetryHttp2Test, Ping) {
   const int kPingCount = 5;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   InitClient(ChannelArgs()

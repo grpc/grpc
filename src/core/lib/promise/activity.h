@@ -32,6 +32,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -56,6 +57,9 @@ class Wakeable {
   // WakeupMask comes from the activity that created this Wakeable and specifies
   // the set of promises that should be awoken.
   virtual void Wakeup(WakeupMask wakeup_mask) = 0;
+  // Per Wakeup, but guarantee that the activity will be woken up out-of-line.
+  // Useful if there may be mutexes or the like held by the current thread.
+  virtual void WakeupAsync(WakeupMask wakeup_mask) = 0;
   // Drop this wakeable without waking up the underlying activity.
   virtual void Drop(WakeupMask wakeup_mask) = 0;
 
@@ -69,6 +73,7 @@ class Wakeable {
 namespace promise_detail {
 struct Unwakeable final : public Wakeable {
   void Wakeup(WakeupMask) override {}
+  void WakeupAsync(WakeupMask) override {}
   void Drop(WakeupMask) override {}
   std::string ActivityDebugTag(WakeupMask) const override;
 };
@@ -95,6 +100,8 @@ class Waker {
 
   // Wake the underlying activity.
   void Wakeup() { Take().Wakeup(); }
+
+  void WakeupAsync() { Take().WakeupAsync(); }
 
   template <typename H>
   friend H AbslHashValue(H h, const Waker& w) {
@@ -125,6 +132,7 @@ class Waker {
     WakeupMask wakeup_mask;
 
     void Wakeup() { wakeable->Wakeup(wakeup_mask); }
+    void WakeupAsync() { wakeable->WakeupAsync(wakeup_mask); }
     void Drop() { wakeable->Drop(wakeup_mask); }
     std::string ActivityDebugTag() const {
       return wakeable == nullptr ? "<unknown>"
@@ -511,6 +519,8 @@ class PromiseActivity final
       WakeupComplete();
     }
   }
+
+  void WakeupAsync(WakeupMask) final { Crash("not implemented"); }
 
   // Drop a wakeup
   void Drop(WakeupMask) final { this->WakeupComplete(); }

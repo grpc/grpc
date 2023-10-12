@@ -27,9 +27,10 @@ async def run_worker_server(port: int) -> None:
 
     servicer = worker_servicer.WorkerServicer()
     worker_service_pb2_grpc.add_WorkerServiceServicer_to_server(
-        servicer, server)
+        servicer, server
+    )
 
-    server.add_insecure_port('[::]:{}'.format(port))
+    server.add_insecure_port("[::]:{}".format(port))
 
     await server.start()
 
@@ -37,21 +38,25 @@ async def run_worker_server(port: int) -> None:
     await server.stop(None)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     parser = argparse.ArgumentParser(
-        description='gRPC Python performance testing worker')
-    parser.add_argument('--driver_port',
-                        type=int,
-                        dest='port',
-                        help='The port the worker should listen on')
-    parser.add_argument('--uvloop',
-                        action='store_true',
-                        help='Use uvloop or not')
+        description="gRPC Python performance testing worker"
+    )
+    parser.add_argument(
+        "--driver_port",
+        type=int,
+        dest="port",
+        help="The port the worker should listen on",
+    )
+    parser.add_argument(
+        "--uvloop", action="store_true", help="Use uvloop or not"
+    )
     args = parser.parse_args()
 
     if args.uvloop:
         import uvloop
+
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         loop = uvloop.new_event_loop()
         asyncio.set_event_loop(loop)

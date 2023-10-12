@@ -15,7 +15,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
 #include <atomic>
-#include <chrono>
 #include <thread>
 
 #include <gtest/gtest.h>
@@ -37,7 +36,6 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
       : FuzzingEventEngine(
             []() {
               Options options;
-              options.final_tick_length = std::chrono::milliseconds(10);
               return options;
             }(),
             fuzzing_event_engine::Actions()),

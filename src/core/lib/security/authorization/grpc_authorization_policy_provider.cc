@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/security/authorization/rbac_policy.h"
 #include "src/core/lib/security/authorization/rbac_translator.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -121,7 +122,8 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace) && !status.ok()) {
         gpr_log(GPR_ERROR,
                 "authorization policy reload status. code=%d error_details=%s",
-                status.code(), std::string(status.message()).c_str());
+                static_cast<int>(status.code()),
+                std::string(status.message()).c_str());
       }
     }
   };

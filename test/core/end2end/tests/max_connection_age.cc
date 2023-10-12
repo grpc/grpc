@@ -18,9 +18,11 @@
 
 #include <limits.h>
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -48,7 +50,7 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(Http2Test, MaxAgeForciblyClose) {
+CORE_END2END_TEST(Http2Test, MaxAgeForciblyClose) {
   SKIP_IF_MINSTACK();
   InitClient(ChannelArgs());
   InitServer(ChannelArgs()
@@ -109,8 +111,10 @@ TEST_P(Http2Test, MaxAgeForciblyClose) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
 }
 
-TEST_P(Http2Test, MaxAgeGracefullyClose) {
+CORE_END2END_TEST(Http2Test, MaxAgeGracefullyClose) {
   SKIP_IF_MINSTACK();
+  SKIP_IF_FUZZING();
+
   InitClient(ChannelArgs());
   InitServer(ChannelArgs()
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)

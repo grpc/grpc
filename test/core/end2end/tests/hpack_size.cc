@@ -25,7 +25,7 @@
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -138,84 +138,112 @@ void HpackSize(CoreEnd2endTest& test, int encode_size, int decode_size) {
   }
 }
 
-TEST_P(Http2SingleHopTest, Encode0Decode0) { HpackSize(*this, 0, 0); }
-TEST_P(Http2SingleHopTest, Encode0Decode100) { HpackSize(*this, 0, 100); }
-TEST_P(Http2SingleHopTest, Encode0Decode1000) { HpackSize(*this, 0, 1000); }
-TEST_P(Http2SingleHopTest, Encode0Decode4096) { HpackSize(*this, 0, 4096); }
-TEST_P(Http2SingleHopTest, Encode0Decode32768) { HpackSize(*this, 0, 32768); }
-TEST_P(Http2SingleHopTest, Encode0Decode4194304) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode0Decode0) {
+  HpackSize(*this, 0, 0);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode0Decode100) {
+  HpackSize(*this, 0, 100);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode0Decode1000) {
+  HpackSize(*this, 0, 1000);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode0Decode4096) {
+  HpackSize(*this, 0, 4096);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode0Decode32768) {
+  HpackSize(*this, 0, 32768);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode0Decode4194304) {
   HpackSize(*this, 0, 4194304);
 }
-TEST_P(Http2SingleHopTest, Encode100Decode0) { HpackSize(*this, 100, 0); }
-TEST_P(Http2SingleHopTest, Encode100Decode100) { HpackSize(*this, 100, 100); }
-TEST_P(Http2SingleHopTest, Encode100Decode1000) { HpackSize(*this, 100, 1000); }
-TEST_P(Http2SingleHopTest, Encode100Decode4096) { HpackSize(*this, 100, 4096); }
-TEST_P(Http2SingleHopTest, Encode100Decode32768) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode100Decode0) {
+  HpackSize(*this, 100, 0);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode100Decode100) {
+  HpackSize(*this, 100, 100);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode100Decode1000) {
+  HpackSize(*this, 100, 1000);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode100Decode4096) {
+  HpackSize(*this, 100, 4096);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode100Decode32768) {
   HpackSize(*this, 100, 32768);
 }
-TEST_P(Http2SingleHopTest, Encode100Decode4194304) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode100Decode4194304) {
   HpackSize(*this, 100, 4194304);
 }
-TEST_P(Http2SingleHopTest, Encode1000Decode0) { HpackSize(*this, 1000, 0); }
-TEST_P(Http2SingleHopTest, Encode1000Decode100) { HpackSize(*this, 1000, 100); }
-TEST_P(Http2SingleHopTest, Encode1000Decode1000) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode1000Decode0) {
+  HpackSize(*this, 1000, 0);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode1000Decode100) {
+  HpackSize(*this, 1000, 100);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode1000Decode1000) {
   HpackSize(*this, 1000, 1000);
 }
-TEST_P(Http2SingleHopTest, Encode1000Decode4096) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode1000Decode4096) {
   HpackSize(*this, 1000, 4096);
 }
-TEST_P(Http2SingleHopTest, Encode1000Decode32768) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode1000Decode32768) {
   HpackSize(*this, 1000, 32768);
 }
-TEST_P(Http2SingleHopTest, Encode1000Decode4194304) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode1000Decode4194304) {
   HpackSize(*this, 1000, 4194304);
 }
-TEST_P(Http2SingleHopTest, Encode4096Decode0) { HpackSize(*this, 4096, 0); }
-TEST_P(Http2SingleHopTest, Encode4096Decode100) { HpackSize(*this, 4096, 100); }
-TEST_P(Http2SingleHopTest, Encode4096Decode1000) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode4096Decode0) {
+  HpackSize(*this, 4096, 0);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode4096Decode100) {
+  HpackSize(*this, 4096, 100);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode4096Decode1000) {
   HpackSize(*this, 4096, 1000);
 }
-TEST_P(Http2SingleHopTest, Encode4096Decode4096) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode4096Decode4096) {
   HpackSize(*this, 4096, 4096);
 }
-TEST_P(Http2SingleHopTest, Encode4096Decode32768) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode4096Decode32768) {
   HpackSize(*this, 4096, 32768);
 }
-TEST_P(Http2SingleHopTest, Encode4096Decode4194304) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode4096Decode4194304) {
   HpackSize(*this, 4096, 4194304);
 }
-TEST_P(Http2SingleHopTest, Encode32768Decode0) { HpackSize(*this, 32768, 0); }
-TEST_P(Http2SingleHopTest, Encode32768Decode100) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode32768Decode0) {
+  HpackSize(*this, 32768, 0);
+}
+CORE_END2END_TEST(Http2SingleHopTest, Encode32768Decode100) {
   HpackSize(*this, 32768, 100);
 }
-TEST_P(Http2SingleHopTest, Encode32768Decode1000) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode32768Decode1000) {
   HpackSize(*this, 32768, 1000);
 }
-TEST_P(Http2SingleHopTest, Encode32768Decode4096) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode32768Decode4096) {
   HpackSize(*this, 32768, 4096);
 }
-TEST_P(Http2SingleHopTest, Encode32768Decode32768) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode32768Decode32768) {
   HpackSize(*this, 32768, 32768);
 }
-TEST_P(Http2SingleHopTest, Encode32768Decode4194304) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode32768Decode4194304) {
   HpackSize(*this, 32768, 4194304);
 }
-TEST_P(Http2SingleHopTest, Encode4194304Decode0) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode4194304Decode0) {
   HpackSize(*this, 4194304, 0);
 }
-TEST_P(Http2SingleHopTest, Encode4194304Decode100) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode4194304Decode100) {
   HpackSize(*this, 4194304, 100);
 }
-TEST_P(Http2SingleHopTest, Encode4194304Decode1000) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode4194304Decode1000) {
   HpackSize(*this, 4194304, 1000);
 }
-TEST_P(Http2SingleHopTest, Encode4194304Decode4096) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode4194304Decode4096) {
   HpackSize(*this, 4194304, 4096);
 }
-TEST_P(Http2SingleHopTest, Encode4194304Decode32768) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode4194304Decode32768) {
   HpackSize(*this, 4194304, 32768);
 }
-TEST_P(Http2SingleHopTest, Encode4194304Decode4194304) {
+CORE_END2END_TEST(Http2SingleHopTest, Encode4194304Decode4194304) {
   HpackSize(*this, 4194304, 4194304);
 }
 

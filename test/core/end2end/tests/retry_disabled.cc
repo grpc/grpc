@@ -16,10 +16,12 @@
 //
 //
 
+#include <memory>
+
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -34,7 +36,7 @@ namespace {
 // configuration in the service config.
 // - 1 retry allowed for ABORTED status
 // - first attempt returns ABORTED but does not retry
-TEST_P(RetryTest, RetryDisabled) {
+CORE_END2END_TEST(RetryTest, RetryDisabled) {
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

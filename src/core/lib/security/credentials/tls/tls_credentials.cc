@@ -23,11 +23,11 @@
 #include <string>
 #include <utility>
 
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -98,7 +98,7 @@ TlsCredentials::create_security_connector(
   return sc;
 }
 
-grpc_core::UniqueTypeName TlsCredentials::type() const {
+grpc_core::UniqueTypeName TlsCredentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("Tls");
   return kFactory.Create();
 }

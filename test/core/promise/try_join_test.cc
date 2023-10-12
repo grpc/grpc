@@ -15,7 +15,7 @@
 #include "src/core/lib/promise/try_join.h"
 
 #include <functional>
-#include <tuple>
+#include <memory>
 #include <utility>
 
 #include "absl/utility/utility.h"
@@ -75,6 +75,12 @@ TEST(TryJoinTest, Join2Fail1P) {
 
 TEST(TryJoinTest, Join2Fail2P) {
   EXPECT_EQ(TryJoin(instant_fail<int>(), pending<int>())(), (fail<int, int>()));
+}
+
+TEST(TryJoinTest, JoinStatus) {
+  EXPECT_EQ(TryJoin([]() { return absl::OkStatus(); },
+                    []() { return absl::OkStatus(); })(),
+            ok(Empty{}, Empty{}));
 }
 
 }  // namespace grpc_core

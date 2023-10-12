@@ -53,11 +53,11 @@ void SimpleRequestBody(CoreEnd2endTest& test,
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-TEST_P(CoreEnd2endTest, InvokeRegisteredCall) {
+CORE_END2END_TEST(CoreEnd2endTest, InvokeRegisteredCall) {
   SimpleRequestBody(*this, RegisterCallOnClient("/foo", nullptr));
 }
 
-TEST_P(CoreEnd2endTest, Invoke10RegisteredCalls) {
+CORE_END2END_TEST(CoreEnd2endTest, Invoke10RegisteredCalls) {
   auto rc = RegisterCallOnClient("/foo", nullptr);
   for (int i = 0; i < 10; i++) {
     SimpleRequestBody(*this, rc);

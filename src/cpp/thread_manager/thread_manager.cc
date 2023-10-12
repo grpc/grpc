@@ -19,7 +19,6 @@
 #include "src/cpp/thread_manager/thread_manager.h"
 
 #include <climits>
-#include <initializer_list>
 
 #include "absl/strings/str_format.h"
 

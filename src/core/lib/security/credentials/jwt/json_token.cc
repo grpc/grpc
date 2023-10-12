@@ -115,8 +115,12 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
     gpr_log(GPR_ERROR, "Could not write into openssl BIO.");
     goto end;
   }
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   result.private_key =
       PEM_read_bio_RSAPrivateKey(bio, nullptr, nullptr, const_cast<char*>(""));
+#else
+  result.private_key = PEM_read_bio_PrivateKey(bio, nullptr, nullptr, nullptr);
+#endif
   if (result.private_key == nullptr) {
     gpr_log(GPR_ERROR, "Could not deserialize private key.");
     goto end;
@@ -158,7 +162,11 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key) {
     json_key->client_email = nullptr;
   }
   if (json_key->private_key != nullptr) {
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     RSA_free(json_key->private_key);
+#else
+    EVP_PKEY_free(json_key->private_key);
+#endif
     json_key->private_key = nullptr;
   }
 }
@@ -237,7 +245,9 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
                                    const char* to_sign) {
   const EVP_MD* md = openssl_digest_from_algorithm(signature_algorithm);
   EVP_MD_CTX* md_ctx = nullptr;
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   EVP_PKEY* key = EVP_PKEY_new();
+#endif
   size_t sig_len = 0;
   unsigned char* sig = nullptr;
   char* result = nullptr;
@@ -247,8 +257,13 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
     gpr_log(GPR_ERROR, "Could not create MD_CTX");
     goto end;
   }
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   EVP_PKEY_set1_RSA(key, json_key->private_key);
   if (EVP_DigestSignInit(md_ctx, nullptr, md, nullptr, key) != 1) {
+#else
+  if (EVP_DigestSignInit(md_ctx, nullptr, md, nullptr, json_key->private_key) !=
+      1) {
+#endif
     gpr_log(GPR_ERROR, "DigestInit failed.");
     goto end;
   }
@@ -268,7 +283,9 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
   result = grpc_base64_encode(sig, sig_len, 1, 0);
 
 end:
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   if (key != nullptr) EVP_PKEY_free(key);
+#endif
   if (md_ctx != nullptr) EVP_MD_CTX_destroy(md_ctx);
   if (sig != nullptr) gpr_free(sig);
   return result;

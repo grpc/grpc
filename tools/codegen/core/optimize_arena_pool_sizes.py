@@ -26,8 +26,8 @@ import re
 import sys
 
 # A single allocation, negative size => free
-Allocation = collections.namedtuple('Allocation', 'size ptr')
-Active = collections.namedtuple('Active', 'id size')
+Allocation = collections.namedtuple("Allocation", "size ptr")
+Active = collections.namedtuple("Active", "id size")
 
 # Read through all the captures, and build up scrubbed traces
 arenas = []
@@ -38,8 +38,9 @@ smallest = 1024
 sizes = set()
 for filename in sys.argv[1:]:
     for line in open(filename):
-        m = re.search(r'ARENA 0x([0-9a-f]+) ALLOC ([0-9]+) @ 0x([0-9a-f]+)',
-                      line)
+        m = re.search(
+            r"ARENA 0x([0-9a-f]+) ALLOC ([0-9]+) @ 0x([0-9a-f]+)", line
+        )
         if m:
             size = int(m.group(2))
             if size > biggest:
@@ -49,13 +50,13 @@ for filename in sys.argv[1:]:
             active[m.group(3)] = Active(m.group(1), size)
             building[m.group(1)].append(size)
             sizes.add(size)
-        m = re.search(r'FREE 0x([0-9a-f]+)', line)
+        m = re.search(r"FREE 0x([0-9a-f]+)", line)
         if m:
             # We may have spurious frees, so make sure there's an outstanding allocation
             last = active.pop(m.group(1), None)
             if last is not None:
                 building[last.id].append(-last.size)
-        m = re.search(r'DESTRUCT_ARENA 0x([0-9a-f]+)', line)
+        m = re.search(r"DESTRUCT_ARENA 0x([0-9a-f]+)", line)
         if m:
             trace = building.pop(m.group(1), None)
             if trace:
@@ -89,8 +90,9 @@ def outstanding_bytes(pool_sizes, trace):
 def measure(pool_sizes):
     max_outstanding = 0
     for trace in arenas:
-        max_outstanding = max(max_outstanding,
-                              outstanding_bytes(pool_sizes, trace))
+        max_outstanding = max(
+            max_outstanding, outstanding_bytes(pool_sizes, trace)
+        )
     return max_outstanding
 
 
@@ -120,8 +122,10 @@ while testq:
     m = measure(top)
     step += 1
     if step % 1000 == 0:
-        print("iter %d; pending=%d; top=%r/%d" %
-              (step, len(testq), top, measure(top)))
+        print(
+            "iter %d; pending=%d; top=%r/%d"
+            % (step, len(testq), top, measure(top))
+        )
     for i in sizes:
         if i >= top[-1]:
             continue

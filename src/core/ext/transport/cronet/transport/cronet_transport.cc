@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <initializer_list>
 #include <new>
 #include <string>
 #include <utility>
@@ -37,6 +36,7 @@
 #include "absl/types/optional.h"
 #include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>

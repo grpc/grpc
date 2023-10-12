@@ -32,7 +32,8 @@
 #define UPB_MESSAGE_VALUE_H_
 
 #include "upb/base/string_view.h"
-#include "upb/mini_table/types.h"
+#include "upb/message/tagged_ptr.h"
+#include "upb/mini_table/message.h"
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -52,6 +53,12 @@ typedef union {
   const upb_Map* map_val;
   const upb_Message* msg_val;
   upb_StringView str_val;
+
+  // EXPERIMENTAL: A tagged upb_Message*.  Users must use this instead of
+  // msg_val if unlinked sub-messages may possibly be in use.  See the
+  // documentation in kUpb_DecodeOption_ExperimentalAllowUnlinked for more
+  // information.
+  upb_TaggedMessagePtr tagged_msg_val;
 } upb_MessageValue;
 
 typedef union {

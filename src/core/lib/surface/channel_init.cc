@@ -26,6 +26,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <type_traits>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -72,6 +73,15 @@ ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::Before(
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::If(
     InclusionPredicate predicate) {
   predicates_.emplace_back(std::move(predicate));
+  return *this;
+}
+
+ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::IfNot(
+    InclusionPredicate predicate) {
+  predicates_.emplace_back(
+      [predicate = std::move(predicate)](const ChannelArgs& args) {
+        return !predicate(args);
+      });
   return *this;
 }
 

@@ -23,59 +23,63 @@ from grpc import _channel
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
-_CHANNEL_ARGS = (('grpc.primary_user_agent', 'primary-agent'),
-                 ('grpc.secondary_user_agent', 'secondary-agent'))
+_CHANNEL_ARGS = (
+    ("grpc.primary_user_agent", "primary-agent"),
+    ("grpc.secondary_user_agent", "secondary-agent"),
+)
 
-_REQUEST = b'\x00\x00\x00'
-_RESPONSE = b'\x00\x00\x00'
+_REQUEST = b"\x00\x00\x00"
+_RESPONSE = b"\x00\x00\x00"
 
-_UNARY_UNARY = '/test/UnaryUnary'
-_UNARY_STREAM = '/test/UnaryStream'
-_STREAM_UNARY = '/test/StreamUnary'
-_STREAM_STREAM = '/test/StreamStream'
+_UNARY_UNARY = "/test/UnaryUnary"
+_UNARY_STREAM = "/test/UnaryStream"
+_STREAM_UNARY = "/test/StreamUnary"
+_STREAM_STREAM = "/test/StreamStream"
 
 _INVOCATION_METADATA = (
     (
-        b'invocation-md-key',
-        u'invocation-md-value',
+        b"invocation-md-key",
+        "invocation-md-value",
     ),
     (
-        u'invocation-md-key-bin',
-        b'\x00\x01',
+        "invocation-md-key-bin",
+        b"\x00\x01",
     ),
 )
 _EXPECTED_INVOCATION_METADATA = (
     (
-        'invocation-md-key',
-        'invocation-md-value',
+        "invocation-md-key",
+        "invocation-md-value",
     ),
     (
-        'invocation-md-key-bin',
-        b'\x00\x01',
+        "invocation-md-key-bin",
+        b"\x00\x01",
     ),
 )
 
-_INITIAL_METADATA = ((b'initial-md-key', u'initial-md-value'),
-                     (u'initial-md-key-bin', b'\x00\x02'))
+_INITIAL_METADATA = (
+    (b"initial-md-key", "initial-md-value"),
+    ("initial-md-key-bin", b"\x00\x02"),
+)
 _EXPECTED_INITIAL_METADATA = (
     (
-        'initial-md-key',
-        'initial-md-value',
+        "initial-md-key",
+        "initial-md-value",
     ),
     (
-        'initial-md-key-bin',
-        b'\x00\x02',
+        "initial-md-key-bin",
+        b"\x00\x02",
     ),
 )
 
 _TRAILING_METADATA = (
     (
-        'server-trailing-md-key',
-        'server-trailing-md-value',
+        "server-trailing-md-key",
+        "server-trailing-md-value",
     ),
     (
-        'server-trailing-md-key-bin',
-        b'\x00\x03',
+        "server-trailing-md-key-bin",
+        b"\x00\x03",
     ),
 )
 _EXPECTED_TRAILING_METADATA = _TRAILING_METADATA
@@ -83,20 +87,23 @@ _EXPECTED_TRAILING_METADATA = _TRAILING_METADATA
 
 def _user_agent(metadata):
     for key, val in metadata:
-        if key == 'user-agent':
+        if key == "user-agent":
             return val
-    raise KeyError('No user agent!')
+    raise KeyError("No user agent!")
 
 
 def validate_client_metadata(test, servicer_context):
     invocation_metadata = servicer_context.invocation_metadata()
     test.assertTrue(
-        test_common.metadata_transmitted(_EXPECTED_INVOCATION_METADATA,
-                                         invocation_metadata))
+        test_common.metadata_transmitted(
+            _EXPECTED_INVOCATION_METADATA, invocation_metadata
+        )
+    )
     user_agent = _user_agent(invocation_metadata)
     test.assertTrue(
-        user_agent.startswith('primary-agent ' + _channel._USER_AGENT))
-    test.assertTrue(user_agent.endswith('secondary-agent'))
+        user_agent.startswith("primary-agent " + _channel._USER_AGENT)
+    )
+    test.assertTrue(user_agent.endswith("secondary-agent"))
 
 
 def handle_unary_unary(test, request, servicer_context):
@@ -135,7 +142,6 @@ def handle_stream_stream(test, request_iterator, servicer_context):
 
 
 class _MethodHandler(grpc.RpcMethodHandler):
-
     def __init__(self, test, request_streaming, response_streaming):
         self.request_streaming = request_streaming
         self.response_streaming = response_streaming
@@ -156,7 +162,6 @@ class _MethodHandler(grpc.RpcMethodHandler):
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
-
     def __init__(self, test):
         self._test = test
 
@@ -174,15 +179,16 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 
 class MetadataTest(unittest.TestCase):
-
     def setUp(self):
         self._server = test_common.test_server()
         self._server.add_generic_rpc_handlers(
-            (_GenericHandler(weakref.proxy(self)),))
-        port = self._server.add_insecure_port('[::]:0')
+            (_GenericHandler(weakref.proxy(self)),)
+        )
+        port = self._server.add_insecure_port("[::]:0")
         self._server.start()
-        self._channel = grpc.insecure_channel('localhost:%d' % port,
-                                              options=_CHANNEL_ARGS)
+        self._channel = grpc.insecure_channel(
+            "localhost:%d" % port, options=_CHANNEL_ARGS
+        )
 
     def tearDown(self):
         self._server.stop(0)
@@ -191,52 +197,72 @@ class MetadataTest(unittest.TestCase):
     def testUnaryUnary(self):
         multi_callable = self._channel.unary_unary(_UNARY_UNARY)
         unused_response, call = multi_callable.with_call(
-            _REQUEST, metadata=_INVOCATION_METADATA)
+            _REQUEST, metadata=_INVOCATION_METADATA
+        )
         self.assertTrue(
-            test_common.metadata_transmitted(_EXPECTED_INITIAL_METADATA,
-                                             call.initial_metadata()))
+            test_common.metadata_transmitted(
+                _EXPECTED_INITIAL_METADATA, call.initial_metadata()
+            )
+        )
         self.assertTrue(
-            test_common.metadata_transmitted(_EXPECTED_TRAILING_METADATA,
-                                             call.trailing_metadata()))
+            test_common.metadata_transmitted(
+                _EXPECTED_TRAILING_METADATA, call.trailing_metadata()
+            )
+        )
 
     def testUnaryStream(self):
         multi_callable = self._channel.unary_stream(_UNARY_STREAM)
         call = multi_callable(_REQUEST, metadata=_INVOCATION_METADATA)
         self.assertTrue(
-            test_common.metadata_transmitted(_EXPECTED_INITIAL_METADATA,
-                                             call.initial_metadata()))
+            test_common.metadata_transmitted(
+                _EXPECTED_INITIAL_METADATA, call.initial_metadata()
+            )
+        )
         for _ in call:
             pass
         self.assertTrue(
-            test_common.metadata_transmitted(_EXPECTED_TRAILING_METADATA,
-                                             call.trailing_metadata()))
+            test_common.metadata_transmitted(
+                _EXPECTED_TRAILING_METADATA, call.trailing_metadata()
+            )
+        )
 
     def testStreamUnary(self):
         multi_callable = self._channel.stream_unary(_STREAM_UNARY)
         unused_response, call = multi_callable.with_call(
             iter([_REQUEST] * test_constants.STREAM_LENGTH),
-            metadata=_INVOCATION_METADATA)
+            metadata=_INVOCATION_METADATA,
+        )
         self.assertTrue(
-            test_common.metadata_transmitted(_EXPECTED_INITIAL_METADATA,
-                                             call.initial_metadata()))
+            test_common.metadata_transmitted(
+                _EXPECTED_INITIAL_METADATA, call.initial_metadata()
+            )
+        )
         self.assertTrue(
-            test_common.metadata_transmitted(_EXPECTED_TRAILING_METADATA,
-                                             call.trailing_metadata()))
+            test_common.metadata_transmitted(
+                _EXPECTED_TRAILING_METADATA, call.trailing_metadata()
+            )
+        )
 
     def testStreamStream(self):
         multi_callable = self._channel.stream_stream(_STREAM_STREAM)
-        call = multi_callable(iter([_REQUEST] * test_constants.STREAM_LENGTH),
-                              metadata=_INVOCATION_METADATA)
+        call = multi_callable(
+            iter([_REQUEST] * test_constants.STREAM_LENGTH),
+            metadata=_INVOCATION_METADATA,
+        )
         self.assertTrue(
-            test_common.metadata_transmitted(_EXPECTED_INITIAL_METADATA,
-                                             call.initial_metadata()))
+            test_common.metadata_transmitted(
+                _EXPECTED_INITIAL_METADATA, call.initial_metadata()
+            )
+        )
         for _ in call:
             pass
         self.assertTrue(
-            test_common.metadata_transmitted(_EXPECTED_TRAILING_METADATA,
-                                             call.trailing_metadata()))
+            test_common.metadata_transmitted(
+                _EXPECTED_TRAILING_METADATA, call.trailing_metadata()
+            )
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

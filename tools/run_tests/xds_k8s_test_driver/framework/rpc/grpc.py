@@ -19,6 +19,8 @@ from google.protobuf import json_format
 import google.protobuf.message
 import grpc
 
+import framework.errors
+
 logger = logging.getLogger(__name__)
 
 # Type aliases
@@ -36,24 +38,28 @@ class GrpcClientHelper:
     # or port forwarding, this still is set to a useful name.
     log_target: str
 
-    def __init__(self,
-                 channel: grpc.Channel,
-                 stub_class: Any,
-                 *,
-                 log_target: Optional[str] = ''):
+    def __init__(
+        self,
+        channel: grpc.Channel,
+        stub_class: Any,
+        *,
+        log_target: Optional[str] = "",
+    ):
         self.channel = channel
         self.stub = stub_class(channel)
-        self.log_service_name = re.sub('Stub$', '',
-                                       self.stub.__class__.__name__)
-        self.log_target = log_target or ''
+        self.log_service_name = re.sub(
+            "Stub$", "", self.stub.__class__.__name__
+        )
+        self.log_target = log_target or ""
 
     def call_unary_with_deadline(
-            self,
-            *,
-            rpc: str,
-            req: Message,
-            deadline_sec: Optional[int] = DEFAULT_RPC_DEADLINE_SEC,
-            log_level: Optional[int] = logging.DEBUG) -> Message:
+        self,
+        *,
+        rpc: str,
+        req: Message,
+        deadline_sec: Optional[int] = DEFAULT_RPC_DEADLINE_SEC,
+        log_level: Optional[int] = logging.DEBUG,
+    ) -> Message:
         if deadline_sec is None:
             deadline_sec = self.DEFAULT_RPC_DEADLINE_SEC
 
@@ -65,22 +71,23 @@ class GrpcClientHelper:
         return rpc_callable(req, **call_kwargs)
 
     def _log_rpc_request(self, rpc, req, call_kwargs, log_level=logging.DEBUG):
-        logger.log(logging.DEBUG if log_level is None else log_level,
-                   '[%s] RPC %s.%s(request=%s(%r), %s)', self.log_target,
-                   self.log_service_name, rpc, req.__class__.__name__,
-                   json_format.MessageToDict(req),
-                   ', '.join({f'{k}={v}' for k, v in call_kwargs.items()}))
+        logger.log(
+            logging.DEBUG if log_level is None else log_level,
+            "[%s] >> RPC %s.%s(request=%s(%r), %s)",
+            self.log_target,
+            self.log_service_name,
+            rpc,
+            req.__class__.__name__,
+            json_format.MessageToDict(req),
+            ", ".join({f"{k}={v}" for k, v in call_kwargs.items()}),
+        )
 
 
 class GrpcApp:
     channels: Dict[int, grpc.Channel]
 
-    class NotFound(Exception):
+    class NotFound(framework.errors.FrameworkError):
         """Requested resource not found"""
-
-        def __init__(self, message):
-            self.message = message
-            super().__init__(message)
 
     def __init__(self, rpc_host):
         self.rpc_host = rpc_host
@@ -89,7 +96,7 @@ class GrpcApp:
 
     def _make_channel(self, port) -> grpc.Channel:
         if port not in self.channels:
-            target = f'{self.rpc_host}:{port}'
+            target = f"{self.rpc_host}:{port}"
             self.channels[port] = grpc.insecure_channel(target)
         return self.channels[port]
 

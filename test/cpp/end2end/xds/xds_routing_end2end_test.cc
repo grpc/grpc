@@ -402,7 +402,9 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
-MATCHER_P2(AdjustedClockInRange, t1, t2, "equals time") {
+MATCHER_P2(AdjustedClockInRange, t1, t2,
+           absl::StrFormat("time between %s and %s", t1.ToString().c_str(),
+                           t2.ToString().c_str())) {
   gpr_cycle_counter cycle_now = gpr_get_cycle_counter();
   grpc_core::Timestamp cycle_time =
       grpc_core::Timestamp::FromCycleCounterRoundDown(cycle_now);

@@ -20,179 +20,182 @@ import os
 # template arguments and dynamic arguments of individual benchmark types
 # Example benchmark name: "BM_UnaryPingPong<TCP, NoOpMutator, NoOpMutator>/0/0"
 _BM_SPECS = {
-    'BM_UnaryPingPong': {
-        'tpl': ['fixture', 'client_mutator', 'server_mutator'],
-        'dyn': ['request_size', 'response_size'],
+    "BM_UnaryPingPong": {
+        "tpl": ["fixture", "client_mutator", "server_mutator"],
+        "dyn": ["request_size", "response_size"],
     },
-    'BM_PumpStreamClientToServer': {
-        'tpl': ['fixture'],
-        'dyn': ['request_size'],
+    "BM_PumpStreamClientToServer": {
+        "tpl": ["fixture"],
+        "dyn": ["request_size"],
     },
-    'BM_PumpStreamServerToClient': {
-        'tpl': ['fixture'],
-        'dyn': ['request_size'],
+    "BM_PumpStreamServerToClient": {
+        "tpl": ["fixture"],
+        "dyn": ["request_size"],
     },
-    'BM_StreamingPingPong': {
-        'tpl': ['fixture', 'client_mutator', 'server_mutator'],
-        'dyn': ['request_size', 'request_count'],
+    "BM_StreamingPingPong": {
+        "tpl": ["fixture", "client_mutator", "server_mutator"],
+        "dyn": ["request_size", "request_count"],
     },
-    'BM_StreamingPingPongMsgs': {
-        'tpl': ['fixture', 'client_mutator', 'server_mutator'],
-        'dyn': ['request_size'],
+    "BM_StreamingPingPongMsgs": {
+        "tpl": ["fixture", "client_mutator", "server_mutator"],
+        "dyn": ["request_size"],
     },
-    'BM_PumpStreamServerToClient_Trickle': {
-        'tpl': [],
-        'dyn': ['request_size', 'bandwidth_kilobits'],
+    "BM_PumpStreamServerToClient_Trickle": {
+        "tpl": [],
+        "dyn": ["request_size", "bandwidth_kilobits"],
     },
-    'BM_PumpUnbalancedUnary_Trickle': {
-        'tpl': [],
-        'dyn': ['cli_req_size', 'svr_req_size', 'bandwidth_kilobits'],
+    "BM_PumpUnbalancedUnary_Trickle": {
+        "tpl": [],
+        "dyn": ["cli_req_size", "svr_req_size", "bandwidth_kilobits"],
     },
-    'BM_ErrorStringOnNewError': {
-        'tpl': ['fixture'],
-        'dyn': [],
+    "BM_ErrorStringOnNewError": {
+        "tpl": ["fixture"],
+        "dyn": [],
     },
-    'BM_ErrorStringRepeatedly': {
-        'tpl': ['fixture'],
-        'dyn': [],
+    "BM_ErrorStringRepeatedly": {
+        "tpl": ["fixture"],
+        "dyn": [],
     },
-    'BM_ErrorGetStatus': {
-        'tpl': ['fixture'],
-        'dyn': [],
+    "BM_ErrorGetStatus": {
+        "tpl": ["fixture"],
+        "dyn": [],
     },
-    'BM_ErrorGetStatusCode': {
-        'tpl': ['fixture'],
-        'dyn': [],
+    "BM_ErrorGetStatusCode": {
+        "tpl": ["fixture"],
+        "dyn": [],
     },
-    'BM_ErrorHttpError': {
-        'tpl': ['fixture'],
-        'dyn': [],
+    "BM_ErrorHttpError": {
+        "tpl": ["fixture"],
+        "dyn": [],
     },
-    'BM_HasClearGrpcStatus': {
-        'tpl': ['fixture'],
-        'dyn': [],
+    "BM_HasClearGrpcStatus": {
+        "tpl": ["fixture"],
+        "dyn": [],
     },
-    'BM_IsolatedFilter': {
-        'tpl': ['fixture', 'client_mutator'],
-        'dyn': [],
+    "BM_IsolatedFilter": {
+        "tpl": ["fixture", "client_mutator"],
+        "dyn": [],
     },
-    'BM_HpackEncoderEncodeHeader': {
-        'tpl': ['fixture'],
-        'dyn': ['end_of_stream', 'request_size'],
+    "BM_HpackEncoderEncodeHeader": {
+        "tpl": ["fixture"],
+        "dyn": ["end_of_stream", "request_size"],
     },
-    'BM_HpackParserParseHeader': {
-        'tpl': ['fixture'],
-        'dyn': [],
+    "BM_HpackParserParseHeader": {
+        "tpl": ["fixture"],
+        "dyn": [],
     },
-    'BM_CallCreateDestroy': {
-        'tpl': ['fixture'],
-        'dyn': [],
+    "BM_CallCreateDestroy": {
+        "tpl": ["fixture"],
+        "dyn": [],
     },
-    'BM_Zalloc': {
-        'tpl': [],
-        'dyn': ['request_size'],
+    "BM_Zalloc": {
+        "tpl": [],
+        "dyn": ["request_size"],
     },
-    'BM_PollEmptyPollset_SpeedOfLight': {
-        'tpl': [],
-        'dyn': ['request_size', 'request_count'],
+    "BM_PollEmptyPollset_SpeedOfLight": {
+        "tpl": [],
+        "dyn": ["request_size", "request_count"],
     },
-    'BM_StreamCreateSendInitialMetadataDestroy': {
-        'tpl': ['fixture'],
-        'dyn': [],
+    "BM_StreamCreateSendInitialMetadataDestroy": {
+        "tpl": ["fixture"],
+        "dyn": [],
     },
-    'BM_TransportStreamSend': {
-        'tpl': [],
-        'dyn': ['request_size'],
+    "BM_TransportStreamSend": {
+        "tpl": [],
+        "dyn": ["request_size"],
     },
-    'BM_TransportStreamRecv': {
-        'tpl': [],
-        'dyn': ['request_size'],
+    "BM_TransportStreamRecv": {
+        "tpl": [],
+        "dyn": ["request_size"],
     },
-    'BM_StreamingPingPongWithCoalescingApi': {
-        'tpl': ['fixture', 'client_mutator', 'server_mutator'],
-        'dyn': ['request_size', 'request_count', 'end_of_stream'],
+    "BM_StreamingPingPongWithCoalescingApi": {
+        "tpl": ["fixture", "client_mutator", "server_mutator"],
+        "dyn": ["request_size", "request_count", "end_of_stream"],
     },
-    'BM_Base16SomeStuff': {
-        'tpl': [],
-        'dyn': ['request_size'],
-    }
+    "BM_Base16SomeStuff": {
+        "tpl": [],
+        "dyn": ["request_size"],
+    },
 }
 
 
 def numericalize(s):
     """Convert abbreviations like '100M' or '10k' to a number."""
     if not s:
-        return ''
-    if s[-1] == 'k':
+        return ""
+    if s[-1] == "k":
         return float(s[:-1]) * 1024
-    if s[-1] == 'M':
+    if s[-1] == "M":
         return float(s[:-1]) * 1024 * 1024
-    if 0 <= (ord(s[-1]) - ord('0')) <= 9:
+    if 0 <= (ord(s[-1]) - ord("0")) <= 9:
         return float(s)
-    assert 'not a number: %s' % s
+    assert "not a number: %s" % s
 
 
 def parse_name(name):
     cpp_name = name
-    if '<' not in name and '/' not in name and name not in _BM_SPECS:
-        return {'name': name, 'cpp_name': name}
+    if "<" not in name and "/" not in name and name not in _BM_SPECS:
+        return {"name": name, "cpp_name": name}
     rest = name
     out = {}
     tpl_args = []
     dyn_args = []
-    if '<' in rest:
-        tpl_bit = rest[rest.find('<') + 1:rest.rfind('>')]
-        arg = ''
+    if "<" in rest:
+        tpl_bit = rest[rest.find("<") + 1 : rest.rfind(">")]
+        arg = ""
         nesting = 0
         for c in tpl_bit:
-            if c == '<':
+            if c == "<":
                 nesting += 1
                 arg += c
-            elif c == '>':
+            elif c == ">":
                 nesting -= 1
                 arg += c
-            elif c == ',':
+            elif c == ",":
                 if nesting == 0:
                     tpl_args.append(arg.strip())
-                    arg = ''
+                    arg = ""
                 else:
                     arg += c
             else:
                 arg += c
         tpl_args.append(arg.strip())
-        rest = rest[:rest.find('<')] + rest[rest.rfind('>') + 1:]
-    if '/' in rest:
-        s = rest.split('/')
+        rest = rest[: rest.find("<")] + rest[rest.rfind(">") + 1 :]
+    if "/" in rest:
+        s = rest.split("/")
         rest = s[0]
         dyn_args = s[1:]
     name = rest
-    assert name in _BM_SPECS, '_BM_SPECS needs to be expanded for %s' % name
-    assert len(dyn_args) == len(_BM_SPECS[name]['dyn'])
-    assert len(tpl_args) == len(_BM_SPECS[name]['tpl'])
-    out['name'] = name
-    out['cpp_name'] = cpp_name
+    assert name in _BM_SPECS, "_BM_SPECS needs to be expanded for %s" % name
+    assert len(dyn_args) == len(_BM_SPECS[name]["dyn"])
+    assert len(tpl_args) == len(_BM_SPECS[name]["tpl"])
+    out["name"] = name
+    out["cpp_name"] = cpp_name
     out.update(
-        dict((k, numericalize(v))
-             for k, v in zip(_BM_SPECS[name]['dyn'], dyn_args)))
-    out.update(dict(zip(_BM_SPECS[name]['tpl'], tpl_args)))
+        dict(
+            (k, numericalize(v))
+            for k, v in zip(_BM_SPECS[name]["dyn"], dyn_args)
+        )
+    )
+    out.update(dict(zip(_BM_SPECS[name]["tpl"], tpl_args)))
     return out
 
 
 def expand_json(js):
     if not js:
         raise StopIteration()
-    for bm in js['benchmarks']:
-        if bm['name'].endswith('_stddev') or bm['name'].endswith('_mean'):
+    for bm in js["benchmarks"]:
+        if bm["name"].endswith("_stddev") or bm["name"].endswith("_mean"):
             continue
-        context = js['context']
-        if 'label' in bm:
+        context = js["context"]
+        if "label" in bm:
             labels_list = [
-                s.split(':')
-                for s in bm['label'].strip().split(' ')
-                if len(s) and s[0] != '#'
+                s.split(":")
+                for s in bm["label"].strip().split(" ")
+                if len(s) and s[0] != "#"
             ]
             for el in labels_list:
-                el[0] = el[0].replace('/iter', '_per_iteration')
+                el[0] = el[0].replace("/iter", "_per_iteration")
             labels = dict(labels_list)
         else:
             labels = {}
@@ -201,11 +204,11 @@ def expand_json(js):
         # Link the data to a kokoro job run by adding
         # well known kokoro env variables as metadata for each row
         row = {
-            'jenkins_build': os.environ.get('KOKORO_BUILD_NUMBER', ''),
-            'jenkins_job': os.environ.get('KOKORO_JOB_NAME', ''),
+            "jenkins_build": os.environ.get("KOKORO_BUILD_NUMBER", ""),
+            "jenkins_job": os.environ.get("KOKORO_JOB_NAME", ""),
         }
         row.update(context)
         row.update(bm)
-        row.update(parse_name(row['name']))
+        row.update(parse_name(row["name"]))
         row.update(labels)
         yield row

@@ -20,7 +20,6 @@
 #include <stdlib.h>
 
 #include <algorithm>
-#include <initializer_list>
 #include <map>
 #include <string>
 #include <utility>
@@ -476,6 +475,7 @@ JsonReader::Status JsonReader::Run() {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
               state_ = State::GRPC_JSON_STATE_VALUE_END;
+              container_just_begun_ = false;
               EndContainer();
               if (stack_.empty()) {
                 state_ = State::GRPC_JSON_STATE_END;

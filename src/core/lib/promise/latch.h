@@ -21,14 +21,12 @@
 
 #include <atomic>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/trace.h"
@@ -44,6 +42,7 @@ class Latch {
  public:
   Latch() = default;
   Latch(const Latch&) = delete;
+  explicit Latch(T value) : value_(std::move(value)), has_value_(true) {}
   Latch& operator=(const Latch&) = delete;
   Latch(Latch&& other) noexcept
       : value_(std::move(other.value_)), has_value_(other.has_value_) {

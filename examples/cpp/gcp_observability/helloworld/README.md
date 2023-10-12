@@ -4,10 +4,11 @@ This example consists of a hello world client and a hello world server
 instrumented with GCP Observability for logs, metrics and tracing. Note that
 familiarity with the [basic hello world][] example is assumed.
 
-Please refer to GCP's Microservices Observability user guide for setup
+Please refer to GCP's [Microservices Observability user guide][] for setup
 instructions.
 
 [basic hello world]: https://grpc.io/docs/languages/cpp/quickstart
+[Microservices Observability user guide]: https://cloud.google.com/stackdriver/docs/solutions/grpc
 
 ### Run the example with configuration
 

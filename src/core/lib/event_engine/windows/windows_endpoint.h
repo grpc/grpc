@@ -48,15 +48,15 @@ class WindowsEndpoint : public EventEngine::Endpoint {
     void Run() override;
     void Prime(std::shared_ptr<AsyncIOState> io_state, SliceBuffer* buffer,
                absl::AnyInvocable<void(absl::Status)> cb);
-    // Resets the per-request data
-    void Reset();
+    // Resets the per-request data, releasing the ref on io_state_.
+    // Returns the previous callback.
+    ABSL_MUST_USE_RESULT absl::AnyInvocable<void(absl::Status)>
+    ResetAndReturnCallback();
     // Run the callback with whatever data is available, and reset state.
     //
     // Returns true if the callback has been called with some data. Returns
     // false if no data has been read.
     bool MaybeFinishIfDataHasAlreadyBeenRead();
-    // Execute the callback and reset.
-    void ExecuteCallbackAndReset(absl::Status status);
     // Swap any leftover slices into the provided buffer
     void DonateSpareSlices(SliceBuffer* buffer);
 
@@ -73,8 +73,10 @@ class WindowsEndpoint : public EventEngine::Endpoint {
     void Run() override;
     void Prime(std::shared_ptr<AsyncIOState> io_state, SliceBuffer* buffer,
                absl::AnyInvocable<void(absl::Status)> cb);
-    // Resets the per-request data
-    void Reset();
+    // Resets the per-request data, releasing the ref on io_state_.
+    // Returns the previous callback.
+    ABSL_MUST_USE_RESULT absl::AnyInvocable<void(absl::Status)>
+    ResetAndReturnCallback();
 
    private:
     std::shared_ptr<AsyncIOState> io_state_;
@@ -90,25 +92,26 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   // events are complete.
   struct AsyncIOState {
     AsyncIOState(WindowsEndpoint* endpoint, std::unique_ptr<WinSocket> socket,
-                 std::shared_ptr<EventEngine> engine);
+                 std::shared_ptr<EventEngine> engine, ThreadPool* thread_pool);
     ~AsyncIOState();
+
+    // Perform the low-level calls and execute the HandleReadClosure
+    // asynchronously.
+    absl::Status DoTcpRead(SliceBuffer* buffer);
+
     WindowsEndpoint* const endpoint;
     std::unique_ptr<WinSocket> socket;
     HandleReadClosure handle_read_event;
     HandleWriteClosure handle_write_event;
     std::shared_ptr<EventEngine> engine;
+    ThreadPool* thread_pool;
   };
-
-  // Perform the low-level calls and execute the HandleReadClosure
-  // asynchronously.
-  absl::Status DoTcpRead(SliceBuffer* buffer);
 
   EventEngine::ResolvedAddress peer_address_;
   std::string peer_address_string_;
   EventEngine::ResolvedAddress local_address_;
   std::string local_address_string_;
   MemoryAllocator allocator_;
-  ThreadPool* thread_pool_;
   std::shared_ptr<AsyncIOState> io_state_;
 };
 

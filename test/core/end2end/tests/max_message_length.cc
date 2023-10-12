@@ -18,11 +18,10 @@
 
 #include <string>
 
-#include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -132,15 +131,17 @@ void TestMaxMessageLengthOnServerOnResponse(CoreEnd2endTest& test) {
   EXPECT_EQ(server_status.message(), "Sent message larger than max (11 vs. 5)");
 }
 
-TEST_P(CoreEnd2endTest, MaxMessageLengthOnClientOnRequestViaChannelArg) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  MaxMessageLengthOnClientOnRequestViaChannelArg) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, 5));
   TestMaxMessageLengthOnClientOnRequest(*this);
 }
 
-TEST_P(CoreEnd2endTest,
-       MaxMessageLengthOnClientOnRequestViaServiceConfigWithStringJsonValue) {
+CORE_END2END_TEST(
+    CoreEnd2endTest,
+    MaxMessageLengthOnClientOnRequestViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
@@ -156,8 +157,9 @@ TEST_P(CoreEnd2endTest,
   TestMaxMessageLengthOnClientOnRequest(*this);
 }
 
-TEST_P(CoreEnd2endTest,
-       MaxMessageLengthOnClientOnRequestViaServiceConfigWithIntegerJsonValue) {
+CORE_END2END_TEST(
+    CoreEnd2endTest,
+    MaxMessageLengthOnClientOnRequestViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
@@ -173,22 +175,25 @@ TEST_P(CoreEnd2endTest,
   TestMaxMessageLengthOnClientOnRequest(*this);
 }
 
-TEST_P(CoreEnd2endTest, MaxMessageLengthOnServerOnRequestViaChannelArg) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  MaxMessageLengthOnServerOnRequestViaChannelArg) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
   InitClient(ChannelArgs());
   TestMaxMessageLengthOnServerOnRequest(*this);
 }
 
-TEST_P(CoreEnd2endTest, MaxMessageLengthOnClientOnResponseViaChannelArg) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  MaxMessageLengthOnClientOnResponseViaChannelArg) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
   TestMaxMessageLengthOnClientOnResponse(*this);
 }
 
-TEST_P(CoreEnd2endTest,
-       MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue) {
+CORE_END2END_TEST(
+    CoreEnd2endTest,
+    MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
@@ -204,8 +209,9 @@ TEST_P(CoreEnd2endTest,
   TestMaxMessageLengthOnClientOnResponse(*this);
 }
 
-TEST_P(CoreEnd2endTest,
-       MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue) {
+CORE_END2END_TEST(
+    CoreEnd2endTest,
+    MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
@@ -221,14 +227,15 @@ TEST_P(CoreEnd2endTest,
   TestMaxMessageLengthOnClientOnResponse(*this);
 }
 
-TEST_P(CoreEnd2endTest, MaxMessageLengthOnServerOnResponseViaChannelArg) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  MaxMessageLengthOnServerOnResponseViaChannelArg) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, 5));
   InitClient(ChannelArgs());
   TestMaxMessageLengthOnServerOnResponse(*this);
 }
 
-TEST_P(Http2Test, MaxMessageLengthOnServerOnRequestWithCompression) {
+CORE_END2END_TEST(Http2Test, MaxMessageLengthOnServerOnRequestWithCompression) {
   SKIP_IF_MINSTACK();
   // Set limit via channel args.
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
@@ -263,7 +270,8 @@ TEST_P(Http2Test, MaxMessageLengthOnServerOnRequestWithCompression) {
               StartsWith("Received message larger than max"));
 }
 
-TEST_P(Http2Test, MaxMessageLengthOnClientOnResponseWithCompression) {
+CORE_END2END_TEST(Http2Test,
+                  MaxMessageLengthOnClientOnResponseWithCompression) {
   SKIP_IF_MINSTACK();
   // Set limit via channel args.
   InitServer(ChannelArgs());

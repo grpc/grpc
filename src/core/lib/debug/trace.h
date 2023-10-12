@@ -25,6 +25,8 @@
 #include <map>
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 void grpc_tracer_init();
 void grpc_tracer_shutdown(void);
 
@@ -33,7 +35,7 @@ namespace grpc_core {
 class TraceFlag;
 class TraceFlagList {
  public:
-  static bool Set(const char* name, bool enabled);
+  static bool Set(absl::string_view name, bool enabled);
   static void Add(TraceFlag* flag);
   static void SaveTo(std::map<std::string, bool>& values);
 

@@ -21,6 +21,8 @@
     autoconf automake build-essential git libtool curl ${'\\'}
     zlib1g-dev ${'\\'}
     && apt-get clean
+  
+  <%include file="../../git_avoid_dubious_ownership_error.include"/>
 
   # install php pthreads from source
   # TODO(jtattermusch): is this really needed?

@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <initializer_list>
 #include <memory>
 #include <utility>
@@ -68,7 +70,7 @@ class ChannelInit {
   // Post processing slots - up to one PostProcessor per slot can be registered
   // They run after filters registered are added to the channel stack builder,
   // but before Build is called - allowing ad-hoc mutation to the channel stack.
-  enum class PostProcessorSlot {
+  enum class PostProcessorSlot : uint8_t {
     kAuthSubstitution,
     kXdsChannelStackModifier,
     kCount
@@ -99,6 +101,7 @@ class ChannelInit {
     // per-channel creation.
     // Multiple predicates can be added to each registration.
     FilterRegistration& If(InclusionPredicate predicate);
+    FilterRegistration& IfNot(InclusionPredicate predicate);
     // Add a predicate that only includes this filter if a channel arg is
     // present.
     FilterRegistration& IfHasChannelArg(const char* arg);

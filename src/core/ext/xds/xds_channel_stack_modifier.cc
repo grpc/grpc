@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <initializer_list>
+#include <string>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"

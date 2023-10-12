@@ -37,37 +37,47 @@ class FirstServiceServicer(services_pb2_grpc.FirstServiceServicer):
         elif request == _application_common.ABORT_REQUEST:
             with self._abort_lock:
                 try:
-                    context.abort(grpc.StatusCode.PERMISSION_DENIED,
-                                  "Denying permission to test abort.")
+                    context.abort(
+                        grpc.StatusCode.PERMISSION_DENIED,
+                        "Denying permission to test abort.",
+                    )
                 except Exception as e:  # pylint: disable=broad-except
-                    self._abort_response = _application_common.ABORT_SUCCESS_RESPONSE
+                    self._abort_response = (
+                        _application_common.ABORT_SUCCESS_RESPONSE
+                    )
                 else:
-                    self._abort_status = _application_common.ABORT_FAILURE_RESPONSE
+                    self._abort_status = (
+                        _application_common.ABORT_FAILURE_RESPONSE
+                    )
             return None  # NOTE: For the linter.
         elif request == _application_common.ABORT_SUCCESS_QUERY:
             with self._abort_lock:
                 return self._abort_response
         else:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details('Something is wrong with your request!')
+            context.set_details("Something is wrong with your request!")
             return services_pb2.Down()
 
     def UnStre(self, request, context):
         if _application_common.UNARY_STREAM_REQUEST != request:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details('Something is wrong with your request!')
+            context.set_details("Something is wrong with your request!")
         return
         yield services_pb2.Strange()  # pylint: disable=unreachable
 
     def StreUn(self, request_iterator, context):
-        context.send_initial_metadata(((
-            'server_application_metadata_key',
-            'Hi there!',
-        ),))
+        context.send_initial_metadata(
+            (
+                (
+                    "server_application_metadata_key",
+                    "Hi there!",
+                ),
+            )
+        )
         for request in request_iterator:
             if request != _application_common.STREAM_UNARY_REQUEST:
                 context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-                context.set_details('Something is wrong with your request!')
+                context.set_details("Something is wrong with your request!")
                 return services_pb2.Strange()
             elif not context.is_active():
                 return services_pb2.Strange()
@@ -75,12 +85,14 @@ class FirstServiceServicer(services_pb2_grpc.FirstServiceServicer):
             return _application_common.STREAM_UNARY_RESPONSE
 
     def StreStre(self, request_iterator, context):
-        valid_requests = (_application_common.STREAM_STREAM_REQUEST,
-                          _application_common.STREAM_STREAM_MUTATING_REQUEST)
+        valid_requests = (
+            _application_common.STREAM_STREAM_REQUEST,
+            _application_common.STREAM_STREAM_MUTATING_REQUEST,
+        )
         for request in request_iterator:
             if request not in valid_requests:
                 context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-                context.set_details('Something is wrong with your request!')
+                context.set_details("Something is wrong with your request!")
                 return
             elif not context.is_active():
                 return
@@ -90,6 +102,7 @@ class FirstServiceServicer(services_pb2_grpc.FirstServiceServicer):
             elif request == _application_common.STREAM_STREAM_MUTATING_REQUEST:
                 response = services_pb2.Bottom()
                 for i in range(
-                        _application_common.STREAM_STREAM_MUTATING_COUNT):
+                    _application_common.STREAM_STREAM_MUTATING_COUNT
+                ):
                     response.first_bottom_field = i
                     yield response

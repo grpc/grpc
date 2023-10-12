@@ -27,12 +27,12 @@ ALPHANUM_LOWERCASE = string.ascii_lowercase + string.digits
 def rand_string(length: int = 8, *, lowercase: bool = False) -> str:
     """Return random alphanumeric string of given length.
 
-   Space for default arguments: alphabet^length
-      lowercase and uppercase = (26*2 + 10)^8 = 2.18e14 = 218 trillion.
-      lowercase only = (26 + 10)^8 = 2.8e12 = 2.8 trillion.
-   """
+    Space for default arguments: alphabet^length
+       lowercase and uppercase = (26*2 + 10)^8 = 2.18e14 = 218 trillion.
+       lowercase only = (26 + 10)^8 = 2.8e12 = 2.8 trillion.
+    """
     alphabet = ALPHANUM_LOWERCASE if lowercase else ALPHANUM
-    return ''.join(random.choices(population=alphabet, k=length))
+    return "".join(random.choices(population=alphabet, k=length))
 
 
 def random_resource_suffix() -> str:
@@ -46,4 +46,4 @@ def random_resource_suffix() -> str:
     # produce a collision: math.sqrt(math.pi/2 * (26+10)**5) ≈ 9745.
     # https://en.wikipedia.org/wiki/Birthday_attack#Mathematics
     unique_hash: str = rand_string(5, lowercase=True)
-    return f'{datetime_suffix}-{unique_hash}'
+    return f"{datetime_suffix}-{unique_hash}"

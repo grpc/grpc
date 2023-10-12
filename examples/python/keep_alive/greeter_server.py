@@ -23,7 +23,6 @@ import helloworld_pb2_grpc
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
-
     def SayHello(self, request, context):
         message = request.name
         if message.startswith("[delay]"):
@@ -51,24 +50,28 @@ def serve():
         pings to be sent even if there are no calls in flight.
     For more details, check: https://github.com/grpc/grpc/blob/master/doc/keepalive.md
     """
-    server_options = [('grpc.keepalive_time_ms', 20000),
-                      ('grpc.keepalive_timeout_ms', 10000),
-                      ('grpc.http2.min_ping_interval_without_data_ms', 5000),
-                      ('grpc.max_connection_idle_ms', 10000),
-                      ('grpc.max_connection_age_ms', 30000),
-                      ('grpc.max_connection_age_grace_ms', 5000),
-                      ('grpc.http2.max_pings_without_data', 5),
-                      ('grpc.keepalive_permit_without_calls', 1)]
-    port = '50051'
-    server = grpc.server(thread_pool=futures.ThreadPoolExecutor(max_workers=10),
-                         options=server_options)
+    server_options = [
+        ("grpc.keepalive_time_ms", 20000),
+        ("grpc.keepalive_timeout_ms", 10000),
+        ("grpc.http2.min_ping_interval_without_data_ms", 5000),
+        ("grpc.max_connection_idle_ms", 10000),
+        ("grpc.max_connection_age_ms", 30000),
+        ("grpc.max_connection_age_grace_ms", 5000),
+        ("grpc.http2.max_pings_without_data", 5),
+        ("grpc.keepalive_permit_without_calls", 1),
+    ]
+    port = "50051"
+    server = grpc.server(
+        thread_pool=futures.ThreadPoolExecutor(max_workers=10),
+        options=server_options,
+    )
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
-    server.add_insecure_port('[::]:' + port)
+    server.add_insecure_port("[::]:" + port)
     server.start()
     print("Server started, listening on " + port)
     server.wait_for_termination()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     serve()

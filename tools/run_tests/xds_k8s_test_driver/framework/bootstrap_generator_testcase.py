@@ -42,8 +42,9 @@ class BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
         """
         super().setUpClass()
         if cls.server_maintenance_port is None:
-            cls.server_maintenance_port = \
+            cls.server_maintenance_port = (
                 KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
+            )
 
         # Bootstrap generator tests are run as parameterized tests which only
         # perform steps specific to the parameterized version of the bootstrap
@@ -53,22 +54,28 @@ class BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
         # side variants of the bootstrap generator test.
         if cls.resource_suffix_randomize:
             cls.resource_suffix = helpers_rand.random_resource_suffix()
-        logger.info('Test run resource prefix: %s, suffix: %s',
-                    cls.resource_prefix, cls.resource_suffix)
+        logger.info(
+            "Test run resource prefix: %s, suffix: %s",
+            cls.resource_prefix,
+            cls.resource_suffix,
+        )
 
         # TD Manager
         cls.td = cls.initTrafficDirectorManager()
 
         # Test namespaces for client and server.
         cls.server_namespace = KubernetesServerRunner.make_namespace_name(
-            cls.resource_prefix, cls.resource_suffix)
+            cls.resource_prefix, cls.resource_suffix
+        )
         cls.client_namespace = KubernetesClientRunner.make_namespace_name(
-            cls.resource_prefix, cls.resource_suffix)
+            cls.resource_prefix, cls.resource_suffix
+        )
 
         # Ensures the firewall exist
         if cls.ensure_firewall:
             cls.td.create_firewall_rule(
-                allowed_ports=cls.firewall_allowed_ports)
+                allowed_ports=cls.firewall_allowed_ports
+            )
 
         # Randomize xds port, when it's set to 0
         if cls.server_xds_port == 0:
@@ -78,12 +85,14 @@ class BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
             #  forwarding rule. This check is better than nothing,
             #  but we should find a better approach.
             cls.server_xds_port = cls.td.find_unused_forwarding_rule_port()
-            logger.info('Found unused xds port: %s', cls.server_xds_port)
+            logger.info("Found unused xds port: %s", cls.server_xds_port)
 
         # Common TD resources across client and server tests.
-        cls.td.setup_for_grpc(cls.server_xds_host,
-                              cls.server_xds_port,
-                              health_check_port=cls.server_maintenance_port)
+        cls.td.setup_for_grpc(
+            cls.server_xds_host,
+            cls.server_xds_port,
+            health_check_port=cls.server_maintenance_port,
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -98,13 +107,13 @@ class BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
             resource_prefix=cls.resource_prefix,
             resource_suffix=cls.resource_suffix,
             network=cls.network,
-            compute_api_version=cls.compute_api_version)
+            compute_api_version=cls.compute_api_version,
+        )
 
     @classmethod
     def initKubernetesServerRunner(
-            cls,
-            *,
-            td_bootstrap_image: Optional[str] = None) -> KubernetesServerRunner:
+        cls, *, td_bootstrap_image: Optional[str] = None
+    ) -> KubernetesServerRunner:
         if not td_bootstrap_image:
             td_bootstrap_image = cls.td_bootstrap_image
         return KubernetesServerRunner(
@@ -118,31 +127,37 @@ class BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
             xds_server_uri=cls.xds_server_uri,
             network=cls.network,
             debug_use_port_forwarding=cls.debug_use_port_forwarding,
-            enable_workload_identity=cls.enable_workload_identity)
+            enable_workload_identity=cls.enable_workload_identity,
+        )
 
     @staticmethod
-    def startTestServer(server_runner,
-                        port,
-                        maintenance_port,
-                        xds_host,
-                        xds_port,
-                        replica_count=1,
-                        **kwargs) -> XdsTestServer:
-        test_server = server_runner.run(replica_count=replica_count,
-                                        test_port=port,
-                                        maintenance_port=maintenance_port,
-                                        **kwargs)[0]
+    def startTestServer(
+        server_runner,
+        port,
+        maintenance_port,
+        xds_host,
+        xds_port,
+        replica_count=1,
+        **kwargs,
+    ) -> XdsTestServer:
+        test_server = server_runner.run(
+            replica_count=replica_count,
+            test_port=port,
+            maintenance_port=maintenance_port,
+            **kwargs,
+        )[0]
         test_server.set_xds_address(xds_host, xds_port)
         return test_server
 
     def initKubernetesClientRunner(
-            self,
-            td_bootstrap_image: Optional[str] = None) -> KubernetesClientRunner:
+        self, td_bootstrap_image: Optional[str] = None
+    ) -> KubernetesClientRunner:
         if not td_bootstrap_image:
             td_bootstrap_image = self.td_bootstrap_image
         return KubernetesClientRunner(
-            k8s.KubernetesNamespace(self.k8s_api_manager,
-                                    self.client_namespace),
+            k8s.KubernetesNamespace(
+                self.k8s_api_manager, self.client_namespace
+            ),
             deployment_name=self.client_name,
             image_name=self.client_image,
             td_bootstrap_image=td_bootstrap_image,
@@ -154,11 +169,14 @@ class BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             enable_workload_identity=self.enable_workload_identity,
             stats_port=self.client_port,
-            reuse_namespace=self.server_namespace == self.client_namespace)
+            reuse_namespace=self.server_namespace == self.client_namespace,
+        )
 
-    def startTestClient(self, test_server: XdsTestServer,
-                        **kwargs) -> XdsTestClient:
-        test_client = self.client_runner.run(server_target=test_server.xds_uri,
-                                             **kwargs)
+    def startTestClient(
+        self, test_server: XdsTestServer, **kwargs
+    ) -> XdsTestClient:
+        test_client = self.client_runner.run(
+            server_target=test_server.xds_uri, **kwargs
+        )
         test_client.wait_for_active_server_channel()
         return test_client

@@ -28,8 +28,11 @@ import unittest
 from tests.unit import _server_shutdown_scenarios
 
 SCENARIO_FILE = os.path.abspath(
-    os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                 '_server_shutdown_scenarios.py'))
+    os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        "_server_shutdown_scenarios.py",
+    )
+)
 INTERPRETER = sys.executable
 BASE_COMMAND = [INTERPRETER, SCENARIO_FILE]
 
@@ -58,32 +61,34 @@ def wait(process):
 
 
 class ServerShutdown(unittest.TestCase):
-
     # Currently we shut down a server (if possible) after the Python server
     # instance is garbage collected. This behavior may change in the future.
     def test_deallocated_server_stops(self):
         process = subprocess.Popen(
             BASE_COMMAND + [_server_shutdown_scenarios.SERVER_DEALLOCATED],
             stdout=sys.stdout,
-            stderr=sys.stderr)
+            stderr=sys.stderr,
+        )
         wait(process)
 
     def test_server_exception_exits(self):
         process = subprocess.Popen(
             BASE_COMMAND + [_server_shutdown_scenarios.SERVER_RAISES_EXCEPTION],
             stdout=sys.stdout,
-            stderr=sys.stderr)
+            stderr=sys.stderr,
+        )
         wait(process)
 
-    @unittest.skipIf(os.name == 'nt', 'fork not supported on windows')
+    @unittest.skipIf(os.name == "nt", "fork not supported on windows")
     def test_server_fork_can_exit(self):
         process = subprocess.Popen(
             BASE_COMMAND + [_server_shutdown_scenarios.SERVER_FORK_CAN_EXIT],
             stdout=sys.stdout,
-            stderr=sys.stderr)
+            stderr=sys.stderr,
+        )
         wait(process)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

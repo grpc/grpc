@@ -25,55 +25,69 @@ import subprocess
 # processes and reports back to the main PHP interop client each
 # of the child RPCs' status code.
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tmp_file1', nargs='?', default='')
-    parser.add_argument('--tmp_file2', nargs='?', default='')
-    parser.add_argument('--bootstrap_path', nargs='?', default='')
+    parser.add_argument("--tmp_file1", nargs="?", default="")
+    parser.add_argument("--tmp_file2", nargs="?", default="")
+    parser.add_argument("--bootstrap_path", nargs="?", default="")
     args = parser.parse_args()
-    server_address = ''
+    server_address = ""
     rpcs_started = []
     open_processes = {}
     client_env = dict(os.environ)
-    client_env['GRPC_XDS_BOOTSTRAP'] = args.bootstrap_path
+    client_env["GRPC_XDS_BOOTSTRAP"] = args.bootstrap_path
     while True:
         # tmp_file1 contains a list of RPCs (and their spec) the parent process
         # wants executed
-        f1 = open(args.tmp_file1, 'r+')
+        f1 = open(args.tmp_file1, "r+")
         fcntl.flock(f1, fcntl.LOCK_EX)
         while True:
             key = f1.readline()
             if not key:
                 break
             key = key.strip()
-            if key.startswith('server_address'):
+            if key.startswith("server_address"):
                 if not server_address:
                     server_address = key[15:]
             elif not key in rpcs_started:
                 # format here needs to be in sync with
                 # src/php/tests/interop/xds_client.php
-                items = key.split('|')
+                items = key.split("|")
                 num = items[0]
                 metadata = items[2]
                 timeout_sec = items[3]
-                if items[1] == 'UnaryCall':
-                    p = subprocess.Popen([
-                        'php', '-d', 'extension=grpc.so', '-d',
-                        'extension=pthreads.so',
-                        'src/php/tests/interop/xds_unary_call.php',
-                        '--server=' + server_address, '--num=' + str(num),
-                        '--metadata=' + metadata, '--timeout_sec=' + timeout_sec
-                    ],
-                                         env=client_env)
-                elif items[1] == 'EmptyCall':
-                    p = subprocess.Popen([
-                        'php', '-d', 'extension=grpc.so', '-d',
-                        'extension=pthreads.so',
-                        'src/php/tests/interop/xds_empty_call.php',
-                        '--server=' + server_address, '--num=' + str(num),
-                        '--metadata=' + metadata, '--timeout_sec=' + timeout_sec
-                    ],
-                                         env=client_env)
+                if items[1] == "UnaryCall":
+                    p = subprocess.Popen(
+                        [
+                            "php",
+                            "-d",
+                            "extension=grpc.so",
+                            "-d",
+                            "extension=pthreads.so",
+                            "src/php/tests/interop/xds_unary_call.php",
+                            "--server=" + server_address,
+                            "--num=" + str(num),
+                            "--metadata=" + metadata,
+                            "--timeout_sec=" + timeout_sec,
+                        ],
+                        env=client_env,
+                    )
+                elif items[1] == "EmptyCall":
+                    p = subprocess.Popen(
+                        [
+                            "php",
+                            "-d",
+                            "extension=grpc.so",
+                            "-d",
+                            "extension=pthreads.so",
+                            "src/php/tests/interop/xds_empty_call.php",
+                            "--server=" + server_address,
+                            "--num=" + str(num),
+                            "--metadata=" + metadata,
+                            "--timeout_sec=" + timeout_sec,
+                        ],
+                        env=client_env,
+                    )
                 else:
                     continue
                 rpcs_started.append(key)
@@ -82,7 +96,7 @@ if __name__ == '__main__':
         fcntl.flock(f1, fcntl.LOCK_UN)
         f1.close()
         # tmp_file2 contains the RPC result of each key received from tmp_file1
-        f2 = open(args.tmp_file2, 'a')
+        f2 = open(args.tmp_file2, "a")
         fcntl.flock(f2, fcntl.LOCK_EX)
         keys_to_delete = []
         for key, process in open_processes.items():
@@ -90,7 +104,7 @@ if __name__ == '__main__':
             if result is not None:
                 # format here needs to be in sync with
                 # src/php/tests/interop/xds_client.php
-                f2.write(key + ',' + str(process.returncode) + "\n")
+                f2.write(key + "," + str(process.returncode) + "\n")
                 keys_to_delete.append(key)
         for key in keys_to_delete:
             del open_processes[key]

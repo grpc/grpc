@@ -34,6 +34,8 @@ grpc_cc_library(
     deps = [
         "//src/core:lb_policy",
         "//src/core:subchannel_interface",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/fuzzing_event_engine",
     ],
 )
 
@@ -42,6 +44,9 @@ grpc_cc_test(
     srcs = ["pick_first_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -49,6 +54,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_pick_first",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 
@@ -57,6 +63,9 @@ grpc_cc_test(
     srcs = ["round_robin_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -74,7 +83,9 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["no_test_ios"],
+    tags = [
+        "no_test_ios",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -90,6 +101,9 @@ grpc_cc_test(
     srcs = ["outlier_detection_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
     uses_polling = False,
     deps = [
         ":lb_policy_test_lib",
@@ -106,7 +120,9 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["no_test_ios"],
+    tags = [
+        "no_test_ios",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -120,6 +136,9 @@ grpc_cc_test(
     srcs = ["xds_override_host_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -136,7 +155,9 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["no_test_ios"],
+    tags = [
+        "no_test_ios",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -187,7 +208,9 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["no_test_ios"],
+    tags = [
+        "no_test_ios",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -201,11 +224,31 @@ grpc_cc_test(
     srcs = ["weighted_round_robin_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
     uses_polling = False,
     deps = [
         ":lb_policy_test_lib",
         "//src/core:grpc_lb_policy_weighted_round_robin",
-        "//test/core/event_engine:mock_event_engine",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ring_hash_test",
+    srcs = ["ring_hash_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":lb_policy_test_lib",
+        "//src/core:channel_args",
+        "//src/core:grpc_lb_policy_ring_hash",
         "//test/core/util:grpc_test_util",
     ],
 )

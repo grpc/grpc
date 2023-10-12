@@ -24,27 +24,27 @@ from tests.unit.framework.common import test_constants
 
 WAIT_TIME = 1000
 
-REQUEST = b'request'
+REQUEST = b"request"
 
-UNSTARTED_SERVER = 'unstarted_server'
-RUNNING_SERVER = 'running_server'
-POLL_CONNECTIVITY_NO_SERVER = 'poll_connectivity_no_server'
-POLL_CONNECTIVITY = 'poll_connectivity'
-IN_FLIGHT_UNARY_UNARY_CALL = 'in_flight_unary_unary_call'
-IN_FLIGHT_UNARY_STREAM_CALL = 'in_flight_unary_stream_call'
-IN_FLIGHT_STREAM_UNARY_CALL = 'in_flight_stream_unary_call'
-IN_FLIGHT_STREAM_STREAM_CALL = 'in_flight_stream_stream_call'
-IN_FLIGHT_PARTIAL_UNARY_STREAM_CALL = 'in_flight_partial_unary_stream_call'
-IN_FLIGHT_PARTIAL_STREAM_UNARY_CALL = 'in_flight_partial_stream_unary_call'
-IN_FLIGHT_PARTIAL_STREAM_STREAM_CALL = 'in_flight_partial_stream_stream_call'
+UNSTARTED_SERVER = "unstarted_server"
+RUNNING_SERVER = "running_server"
+POLL_CONNECTIVITY_NO_SERVER = "poll_connectivity_no_server"
+POLL_CONNECTIVITY = "poll_connectivity"
+IN_FLIGHT_UNARY_UNARY_CALL = "in_flight_unary_unary_call"
+IN_FLIGHT_UNARY_STREAM_CALL = "in_flight_unary_stream_call"
+IN_FLIGHT_STREAM_UNARY_CALL = "in_flight_stream_unary_call"
+IN_FLIGHT_STREAM_STREAM_CALL = "in_flight_stream_stream_call"
+IN_FLIGHT_PARTIAL_UNARY_STREAM_CALL = "in_flight_partial_unary_stream_call"
+IN_FLIGHT_PARTIAL_STREAM_UNARY_CALL = "in_flight_partial_stream_unary_call"
+IN_FLIGHT_PARTIAL_STREAM_STREAM_CALL = "in_flight_partial_stream_stream_call"
 
-UNARY_UNARY = b'/test/UnaryUnary'
-UNARY_STREAM = b'/test/UnaryStream'
-STREAM_UNARY = b'/test/StreamUnary'
-STREAM_STREAM = b'/test/StreamStream'
-PARTIAL_UNARY_STREAM = b'/test/PartialUnaryStream'
-PARTIAL_STREAM_UNARY = b'/test/PartialStreamUnary'
-PARTIAL_STREAM_STREAM = b'/test/PartialStreamStream'
+UNARY_UNARY = b"/test/UnaryUnary"
+UNARY_STREAM = b"/test/UnaryStream"
+STREAM_UNARY = b"/test/StreamUnary"
+STREAM_STREAM = b"/test/StreamStream"
+PARTIAL_UNARY_STREAM = b"/test/PartialUnaryStream"
+PARTIAL_STREAM_UNARY = b"/test/PartialStreamUnary"
+PARTIAL_STREAM_STREAM = b"/test/PartialStreamStream"
 
 TEST_TO_METHOD = {
     IN_FLIGHT_UNARY_UNARY_CALL: UNARY_UNARY,
@@ -87,12 +87,11 @@ def hang_stream_stream(request_iterator, servicer_context):
 
 def hang_partial_stream_stream(request_iterator, servicer_context):
     for _ in range(test_constants.STREAM_LENGTH // 2):
-        yield next(request_iterator)  #pylint: disable=stop-iteration-return
+        yield next(request_iterator)  # pylint: disable=stop-iteration-return
     time.sleep(WAIT_TIME)
 
 
 class MethodHandler(grpc.RpcMethodHandler):
-
     def __init__(self, request_streaming, response_streaming, partial_hang):
         self.request_streaming = request_streaming
         self.response_streaming = response_streaming
@@ -122,7 +121,6 @@ class MethodHandler(grpc.RpcMethodHandler):
 
 
 class GenericHandler(grpc.GenericRpcHandler):
-
     def service(self, handler_call_details):
         if handler_call_details.method == UNARY_UNARY:
             return MethodHandler(False, False, False)
@@ -146,7 +144,6 @@ class GenericHandler(grpc.GenericRpcHandler):
 # current jobs complete.  Because we submit jobs that will
 # never finish, we don't want to block exit on these jobs.
 class DaemonPool(object):
-
     def submit(self, fn, *args, **kwargs):
         thread = threading.Thread(target=fn, args=args, kwargs=kwargs)
         thread.daemon = True
@@ -161,27 +158,27 @@ def infinite_request_iterator():
         yield REQUEST
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     parser = argparse.ArgumentParser()
-    parser.add_argument('scenario', type=str)
-    parser.add_argument('--wait_for_interrupt',
-                        dest='wait_for_interrupt',
-                        action='store_true')
+    parser.add_argument("scenario", type=str)
+    parser.add_argument(
+        "--wait_for_interrupt", dest="wait_for_interrupt", action="store_true"
+    )
     args = parser.parse_args()
 
     if args.scenario == UNSTARTED_SERVER:
-        server = grpc.server(DaemonPool(), options=(('grpc.so_reuseport', 0),))
+        server = grpc.server(DaemonPool(), options=(("grpc.so_reuseport", 0),))
         if args.wait_for_interrupt:
             time.sleep(WAIT_TIME)
     elif args.scenario == RUNNING_SERVER:
-        server = grpc.server(DaemonPool(), options=(('grpc.so_reuseport', 0),))
-        port = server.add_insecure_port('[::]:0')
+        server = grpc.server(DaemonPool(), options=(("grpc.so_reuseport", 0),))
+        port = server.add_insecure_port("[::]:0")
         server.start()
         if args.wait_for_interrupt:
             time.sleep(WAIT_TIME)
     elif args.scenario == POLL_CONNECTIVITY_NO_SERVER:
-        channel = grpc.insecure_channel('localhost:12345')
+        channel = grpc.insecure_channel("localhost:12345")
 
         def connectivity_callback(connectivity):
             pass
@@ -190,10 +187,10 @@ if __name__ == '__main__':
         if args.wait_for_interrupt:
             time.sleep(WAIT_TIME)
     elif args.scenario == POLL_CONNECTIVITY:
-        server = grpc.server(DaemonPool(), options=(('grpc.so_reuseport', 0),))
-        port = server.add_insecure_port('[::]:0')
+        server = grpc.server(DaemonPool(), options=(("grpc.so_reuseport", 0),))
+        port = server.add_insecure_port("[::]:0")
         server.start()
-        channel = grpc.insecure_channel('localhost:%d' % port)
+        channel = grpc.insecure_channel("localhost:%d" % port)
 
         def connectivity_callback(connectivity):
             pass
@@ -204,11 +201,11 @@ if __name__ == '__main__':
 
     else:
         handler = GenericHandler()
-        server = grpc.server(DaemonPool(), options=(('grpc.so_reuseport', 0),))
-        port = server.add_insecure_port('[::]:0')
+        server = grpc.server(DaemonPool(), options=(("grpc.so_reuseport", 0),))
+        port = server.add_insecure_port("[::]:0")
         server.add_generic_rpc_handlers((handler,))
         server.start()
-        channel = grpc.insecure_channel('localhost:%d' % port)
+        channel = grpc.insecure_channel("localhost:%d" % port)
 
         method = TEST_TO_METHOD[args.scenario]
 
@@ -216,20 +213,27 @@ if __name__ == '__main__':
             multi_callable = channel.unary_unary(method)
             future = multi_callable.future(REQUEST)
             result, call = multi_callable.with_call(REQUEST)
-        elif (args.scenario == IN_FLIGHT_UNARY_STREAM_CALL or
-              args.scenario == IN_FLIGHT_PARTIAL_UNARY_STREAM_CALL):
+        elif (
+            args.scenario == IN_FLIGHT_UNARY_STREAM_CALL
+            or args.scenario == IN_FLIGHT_PARTIAL_UNARY_STREAM_CALL
+        ):
             multi_callable = channel.unary_stream(method)
             response_iterator = multi_callable(REQUEST)
             for response in response_iterator:
                 pass
-        elif (args.scenario == IN_FLIGHT_STREAM_UNARY_CALL or
-              args.scenario == IN_FLIGHT_PARTIAL_STREAM_UNARY_CALL):
+        elif (
+            args.scenario == IN_FLIGHT_STREAM_UNARY_CALL
+            or args.scenario == IN_FLIGHT_PARTIAL_STREAM_UNARY_CALL
+        ):
             multi_callable = channel.stream_unary(method)
             future = multi_callable.future(infinite_request_iterator())
             result, call = multi_callable.with_call(
-                iter([REQUEST] * test_constants.STREAM_LENGTH))
-        elif (args.scenario == IN_FLIGHT_STREAM_STREAM_CALL or
-              args.scenario == IN_FLIGHT_PARTIAL_STREAM_STREAM_CALL):
+                iter([REQUEST] * test_constants.STREAM_LENGTH)
+            )
+        elif (
+            args.scenario == IN_FLIGHT_STREAM_STREAM_CALL
+            or args.scenario == IN_FLIGHT_PARTIAL_STREAM_STREAM_CALL
+        ):
             multi_callable = channel.stream_stream(method)
             response_iterator = multi_callable(infinite_request_iterator())
             for response in response_iterator:

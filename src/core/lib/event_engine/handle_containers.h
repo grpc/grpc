@@ -49,10 +49,6 @@ using ConnectionHandleSet = absl::flat_hash_set<
     EventEngine::ConnectionHandle,
     TaskHandleComparator<EventEngine::ConnectionHandle>::Hash>;
 
-using LookupTaskHandleSet = absl::flat_hash_set<
-    EventEngine::DNSResolver::LookupTaskHandle,
-    TaskHandleComparator<EventEngine::DNSResolver::LookupTaskHandle>::Hash>;
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

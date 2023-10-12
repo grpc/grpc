@@ -22,13 +22,16 @@
 
 #include <functional>
 #include <memory>
+#include <string_view>
 #include <utility>
 
 #include "absl/strings/str_cat.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
@@ -41,13 +44,14 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
@@ -256,8 +260,7 @@ grpc_channel* CreateXdsChannel(const ChannelArgs& args,
                                const GrpcXdsBootstrap::GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-          server.channel_creds_type(),
-          Json::FromObject(server.channel_creds_config()));
+          server.channel_creds_config());
   return grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
                              args.ToC().get());
 }
@@ -303,7 +306,14 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {
     GPR_ASSERT(client_channel != nullptr);
     client_channel->RemoveConnectivityWatcher(watcher_);
   }
-  Unref();
+  // Do an async hop before unreffing.  This avoids a deadlock upon
+  // shutdown in the case where the xDS channel is itself an xDS channel
+  // (e.g., when using one control plane to find another control plane).
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([this]() {
+    ApplicationCallbackExecCtx application_exec_ctx;
+    ExecCtx exec_ctx;
+    Unref();
+  });
 }
 
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>

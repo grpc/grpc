@@ -16,13 +16,14 @@
 
 #include <string.h>
 
+#include <memory>
 #include <new>
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
@@ -128,7 +129,7 @@ grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
 };
 
 // Tests transparent retries when the call was never sent out on the wire.
-TEST_P(RetryTest, RetryTransparentNotSentOnWire) {
+CORE_END2END_TEST(RetryTest, RetryTransparentNotSentOnWire) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()
         ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
@@ -137,7 +138,7 @@ TEST_P(RetryTest, RetryTransparentNotSentOnWire) {
         .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
   });
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Start a batch containing send ops.
   c.NewBatch(1)

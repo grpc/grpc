@@ -68,7 +68,9 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
     return inner_creds_->update_arguments(std::move(args));
   }
 
-  grpc_core::UniqueTypeName type() const override;
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
 
   const grpc_channel_credentials* inner_creds() const {
     return inner_creds_.get();

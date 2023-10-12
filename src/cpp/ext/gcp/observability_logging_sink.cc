@@ -21,7 +21,6 @@
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
 #include <algorithm>
-#include <initializer_list>
 #include <map>
 #include <utility>
 
@@ -36,6 +35,7 @@
 #include "google/logging/v2/logging.pb.h"
 #include "google/protobuf/text_format.h"
 
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/grpcpp.h>
@@ -119,7 +119,7 @@ std::string EventTypeToString(LoggingSink::Entry::EventType type) {
       return "SERVER_TRAILER";
     case LoggingSink::Entry::EventType::kCancel:
       return "CANCEL";
-    case LoggingSink::Entry::EventType::kUnkown:
+    case LoggingSink::Entry::EventType::kUnknown:
     default:
       return "EVENT_TYPE_UNKNOWN";
   }
@@ -131,7 +131,7 @@ std::string LoggerToString(LoggingSink::Entry::Logger type) {
       return "CLIENT";
     case LoggingSink::Entry::Logger::kServer:
       return "SERVER";
-    case LoggingSink::Entry::Logger::kUnkown:
+    case LoggingSink::Entry::Logger::kUnknown:
     default:
       return "LOGGER_UNKNOWN";
   }

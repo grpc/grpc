@@ -163,6 +163,8 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
+  grpc_core::testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB",
+                                           "false");
   CreateAndStartBackends(1);
   // Populate new EDS resources.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});

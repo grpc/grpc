@@ -22,9 +22,9 @@ def run_buildozer(buildozer_commands):
         return
     ok_statuses = (0, 3)
     temp = tempfile.NamedTemporaryFile()
-    open(temp.name, 'w').write('\n'.join(buildozer_commands))
-    c = ['tools/distrib/buildozer.sh', '-f', temp.name]
+    open(temp.name, "w").write("\n".join(buildozer_commands))
+    c = ["tools/distrib/buildozer.sh", "-f", temp.name]
     r = subprocess.call(c)
     if r not in ok_statuses:
-        print('{} failed with status {}'.format(c, r))
+        print("{} failed with status {}".format(c, r))
         sys.exit(1)

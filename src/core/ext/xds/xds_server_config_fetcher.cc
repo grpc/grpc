@@ -150,7 +150,8 @@ class XdsServerConfigFetcher::ListenerWatcher
     xds_client_.reset(DEBUG_LOCATION, "ListenerWatcher");
   }
 
-  void OnResourceChanged(XdsListenerResource listener) override;
+  void OnResourceChanged(
+      std::shared_ptr<const XdsListenerResource> listener) override;
 
   void OnError(absl::Status status) override;
 
@@ -236,7 +237,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   class RouteConfigWatcher;
   struct RdsUpdateState {
     RouteConfigWatcher* watcher;
-    absl::optional<absl::StatusOr<XdsRouteConfigResource>> rds_update;
+    absl::optional<
+        absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>>
+        rds_update;
   };
 
   class XdsServerConfigSelector;
@@ -249,8 +252,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
 
   // Helper functions invoked by RouteConfigWatcher when there are updates to
   // RDS resources.
-  void OnRouteConfigChanged(const std::string& resource_name,
-                            XdsRouteConfigResource route_config);
+  void OnRouteConfigChanged(
+      const std::string& resource_name,
+      std::shared_ptr<const XdsRouteConfigResource> route_config);
   void OnError(const std::string& resource_name, absl::Status status);
   void OnResourceDoesNotExist(const std::string& resource_name);
 
@@ -258,6 +262,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   // This ref is only kept around till the FilterChainMatchManager becomes
   // ready.
   RefCountedPtr<ListenerWatcher> listener_watcher_;
+  // TODO(roth): Consider holding a ref to the LDS resource and storing
+  // a pointer to the filter chain data within that LDS resource, rather
+  // than copying the filter chain data here.
   XdsListenerResource::FilterChainMap filter_chain_map_;
   absl::optional<XdsListenerResource::FilterChainData> default_filter_chain_;
   Mutex mu_;
@@ -284,7 +291,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       : resource_name_(std::move(resource_name)),
         filter_chain_match_manager_(std::move(filter_chain_match_manager)) {}
 
-  void OnResourceChanged(XdsRouteConfigResource route_config) override {
+  void OnResourceChanged(
+      std::shared_ptr<const XdsRouteConfigResource> route_config) override {
     filter_chain_match_manager_->OnRouteConfigChanged(resource_name_,
                                                       std::move(route_config));
   }
@@ -311,7 +319,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
  public:
   static absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>> Create(
       const XdsHttpFilterRegistry& http_filter_registry,
-      XdsRouteConfigResource rds_update,
+      std::shared_ptr<const XdsRouteConfigResource> rds_update,
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters);
   ~XdsServerConfigSelector() override = default;
@@ -324,6 +332,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     struct Route {
       // true if an action other than kNonForwardingAction is configured.
       bool unsupported_action;
+      // TODO(roth): Consider holding a ref to the RDS resource and storing
+      // a pointer to the matchers within that RDS resource, rather than
+      // copying the matchers here.
       XdsRouteConfigResource::Route::Matchers matchers;
       RefCountedPtr<ServiceConfig> method_config;
     };
@@ -376,7 +387,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
  public:
   StaticXdsServerConfigSelectorProvider(
       RefCountedPtr<GrpcXdsClient> xds_client,
-      absl::StatusOr<XdsRouteConfigResource> static_resource,
+      absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+          static_resource,
       std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
           http_filters)
       : xds_client_(std::move(xds_client)),
@@ -407,7 +419,11 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
  private:
   RefCountedPtr<GrpcXdsClient> xds_client_;
-  absl::StatusOr<XdsRouteConfigResource> static_resource_;
+  absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+      static_resource_;
+  // TODO(roth): Consider holding a ref to the LDS resource and storing
+  // a pointer to the HTTP filters within that LDS resource, rather than
+  // copying the HTTP filters here.
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       http_filters_;
   std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
@@ -422,7 +438,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
  public:
   DynamicXdsServerConfigSelectorProvider(
       RefCountedPtr<GrpcXdsClient> xds_client, std::string resource_name,
-      absl::StatusOr<XdsRouteConfigResource> initial_resource,
+      absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+          initial_resource,
       std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
           http_filters);
 
@@ -440,19 +457,24 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
  private:
   class RouteConfigWatcher;
 
-  void OnRouteConfigChanged(XdsRouteConfigResource rds_update);
+  void OnRouteConfigChanged(
+      std::shared_ptr<const XdsRouteConfigResource> rds_update);
   void OnError(absl::Status status);
   void OnResourceDoesNotExist();
 
   RefCountedPtr<GrpcXdsClient> xds_client_;
   std::string resource_name_;
+  // TODO(roth): Consider holding a ref to the LDS resource and storing
+  // a pointer to the HTTP filters within that LDS resource, rather than
+  // copying the HTTP filters here.
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       http_filters_;
   RouteConfigWatcher* route_config_watcher_ = nullptr;
   Mutex mu_;
   std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
       watcher_ ABSL_GUARDED_BY(mu_);
-  absl::StatusOr<XdsRouteConfigResource> resource_ ABSL_GUARDED_BY(mu_);
+  absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource_
+      ABSL_GUARDED_BY(mu_);
 };
 
 // A watcher implementation for updating the RDS resource used by
@@ -465,7 +487,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       WeakRefCountedPtr<DynamicXdsServerConfigSelectorProvider> parent)
       : parent_(std::move(parent)) {}
 
-  void OnResourceChanged(XdsRouteConfigResource route_config) override {
+  void OnResourceChanged(
+      std::shared_ptr<const XdsRouteConfigResource> route_config) override {
     parent_->OnRouteConfigChanged(std::move(route_config));
   }
 
@@ -551,14 +574,14 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
       listening_address_(std::move(listening_address)) {}
 
 void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
-    XdsListenerResource listener) {
+    std::shared_ptr<const XdsListenerResource> listener) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_server_config_fetcher_trace)) {
     gpr_log(GPR_INFO,
             "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
-            this, xds_client_.get(), listener.ToString().c_str());
+            this, xds_client_.get(), listener->ToString().c_str());
   }
   auto* tcp_listener =
-      absl::get_if<XdsListenerResource::TcpListener>(&listener.listener);
+      absl::get_if<XdsListenerResource::TcpListener>(&listener->listener);
   if (tcp_listener == nullptr) {
     MutexLock lock(&mu_);
     OnFatalError(
@@ -573,8 +596,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
   }
   auto new_filter_chain_match_manager = MakeRefCounted<FilterChainMatchManager>(
       xds_client_->Ref(DEBUG_LOCATION, "FilterChainMatchManager"),
-      std::move(tcp_listener->filter_chain_map),
-      std::move(tcp_listener->default_filter_chain));
+      tcp_listener->filter_chain_map, tcp_listener->default_filter_chain);
   MutexLock lock(&mu_);
   if (filter_chain_match_manager_ == nullptr ||
       !(new_filter_chain_match_manager->filter_chain_map() ==
@@ -824,8 +846,9 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    OnRouteConfigChanged(const std::string& resource_name,
-                         XdsRouteConfigResource route_config) {
+    OnRouteConfigChanged(
+        const std::string& resource_name,
+        std::shared_ptr<const XdsRouteConfigResource> route_config) {
   RefCountedPtr<ListenerWatcher> listener_watcher;
   {
     MutexLock lock(&mu_);
@@ -1091,7 +1114,8 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
       filter_chain->http_connection_manager.route_config,
       // RDS resource name
       [&](const std::string& rds_name) {
-        absl::StatusOr<XdsRouteConfigResource> initial_resource;
+        absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+            initial_resource;
         {
           MutexLock lock(&mu_);
           initial_resource = rds_map_[rds_name].rds_update.value();
@@ -1104,7 +1128,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
                 filter_chain->http_connection_manager.http_filters);
       },
       // inline RouteConfig
-      [&](const XdsRouteConfigResource& route_config) {
+      [&](const std::shared_ptr<const XdsRouteConfigResource>& route_config) {
         server_config_selector_provider =
             MakeRefCounted<StaticXdsServerConfigSelectorProvider>(
                 xds_client_->Ref(DEBUG_LOCATION,
@@ -1140,19 +1164,19 @@ absl::StatusOr<
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     XdsServerConfigSelector::Create(
         const XdsHttpFilterRegistry& http_filter_registry,
-        XdsRouteConfigResource rds_update,
+        std::shared_ptr<const XdsRouteConfigResource> rds_update,
         const std::vector<
             XdsListenerResource::HttpConnectionManager::HttpFilter>&
             http_filters) {
   auto config_selector = MakeRefCounted<XdsServerConfigSelector>();
-  for (auto& vhost : rds_update.virtual_hosts) {
+  for (auto& vhost : rds_update->virtual_hosts) {
     config_selector->virtual_hosts_.emplace_back();
     auto& virtual_host = config_selector->virtual_hosts_.back();
-    virtual_host.domains = std::move(vhost.domains);
+    virtual_host.domains = vhost.domains;
     for (auto& route : vhost.routes) {
       virtual_host.routes.emplace_back();
       auto& config_selector_route = virtual_host.routes.back();
-      config_selector_route.matchers = std::move(route.matchers);
+      config_selector_route.matchers = route.matchers;
       config_selector_route.unsupported_action =
           absl::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
               &route.action) == nullptr;
@@ -1234,7 +1258,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::
         DynamicXdsServerConfigSelectorProvider(
             RefCountedPtr<GrpcXdsClient> xds_client, std::string resource_name,
-            absl::StatusOr<XdsRouteConfigResource> initial_resource,
+            absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+                initial_resource,
             std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
                 http_filters)
     : xds_client_(std::move(xds_client)),
@@ -1264,7 +1289,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         std::unique_ptr<
             ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
             watcher) {
-  absl::StatusOr<XdsRouteConfigResource> resource;
+  absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource;
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(watcher_ == nullptr);
@@ -1288,7 +1313,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::OnRouteConfigChanged(
-        XdsRouteConfigResource rds_update) {
+        std::shared_ptr<const XdsRouteConfigResource> rds_update) {
   MutexLock lock(&mu_);
   resource_ = std::move(rds_update);
   if (watcher_ == nullptr) {

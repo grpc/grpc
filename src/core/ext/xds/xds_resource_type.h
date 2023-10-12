@@ -61,7 +61,7 @@ class XdsResourceType {
     // non-OK status.
     absl::optional<std::string> name;
     // The parsed and validated resource, or an error status.
-    absl::StatusOr<std::unique_ptr<ResourceData>> resource;
+    absl::StatusOr<std::shared_ptr<const ResourceData>> resource;
   };
 
   virtual ~XdsResourceType() = default;
@@ -78,12 +78,6 @@ class XdsResourceType {
   // method.
   virtual bool ResourcesEqual(const ResourceData* r1,
                               const ResourceData* r2) const = 0;
-
-  // Returns a copy of resource.
-  // Must be invoked only on resources returned by this object's Decode()
-  // method.
-  virtual std::unique_ptr<ResourceData> CopyResource(
-      const ResourceData* resource) const = 0;
 
   // Indicates whether the resource type requires that all resources must
   // be present in every SotW response from the server.  If true, a

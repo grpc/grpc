@@ -32,6 +32,7 @@ pyx_library(
         "cygrpc.pyx",
     ],
     data = [":copy_roots_pem"],
+    defines = ["GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER=1"],
     deps = [
         "//:grpc",
     ],

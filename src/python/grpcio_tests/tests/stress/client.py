@@ -31,45 +31,58 @@ from tests.stress import test_runner
 
 def _args():
     parser = argparse.ArgumentParser(
-        description='gRPC Python stress test client')
+        description="gRPC Python stress test client"
+    )
     parser.add_argument(
-        '--server_addresses',
-        help='comma separated list of hostname:port to run servers on',
-        default='localhost:8080',
-        type=str)
+        "--server_addresses",
+        help="comma separated list of hostname:port to run servers on",
+        default="localhost:8080",
+        type=str,
+    )
     parser.add_argument(
-        '--test_cases',
-        help='comma separated list of testcase:weighting of tests to run',
-        default='large_unary:100',
-        type=str)
-    parser.add_argument('--test_duration_secs',
-                        help='number of seconds to run the stress test',
-                        default=-1,
-                        type=int)
-    parser.add_argument('--num_channels_per_server',
-                        help='number of channels per server',
-                        default=1,
-                        type=int)
-    parser.add_argument('--num_stubs_per_channel',
-                        help='number of stubs to create per channel',
-                        default=1,
-                        type=int)
-    parser.add_argument('--metrics_port',
-                        help='the port to listen for metrics requests on',
-                        default=8081,
-                        type=int)
+        "--test_cases",
+        help="comma separated list of testcase:weighting of tests to run",
+        default="large_unary:100",
+        type=str,
+    )
     parser.add_argument(
-        '--use_test_ca',
-        help='Whether to use our fake CA. Requires --use_tls=true',
+        "--test_duration_secs",
+        help="number of seconds to run the stress test",
+        default=-1,
+        type=int,
+    )
+    parser.add_argument(
+        "--num_channels_per_server",
+        help="number of channels per server",
+        default=1,
+        type=int,
+    )
+    parser.add_argument(
+        "--num_stubs_per_channel",
+        help="number of stubs to create per channel",
+        default=1,
+        type=int,
+    )
+    parser.add_argument(
+        "--metrics_port",
+        help="the port to listen for metrics requests on",
+        default=8081,
+        type=int,
+    )
+    parser.add_argument(
+        "--use_test_ca",
+        help="Whether to use our fake CA. Requires --use_tls=true",
         default=False,
-        type=bool)
-    parser.add_argument('--use_tls',
-                        help='Whether to use TLS',
-                        default=False,
-                        type=bool)
-    parser.add_argument('--server_host_override',
-                        help='the server host to which to claim to connect',
-                        type=str)
+        type=bool,
+    )
+    parser.add_argument(
+        "--use_tls", help="Whether to use TLS", default=False, type=bool
+    )
+    parser.add_argument(
+        "--server_host_override",
+        help="the server host to which to claim to connect",
+        type=str,
+    )
     return parser.parse_args()
 
 
@@ -78,13 +91,13 @@ def _test_case_from_arg(test_case_arg):
         if test_case_arg == test_case.value:
             return test_case
     else:
-        raise ValueError('No test case {}!'.format(test_case_arg))
+        raise ValueError("No test case {}!".format(test_case_arg))
 
 
 def _parse_weighted_test_cases(test_case_args):
     weighted_test_cases = {}
-    for test_case_arg in test_case_args.split(','):
-        name, weight = test_case_arg.split(':', 1)
+    for test_case_arg in test_case_args.split(","):
+        name, weight = test_case_arg.split(":", 1)
         test_case = _test_case_from_arg(name)
         weighted_test_cases[test_case] = int(weight)
     return weighted_test_cases
@@ -97,14 +110,17 @@ def _get_channel(target, args):
         else:
             root_certificates = None  # will load default roots.
         channel_credentials = grpc.ssl_channel_credentials(
-            root_certificates=root_certificates)
-        options = ((
-            'grpc.ssl_target_name_override',
-            args.server_host_override,
-        ),)
-        channel = grpc.secure_channel(target,
-                                      channel_credentials,
-                                      options=options)
+            root_certificates=root_certificates
+        )
+        options = (
+            (
+                "grpc.ssl_target_name_override",
+                args.server_host_override,
+            ),
+        )
+        channel = grpc.secure_channel(
+            target, channel_credentials, options=options
+        )
     else:
         channel = grpc.insecure_channel(target)
 
@@ -115,7 +131,7 @@ def _get_channel(target, args):
 
 def run_test(args):
     test_cases = _parse_weighted_test_cases(args.test_cases)
-    test_server_targets = args.server_addresses.split(',')
+    test_server_targets = args.server_addresses.split(",")
     # Propagate any client exceptions with a queue
     exception_queue = queue.Queue()
     stop_event = threading.Event()
@@ -124,8 +140,9 @@ def run_test(args):
 
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=25))
     metrics_pb2_grpc.add_MetricsServiceServicer_to_server(
-        metrics_server.MetricsServer(hist), server)
-    server.add_insecure_port('[::]:{}'.format(args.metrics_port))
+        metrics_server.MetricsServer(hist), server
+    )
+    server.add_insecure_port("[::]:{}".format(args.metrics_port))
     server.start()
 
     for test_server_target in test_server_targets:
@@ -133,8 +150,9 @@ def run_test(args):
             channel = _get_channel(test_server_target, args)
             for _ in range(args.num_stubs_per_channel):
                 stub = test_pb2_grpc.TestServiceStub(channel)
-                runner = test_runner.TestRunner(stub, test_cases, hist,
-                                                exception_queue, stop_event)
+                runner = test_runner.TestRunner(
+                    stub, test_cases, hist, exception_queue, stop_event
+                )
                 runners.append(runner)
 
     for runner in runners:
@@ -155,5 +173,5 @@ def run_test(args):
         server.stop(None)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_test(_args())

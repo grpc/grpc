@@ -17,6 +17,7 @@
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "action_config",
+    "artifact_name_pattern",
     "feature",
     "feature_set",
     "flag_group",
@@ -141,6 +142,34 @@ lto_index_actions = [
     ACTION_NAMES.lto_index_for_dynamic_library,
     ACTION_NAMES.lto_index_for_nodeps_dynamic_library,
 ]
+
+def _sanitizer_feature(name = "", specific_compile_flags = [], specific_link_flags = []):
+    return feature(
+        name = name,
+        flag_sets = [
+            flag_set(
+                actions = all_compile_actions,
+                flag_groups = [
+                    flag_group(flags = [
+                        "-fno-omit-frame-pointer",
+                        "-fno-sanitize-recover=all",
+                    ] + specific_compile_flags),
+                ],
+                with_features = [
+                    with_feature_set(features = [name]),
+                ],
+            ),
+            flag_set(
+                actions = all_link_actions,
+                flag_groups = [
+                    flag_group(flags = specific_link_flags),
+                ],
+                with_features = [
+                    with_feature_set(features = [name]),
+                ],
+            ),
+        ],
+    )
 
 def _impl(ctx):
     tool_paths = [
@@ -390,6 +419,7 @@ def _impl(ctx):
 
     per_object_debug_info_feature = feature(
         name = "per_object_debug_info",
+        enabled = True,
         flag_sets = [
             flag_set(
                 actions = [
@@ -484,13 +514,19 @@ def _impl(ctx):
                         flag_groups = [
                             flag_group(
                                 flags = [
-                                    "-Wl,-rpath,$EXEC_ORIGIN/%{runtime_library_search_directories}",
+                                    "-Xlinker",
+                                    "-rpath",
+                                    "-Xlinker",
+                                    "$EXEC_ORIGIN/%{runtime_library_search_directories}",
                                 ],
                                 expand_if_true = "is_cc_test",
                             ),
                             flag_group(
                                 flags = [
-                                    "-Wl,-rpath,$ORIGIN/%{runtime_library_search_directories}",
+                                    "-Xlinker",
+                                    "-rpath",
+                                    "-Xlinker",
+                                    "$ORIGIN/%{runtime_library_search_directories}",
                                 ],
                                 expand_if_false = "is_cc_test",
                             ),
@@ -511,7 +547,10 @@ def _impl(ctx):
                         flag_groups = [
                             flag_group(
                                 flags = [
-                                    "-Wl,-rpath,$ORIGIN/%{runtime_library_search_directories}",
+                                    "-Xlinker",
+                                    "-rpath",
+                                    "-Xlinker",
+                                    "$ORIGIN/%{runtime_library_search_directories}",
                                 ],
                             ),
                         ],
@@ -727,41 +766,6 @@ def _impl(ctx):
         ],
     )
 
-    llvm_coverage_map_format_feature = feature(
-        name = "llvm_coverage_map_format",
-        flag_sets = [
-            flag_set(
-                actions = [
-                    ACTION_NAMES.preprocess_assemble,
-                    ACTION_NAMES.c_compile,
-                    ACTION_NAMES.cpp_compile,
-                    ACTION_NAMES.cpp_module_compile,
-                    ACTION_NAMES.objc_compile,
-                    ACTION_NAMES.objcpp_compile,
-                ],
-                flag_groups = [
-                    flag_group(
-                        flags = [
-                            "-fprofile-instr-generate",
-                            "-fcoverage-mapping",
-                        ],
-                    ),
-                ],
-            ),
-            flag_set(
-                actions = all_link_actions + lto_index_actions + [
-                    "objc-executable",
-                    "objc++-executable",
-                ],
-                flag_groups = [
-                    flag_group(flags = ["-fprofile-instr-generate"]),
-                ],
-            ),
-        ],
-        requires = [feature_set(features = ["coverage"])],
-        provides = ["profile"],
-    )
-
     strip_debug_symbols_feature = feature(
         name = "strip_debug_symbols",
         flag_sets = [
@@ -905,7 +909,18 @@ def _impl(ctx):
                         iterate_over = "user_link_flags",
                         expand_if_available = "user_link_flags",
                     ),
-                ] + ([flag_group(flags = ctx.attr.link_libs)] if ctx.attr.link_libs else []),
+                ],
+            ),
+        ],
+    )
+
+    default_link_libs_feature = feature(
+        name = "default_link_libs",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = all_link_actions + lto_index_actions,
+                flag_groups = [flag_group(flags = ctx.attr.link_libs)] if ctx.attr.link_libs else [],
             ),
         ],
     )
@@ -948,36 +963,6 @@ def _impl(ctx):
         ],
     )
 
-    gcc_coverage_map_format_feature = feature(
-        name = "gcc_coverage_map_format",
-        flag_sets = [
-            flag_set(
-                actions = [
-                    ACTION_NAMES.preprocess_assemble,
-                    ACTION_NAMES.c_compile,
-                    ACTION_NAMES.cpp_compile,
-                    ACTION_NAMES.cpp_module_compile,
-                    ACTION_NAMES.objc_compile,
-                    ACTION_NAMES.objcpp_compile,
-                    "objc-executable",
-                    "objc++-executable",
-                ],
-                flag_groups = [
-                    flag_group(
-                        flags = ["-fprofile-arcs", "-ftest-coverage"],
-                        expand_if_available = "gcov_gcno_file",
-                    ),
-                ],
-            ),
-            flag_set(
-                actions = all_link_actions + lto_index_actions,
-                flag_groups = [flag_group(flags = ["--coverage"])],
-            ),
-        ],
-        requires = [feature_set(features = ["coverage"])],
-        provides = ["profile"],
-    )
-
     archiver_flags_feature = feature(
         name = "archiver_flags",
         flag_sets = [
@@ -988,6 +973,26 @@ def _impl(ctx):
                     flag_group(
                         flags = ["%{output_execpath}"],
                         expand_if_available = "output_execpath",
+                    ),
+                ],
+                with_features = [
+                    with_feature_set(
+                        not_features = ["libtool"],
+                    ),
+                ],
+            ),
+            flag_set(
+                actions = [ACTION_NAMES.cpp_link_static_library],
+                flag_groups = [
+                    flag_group(flags = ["-static", "-s"]),
+                    flag_group(
+                        flags = ["-o", "%{output_execpath}"],
+                        expand_if_available = "output_execpath",
+                    ),
+                ],
+                with_features = [
+                    with_feature_set(
+                        features = ["libtool"],
                     ),
                 ],
             ),
@@ -1016,6 +1021,14 @@ def _impl(ctx):
                         expand_if_available = "libraries_to_link",
                     ),
                 ],
+            ),
+            flag_set(
+                actions = [ACTION_NAMES.cpp_link_static_library],
+                flag_groups = ([
+                    flag_group(
+                        flags = ctx.attr.archive_flags,
+                    ),
+                ] if ctx.attr.archive_flags else []),
             ),
         ],
     )
@@ -1089,7 +1102,6 @@ def _impl(ctx):
         ],
     )
 
-    dynamic_library_linker_tool_path = tool_paths
     dynamic_library_linker_tool_feature = feature(
         name = "dynamic_library_linker_tool",
         flag_sets = [
@@ -1221,10 +1233,66 @@ def _impl(ctx):
         ],
     )
 
+    treat_warnings_as_errors_feature = feature(
+        name = "treat_warnings_as_errors",
+        flag_sets = [
+            flag_set(
+                actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
+                flag_groups = [flag_group(flags = ["-Werror"])],
+            ),
+            flag_set(
+                actions = all_link_actions,
+                flag_groups = [flag_group(flags = ["-Wl,-fatal-warnings"])],
+            ),
+        ],
+    )
+
+    archive_param_file_feature = feature(
+        name = "archive_param_file",
+        enabled = True,
+    )
+
+    asan_feature = _sanitizer_feature(
+        name = "asan",
+        specific_compile_flags = [
+            "-fsanitize=address",
+            "-fno-common",
+        ],
+        specific_link_flags = [
+            "-fsanitize=address",
+        ],
+    )
+
+    tsan_feature = _sanitizer_feature(
+        name = "tsan",
+        specific_compile_flags = [
+            "-fsanitize=thread",
+        ],
+        specific_link_flags = [
+            "-fsanitize=thread",
+        ],
+    )
+
+    ubsan_feature = _sanitizer_feature(
+        name = "ubsan",
+        specific_compile_flags = [
+            "-fsanitize=undefined",
+        ],
+        specific_link_flags = [
+            "-fsanitize=undefined",
+        ],
+    )
+
     is_linux = ctx.attr.target_libc != "macosx"
+    libtool_feature = feature(
+        name = "libtool",
+        enabled = not is_linux,
+    )
 
     # TODO(#8303): Mac crosstool should also declare every feature.
     if is_linux:
+        # Linux artifact name patterns are the default.
+        artifact_name_patterns = []
         features = [
             dependency_file_feature,
             serialized_diagnostics_file_feature,
@@ -1249,12 +1317,16 @@ def _impl(ctx):
             output_execpath_flags_feature,
             runtime_library_search_directories_feature,
             library_search_directories_feature,
+            libtool_feature,
             archiver_flags_feature,
             force_pic_flags_feature,
             fission_support_feature,
             strip_debug_symbols_feature,
             coverage_feature,
             supports_pic_feature,
+            asan_feature,
+            tsan_feature,
+            ubsan_feature,
         ] + (
             [
                 supports_start_end_lib_feature,
@@ -1264,6 +1336,7 @@ def _impl(ctx):
             default_link_flags_feature,
             libraries_to_link_feature,
             user_link_flags_feature,
+            default_link_libs_feature,
             static_libgcc_feature,
             fdo_optimize_feature,
             supports_dynamic_linker_feature,
@@ -1272,10 +1345,26 @@ def _impl(ctx):
             user_compile_flags_feature,
             sysroot_feature,
             unfiltered_compile_flags_feature,
+            treat_warnings_as_errors_feature,
+            archive_param_file_feature,
         ] + layering_check_features(ctx.attr.compiler)
     else:
+        # macOS artifact name patterns differ from the defaults only for dynamic
+        # libraries.
+        artifact_name_patterns = [
+            artifact_name_pattern(
+                category_name = "dynamic_library",
+                prefix = "lib",
+                extension = ".dylib",
+            ),
+        ]
         features = [
+            libtool_feature,
+            archiver_flags_feature,
             supports_pic_feature,
+            asan_feature,
+            tsan_feature,
+            ubsan_feature,
         ] + (
             [
                 supports_start_end_lib_feature,
@@ -1285,6 +1374,7 @@ def _impl(ctx):
             default_compile_flags_feature,
             default_link_flags_feature,
             user_link_flags_feature,
+            default_link_libs_feature,
             fdo_optimize_feature,
             supports_dynamic_linker_feature,
             dbg_feature,
@@ -1292,12 +1382,15 @@ def _impl(ctx):
             user_compile_flags_feature,
             sysroot_feature,
             unfiltered_compile_flags_feature,
+            treat_warnings_as_errors_feature,
+            archive_param_file_feature,
         ] + layering_check_features(ctx.attr.compiler)
 
     return cc_common.create_cc_toolchain_config_info(
         ctx = ctx,
         features = features,
         action_configs = action_configs,
+        artifact_name_patterns = artifact_name_patterns,
         cxx_builtin_include_directories = ctx.attr.cxx_builtin_include_directories,
         toolchain_identifier = ctx.attr.toolchain_identifier,
         host_system_name = ctx.attr.host_system_name,
@@ -1329,6 +1422,7 @@ cc_toolchain_config = rule(
         "opt_compile_flags": attr.string_list(),
         "cxx_flags": attr.string_list(),
         "link_flags": attr.string_list(),
+        "archive_flags": attr.string_list(),
         "link_libs": attr.string_list(),
         "opt_link_flags": attr.string_list(),
         "unfiltered_compile_flags": attr.string_list(),

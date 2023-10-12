@@ -20,6 +20,8 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
+#include <memory>
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -119,4 +121,12 @@ void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
     gpr_log(GPR_INFO, "Disabling TLS session key logging");
   }
   options->set_tls_session_key_log_file_path(path != nullptr ? path : "");
+}
+
+void grpc_tls_credentials_options_set_send_client_ca_list(
+    grpc_tls_credentials_options* options, bool send_client_ca_list) {
+  if (options == nullptr) {
+    return;
+  }
+  options->set_send_client_ca_list(send_client_ca_list);
 }

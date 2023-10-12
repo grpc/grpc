@@ -14,13 +14,14 @@
 
 #include "src/core/ext/filters/http/client_authority_filter.h"
 
+#include <memory>
+
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include "test/core/filters/filter_test.h"
 
@@ -71,10 +72,5 @@ TEST_F(ClientAuthorityFilterTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  // TODO(ctiller): promise_based_call currently demands to instantiate an event
-  // engine which needs grpc to be initialized.
-  grpc_init();
-  int r = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return r;
+  return RUN_ALL_TESTS();
 }

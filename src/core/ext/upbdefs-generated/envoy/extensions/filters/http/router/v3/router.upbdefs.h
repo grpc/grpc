@@ -27,6 +27,11 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_router_v3_Router_
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.router.v3.Router");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_router_v3_router_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.router.v3.Router.UpstreamAccessLogOptions");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

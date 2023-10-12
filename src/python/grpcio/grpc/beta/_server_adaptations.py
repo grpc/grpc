@@ -33,7 +33,6 @@ _DEFAULT_POOL_SIZE = 8
 
 
 class _ServerProtocolContext(interfaces.GRPCServicerContext):
-
     def __init__(self, servicer_context):
         self._servicer_context = servicer_context
 
@@ -45,7 +44,6 @@ class _ServerProtocolContext(interfaces.GRPCServicerContext):
 
 
 class _FaceServicerContext(face.ServicerContext):
-
     def __init__(self, servicer_context):
         self._servicer_context = servicer_context
 
@@ -57,7 +55,8 @@ class _FaceServicerContext(face.ServicerContext):
 
     def add_abortion_callback(self, abortion_callback):
         raise NotImplementedError(
-            'add_abortion_callback no longer supported server-side!')
+            "add_abortion_callback no longer supported server-side!"
+        )
 
     def cancel(self):
         self._servicer_context.cancel()
@@ -70,11 +69,13 @@ class _FaceServicerContext(face.ServicerContext):
 
     def initial_metadata(self, initial_metadata):
         self._servicer_context.send_initial_metadata(
-            _metadata.unbeta(initial_metadata))
+            _metadata.unbeta(initial_metadata)
+        )
 
     def terminal_metadata(self, terminal_metadata):
         self._servicer_context.set_terminal_metadata(
-            _metadata.unbeta(terminal_metadata))
+            _metadata.unbeta(terminal_metadata)
+        )
 
     def code(self, code):
         self._servicer_context.set_code(code)
@@ -84,25 +85,24 @@ class _FaceServicerContext(face.ServicerContext):
 
 
 def _adapt_unary_request_inline(unary_request_inline):
-
     def adaptation(request, servicer_context):
-        return unary_request_inline(request,
-                                    _FaceServicerContext(servicer_context))
+        return unary_request_inline(
+            request, _FaceServicerContext(servicer_context)
+        )
 
     return adaptation
 
 
 def _adapt_stream_request_inline(stream_request_inline):
-
     def adaptation(request_iterator, servicer_context):
-        return stream_request_inline(request_iterator,
-                                     _FaceServicerContext(servicer_context))
+        return stream_request_inline(
+            request_iterator, _FaceServicerContext(servicer_context)
+        )
 
     return adaptation
 
 
 class _Callback(stream.Consumer):
-
     def __init__(self):
         self._condition = threading.Condition()
         self._values = []
@@ -155,8 +155,9 @@ class _Callback(stream.Consumer):
                     self._condition.wait()
 
 
-def _run_request_pipe_thread(request_iterator, request_consumer,
-                             servicer_context):
+def _run_request_pipe_thread(
+    request_iterator, request_consumer, servicer_context
+):
     thread_joined = threading.Event()
 
     def pipe_requests():
@@ -174,26 +175,28 @@ def _run_request_pipe_thread(request_iterator, request_consumer,
 
 
 def _adapt_unary_unary_event(unary_unary_event):
-
     def adaptation(request, servicer_context):
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
             raise abandonment.Abandoned()
-        unary_unary_event(request, callback.consume_and_terminate,
-                          _FaceServicerContext(servicer_context))
+        unary_unary_event(
+            request,
+            callback.consume_and_terminate,
+            _FaceServicerContext(servicer_context),
+        )
         return callback.draw_all_values()[0]
 
     return adaptation
 
 
 def _adapt_unary_stream_event(unary_stream_event):
-
     def adaptation(request, servicer_context):
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
             raise abandonment.Abandoned()
-        unary_stream_event(request, callback,
-                           _FaceServicerContext(servicer_context))
+        unary_stream_event(
+            request, callback, _FaceServicerContext(servicer_context)
+        )
         while True:
             response = callback.draw_one_value()
             if response is None:
@@ -205,31 +208,33 @@ def _adapt_unary_stream_event(unary_stream_event):
 
 
 def _adapt_stream_unary_event(stream_unary_event):
-
     def adaptation(request_iterator, servicer_context):
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
             raise abandonment.Abandoned()
         request_consumer = stream_unary_event(
             callback.consume_and_terminate,
-            _FaceServicerContext(servicer_context))
-        _run_request_pipe_thread(request_iterator, request_consumer,
-                                 servicer_context)
+            _FaceServicerContext(servicer_context),
+        )
+        _run_request_pipe_thread(
+            request_iterator, request_consumer, servicer_context
+        )
         return callback.draw_all_values()[0]
 
     return adaptation
 
 
 def _adapt_stream_stream_event(stream_stream_event):
-
     def adaptation(request_iterator, servicer_context):
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
             raise abandonment.Abandoned()
         request_consumer = stream_stream_event(
-            callback, _FaceServicerContext(servicer_context))
-        _run_request_pipe_thread(request_iterator, request_consumer,
-                                 servicer_context)
+            callback, _FaceServicerContext(servicer_context)
+        )
+        _run_request_pipe_thread(
+            request_iterator, request_consumer, servicer_context
+        )
         while True:
             response = callback.draw_one_value()
             if response is None:
@@ -241,66 +246,125 @@ def _adapt_stream_stream_event(stream_stream_event):
 
 
 class _SimpleMethodHandler(
-        collections.namedtuple('_MethodHandler', (
-            'request_streaming',
-            'response_streaming',
-            'request_deserializer',
-            'response_serializer',
-            'unary_unary',
-            'unary_stream',
-            'stream_unary',
-            'stream_stream',
-        )), grpc.RpcMethodHandler):
+    collections.namedtuple(
+        "_MethodHandler",
+        (
+            "request_streaming",
+            "response_streaming",
+            "request_deserializer",
+            "response_serializer",
+            "unary_unary",
+            "unary_stream",
+            "stream_unary",
+            "stream_stream",
+        ),
+    ),
+    grpc.RpcMethodHandler,
+):
     pass
 
 
-def _simple_method_handler(implementation, request_deserializer,
-                           response_serializer):
+def _simple_method_handler(
+    implementation, request_deserializer, response_serializer
+):
     if implementation.style is style.Service.INLINE:
         if implementation.cardinality is cardinality.Cardinality.UNARY_UNARY:
             return _SimpleMethodHandler(
-                False, False, request_deserializer, response_serializer,
+                False,
+                False,
+                request_deserializer,
+                response_serializer,
                 _adapt_unary_request_inline(implementation.unary_unary_inline),
-                None, None, None)
+                None,
+                None,
+                None,
+            )
         elif implementation.cardinality is cardinality.Cardinality.UNARY_STREAM:
             return _SimpleMethodHandler(
-                False, True, request_deserializer, response_serializer, None,
+                False,
+                True,
+                request_deserializer,
+                response_serializer,
+                None,
                 _adapt_unary_request_inline(implementation.unary_stream_inline),
-                None, None)
+                None,
+                None,
+            )
         elif implementation.cardinality is cardinality.Cardinality.STREAM_UNARY:
             return _SimpleMethodHandler(
-                True, False, request_deserializer, response_serializer, None,
+                True,
+                False,
+                request_deserializer,
+                response_serializer,
+                None,
                 None,
                 _adapt_stream_request_inline(
-                    implementation.stream_unary_inline), None)
-        elif implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
+                    implementation.stream_unary_inline
+                ),
+                None,
+            )
+        elif (
+            implementation.cardinality is cardinality.Cardinality.STREAM_STREAM
+        ):
             return _SimpleMethodHandler(
-                True, True, request_deserializer, response_serializer, None,
-                None, None,
+                True,
+                True,
+                request_deserializer,
+                response_serializer,
+                None,
+                None,
+                None,
                 _adapt_stream_request_inline(
-                    implementation.stream_stream_inline))
+                    implementation.stream_stream_inline
+                ),
+            )
     elif implementation.style is style.Service.EVENT:
         if implementation.cardinality is cardinality.Cardinality.UNARY_UNARY:
             return _SimpleMethodHandler(
-                False, False, request_deserializer, response_serializer,
+                False,
+                False,
+                request_deserializer,
+                response_serializer,
                 _adapt_unary_unary_event(implementation.unary_unary_event),
-                None, None, None)
+                None,
+                None,
+                None,
+            )
         elif implementation.cardinality is cardinality.Cardinality.UNARY_STREAM:
             return _SimpleMethodHandler(
-                False, True, request_deserializer, response_serializer, None,
+                False,
+                True,
+                request_deserializer,
+                response_serializer,
+                None,
                 _adapt_unary_stream_event(implementation.unary_stream_event),
-                None, None)
+                None,
+                None,
+            )
         elif implementation.cardinality is cardinality.Cardinality.STREAM_UNARY:
             return _SimpleMethodHandler(
-                True, False, request_deserializer, response_serializer, None,
+                True,
+                False,
+                request_deserializer,
+                response_serializer,
+                None,
                 None,
                 _adapt_stream_unary_event(implementation.stream_unary_event),
-                None)
-        elif implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
+                None,
+            )
+        elif (
+            implementation.cardinality is cardinality.Cardinality.STREAM_STREAM
+        ):
             return _SimpleMethodHandler(
-                True, True, request_deserializer, response_serializer, None,
-                None, None,
-                _adapt_stream_stream_event(implementation.stream_stream_event))
+                True,
+                True,
+                request_deserializer,
+                response_serializer,
+                None,
+                None,
+                None,
+                _adapt_stream_stream_event(implementation.stream_stream_event),
+            )
     raise ValueError()
 
 
@@ -314,36 +378,44 @@ def _flatten_method_pair_map(method_pair_map):
 
 
 class _GenericRpcHandler(grpc.GenericRpcHandler):
-
-    def __init__(self, method_implementations, multi_method_implementation,
-                 request_deserializers, response_serializers):
+    def __init__(
+        self,
+        method_implementations,
+        multi_method_implementation,
+        request_deserializers,
+        response_serializers,
+    ):
         self._method_implementations = _flatten_method_pair_map(
-            method_implementations)
+            method_implementations
+        )
         self._request_deserializers = _flatten_method_pair_map(
-            request_deserializers)
+            request_deserializers
+        )
         self._response_serializers = _flatten_method_pair_map(
-            response_serializers)
+            response_serializers
+        )
         self._multi_method_implementation = multi_method_implementation
 
     def service(self, handler_call_details):
         method_implementation = self._method_implementations.get(
-            handler_call_details.method)
+            handler_call_details.method
+        )
         if method_implementation is not None:
             return _simple_method_handler(
                 method_implementation,
                 self._request_deserializers.get(handler_call_details.method),
-                self._response_serializers.get(handler_call_details.method))
+                self._response_serializers.get(handler_call_details.method),
+            )
         elif self._multi_method_implementation is None:
             return None
         else:
             try:
-                return None  #TODO(nathaniel): call the multimethod.
+                return None  # TODO(nathaniel): call the multimethod.
             except face.NoSuchMethodError:
                 return None
 
 
 class _Server(interfaces.Server):
-
     def __init__(self, grpc_server):
         self._grpc_server = grpc_server
 
@@ -368,13 +440,20 @@ class _Server(interfaces.Server):
         return False
 
 
-def server(service_implementations, multi_method_implementation,
-           request_deserializers, response_serializers, thread_pool,
-           thread_pool_size):
-    generic_rpc_handler = _GenericRpcHandler(service_implementations,
-                                             multi_method_implementation,
-                                             request_deserializers,
-                                             response_serializers)
+def server(
+    service_implementations,
+    multi_method_implementation,
+    request_deserializers,
+    response_serializers,
+    thread_pool,
+    thread_pool_size,
+):
+    generic_rpc_handler = _GenericRpcHandler(
+        service_implementations,
+        multi_method_implementation,
+        request_deserializers,
+        response_serializers,
+    )
     if thread_pool is None:
         effective_thread_pool = logging_pool.pool(
             _DEFAULT_POOL_SIZE if thread_pool_size is None else thread_pool_size
@@ -382,4 +461,5 @@ def server(service_implementations, multi_method_implementation,
     else:
         effective_thread_pool = thread_pool
     return _Server(
-        grpc.server(effective_thread_pool, handlers=(generic_rpc_handler,)))
+        grpc.server(effective_thread_pool, handlers=(generic_rpc_handler,))
+    )

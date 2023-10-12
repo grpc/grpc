@@ -16,18 +16,19 @@ import unittest
 
 
 class TestInit(unittest.TestCase):
-
     def test_grpc(self):
         import grpc  # pylint: disable=wrong-import-position
-        channel = grpc.aio.insecure_channel('phony')
+
+        channel = grpc.aio.insecure_channel("phony")
         self.assertIsInstance(channel, grpc.aio.Channel)
 
     def test_grpc_dot_aio(self):
         import grpc.aio  # pylint: disable=wrong-import-position
-        channel = grpc.aio.insecure_channel('phony')
+
+        channel = grpc.aio.insecure_channel("phony")
         self.assertIsInstance(channel, grpc.aio.Channel)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

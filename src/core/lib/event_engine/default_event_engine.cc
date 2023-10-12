@@ -32,6 +32,10 @@
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 
+#ifdef GRPC_MAXIMIZE_THREADYNESS
+#include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"  // IWYU pragma: keep
+#endif
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -57,11 +61,19 @@ void EventEngineFactoryReset() {
   g_event_engine->reset();
 }
 
-std::unique_ptr<EventEngine> CreateEventEngine() {
+std::unique_ptr<EventEngine> CreateEventEngineInner() {
   if (auto* factory = g_event_engine_factory.load()) {
     return (*factory)();
   }
   return DefaultEventEngineFactory();
+}
+
+std::unique_ptr<EventEngine> CreateEventEngine() {
+#ifdef GRPC_MAXIMIZE_THREADYNESS
+  return std::make_unique<ThreadyEventEngine>(CreateEventEngineInner());
+#else
+  return CreateEventEngineInner();
+#endif
 }
 
 std::shared_ptr<EventEngine> GetDefaultEventEngine(

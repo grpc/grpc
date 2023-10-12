@@ -33,9 +33,11 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -73,41 +75,6 @@ class WorkStealingThreadPool final : public ThreadPool {
    private:
     grpc_core::Mutex mu_;
     grpc_core::CondVar cv_ ABSL_GUARDED_BY(mu_);
-  };
-
-  // Types of thread counts.
-  // Note this is intentionally not an enum class, the keys are used as indexes
-  // into the ThreadCount's private array.
-  enum CounterType {
-    kLivingThreadCount = 0,
-    kBusyCount,
-  };
-
-  class ThreadCount {
-   public:
-    // Adds 1 to the thread count for that counter type.
-    void Add(CounterType counter_type);
-    // Subtracts 1 from the thread count for that counter type.
-    void Remove(CounterType counter_type);
-    // Blocks until the thread count for that type reaches `desired_threads`.
-    void BlockUntilThreadCount(CounterType counter_type, int desired_threads,
-                               const char* why, WorkSignal* work_signal);
-    // Returns the current thread count for the tracked type.
-    size_t GetCount(CounterType counter_type);
-
-    // Adds and removes thread counts on construction and destruction
-    class AutoThreadCount {
-     public:
-      AutoThreadCount(ThreadCount* counter, CounterType counter_type);
-      ~AutoThreadCount();
-
-     private:
-      ThreadCount* counter_;
-      CounterType counter_type_;
-    };
-
-   private:
-    std::atomic<size_t> thread_counts_[2]{{0}, {0}};
   };
 
   // A pool of WorkQueues that participate in work stealing.
@@ -152,8 +119,8 @@ class WorkStealingThreadPool final : public ThreadPool {
     // This method is safe to call from within a ThreadPool thread.
     void Quiesce();
     // Sets a throttled state.
-    // After the initial pool has been created, if the pool is backlogged when a
-    // new thread has started, it is rate limited.
+    // After the initial pool has been created, if the pool is backlogged when
+    // a new thread has started, it is rate limited.
     // Returns the previous throttling state.
     bool SetThrottled(bool throttle);
     // Set the shutdown flag.
@@ -170,7 +137,8 @@ class WorkStealingThreadPool final : public ThreadPool {
     bool IsForking();
     bool IsQuiesced();
     size_t reserve_threads() { return reserve_threads_; }
-    ThreadCount* thread_count() { return &thread_count_; }
+    BusyThreadCount* busy_thread_count() { return &busy_thread_count_; }
+    LivingThreadCount* living_thread_count() { return &living_thread_count_; }
     TheftRegistry* theft_registry() { return &theft_registry_; }
     WorkQueue* queue() { return &queue_; }
     WorkSignal* work_signal() { return &work_signal_; }
@@ -183,24 +151,30 @@ class WorkStealingThreadPool final : public ThreadPool {
     //    and there are threads that can accept work.
     class Lifeguard {
      public:
-      Lifeguard();
+      explicit Lifeguard(WorkStealingThreadPoolImpl* pool);
       // Start the lifeguard thread.
-      void Start(std::shared_ptr<WorkStealingThreadPoolImpl> pool);
+      void Start();
       // Block until the lifeguard thread is shut down.
-      void BlockUntilShutdown();
+      // Afterwards, reset the lifeguard state so it can start again cleanly.
+      void BlockUntilShutdownAndReset();
 
      private:
       // The main body of the lifeguard thread.
       void LifeguardMain();
       // Starts a new thread if the pool is backlogged
       void MaybeStartNewThread();
-      std::shared_ptr<WorkStealingThreadPoolImpl> pool_;
+
+      WorkStealingThreadPoolImpl* pool_;
       grpc_core::BackOff backoff_;
-      std::atomic<bool> thread_running_{false};
+      // Used for signaling that the lifeguard thread has stopped running.
+      std::unique_ptr<grpc_core::Notification> lifeguard_should_shut_down_;
+      std::unique_ptr<grpc_core::Notification> lifeguard_is_shut_down_;
+      std::atomic<bool> lifeguard_running_{false};
     };
 
     const size_t reserve_threads_;
-    ThreadCount thread_count_;
+    BusyThreadCount busy_thread_count_;
+    LivingThreadCount living_thread_count_;
     TheftRegistry theft_registry_;
     BasicWorkQueue queue_;
     // Track shutdown and fork bits separately.
@@ -224,17 +198,20 @@ class WorkStealingThreadPool final : public ThreadPool {
     void ThreadBody();
     void SleepIfRunning();
     bool Step();
+    // After the pool is shut down, ensure all local and global callbacks are
+    // executed before quitting the thread.
+    void FinishDraining();
 
    private:
     // pool_ must be the first member so that it is alive when the thread count
     // is decremented at time of destruction. This is necessary when this thread
     // state holds the last shared_ptr keeping the pool alive.
     std::shared_ptr<WorkStealingThreadPoolImpl> pool_;
-    // auto_thread_count_ must be the second member declared, so that the thread
-    // count is decremented after all other state is cleaned up (preventing
-    // leaks).
-    ThreadCount::AutoThreadCount auto_thread_count_;
+    // auto_thread_counter_ must be declared after pool_, so that the thread
+    // count is decremented after all other pool state is cleaned up.
+    LivingThreadCount::AutoThreadCounter auto_thread_counter_;
     grpc_core::BackOff backoff_;
+    size_t busy_count_idx_;
   };
 
   const std::shared_ptr<WorkStealingThreadPoolImpl> pool_;

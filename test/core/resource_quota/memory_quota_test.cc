@@ -18,6 +18,7 @@
 #include <atomic>
 #include <chrono>
 #include <random>
+#include <set>
 #include <thread>
 #include <vector>
 
@@ -167,6 +168,23 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
   }
 
   EXPECT_GE(count_reclaimers_called.load(std::memory_order_relaxed), 8000);
+}
+
+TEST(MemoryQuotaTest, AllMemoryQuotas) {
+  auto gather = []() {
+    std::set<std::string> all_names;
+    for (const auto& q : AllMemoryQuotas()) {
+      all_names.emplace(q->name());
+    }
+    return all_names;
+  };
+
+  auto m1 = MakeMemoryQuota("m1");
+  auto m2 = MakeMemoryQuota("m2");
+
+  EXPECT_EQ(gather(), std::set<std::string>({"m1", "m2"}));
+  m1.reset();
+  EXPECT_EQ(gather(), std::set<std::string>({"m2"}));
 }
 
 }  // namespace testing

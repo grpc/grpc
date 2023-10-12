@@ -41,7 +41,10 @@ class XdsAuditLoggerRegistry {
     virtual Json::Object ConvertXdsAuditLoggerConfig(
         const XdsResourceType::DecodeContext& context,
         absl::string_view configuration, ValidationErrors* errors) = 0;
+    // The full proto message name for the logger config.
     virtual absl::string_view type() = 0;
+    // The logger name used for the gRPC registry.
+    virtual absl::string_view name() = 0;
   };
 
   XdsAuditLoggerRegistry();

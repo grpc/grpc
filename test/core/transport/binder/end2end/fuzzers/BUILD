@@ -53,6 +53,7 @@ grpc_proto_fuzzer(
         "client_fuzzer.cc",
     ],
     corpus = "binder_transport_client_fuzzer_corpus",
+    owner = "binder",
     proto = "client.proto",
     tags = [
         "no_mac",
@@ -75,6 +76,7 @@ grpc_proto_fuzzer(
         "server_fuzzer.cc",
     ],
     corpus = "binder_transport_server_fuzzer_corpus",
+    owner = "binder",
     proto = "server.proto",
     tags = [
         "no_mac",

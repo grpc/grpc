@@ -18,11 +18,10 @@ import time
 from src.proto.grpc.testing import metrics_pb2
 from src.proto.grpc.testing import metrics_pb2_grpc
 
-GAUGE_NAME = 'python_overall_qps'
+GAUGE_NAME = "python_overall_qps"
 
 
 class MetricsServer(metrics_pb2_grpc.MetricsServiceServicer):
-
     def __init__(self, histogram):
         self._start_time = time.time()
         self._histogram = histogram
@@ -40,6 +39,6 @@ class MetricsServer(metrics_pb2_grpc.MetricsServiceServicer):
 
     def GetGauge(self, request, context):
         if request.name != GAUGE_NAME:
-            raise Exception('Gauge {} does not exist'.format(request.name))
+            raise Exception("Gauge {} does not exist".format(request.name))
         qps = self._get_qps()
         return metrics_pb2.GaugeResponse(name=GAUGE_NAME, long_value=qps)

@@ -62,17 +62,16 @@ class RingHashTest : public XdsEnd2endTest {
     ResetStub(/*failover_timeout_ms=*/0, args);
   }
 
-  grpc_core::ServerAddressList CreateAddressListFromPortList(
+  grpc_core::EndpointAddressesList CreateAddressListFromPortList(
       const std::vector<int>& ports) {
-    grpc_core::ServerAddressList addresses;
+    grpc_core::EndpointAddressesList addresses;
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      addresses.emplace_back(address.addr, address.len,
-                             grpc_core::ChannelArgs());
+      addresses.emplace_back(address, grpc_core::ChannelArgs());
     }
     return addresses;
   }
@@ -211,7 +210,7 @@ TEST_P(RingHashTest,
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(GetBackendPorts());
-    logical_dns_cluster_resolver_response_generator_->SetResponse(
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
         std::move(result));
   }
   // Inject connection delay to make this act more realistically.
@@ -279,7 +278,7 @@ TEST_P(RingHashTest,
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(GetBackendPorts());
-    logical_dns_cluster_resolver_response_generator_->SetResponse(
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
         std::move(result));
   }
   // Set up connection attempt injector.
@@ -996,7 +995,7 @@ TEST_P(RingHashTest, ReattemptWhenAllEndpointsUnreachable) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex(
-          "ring hash cannot find a connected subchannel; first failure: "),
+          "ring hash cannot find a connected endpoint; first failure: "),
       RpcOptions().set_metadata(std::move(metadata)));
   StartBackend(0);
   // Ensure we are actively connecting without any traffic.
@@ -1035,7 +1034,7 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex(
-          "ring hash cannot find a connected subchannel; first failure: "),
+          "ring hash cannot find a connected endpoint; first failure: "),
       rpc_options);
   gpr_log(GPR_INFO, "=== DONE WITH FIRST RPC ===");
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
@@ -1071,7 +1070,7 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex(
-          "ring hash cannot find a connected subchannel; first failure: "),
+          "ring hash cannot find a connected endpoint; first failure: "),
       rpc_options);
   gpr_log(GPR_INFO, "=== STARTING BACKEND 1 ===");
   StartBackend(1);

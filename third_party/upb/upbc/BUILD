@@ -40,6 +40,10 @@ load(
     "bootstrap_upb_proto_library",
 )
 
+# begin:google_only
+# package(default_applicable_licenses = ["//:license"])
+# end:google_only
+
 licenses(["notice"])
 
 proto_library(
@@ -64,14 +68,16 @@ upb_proto_reflection_library(
 bootstrap_upb_proto_library(
     name = "plugin_upb_proto",
     base_dir = "",
+    # TODO(b/289127200): Export 'net/proto2/proto/descriptor.upb.h' and remove "-layering_check".
+    features = ["-layering_check"],
     google3_src_files = [
-        "net/proto2/compiler/proto/plugin.proto",
         "net/proto2/compiler/proto/profile.proto",
+        "third_party/protobuf/compiler/plugin.proto",
     ],
     google3_src_rules = [
         "//net/proto2/proto:descriptor_proto_source",
-        "//net/proto2/compiler/proto:plugin.proto",
         "//net/proto2/compiler/proto:profile.proto",
+        "//third_party/protobuf/compiler:plugin_proto_source",
     ],
     oss_src_files = ["google/protobuf/compiler/plugin.proto"],
     oss_src_rules = [
@@ -88,24 +94,6 @@ upb_proto_reflection_library(
     name = "plugin_upb_proto_reflection",
     visibility = ["//:friends"],
     deps = ["@com_google_protobuf//:compiler_plugin_proto"],
-)
-
-cc_binary(
-    name = "upbc_so",
-    srcs = ["upbc_so.c"],
-    copts = UPB_DEFAULT_COPTS,
-    linkshared = 1,
-    linkstatic = 1,
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:collections",
-        "//:mem",
-        "//:message",
-        "//:message_accessors",
-        "//:mini_table",
-        "//:port",
-        "//upbc:upbdev",
-    ],
 )
 
 bootstrap_cc_library(
@@ -146,6 +134,7 @@ bootstrap_cc_library(
         "//:mini_table_internal",
         "//:port",
         "//:upb",
+        "//upb/mini_descriptor",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
     ],
@@ -206,6 +195,19 @@ bootstrap_cc_library(
     ],
 )
 
+cc_binary(
+    name = "libupbc.so",
+    srcs = ["upbc_so.c"],
+    copts = UPB_DEFAULT_COPTS + ["-DUPB_BUILD_API"],
+    linkshared = 1,
+    linkstatic = 1,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":upbdev",
+        "//:port",
+    ],
+)
+
 cc_library(
     name = "upbdev",
     srcs = [
@@ -217,7 +219,7 @@ cc_library(
         "upbdev.h",
     ],
     copts = UPB_DEFAULT_COPTS,
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:private"],
     deps = [
         ":code_generator_request_upb_proto",
         ":code_generator_request_upb_proto_reflection",
@@ -229,6 +231,8 @@ cc_library(
         "//:mini_table",
         "//:port",
         "//:reflection",
+        "//upb/json",
+        "//upb/mini_descriptor",
     ],
 )
 

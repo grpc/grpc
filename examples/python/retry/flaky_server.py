@@ -21,38 +21,42 @@ import random
 import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
-    "helloworld.proto")
+    "helloworld.proto"
+)
 
 
 class ErrorInjectingGreeter(helloworld_pb2_grpc.GreeterServicer):
-
     def __init__(self):
         self._counter = collections.defaultdict(int)
 
     async def SayHello(
-            self, request: helloworld_pb2.HelloRequest,
-            context: grpc.aio.ServicerContext) -> helloworld_pb2.HelloReply:
+        self,
+        request: helloworld_pb2.HelloRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> helloworld_pb2.HelloReply:
         self._counter[context.peer()] += 1
         if self._counter[context.peer()] < 5:
             if random.random() < 0.75:
-                logging.info('Injecting error to RPC from %s', context.peer())
-                await context.abort(grpc.StatusCode.UNAVAILABLE,
-                                    'injected error')
-        logging.info('Successfully responding to RPC from %s', context.peer())
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+                logging.info("Injecting error to RPC from %s", context.peer())
+                await context.abort(
+                    grpc.StatusCode.UNAVAILABLE, "injected error"
+                )
+        logging.info("Successfully responding to RPC from %s", context.peer())
+        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
 
 
 async def serve() -> None:
     server = grpc.aio.server()
-    helloworld_pb2_grpc.add_GreeterServicer_to_server(ErrorInjectingGreeter(),
-                                                      server)
-    listen_addr = '[::]:50051'
+    helloworld_pb2_grpc.add_GreeterServicer_to_server(
+        ErrorInjectingGreeter(), server
+    )
+    listen_addr = "[::]:50051"
     server.add_insecure_port(listen_addr)
     logging.info("Starting flaky server on %s", listen_addr)
     await server.start()
     await server.wait_for_termination()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.run(serve())

@@ -56,3 +56,22 @@ grpc_sh_test(
     ],
     uses_polling = False,
 )
+
+grpc_sh_test(
+    name = "csharp_codegen_base_namespace_test",
+    size = "small",
+    srcs = ["csharp_codegen_base_namespace_test.sh"],
+    data = [
+        "basenamespace/proto/namespacetest.proto",
+        "//src/compiler:grpc_csharp_plugin",
+        "@com_google_protobuf//:protoc",
+    ],
+    tags = [
+        "no_windows",
+        "noasan",
+        "nomsan",
+        "notsan",
+        "noubsan",
+    ],
+    uses_polling = False,
+)

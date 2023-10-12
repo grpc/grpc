@@ -23,13 +23,10 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <algorithm>
-#include <initializer_list>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -157,7 +154,28 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   void RecordEnd(const grpc_call_final_info* final_info) override;
 
   void RecordAnnotation(absl::string_view annotation) override {
+    if (!context_.Span().IsRecording()) {
+      return;
+    }
     context_.AddSpanAnnotation(annotation, {});
+  }
+
+  void RecordAnnotation(const Annotation& annotation) override {
+    if (!context_.Span().IsRecording()) {
+      return;
+    }
+
+    switch (annotation.type()) {
+      case AnnotationType::kMetadataSizes:
+        // This annotation is expensive to create. We should only create it if
+        // the call is being sampled, not just recorded.
+        if (IsSampled()) {
+          context_.AddSpanAnnotation(annotation.ToString(), {});
+        }
+        break;
+      default:
+        context_.AddSpanAnnotation(annotation.ToString(), {});
+    }
   }
 
  private:

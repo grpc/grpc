@@ -24,5 +24,6 @@ import scenario_generator_helper as gen
 
 gen.generate_scenarios_bzl(
     gen.generate_json_run_localhost_scenarios(),
-    os.path.join(script_dir, 'json_run_localhost_scenarios.bzl'),
-    'JSON_RUN_LOCALHOST_SCENARIOS')
+    os.path.join(script_dir, "json_run_localhost_scenarios.bzl"),
+    "JSON_RUN_LOCALHOST_SCENARIOS",
+)

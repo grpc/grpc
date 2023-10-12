@@ -25,6 +25,8 @@ On the client side, this does not have any effect.
 
 **IMPORTANT NOTE** - For keepalive to work properly and as intended, all of the above channel arguments should be configured appropriately. The client-side keepalive settings should also be in agreement with the server-side settings. If a client sends pings more often than the server is willing to accept, the connection will be terminated with a GOAWAY frame with "too_many_pings" as the debug data. 
 
+Please refer to the [C++ keepalive example](https://github.com/grpc/grpc/tree/master/examples/cpp/keepalive) for a sample way of setting these arguments.
+
 ### Defaults Values
 
 Channel Argument| Client|Server

@@ -95,6 +95,11 @@ py_library(
 )
 
 py_library(
+    name = "_observability",
+    srcs = ["_observability.py"],
+)
+
+py_library(
     name = "grpcio",
     srcs = ["__init__.py"],
     data = [
@@ -102,6 +107,7 @@ py_library(
     ],
     imports = ["../"],
     deps = [
+        ":_observability",
         ":_runtime_protos",
         ":_simple_stubs",
         ":_typing",

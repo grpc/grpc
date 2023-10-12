@@ -1,4 +1,4 @@
-#Copyright 2019 gRPC authors.
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -83,38 +83,44 @@ This release contains refinements, improvements, and bug fixes, with highlights 
 """
 
 HTML_URL = "https://github.com/grpc/grpc/pull/"
-API_URL = 'https://api.github.com/repos/grpc/grpc/pulls/'
+API_URL = "https://api.github.com/repos/grpc/grpc/pulls/"
 
 
 def get_commit_log(prevRelLabel, relBranch):
-    """Return the output of 'git log prevRelLabel..relBranch' """
+    """Return the output of 'git log prevRelLabel..relBranch'"""
 
     import subprocess
+
     glg_command = [
-        "git", "log", "--pretty=oneline", "--committer=GitHub",
-        "%s..%s" % (prevRelLabel, relBranch)
+        "git",
+        "log",
+        "--pretty=oneline",
+        "--committer=GitHub",
+        "%s..%s" % (prevRelLabel, relBranch),
     ]
     print(("Running ", " ".join(glg_command)))
-    return subprocess.check_output(glg_command).decode('utf-8', 'ignore')
+    return subprocess.check_output(glg_command).decode("utf-8", "ignore")
 
 
 def get_pr_data(pr_num):
     """Get the PR data from github. Return 'error' on exception"""
-    http = urllib3.PoolManager(retries=urllib3.Retry(total=7, backoff_factor=1),
-                               timeout=4.0)
+    http = urllib3.PoolManager(
+        retries=urllib3.Retry(total=7, backoff_factor=1), timeout=4.0
+    )
     url = API_URL + pr_num
     try:
-        response = http.request('GET',
-                                url,
-                                headers={'Authorization': 'token %s' % TOKEN})
+        response = http.request(
+            "GET", url, headers={"Authorization": "token %s" % TOKEN}
+        )
     except urllib3.exceptions.HTTPError as e:
-        print('Request error:', e.reason)
-        return 'error'
-    return json.loads(response.data.decode('utf-8'))
+        print("Request error:", e.reason)
+        return "error"
+    return json.loads(response.data.decode("utf-8"))
 
 
 def get_pr_titles(gitLogs):
     import re
+
     error_count = 0
     # PRs with merge commits
     match_merge_pr = "Merge pull request #(\d+)"
@@ -136,21 +142,22 @@ def get_pr_titles(gitLogs):
         pr = get_pr_data(pr_num)
         if pr == "error":
             print(
-                ("\n***ERROR*** Error in getting data for PR " + pr_num + "\n"))
+                ("\n***ERROR*** Error in getting data for PR " + pr_num + "\n")
+            )
             error_count += 1
             continue
         rl_no_found = False
         rl_yes_found = False
         lang_found = False
-        for label in pr['labels']:
-            if label['name'] == 'release notes: yes':
+        for label in pr["labels"]:
+            if label["name"] == "release notes: yes":
                 rl_yes_found = True
-            elif label['name'] == 'release notes: no':
+            elif label["name"] == "release notes: no":
                 rl_no_found = True
-            elif label['name'].startswith('lang/'):
+            elif label["name"].startswith("lang/"):
                 lang_found = True
-                lang = label['name'].split('/')[1].lower()
-                #lang = lang[0].upper() + lang[1:]
+                lang = label["name"].split("/")[1].lower()
+                # lang = lang[0].upper() + lang[1:]
         body = pr["title"]
         if not body.endswith("."):
             body = body + "."
@@ -159,10 +166,12 @@ def get_pr_titles(gitLogs):
             error_count += 1
             continue
 
-        prline = "-  " + body + " ([#" + pr_num + "](" + HTML_URL + pr_num + "))"
+        prline = (
+            "-  " + body + " ([#" + pr_num + "](" + HTML_URL + pr_num + "))"
+        )
         detail = "- " + pr["merged_by"]["login"] + "@ " + prline
         print(detail)
-        #if no RL label
+        # if no RL label
         if not rl_no_found and not rl_yes_found:
             print(("Release notes label missing for " + pr_num))
             langs_pr["nolabel"].append(detail)
@@ -173,8 +182,14 @@ def get_pr_titles(gitLogs):
             print(("'Release notes:no' found for " + pr_num))
             langs_pr["notinrel"].append(detail)
         elif rl_yes_found:
-            print(("'Release notes:yes' found for " + pr_num + " with lang " +
-                   lang))
+            print(
+                (
+                    "'Release notes:yes' found for "
+                    + pr_num
+                    + " with lang "
+                    + lang
+                )
+            )
             langs_pr["inrel"].append(detail)
             langs_pr[lang].append(prline)
 
@@ -204,7 +219,8 @@ def write_draft(langs_pr, file, version, date):
     file.write("\n")
     file.write("\n")
     file.write(
-        "PRs going into release notes - please check title and fix in Github. Do not edit here.\n"
+        "PRs going into release notes - please check title and fix in Github."
+        " Do not edit here.\n"
     )
     file.write("---\n")
     file.write("\n")
@@ -288,53 +304,69 @@ def write_rel_notes(langs_pr, file, version, name):
 
 def build_args_parser():
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('release_version',
-                        type=str,
-                        help='New release version e.g. 1.14.0')
-    parser.add_argument('release_name',
-                        type=str,
-                        help='New release name e.g. gladiolus')
-    parser.add_argument('release_date',
-                        type=str,
-                        help='Release date e.g. 7/30/18')
-    parser.add_argument('previous_release_label',
-                        type=str,
-                        help='Previous release branch/tag e.g. v1.13.x')
-    parser.add_argument('release_branch',
-                        type=str,
-                        help='Current release branch e.g. origin/v1.14.x')
-    parser.add_argument('draft_filename',
-                        type=str,
-                        help='Name of the draft file e.g. draft.md')
-    parser.add_argument('release_notes_filename',
-                        type=str,
-                        help='Name of the release notes file e.g. relnotes.md')
-    parser.add_argument('--token',
-                        type=str,
-                        default='',
-                        help='GitHub API token to avoid being rate limited')
+    parser.add_argument(
+        "release_version", type=str, help="New release version e.g. 1.14.0"
+    )
+    parser.add_argument(
+        "release_name", type=str, help="New release name e.g. gladiolus"
+    )
+    parser.add_argument(
+        "release_date", type=str, help="Release date e.g. 7/30/18"
+    )
+    parser.add_argument(
+        "previous_release_label",
+        type=str,
+        help="Previous release branch/tag e.g. v1.13.x",
+    )
+    parser.add_argument(
+        "release_branch",
+        type=str,
+        help="Current release branch e.g. origin/v1.14.x",
+    )
+    parser.add_argument(
+        "draft_filename", type=str, help="Name of the draft file e.g. draft.md"
+    )
+    parser.add_argument(
+        "release_notes_filename",
+        type=str,
+        help="Name of the release notes file e.g. relnotes.md",
+    )
+    parser.add_argument(
+        "--token",
+        type=str,
+        default="",
+        help="GitHub API token to avoid being rate limited",
+    )
     return parser
 
 
 def main():
     import os
+
     global TOKEN
 
     parser = build_args_parser()
     args = parser.parse_args()
-    version, name, date = args.release_version, args.release_name, args.release_date
+    version, name, date = (
+        args.release_version,
+        args.release_name,
+        args.release_date,
+    )
     start, end = args.previous_release_label, args.release_branch
 
     TOKEN = args.token
-    if TOKEN == '':
+    if TOKEN == "":
         try:
             TOKEN = os.environ["GITHUB_TOKEN"]
         except:
             pass
-    if TOKEN == '':
+    if TOKEN == "":
         print(
-            "Error: Github API token required. Either include param --token=<your github token> or set environment variable GITHUB_TOKEN to your github token"
+            "Error: Github API token required. Either include param"
+            " --token=<your github token> or set environment variable"
+            " GITHUB_TOKEN to your github token"
         )
         return
 
@@ -343,9 +375,9 @@ def main():
     draft_file, rel_file = args.draft_filename, args.release_notes_filename
     filename = os.path.abspath(draft_file)
     if os.path.exists(filename):
-        file = open(filename, 'r+')
+        file = open(filename, "r+")
     else:
-        file = open(filename, 'w')
+        file = open(filename, "w")
 
     file.seek(0)
     write_draft(langs_pr, file, version, date)
@@ -355,9 +387,9 @@ def main():
 
     filename = os.path.abspath(rel_file)
     if os.path.exists(filename):
-        file = open(filename, 'r+')
+        file = open(filename, "r+")
     else:
-        file = open(filename, 'w')
+        file = open(filename, "w")
 
     file.seek(0)
     write_rel_notes(langs_pr, file, version, name)

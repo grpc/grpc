@@ -22,7 +22,8 @@ from typing import Iterable
 import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
-    "helloworld.proto")
+    "helloworld.proto"
+)
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
@@ -34,32 +35,35 @@ def get_free_loopback_tcp_port() -> Iterable[str]:
         tcp_socket = socket.socket(socket.AF_INET6)
     else:
         tcp_socket = socket.socket(socket.AF_INET)
-    tcp_socket.bind(('', 0))
+    tcp_socket.bind(("", 0))
     address_tuple = tcp_socket.getsockname()
     yield f"localhost:{address_tuple[1]}"
     tcp_socket.close()
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
-
-    async def SayHello(self, request: helloworld_pb2.HelloRequest,
-                       unused_context) -> helloworld_pb2.HelloReply:
-        return helloworld_pb2.HelloReply(message=f'Hello, {request.name}!')
+    async def SayHello(
+        self, request: helloworld_pb2.HelloRequest, unused_context
+    ) -> helloworld_pb2.HelloReply:
+        return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 
 def create_server(server_address: str):
     server = grpc.aio.server()
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     bound_port = server.add_insecure_port(server_address)
-    assert bound_port == int(server_address.split(':')[-1])
+    assert bound_port == int(server_address.split(":")[-1])
     return server
 
 
-async def process(stub: helloworld_pb2_grpc.GreeterStub,
-                  wait_for_ready: bool = None) -> None:
+async def process(
+    stub: helloworld_pb2_grpc.GreeterStub, wait_for_ready: bool = None
+) -> None:
     try:
-        response = await stub.SayHello(helloworld_pb2.HelloRequest(name='you'),
-                                       wait_for_ready=wait_for_ready)
+        response = await stub.SayHello(
+            helloworld_pb2.HelloRequest(name="you"),
+            wait_for_ready=wait_for_ready,
+        )
         message = response.message
     except grpc.aio.AioRpcError as rpc_error:
         assert rpc_error.code() == grpc.StatusCode.UNAVAILABLE
@@ -67,8 +71,11 @@ async def process(stub: helloworld_pb2_grpc.GreeterStub,
         message = rpc_error
     else:
         assert wait_for_ready
-    _LOGGER.info("Wait-for-ready %s, client received: %s",
-                 "enabled" if wait_for_ready else "disabled", message)
+    _LOGGER.info(
+        "Wait-for-ready %s, client received: %s",
+        "enabled" if wait_for_ready else "disabled",
+        message,
+    )
 
 
 async def main() -> None:
@@ -80,10 +87,12 @@ async def main() -> None:
 
         # Fire an RPC without wait_for_ready
         fail_fast_task = asyncio.get_event_loop().create_task(
-            process(stub, wait_for_ready=False))
+            process(stub, wait_for_ready=False)
+        )
         # Fire an RPC with wait_for_ready
         wait_for_ready_task = asyncio.get_event_loop().create_task(
-            process(stub, wait_for_ready=True))
+            process(stub, wait_for_ready=True)
+        )
 
     # Wait for the channel entering TRANSIENT FAILURE state.
     state = channel.get_state()
@@ -104,6 +113,6 @@ async def main() -> None:
     await channel.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.get_event_loop().run_until_complete(main())

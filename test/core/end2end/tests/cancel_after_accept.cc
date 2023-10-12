@@ -18,16 +18,18 @@
 
 #include <memory>
 
+#include "absl/strings/str_cat.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -65,29 +67,35 @@ void CancelAfterAccept(CoreEnd2endTest& test,
   EXPECT_TRUE(client_close.was_cancelled());
 }
 
-TEST_P(CoreEnd2endTest, CancelAfterAccept) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelAfterAccept) {
   CancelAfterAccept(*this, std::make_unique<CancelCancellationMode>(),
                     Duration::Seconds(5));
 }
 
-TEST_P(CoreDeadlineTest, DeadlineAfterAccept) {
+CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterAccept) {
   CancelAfterAccept(*this, std::make_unique<DeadlineCancellationMode>(),
                     Duration::Seconds(5));
 }
 
-TEST_P(CoreClientChannelTest, DeadlineAfterAcceptWithServiceConfig) {
+CORE_END2END_TEST(CoreClientChannelTest, DeadlineAfterAcceptWithServiceConfig) {
+  // TODO(vigneshbabu): re-enable these before release
+  SKIP_IF_USES_EVENT_ENGINE_CLIENT();
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      { \"service\": \"service\", \"method\": \"method\" },\n"
-      "      { \"service\": \"unused\" }\n"
-      "    ],\n"
-      "    \"timeout\": \"5s\"\n"
-      "  } ]\n"
-      "}"));
+      absl::StrCat(
+          "{\n"
+          "  \"methodConfig\": [ {\n"
+          "    \"name\": [\n"
+          "      { \"service\": \"service\", \"method\": \"method\" },\n"
+          "      { \"service\": \"unused\" }\n"
+          "    ],\n"
+          "    \"timeout\": \"",
+          5 * grpc_test_slowdown_factor(),
+          "s\"\n"
+          "  } ]\n"
+          "}")));
   CancelAfterAccept(*this, std::make_unique<DeadlineCancellationMode>(),
                     Duration::Infinity());
 }

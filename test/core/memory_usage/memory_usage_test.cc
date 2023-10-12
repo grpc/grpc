@@ -36,9 +36,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gpr/subprocess.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/port.h"
-#include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
 ABSL_FLAG(std::string, benchmark_names, "call,channel",
@@ -82,7 +83,9 @@ int RunCallBenchmark(char* root, std::vector<std::string> server_scenario_flags,
   std::vector<std::string> server_flags = {
       absl::StrCat(root, "/memory_usage_server",
                    gpr_subprocess_binary_extension()),
-      "--bind", grpc_core::JoinHostPort("::", port)};
+      "--grpc_experiments",
+      std::string(grpc_core::ConfigVars::Get().Experiments()), "--bind",
+      grpc_core::JoinHostPort("::", port)};
   // Add scenario-specific server flags to the end of the server_flags
   absl::c_move(server_scenario_flags, std::back_inserter(server_flags));
   Subprocess svr(server_flags);
@@ -91,7 +94,10 @@ int RunCallBenchmark(char* root, std::vector<std::string> server_scenario_flags,
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_client",
                    gpr_subprocess_binary_extension()),
-      "--target", grpc_core::JoinHostPort("127.0.0.1", port),
+      "--target",
+      grpc_core::JoinHostPort("localhost", port),
+      "--grpc_experiments",
+      std::string(grpc_core::ConfigVars::Get().Experiments()),
       absl::StrCat("--warmup=", 10000),
       absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_size))};
   // Add scenario-specific client flags to the end of the client_flags
@@ -129,7 +135,7 @@ int RunChannelBenchmark(char* root) {
       absl::StrCat(root, "/memory_usage_callback_client",
                    gpr_subprocess_binary_extension()),
       "--target",
-      grpc_core::JoinHostPort("127.0.0.1", port),
+      grpc_core::JoinHostPort("localhost", port),
       "--nosecure",
       absl::StrCat("--server_pid=", svr.GetPID()),
       absl::StrCat("--size=", absl::GetFlag(FLAGS_size))};

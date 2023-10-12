@@ -1,0 +1,85 @@
+# Copyright 2023 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("//bazel:cython_library.bzl", "pyx_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# TODO(xuanwn): We also need support Python-native build
+
+cc_library(
+    name = "observability",
+    srcs = [
+        "client_call_tracer.cc",
+        "observability_util.cc",
+        "python_census_context.cc",
+        "sampler.cc",
+        "server_call_tracer.cc",
+    ],
+    hdrs = [
+        "client_call_tracer.h",
+        "constants.h",
+        "observability_util.h",
+        "python_census_context.h",
+        "sampler.h",
+        "server_call_tracer.h",
+    ],
+    includes = ["."],
+    deps = [
+        #TODO(xuanwn): Confirm only referenced code is inlcuded in shared object library
+        "//:grpc",
+        "//:grpc_rpc_encoding",
+        "//src/cpp/ext/gcp:observability_config",
+    ],
+)
+
+pyx_library(
+    name = "cyobservability",
+    srcs = [
+        "_cyobservability.pxd",
+        "_cyobservability.pyx",
+    ],
+    deps = [
+        ":observability",
+    ],
+)
+
+# Since `opencensus` and `opencensus-ext-stackdriver` are non-hermetic,
+# pyobservability is for internal use only.
+py_library(
+    name = "pyobservability",
+    srcs = [
+        "__init__.py",
+        "_gcp_observability.py",
+        "_measures.py",
+        "_observability.py",
+        "_open_census_exporter.py",
+        "_views.py",
+    ],
+    imports = [
+        ".",
+        "../",
+    ],
+    srcs_version = "PY3ONLY",
+    visibility = [
+        "//:__subpackages__",
+    ],
+    deps = [
+        ":cyobservability",
+        "//src/python/grpcio/grpc:grpcio",
+        requirement("opencensus"),
+        requirement("opencensus-ext-stackdriver"),
+    ],
+)

@@ -19,7 +19,6 @@
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 
 #include <algorithm>
-#include <initializer_list>
 #include <map>
 #include <string>
 #include <utility>
@@ -84,7 +83,7 @@ bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
   if (factory == nullptr) return false;
   // If requested, check if the load balancing policy allows an empty config.
   if (requires_config != nullptr) {
-    auto config = factory->ParseLoadBalancingConfig(Json());
+    auto config = factory->ParseLoadBalancingConfig(Json::FromObject({}));
     *requires_config = !config.ok();
   }
   return true;

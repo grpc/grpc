@@ -57,6 +57,11 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_filters_network_http_connectio
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.ProxyStatusConfig");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_HcmAccessLogOptions_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.HcmAccessLogOptions");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.network.http_connection_manager.v3.LocalReplyConfig");

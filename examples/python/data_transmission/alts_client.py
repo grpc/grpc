@@ -28,8 +28,8 @@ SERVER_ADDRESS = "localhost:23333"
 
 def main():
     with grpc.secure_channel(
-            SERVER_ADDRESS,
-            credentials=grpc.alts_channel_credentials()) as channel:
+        SERVER_ADDRESS, credentials=grpc.alts_channel_credentials()
+    ) as channel:
         stub = demo_pb2_grpc.GRPCDemoStub(channel)
         simple_method(stub)
         client_streaming_method(stub)
@@ -37,5 +37,5 @@ def main():
         bidirectional_streaming_method(stub)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

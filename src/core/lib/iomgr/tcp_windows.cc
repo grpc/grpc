@@ -186,9 +186,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
 
   if (error.ok()) {
     if (info->wsa_error != 0 && !tcp->shutting_down) {
-      char* utf8_message = gpr_format_message(info->wsa_error);
-      error = GRPC_ERROR_CREATE(utf8_message);
-      gpr_free(utf8_message);
+      error = GRPC_WSA_ERROR(info->wsa_error, "IOCP/Socket");
       grpc_slice_buffer_reset_and_unref(tcp->read_slices);
     } else {
       if (info->bytes_transferred != 0 && !tcp->shutting_down) {

@@ -26,20 +26,26 @@ from grpc._typing import DoneCallbackType
 _LOGGER = logging.getLogger(__name__)
 
 _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
-    'Exception calling connectivity future "done" callback!')
+    'Exception calling connectivity future "done" callback!'
+)
 
 
 class RpcMethodHandler(
-        collections.namedtuple('_RpcMethodHandler', (
-            'request_streaming',
-            'response_streaming',
-            'request_deserializer',
-            'response_serializer',
-            'unary_unary',
-            'unary_stream',
-            'stream_unary',
-            'stream_stream',
-        )), grpc.RpcMethodHandler):
+    collections.namedtuple(
+        "_RpcMethodHandler",
+        (
+            "request_streaming",
+            "response_streaming",
+            "request_deserializer",
+            "response_serializer",
+            "unary_unary",
+            "unary_stream",
+            "stream_unary",
+            "stream_stream",
+        ),
+    ),
+    grpc.RpcMethodHandler,
+):
     pass
 
 
@@ -47,8 +53,9 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
     _name: str
     _method_handlers: Dict[str, grpc.RpcMethodHandler]
 
-    def __init__(self, service: str,
-                 method_handlers: Dict[str, grpc.RpcMethodHandler]):
+    def __init__(
+        self, service: str, method_handlers: Dict[str, grpc.RpcMethodHandler]
+    ):
         self._name = service
         self._method_handlers = {
             _common.fully_qualified_method(service, method): method_handler
@@ -62,7 +69,9 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
         self, handler_call_details: grpc.HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
         details_method = handler_call_details.method
-        return self._method_handlers.get(details_method)  # pytype: disable=attribute-error
+        return self._method_handlers.get(
+            details_method
+        )  # pytype: disable=attribute-error
 
 
 class _ChannelReadyFuture(grpc.Future):
@@ -100,8 +109,10 @@ class _ChannelReadyFuture(grpc.Future):
 
     def _update(self, connectivity: Optional[grpc.ChannelConnectivity]) -> None:
         with self._condition:
-            if (not self._cancelled and
-                    connectivity is grpc.ChannelConnectivity.READY):
+            if (
+                not self._cancelled
+                and connectivity is grpc.ChannelConnectivity.READY
+            ):
                 self._matured = True
                 self._channel.unsubscribe(self._update)
                 self._condition.notify_all()

@@ -31,11 +31,13 @@
 #include <vector>
 
 #include "google/protobuf/descriptor.pb.h"
+#include "absl/strings/str_cat.h"
 #include "google/protobuf/descriptor.h"
 #include "protos_generator/gen_accessors.h"
 #include "protos_generator/gen_enums.h"
 #include "protos_generator/gen_extensions.h"
 #include "protos_generator/gen_utils.h"
+#include "protos_generator/names.h"
 #include "protos_generator/output.h"
 #include "upbc/common.h"
 #include "upbc/file_layout.h"
@@ -88,31 +90,34 @@ void WriteMessageClassDeclarations(
   }
 
   // Forward declaration of Proto Class for GCC handling of free friend method.
-  output("class $0;", ClassName(descriptor));
-  output("namespace internal {\n");
+  output("class $0;\n", ClassName(descriptor));
+  output("namespace internal {\n\n");
   WriteModelAccessDeclaration(descriptor, output);
   output("\n");
   WriteInternalForwardDeclarationsInHeader(descriptor, output);
   output("\n");
-  output("}  // namespace internal\n");
+  output("}  // namespace internal\n\n");
   WriteModelPublicDeclaration(descriptor, file_exts, file_enums, output);
   output("namespace internal {\n");
   WriteModelCProxyDeclaration(descriptor, output);
   WriteModelProxyDeclaration(descriptor, output);
-  output("}  // namespace internal\n");
+  output("}  // namespace internal\n\n");
 }
 
 void WriteModelAccessDeclaration(const protobuf::Descriptor* descriptor,
                                  Output& output) {
   output(
       R"cc(
-
         class $0Access {
          public:
           $0Access() {}
-          $0Access($1* msg, upb_Arena* arena) : msg_(msg), arena_(arena) {}  // NOLINT
+          $0Access($1* msg, upb_Arena* arena) : msg_(msg), arena_(arena) {
+            assert(arena != nullptr);
+          }  // NOLINT
           $0Access(const $1* msg, upb_Arena* arena)
-              : msg_(const_cast<$1*>(msg)), arena_(arena) {}  // NOLINT
+              : msg_(const_cast<$1*>(msg)), arena_(arena) {
+            assert(arena != nullptr);
+          }  // NOLINT
           void* GetInternalArena() const { return arena_; }
       )cc",
       ClassName(descriptor), MessageName(descriptor));
@@ -127,9 +132,8 @@ void WriteModelAccessDeclaration(const protobuf::Descriptor* descriptor,
         friend class $2;
         friend class $0Proxy;
         friend class $0CProxy;
-        friend void* ::protos::internal::GetInternalMsg<$2>(const $2& message);
-        friend void* ::protos::internal::GetInternalMsg<$2>(
-            const ::protos::Ptr<$2>& message);
+        friend void* ::protos::internal::GetInternalMsg<$2>(const $2* message);
+        friend void* ::protos::internal::GetInternalMsg<$2>(::protos::Ptr<$2> message);
         $1* msg_;
         upb_Arena* arena_;
       )cc",
@@ -166,7 +170,7 @@ void WriteModelPublicDeclaration(
           inline $0& operator=(const CProxy& from) {
             arena_ = owned_arena_.ptr();
             msg_ = ($2*)upb_Message_DeepClone(
-                ::protos::internal::GetInternalMsg(from), &$1, arena_);
+                ::protos::internal::GetInternalMsg(&from), &$1, arena_);
             return *this;
           }
           $0($0&& m)
@@ -188,8 +192,6 @@ void WriteModelPublicDeclaration(
   WriteUsingEnumsInHeader(descriptor, file_enums, output);
   WriteDefaultInstanceHeader(descriptor, output);
   WriteExtensionIdentifiersInClassHeader(descriptor, file_exts, output);
-  output.Indent();
-  output.Indent();
   if (descriptor->extension_range_count()) {
     // for typetrait checking
     output("using ExtendableType = $0;\n", ClassName(descriptor));
@@ -199,11 +201,16 @@ void WriteModelPublicDeclaration(
   // with gcc otherwise the compiler will fail with
   // "has not been declared within namespace" error. Even though there is a
   // namespace qualifier, cross namespace matching fails.
+  output.Indent();
   output(
       R"cc(
         static const upb_MiniTable* minitable();
         using $0Access::GetInternalArena;
-
+      )cc",
+      ClassName(descriptor));
+  output("\n");
+  output(
+      R"cc(
         private:
         $0(upb_Message* msg, upb_Arena* arena) : $0Access() {
           msg_ = ($1*)msg;
@@ -219,9 +226,8 @@ void WriteModelPublicDeclaration(
             absl::string_view bytes,
             const ::protos::ExtensionRegistry& extension_registry,
             int options));
-        friend upb_Arena* ::protos::internal::GetArena<$0>(const $0& message);
-        friend upb_Arena* ::protos::internal::GetArena<$0>(
-            const ::protos::Ptr<$0>& message);
+        friend upb_Arena* ::protos::internal::GetArena<$0>($0* message);
+        friend upb_Arena* ::protos::internal::GetArena<$0>(::protos::Ptr<$0> message);
         friend $0(::protos::internal::MoveMessage<$0>(upb_Message* msg,
                                                       upb_Arena* arena));
       )cc",
@@ -243,6 +249,10 @@ void WriteModelProxyDeclaration(const protobuf::Descriptor* descriptor,
             msg_ = m.msg_;
             arena_ = m.arena_;
           }
+          $0Proxy($0* m) : internal::$0Access() {
+            msg_ = m->msg_;
+            arena_ = m->arena_;
+          }
           $0Proxy operator=(const $0Proxy& m) {
             msg_ = m.msg_;
             arena_ = m.arena_;
@@ -263,13 +273,20 @@ void WriteModelProxyDeclaration(const protobuf::Descriptor* descriptor,
         friend $0::Proxy(::protos::CreateMessage<$0>(::protos::Arena& arena));
         friend $0::Proxy(::protos::internal::CreateMessageProxy<$0>(
             upb_Message*, upb_Arena*));
+        friend class RepeatedFieldProxy;
         friend class $0CProxy;
         friend class $0Access;
         friend class ::protos::Ptr<$0>;
         friend class ::protos::Ptr<const $0>;
-        friend upb_Arena* ::protos::internal::GetArena<$2>(const $2& message);
-        friend upb_Arena* ::protos::internal::GetArena<$2>(
-            const ::protos::Ptr<$2>& message);
+        static const upb_MiniTable* minitable() { return $0::minitable(); }
+        friend const upb_MiniTable* ::protos::internal::GetMiniTable<$0Proxy>(
+            const $0Proxy* message);
+        friend const upb_MiniTable* ::protos::internal::GetMiniTable<$0Proxy>(
+            ::protos::Ptr<$0Proxy> message);
+        friend upb_Arena* ::protos::internal::GetArena<$2>($2* message);
+        friend upb_Arena* ::protos::internal::GetArena<$2>(::protos::Ptr<$2> message);
+        friend $0Proxy(::protos::CloneMessage(::protos::Ptr<$2> message,
+                                              ::upb::Arena& arena));
         static void Rebind($0Proxy& lhs, const $0Proxy& rhs) {
           lhs.msg_ = rhs.msg_;
           lhs.arena_ = rhs.arena_;
@@ -289,7 +306,8 @@ void WriteModelCProxyDeclaration(const protobuf::Descriptor* descriptor,
         class $0CProxy final : private internal::$0Access {
          public:
           $0CProxy() = delete;
-          $0CProxy(const $0* m) : internal::$0Access(m->msg_, nullptr) {}
+          $0CProxy(const $0* m)
+              : internal::$0Access(m->msg_, ::protos::internal::GetArena(m)) {}
           $0CProxy($0Proxy m);
           using $0Access::GetInternalArena;
       )cc",
@@ -302,10 +320,18 @@ void WriteModelCProxyDeclaration(const protobuf::Descriptor* descriptor,
   output(
       R"cc(
         private:
-        $0CProxy(void* msg) : internal::$0Access(($1*)msg, nullptr){};
-        friend $0::CProxy(::protos::internal::CreateMessage<$0>(upb_Message* msg));
+        $0CProxy(void* msg, upb_Arena* arena) : internal::$0Access(($1*)msg, arena){};
+        friend $0::CProxy(::protos::internal::CreateMessage<$0>(
+            upb_Message* msg, upb_Arena* arena));
+        friend class RepeatedFieldProxy;
         friend class ::protos::Ptr<$0>;
         friend class ::protos::Ptr<const $0>;
+        static const upb_MiniTable* minitable() { return $0::minitable(); }
+        friend const upb_MiniTable* ::protos::internal::GetMiniTable<$0CProxy>(
+            const $0CProxy* message);
+        friend const upb_MiniTable* ::protos::internal::GetMiniTable<$0CProxy>(
+            ::protos::Ptr<$0CProxy> message);
+
         static void Rebind($0CProxy& lhs, const $0CProxy& rhs) {
           lhs.msg_ = rhs.msg_;
           lhs.arena_ = rhs.arena_;
@@ -342,12 +368,12 @@ void WriteMessageImplementation(
           $0::$0(const CProxy& from) : $0Access() {
             arena_ = owned_arena_.ptr();
             msg_ = ($1*)upb_Message_DeepClone(
-                ::protos::internal::GetInternalMsg(from), &$2, arena_);
+                ::protos::internal::GetInternalMsg(&from), &$2, arena_);
           }
           $0::$0(const Proxy& from) : $0(static_cast<const CProxy&>(from)) {}
           internal::$0CProxy::$0CProxy($0Proxy m) : $0Access() {
             arena_ = m.arena_;
-            msg_ = ($1*)::protos::internal::GetInternalMsg(m);
+            msg_ = ($1*)::protos::internal::GetInternalMsg(&m);
           }
         )cc",
         ClassName(descriptor), MessageName(descriptor),
@@ -370,9 +396,13 @@ void WriteMessageImplementation(
         R"cc(
           struct $0DefaultTypeInternal {
             $1* msg;
+            upb_Arena* arena;
           };
-          $0DefaultTypeInternal _$0_default_instance_ =
-              $0DefaultTypeInternal{$1_new(upb_Arena_New())};
+          static $0DefaultTypeInternal _$0DefaultTypeBuilder() {
+            upb_Arena* arena = upb_Arena_New();
+            return $0DefaultTypeInternal{$1_new(arena), arena};
+          }
+          $0DefaultTypeInternal _$0_default_instance_ = _$0DefaultTypeBuilder();
         )cc",
         ClassName(descriptor), MessageName(descriptor));
 
@@ -380,7 +410,8 @@ void WriteMessageImplementation(
         R"cc(
           ::protos::Ptr<const $0> $0::default_instance() {
             return ::protos::internal::CreateMessage<$0>(
-                (upb_Message *)_$0_default_instance_.msg);
+                (upb_Message *)_$0_default_instance_.msg,
+                _$0_default_instance_.arena);
           }
         )cc",
         ClassName(descriptor));

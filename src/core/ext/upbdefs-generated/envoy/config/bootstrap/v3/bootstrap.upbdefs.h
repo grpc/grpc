@@ -37,6 +37,16 @@ UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_Bootstrap_DynamicReso
   return upb_DefPool_FindMessageByName(s, "envoy.config.bootstrap.v3.Bootstrap.DynamicResources");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.bootstrap.v3.Bootstrap.ApplicationLogConfig");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.bootstrap.v3.Bootstrap.ApplicationLogConfig.LogFormat");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.bootstrap.v3.Bootstrap.CertificateProviderInstancesEntry");

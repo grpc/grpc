@@ -14,7 +14,6 @@
 
 #include "src/core/lib/surface/channel_init.h"
 
-#include <algorithm>
 #include <map>
 #include <string>
 

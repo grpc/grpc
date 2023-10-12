@@ -39,16 +39,16 @@ git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
 #
 ###############################################################################
 
-# latest commit on the clang 15 branch
+# latest commit on the clang_16 branch
 cd ${IWYU_ROOT}/iwyu
-git checkout 7f0b6c304acf69c42bb7f6e03c63f836924cb7e0
+git checkout 7301b1fc88e5e16d8df73aecea55037d9c0a371b
 if [ $? -ne 0 ]; then
   echo "Failed to checkout iwyu commit"
   exit 1
 fi
 mkdir -p ${IWYU_ROOT}/iwyu_build
 cd ${IWYU_ROOT}/iwyu_build
-cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-15 ${IWYU_ROOT}/iwyu 
+cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-16 ${IWYU_ROOT}/iwyu
 if [ $? -ne 0 ]; then
   echo "Failed to cmake iwyu"
   exit 1
@@ -60,10 +60,6 @@ if [ $? -ne 0 ]; then
 fi
 cd ${IWYU_ROOT}
 
-# patch python shebang for our environment (we need python3, not python)
-sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/iwyu_tool.py
-sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix_includes.py
-
 cat compile_commands.json                            \
   | sed "s/ -DNDEBUG//g"                             \
   | sed "s/ -std=c\\+\\+14/ -std=c++17/g"            \
@@ -74,6 +70,7 @@ export ENABLED_MODULES='
   src/core/ext
   src/core/lib
   src/cpp
+  src/python/grpcio_observability
   test/core
   fuzztest
 '
@@ -129,7 +126,7 @@ cat iwyu/iwyu.*.out > iwyu.out
 ${IWYU_ROOT}/iwyu/fix_includes.py \
   --nocomments                    \
   --nosafe_headers                \
-  --ignore_re='^(include/.*|src/core/lib/security/credentials/tls/grpc_tls_credentials_options\.h)' \
+  --ignore_re='^(include/.*|src/core/lib/security/credentials/tls/grpc_tls_credentials_options\.h|external/.*)' \
   < iwyu.out                      \
   | grep 'IWYU edited 0 files on your behalf'
 

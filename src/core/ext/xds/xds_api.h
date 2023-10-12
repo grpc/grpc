@@ -75,8 +75,9 @@ class XdsApi {
                                absl::string_view serialized_resource) = 0;
 
     // Called when a resource is wrapped in a Resource wrapper proto but
-    // we fail to deserialize the wrapper proto.
-    virtual void ResourceWrapperParsingFailed(size_t idx) = 0;
+    // we fail to parse the Resource wrapper.
+    virtual void ResourceWrapperParsingFailed(size_t idx,
+                                              absl::string_view message) = 0;
   };
 
   struct ClusterLoadReport {

@@ -220,7 +220,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
   }
   std::string ToString() const;
 
-  static XdsRouteConfigResource Parse(
+  static std::shared_ptr<const XdsRouteConfigResource> Parse(
       const XdsResourceType::DecodeContext& context,
       const envoy_config_route_v3_RouteConfiguration* route_config,
       ValidationErrors* errors);

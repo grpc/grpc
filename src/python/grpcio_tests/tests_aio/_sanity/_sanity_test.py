@@ -18,10 +18,9 @@ from tests._sanity import _sanity_test
 
 
 class AioSanityTest(_sanity_test.SanityTest):
+    TEST_PKG_MODULE_NAME = "tests_aio"
+    TEST_PKG_PATH = "tests_aio"
 
-    TEST_PKG_MODULE_NAME = 'tests_aio'
-    TEST_PKG_PATH = 'tests_aio'
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

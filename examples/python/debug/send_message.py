@@ -23,42 +23,47 @@ import logging
 import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
-    "helloworld.proto")
+    "helloworld.proto"
+)
 
 
 def process(stub, request):
     try:
         response = stub.SayHello(request)
     except grpc.RpcError as rpc_error:
-        print('Received error: %s' % rpc_error)
+        print("Received error: %s" % rpc_error)
     else:
-        print('Received message: %s' % response)
+        print("Received message: %s" % response)
 
 
 def run(addr, n):
     with grpc.insecure_channel(addr) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
-        request = helloworld_pb2.HelloRequest(name='you')
+        request = helloworld_pb2.HelloRequest(name="you")
         for _ in range(n):
             process(stub, request)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--addr',
-                        nargs=1,
-                        type=str,
-                        default='[::]:50051',
-                        help='the address to request')
-    parser.add_argument('-n',
-                        nargs=1,
-                        type=int,
-                        default=10,
-                        help='an integer for number of messages to sent')
+    parser.add_argument(
+        "--addr",
+        nargs=1,
+        type=str,
+        default="[::]:50051",
+        help="the address to request",
+    )
+    parser.add_argument(
+        "-n",
+        nargs=1,
+        type=int,
+        default=10,
+        help="an integer for number of messages to sent",
+    )
     args = parser.parse_args()
     run(addr=args.addr, n=args.n)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     main()

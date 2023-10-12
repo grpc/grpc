@@ -26,84 +26,26 @@
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
+#include "test/core/util/audit_logging_utils.h"
 #include "test/core/util/evaluate_args_test_util.h"
 
 namespace grpc_core {
 
 namespace {
 
-constexpr absl::string_view kLoggerName = "test_logger";
 constexpr absl::string_view kPolicyName = "authz";
 constexpr absl::string_view kSpiffeId = "spiffe://foo";
 constexpr absl::string_view kRpcMethod = "/foo.Bar/Echo";
 
-using experimental::AuditContext;
-using experimental::AuditLogger;
-using experimental::AuditLoggerFactory;
 using experimental::AuditLoggerRegistry;
 using experimental::RegisterAuditLoggerFactory;
-
-// This test class copies the audit context.
-struct TestAuditContext {
-  explicit TestAuditContext(const AuditContext& context)
-      : rpc_method(context.rpc_method()),
-        principal(context.principal()),
-        policy_name(context.policy_name()),
-        matched_rule(context.matched_rule()),
-        authorized(context.authorized()) {}
-
-  std::string rpc_method;
-  std::string principal;
-  std::string policy_name;
-  std::string matched_rule;
-  bool authorized;
-};
-
-class TestAuditLogger : public AuditLogger {
- public:
-  explicit TestAuditLogger(
-      std::vector<std::unique_ptr<TestAuditContext>>* contexts)
-      : contexts_(contexts) {}
-
-  void Log(const AuditContext& context) override {
-    contexts_->push_back(std::make_unique<TestAuditContext>(context));
-  }
-
- private:
-  std::vector<std::unique_ptr<TestAuditContext>>* contexts_;
-};
-
-class TestAuditLoggerFactory : public AuditLoggerFactory {
- public:
-  class TestAuditLoggerConfig : public AuditLoggerFactory::Config {
-    absl::string_view name() const override { return kLoggerName; }
-    std::string ToString() const override { return ""; }
-  };
-
-  explicit TestAuditLoggerFactory(
-      std::vector<std::unique_ptr<TestAuditContext>>* contexts)
-      : contexts_(contexts) {}
-
-  absl::string_view name() const override { return kLoggerName; }
-  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
-  ParseAuditLoggerConfig(const Json&) override {
-    Crash("unreachable");
-    return nullptr;
-  }
-  std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config>) override {
-    return std::make_unique<TestAuditLogger>(contexts_);
-  }
-
- private:
-  std::vector<std::unique_ptr<TestAuditContext>>* contexts_;
-};
+using testing::TestAuditLoggerFactory;
 
 class GrpcAuthorizationEngineTest : public ::testing::Test {
  protected:
   void SetUp() override {
     RegisterAuditLoggerFactory(
-        std::make_unique<TestAuditLoggerFactory>(&contexts_));
+        std::make_unique<TestAuditLoggerFactory>(&audit_logs_));
     evaluate_args_util_.AddPairToMetadata(":path", kRpcMethod.data());
     evaluate_args_util_.AddPropertyToAuthContext(
         GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, kSpiffeId.data());
@@ -111,7 +53,7 @@ class GrpcAuthorizationEngineTest : public ::testing::Test {
 
   void TearDown() override { AuditLoggerRegistry::TestOnlyResetRegistry(); }
 
-  std::vector<std::unique_ptr<TestAuditContext>> contexts_;
+  std::vector<std::string> audit_logs_;
   EvaluateArgsTestUtil evaluate_args_util_;
 };
 
@@ -208,13 +150,13 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerNoneNotInvokedOnAllowedRequest) {
             std::move(policies));
   rbac.audit_condition = Rbac::AuditCondition::kNone;
   rbac.logger_configs.push_back(
-      std::make_unique<TestAuditLoggerFactory::TestAuditLoggerConfig>());
+      std::make_unique<TestAuditLoggerFactory::Config>());
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
   EXPECT_EQ(decision.matching_policy_name, "policy1");
-  EXPECT_EQ(contexts_.size(), 0);
+  EXPECT_EQ(audit_logs_.size(), 0);
 }
 
 TEST_F(GrpcAuthorizationEngineTest, AuditLoggerNoneNotInvokedOnDeniedRequest) {
@@ -228,13 +170,13 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerNoneNotInvokedOnDeniedRequest) {
             std::move(policies));
   rbac.audit_condition = Rbac::AuditCondition::kNone;
   rbac.logger_configs.push_back(
-      std::make_unique<TestAuditLoggerFactory::TestAuditLoggerConfig>());
+      std::make_unique<TestAuditLoggerFactory::Config>());
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
   EXPECT_EQ(decision.matching_policy_name, "");
-  EXPECT_EQ(contexts_.size(), 0);
+  EXPECT_EQ(audit_logs_.size(), 0);
 }
 
 TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyNotInvoked) {
@@ -246,13 +188,13 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyNotInvoked) {
             std::move(policies));
   rbac.audit_condition = Rbac::AuditCondition::kOnDeny;
   rbac.logger_configs.push_back(
-      std::make_unique<TestAuditLoggerFactory::TestAuditLoggerConfig>());
+      std::make_unique<TestAuditLoggerFactory::Config>());
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
   EXPECT_EQ(decision.matching_policy_name, "policy1");
-  EXPECT_EQ(contexts_.size(), 0);
+  EXPECT_EQ(audit_logs_.size(), 0);
 }
 
 TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnAllowNotInvoked) {
@@ -266,13 +208,13 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnAllowNotInvoked) {
             std::move(policies));
   rbac.audit_condition = Rbac::AuditCondition::kOnAllow;
   rbac.logger_configs.push_back(
-      std::make_unique<TestAuditLoggerFactory::TestAuditLoggerConfig>());
+      std::make_unique<TestAuditLoggerFactory::Config>());
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
   EXPECT_EQ(decision.matching_policy_name, "");
-  EXPECT_EQ(contexts_.size(), 0);
+  EXPECT_EQ(audit_logs_.size(), 0);
 }
 
 TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnAllowInvoked) {
@@ -284,18 +226,17 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnAllowInvoked) {
             std::move(policies));
   rbac.audit_condition = Rbac::AuditCondition::kOnAllow;
   rbac.logger_configs.push_back(
-      std::make_unique<TestAuditLoggerFactory::TestAuditLoggerConfig>());
+      std::make_unique<TestAuditLoggerFactory::Config>());
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
   EXPECT_EQ(decision.matching_policy_name, "policy1");
-  ASSERT_EQ(contexts_.size(), 1);
-  EXPECT_EQ(contexts_[0]->rpc_method, kRpcMethod);
-  EXPECT_EQ(contexts_[0]->principal, kSpiffeId);
-  EXPECT_EQ(contexts_[0]->policy_name, kPolicyName);
-  EXPECT_EQ(contexts_[0]->matched_rule, "policy1");
-  EXPECT_EQ(contexts_[0]->authorized, true);
+  EXPECT_THAT(audit_logs_,
+              ::testing::ElementsAre(absl::StrFormat(
+                  "{\"authorized\":true,\"matched_rule\":\"policy1\",\"policy_"
+                  "name\":\"%s\",\"principal\":\"%s\",\"rpc_method\":\"%s\"}",
+                  kPolicyName, kSpiffeId, kRpcMethod)));
 }
 
 TEST_F(GrpcAuthorizationEngineTest,
@@ -308,18 +249,17 @@ TEST_F(GrpcAuthorizationEngineTest,
             std::move(policies));
   rbac.audit_condition = Rbac::AuditCondition::kOnDenyAndAllow;
   rbac.logger_configs.push_back(
-      std::make_unique<TestAuditLoggerFactory::TestAuditLoggerConfig>());
+      std::make_unique<TestAuditLoggerFactory::Config>());
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
   EXPECT_EQ(decision.matching_policy_name, "policy1");
-  ASSERT_EQ(contexts_.size(), 1);
-  EXPECT_EQ(contexts_[0]->rpc_method, kRpcMethod);
-  EXPECT_EQ(contexts_[0]->principal, kSpiffeId);
-  EXPECT_EQ(contexts_[0]->policy_name, kPolicyName);
-  EXPECT_EQ(contexts_[0]->matched_rule, "policy1");
-  EXPECT_EQ(contexts_[0]->authorized, true);
+  EXPECT_THAT(audit_logs_,
+              ::testing::ElementsAre(absl::StrFormat(
+                  "{\"authorized\":true,\"matched_rule\":\"policy1\",\"policy_"
+                  "name\":\"%s\",\"principal\":\"%s\",\"rpc_method\":\"%s\"}",
+                  kPolicyName, kSpiffeId, kRpcMethod)));
 }
 
 TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyInvoked) {
@@ -333,18 +273,17 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyInvoked) {
             std::move(policies));
   rbac.audit_condition = Rbac::AuditCondition::kOnDeny;
   rbac.logger_configs.push_back(
-      std::make_unique<TestAuditLoggerFactory::TestAuditLoggerConfig>());
+      std::make_unique<TestAuditLoggerFactory::Config>());
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
   EXPECT_EQ(decision.matching_policy_name, "");
-  ASSERT_EQ(contexts_.size(), 1);
-  EXPECT_EQ(contexts_[0]->rpc_method, kRpcMethod);
-  EXPECT_EQ(contexts_[0]->principal, kSpiffeId);
-  EXPECT_EQ(contexts_[0]->policy_name, kPolicyName);
-  EXPECT_EQ(contexts_[0]->matched_rule, "");
-  EXPECT_EQ(contexts_[0]->authorized, false);
+  EXPECT_THAT(audit_logs_,
+              ::testing::ElementsAre(absl::StrFormat(
+                  "{\"authorized\":false,\"matched_rule\":\"\",\"policy_"
+                  "name\":\"%s\",\"principal\":\"%s\",\"rpc_method\":\"%s\"}",
+                  kPolicyName, kSpiffeId, kRpcMethod)));
 }
 
 TEST_F(GrpcAuthorizationEngineTest,
@@ -359,18 +298,17 @@ TEST_F(GrpcAuthorizationEngineTest,
             std::move(policies));
   rbac.audit_condition = Rbac::AuditCondition::kOnDenyAndAllow;
   rbac.logger_configs.push_back(
-      std::make_unique<TestAuditLoggerFactory::TestAuditLoggerConfig>());
+      std::make_unique<TestAuditLoggerFactory::Config>());
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
   EXPECT_EQ(decision.matching_policy_name, "");
-  ASSERT_EQ(contexts_.size(), 1);
-  EXPECT_EQ(contexts_[0]->rpc_method, kRpcMethod);
-  EXPECT_EQ(contexts_[0]->principal, kSpiffeId);
-  EXPECT_EQ(contexts_[0]->policy_name, kPolicyName);
-  EXPECT_EQ(contexts_[0]->matched_rule, "");
-  EXPECT_EQ(contexts_[0]->authorized, false);
+  EXPECT_THAT(audit_logs_,
+              ::testing::ElementsAre(absl::StrFormat(
+                  "{\"authorized\":false,\"matched_rule\":\"\",\"policy_"
+                  "name\":\"%s\",\"principal\":\"%s\",\"rpc_method\":\"%s\"}",
+                  kPolicyName, kSpiffeId, kRpcMethod)));
 }
 
 TEST_F(GrpcAuthorizationEngineTest, MultipleAuditLoggerInvoked) {
@@ -384,22 +322,25 @@ TEST_F(GrpcAuthorizationEngineTest, MultipleAuditLoggerInvoked) {
             std::move(policies));
   rbac.audit_condition = Rbac::AuditCondition::kOnDenyAndAllow;
   rbac.logger_configs.push_back(
-      std::make_unique<TestAuditLoggerFactory::TestAuditLoggerConfig>());
+      std::make_unique<TestAuditLoggerFactory::Config>());
   rbac.logger_configs.push_back(
-      std::make_unique<TestAuditLoggerFactory::TestAuditLoggerConfig>());
+      std::make_unique<TestAuditLoggerFactory::Config>());
   GrpcAuthorizationEngine engine(std::move(rbac));
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
   EXPECT_EQ(decision.matching_policy_name, "");
-  ASSERT_EQ(contexts_.size(), 2);
-  for (const auto& context : contexts_) {
-    EXPECT_EQ(context->rpc_method, kRpcMethod);
-    EXPECT_EQ(context->principal, kSpiffeId);
-    EXPECT_EQ(context->policy_name, kPolicyName);
-    EXPECT_EQ(context->matched_rule, "");
-    EXPECT_EQ(context->authorized, false);
-  }
+  EXPECT_THAT(
+      audit_logs_,
+      ::testing::ElementsAre(
+          absl::StrFormat(
+              "{\"authorized\":false,\"matched_rule\":\"\",\"policy_"
+              "name\":\"%s\",\"principal\":\"%s\",\"rpc_method\":\"%s\"}",
+              kPolicyName, kSpiffeId, kRpcMethod),
+          absl::StrFormat(
+              "{\"authorized\":false,\"matched_rule\":\"\",\"policy_"
+              "name\":\"%s\",\"principal\":\"%s\",\"rpc_method\":\"%s\"}",
+              kPolicyName, kSpiffeId, kRpcMethod)));
 }
 
 }  // namespace grpc_core

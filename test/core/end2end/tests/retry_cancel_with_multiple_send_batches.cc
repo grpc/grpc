@@ -16,7 +16,6 @@
 //
 //
 
-#include <initializer_list>
 #include <memory>
 #include <new>
 
@@ -25,7 +24,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -183,13 +182,13 @@ void RegisterFilter() {
   });
 }
 
-TEST_P(RetryTest, RetryCancelWithMultipleSendBatches) {
+CORE_END2END_TEST(RetryTest, RetryCancelWithMultipleSendBatches) {
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<CancelCancellationMode>());
 }
 
-TEST_P(RetryTest, RetryDeadlineWithMultipleSendBatches) {
+CORE_END2END_TEST(RetryTest, RetryDeadlineWithMultipleSendBatches) {
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<DeadlineCancellationMode>());

@@ -16,6 +16,8 @@
 //
 //
 
+#include <memory>
+
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
@@ -29,7 +31,7 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(ProxyAuthTest, InvokeProxyAuth) {
+CORE_END2END_TEST(ProxyAuthTest, InvokeProxyAuth) {
   // Indicate that the proxy requires user auth
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_HTTP_PROXY_AUTH_CREDS,

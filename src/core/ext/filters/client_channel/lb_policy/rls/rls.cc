@@ -28,7 +28,6 @@
 
 #include <algorithm>
 #include <deque>
-#include <initializer_list>
 #include <list>
 #include <map>
 #include <memory>
@@ -48,7 +47,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "upb/base/string_view.h"
 #include "upb/upb.hpp"
@@ -57,6 +55,7 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
@@ -88,13 +87,12 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/load_balancing/subchannel_interface.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
@@ -103,7 +101,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
 
 namespace grpc_core {
@@ -325,7 +322,7 @@ class RlsLb : public LoadBalancingPolicy {
    private:
     // ChannelControlHelper object that allows the child policy to update state
     // with the wrapper.
-    class ChildPolicyHelper : public LoadBalancingPolicy::ChannelControlHelper {
+    class ChildPolicyHelper : public DelegatingChannelControlHelper {
      public:
       explicit ChildPolicyHelper(WeakRefCountedPtr<ChildPolicyWrapper> wrapper)
           : wrapper_(std::move(wrapper)) {}
@@ -333,18 +330,15 @@ class RlsLb : public LoadBalancingPolicy {
         wrapper_.reset(DEBUG_LOCATION, "ChildPolicyHelper");
       }
 
-      RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        RefCountedPtr<SubchannelPicker> picker) override;
-      void RequestReresolution() override;
-      absl::string_view GetAuthority() override;
-      grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
-      void AddTraceEvent(TraceSeverity severity,
-                         absl::string_view message) override;
 
      private:
+      ChannelControlHelper* parent_helper() const override {
+        return wrapper_->lb_policy_->channel_control_helper();
+      }
+
       WeakRefCountedPtr<ChildPolicyWrapper> wrapper_;
     };
 
@@ -696,9 +690,6 @@ class RlsLb : public LoadBalancingPolicy {
   // Updates the picker in the work serializer.
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
-  // The name of the server for the channel.
-  std::string server_name_;
-
   // Mutex to guard LB policy state that is accessed by the picker.
   Mutex mu_;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
@@ -716,7 +707,7 @@ class RlsLb : public LoadBalancingPolicy {
   OrphanablePtr<RlsChannel> rls_channel_ ABSL_GUARDED_BY(mu_);
 
   // Accessed only from within WorkSerializer.
-  absl::StatusOr<ServerAddressList> addresses_;
+  absl::StatusOr<EndpointAddressesList> addresses_;
   ChannelArgs channel_args_;
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
@@ -866,21 +857,6 @@ absl::Status RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
 // RlsLb::ChildPolicyWrapper::ChildPolicyHelper
 //
 
-RefCountedPtr<SubchannelInterface>
-RlsLb::ChildPolicyWrapper::ChildPolicyHelper::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO,
-            "[rlslb %p] ChildPolicyWrapper=%p [%s] ChildPolicyHelper=%p: "
-            "CreateSubchannel() for %s",
-            wrapper_->lb_policy_.get(), wrapper_.get(),
-            wrapper_->target_.c_str(), this, address.ToString().c_str());
-  }
-  if (wrapper_->is_shutdown_) return nullptr;
-  return wrapper_->lb_policy_->channel_control_helper()->CreateSubchannel(
-      std::move(address), args);
-}
-
 void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
@@ -910,34 +886,6 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
   wrapper_->lb_policy_->UpdatePickerLocked();
 }
 
-void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::RequestReresolution() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-    gpr_log(GPR_INFO,
-            "[rlslb %p] ChildPolicyWrapper=%p [%s] ChildPolicyHelper=%p: "
-            "RequestReresolution",
-            wrapper_->lb_policy_.get(), wrapper_.get(),
-            wrapper_->target_.c_str(), this);
-  }
-  if (wrapper_->is_shutdown_) return;
-  wrapper_->lb_policy_->channel_control_helper()->RequestReresolution();
-}
-
-absl::string_view RlsLb::ChildPolicyWrapper::ChildPolicyHelper::GetAuthority() {
-  return wrapper_->lb_policy_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-RlsLb::ChildPolicyWrapper::ChildPolicyHelper::GetEventEngine() {
-  return wrapper_->lb_policy_->channel_control_helper()->GetEventEngine();
-}
-
-void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::AddTraceEvent(
-    TraceSeverity severity, absl::string_view message) {
-  if (wrapper_->is_shutdown_) return;
-  wrapper_->lb_policy_->channel_control_helper()->AddTraceEvent(severity,
-                                                                message);
-}
-
 //
 // RlsLb::Picker
 //
@@ -945,14 +893,14 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::AddTraceEvent(
 // Builds the key to be used for a request based on path and initial_metadata.
 std::map<std::string, std::string> BuildKeyMap(
     const RlsLbConfig::KeyBuilderMap& key_builder_map, absl::string_view path,
-    const std::string& host,
+    absl::string_view host,
     const LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   size_t last_slash_pos = path.npos;  // May need this a few times, so cache it.
   // Find key builder for this path.
   auto it = key_builder_map.find(std::string(path));
   if (it == key_builder_map.end()) {
     // Didn't find exact match, try method wildcard.
-    last_slash_pos = path.rfind("/");
+    last_slash_pos = path.rfind('/');
     GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
     if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     std::string service(path.substr(0, last_slash_pos + 1));
@@ -981,12 +929,12 @@ std::map<std::string, std::string> BuildKeyMap(
                  key_builder->constant_keys.end());
   // Add host key.
   if (!key_builder->host_key.empty()) {
-    key_map[key_builder->host_key] = host;
+    key_map[key_builder->host_key] = std::string(host);
   }
   // Add service key.
   if (!key_builder->service_key.empty()) {
     if (last_slash_pos == path.npos) {
-      last_slash_pos = path.rfind("/");
+      last_slash_pos = path.rfind('/');
       GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
@@ -996,7 +944,7 @@ std::map<std::string, std::string> BuildKeyMap(
   // Add method key.
   if (!key_builder->method_key.empty()) {
     if (last_slash_pos == path.npos) {
-      last_slash_pos = path.rfind("/");
+      last_slash_pos = path.rfind('/');
       GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
@@ -1016,9 +964,10 @@ RlsLb::Picker::Picker(RefCountedPtr<RlsLb> lb_policy)
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   // Construct key for request.
-  RequestKey key = {BuildKeyMap(config_->key_builder_map(), args.path,
-                                lb_policy_->server_name_,
-                                args.initial_metadata)};
+  RequestKey key = {
+      BuildKeyMap(config_->key_builder_map(), args.path,
+                  lb_policy_->channel_control_helper()->GetAuthority(),
+                  args.initial_metadata)};
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] picker=%p: request keys: %s",
             lb_policy_.get(), this, key.ToString().c_str());
@@ -1562,11 +1511,13 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "RlsChannel" : nullptr),
       lb_policy_(std::move(lb_policy)) {
   // Get channel creds from parent channel.
-  // TODO(roth): Once we eliminate insecure builds, get this via a
-  // method on the helper instead of digging through channel args.
-  auto* creds = lb_policy_->channel_args_.GetObject<grpc_channel_credentials>();
+  // Note that we are using the "unsafe" channel creds here, which do
+  // include any associated call creds.  This is safe in this case,
+  // because we are using the parent channel's authority on the RLS channel.
+  auto creds =
+      lb_policy_->channel_control_helper()->GetUnsafeChannelCredentials();
   // Use the parent channel's authority.
-  std::string authority(lb_policy_->channel_control_helper()->GetAuthority());
+  auto authority = lb_policy_->channel_control_helper()->GetAuthority();
   ChannelArgs args = ChannelArgs()
                          .Set(GRPC_ARG_DEFAULT_AUTHORITY, authority)
                          .Set(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, 1);
@@ -1589,7 +1540,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
                .Set(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 1);
   }
   channel_ = grpc_channel_create(lb_policy_->config_->lookup_service().c_str(),
-                                 creds, args.ToC().get());
+                                 creds.get(), args.ToC().get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
             lb_policy_.get(), this, channel_,
@@ -1901,18 +1852,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
 // RlsLb
 //
 
-std::string GetServerUri(const ChannelArgs& args) {
-  auto server_uri_str = args.GetString(GRPC_ARG_SERVER_URI);
-  GPR_ASSERT(server_uri_str.has_value());
-  absl::StatusOr<URI> uri = URI::Parse(*server_uri_str);
-  GPR_ASSERT(uri.ok());
-  return std::string(absl::StripPrefix(uri->path(), "/"));
-}
-
-RlsLb::RlsLb(Args args)
-    : LoadBalancingPolicy(std::move(args)),
-      server_name_(GetServerUri(channel_args())),
-      cache_(this) {
+RlsLb::RlsLb(Args args) : LoadBalancingPolicy(std::move(args)), cache_(this) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
   }
@@ -1935,7 +1875,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   // Swap out addresses.
   // If the new address list is an error and we have an existing address list,
   // stick with the existing addresses.
-  absl::StatusOr<ServerAddressList> old_addresses;
+  absl::StatusOr<EndpointAddressesList> old_addresses;
   if (args.addresses.ok()) {
     old_addresses = std::move(addresses_);
     addresses_ = std::move(args.addresses);
@@ -2500,7 +2440,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    return LoadRefCountedFromJson<RlsLbConfig>(
+    return LoadFromJson<RefCountedPtr<RlsLbConfig>>(
         json, JsonArgs(), "errors validing RLS LB policy config");
   }
 };

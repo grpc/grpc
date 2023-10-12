@@ -16,6 +16,8 @@
 //
 //
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
@@ -24,7 +26,7 @@
 
 namespace grpc_core {
 
-TEST_P(CoreEnd2endTest, CancelBeforeInvoke6) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke6) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -42,7 +44,7 @@ TEST_P(CoreEnd2endTest, CancelBeforeInvoke6) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_CANCELLED);
 }
 
-TEST_P(CoreEnd2endTest, CancelBeforeInvoke5) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke5) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -58,7 +60,7 @@ TEST_P(CoreEnd2endTest, CancelBeforeInvoke5) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_CANCELLED);
 }
 
-TEST_P(CoreEnd2endTest, CancelBeforeInvoke4) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke4) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -72,7 +74,7 @@ TEST_P(CoreEnd2endTest, CancelBeforeInvoke4) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_CANCELLED);
 }
 
-TEST_P(CoreEnd2endTest, CancelBeforeInvoke3) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke3) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -85,7 +87,7 @@ TEST_P(CoreEnd2endTest, CancelBeforeInvoke3) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_CANCELLED);
 }
 
-TEST_P(CoreEnd2endTest, CancelBeforeInvoke2) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke2) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -95,7 +97,7 @@ TEST_P(CoreEnd2endTest, CancelBeforeInvoke2) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_CANCELLED);
 }
 
-TEST_P(CoreEnd2endTest, CancelBeforeInvoke1) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke1) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
   CoreEnd2endTest::IncomingStatusOnClient server_status;

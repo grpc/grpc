@@ -20,6 +20,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
@@ -28,7 +29,7 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(RetryHttp2Test, ConnectivityWatch) {
+CORE_END2END_TEST(RetryHttp2Test, ConnectivityWatch) {
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
@@ -46,6 +47,8 @@ TEST_P(RetryHttp2Test, ConnectivityWatch) {
   // start watching for a change
   WatchConnectivityState(GRPC_CHANNEL_IDLE, Duration::Seconds(10), 2);
   // and now the watch should trigger
+  // (we might miss the notification for CONNECTING, so we might see
+  // TRANSIENT_FAILURE instead)
   Expect(2, true);
   Step();
   grpc_connectivity_state state = CheckConnectivityState(false);
@@ -56,32 +59,24 @@ TEST_P(RetryHttp2Test, ConnectivityWatch) {
   Expect(3, true);
   Step();
   state = CheckConnectivityState(false);
-  EXPECT_THAT(state, ::testing::AnyOf(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                      GRPC_CHANNEL_CONNECTING));
+  EXPECT_EQ(state, GRPC_CHANNEL_TRANSIENT_FAILURE);
   // now let's bring up a server to connect to
   InitServer(ChannelArgs());
-  // we'll go through some set of transitions (some might be missed), until
-  // READY is reached
-  while (state != GRPC_CHANNEL_READY) {
-    WatchConnectivityState(state, Duration::Seconds(10), 4);
-    Expect(4, true);
-    Step(Duration::Seconds(20));
-    state = CheckConnectivityState(false);
-    EXPECT_THAT(state,
-                ::testing::AnyOf(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                 GRPC_CHANNEL_CONNECTING, GRPC_CHANNEL_READY));
-  }
+  // when the channel gets connected, it will report READY
+  WatchConnectivityState(state, Duration::Seconds(10), 4);
+  Expect(4, true);
+  Step(Duration::Seconds(20));
+  state = CheckConnectivityState(false);
+  EXPECT_EQ(state, GRPC_CHANNEL_READY);
   // bring down the server again
-  // we should go immediately to TRANSIENT_FAILURE
+  // we should go immediately to IDLE
   WatchConnectivityState(GRPC_CHANNEL_READY, Duration::Seconds(10), 5);
   ShutdownServerAndNotify(1000);
   Expect(5, true);
   Expect(1000, true);
   Step();
   state = CheckConnectivityState(false);
-  EXPECT_THAT(state,
-              ::testing::AnyOf(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                               GRPC_CHANNEL_CONNECTING, GRPC_CHANNEL_IDLE));
+  EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
 }
 
 }  // namespace
