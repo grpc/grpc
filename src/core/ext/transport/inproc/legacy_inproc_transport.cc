@@ -1232,9 +1232,9 @@ void inproc_transports_create(grpc_core::Transport** server_transport,
 }
 }  // namespace
 
-grpc_channel* grpc_inproc_channel_create(grpc_server* server,
-                                         const grpc_channel_args* args,
-                                         void* /*reserved*/) {
+grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
+                                                const grpc_channel_args* args,
+                                                void* /*reserved*/) {
   GRPC_API_TRACE("grpc_inproc_channel_create(server=%p, args=%p)", 2,
                  (server, args));
 
