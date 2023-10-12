@@ -793,7 +793,8 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
   // Sending connectivity state notifications to the watchers may cause the set
   // of watchers to change, so we can't be iterating over the set of watchers
   // while we send the notifications
-  std::vector<ConnectivityStateWatcherInterface*> watchers(watchers_.size());
+  std::vector<ConnectivityStateWatcherInterface*> watchers;
+  watchers.reserve(watchers_.size());
   for (const auto& watcher : watchers_) {
     watchers.push_back(watcher.get());
   }
