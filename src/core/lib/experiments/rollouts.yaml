@@ -96,6 +96,10 @@
   default: true
 - name: separate_ping_from_keepalive
   default: true
+- name: write_size_cap
+  default: true
+- name: write_size_policy
+  default: true
 - name: wrr_delegate_to_pick_first
   default: true
 - name: combiner_offload_to_event_engine

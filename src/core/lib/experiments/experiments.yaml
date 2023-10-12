@@ -193,6 +193,18 @@
   expiry: 2023/11/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: write_size_cap
+  description:
+    Limit outgoing writes proportional to the target write size
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: [flow_control_test]
+- name: write_size_policy
+  description:
+    Try to size writes such that they don't create too large of a backlog
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: [flow_control_test]
 - name: wrr_delegate_to_pick_first
   description:
     Change WRR code to delegate to pick_first as per dualstack

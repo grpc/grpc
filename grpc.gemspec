@@ -329,6 +329,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_lists.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/varint.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/varint.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/write_size_policy.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/write_size_policy.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/writing.cc )
   s.files += %w( src/core/ext/transport/inproc/inproc_plugin.cc )
   s.files += %w( src/core/ext/transport/inproc/inproc_transport.cc )
