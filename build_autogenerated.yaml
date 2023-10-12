@@ -315,6 +315,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
+  - src/core/ext/transport/inproc/legacy_inproc_transport.h
   - src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.h
@@ -770,6 +771,7 @@ libs:
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
+  - src/core/lib/gprpp/xxhash_inline.h
   - src/core/lib/handshaker/proxy_mapper.h
   - src/core/lib/handshaker/proxy_mapper_registry.h
   - src/core/lib/http/format_request.h
@@ -1146,6 +1148,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_plugin.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
+  - src/core/ext/transport/inproc/legacy_inproc_transport.cc
   - src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c
@@ -2058,6 +2061,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
+  - src/core/ext/transport/inproc/legacy_inproc_transport.h
   - src/core/ext/upb-generated/google/api/annotations.upb.h
   - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
@@ -2501,6 +2505,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_plugin.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
+  - src/core/ext/transport/inproc/legacy_inproc_transport.cc
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c

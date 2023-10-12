@@ -167,6 +167,12 @@
   expiry: 2023/11/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
+- name: promise_based_inproc_transport
+  description:
+    Use promises for the in-process transport.
+  expiry: 2024/06/06
+  owner: ctiller@google.com
+  test_tags: []
 - name: promise_based_server_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
