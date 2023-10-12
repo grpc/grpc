@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -158,9 +159,9 @@ std::string MaybeAddDefaultPort(absl::string_view target) {
 }
 
 absl::optional<grpc_resolved_address> GetAddressProxyServer(ChannelArgs* args) {
-  auto address_value = args->GetOwnedString(GRPC_ARG_ADDRESS_PROXY);
+  auto address_value = args->GetOwnedString(GRPC_ARG_ADDRESS_HTTP_PROXY);
   if (!address_value.has_value()) {
-    address_value = GetEnv(HttpProxyMapper::ADDRESS_PROXY_ENV_VAR);
+    address_value = GetEnv(HttpProxyMapper::kAddressProxyEnvVar);
   }
   if (!address_value.has_value()) {
     return absl::nullopt;
@@ -168,11 +169,11 @@ absl::optional<grpc_resolved_address> GetAddressProxyServer(ChannelArgs* args) {
   auto address = StringToSockaddr(*address_value);
   if (!address.ok()) {
     gpr_log(GPR_ERROR, "cannot parse value of '%s' env var. Error: %s",
-            HttpProxyMapper::ADDRESS_PROXY_ENV_VAR,
+            HttpProxyMapper::kAddressProxyEnvVar,
             address.status().ToString().c_str());
     return absl::nullopt;
   }
-  return *address;
+  return std::move(*address);
 }
 
 }  // namespace
@@ -257,6 +258,7 @@ absl::optional<grpc_resolved_address> HttpProxyMapper::MapAddress(
   if (!address_string.ok()) {
     gpr_log(GPR_ERROR, "Unable to convert address to string: %s",
             std::string(address_string.status().message()).c_str());
+    return absl::nullopt;
   } else {
     *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER, *address_string);
   }

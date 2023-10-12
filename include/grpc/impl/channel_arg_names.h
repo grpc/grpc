@@ -328,9 +328,11 @@
 /** Channel arg to set http proxy per channel. If set, the channel arg
  *  value will be preferred over the environment variable settings. */
 #define GRPC_ARG_HTTP_PROXY "grpc.http_proxy"
-/** Channel arg to set proxy per channel. If set, the channel arg
- *  value will be preferred over the environment variable settings. */
-#define GRPC_ARG_ADDRESS_PROXY "grpc.address_proxy"
+/** Specifies an HTTP proxy to use for individual addresses.
+ *  The proxy must be specified as an IP address, not a DNS name.
+ *  If set, the channel arg value will be preferred over the environment
+ *  variable settings. */
+#define GRPC_ARG_ADDRESS_HTTP_PROXY "grpc.address_http_proxy"
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"

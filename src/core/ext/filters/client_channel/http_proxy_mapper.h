@@ -35,7 +35,7 @@ namespace grpc_core {
 
 class HttpProxyMapper : public ProxyMapperInterface {
  public:
-  static constexpr char const* ADDRESS_PROXY_ENV_VAR = "grpc_address_proxy";
+  static constexpr char const* kAddressProxyEnvVar = "GRPC_ADDRESS_HTTP_PROXY";
 
   absl::optional<std::string> MapName(absl::string_view server_uri,
                                       ChannelArgs* args) override;
