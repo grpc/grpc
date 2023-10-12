@@ -73,17 +73,17 @@ TEST(WriteSizePolicyTest, SlowWritesCloseThingsUp) {
   policy.BeginWrite(131072);
   timestamp(40000);
   policy.EndWrite(true);
-  EXPECT_EQ(policy.WriteTargetSize(), 98304);
+  EXPECT_EQ(policy.WriteTargetSize(), 43690);
   timestamp(50000);
-  policy.BeginWrite(98304);
+  policy.BeginWrite(43690);
   timestamp(60000);
   policy.EndWrite(true);
-  EXPECT_EQ(policy.WriteTargetSize(), 98304);
+  EXPECT_EQ(policy.WriteTargetSize(), 43690);
   timestamp(70000);
-  policy.BeginWrite(98304);
+  policy.BeginWrite(43690);
   timestamp(80000);
   policy.EndWrite(true);
-  EXPECT_EQ(policy.WriteTargetSize(), 65536);
+  EXPECT_EQ(policy.WriteTargetSize(), 32768);
 }
 
 TEST(WriteSizePolicyTest, MediumWritesJustHangOut) {

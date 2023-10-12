@@ -50,8 +50,7 @@ void WriteSizePolicyStaysWithinBounds(std::vector<OneWrite> ops) {
         EXPECT_LE(policy.WriteTargetSize(), start_target * 3 / 2);
       } else if (op.write_time > Chttp2WriteSizePolicy::SlowWrite().millis()) {
         EXPECT_LE(policy.WriteTargetSize(), start_target);
-        EXPECT_GE(policy.WriteTargetSize(),
-                  start_target - Chttp2WriteSizePolicy::MinTarget());
+        EXPECT_GE(policy.WriteTargetSize(), start_target / 3);
       }
     } else {
       EXPECT_EQ(policy.WriteTargetSize(), start_target);
