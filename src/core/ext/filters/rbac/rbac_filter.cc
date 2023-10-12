@@ -40,7 +40,6 @@
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 
 namespace grpc_core {
 

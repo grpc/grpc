@@ -29,12 +29,11 @@
 // configurations and assess whether such a change is correct and desirable.
 //
 
-#include <string.h>
-
 #include <algorithm>
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -45,11 +44,12 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/util/test_config.h"
 
 namespace {

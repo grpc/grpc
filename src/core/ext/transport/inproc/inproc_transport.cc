@@ -20,6 +20,7 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -65,7 +66,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 
 #define INPROC_LOG(...)                               \
   do {                                                \
@@ -113,7 +113,7 @@ struct inproc_transport final : public grpc_core::Transport,
     gpr_ref_init(&refs, 2);
   }
 
-  ~inproc_transport() {
+  ~inproc_transport() override {
     if (gpr_unref(&mu->refs)) {
       mu->~shared_mu();
       gpr_free(mu);

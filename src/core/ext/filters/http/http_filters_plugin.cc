@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include "absl/strings/match.h"
 
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
@@ -29,7 +29,6 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 
 static bool is_building_http_like_transport(
     grpc_core::ChannelStackBuilder* builder) {
