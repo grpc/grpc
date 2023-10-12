@@ -3013,9 +3013,12 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
     Party::BulkSpawner& spawner) {
   spawner.Spawn(
       "recv_initial_metadata",
-      Race(server_initial_metadata_.receiver.Next(),
-           Map(finished(),
-               [](Empty) { return NextResult<ServerMetadataHandle>(true); })),
+      [this]() {
+        return Race(server_initial_metadata_.receiver.Next(),
+                    Map(finished(), [](Empty) {
+                      return NextResult<ServerMetadataHandle>(true);
+                    }));
+      },
       [this, array,
        completion =
            AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata)](
