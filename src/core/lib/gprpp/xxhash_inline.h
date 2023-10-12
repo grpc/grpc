@@ -1,4 +1,5 @@
-// Copyright 2017 gRPC authors.
+//
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,20 +12,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H
-#define GRPC_SRC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_XXHASH_INLINE_H
+#define GRPC_SRC_CORE_LIB_GPRPP_XXHASH_INLINE_H
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
+// This header is a simple wrapper around the third-party xxhash
+// library, so that we don't need to define XXH_INLINE_ALL in every file
+// that includes xxhash.h.  That definition confuses clang-format's
+// ordering of includes.
+#define XXH_INLINE_ALL
+#include "xxhash.h"
 
-#include "src/core/lib/debug/trace.h"
-
-grpc_channel* grpc_inproc_channel_create(grpc_server* server,
-                                         const grpc_channel_args* args,
-                                         void* reserved);
-
-extern grpc_core::TraceFlag grpc_inproc_trace;
-
-#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_XXHASH_INLINE_H

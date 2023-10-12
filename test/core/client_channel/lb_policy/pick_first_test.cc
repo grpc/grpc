@@ -589,6 +589,98 @@ TEST_F(PickFirstTest, HappyEyeballsCompletesWithoutSuccess) {
   }
 }
 
+TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
+  if (!IsPickFirstHappyEyeballsEnabled()) return;
+  // Send an update containing three IPv4 addresses followed by three
+  // IPv6 addresses.
+  constexpr std::array<absl::string_view, 6> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
+      "ipv6:[::1]:443",     "ipv6:[::1]:444",     "ipv6:[::1]:445"};
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for all addresses.
+  auto* subchannel_ipv4_1 = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel_ipv4_1, nullptr);
+  auto* subchannel_ipv4_2 = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel_ipv4_2, nullptr);
+  auto* subchannel_ipv4_3 = FindSubchannel(kAddresses[2]);
+  ASSERT_NE(subchannel_ipv4_3, nullptr);
+  auto* subchannel_ipv6_1 = FindSubchannel(kAddresses[3]);
+  ASSERT_NE(subchannel_ipv6_1, nullptr);
+  auto* subchannel_ipv6_2 = FindSubchannel(kAddresses[4]);
+  ASSERT_NE(subchannel_ipv6_2, nullptr);
+  auto* subchannel_ipv6_3 = FindSubchannel(kAddresses[5]);
+  ASSERT_NE(subchannel_ipv6_3, nullptr);
+  // When the LB policy receives the subchannels' initial connectivity
+  // state notifications (all IDLE), it will request a connection on the
+  // first IPv4 subchannel.
+  EXPECT_TRUE(subchannel_ipv4_1->ConnectionRequested());
+  subchannel_ipv4_1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // No other subchannels should be connecting.
+  EXPECT_FALSE(subchannel_ipv4_2->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv4_3->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv6_1->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv6_2->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv6_3->ConnectionRequested());
+  // The timer fires before the connection attempt completes.
+  IncrementTimeBy(Duration::Milliseconds(250));
+  // This causes the LB policy to start connecting to the first IPv6
+  // subchannel.
+  EXPECT_TRUE(subchannel_ipv6_1->ConnectionRequested());
+  subchannel_ipv6_1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // No other subchannels should be connecting.
+  EXPECT_FALSE(subchannel_ipv4_2->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv4_3->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv6_2->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv6_3->ConnectionRequested());
+  // The timer fires before the connection attempt completes.
+  IncrementTimeBy(Duration::Milliseconds(250));
+  // This causes the LB policy to start connecting to the second IPv4
+  // subchannel.
+  EXPECT_TRUE(subchannel_ipv4_2->ConnectionRequested());
+  subchannel_ipv4_2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // No other subchannels should be connecting.
+  EXPECT_FALSE(subchannel_ipv4_3->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv6_2->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv6_3->ConnectionRequested());
+  // The timer fires before the connection attempt completes.
+  IncrementTimeBy(Duration::Milliseconds(250));
+  // This causes the LB policy to start connecting to the second IPv6
+  // subchannel.
+  EXPECT_TRUE(subchannel_ipv6_2->ConnectionRequested());
+  subchannel_ipv6_2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // No other subchannels should be connecting.
+  EXPECT_FALSE(subchannel_ipv4_3->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv6_3->ConnectionRequested());
+  // The timer fires before the connection attempt completes.
+  IncrementTimeBy(Duration::Milliseconds(250));
+  // This causes the LB policy to start connecting to the third IPv4
+  // subchannel.
+  EXPECT_TRUE(subchannel_ipv4_3->ConnectionRequested());
+  subchannel_ipv4_3->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // No other subchannels should be connecting.
+  EXPECT_FALSE(subchannel_ipv6_3->ConnectionRequested());
+  // The timer fires before the connection attempt completes.
+  IncrementTimeBy(Duration::Milliseconds(250));
+  // This causes the LB policy to start connecting to the third IPv6
+  // subchannel.
+  EXPECT_TRUE(subchannel_ipv6_3->ConnectionRequested());
+  subchannel_ipv6_3->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+}
+
 TEST_F(PickFirstTest, FirstAddressGoesIdleBeforeSecondOneFails) {
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {

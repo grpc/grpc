@@ -3722,6 +3722,7 @@ grpc_cc_library(
         "closure",
         "error",
         "exec_ctx_wakeup_scheduler",
+        "experiments",
         "http2_errors",
         "idle_filter_state",
         "loop",
@@ -4857,8 +4858,17 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:sockaddr_utils",
         "//:work_serializer",
     ],
+)
+
+grpc_cc_library(
+    name = "xxhash_inline",
+    hdrs = ["lib/gprpp/xxhash_inline.h"],
+    external_deps = ["xxhash"],
+    language = "c++",
+    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
@@ -4876,7 +4886,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
-        "xxhash",
     ],
     language = "c++",
     deps = [
@@ -4897,6 +4906,7 @@ grpc_cc_library(
         "resolved_address",
         "unique_type_name",
         "validation_errors",
+        "xxhash_inline",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
@@ -5533,7 +5543,6 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/types:variant",
         "re2",
-        "xxhash",
     ],
     language = "c++",
     deps = [
@@ -5554,6 +5563,7 @@ grpc_cc_library(
         "ref_counted",
         "slice",
         "time",
+        "xxhash_inline",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
@@ -5900,9 +5910,11 @@ grpc_cc_library(
     srcs = [
         "ext/transport/inproc/inproc_plugin.cc",
         "ext/transport/inproc/inproc_transport.cc",
+        "ext/transport/inproc/legacy_inproc_transport.cc",
     ],
     hdrs = [
         "ext/transport/inproc/inproc_transport.h",
+        "ext/transport/inproc/legacy_inproc_transport.h",
     ],
     external_deps = [
         "absl/status",
@@ -5918,6 +5930,7 @@ grpc_cc_library(
         "channel_stack_type",
         "closure",
         "error",
+        "experiments",
         "iomgr_fwd",
         "slice",
         "slice_buffer",
