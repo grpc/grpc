@@ -15,7 +15,6 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 
 #include <chrono>
-#include <string>
 
 #include "absl/random/random.h"
 #include "gmock/gmock.h"

@@ -20,8 +20,6 @@
 
 #include <stdint.h>
 
-#include <string>
-
 #include "gtest/gtest.h"
 
 #include <grpc/support/time.h>
