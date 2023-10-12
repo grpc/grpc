@@ -3386,9 +3386,15 @@ target_include_directories(gtest
 )
 target_link_libraries(gtest
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  ${_gRPC_RE2_LIBRARIES}
+  absl::flat_hash_set
   absl::failure_signal_handler
   absl::stacktrace
   absl::symbolize
+  absl::flags
+  absl::flags_parse
+  absl::flags_reflection
+  absl::flags_usage
   absl::strings
   absl::any
   absl::optional
@@ -5596,7 +5602,6 @@ target_include_directories(activity_test
 target_link_libraries(activity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_set
   absl::hash
   absl::type_traits
   absl::statusor
@@ -8790,7 +8795,6 @@ target_link_libraries(chunked_vector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
-  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -11876,7 +11880,6 @@ target_link_libraries(flow_control_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
-  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -11947,7 +11950,6 @@ target_link_libraries(for_each_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
-  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -14590,7 +14592,6 @@ target_link_libraries(interceptor_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
-  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -15500,7 +15501,6 @@ target_link_libraries(map_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
-  absl::flat_hash_set
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -16228,7 +16228,6 @@ target_include_directories(mpsc_test
 target_link_libraries(mpsc_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_set
   absl::hash
   absl::type_traits
   absl::statusor
@@ -18848,7 +18847,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(resolve_address_using_ares_resolver_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::flags_parse
     grpc_test_util
   )
 
@@ -18939,7 +18937,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(resolve_address_using_native_resolver_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::flags_parse
     grpc_test_util
   )
 
@@ -23608,7 +23605,6 @@ target_include_directories(test_core_event_engine_slice_buffer_test
 target_link_libraries(test_core_event_engine_slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_set
   absl::hash
   absl::statusor
   absl::utility
@@ -24236,7 +24232,6 @@ target_link_libraries(test_core_transport_chaotic_good_frame_test
   ${_gRPC_ZLIB_LIBRARIES}
   absl::cleanup
   absl::flat_hash_map
-  absl::flat_hash_set
   absl::inlined_vector
   absl::function_ref
   absl::hash
