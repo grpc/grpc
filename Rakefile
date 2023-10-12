@@ -220,6 +220,8 @@ task 'gem:native', [:plat] do |t, args|
   end
   # Generate debug symbol packages to complement the native libraries we just built
   unix_platforms.each do |plat|
+    # TODO(apolcyn): make debug symbol generation work for arm64-darwin
+    next if plat == 'arm64-darwin'
     `bash src/ruby/nativedebug/build_package.sh #{plat}`
     `cp src/ruby/nativedebug/pkg/*.gem pkg/`
   end
