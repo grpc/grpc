@@ -647,6 +647,9 @@ class FilterStackTransport {
   // implementation of grpc_transport_destroy_stream
   virtual void DestroyStream(grpc_stream* stream,
                              grpc_closure* then_schedule_closure) = 0;
+
+ protected:
+  ~FilterStackTransport() = default;
 };
 
 class PromiseTransport {
@@ -662,6 +665,9 @@ class PromiseTransport {
   // then to drop perform_stream_op.
   virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args) = 0;
+
+ protected:
+  ~PromiseTransport() = default;
 };
 
 class Transport : public Orphanable {

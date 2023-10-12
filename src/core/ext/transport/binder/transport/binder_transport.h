@@ -42,12 +42,35 @@ struct grpc_binder_stream;
 // depends on what style we want to follow)
 // TODO(mingcl): Decide casing for this class name. Should we use C-style class
 // name here or just go with C++ style?
-struct grpc_binder_transport {
+struct grpc_binder_transport final : public grpc_core::Transport,
+                                     public grpc_core::FilterStackTransport {
   explicit grpc_binder_transport(
       std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
       std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
           security_policy);
   ~grpc_binder_transport();
+
+  grpc_core::FilterStackTransport* filter_stack_transport() override {
+    return this;
+  }
+  grpc_core::PromiseTransport* promise_transport() override { return nullptr; }
+  absl::string_view GetTransportName() const override { return "binder"; }
+  void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
+                  const void* server_data, grpc_core::Arena* arena) override;
+  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
+  void SetPollsetSet(grpc_stream* stream,
+                     grpc_pollset_set* pollset_set) override {}
+  void PerformOp(grpc_transport_op* op) override;
+  grpc_endpoint* GetEndpoint() override;
+  size_t SizeOfStream() const override;
+  bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override {
+    return false;
+  }
+  void PerformStreamOp(grpc_stream* gs,
+                       grpc_transport_stream_op_batch* op) override;
+  void DestroyStream(grpc_stream* gs,
+                     grpc_closure* then_schedule_closure) override;
+  void Orphan() override;
 
   int NewStreamTxCode() {
     // TODO(mingcl): Wrap around when all tx codes are used. "If we do detect a
@@ -56,8 +79,6 @@ struct grpc_binder_transport {
     GPR_ASSERT(next_free_tx_code <= LAST_CALL_TRANSACTION);
     return next_free_tx_code++;
   }
-
-  grpc_core::Transport base;  // must be first
 
   std::shared_ptr<grpc_binder::TransportStreamReceiver>
       transport_stream_receiver;
