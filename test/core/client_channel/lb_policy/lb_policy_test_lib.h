@@ -1387,7 +1387,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   void IncrementTimeBy(Duration duration) {
     ExecCtx exec_ctx;
+    gpr_log(GPR_INFO, "Incrementing time by %s...",
+            duration.ToString().c_str());
     fuzzing_ee_->TickForDuration(duration);
+    gpr_log(GPR_INFO, "Done incrementing time");
     // Flush WorkSerializer, in case the timer callback enqueued anything.
     WaitForWorkSerializerToFlush();
   }

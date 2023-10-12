@@ -24,6 +24,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/time.h"
@@ -41,6 +42,7 @@ CORE_END2END_TEST(Http2SingleHopTest, KeepaliveTimeout) {
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 10)
                  .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 0)
+                 .Set(GRPC_ARG_PING_TIMEOUT_MS, 0)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingMetadata server_initial_metadata;

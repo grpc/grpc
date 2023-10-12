@@ -46,6 +46,8 @@
   default: true
 - name: chttp2_offload_on_rst_stream
   default: true
+- name: client_idleness
+  default: true
 - name: client_privacy
   default: false
 - name: combiner_offload_to_event_engine
@@ -102,6 +104,8 @@
   default: false
 - name: schedule_cancellation_over_write
   default: false
+- name: separate_ping_from_keepalive
+  default: true
 - name: server_privacy
   default: false
 - name: settings_timeout

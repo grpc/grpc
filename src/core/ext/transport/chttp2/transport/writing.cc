@@ -127,6 +127,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         const uint64_t id = t->ping_callbacks.StartPing(t->bitgen);
         grpc_slice_buffer_add(t->outbuf.c_slice_buffer(),
                               grpc_chttp2_ping_create(false, id));
+        t->keepalive_incoming_data_wanted = true;
         if (t->channelz_socket != nullptr) {
           t->channelz_socket->RecordKeepaliveSent();
         }
@@ -719,8 +720,11 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
       t->keepalive_timeout != grpc_core::Duration::Infinity()) {
     // Set ping timeout after finishing write so we don't measure our own send
     // time.
+    const auto timeout = grpc_core::IsSeparatePingFromKeepaliveEnabled()
+                             ? t->ping_timeout
+                             : t->keepalive_timeout;
     auto id = t->ping_callbacks.OnPingTimeout(
-        t->keepalive_timeout, t->event_engine.get(), [t = t->Ref()] {
+        timeout, t->event_engine.get(), [t = t->Ref()] {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
           grpc_chttp2_ping_timeout(t);
@@ -728,8 +732,28 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace) && id.has_value()) {
       gpr_log(GPR_INFO,
               "%s[%p]: Set ping timeout timer of %s for ping id %" PRIx64,
-              t->is_client ? "CLIENT" : "SERVER", t,
-              t->keepalive_timeout.ToString().c_str(), id.value());
+              t->is_client ? "CLIENT" : "SERVER", t, timeout.ToString().c_str(),
+              id.value());
+    }
+
+    if (grpc_core::IsSeparatePingFromKeepaliveEnabled() &&
+        t->keepalive_incoming_data_wanted &&
+        t->keepalive_timeout < t->ping_timeout &&
+        t->keepalive_ping_timeout_handle !=
+            grpc_event_engine::experimental::EventEngine::TaskHandle::
+                kInvalid) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace) ||
+          GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+        gpr_log(GPR_INFO, "%s[%p]: Set keepalive ping timeout timer of %s",
+                t->is_client ? "CLIENT" : "SERVER", t,
+                t->keepalive_timeout.ToString().c_str());
+      }
+      t->keepalive_ping_timeout_handle =
+          t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            grpc_chttp2_keepalive_timeout(t);
+          });
     }
   }
 
