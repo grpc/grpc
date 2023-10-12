@@ -171,6 +171,8 @@ end
 
 if grpc_config == 'dbg'
   $CFLAGS << ' -O0 -ggdb3'
+else
+  $CFLAGS << ' -g'
 end
 
 $LDFLAGS << ' -Wl,-wrap,memcpy' if linux
