@@ -31,7 +31,7 @@
 #include <openssl/mem.h>
 #else
 #include <openssl/crypto.h>  // For OPENSSL_free
-#endif
+#endif                       // OPENSSL_IS_BORING_SSL
 
 #include <openssl/pem.h>
 #include <openssl/x509.h>
