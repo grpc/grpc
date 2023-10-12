@@ -446,6 +446,8 @@ grpc_core_end2end_test(name = "simple_request")
 
 grpc_core_end2end_test(name = "streaming_error_response")
 
+grpc_core_end2end_test(name = "timeout_before_request_call")
+
 grpc_core_end2end_test(name = "trailing_metadata")
 
 grpc_core_end2end_test(name = "write_buffering")
