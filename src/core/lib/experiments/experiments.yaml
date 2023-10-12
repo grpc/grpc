@@ -187,6 +187,12 @@
   expiry: 2024/03/31
   owner: yashkt@google.com
   test_tags: ["surface_registered_method_lookup"]
+- name: registered_methods_map
+  description:
+    Use absl::flat_hash_map for registered methods.
+  expiry: 2024/01/31
+  owner: alishananda@google.com
+  test_tags: []
 - name: round_robin_delegate_to_pick_first
   description:
     Change round_robin code to delegate to pick_first as per dualstack
@@ -278,9 +284,3 @@
   expiry: 2023/11/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
-- name: registered_methods_map
-  description:
-    Use absl::flat_hash_map for registered methods.
-  expiry: 2024/01/31
-  owner: alishananda@google.com
-  test_tags: []

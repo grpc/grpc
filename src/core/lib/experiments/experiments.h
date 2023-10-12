@@ -99,6 +99,7 @@ inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+inline bool IsRegisteredMethodsMapEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
@@ -163,6 +164,7 @@ inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+inline bool IsRegisteredMethodsMapEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
@@ -227,6 +229,7 @@ inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+inline bool IsRegisteredMethodsMapEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
@@ -275,6 +278,7 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedServerCall,
   kExperimentIdRedMaxConcurrentStreams,
   kExperimentIdRegisteredMethodLookupInTransport,
+  kExperimentIdRegisteredMethodsMap,
   kExperimentIdRoundRobinDelegateToPickFirst,
   kExperimentIdRstpit,
   kExperimentIdScheduleCancellationOverWrite,
@@ -387,6 +391,10 @@ inline bool IsRedMaxConcurrentStreamsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() {
   return IsExperimentEnabled(kExperimentIdRegisteredMethodLookupInTransport);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHODS_MAP
+inline bool IsRegisteredMethodsMapEnabled() {
+  return IsExperimentEnabled(kExperimentIdRegisteredMethodsMap);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() {
