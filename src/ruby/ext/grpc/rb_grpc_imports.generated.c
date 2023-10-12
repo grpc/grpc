@@ -121,7 +121,6 @@ grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
 grpc_channelz_get_subchannel_type grpc_channelz_get_subchannel_import;
 grpc_channelz_get_socket_type grpc_channelz_get_socket_import;
 grpc_authorization_policy_provider_arg_vtable_type grpc_authorization_policy_provider_arg_vtable_import;
-grpc_tls_credentials_options_set_crl_provider_type grpc_tls_credentials_options_set_crl_provider_import;
 grpc_channel_create_from_fd_type grpc_channel_create_from_fd_import;
 grpc_server_add_channel_from_fd_type grpc_server_add_channel_from_fd_import;
 grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
@@ -409,7 +408,6 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_channelz_get_subchannel_import = (grpc_channelz_get_subchannel_type) GetProcAddress(library, "grpc_channelz_get_subchannel");
   grpc_channelz_get_socket_import = (grpc_channelz_get_socket_type) GetProcAddress(library, "grpc_channelz_get_socket");
   grpc_authorization_policy_provider_arg_vtable_import = (grpc_authorization_policy_provider_arg_vtable_type) GetProcAddress(library, "grpc_authorization_policy_provider_arg_vtable");
-  grpc_tls_credentials_options_set_crl_provider_import = (grpc_tls_credentials_options_set_crl_provider_type) GetProcAddress(library, "grpc_tls_credentials_options_set_crl_provider");
   grpc_channel_create_from_fd_import = (grpc_channel_create_from_fd_type) GetProcAddress(library, "grpc_channel_create_from_fd");
   grpc_server_add_channel_from_fd_import = (grpc_server_add_channel_from_fd_type) GetProcAddress(library, "grpc_server_add_channel_from_fd");
   grpc_auth_property_iterator_next_import = (grpc_auth_property_iterator_next_type) GetProcAddress(library, "grpc_auth_property_iterator_next");

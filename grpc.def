@@ -98,7 +98,6 @@ EXPORTS
     grpc_channelz_get_subchannel
     grpc_channelz_get_socket
     grpc_authorization_policy_provider_arg_vtable
-    grpc_tls_credentials_options_set_crl_provider
     grpc_channel_create_from_fd
     grpc_server_add_channel_from_fd
     grpc_auth_property_iterator_next

@@ -28,7 +28,6 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -339,9 +338,6 @@ extern grpc_channelz_get_socket_type grpc_channelz_get_socket_import;
 typedef const grpc_arg_pointer_vtable*(*grpc_authorization_policy_provider_arg_vtable_type)(void);
 extern grpc_authorization_policy_provider_arg_vtable_type grpc_authorization_policy_provider_arg_vtable_import;
 #define grpc_authorization_policy_provider_arg_vtable grpc_authorization_policy_provider_arg_vtable_import
-typedef void(*grpc_tls_credentials_options_set_crl_provider_type)(grpc_tls_credentials_options* options, std::shared_ptr<grpc_core::experimental::CrlProvider> provider);
-extern grpc_tls_credentials_options_set_crl_provider_type grpc_tls_credentials_options_set_crl_provider_import;
-#define grpc_tls_credentials_options_set_crl_provider grpc_tls_credentials_options_set_crl_provider_import
 typedef grpc_channel*(*grpc_channel_create_from_fd_type)(const char* target, int fd, grpc_channel_credentials* creds, const grpc_channel_args* args);
 extern grpc_channel_create_from_fd_type grpc_channel_create_from_fd_import;
 #define grpc_channel_create_from_fd grpc_channel_create_from_fd_import
