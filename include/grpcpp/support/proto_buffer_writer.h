@@ -156,11 +156,14 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
   /// blocks of the cord, and the slices of the byte_buffer.
   // (override is conditionally omitted here to support old Protobuf which
   //  doesn't have ReadCord method)
-  // NOLINTNEXTLINE(modernize-use-override)
+  // NOLINTBEGIN(modernize-use-override,
+  // clang-diagnostic-inconsistent-missing-override)
   virtual bool WriteCord(const absl::Cord& cord)
-#if PROTOBUF_VERSION >= 4022000
+#if GOOGLE_PROTOBUF_VERSION >= 4022000
       override
 #endif
+  // NOLINTEND(modernize-use-override,
+  // clang-diagnostic-inconsistent-missing-override)
   {
     grpc_slice_buffer* buffer = slice_buffer();
     size_t cur = 0;

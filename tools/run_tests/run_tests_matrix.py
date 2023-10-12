@@ -360,7 +360,7 @@ def _create_portability_test_jobs(
         "gcc12_openssl309",
         "gcc_musl",
         "clang6",
-        "clang15",
+        "clang16",
     ]:
         test_jobs += _generate_jobs(
             languages=["c", "c++"],

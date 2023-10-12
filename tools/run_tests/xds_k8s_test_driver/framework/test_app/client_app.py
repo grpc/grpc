@@ -129,7 +129,12 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             timeout_sec=timeout_sec
         )
 
-    def wait_for_active_server_channel(self) -> _ChannelzChannel:
+    def wait_for_active_server_channel(
+        self,
+        *,
+        timeout: Optional[_timedelta] = None,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
         """Wait for the channel to the server to transition to READY.
 
         Raises:
@@ -137,7 +142,9 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         """
         try:
             return self.wait_for_server_channel_state(
-                _ChannelzChannelState.READY
+                _ChannelzChannelState.READY,
+                timeout=timeout,
+                rpc_deadline=rpc_deadline,
             )
         except retryers.RetryError as retry_err:
             if isinstance(retry_err.exception(), self.ChannelNotFound):

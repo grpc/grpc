@@ -19,6 +19,7 @@
 #ifndef GRPC_TEST_CORE_UTIL_PORT_SERVER_CLIENT_H
 #define GRPC_TEST_CORE_UTIL_PORT_SERVER_CLIENT_H
 
+#include <memory>
 // C interface to port_server.py
 
 // must be synchronized with tools/run_tests/python_utils/start_port_server.py

@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <initializer_list>
 #include <new>
 #include <string>
 #include <utility>

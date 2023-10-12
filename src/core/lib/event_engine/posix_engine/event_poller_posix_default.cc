@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 

@@ -21,8 +21,6 @@
 #include <inttypes.h>
 
 #include <functional>
-#include <initializer_list>
-#include <string>
 #include <utility>
 
 #include "absl/strings/str_format.h"
@@ -40,7 +38,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"

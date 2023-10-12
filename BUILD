@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "generative"  # @unused
+g_stands_for = "gjallarhorn"  # @unused
 
-core_version = "35.0.0"  # @unused
+core_version = "36.0.0"  # @unused
 
-version = "1.59.0-dev"  # @unused
+version = "1.60.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -305,7 +305,6 @@ GRPCXX_SRCS = [
     "src/cpp/client/create_channel_posix.cc",
     "src/cpp/common/alarm.cc",
     "src/cpp/common/channel_arguments.cc",
-    "src/cpp/common/channel_filter.cc",
     "src/cpp/common/completion_queue_cc.cc",
     "src/cpp/common/resource_quota_cc.cc",
     "src/cpp/common/rpc_method.cc",
@@ -332,7 +331,6 @@ GRPCXX_SRCS = [
 GRPCXX_HDRS = [
     "src/cpp/client/create_channel_internal.h",
     "src/cpp/client/client_stats_interceptor.h",
-    "src/cpp/common/channel_filter.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/external_connection_acceptor_impl.h",
     "src/cpp/server/health/default_health_check_service.h",
@@ -2108,6 +2106,7 @@ grpc_cc_library(
     deps = [
         "grpc++",
         "grpc++_config_proto",
+        "//src/proto/grpc/reflection/v1:reflection_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
     alwayslink = 1,
@@ -2339,7 +2338,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2918,12 +2916,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "server_address",
+    name = "endpoint_addresses",
     srcs = [
-        "//src/core:lib/resolver/server_address.cc",
+        "//src/core:lib/resolver/endpoint_addresses.cc",
     ],
     hdrs = [
-        "//src/core:lib/resolver/server_address.h",
+        "//src/core:lib/resolver/endpoint_addresses.h",
     ],
     external_deps = [
         "absl/status",
@@ -2933,11 +2931,25 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
+        "gpr",
         "gpr_platform",
         "sockaddr_utils",
         "//src/core:channel_args",
         "//src/core:resolved_address",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "server_address",
+    hdrs = [
+        "//src/core:lib/resolver/server_address.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:client_channel"],
+    deps = [
+        "endpoint_addresses",
+        "gpr_public_hdrs",
     ],
 )
 
@@ -2961,6 +2973,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
+        "endpoint_addresses",
         "gpr",
         "grpc_trace",
         "orphanable",
@@ -3050,6 +3063,7 @@ grpc_cc_library(
         "config",
         "config_vars",
         "debug_location",
+        "endpoint_addresses",
         "exec_ctx",
         "gpr",
         "grpc_base",
@@ -3066,7 +3080,6 @@ grpc_cc_library(
         "promise",
         "protobuf_duration_upb",
         "ref_counted_ptr",
-        "server_address",
         "sockaddr_utils",
         "stats",
         "uri_parser",
@@ -3147,7 +3160,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
@@ -3164,6 +3176,7 @@ grpc_cc_library(
         "config",
         "config_vars",
         "debug_location",
+        "endpoint_addresses",
         "exec_ctx",
         "gpr",
         "grpc_base",
@@ -3175,7 +3188,6 @@ grpc_cc_library(
         "orphanable",
         "parse_address",
         "ref_counted_ptr",
-        "server_address",
         "sockaddr_utils",
         "uri_parser",
         "//src/core:channel_args",
@@ -3566,7 +3578,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3618,9 +3629,9 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:grpclb"],
     deps = [
+        "endpoint_addresses",
         "gpr_platform",
         "grpc_public_hdrs",
-        "server_address",
         "//src/core:channel_args",
         "//src/core:useful",
     ],
@@ -3738,12 +3749,12 @@ grpc_cc_library(
     deps = [
         "config",
         "debug_location",
+        "endpoint_addresses",
         "gpr",
         "grpc_public_hdrs",
         "grpc_resolver",
         "orphanable",
         "ref_counted_ptr",
-        "server_address",
         "uri_parser",
         "work_serializer",
         "//src/core:channel_args",
@@ -3983,11 +3994,13 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/random",
         "absl/random:bit_gen_ref",
+        "absl/random:distributions",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",
         "absl/strings:str_format",
         "absl/types:optional",
+        "absl/types:variant",
     ],
     language = "c++",
     visibility = ["@grpc:grpclb"],
@@ -4025,10 +4038,13 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:match",
+        "//src/core:max_concurrent_streams_policy",
         "//src/core:memory_quota",
         "//src/core:ping_abuse_policy",
+        "//src/core:ping_callbacks",
         "//src/core:ping_rate_policy",
         "//src/core:poll",
+        "//src/core:random_early_detection",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:resource_quota_trace",

@@ -35,8 +35,6 @@
 #endif
 #include <sys/socket.h>
 
-#include <string>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>

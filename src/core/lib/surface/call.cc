@@ -27,7 +27,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <memory>
 #include <new>
 #include <string>
@@ -36,7 +35,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -55,7 +53,6 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/call_tracer.h"
@@ -1308,6 +1305,18 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
 void FilterStackCall::BatchControl::PostCompletion() {
   FilterStackCall* call = call_;
   grpc_error_handle error = batch_error_.get();
+
+  if (IsCallStatusOverrideOnCancellationEnabled()) {
+    // On the client side, if final call status is already known (i.e if this op
+    // includes recv_trailing_metadata) and if the call status is known to be
+    // OK, then disregard the batch error to ensure call->receiving_buffer_ is
+    // not cleared.
+    if (op_.recv_trailing_metadata && call->is_client() &&
+        call->status_error_.ok()) {
+      error = absl::OkStatus();
+    }
+  }
+
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "tag:%p batch_error=%s op:%s",
             completion_data_.notify_tag.tag, error.ToString().c_str(),
@@ -1329,6 +1338,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
   if (op_.send_trailing_metadata) {
     call->send_trailing_metadata_.Clear();
   }
+
   if (!error.ok() && op_.recv_message && *call->receiving_buffer_ != nullptr) {
     grpc_byte_buffer_destroy(*call->receiving_buffer_);
     *call->receiving_buffer_ = nullptr;

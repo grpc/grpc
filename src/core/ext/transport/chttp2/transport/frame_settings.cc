@@ -22,13 +22,11 @@
 
 #include <string.h>
 
-#include <initializer_list>
 #include <string>
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>

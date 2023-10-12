@@ -18,6 +18,8 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 
+#include <memory>
+
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
@@ -25,7 +27,7 @@
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
