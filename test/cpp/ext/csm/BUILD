@@ -27,7 +27,7 @@ grpc_cc_test(
         "csm_observability_test.cc",
     ],
     external_deps = [
-        "google_cloud_cpp:experimental-opentelemetry",
+        "google_cloud_cpp:opentelemetry",
         "gtest",
         "otel/sdk/src/metrics",
     ],
@@ -47,7 +47,7 @@ grpc_cc_test(
         "metadata_exchange_test.cc",
     ],
     external_deps = [
-        "google_cloud_cpp:experimental-opentelemetry",
+        "google_cloud_cpp:opentelemetry",
         "gtest",
         "otel/sdk/src/metrics",
     ],

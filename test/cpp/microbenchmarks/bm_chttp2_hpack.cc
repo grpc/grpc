@@ -330,7 +330,9 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 static void BM_HpackParserInitDestroy(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    { grpc_core::HPackParser(); }
+    {
+      grpc_core::HPackParser();
+    }
     grpc_core::ExecCtx::Get()->Flush();
   }
 }

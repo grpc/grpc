@@ -1314,6 +1314,8 @@ src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
 src/core/ext/transport/chttp2/transport/legacy_frame.h \
+src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc \
+src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h \
 src/core/ext/transport/chttp2/transport/parsing.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.h \
@@ -2795,8 +2797,6 @@ src/cpp/client/xds_credentials.cc \
 src/cpp/common/alarm.cc \
 src/cpp/common/auth_property_iterator.cc \
 src/cpp/common/channel_arguments.cc \
-src/cpp/common/channel_filter.cc \
-src/cpp/common/channel_filter.h \
 src/cpp/common/completion_queue_cc.cc \
 src/cpp/common/resource_quota_cc.cc \
 src/cpp/common/rpc_method.cc \

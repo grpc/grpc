@@ -234,3 +234,21 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "ring_hash_test",
+    srcs = ["ring_hash_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":lb_policy_test_lib",
+        "//src/core:channel_args",
+        "//src/core:grpc_lb_policy_ring_hash",
+        "//test/core/util:grpc_test_util",
+    ],
+)

@@ -18,6 +18,8 @@
 
 #include "src/core/lib/transport/status_conversion.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/support/time.h>

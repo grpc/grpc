@@ -309,6 +309,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
+  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
@@ -1135,6 +1136,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/http_trace.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
+  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
@@ -2050,6 +2052,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
+  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
@@ -2488,6 +2491,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/http_trace.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
+  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
@@ -3561,7 +3565,6 @@ libs:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -3603,7 +3606,6 @@ libs:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -3673,6 +3675,7 @@ libs:
   headers:
   - src/cpp/ext/proto_server_reflection.h
   src:
+  - src/proto/grpc/reflection/v1/reflection.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/cpp/ext/proto_server_reflection.cc
   - src/cpp/ext/proto_server_reflection_plugin.cc
@@ -3962,7 +3965,6 @@ libs:
   headers:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -3981,7 +3983,6 @@ libs:
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/insecure_create_auth_context.cc
   - src/cpp/common/resource_quota_cc.cc
@@ -5710,7 +5711,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -5752,7 +5752,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -6580,18 +6579,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: channel_filter_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/cpp/common/channel_filter_test.cc
-  deps:
-  - gtest
-  - grpc++
-  - grpc_test_util
-  uses_polling: false
 - name: channel_stack_builder_test
   gtest: true
   build: test
@@ -7699,7 +7686,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -7741,7 +7727,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -8183,7 +8168,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -8225,7 +8209,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -8405,21 +8388,6 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
-- name: filter_end2end_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
-  - src/proto/grpc/testing/echo.proto
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
-  - test/cpp/end2end/filter_end2end_test.cc
-  deps:
-  - gtest
-  - grpc++_test_util
 - name: filter_init_fails_test
   gtest: true
   build: test
@@ -8881,6 +8849,20 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: fuzzing_event_engine_unittest
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine_unittest.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -10779,6 +10761,18 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: max_concurrent_streams_policy_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
+  src:
+  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
+  - test/core/transport/chttp2/max_concurrent_streams_policy_test.cc
+  deps:
+  - gtest
+  - gpr
 - name: max_concurrent_streams_test
   gtest: true
   build: test
@@ -13940,6 +13934,24 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: ring_hash_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/client_channel/lb_policy/lb_policy_test_lib.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/client_channel/lb_policy/ring_hash_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: rls_end2end_test
   gtest: true
   build: test
@@ -16667,7 +16679,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -16708,7 +16719,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -17035,7 +17045,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -17077,7 +17086,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -17144,7 +17152,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -17186,7 +17193,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -18198,6 +18204,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h

@@ -18,6 +18,8 @@
 
 #include <string.h>
 
+#include <memory>
+
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 

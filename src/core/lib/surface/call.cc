@@ -27,7 +27,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <memory>
 #include <new>
 #include <string>
@@ -36,7 +35,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -55,7 +53,6 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/call_tracer.h"

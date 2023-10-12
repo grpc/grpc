@@ -24,7 +24,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <list>
 #include <new>
 #include <queue>
