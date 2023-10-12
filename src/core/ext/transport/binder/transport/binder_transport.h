@@ -53,7 +53,8 @@ struct grpc_binder_transport final : public grpc_core::Transport,
   grpc_core::FilterStackTransport* filter_stack_transport() override {
     return this;
   }
-  grpc_core::PromiseTransport* promise_transport() override { return nullptr; }
+  grpc_core::ClientTransport* client_transport() override { return nullptr; }
+  grpc_core::ServerTransport* server_transport() override { return nullptr; }
   absl::string_view GetTransportName() const override { return "binder"; }
   void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
                   const void* server_data, grpc_core::Arena* arena) override;

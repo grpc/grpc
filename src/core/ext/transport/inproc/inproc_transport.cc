@@ -124,7 +124,8 @@ struct inproc_transport final : public grpc_core::Transport,
     return this;
   }
 
-  grpc_core::PromiseTransport* promise_transport() override { return nullptr; }
+  grpc_core::ClientTransport* client_transport() override { return nullptr; }
+  grpc_core::ServerTransport* server_transport() override { return nullptr; }
 
   absl::string_view GetTransportName() const override;
   void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,

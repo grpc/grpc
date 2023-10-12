@@ -630,22 +630,25 @@ class FilterStackTransport {
   ~FilterStackTransport() = default;
 };
 
-class PromiseTransport {
+class ClientTransport {
  public:
   // Create a promise to execute one client call.
-  // If this is non-null, it may be used in preference to
-  // perform_stream_op.
-  // If this is used in preference to perform_stream_op, the
-  // following can be omitted also:
-  //   - calling init_stream, destroy_stream, set_pollset, set_pollset_set
-  //   - allocation of memory for call data (sizeof_stream may be ignored)
-  // There is an on-going migration to move all filters to providing this, and
-  // then to drop perform_stream_op.
   virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args) = 0;
 
  protected:
-  ~PromiseTransport() = default;
+  ~ClientTransport() = default;
+};
+
+class ServerTransport {
+ public:
+  // Register the factory function for the filter stack part of a call
+  // promise.
+  void SetCallPromiseFactory(
+      absl::AnyInvocable<ArenaPromise<ServerMetadataHandle>(CallArgs) const>);
+
+ protected:
+  ~ServerTransport() = default;
 };
 
 class Transport : public Orphanable {
@@ -654,7 +657,8 @@ class Transport : public Orphanable {
   static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
 
   virtual FilterStackTransport* filter_stack_transport() = 0;
-  virtual PromiseTransport* promise_transport() = 0;
+  virtual ClientTransport* client_transport() = 0;
+  virtual ServerTransport* server_transport() = 0;
 
   // name of this transport implementation
   virtual absl::string_view GetTransportName() const = 0;

@@ -61,7 +61,8 @@ class FakeTransport final : public grpc_core::Transport {
   grpc_core::FilterStackTransport* filter_stack_transport() override {
     return nullptr;
   }
-  grpc_core::PromiseTransport* promise_transport() override { return nullptr; }
+  grpc_core::ClientTransport* client_transport() override { return nullptr; }
+  grpc_core::ServerTransport* server_transport() override { return nullptr; }
 
   absl::string_view GetTransportName() const override {
     return transport_name_;

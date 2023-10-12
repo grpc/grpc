@@ -123,7 +123,8 @@ static bidirectional_stream_callback cronet_callbacks = {
 struct grpc_cronet_transport final : public grpc_core::Transport,
                                      public grpc_core::FilterStackTransport {
   FilterStackTransport* filter_stack_transport() override { return this; }
-  grpc_core::PromiseTransport* promise_transport() override { return nullptr; }
+  grpc_core::ClientTransport* client_transport() override { return nullptr; }
+  grpc_core::ServerTransport* server_transport() override { return nullptr; }
 
   absl::string_view GetTransportName() const override { return "cronet_http"; }
   void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
@@ -132,12 +133,12 @@ struct grpc_cronet_transport final : public grpc_core::Transport,
   void PerformOp(grpc_transport_op* op) override;
   grpc_endpoint* GetEndpoint() override { return nullptr; }
   size_t SizeOfStream() const override;
-  void InitStream(grpc_stream* stream, grpc_stream_refcount* refcount,
+  void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
                   const void* server_data, grpc_core::Arena* arena) override;
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override;
-  void PerformStreamOp(grpc_stream* stream,
+  void PerformStreamOp(grpc_stream* gs,
                        grpc_transport_stream_op_batch* op) override;
-  void DestroyStream(grpc_stream* stream,
+  void DestroyStream(grpc_stream* gs,
                      grpc_closure* then_schedule_closure) override;
   void Orphan() override {}
 

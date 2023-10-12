@@ -246,18 +246,19 @@ struct grpc_chttp2_transport final
 
   size_t SizeOfStream() const override;
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override;
-  void PerformStreamOp(grpc_stream* stream,
+  void PerformStreamOp(grpc_stream* gs,
                        grpc_transport_stream_op_batch* op) override;
-  void DestroyStream(grpc_stream* stream,
+  void DestroyStream(grpc_stream* gs,
                      grpc_closure* then_schedule_closure) override;
 
   grpc_core::FilterStackTransport* filter_stack_transport() override {
     return this;
   }
-  grpc_core::PromiseTransport* promise_transport() override { return nullptr; }
+  grpc_core::ClientTransport* client_transport() override { return nullptr; }
+  grpc_core::ServerTransport* server_transport() override { return nullptr; }
 
   absl::string_view GetTransportName() const override;
-  void InitStream(grpc_stream* stream, grpc_stream_refcount* refcount,
+  void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
                   const void* server_data, grpc_core::Arena* arena) override;
   void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override;
   void SetPollsetSet(grpc_stream* stream,
