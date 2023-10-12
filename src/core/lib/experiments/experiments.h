@@ -74,6 +74,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
+inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
@@ -139,6 +141,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
+inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
@@ -204,6 +208,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
+inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
@@ -259,6 +265,7 @@ enum ExperimentIds {
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdChttp2BatchRequests,
   kExperimentIdChttp2OffloadOnRstStream,
+  kExperimentIdClientIdleness,
   kExperimentIdClientPrivacy,
   kExperimentIdCombinerOffloadToEventEngine,
   kExperimentIdEventEngineClient,
@@ -315,6 +322,10 @@ inline bool IsChttp2BatchRequestsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() {
   return IsExperimentEnabled(kExperimentIdChttp2OffloadOnRstStream);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
+inline bool IsClientIdlenessEnabled() {
+  return IsExperimentEnabled(kExperimentIdClientIdleness);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
 inline bool IsClientPrivacyEnabled() {
