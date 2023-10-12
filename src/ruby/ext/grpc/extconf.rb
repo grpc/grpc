@@ -203,8 +203,7 @@ if grpc_config == 'opt'
     o.puts
     o.puts 'strip: $(DLLIB)'
     if debug_symbols_dir and debug_symbols_dir.size > 0
-      # Save debug symbols before stripping. These can be distributed separately and used when needed.
-      o.puts "\t$(ECHO) Generating debug symbols #{debug_symbols_dir}/#{debug_symbols}"
+      o.puts "\t$(ECHO) Saving debug symbols in #{debug_symbols_dir}/#{debug_symbols}"
       o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols_dir}/#{debug_symbols}"
     end
     o.puts "\t$(ECHO) Stripping $(DLLIB)"
