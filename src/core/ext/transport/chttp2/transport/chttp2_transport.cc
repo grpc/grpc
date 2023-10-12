@@ -407,6 +407,12 @@ static void read_channel_args(grpc_chttp2_transport* t,
                         ? grpc_core::Duration::Infinity()
                         : (t->is_client ? g_default_client_keepalive_timeout
                                         : g_default_server_keepalive_timeout)));
+  t->ping_timeout = std::max(
+      grpc_core::Duration::Zero(),
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
+          .value_or(t->keepalive_time == grpc_core::Duration::Infinity()
+                        ? grpc_core::Duration::Infinity()
+                        : grpc_core::Duration::Minutes(1)));
   if (t->is_client) {
     t->keepalive_permit_without_calls =
         channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
@@ -739,6 +745,12 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     t->closed_with_error = error;
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
+    if (t->keepalive_ping_timeout_handle !=
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
+      t->event_engine->Cancel(std::exchange(
+          t->keepalive_ping_timeout_handle,
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
+    }
     if (t->settings_ack_watchdog !=
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
       t->event_engine->Cancel(std::exchange(
@@ -1772,6 +1784,27 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
   }
 }
 
+void grpc_chttp2_keepalive_timeout(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+  t->combiner->Run(
+      grpc_core::NewClosure([t](grpc_error_handle) {
+        gpr_log(GPR_INFO, "%s: Keepalive timeout. Closing transport.",
+                std::string(t->peer_string.as_string_view()).c_str());
+        send_goaway(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("keepalive_timeout"),
+                               grpc_core::StatusIntProperty::kHttp2Error,
+                               GRPC_HTTP2_ENHANCE_YOUR_CALM),
+            /*immediate_disconnect_hint=*/true);
+        close_transport_locked(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("keepalive timeout"),
+                               grpc_core::StatusIntProperty::kRpcStatus,
+                               GRPC_STATUS_UNAVAILABLE));
+      }),
+      absl::OkStatus());
+}
+
 void grpc_chttp2_ping_timeout(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
   t->combiner->Run(
@@ -1835,6 +1868,8 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     grpc_chttp2_goaway_append((1u << 31) - 1, 0, grpc_empty_slice(), &t->qbuf);
     t->keepalive_timeout =
         std::min(t->keepalive_timeout, grpc_core::Duration::Seconds(20));
+    t->ping_timeout =
+        std::min(t->ping_timeout, grpc_core::Duration::Seconds(20));
     send_ping_locked(
         t, nullptr, GRPC_CLOSURE_INIT(&on_ping_ack_, OnPingAck, this, nullptr));
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
@@ -2754,6 +2789,20 @@ static void read_action_parse_loop_locked(
 static void read_action_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
+  // got an incoming read, cancel any pending keepalive timers
+  t->keepalive_incoming_data_wanted = false;
+  if (t->keepalive_ping_timeout_handle !=
+      grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+      gpr_log(GPR_INFO,
+              "%s[%p]: Clear keepalive timer because data was received",
+              t->is_client ? "CLIENT" : "SERVER", t.get());
+    }
+    t->event_engine->Cancel(std::exchange(
+        t->keepalive_ping_timeout_handle,
+        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
+  }
   grpc_error_handle err = error;
   if (!err.ok()) {
     err = grpc_error_set_int(

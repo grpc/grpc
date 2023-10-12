@@ -74,6 +74,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
+inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
@@ -95,6 +97,7 @@ inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
 inline bool IsPingOnRstStreamEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
+inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
@@ -103,6 +106,8 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsServerPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
@@ -136,6 +141,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
+inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
@@ -157,6 +164,7 @@ inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
 inline bool IsPingOnRstStreamEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
+inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
@@ -165,6 +173,8 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsServerPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
@@ -198,6 +208,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
+inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
@@ -219,6 +231,7 @@ inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
 inline bool IsPingOnRstStreamEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
+inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
@@ -227,6 +240,8 @@ inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsServerPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SETTINGS_TIMEOUT
 inline bool IsSettingsTimeoutEnabled() { return true; }
@@ -250,6 +265,7 @@ enum ExperimentIds {
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdChttp2BatchRequests,
   kExperimentIdChttp2OffloadOnRstStream,
+  kExperimentIdClientIdleness,
   kExperimentIdClientPrivacy,
   kExperimentIdCombinerOffloadToEventEngine,
   kExperimentIdEventEngineClient,
@@ -266,12 +282,14 @@ enum ExperimentIds {
   kExperimentIdPickFirstHappyEyeballs,
   kExperimentIdPingOnRstStream,
   kExperimentIdPromiseBasedClientCall,
+  kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBasedServerCall,
   kExperimentIdRedMaxConcurrentStreams,
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdRoundRobinDelegateToPickFirst,
   kExperimentIdRstpit,
   kExperimentIdScheduleCancellationOverWrite,
+  kExperimentIdSeparatePingFromKeepalive,
   kExperimentIdServerPrivacy,
   kExperimentIdSettingsTimeout,
   kExperimentIdTarpit,
@@ -304,6 +322,10 @@ inline bool IsChttp2BatchRequestsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
 inline bool IsChttp2OffloadOnRstStreamEnabled() {
   return IsExperimentEnabled(kExperimentIdChttp2OffloadOnRstStream);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
+inline bool IsClientIdlenessEnabled() {
+  return IsExperimentEnabled(kExperimentIdClientIdleness);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
 inline bool IsClientPrivacyEnabled() {
@@ -369,6 +391,10 @@ inline bool IsPingOnRstStreamEnabled() {
 inline bool IsPromiseBasedClientCallEnabled() {
   return IsExperimentEnabled(kExperimentIdPromiseBasedClientCall);
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
+inline bool IsPromiseBasedInprocTransportEnabled() {
+  return IsExperimentEnabled(kExperimentIdPromiseBasedInprocTransport);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 inline bool IsPromiseBasedServerCallEnabled() {
   return IsExperimentEnabled(kExperimentIdPromiseBasedServerCall);
@@ -392,6 +418,10 @@ inline bool IsRstpitEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
   return IsExperimentEnabled(kExperimentIdScheduleCancellationOverWrite);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
+inline bool IsSeparatePingFromKeepaliveEnabled() {
+  return IsExperimentEnabled(kExperimentIdSeparatePingFromKeepalive);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_PRIVACY
 inline bool IsServerPrivacyEnabled() {
