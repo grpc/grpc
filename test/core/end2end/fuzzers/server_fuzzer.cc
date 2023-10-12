@@ -70,7 +70,7 @@ class ServerFuzzer final : public BasicFuzzer {
                     msg.channel_args(), FuzzingEnvironment{resource_quota()})
                     .ToC()
                     .get());
-    grpc_transport* transport =
+    Transport* transport =
         grpc_create_chttp2_transport(channel_args, mock_endpoint_, false);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "SetupTransport", Server::FromC(server_)->SetupTransport(

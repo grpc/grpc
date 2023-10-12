@@ -227,22 +227,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "bm_call_create",
-    srcs = ["bm_call_create.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        ":helpers",
-        "//src/core:channel_args",
-    ],
-)
-
-grpc_cc_test(
     name = "bm_cq",
     srcs = ["bm_cq.cc"],
     args = grpc_benchmark_args(),

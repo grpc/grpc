@@ -64,7 +64,7 @@ class ClientFuzzer final : public BasicFuzzer {
             .channel_args_preconditioning()
             .PreconditionChannelArgs(nullptr)
             .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
-    grpc_transport* transport =
+    Transport* transport =
         grpc_create_chttp2_transport(args, mock_endpoint_, true);
     channel_ = Channel::Create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
                                transport)

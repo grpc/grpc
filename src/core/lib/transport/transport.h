@@ -571,43 +571,6 @@ typedef struct grpc_transport_op {
   grpc_handler_private_op_data handler_private;
 } grpc_transport_op;
 
-// Returns the amount of memory required to store a grpc_stream for this
-// transport
-size_t grpc_transport_stream_size(grpc_core::Transport* transport);
-
-// Initialize transport data for a stream.
-
-// Returns 0 on success, any other (transport-defined) value for failure.
-// May assume that stream contains all-zeros.
-
-// Arguments:
-//   transport   - the transport on which to create this stream
-//   stream      - a pointer to uninitialized memory to initialize
-//   server_data - either NULL for a client initiated stream, or a pointer
-//                 supplied from the accept_stream callback function
-int grpc_transport_init_stream(grpc_core::Transport* transport,
-                               grpc_stream* stream,
-                               grpc_stream_refcount* refcount,
-                               const void* server_data,
-                               grpc_core::Arena* arena);
-
-void grpc_transport_set_pops(grpc_core::Transport* transport,
-                             grpc_stream* stream, grpc_polling_entity* pollent);
-
-// Destroy transport data for a stream.
-
-// Requires: a recv_batch with final_state == GRPC_STREAM_CLOSED has been
-// received by the up-layer. Must not be called in the same call stack as
-// recv_frame.
-
-// Arguments:
-//   transport - the transport on which to create this stream
-//   stream    - the grpc_stream to destroy (memory is still owned by the
-//               caller, but any child memory must be cleaned up)
-void grpc_transport_destroy_stream(grpc_core::Transport* transport,
-                                   grpc_stream* stream,
-                                   grpc_closure* then_schedule_closure);
-
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombiner* call_combiner);
@@ -629,8 +592,17 @@ class FilterStackTransport {
  public:
   // Memory required for a single stream element - this is allocated by upper
   // layers and initialized by the transport
-  // TODO(ctiller): not used for promises, remove
   virtual size_t SizeOfStream() const = 0;
+
+  // Initialize transport data for a stream.
+  // Returns 0 on success, any other (transport-defined) value for failure.
+  // May assume that stream contains all-zeros.
+  // Arguments:
+  //   stream      - a pointer to uninitialized memory to initialize
+  //   server_data - either NULL for a client initiated stream, or a pointer
+  //                 supplied from the accept_stream callback function
+  virtual void InitStream(grpc_stream* stream, grpc_stream_refcount* refcount,
+                          const void* server_data, Arena* arena) = 0;
 
   // HACK: inproc does not handle stream op batch callbacks correctly (receive
   // ops are required to complete prior to on_complete triggering).
@@ -640,11 +612,16 @@ class FilterStackTransport {
   virtual bool HackyDisableStreamOpBatchCoalescingInConnectedChannel()
       const = 0;
 
-  // implementation of grpc_transport_perform_stream_op
   virtual void PerformStreamOp(grpc_stream* stream,
                                grpc_transport_stream_op_batch* op) = 0;
 
-  // implementation of grpc_transport_destroy_stream
+  // Destroy transport data for a stream.
+  // Requires: a recv_batch with final_state == GRPC_STREAM_CLOSED has been
+  // received by the up-layer. Must not be called in the same call stack as
+  // recv_frame.
+  // Arguments:
+  //   stream    - the grpc_stream to destroy (memory is still owned by the
+  //               caller, but any child memory must be cleaned up)
   virtual void DestroyStream(grpc_stream* stream,
                              grpc_closure* then_schedule_closure) = 0;
 
@@ -680,11 +657,6 @@ class Transport : public Orphanable {
 
   // name of this transport implementation
   virtual absl::string_view GetTransportName() const = 0;
-
-  // implementation of grpc_transport_init_stream
-  // TODO(ctiller): Remove post-promises.
-  virtual void InitStream(grpc_stream* stream, grpc_stream_refcount* refcount,
-                          const void* server_data, Arena* arena) = 0;
 
   // implementation of grpc_transport_set_pollset
   virtual void SetPollset(grpc_stream* stream, grpc_pollset* pollset) = 0;

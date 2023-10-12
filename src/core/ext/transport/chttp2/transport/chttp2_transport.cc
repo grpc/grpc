@@ -3187,6 +3187,19 @@ const char* grpc_chttp2_initiate_write_reason_string(
 
 grpc_endpoint* grpc_chttp2_transport::GetEndpoint() { return ep; }
 
+size_t grpc_chttp2_transport::SizeOfStream() const {
+  return sizeof(grpc_chttp2_stream);
+}
+
+bool grpc_chttp2_transport::
+    HackyDisableStreamOpBatchCoalescingInConnectedChannel() const {
+  return false;
+}
+
+absl::string_view grpc_chttp2_transport::GetTransportName() const {
+  return "chttp2";
+}
+
 grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
 grpc_chttp2_transport_get_socket_node(grpc_core::Transport* transport) {
   grpc_chttp2_transport* t =

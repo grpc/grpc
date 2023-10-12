@@ -36,15 +36,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
-// Cronet transport object
-typedef struct cronet_transport {
-  grpc_core::Transport base;  // must be first element in this structure
-  void* engine;
-  char* host;
-} cronet_transport;
-
-extern grpc_transport_vtable grpc_cronet_vtable;
-
 GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
     void* engine, const char* target, const grpc_channel_args* args,
     void* reserved) {

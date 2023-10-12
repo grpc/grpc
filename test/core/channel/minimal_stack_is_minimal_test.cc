@@ -52,16 +52,39 @@
 #include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/util/test_config.h"
 
+namespace {
+class FakeTransport final : public grpc_core::Transport {
+ public:
+  explicit FakeTransport(absl::string_view transport_name)
+      : transport_name_(transport_name) {}
+
+  grpc_core::FilterStackTransport* filter_stack_transport() override {
+    return nullptr;
+  }
+  grpc_core::PromiseTransport* promise_transport() override { return nullptr; }
+
+  absl::string_view GetTransportName() const override {
+    return transport_name_;
+  }
+  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
+  void SetPollsetSet(grpc_stream* stream,
+                     grpc_pollset_set* pollset_set) override {}
+  void PerformOp(grpc_transport_op* op) override {}
+  grpc_endpoint* GetEndpoint() override { return nullptr; }
+  void Orphan() override {}
+
+ private:
+  absl::string_view transport_name_;
+};
+}  // namespace
+
 std::vector<std::string> MakeStack(const char* transport_name,
                                    const grpc_core::ChannelArgs& channel_args,
                                    grpc_channel_stack_type channel_stack_type) {
   // create phony channel stack
   grpc_core::ChannelStackBuilderImpl builder("test", channel_stack_type,
                                              channel_args);
-  grpc_transport_vtable fake_transport_vtable;
-  memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
-  fake_transport_vtable.name = transport_name;
-  grpc_core::Transport fake_transport = {&fake_transport_vtable};
+  FakeTransport fake_transport(transport_name);
   builder.SetTarget("foo.test.google.fr");
   if (transport_name != nullptr) {
     builder.SetTransport(&fake_transport);

@@ -74,6 +74,24 @@ TEST(XdsChannelStackModifierTest, ChannelArgsCompare) {
 constexpr char kTestFilter1[] = "test_filter_1";
 constexpr char kTestFilter2[] = "test_filter_2";
 
+namespace {
+class FakeTransport final : public grpc_core::Transport {
+ public:
+  grpc_core::FilterStackTransport* filter_stack_transport() override {
+    return nullptr;
+  }
+  grpc_core::PromiseTransport* promise_transport() override { return nullptr; }
+
+  absl::string_view GetTransportName() const override { return "fake"; }
+  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
+  void SetPollsetSet(grpc_stream* stream,
+                     grpc_pollset_set* pollset_set) override {}
+  void PerformOp(grpc_transport_op* op) override {}
+  grpc_endpoint* GetEndpoint() override { return nullptr; }
+  void Orphan() override {}
+};
+}  // namespace
+
 // Test filters insertion
 TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   CoreConfiguration::Reset();
@@ -93,10 +111,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   ChannelStackBuilderImpl builder("test", GRPC_SERVER_CHANNEL,
                                   ChannelArgs::FromC(args));
   grpc_channel_args_destroy(args);
-  grpc_transport_vtable fake_transport_vtable;
-  memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
-  fake_transport_vtable.name = "fake";
-  Transport fake_transport = {&fake_transport_vtable};
+  FakeTransport fake_transport;
   builder.SetTransport(&fake_transport);
   // Construct channel stack and verify that the test filters were successfully
   // added
