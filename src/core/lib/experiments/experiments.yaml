@@ -65,11 +65,6 @@
   expiry: 2024/03/03
   owner: ctiller@google.com
   test_tags: ["cpp_end2end_test", "flow_control_test"]
-- name: client_idleness
-  description: If enabled, client channel idleness is enabled by default.
-  expiry: 2023/12/15
-  owner: roth@google.com
-  test_tags: []
 - name: client_privacy
   description:
     If set, client privacy
