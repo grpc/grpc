@@ -20,8 +20,6 @@
 
 #include "src/cpp/ext/otel/otel_plugin.h"
 
-#include <limits.h>
-
 #include <type_traits>
 #include <utility>
 
@@ -36,7 +34,6 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/cpp/ext/otel/otel_client_filter.h"
