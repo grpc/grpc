@@ -97,6 +97,7 @@ inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
 inline bool IsPingOnRstStreamEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
+inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
@@ -163,6 +164,7 @@ inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
 inline bool IsPingOnRstStreamEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
+inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
@@ -229,6 +231,7 @@ inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PING_ON_RST_STREAM
 inline bool IsPingOnRstStreamEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
+inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
@@ -279,6 +282,7 @@ enum ExperimentIds {
   kExperimentIdPickFirstHappyEyeballs,
   kExperimentIdPingOnRstStream,
   kExperimentIdPromiseBasedClientCall,
+  kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBasedServerCall,
   kExperimentIdRedMaxConcurrentStreams,
   kExperimentIdRegisteredMethodLookupInTransport,
@@ -386,6 +390,10 @@ inline bool IsPingOnRstStreamEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 inline bool IsPromiseBasedClientCallEnabled() {
   return IsExperimentEnabled(kExperimentIdPromiseBasedClientCall);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
+inline bool IsPromiseBasedInprocTransportEnabled() {
+  return IsExperimentEnabled(kExperimentIdPromiseBasedInprocTransport);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 inline bool IsPromiseBasedServerCallEnabled() {
