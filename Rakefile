@@ -202,9 +202,11 @@ task 'gem:native', [:plat] do |t, args|
   File.truncate('grpc_c.64-ucrt.ruby', 0)
 
   `mkdir -p src/ruby/nativedebug/symbols`
-  # TODO(apolcyn): make debug symbol generation work on apple platforms
+  # TODO(apolcyn): make debug symbols work on apple platforms.
   # Currently we hit "objcopy: grpc_c.bundle: file format not recognized"
-  unix_platforms_without_debug_symbols = ['x86_64-darwin', 'arm64-darwin']
+  # TODO(apolcyn): make debug symbols work on aarch64 linux.
+  # Currently we hit "objcopy: Unable to recognise the format of the input file `grpc_c.so'"
+  unix_platforms_without_debug_symbols = ['x86_64-darwin', 'arm64-darwin', 'aarch64-linux']
 
   unix_platforms.each do |plat|
     if unix_platforms_without_debug_symbols.include?(plat)
