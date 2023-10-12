@@ -22,6 +22,7 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -50,11 +51,13 @@
 #include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -374,9 +377,13 @@ class WriteContext {
     return result_;
   }
 
+  size_t target_write_size() const { return target_write_size_; }
+
  private:
   grpc_chttp2_transport* const t_;
-  size_t target_write_size_ = 1024 * 1024;
+  size_t target_write_size_ = grpc_core::IsWriteSizePolicyEnabled()
+                                  ? t_->write_size_policy.WriteTargetSize()
+                                  : 1024 * 1024;
 
   // stats histogram counters: we increment these throughout this function,
   // and at the end publish to the central stats histograms
@@ -406,11 +413,15 @@ class DataSendContext {
   }
 
   uint32_t max_outgoing() const {
-    return static_cast<uint32_t>(std::min(
-        t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-        static_cast<uint32_t>(
-            std::min(static_cast<int64_t>(stream_remote_window()),
-                     t_->flow_control.remote_window()))));
+    return grpc_core::Clamp<uint32_t>(
+        std::min<int64_t>(
+            {t_->settings[GRPC_PEER_SETTINGS]
+                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+             stream_remote_window(), t_->flow_control.remote_window(),
+             grpc_core::IsWriteSizeCapEnabled()
+                 ? static_cast<int64_t>(write_context_->target_write_size())
+                 : std::numeric_limits<uint32_t>::max()}),
+        0, std::numeric_limits<uint32_t>::max());
   }
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }

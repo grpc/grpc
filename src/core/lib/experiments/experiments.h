@@ -118,6 +118,10 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
+inline bool IsWriteSizeCapEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
+inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 
@@ -183,6 +187,10 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
+inline bool IsWriteSizeCapEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
+inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 
@@ -248,6 +256,10 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
+inline bool IsWriteSizeCapEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
+inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #endif
@@ -292,6 +304,8 @@ enum ExperimentIds {
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
+  kExperimentIdWriteSizeCap,
+  kExperimentIdWriteSizePolicy,
   kExperimentIdWrrDelegateToPickFirst,
   kNumExperiments
 };
@@ -447,6 +461,14 @@ inline bool IsWorkSerializerClearsTimeCacheEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() {
   return IsExperimentEnabled(kExperimentIdWorkSerializerDispatch);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
+inline bool IsWriteSizeCapEnabled() {
+  return IsExperimentEnabled(kExperimentIdWriteSizeCap);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
+inline bool IsWriteSizePolicyEnabled() {
+  return IsExperimentEnabled(kExperimentIdWriteSizePolicy);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() {
