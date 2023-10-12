@@ -22,7 +22,6 @@
 #include <stdlib.h>
 
 #include <algorithm>
-#include <string>
 #include <utility>
 
 #include "gmock/gmock.h"

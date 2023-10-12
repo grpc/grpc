@@ -15,7 +15,6 @@
 //
 
 #include <memory>
-#include <string>
 
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"

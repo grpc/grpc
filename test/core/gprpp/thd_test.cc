@@ -21,7 +21,6 @@
 #include "src/core/lib/gprpp/thd.h"
 
 #include <atomic>
-#include <string>
 
 #include "gtest/gtest.h"
 

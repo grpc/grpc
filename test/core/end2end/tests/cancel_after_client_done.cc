@@ -17,7 +17,6 @@
 //
 
 #include <memory>
-#include <string>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

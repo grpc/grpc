@@ -17,7 +17,6 @@
 //
 
 #include <memory>
-#include <string>
 
 #include "absl/strings/str_cat.h"
 #include "gmock/gmock.h"

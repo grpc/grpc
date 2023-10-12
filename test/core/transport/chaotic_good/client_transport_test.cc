@@ -20,7 +20,6 @@
 
 #include <algorithm>  // IWYU pragma: keep
 #include <memory>
-#include <string>
 #include <tuple>
 #include <vector>  // IWYU pragma: keep
 
