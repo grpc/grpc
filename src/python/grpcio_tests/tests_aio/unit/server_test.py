@@ -570,9 +570,6 @@ class TestServer(AioTestBase):
             server.add_secure_port(bind_address, server_credentials)
 
     async def test_maximum_concurrent_rpcs(self):
-        async def coro_wrapper(awaitable):
-            return await awaitable
-
         # Build the server with concurrent rpc argument
         server = aio.server(maximum_concurrent_rpcs=_MAXIMUM_CONCURRENT_RPCS)
         port = server.add_insecure_port("localhost:0")
@@ -582,18 +579,15 @@ class TestServer(AioTestBase):
         # Build the channel
         channel = aio.insecure_channel(bind_address)
         # Deplete the concurrent quota with 3 times of max RPCs
-        rpc_tasks = []
+        rpcs = []
         for _ in range(3 * _MAXIMUM_CONCURRENT_RPCS):
-            task = asyncio.create_task(
-                coro_wrapper(channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
-            )
-            rpc_tasks.append(task)
-        await_tasks = asyncio.wait(
-            rpc_tasks, return_when=asyncio.FIRST_EXCEPTION
+            rpcs.append(channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
+        task = self.loop.create_task(
+            asyncio.wait(rpcs, return_when=asyncio.FIRST_EXCEPTION)
         )
         # Each batch took test_constants.SHORT_TIMEOUT /2
         start_time = time.time()
-        await await_tasks
+        await task
         elapsed_time = time.time() - start_time
         self.assertGreater(elapsed_time, test_constants.SHORT_TIMEOUT * 3 / 2)
         # Clean-up

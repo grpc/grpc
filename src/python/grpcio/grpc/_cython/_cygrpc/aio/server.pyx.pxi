@@ -55,7 +55,6 @@ cdef class RPCState:
         self.metadata_sent = False
         self.status_sent = False
         self.status_code = StatusCode.ok
-        self.py_status_code = None
         self.status_details = ''
         self.trailing_metadata = _IMMUTABLE_EMPTY_METADATA
         self.compression_algorithm = None
@@ -185,7 +184,6 @@ cdef class _ServicerContext:
                 self._rpc_state.status_details = details
 
             actual_code = get_status_code(code)
-            self._rpc_state.py_status_code = code
             self._rpc_state.status_code = actual_code
 
             self._rpc_state.status_sent = True
@@ -215,10 +213,9 @@ cdef class _ServicerContext:
 
     def set_code(self, object code):
         self._rpc_state.status_code = get_status_code(code)
-        self._rpc_state.py_status_code = code
 
     def code(self):
-        return self._rpc_state.py_status_code
+        return self._rpc_state.status_code
 
     def set_details(self, str details):
         self._rpc_state.status_details = details

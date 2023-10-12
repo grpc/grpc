@@ -924,7 +924,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx channel_args_test)
   add_dependencies(buildtests_cxx channel_arguments_test)
   add_dependencies(buildtests_cxx channel_creds_registry_test)
-  add_dependencies(buildtests_cxx channel_filter_test)
   add_dependencies(buildtests_cxx channel_stack_builder_test)
   add_dependencies(buildtests_cxx channel_stack_test)
   add_dependencies(buildtests_cxx channel_trace_test)
@@ -1019,7 +1018,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx file_watcher_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx filter_causes_close_test)
   add_dependencies(buildtests_cxx filter_context_test)
-  add_dependencies(buildtests_cxx filter_end2end_test)
   add_dependencies(buildtests_cxx filter_init_fails_test)
   add_dependencies(buildtests_cxx filter_test_test)
   add_dependencies(buildtests_cxx filtered_metadata_test)
@@ -3859,7 +3857,6 @@ add_library(grpc++
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
@@ -4561,7 +4558,6 @@ add_library(grpc++_unsecure
   src/cpp/client/insecure_credentials.cc
   src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/insecure_create_auth_context.cc
   src/cpp/common/resource_quota_cc.cc
@@ -7291,7 +7287,6 @@ add_executable(binder_transport_test
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
@@ -8456,40 +8451,6 @@ target_include_directories(channel_creds_registry_test
 target_link_libraries(channel_creds_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(channel_filter_test
-  test/cpp/common/channel_filter_test.cc
-)
-target_compile_features(channel_filter_test PUBLIC cxx_std_14)
-target_include_directories(channel_filter_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(channel_filter_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc++
   grpc_test_util
 )
 
@@ -10667,7 +10628,6 @@ add_executable(endpoint_binder_pool_test
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
@@ -11379,7 +11339,6 @@ add_executable(fake_binder_test
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
@@ -11672,59 +11631,6 @@ target_link_libraries(filter_context_test
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(filter_end2end_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
-  test/cpp/end2end/filter_end2end_test.cc
-)
-target_compile_features(filter_end2end_test PUBLIC cxx_std_14)
-target_include_directories(filter_end2end_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(filter_end2end_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc++_test_util
 )
 
 
@@ -25319,7 +25225,6 @@ add_executable(transport_stream_receiver_test
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
@@ -26009,7 +25914,6 @@ add_executable(wire_reader_test
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
@@ -26107,7 +26011,6 @@ add_executable(wire_writer_test
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
