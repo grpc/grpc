@@ -16,6 +16,7 @@
 
 #include <string.h>
 
+#include <memory>
 #include <new>
 
 #include "absl/status/status.h"

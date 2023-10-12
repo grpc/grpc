@@ -79,7 +79,10 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
     ):
         # API
         self.compute = _ComputeV1(
-            gcp_api_manager, project, version=compute_api_version
+            gcp_api_manager,
+            project,
+            version=compute_api_version,
+            gfe_debug_header=xds_flags.GFE_DEBUG_HEADER.value,
         )
 
         # Settings

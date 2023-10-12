@@ -14,8 +14,7 @@
 
 #include "src/core/lib/promise/loop.h"
 
-#include <stdint.h>
-
+#include <memory>
 #include <utility>
 
 #include "gtest/gtest.h"

@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -87,9 +86,9 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
@@ -812,8 +811,8 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
       // Rotating the old value prevents duplicate hash rules from cancelling
       // each other out and preserves all of the entropy
       const uint64_t old_value =
-          hash.has_value() ? ((hash.value() << 1) | (hash.value() >> 63)) : 0;
-      hash = old_value ^ new_hash.value();
+          hash.has_value() ? ((*hash << 1) | (*hash >> 63)) : 0;
+      hash = old_value ^ *new_hash;
     }
     // If the policy is a terminal policy and a hash has been generated,
     // ignore the rest of the hash policies.
@@ -833,13 +832,8 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
   }
   args.service_config_call_data->SetCallAttribute(
       args.arena->New<XdsClusterAttribute>(cluster->cluster_name()));
-  std::string hash_string = absl::StrCat(hash.value());
-  char* hash_value =
-      static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
-  memcpy(hash_value, hash_string.c_str(), hash_string.size());
-  hash_value[hash_string.size()] = '\0';
   args.service_config_call_data->SetCallAttribute(
-      args.arena->New<RequestHashAttribute>(hash_value));
+      args.arena->New<RequestHashAttribute>(*hash));
   args.service_config_call_data->SetCallAttribute(
       args.arena->ManagedNew<XdsRouteStateAttributeImpl>(route_config_data_,
                                                          entry));

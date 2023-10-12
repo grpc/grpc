@@ -14,9 +14,6 @@
 
 #include "src/core/lib/promise/for_each.h"
 
-#include <stdint.h>
-
-#include <initializer_list>
 #include <memory>
 
 #include "gmock/gmock.h"

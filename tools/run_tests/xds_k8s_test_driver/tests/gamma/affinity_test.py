@@ -34,6 +34,11 @@ RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 
 _REPLICA_COUNT = 3
 
+# TODO(rbellevi): set this property on the prestop hook test class
+# We never actually hit this timeout under normal circumstances, so this large
+# value is acceptable.
+# termination_grace_period_seconds: int = 600
+
 
 class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
     def getClientRpcStats(
@@ -167,4 +172,4 @@ class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
 
 
 if __name__ == "__main__":
-    absltest.main(failfast=True)
+    absltest.main()

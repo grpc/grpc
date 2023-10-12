@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.59.0-dev'
+  version = '1.60.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -200,6 +200,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
+    ss.dependency 'abseil/random/bit_gen_ref', abseil_version
+    ss.dependency 'abseil/random/distributions', abseil_version
     ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
@@ -413,9 +415,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
                       'src/core/ext/transport/chttp2/transport/legacy_frame.h',
+                      'src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc',
+                      'src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h',
                       'src/core/ext/transport/chttp2/transport/parsing.cc',
                       'src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc',
                       'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
+                      'src/core/ext/transport/chttp2/transport/ping_callbacks.cc',
+                      'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.cc',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                       'src/core/ext/transport/chttp2/transport/stream_lists.cc',
@@ -1576,12 +1582,13 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/trace.cc',
                       'src/core/lib/promise/trace.h',
                       'src/core/lib/promise/try_seq.h',
+                      'src/core/lib/resolver/endpoint_addresses.cc',
+                      'src/core/lib/resolver/endpoint_addresses.h',
                       'src/core/lib/resolver/resolver.cc',
                       'src/core/lib/resolver/resolver.h',
                       'src/core/lib/resolver/resolver_factory.h',
                       'src/core/lib/resolver/resolver_registry.cc',
                       'src/core/lib/resolver/resolver_registry.h',
-                      'src/core/lib/resolver/server_address.cc',
                       'src/core/lib/resolver/server_address.h',
                       'src/core/lib/resource_quota/api.cc',
                       'src/core/lib/resource_quota/api.h',
@@ -2202,7 +2209,9 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
                               'src/core/ext/transport/chttp2/transport/legacy_frame.h',
+                              'src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h',
                               'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
+                              'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
                               'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                               'src/core/ext/transport/chttp2/transport/varint.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
@@ -2797,6 +2806,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/sleep.h',
                               'src/core/lib/promise/trace.h',
                               'src/core/lib/promise/try_seq.h',
+                              'src/core/lib/resolver/endpoint_addresses.h',
                               'src/core/lib/resolver/resolver.h',
                               'src/core/lib/resolver/resolver_factory.h',
                               'src/core/lib/resolver/resolver_registry.h',

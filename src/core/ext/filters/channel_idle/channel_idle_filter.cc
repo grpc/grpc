@@ -19,12 +19,11 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
-#include <stdint.h>
-
 #include <functional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/types/optional.h"
 
@@ -36,7 +35,6 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -55,6 +53,7 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
@@ -127,8 +126,7 @@ struct MaxAgeFilter::Config {
         1.0 - kMaxConnectionAgeJitter, 1.0 + kMaxConnectionAgeJitter);
     // GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
     // will not be cast to int implicitly before the comparison.
-    return Config{args_max_age * multiplier,
-                  args_max_idle * (IsJitterMaxIdleEnabled() ? multiplier : 1.0),
+    return Config{args_max_age * multiplier, args_max_idle * multiplier,
                   args_max_age_grace};
   }
 };

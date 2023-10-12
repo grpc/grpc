@@ -22,8 +22,6 @@
 
 #include <utility>
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/grpc.h>
 
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"

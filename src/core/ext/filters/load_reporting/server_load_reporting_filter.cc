@@ -25,12 +25,11 @@
 #include <stdlib.h>
 
 #include <functional>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"

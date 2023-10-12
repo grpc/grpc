@@ -42,30 +42,43 @@ TEST(PingRatePolicy, NoOpServer) {
 
 TEST(PingRatePolicy, ServerCanSendAtStart) {
   Chttp2PingRatePolicy policy{ChannelArgs(), false};
-  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(100)), SendGranted());
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(100), 0),
+            SendGranted());
 }
 
 TEST(PingRatePolicy, ClientBlockedUntilDataSent) {
   Chttp2PingRatePolicy policy{ChannelArgs(), true};
-  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10)),
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
             TooManyRecentPings());
   policy.ResetPingsBeforeDataRequired();
-  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10)), SendGranted());
-  EXPECT_EQ(policy.RequestSendPing(Duration::Zero()), SendGranted());
-  EXPECT_EQ(policy.RequestSendPing(Duration::Zero()), TooManyRecentPings());
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
+            SendGranted());
+  policy.SentPing();
+  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), SendGranted());
+  policy.SentPing();
+  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), TooManyRecentPings());
 }
 
 TEST(PingRatePolicy, RateThrottlingWorks) {
   Chttp2PingRatePolicy policy{ChannelArgs(), false};
   // Observe that we can fail if we send in a tight loop
-  while (policy.RequestSendPing(Duration::Milliseconds(10)) == SendGranted()) {
+  while (policy.RequestSendPing(Duration::Milliseconds(10), 0) ==
+         SendGranted()) {
+    policy.SentPing();
   }
   // Observe that we can succeed if we wait a bit between pings
   for (int i = 0; i < 100; i++) {
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
-    EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10)),
+    EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
               SendGranted());
+    policy.SentPing();
   }
+}
+
+TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPings) {
+  Chttp2PingRatePolicy policy{ChannelArgs(), false};
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 100000000),
+            TooManyRecentPings());
 }
 
 }  // namespace

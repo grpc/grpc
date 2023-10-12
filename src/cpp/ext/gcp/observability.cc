@@ -41,6 +41,7 @@
 #include "opencensus/trace/trace_config.h"
 
 #include <grpc/grpc.h>
+#include <grpcpp/channel.h>
 #include <grpcpp/ext/gcp_observability.h>
 #include <grpcpp/opencensus.h>
 #include <grpcpp/security/credentials.h>

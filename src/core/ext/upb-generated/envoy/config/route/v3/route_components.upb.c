@@ -699,25 +699,48 @@ const upb_MiniTable envoy_config_route_v3_RouteAction_HashPolicy_Header_msg_init
   })
 };
 
-static const upb_MiniTableSub envoy_config_route_v3_RouteAction_HashPolicy_Cookie_submsgs[1] = {
-  {.submsg = &google_protobuf_Duration_msg_init},
+static const upb_MiniTableField envoy_config_route_v3_RouteAction_HashPolicy_CookieAttribute__fields[2] = {
+  {1, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-static const upb_MiniTableField envoy_config_route_v3_RouteAction_HashPolicy_Cookie__fields[3] = {
-  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+const upb_MiniTable envoy_config_route_v3_RouteAction_HashPolicy_CookieAttribute_msg_init = {
+  NULL,
+  &envoy_config_route_v3_RouteAction_HashPolicy_CookieAttribute__fields[0],
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000000003f00000a, &upb_pss_1bt},
+    {0x001000003f000012, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+static const upb_MiniTableSub envoy_config_route_v3_RouteAction_HashPolicy_Cookie_submsgs[2] = {
+  {.submsg = &google_protobuf_Duration_msg_init},
+  {.submsg = &envoy_config_route_v3_RouteAction_HashPolicy_CookieAttribute_msg_init},
+};
+
+static const upb_MiniTableField envoy_config_route_v3_RouteAction_HashPolicy_Cookie__fields[4] = {
+  {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(4, 24), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(16, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(8, 48), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_route_v3_RouteAction_HashPolicy_Cookie_msg_init = {
   &envoy_config_route_v3_RouteAction_HashPolicy_Cookie_submsgs[0],
   &envoy_config_route_v3_RouteAction_HashPolicy_Cookie__fields[0],
-  UPB_SIZE(24, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
     {0x0018000001000012, &upb_psm_1bt_maxmaxb},
     {0x002000003f00001a, &upb_pss_1bt},
+    {0x003000003f010022, &upb_prm_1bt_max64b},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
@@ -1571,7 +1594,7 @@ const upb_MiniTable envoy_config_route_v3_FilterConfig_msg_init = {
   })
 };
 
-static const upb_MiniTable *messages_layout[57] = {
+static const upb_MiniTable *messages_layout[58] = {
   &envoy_config_route_v3_VirtualHost_msg_init,
   &envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_msg_init,
   &envoy_config_route_v3_FilterAction_msg_init,
@@ -1591,6 +1614,7 @@ static const upb_MiniTable *messages_layout[57] = {
   &envoy_config_route_v3_RouteAction_RequestMirrorPolicy_msg_init,
   &envoy_config_route_v3_RouteAction_HashPolicy_msg_init,
   &envoy_config_route_v3_RouteAction_HashPolicy_Header_msg_init,
+  &envoy_config_route_v3_RouteAction_HashPolicy_CookieAttribute_msg_init,
   &envoy_config_route_v3_RouteAction_HashPolicy_Cookie_msg_init,
   &envoy_config_route_v3_RouteAction_HashPolicy_ConnectionProperties_msg_init,
   &envoy_config_route_v3_RouteAction_HashPolicy_QueryParameter_msg_init,
@@ -1635,7 +1659,7 @@ const upb_MiniTableFile envoy_config_route_v3_route_components_proto_upb_file_la
   messages_layout,
   NULL,
   NULL,
-  57,
+  58,
   0,
   0,
 };

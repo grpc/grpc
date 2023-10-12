@@ -18,8 +18,6 @@
 #include <algorithm>
 #include <atomic>
 #include <functional>
-#include <initializer_list>
-#include <map>
 #include <memory>
 #include <regex>
 #include <string>
@@ -27,6 +25,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"

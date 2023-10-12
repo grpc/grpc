@@ -19,12 +19,16 @@ from typing import Any, Dict, List, Optional, Set
 
 from googleapiclient import discovery
 import googleapiclient.errors
+import httplib2
 
 import framework.errors
 from framework.helpers import retryers
 from framework.infrastructure import gcp
 
 logger = logging.getLogger(__name__)
+
+DEBUG_HEADER_IN_RESPONSE = "x-encrypted-debug-headers"
+DEBUG_HEADER_KEY = "X-Return-Encrypted-Headers"
 
 
 class ComputeV1(
@@ -34,6 +38,7 @@ class ComputeV1(
     _WAIT_FOR_BACKEND_SEC = 60 * 10
     _WAIT_FOR_BACKEND_SLEEP_SEC = 4
     _WAIT_FOR_OPERATION_SEC = 60 * 10
+    gfe_debug_header: Optional[str]
 
     @dataclasses.dataclass(frozen=True)
     class GcpResource:
@@ -48,9 +53,11 @@ class ComputeV1(
         self,
         api_manager: gcp.api.GcpApiManager,
         project: str,
+        gfe_debug_header: Optional[str] = None,
         version: str = "v1",
     ):
         super().__init__(api_manager.compute(version), project)
+        self.gfe_debug_header = gfe_debug_header
 
     class HealthCheckProtocol(enum.Enum):
         TCP = enum.auto()
@@ -576,9 +583,21 @@ class ComputeV1(
     def _operation_status_done(operation):
         return "status" in operation and operation["status"] == "DONE"
 
+    @staticmethod
+    def _log_debug_header(resp: httplib2.Response):
+        if DEBUG_HEADER_IN_RESPONSE in resp:
+            logger.info(
+                "Received GCP debug headers: %s",
+                resp[DEBUG_HEADER_IN_RESPONSE],
+            )
+
     def _execute(  # pylint: disable=arguments-differ
         self, request, *, timeout_sec=_WAIT_FOR_OPERATION_SEC
     ):
+        if self.gfe_debug_header:
+            logger.info("Adding debug headers for method: %s", request.methodId)
+            request.headers[DEBUG_HEADER_KEY] = self.gfe_debug_header
+            request.add_response_callback(self._log_debug_header)
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
         logger.debug("Operation %s", operation)
         return self._wait(operation["name"], timeout_sec)
