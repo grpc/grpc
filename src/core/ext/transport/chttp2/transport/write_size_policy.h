@@ -26,13 +26,21 @@ namespace grpc_core {
 
 class Chttp2WriteSizePolicy {
  public:
+  // Smallest possible WriteTargetSize
   static constexpr size_t MinTarget() { return 32 * 1024; }
+  // Largest possible WriteTargetSize
   static constexpr size_t MaxTarget() { return 16 * 1024 * 1024; }
+  // How long should a write take to be considered "fast"
   static constexpr Duration FastWrite() { return Duration::Milliseconds(100); }
+  // How long should a write take to be considered "slow"
   static constexpr Duration SlowWrite() { return Duration::Seconds(1); }
 
+  // What size should be targetted for the next write.
   size_t WriteTargetSize();
+  // Notify the policy that a write of some size has begun.
+  // EndWrite must be called when the write completes.
   void BeginWrite(size_t size);
+  // Notify the policy that a write of some size has ended.
   void EndWrite(bool success);
 
  private:

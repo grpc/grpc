@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 
+#include <vector>
+
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 
