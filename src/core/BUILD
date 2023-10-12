@@ -3722,7 +3722,6 @@ grpc_cc_library(
         "closure",
         "error",
         "exec_ctx_wakeup_scheduler",
-        "experiments",
         "http2_errors",
         "idle_filter_state",
         "loop",
@@ -5913,9 +5912,11 @@ grpc_cc_library(
     srcs = [
         "ext/transport/inproc/inproc_plugin.cc",
         "ext/transport/inproc/inproc_transport.cc",
+        "ext/transport/inproc/legacy_inproc_transport.cc",
     ],
     hdrs = [
         "ext/transport/inproc/inproc_transport.h",
+        "ext/transport/inproc/legacy_inproc_transport.h",
     ],
     external_deps = [
         "absl/status",
@@ -5931,6 +5932,7 @@ grpc_cc_library(
         "channel_stack_type",
         "closure",
         "error",
+        "experiments",
         "iomgr_fwd",
         "slice",
         "slice_buffer",

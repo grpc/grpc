@@ -65,11 +65,6 @@
   expiry: 2024/03/03
   owner: ctiller@google.com
   test_tags: ["cpp_end2end_test", "flow_control_test"]
-- name: client_idleness
-  description: If enabled, client channel idleness is enabled by default.
-  expiry: 2023/12/15
-  owner: roth@google.com
-  test_tags: []
 - name: client_privacy
   description:
     If set, client privacy
@@ -172,6 +167,12 @@
   expiry: 2023/11/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
+- name: promise_based_inproc_transport
+  description:
+    Use promises for the in-process transport.
+  expiry: 2024/06/06
+  owner: ctiller@google.com
+  test_tags: []
 - name: promise_based_server_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
