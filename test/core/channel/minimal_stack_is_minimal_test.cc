@@ -134,7 +134,7 @@ TEST(ChannelStackFilters, LooksAsExpected) {
                                       "http-server", "compression",
                                       "server_call_tracer", "connected"}));
   EXPECT_EQ(MakeStack(nullptr, no_args, GRPC_CLIENT_CHANNEL),
-            std::vector<std::string>({"client_idle", "client-channel"}));
+            std::vector<std::string>({"client-channel"}));
 }
 
 int main(int argc, char** argv) {

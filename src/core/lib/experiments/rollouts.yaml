@@ -46,8 +46,6 @@
   default: true
 - name: chttp2_offload_on_rst_stream
   default: true
-- name: client_idleness
-  default: true
 - name: client_privacy
   default: false
 - name: combiner_offload_to_event_engine
