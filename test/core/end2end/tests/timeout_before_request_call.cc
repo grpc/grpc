@@ -39,16 +39,133 @@ CORE_END2END_TEST(CoreDeadlineTest, TimeoutBeforeRequestCall) {
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   Expect(1, true);
-  Step(Duration::Seconds(2));
+  Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_DEADLINE_EXCEEDED);
   auto s = RequestCall(2);
-  Expect(2, true);
-  Step(Duration::Milliseconds(100));
-  IncomingCloseOnServer client_close;
-  s.NewBatch(3).RecvCloseOnServer(client_close);
-  Expect(3, true);
-  Step(Duration::Milliseconds(100));
-  EXPECT_EQ(client_close.was_cancelled(), true);
+  bool got_call = false;
+  std::unique_ptr<IncomingCloseOnServer> client_close;
+  Expect(2, MaybePerformAction{[this, &s, &got_call, &client_close](bool ok) {
+           got_call = true;
+           if (ok) {
+             // If we successfully get a call, then we should additionally get a
+             // close tag.
+             client_close = std::make_unique<IncomingCloseOnServer>();
+             s.NewBatch(3).RecvCloseOnServer(*client_close);
+             Expect(3, true);
+           }
+         }});
+  Step();
+  if (client_close != nullptr) {
+    // If we got a close op then it should indicate cancelled.
+    EXPECT_TRUE(got_call);
+    EXPECT_TRUE(client_close->was_cancelled());
+  }
+  if (!got_call) {
+    // Maybe we didn't get a call (didn't reach the server pre-deadline).
+    // In that case we should get a failed call back on shutdown.
+    ShutdownServerAndNotify(4);
+    Expect(2, AnyStatus{});
+    Expect(4, true);
+    Step();
+  }
+}
+
+CORE_END2END_TEST(CoreDeadlineTest,
+                  TimeoutBeforeRequestCallWithRegisteredMethod) {
+  auto method = RegisterServerMethod("/foo", GRPC_SRM_PAYLOAD_NONE);
+
+  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  c.NewBatch(1)
+      .SendInitialMetadata({})
+      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvStatusOnClient(server_status);
+  Expect(1, true);
+  Step();
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_DEADLINE_EXCEEDED);
+  auto s = RequestRegisteredCall(method, 2);
+  bool got_call = false;
+  std::unique_ptr<IncomingCloseOnServer> client_close;
+  Expect(2, MaybePerformAction{[this, &s, &got_call, &client_close](bool ok) {
+           got_call = true;
+           if (ok) {
+             // If we successfully get a call, then we should additionally get a
+             // close tag.
+             client_close = std::make_unique<IncomingCloseOnServer>();
+             s.NewBatch(3).RecvCloseOnServer(*client_close);
+             Expect(3, true);
+           }
+         }});
+  Step();
+  if (client_close != nullptr) {
+    // If we got a close op then it should indicate cancelled.
+    EXPECT_TRUE(got_call);
+    EXPECT_TRUE(client_close->was_cancelled());
+  }
+  if (!got_call) {
+    // Maybe we didn't get a call (didn't reach the server pre-deadline).
+    // In that case we should get a failed call back on shutdown.
+    ShutdownServerAndNotify(4);
+    Expect(2, AnyStatus{});
+    Expect(4, true);
+    Step();
+  }
+}
+
+CORE_END2END_TEST(CoreDeadlineSingleHopTest,
+                  TimeoutBeforeRequestCallWithRegisteredMethodWithPayload) {
+  auto method =
+      RegisterServerMethod("/foo", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER);
+
+  const size_t kMessageSize = 10 * 1024 * 1024;
+  auto send_from_client = RandomSlice(kMessageSize);
+  InitServer(
+      ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
+  InitClient(
+      ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
+
+  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  c.NewBatch(1)
+      .SendInitialMetadata({})
+      .SendCloseFromClient()
+      .SendMessage(send_from_client.Ref())
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvStatusOnClient(server_status);
+  Expect(1, true);
+  Step();
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_DEADLINE_EXCEEDED);
+  IncomingMessage client_message;
+  auto s = RequestRegisteredCall(method, &client_message, 2);
+  bool got_call = false;
+  std::unique_ptr<IncomingCloseOnServer> client_close;
+  Expect(2, MaybePerformAction{[this, &s, &got_call, &client_close](bool ok) {
+           got_call = true;
+           if (ok) {
+             // If we successfully get a call, then we should additionally get a
+             // close tag.
+             client_close = std::make_unique<IncomingCloseOnServer>();
+             s.NewBatch(3).RecvCloseOnServer(*client_close);
+             Expect(3, true);
+           }
+         }});
+  Step();
+  if (client_close != nullptr) {
+    // If we got a close op then it should indicate cancelled.
+    EXPECT_TRUE(got_call);
+    EXPECT_TRUE(client_close->was_cancelled());
+  }
+  if (!got_call) {
+    // Maybe we didn't get a call (didn't reach the server pre-deadline).
+    // In that case we should get a failed call back on shutdown.
+    ShutdownServerAndNotify(4);
+    Expect(2, false);
+    Expect(4, true);
+    Step();
+  }
 }
 
 }  // namespace

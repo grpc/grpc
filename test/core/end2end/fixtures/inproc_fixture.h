@@ -23,18 +23,20 @@
 
 class InprocFixture : public grpc_core::CoreTestFixture {
  private:
-  grpc_server* MakeServer(const grpc_core::ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const grpc_core::ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override {
     if (made_server_ != nullptr) return made_server_;
     made_server_ = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(made_server_, cq, nullptr);
+    pre_server_start(made_server_);
     grpc_server_start(made_server_);
     return made_server_;
   }
   grpc_channel* MakeClient(const grpc_core::ChannelArgs& args,
                            grpc_completion_queue* cq) override {
-    return grpc_inproc_channel_create(MakeServer(args, cq), args.ToC().get(),
-                                      nullptr);
+    return grpc_inproc_channel_create(MakeServer(args, cq, [](grpc_server*) {}),
+                                      args.ToC().get(), nullptr);
   }
 
   grpc_server* made_server_ = nullptr;
