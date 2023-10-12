@@ -190,10 +190,8 @@ puts 'Generating Makefile for ' + output
 create_makefile(output)
 
 debug_symbols_dir = ENV['GRPC_RUBY_DEBUG_SYMBOLS_DIR']
-if debug_symbols_dir
-  ruby_major_minor = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
-  debug_symbols = "grpc-#{GRPC::VERSION}-#{RUBY_PLATFORM}-ruby-#{ruby_major_minor}.dbg"
-end
+ruby_major_minor = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
+debug_symbols = "grpc-#{GRPC::VERSION}-#{RUBY_PLATFORM}-ruby-#{ruby_major_minor}.dbg"
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
@@ -202,7 +200,7 @@ if grpc_config == 'opt'
     o.write(File.read('Makefile'))
     o.puts
     o.puts 'strip: $(DLLIB)'
-    if debug_symbols_dir
+    if debug_symbols_dir and debug_symbols_dir.size > 0
       # Save debug symbols before stripping. These can be distributed separately and used when needed.
       o.puts "\t$(ECHO) Generating debug symbols #{debug_symbols_dir}/#{debug_symbols}"
       o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols_dir}/#{debug_symbols}"
