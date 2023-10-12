@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.license = 'Apache-2.0'
 
   s.files = %w( platform.rb version.rb README.md )
-  s.files += Dir.glob('symbols/**/*')
+  s.files += Dir.glob('symbols/*.dbg')
 
   s.platform = GRPC::NativeDebug::PLATFORM
 end
