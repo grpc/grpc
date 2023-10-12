@@ -1273,6 +1273,7 @@ let package = Package(
         "src/core/lib/gprpp/windows/thd.cc",
         "src/core/lib/gprpp/work_serializer.cc",
         "src/core/lib/gprpp/work_serializer.h",
+        "src/core/lib/gprpp/xxhash_inline.h",
         "src/core/lib/handshaker/proxy_mapper.h",
         "src/core/lib/handshaker/proxy_mapper_registry.cc",
         "src/core/lib/handshaker/proxy_mapper_registry.h",

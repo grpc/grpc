@@ -4865,6 +4865,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xxhash_inline",
+    hdrs = ["lib/gprpp/xxhash_inline.h"],
+    external_deps = ["xxhash"],
+    language = "c++",
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_ring_hash",
     srcs = [
         "ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc",
@@ -4879,7 +4887,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
-        "xxhash",
     ],
     language = "c++",
     deps = [
@@ -4900,6 +4907,7 @@ grpc_cc_library(
         "resolved_address",
         "unique_type_name",
         "validation_errors",
+        "xxhash_inline",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
@@ -5536,7 +5544,6 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/types:variant",
         "re2",
-        "xxhash",
     ],
     language = "c++",
     deps = [
@@ -5557,6 +5564,7 @@ grpc_cc_library(
         "ref_counted",
         "slice",
         "time",
+        "xxhash_inline",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
