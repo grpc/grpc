@@ -19,12 +19,11 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
-#include <stdint.h>
-
 #include <functional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/types/optional.h"
 
@@ -54,6 +53,7 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 

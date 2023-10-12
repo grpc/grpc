@@ -23,7 +23,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -55,6 +54,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"

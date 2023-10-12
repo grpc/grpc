@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <initializer_list>
 #include <limits>
 #include <memory>
 #include <new>

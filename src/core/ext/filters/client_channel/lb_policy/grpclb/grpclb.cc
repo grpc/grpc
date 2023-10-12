@@ -64,7 +64,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -753,9 +752,11 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // The metadata value is a hack: we pretend the pointer points to
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.
+      // NOLINTBEGIN(bugprone-string-constructor)
       args.initial_metadata->Add(
           GrpcLbClientStatsMetadata::key(),
           absl::string_view(reinterpret_cast<const char*>(client_stats), 0));
+      // NOLINTEND(bugprone-string-constructor)
       // Update calls-started.
       client_stats->AddCallStarted();
     }

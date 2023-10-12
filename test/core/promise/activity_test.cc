@@ -18,6 +18,7 @@
 
 #include <functional>
 #include <tuple>
+#include <variant>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

@@ -20,6 +20,7 @@
 
 #include <math.h>
 
+#include <memory>
 #include <ostream>
 
 #include "gtest/gtest.h"

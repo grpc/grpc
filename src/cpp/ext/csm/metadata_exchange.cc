@@ -27,7 +27,6 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "absl/meta/type_traits.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
@@ -46,7 +45,6 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"

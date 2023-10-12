@@ -19,7 +19,6 @@
 
 #include <stdlib.h>
 
-#include <type_traits>
 #include <utility>
 
 #include "src/core/lib/promise/detail/basic_seq.h"
