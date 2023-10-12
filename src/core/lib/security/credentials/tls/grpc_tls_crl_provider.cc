@@ -26,7 +26,13 @@
 #include <utility>
 
 #include <openssl/bio.h>
+
+#ifdef OPENSSL_IS_BORING_SSL
+#include <openssl/mem.h>
+#else
 #include <openssl/crypto.h>  // For OPENSSL_free
+#endif
+
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 
