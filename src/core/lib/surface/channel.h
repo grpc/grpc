@@ -55,7 +55,7 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport.h"
 
 /// The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
 /// is safe to use from within core.

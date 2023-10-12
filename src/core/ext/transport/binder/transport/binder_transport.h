@@ -48,7 +48,7 @@ struct grpc_binder_transport final : public grpc_core::Transport,
       std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
       std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
           security_policy);
-  ~grpc_binder_transport();
+  ~grpc_binder_transport() override;
 
   grpc_core::FilterStackTransport* filter_stack_transport() override {
     return this;

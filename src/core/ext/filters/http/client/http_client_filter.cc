@@ -48,7 +48,6 @@
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 
 namespace grpc_core {
 

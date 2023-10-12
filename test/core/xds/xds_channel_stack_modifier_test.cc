@@ -18,8 +18,6 @@
 
 #include "src/core/ext/xds/xds_channel_stack_modifier.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <string>
 
@@ -31,11 +29,12 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -75,12 +74,10 @@ constexpr char kTestFilter1[] = "test_filter_1";
 constexpr char kTestFilter2[] = "test_filter_2";
 
 namespace {
-class FakeTransport final : public grpc_core::Transport {
+class FakeTransport final : public Transport {
  public:
-  grpc_core::FilterStackTransport* filter_stack_transport() override {
-    return nullptr;
-  }
-  grpc_core::PromiseTransport* promise_transport() override { return nullptr; }
+  FilterStackTransport* filter_stack_transport() override { return nullptr; }
+  PromiseTransport* promise_transport() override { return nullptr; }
 
   absl::string_view GetTransportName() const override { return "fake"; }
   void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}

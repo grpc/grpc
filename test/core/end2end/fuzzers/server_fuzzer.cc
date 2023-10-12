@@ -31,7 +31,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"

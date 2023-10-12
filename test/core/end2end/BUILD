@@ -183,7 +183,6 @@ grpc_cc_library(
         "//src/core:grpc_tls_credentials",
         "//src/core:grpc_transport_inproc",
         "//src/core:slice",
-        "//src/core:transport_fwd",
         "//test/core/util:grpc_test_util",
     ],
 )
