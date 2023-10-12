@@ -882,7 +882,7 @@ grpc_channel_filter MakeConnectedFilter() {
 
 ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
     Transport* transport, CallArgs call_args, NextPromiseFactory) {
-  return transport->promise_transport()->MakeCallPromise(std::move(call_args));
+  return transport->client_transport()->MakeCallPromise(std::move(call_args));
 }
 
 const grpc_channel_filter kPromiseBasedTransportFilter =
@@ -916,7 +916,7 @@ bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder) {
   // ordering constraints on when we add filters).
   // We can know if this results in a promise based call how we'll create
   // our promise (if indeed we can), and so that is the choice made here.
-  if (t->promise_transport() != nullptr) {
+  if (t->client_transport() != nullptr) {
     // Option 1, and our ideal: the transport supports promise based calls,
     // and so we simply use the transport directly.
     builder->AppendFilter(&grpc_core::kPromiseBasedTransportFilter);
