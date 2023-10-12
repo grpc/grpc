@@ -71,7 +71,6 @@
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 

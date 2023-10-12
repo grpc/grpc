@@ -34,7 +34,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 
 GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
     void* engine, const char* target, const grpc_channel_args* args,

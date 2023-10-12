@@ -3136,7 +3136,6 @@ grpc_cc_library(
         "//src/core:status_helper",
         "//src/core:subchannel_interface",
         "//src/core:time",
-        "//src/core:transport_fwd",
         "//src/core:try_seq",
         "//src/core:unique_type_name",
         "//src/core:useful",
@@ -3615,7 +3614,6 @@ grpc_cc_library(
         "//src/core:race",
         "//src/core:slice",
         "//src/core:slice_buffer",
-        "//src/core:transport_fwd",
     ],
 )
 

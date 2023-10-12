@@ -32,7 +32,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/transport/transport.h"
 #include "test/core/util/mock_endpoint.h"
 #include "test/core/util/test_config.h"
 

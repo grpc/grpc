@@ -78,7 +78,6 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 
 typedef struct connected_channel_channel_data {
   grpc_core::Transport* transport;
