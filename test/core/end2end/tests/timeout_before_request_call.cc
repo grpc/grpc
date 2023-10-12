@@ -64,7 +64,7 @@ CORE_END2END_TEST(CoreDeadlineTest, TimeoutBeforeRequestCall) {
     // Maybe we didn't get a call (didn't reach the server pre-deadline).
     // In that case we should get a failed call back on shutdown.
     ShutdownServerAndNotify(4);
-    Expect(2, AnyStatus{});
+    Expect(2, false);
     Expect(4, true);
     Step();
   }
@@ -108,7 +108,7 @@ CORE_END2END_TEST(CoreDeadlineTest,
     // Maybe we didn't get a call (didn't reach the server pre-deadline).
     // In that case we should get a failed call back on shutdown.
     ShutdownServerAndNotify(4);
-    Expect(2, AnyStatus{});
+    Expect(2, false);
     Expect(4, true);
     Step();
   }
