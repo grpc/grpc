@@ -94,6 +94,8 @@
   default: true
 - name: round_robin_delegate_to_pick_first
   default: true
+- name: separate_ping_from_keepalive
+  default: true
 - name: wrr_delegate_to_pick_first
   default: true
 - name: combiner_offload_to_event_engine

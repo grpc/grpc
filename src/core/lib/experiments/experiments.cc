@@ -88,6 +88,12 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
     "callback, instead of running things inline in the first thread that "
@@ -196,6 +202,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
@@ -303,6 +311,12 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
     "callback, instead of running things inline in the first thread that "
@@ -411,6 +425,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
@@ -518,6 +534,12 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
     "callback, instead of running things inline in the first thread that "
@@ -626,6 +648,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
