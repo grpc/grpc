@@ -666,16 +666,7 @@ class Transport : public Orphanable {
                              grpc_pollset_set* pollset_set) = 0;
 
   void SetPollingEntity(grpc_stream* stream,
-                        grpc_polling_entity* pollset_or_pollset_set) {
-    if (auto* pollset = grpc_polling_entity_pollset(pollset_or_pollset_set)) {
-      SetPollset(stream, pollset);
-    } else if (auto* pollset_set =
-                   grpc_polling_entity_pollset_set(pollset_or_pollset_set)) {
-      SetPollsetSet(stream, pollset_set);
-    } else {
-      GPR_ASSERT(false);
-    }
-  }
+                        grpc_polling_entity* pollset_or_pollset_set);
 
   // implementation of grpc_transport_perform_op
   virtual void PerformOp(grpc_transport_op* op) = 0;

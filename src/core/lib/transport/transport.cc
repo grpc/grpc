@@ -104,6 +104,21 @@ void grpc_transport_move_stats(grpc_transport_stream_stats* from,
   to->latency = std::exchange(from->latency, gpr_inf_future(GPR_TIMESPAN));
 }
 
+namespace grpc_core {
+void Transport::SetPollingEntity(grpc_stream* stream,
+                                 grpc_polling_entity* pollset_or_pollset_set) {
+  if (auto* pollset = grpc_polling_entity_pollset(pollset_or_pollset_set)) {
+    SetPollset(stream, pollset);
+  } else if (auto* pollset_set =
+                 grpc_polling_entity_pollset_set(pollset_or_pollset_set)) {
+    SetPollsetSet(stream, pollset_set);
+  } else {
+    // No-op for empty pollset. Empty pollset is possible when using
+    // non-fd-based event engines such as CFStream.
+  }
+}
+}  // namespace grpc_core
+
 // This comment should be sung to the tune of
 // "Supercalifragilisticexpialidocious":
 //
