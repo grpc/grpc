@@ -18,6 +18,8 @@
 
 #include <string.h>
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/impl/channel_arg_names.h>

@@ -23,7 +23,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <initializer_list>
 #include <string>
 #include <utility>
 

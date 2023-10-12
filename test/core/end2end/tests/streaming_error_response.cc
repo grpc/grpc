@@ -19,6 +19,8 @@
 /// \file Verify that status ordering rules are obeyed.
 /// \ref doc/status_ordering.md
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>

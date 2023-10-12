@@ -82,7 +82,7 @@ class XdsClientTest : public ::testing::Test {
    public:
     class FakeNode : public Node {
      public:
-      FakeNode() = default;
+      FakeNode() : id_("xds_client_test") {}
       const std::string& id() const override { return id_; }
       const std::string& cluster() const override { return cluster_; }
       const std::string& locality_region() const override {
@@ -112,7 +112,7 @@ class XdsClientTest : public ::testing::Test {
       }
 
      private:
-      std::string id_ = "xds_client_test";
+      std::string id_;
       std::string cluster_;
       std::string locality_region_;
       std::string locality_zone_;

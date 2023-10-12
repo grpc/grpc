@@ -23,7 +23,6 @@
 #include <inttypes.h>
 
 #include <functional>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -32,7 +31,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>

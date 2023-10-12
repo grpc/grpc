@@ -21,7 +21,6 @@
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
 
 #include <array>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>

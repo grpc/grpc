@@ -55,6 +55,8 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
+// IWYU pragma: no_include "absl/meta/type_traits.h"
+
 namespace grpc_core {
 
 namespace {

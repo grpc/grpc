@@ -17,7 +17,6 @@
 #include "src/core/lib/security/authorization/stdout_logger.h"
 
 #include <cstdio>
-#include <initializer_list>
 #include <memory>
 #include <string>
 
