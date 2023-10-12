@@ -203,8 +203,15 @@ task 'gem:native', [:plat] do |t, args|
   File.truncate('grpc_c.64-ucrt.ruby', 0)
 
   `mkdir -p src/ruby/nativedebug/symbols`
-  debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/nativedebug/symbols')
+  # TODO(apolcyn): make debug symbol generation work for arm64-darwin
+  skip_debug_symbols = ['arm64-darwin']
+
   unix_platforms.each do |plat|
+    if skip_debug_symbols.include?(plat)
+      debug_symbols_dir = ''
+    else
+      debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/nativedebug/symbols')
+    end
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
@@ -220,10 +227,10 @@ task 'gem:native', [:plat] do |t, args|
   end
   # Generate debug symbol packages to complement the native libraries we just built
   unix_platforms.each do |plat|
-    # TODO(apolcyn): make debug symbol generation work for arm64-darwin
-    next if plat == 'arm64-darwin'
-    `bash src/ruby/nativedebug/build_package.sh #{plat}`
-    `cp src/ruby/nativedebug/pkg/*.gem pkg/`
+    unless skip_debug_symbols.include?(plat)
+      `bash src/ruby/nativedebug/build_package.sh #{plat}`
+      `cp src/ruby/nativedebug/pkg/*.gem pkg/`
+    end
   end
 end
 
