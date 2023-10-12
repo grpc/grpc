@@ -95,7 +95,7 @@ EXTERNAL_DEPS = {
     "absl/types/variant.h": "absl/types:variant",
     "absl/utility/utility.h": "absl/utility",
     "address_sorting/address_sorting.h": "address_sorting",
-    "google/cloud/opentelemetry/resource_detector.h": "google_cloud_cpp:experimental-opentelemetry",
+    "google/cloud/opentelemetry/resource_detector.h": "google_cloud_cpp:opentelemetry",
     "opentelemetry/common/attribute_value.h": "otel/api",
     "opentelemetry/common/key_value_iterable.h": "otel/api",
     "opentelemetry/nostd/function_ref.h": "otel/api",
