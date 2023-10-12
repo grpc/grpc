@@ -204,3 +204,61 @@ def grpc_run_simple_command_test(name, args = [], data = [], size = "medium", ti
 
     env = {}
     _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env, docker_run_as_root = False)
+
+
+def win_dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, docker_run_as_root = False, env = {}):
+    """Runs sh_test under docker either via RBE or via docker sandbox."""
+    #if docker_image_version:
+    #    image_spec = DOCKERIMAGE_CURRENT_VERSIONS.get(docker_image_version, None)
+    #    if not image_spec:
+    #        fail("Version info for docker image '%s' not found in dockerimage_current_versions.bzl" % docker_image_version)
+    #else:
+    #    fail("docker_image_version attribute not set for dockerized test '%s'" % name)
+
+    exec_properties = create_rbe_exec_properties_dict(
+        #"container-image": ,
+        #"OSFamily": "Windows"
+        
+        #override all the linux values:
+
+        labels = {
+            "os": "windows_2019", 
+            "machine_size": "small"
+        },
+        #docker_add_capabilities = "",
+        #docker_privileged = False,
+
+        #labels = {
+        #    "workload": "misc",
+        #    "machine_size": "misc_large",
+        #},
+        #docker_network = "standard",
+        container_image = "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019@sha256:63aed074a2ca1bf5af45bb43b255d21d51882d7169ec57be7f0f5454ea5d2c98",
+        os_family = "Windows"
+        # TODO(jtattermusch): note that docker sandbox doesn't currently support "docker_run_as_root"
+        #docker_run_as_root = docker_run_as_root,
+    )
+
+    # since the tests require special bazel args, only run them when explicitly requested
+    tags = ["manual"] + tags
+
+    # TODO(jtattermusch): find a way to ensure that action can only run under docker sandbox or remotely
+    # to avoid running it outside of a docker container by accident.
+
+    test_args = {
+        "name": name,
+        "srcs": srcs,
+        "tags": tags,
+        "args": args,
+        "flaky": flaky,
+        "data": data,
+        "size": size,
+        "env": env,
+        "timeout": timeout,
+        "exec_compatible_with": exec_compatible_with,
+        "exec_properties": exec_properties,
+    }
+
+    native.sh_test(
+        **test_args
+    )
