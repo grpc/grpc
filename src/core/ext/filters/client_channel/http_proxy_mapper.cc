@@ -172,7 +172,7 @@ absl::optional<grpc_resolved_address> GetAddressProxyServer(ChannelArgs* args) {
             address.status().ToString().c_str());
     return absl::nullopt;
   }
-  return std::move(*address);
+  return *address;
 }
 
 }  // namespace
