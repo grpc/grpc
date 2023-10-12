@@ -32,7 +32,6 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
     'x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt',
     'x86_64-linux', 'x86-linux', 'aarch64-linux',
     'x86_64-darwin', 'arm64-darwin',
-    'universal-darwin'
   ]
   ext.cross_compiling do |spec|
     spec.files = spec.files.select {
@@ -203,11 +202,12 @@ task 'gem:native', [:plat] do |t, args|
   File.truncate('grpc_c.64-ucrt.ruby', 0)
 
   `mkdir -p src/ruby/nativedebug/symbols`
-  # TODO(apolcyn): make debug symbol generation work for arm64-darwin
-  skip_debug_symbols = ['arm64-darwin']
+  # TODO(apolcyn): make debug symbol generation work on apple platforms
+  # Currently we hit "objcopy: grpc_c.bundle: file format not recognized"
+  unix_platforms_without_debug_symbols = ['x86_64-darwin', 'arm64-darwin']
 
   unix_platforms.each do |plat|
-    if skip_debug_symbols.include?(plat)
+    if unix_platforms_without_debug_symbols.include?(plat)
       debug_symbols_dir = ''
     else
       debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/nativedebug/symbols')
@@ -227,7 +227,7 @@ task 'gem:native', [:plat] do |t, args|
   end
   # Generate debug symbol packages to complement the native libraries we just built
   unix_platforms.each do |plat|
-    unless skip_debug_symbols.include?(plat)
+    unless unix_platforms_without_debug_symbols.include?(plat)
       `bash src/ruby/nativedebug/build_package.sh #{plat}`
       `cp src/ruby/nativedebug/pkg/*.gem pkg/`
     end
