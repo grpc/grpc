@@ -34,6 +34,11 @@ class Chttp2WriteSizePolicy {
   static constexpr Duration FastWrite() { return Duration::Milliseconds(100); }
   // How long should a write take to be considered "slow"
   static constexpr Duration SlowWrite() { return Duration::Seconds(1); }
+  // If a read is slow, what target time should we use to try and adjust back
+  // to?
+  static constexpr Duration TargetWriteTime() {
+    return Duration::Milliseconds(300);
+  }
 
   // What size should be targetted for the next write.
   size_t WriteTargetSize();

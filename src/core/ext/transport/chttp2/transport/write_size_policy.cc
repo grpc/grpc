@@ -26,7 +26,12 @@ size_t Chttp2WriteSizePolicy::WriteTargetSize() { return current_target_; }
 
 void Chttp2WriteSizePolicy::BeginWrite(size_t size) {
   GPR_ASSERT(experiment_start_time_ == Timestamp::InfFuture());
-  if (size < current_target_ * 7 / 10) return;
+  if (size < current_target_ * 7 / 10) {
+    // If we were trending fast but stopped getting enough data to verify, then
+    // reset back to the default state.
+    if (state_ < 0) state_ = 0;
+    return;
+  }
   experiment_start_time_ = Timestamp::Now();
 }
 
@@ -45,7 +50,7 @@ void Chttp2WriteSizePolicy::EndWrite(bool success) {
     ++state_;
     if (state_ == 2) {
       state_ = 0;
-      current_target_ = std::max(current_target_ - MinTarget(), MinTarget());
+      current_target_ = std::max(current_target_ / 3, MinTarget());
     }
   } else {
     state_ = 0;
