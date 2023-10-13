@@ -202,8 +202,7 @@ class RunInterop(test.test):
         from tests.interop import client
 
         sys.argv[1:] = self.args.split()
-        client.test_interoperability(
-            client.parse_interop_client_args(sys.argv))
+        client.test_interoperability(client.parse_interop_client_args(sys.argv))
 
 
 class RunFork(test.test):

@@ -17,10 +17,10 @@ from concurrent import futures
 import queue
 import threading
 
-import grpc
-
 from absl import app
 from absl.flags import argparse_flags
+import grpc
+
 from src.proto.grpc.testing import metrics_pb2_grpc
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import methods
@@ -30,7 +30,7 @@ from tests.stress import metrics_server
 from tests.stress import test_runner
 
 
-def _args():
+def _args(argv):
     parser = argparse_flags.ArgumentParser()
     parser.add_argument(
         "--server_addresses",
