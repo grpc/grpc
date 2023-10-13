@@ -655,6 +655,7 @@ bool BasicFuzzer::Continue() {
 
 BasicFuzzer::Result BasicFuzzer::ExecuteAction(
     const api_fuzzer::Action& action) {
+  gpr_log(GPR_DEBUG, "EXECUTE_ACTION: %s", action.DebugString().c_str());
   switch (action.type_case()) {
     case api_fuzzer::Action::TYPE_NOT_SET:
       return BasicFuzzer::Result::kFailed;
