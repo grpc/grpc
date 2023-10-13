@@ -65,7 +65,7 @@ As a toy example, suppose we are running an application under gdb using:
 
 - ruby-3.0
 
-- `grpc-1.60.1.x86_64-linux.gem`.
+- grpc-1.60.1.x86_64-linux.gem
 
 At first, in gdb we might dump a grpc-ruby stack trace looking
 something like this:
@@ -87,9 +87,9 @@ something like this:
 #12 0x00007ffff7926a4c in clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:81
 ```
 
-### We could take the following steps to get more debug info:
+We could take the following steps to get more debug info:
 
-<h4>1) Fetch the correct `grpc-native-debug` gem:</h4>
+<h3>1) Fetch the correct `grpc-native-debug` gem:</h3>
 
 ```
 cd /home
@@ -99,7 +99,7 @@ gem unpack grpc-native-debug-1.60.1.x86_64-linux.gem
 
 (note again the version and platform of `grpc-native-debug` must match the `grpc` gem)
 
-<h4>2) Load debug symbols (for ruby-3.0):</h4>
+<h3>2) Load debug symbols (for ruby-3.0):</h3>
 
 ```
 (gdb) info sharedlibrary
@@ -149,7 +149,7 @@ that source file information is still missing:
 (gdb)
 ```
 
-<h4>3) Resolve source files:</h4>
+<h3>3) Resolve source files:</h3>
 
 First, we fetch the *source* `grpc` gem at the **exact same version** of our binary
 `grpc` gem:
