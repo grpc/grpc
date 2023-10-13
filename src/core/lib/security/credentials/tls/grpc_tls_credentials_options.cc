@@ -132,7 +132,7 @@ void grpc_tls_credentials_options_set_send_client_ca_list(
   options->set_send_client_ca_list(send_client_ca_list);
 }
 
-void grpc_core::experimental::grpc_tls_credentials_options_set_crl_provider(
+void grpc_tls_credentials_options_set_crl_provider(
     grpc_tls_credentials_options* options,
     std::shared_ptr<grpc_core::experimental::CrlProvider> provider) {
   GPR_ASSERT(options != nullptr);

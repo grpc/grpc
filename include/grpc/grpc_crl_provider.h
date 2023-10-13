@@ -68,8 +68,11 @@ class CrlProvider {
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
     absl::Span<const std::string> crls);
 
-// TODO(gtcooke94) - Mark with GRPCAPI when all wrapped langauges support C++ in
-// core APIs
+}  // namespace experimental
+}  // namespace grpc_core
+
+// TODO(gtcooke94) - Mark with api macro when all wrapped langauges support C++
+// in core APIs
 /**
  * EXPERIMENTAL API - Subject to change
  *
@@ -78,8 +81,5 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
 void grpc_tls_credentials_options_set_crl_provider(
     grpc_tls_credentials_options* options,
     std::shared_ptr<grpc_core::experimental::CrlProvider> provider);
-
-}  // namespace experimental
-}  // namespace grpc_core
 
 #endif /* GRPC_GRPC_CRL_PROVIDER_H */
