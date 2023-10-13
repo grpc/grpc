@@ -31,6 +31,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -110,7 +111,8 @@ void RegisterServiceConfigChannelArgFilter(
       ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
                        &kServiceConfigChannelArgFilter)
       .ExcludeFromMinimalStack()
-      .IfHasChannelArg(GRPC_ARG_SERVICE_CONFIG);
+      .IfHasChannelArg(GRPC_ARG_SERVICE_CONFIG)
+      .Before({&ClientMessageSizeFilter::kFilter});
 }
 
 }  // namespace grpc_core
