@@ -41,6 +41,9 @@ const char* const additional_constraints_chttp2_batch_requests = "{}";
 const char* const description_chttp2_offload_on_rst_stream =
     "Offload work on RST_STREAM.";
 const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const char* const description_client_idleness =
+    "If enabled, client channel idleness is enabled by default.";
+const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_combiner_offload_to_event_engine =
@@ -197,6 +200,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
      additional_constraints_chttp2_offload_on_rst_stream, true, true},
+    {"client_idleness", description_client_idleness,
+     additional_constraints_client_idleness, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"combiner_offload_to_event_engine",
@@ -299,6 +304,9 @@ const char* const additional_constraints_chttp2_batch_requests = "{}";
 const char* const description_chttp2_offload_on_rst_stream =
     "Offload work on RST_STREAM.";
 const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const char* const description_client_idleness =
+    "If enabled, client channel idleness is enabled by default.";
+const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_combiner_offload_to_event_engine =
@@ -455,6 +463,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
      additional_constraints_chttp2_offload_on_rst_stream, true, true},
+    {"client_idleness", description_client_idleness,
+     additional_constraints_client_idleness, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"combiner_offload_to_event_engine",
@@ -557,6 +567,9 @@ const char* const additional_constraints_chttp2_batch_requests = "{}";
 const char* const description_chttp2_offload_on_rst_stream =
     "Offload work on RST_STREAM.";
 const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const char* const description_client_idleness =
+    "If enabled, client channel idleness is enabled by default.";
+const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_combiner_offload_to_event_engine =
@@ -713,6 +726,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
      additional_constraints_chttp2_offload_on_rst_stream, true, true},
+    {"client_idleness", description_client_idleness,
+     additional_constraints_client_idleness, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"combiner_offload_to_event_engine",
