@@ -3722,7 +3722,6 @@ grpc_cc_library(
         "closure",
         "error",
         "exec_ctx_wakeup_scheduler",
-        "experiments",
         "http2_errors",
         "idle_filter_state",
         "loop",
@@ -5715,6 +5714,21 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
+    name = "write_size_policy",
+    srcs = [
+        "ext/transport/chttp2/transport/write_size_policy.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/write_size_policy.h",
+    ],
+    deps = [
+        "time",
+        "//:gpr",
+        "//:gpr_platform",
     ],
 )
 

@@ -601,7 +601,10 @@ class PipeReceiver {
   // Checks closed from the receivers perspective: that is, if there is a value
   // in the pipe but the pipe is closed, reports open until that value is read.
   auto AwaitClosed() {
-    return [center = center_]() { return center->PollClosedForReceiver(); };
+    return [center = center_]() -> Poll<bool> {
+      if (center == nullptr) return false;
+      return center->PollClosedForReceiver();
+    };
   }
 
   auto AwaitEmpty() {
