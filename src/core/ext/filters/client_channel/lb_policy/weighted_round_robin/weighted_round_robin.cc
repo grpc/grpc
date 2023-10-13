@@ -1019,8 +1019,9 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     void MaybeUpdateWeight(double qps, double eps, double utilization,
                            float error_utilization_penalty);
 
-    float GetWeight(Timestamp now, Duration weight_expiration_period,
-                    Duration blackout_period);
+    std::pair<float, Duration> GetWeight(
+        Timestamp now, Duration weight_expiration_period,
+        Duration blackout_period);
 
     void ResetNonEmptySince();
 
@@ -1169,6 +1170,15 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
       RefCountedPtr<EndpointWeight> weight;
     };
 
+    struct Scheduler {
+      StaticStrideScheduler scheduler;
+      std::vector<Duration> endpoint_weight_staleness;
+
+      Scheduler(StaticStrideScheduler sched, std::vector<Duration> staleness)
+          : scheduler(std::move(sched)),
+            endpoint_weight_staleness(std::move(staleness)) {}
+    };
+
     // Returns the index into endpoints_ to be picked.
     size_t PickIndex();
 
@@ -1182,8 +1192,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     std::vector<EndpointInfo> endpoints_;
 
     Mutex scheduler_mu_;
-    std::shared_ptr<StaticStrideScheduler> scheduler_
-        ABSL_GUARDED_BY(&scheduler_mu_);
+    std::shared_ptr<Scheduler> scheduler_ ABSL_GUARDED_BY(&scheduler_mu_);
 
     Mutex timer_mu_ ABSL_ACQUIRED_BEFORE(&scheduler_mu_);
     absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
@@ -1199,6 +1208,10 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
   RefCountedPtr<EndpointWeight> GetOrCreateWeight(
       const std::vector<grpc_resolved_address>& addresses);
+
+  // FIXME: Set this based on some external knob, ideally via the
+  // stats plugin, but maybe via a channel arg.
+  const bool enable_per_call_metrics_ = false;
 
   RefCountedPtr<WeightedRoundRobinConfig> config_;
 
@@ -1274,7 +1287,7 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
   last_update_time_ = now;
 }
 
-float WeightedRoundRobin::EndpointWeight::GetWeight(
+std::pair<float, Duration> WeightedRoundRobin::EndpointWeight::GetWeight(
     Timestamp now, Duration weight_expiration_period,
     Duration blackout_period) {
   MutexLock lock(&mu_);
@@ -1292,17 +1305,18 @@ float WeightedRoundRobin::EndpointWeight::GetWeight(
   // If the most recent update was longer ago than the expiration
   // period, reset non_empty_since_ so that we apply the blackout period
   // again if we start getting data again in the future, and return 0.
-  if (now - last_update_time_ >= weight_expiration_period) {
+  Duration staleness = now - last_update_time_;
+  if (staleness >= weight_expiration_period) {
     non_empty_since_ = Timestamp::InfFuture();
-    return 0;
+    return {0, staleness};
   }
   // If we don't have at least blackout_period worth of data, return 0.
   if (blackout_period > Duration::Zero() &&
       now - non_empty_since_ < blackout_period) {
-    return 0;
+    return {0, staleness};
   }
   // Otherwise, return the weight.
-  return weight_;
+  return {weight_, staleness};
 }
 
 void WeightedRoundRobin::EndpointWeight::ResetNonEmptySince() {
@@ -1404,13 +1418,21 @@ WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(PickArgs args) {
 
 size_t WeightedRoundRobin::Picker::PickIndex() {
   // Grab a ref to the scheduler.
-  std::shared_ptr<StaticStrideScheduler> scheduler;
+  std::shared_ptr<Scheduler> scheduler;
   {
     MutexLock lock(&scheduler_mu_);
     scheduler = scheduler_;
   }
   // If we have a scheduler, use it to do a WRR pick.
-  if (scheduler != nullptr) return scheduler->Pick();
+  if (scheduler != nullptr) {
+    size_t index = scheduler->scheduler.Pick();
+    if (!scheduler->endpoint_weight_staleness.empty()) {
+      // FIXME: use per-channel metric API
+      gpr_log(GPR_INFO, "STALENESS: %s", scheduler->endpoint_weight_staleness[index].ToString().c_str());
+      //g_metric->AddToHistogram(scheduler->endpoint_weight_staleness[index]);
+    }
+    return index;
+  }
   // We don't have a scheduler (i.e., either all of the weights are 0 or
   // there is only one subchannel), so fall back to RR.
   return last_picked_index_.fetch_add(1) % endpoints_.size();
@@ -1421,9 +1443,13 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
   const Timestamp now = Timestamp::Now();
   std::vector<float> weights;
   weights.reserve(endpoints_.size());
+  std::vector<Duration> staleness;
+  if (wrr_->enable_per_call_metrics_) staleness.reserve(endpoints_.size());
   for (const auto& endpoint : endpoints_) {
-    weights.push_back(endpoint.weight->GetWeight(
-        now, config_->weight_expiration_period(), config_->blackout_period()));
+    auto p = endpoint.weight->GetWeight(
+        now, config_->weight_expiration_period(), config_->blackout_period());
+    weights.push_back(p.first);
+    if (wrr_->enable_per_call_metrics_) staleness.push_back(p.second);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] new weights: %s", wrr_.get(), this,
@@ -1431,10 +1457,10 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
   }
   auto scheduler_or = StaticStrideScheduler::Make(
       weights, [this]() { return wrr_->scheduler_state_.fetch_add(1); });
-  std::shared_ptr<StaticStrideScheduler> scheduler;
+  std::shared_ptr<Scheduler> scheduler;
   if (scheduler_or.has_value()) {
-    scheduler =
-        std::make_shared<StaticStrideScheduler>(std::move(*scheduler_or));
+    scheduler = std::make_shared<Scheduler>(std::move(*scheduler_or),
+                                            std::move(staleness));
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO, "[WRR %p picker %p] new scheduler: %p", wrr_.get(),
               this, scheduler.get());
