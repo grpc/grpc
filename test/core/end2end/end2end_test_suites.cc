@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -122,8 +123,9 @@ void AddFailAuthCheckIfNeeded(const ChannelArgs& args,
 
 class CensusFixture : public CoreTestFixture {
  private:
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
     auto* server = grpc_server_create(
@@ -132,6 +134,7 @@ class CensusFixture : public CoreTestFixture {
     GPR_ASSERT(
         grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
+    pre_server_start(server);
     grpc_server_start(server);
     return server;
   }
@@ -150,8 +153,9 @@ class CensusFixture : public CoreTestFixture {
 
 class CompressionFixture : public CoreTestFixture {
  private:
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto* server = grpc_server_create(
         args.SetIfUnset(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                         GRPC_COMPRESS_GZIP)
@@ -164,6 +168,7 @@ class CompressionFixture : public CoreTestFixture {
     GPR_ASSERT(
         grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
+    pre_server_start(server);
     grpc_server_start(server);
     return server;
   }
@@ -246,11 +251,13 @@ class FdFixture : public CoreTestFixture {
   FdFixture() { create_sockets(fd_pair_); }
 
  private:
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     ExecCtx exec_ctx;
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
+    pre_server_start(server);
     grpc_server_start(server);
     grpc_server_credentials* creds = grpc_insecure_server_credentials_create();
     grpc_server_add_channel_from_fd(server, fd_pair_[1], creds);
@@ -298,8 +305,9 @@ class HttpProxyFilter : public CoreTestFixture {
   ~HttpProxyFilter() override { grpc_end2end_http_proxy_destroy(proxy_); }
 
  private:
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
@@ -307,6 +315,7 @@ class HttpProxyFilter : public CoreTestFixture {
     GPR_ASSERT(
         grpc_server_add_http2_port(server, server_addr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
+    pre_server_start(server);
     grpc_server_start(server);
     return server;
   }
@@ -365,8 +374,9 @@ class ProxyFixture : public CoreTestFixture {
     return channel;
   }
 
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
@@ -374,6 +384,7 @@ class ProxyFixture : public CoreTestFixture {
     GPR_ASSERT(grpc_server_add_http2_port(
         server, grpc_end2end_proxy_get_server_port(proxy_), server_creds));
     grpc_server_credentials_release(server_creds);
+    pre_server_start(server);
     grpc_server_start(server);
     return server;
   }
@@ -443,8 +454,9 @@ class SslProxyFixture : public CoreTestFixture {
     return channel;
   }
 
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     grpc_slice cert_slice, key_slice;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
@@ -470,6 +482,7 @@ class SslProxyFixture : public CoreTestFixture {
     GPR_ASSERT(grpc_server_add_http2_port(
         server, grpc_end2end_proxy_get_server_port(proxy_), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
+    pre_server_start(server);
     grpc_server_start(server);
     return server;
   }
@@ -506,9 +519,10 @@ class FixtureWithTracing final : public CoreTestFixture {
     // g_fixture_slowdown_factor = 1;
   }
 
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
-    return fixture_->MakeServer(args, cq);
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
+    return fixture_->MakeServer(args, cq, pre_server_start);
   }
 
   grpc_channel* MakeClient(const ChannelArgs& args,
@@ -1027,6 +1041,13 @@ CORE_END2END_TEST_SUITE(CoreLargeSendTest,
 CORE_END2END_TEST_SUITE(
     CoreDeadlineTest,
     ConfigQuery().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run());
+
+CORE_END2END_TEST_SUITE(
+    CoreDeadlineSingleHopTest,
+    ConfigQuery()
+        .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+                         FEATURE_MASK_IS_MINSTACK)
+        .Run());
 
 CORE_END2END_TEST_SUITE(
     CoreClientChannelTest,
