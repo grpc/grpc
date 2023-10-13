@@ -1,18 +1,19 @@
 This package contains debug symbols that can be useful for debugging
-applications that use grpc pre-compiled binary gems. For example,
-`grpc-1.58.0-x86_64-linux.gem` (as opposed to a source-built gem like
-`grpc-1.58.0.gem`)
-`grpc-native-debug` gems contain debug symbols which complement the pre-compiled
-native libraries in `grpc` binary gems. After fetching with `gem fetch` and
-unpacking with `gem unpack`, one can load the correct `.dbg` symbol file to
+applications that use grpc pre-compiled binary gems.
+
+An example of a pre-compiled binary gem is `grpc-1.58.0-x86_64-linux.gem`
+(as opposed to a source-built gem like `grpc-1.58.0.gem`).
+
+`grpc-native-debug` gems contain debug symbols which complement the
+native libraries in these grpc binary gems. After fetching and unpacking a
+proper `grpc-native-debug` gem, one can load the correct `.dbg` symbol file to
 debug their grpc application.
 
 # Background
 
-grpc-ruby pre-compiled binary gems (e.g. `grpc-1.58.0-x86_64-linux.gem`) are
-*released with debug symbols stripped*. As a consequence, if you are to examine
-a grpc stack trace in a debugger for example, a lot of information will initially
-be missing.
+grpc-ruby pre-compiled binary gems are *released with debug symbols stripped*.
+As a consequence, if you are to examine a grpc stack trace in a debugger
+for example, a lot of information will initially be missing.
 
 # Using grpc-native-debug
 
@@ -34,10 +35,9 @@ need to fetch `grpc-native-debug-1.60.1-x86_64-linux.gem`.
 Each `grpc-native-debug` gem has a top-level `symbols` directory containing
 symbol files ending in `.dbg`.
 
-grpc-ruby binary gems are shipped with multiple native libraries. There is one
-native library for each supported *minor version* of ruby.
-
-As such, grpc-native-debug gems have exactly one `.dbg` file for each native library
+`grpc` binary gems are shipped with multiple native libraries. There is one
+native library for each supported *minor version* of ruby. As such,
+`grpc-native-debug` gems have exactly one `.dbg` file for each native library
 in the corresponding `grpc` gem.
 
 If you unpack a `grpc-native-debug` gem and look at the `symbols`
@@ -61,8 +61,11 @@ need to use symbol file
 
 There are a variety of ways to use these symbols.
 
-As a toy example, suppose we are running an application on ruby-3.0
-under gdb, and using the grpc gem: `grpc-1.60.1.x86_64-linux.gem`.
+As a toy example, suppose we are running an application under gdb using:
+
+- ruby-3.0
+
+- `grpc-1.60.1.x86_64-linux.gem`.
 
 At first, in gdb we might dump a grpc-ruby stack trace looking
 something like this:
@@ -84,9 +87,9 @@ something like this:
 #12 0x00007ffff7926a4c in clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:81
 ```
 
-We could take the following steps to get more debug info:
+### We could take the following steps to get more debug info:
 
-1) Fetch the correct `grpc-native-debug` gem:
+<h4>1) Fetch the correct `grpc-native-debug` gem:</h4>
 
 ```
 cd /home
@@ -96,7 +99,7 @@ gem unpack grpc-native-debug-1.60.1.x86_64-linux.gem
 
 (note again the version and platform of `grpc-native-debug` must match the `grpc` gem)
 
-2) Load debug symbols (for ruby-3.0):
+<h4>2) Load debug symbols (for ruby-3.0):</h4>
 
 ```
 (gdb) info sharedlibrary
@@ -146,7 +149,7 @@ that source file information is still missing:
 (gdb)
 ```
 
-3) Resolve source files:
+<h4>3) Resolve source files:</h4>
 
 First, we fetch the *source* `grpc` gem at the **exact same version** of our binary
 `grpc` gem:
@@ -165,7 +168,7 @@ Source directories searched: /home/grpc-1.60.1:$cdir:$cwd
 (gdb)
 ```
 
-We might now see something like the following:
+Our stack frame will might look more like this now:
 
 ```
 (gdb) list
