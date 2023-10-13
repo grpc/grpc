@@ -54,6 +54,7 @@ def inherit_rbconfig(name)
       value = value.join(' ')
     end
   end
+  p "setting config #{name} = #{value}"
   ENV[name] = value
 end
 
@@ -203,6 +204,9 @@ $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
 
 output = File.join('grpc', 'grpc_c')
+puts "extconf.rb $LDFLAGS: #{$LDFLAGS}"
+puts "extconf.rb $DLDFLAGS: #{$DLDFLAGS}"
+puts "extconf.rb $CFLAGS: #{$CFLAGS}"
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 
