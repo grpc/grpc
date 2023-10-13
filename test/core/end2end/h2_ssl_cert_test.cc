@@ -203,7 +203,8 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
   grpc_call_error error;
 
   grpc_channel* client = f->MakeClient(grpc_core::ChannelArgs(), cq);
-  grpc_server* server = f->MakeServer(grpc_core::ChannelArgs(), cq);
+  grpc_server* server =
+      f->MakeServer(grpc_core::ChannelArgs(), cq, [](grpc_server*) {});
 
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
   c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
