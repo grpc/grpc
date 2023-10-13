@@ -31,6 +31,21 @@ grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
 ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
 
+def maybe_remove_strip_all_linker_flag(flags)
+  if ENV['GRPC_RUBY_REMOVE_STRIP_ALL_LINKER_FLAG'] == "true"
+    # Hack to prevent automatic stripping during shared library linking.
+    # rake-compiler-dock sets the -s LDFLAG when building rubies for
+    # cross compilation, and this -s flag propagates into RbConfig. Stripping
+    # during the link is problematic because it prevents us from saving
+    # debug symbols. We want to first link our shared library, then save
+    # debug symbols, and only after that strip.
+    flags = flags.split(' ')
+    flags = flags.reject {|flag| flag == '-s'}
+    flags = flags.join(' ')
+  end
+  flags
+end
+
 def env_unset?(name)
   ENV[name].nil? || ENV[name].size == 0
 end
@@ -41,18 +56,8 @@ end
 
 def inherit_rbconfig(name)
   value = RbConfig::CONFIG[name] || ''
-  if ENV['GRPC_RUBY_REMOVE_STRIP_ALL_LINKER_FLAG'] == "true"
-    # Hack to prevent automatic stripping during shared library linking.
-    # rake-compiler-dock sets the -s LDFLAG when building rubies for
-    # cross compilation, and this -s flag propagates into RbConfig. Stripping
-    # during the link is problematic because it prevents us from saving
-    # debug symbols. We want to first link our shared library, then save
-    # debug symbols, and only after that strip.
-    if name == "LDFLAGS" or name == "DLDFLAGS"
-      value = value.split(' ')
-      value = value.reject {|flag| flag == '-s'}
-      value = value.join(' ')
-    end
+  if name == 'LDFLAGS' or name == 'DLDFLAGS'
+    value = maybe_remove_strip_all_linker_flag(value)
   end
   p "setting config #{name} = #{value}"
   ENV[name] = value
@@ -62,6 +67,7 @@ def env_append(name, string)
   ENV[name] += ' ' + string
 end
 
+# build grpc C-core
 inherit_env_or_rbconfig 'AR'
 inherit_env_or_rbconfig 'CC'
 inherit_env_or_rbconfig 'CXX'
@@ -141,6 +147,10 @@ unless windows
   #  exit 1 unless $? == 0
   #end
 end
+
+# C-core built, generate Makefile for ruby extension
+$LDFLAGS = maybe_remove_strip_all_linker_flag($LDFLAGS)
+$DLDFLAGS = maybe_remove_strip_all_linker_flag($LDFLAGS)
 
 $CFLAGS << ' -DGRPC_RUBY_WINDOWS_UCRT' if windows_ucrt
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
