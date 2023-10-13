@@ -1298,5 +1298,5 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
     channel = grpc_lame_client_channel_create(
         nullptr, status, "Failed to create server channel");
   }
-  grpc_core::Crash("unimplemented");
+  return channel;
 }
