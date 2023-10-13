@@ -109,9 +109,7 @@ class WSAErrorContext {
 // to and read from c-ares and are used with the grpc windows poller, and it,
 // e.g., manufactures virtual socket error codes when it e.g. needs to tell
 // the c-ares library to wait for an async read.
-class GrpcPolledFdWindows
-    : public GrpcPolledFd,
-      public std::enable_shared_from_this<GrpcPolledFdWindows> {
+class GrpcPolledFdWindows : public GrpcPolledFd {
  public:
   GrpcPolledFdWindows(std::unique_ptr<WinSocket> winsocket,
                       grpc_core::Mutex* mu, int address_family, int socket_type,
@@ -124,6 +122,8 @@ class GrpcPolledFdWindows
         winsocket_(std::move(winsocket)),
         read_buf_(grpc_empty_slice()),
         write_buf_(grpc_empty_slice()),
+        outer_read_closure_([this]() { OnIocpReadable(); }),
+        outer_write_closure_([this]() { OnIocpWriteable(); }),
         on_tcp_connect_locked_([this]() { OnTcpConnect(); }),
         event_engine_(event_engine) {}
 
@@ -184,7 +184,8 @@ class GrpcPolledFdWindows
   bool IsFdStillReadableLocked() override { return read_buf_has_data_; }
 
   void ShutdownLocked(absl::Status error) override {
-    if (absl::IsCancelled(error) && !shutdown_called_) {
+    GPR_ASSERT(!shutdown_called_);
+    if (absl::IsCancelled(error)) {
       GRPC_ARES_RESOLVER_TRACE_LOG("fd:|%s| ShutdownLocked", GetName());
       shutdown_called_ = true;
       // The socket is disconnected and closed here since this is an external
@@ -321,12 +322,7 @@ class GrpcPolledFdWindows
         return;
       }
     }
-    outer_read_closure_ = std::make_unique<AnyInvocableClosure>(
-        [self = shared_from_this()]() mutable {
-          self->OnIocpReadable();
-          self.reset();
-        });
-    winsocket_->NotifyOnRead(outer_read_closure_.get());
+    winsocket_->NotifyOnRead(&outer_read_closure_);
   }
 
   void ContinueRegisterForOnWriteableLocked() {
@@ -358,12 +354,7 @@ class GrpcPolledFdWindows
               GRPC_WSA_ERROR(wsa_error_code, "WSASend (overlapped)"));
           return;
         }
-        outer_write_closure_ = std::make_unique<AnyInvocableClosure>(
-            [self = shared_from_this()]() mutable {
-              self->OnIocpWriteable();
-              self.reset();
-            });
-        winsocket_->NotifyOnWrite(outer_write_closure_.get());
+        winsocket_->NotifyOnWrite(&outer_write_closure_);
         break;
       case WRITE_PENDING:
       case WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY:
@@ -665,8 +656,8 @@ class GrpcPolledFdWindows
   grpc_slice write_buf_;
   absl::AnyInvocable<void(absl::Status)> read_closure_;
   absl::AnyInvocable<void(absl::Status)> write_closure_;
-  std::unique_ptr<AnyInvocableClosure> outer_read_closure_;
-  std::unique_ptr<AnyInvocableClosure> outer_write_closure_;
+  AnyInvocableClosure outer_read_closure_;
+  AnyInvocableClosure outer_write_closure_;
   bool shutdown_called_ = false;
   // State related to TCP sockets
   AnyInvocableClosure on_tcp_connect_locked_;
@@ -714,12 +705,12 @@ class CustomSockFuncs {
         return INVALID_SOCKET;
       }
     }
-    auto polled_fd = std::make_shared<GrpcPolledFdWindows>(
+    auto polled_fd = std::make_unique<GrpcPolledFdWindows>(
         self->iocp_->Watch(s), self->mu_, af, type, self->event_engine_);
     GRPC_ARES_RESOLVER_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
-    GPR_ASSERT(self->sockets_.insert({s, polled_fd}).second);
+    GPR_ASSERT(self->sockets_.insert({s, std::move(polled_fd)}).second);
     return s;
   }
 
@@ -757,11 +748,6 @@ class CustomSockFuncs {
 
   static int CloseSocket(SOCKET s, void* user_data) {
     GRPC_ARES_RESOLVER_TRACE_LOG("c-ares socket: %d CloseSocket", s);
-    GrpcPolledFdFactoryWindows* self =
-        static_cast<GrpcPolledFdFactoryWindows*>(user_data);
-    auto it = self->sockets_.find(s);
-    GPR_ASSERT(it != self->sockets_.end());
-    self->sockets_.erase(it);
     return 0;
   }
 };
@@ -775,11 +761,11 @@ void GrpcPolledFdFactoryWindows::Initialize(grpc_core::Mutex* mutex,
   event_engine_ = event_engine;
 }
 
-GrpcPolledFdReturnType GrpcPolledFdFactoryWindows::NewGrpcPolledFdLocked(
+GrpcPolledFd* GrpcPolledFdFactoryWindows::NewGrpcPolledFdLocked(
     ares_socket_t as) {
   auto it = sockets_.find(as);
   GPR_ASSERT(it != sockets_.end());
-  return it->second;
+  return it->second.get();
 }
 
 void GrpcPolledFdFactoryWindows::ConfigureAresChannelLocked(

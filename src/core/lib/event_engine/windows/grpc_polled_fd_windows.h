@@ -49,7 +49,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   ~GrpcPolledFdFactoryWindows() override = default;
 
   void Initialize(grpc_core::Mutex* mutex, EventEngine* event_engine) override;
-  GrpcPolledFdReturnType NewGrpcPolledFdLocked(ares_socket_t as) override;
+  GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override;
   void ConfigureAresChannelLocked(ares_channel channel) override;
 
  private:
@@ -63,7 +63,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   // This pointer is initialized from the stored pointer inside the shared
   // pointer owned by the AresResolver which owns this object.
   EventEngine* event_engine_;
-  std::map<SOCKET, std::shared_ptr<GrpcPolledFdWindows>> sockets_;
+  std::map<SOCKET, std::unique_ptr<GrpcPolledFdWindows>> sockets_;
 };
 
 }  // namespace experimental

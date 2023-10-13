@@ -58,15 +58,6 @@ class GrpcPolledFd {
   virtual const char* GetName() const = 0;
 };
 
-#ifndef GPR_WINDOWS
-using GrpcPolledFdReturnType = std::unique_ptr<GrpcPolledFd>;
-#else
-// On Windows, the GrpcPolledFd is a virtual socket implementation and has a
-// shared ownership which is owned by the AresResolver, the GrpcPolledFdFactory
-// and pending IOCP callbacks.
-using GrpcPolledFdReturnType = std::shared_ptr<GrpcPolledFd>;
-#endif
-
 // A GrpcPolledFdFactory is 1-to-1 with and owned by a GrpcAresRequest. It knows
 // how to create GrpcPolledFd's for the current platform, and the
 // GrpcAresRequest uses it for all of its fd's.
@@ -79,7 +70,7 @@ class GrpcPolledFdFactory {
   virtual void Initialize(grpc_core::Mutex* mutex,
                           EventEngine* event_engine) = 0;
   // Creates a new wrapped fd for the current platform
-  virtual GrpcPolledFdReturnType NewGrpcPolledFdLocked(ares_socket_t as) = 0;
+  virtual GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) = 0;
   // Optionally configures the ares channel after creation
   virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
 };

@@ -111,9 +111,9 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
   void Initialize(grpc_core::Mutex*, EventEngine*) override {}
 
-  GrpcPolledFdReturnType NewGrpcPolledFdLocked(ares_socket_t as) override {
+  GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override {
     owned_fds_.insert(as);
-    return std::make_unique<GrpcPolledFdPosix>(
+    return new GrpcPolledFdPosix(
         as,
         poller_->CreateHandle(as, "c-ares socket", poller_->CanTrackErrors()));
   }
