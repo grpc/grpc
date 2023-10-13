@@ -84,7 +84,7 @@ something like this:
 #12 0x00007ffff7926a4c in clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:81
 ```
 
-We might take the following steps to get more debug info:
+We could take the following steps to get more debug info:
 
 1) Fetch the correct `grpc-native-debug` gem:
 
@@ -96,7 +96,7 @@ gem unpack grpc-native-debug-1.60.1.x86_64-linux.gem
 
 (note again the version and platform of `grpc-native-debug` must match the `grpc` gem)
 
-2) Load the debug symbols (for ruby-3.0):
+2) Load debug symbols (for ruby-3.0):
 
 ```
 (gdb) info sharedlibrary
@@ -183,8 +183,8 @@ warning: Source file is more recent than executable.
 (gdb)
 ```
 
-This is better, but if we move up a few stack frames we might still be missing
-some information:
+But if we move up a few stack frames we might *still* be missing
+some source information:
 
 ```
 (gdb) up
@@ -193,7 +193,7 @@ some information:
 ```
 
 A portion of the grpc-ruby native extension is built from a sub-directory:
-`src/ruby/ext/grpc`. So we need to add that sub-directory too:
+`src/ruby/ext/grpc`. So we also need to add that sub-directory, to fix this:
 
 ```
 (gdb) dir /home/grpc-1.60.1/src/ruby/ext/grpc
