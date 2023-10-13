@@ -153,6 +153,7 @@ $DLDFLAGS = maybe_remove_strip_all_linker_flag($DLDFLAGS)
 
 $CFLAGS << ' -DGRPC_RUBY_WINDOWS_UCRT' if windows_ucrt
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
+$CFLAGS << ' -g'
 
 def have_ruby_abi_version()
   return true if RUBY_ENGINE == 'truffleruby'
@@ -195,9 +196,7 @@ if grpc_config == 'gcov'
 end
 
 if grpc_config == 'dbg'
-  $CFLAGS << ' -O0 -ggdb3'
-else
-  $CFLAGS << ' -g'
+  $CFLAGS << ' -O0'
 end
 
 $LDFLAGS << ' -Wl,-wrap,memcpy' if linux
