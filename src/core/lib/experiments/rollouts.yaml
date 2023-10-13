@@ -60,8 +60,6 @@
     # TODO(hork): resolve when the client end2end test flake rate reduces to
     # a tolerable amount.
     windows: broken
-- name: event_engine_completion_queue
-  default: false
 - name: event_engine_dns
   default:
     # not tested on iOS at all

@@ -53,10 +53,6 @@ const char* const additional_constraints_combiner_offload_to_event_engine =
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_completion_queue =
-    "Use EventEngine for grpc_complection_queue async execution, instead of "
-    "the Executor";
-const char* const additional_constraints_event_engine_completion_queue = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
@@ -213,8 +209,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_combiner_offload_to_event_engine, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, false, true},
-    {"event_engine_completion_queue", description_event_engine_completion_queue,
-     additional_constraints_event_engine_completion_queue, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -322,10 +316,6 @@ const char* const additional_constraints_combiner_offload_to_event_engine =
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_completion_queue =
-    "Use EventEngine for grpc_complection_queue async execution, instead of "
-    "the Executor";
-const char* const additional_constraints_event_engine_completion_queue = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
@@ -482,8 +472,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_combiner_offload_to_event_engine, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, false, true},
-    {"event_engine_completion_queue", description_event_engine_completion_queue,
-     additional_constraints_event_engine_completion_queue, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -591,10 +579,6 @@ const char* const additional_constraints_combiner_offload_to_event_engine =
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_completion_queue =
-    "Use EventEngine for grpc_complection_queue async execution, instead of "
-    "the Executor";
-const char* const additional_constraints_event_engine_completion_queue = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
@@ -751,8 +735,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_combiner_offload_to_event_engine, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, false, true},
-    {"event_engine_completion_queue", description_event_engine_completion_queue,
-     additional_constraints_event_engine_completion_queue, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
     {"event_engine_listener", description_event_engine_listener,

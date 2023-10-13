@@ -88,12 +88,6 @@
   expiry: 2024/01/21
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
-- name: event_engine_completion_queue
-  description:
-    Use EventEngine for grpc_complection_queue async execution, instead of the Executor
-  expiry: 2024/01/31
-  owner: hork@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test"]
 - name: event_engine_dns
   description:
     If set, use EventEngine DNSResolver for client channel resolution

@@ -22,14 +22,12 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "event_engine_completion_queue",
                 "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
-                "event_engine_completion_queue",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -108,14 +106,12 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "event_engine_completion_queue",
                 "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
-                "event_engine_completion_queue",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -198,14 +194,12 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_client",
-                "event_engine_completion_queue",
                 "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
-                "event_engine_completion_queue",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
