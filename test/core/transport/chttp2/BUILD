@@ -235,6 +235,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "write_size_policy_test",
+    srcs = ["write_size_policy_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/random",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//src/core:write_size_policy",
+    ],
+)
+
+grpc_cc_test(
     name = "flow_control_test",
     srcs = ["flow_control_test.cc"],
     external_deps = [

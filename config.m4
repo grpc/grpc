@@ -151,6 +151,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/write_size_policy.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \

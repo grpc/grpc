@@ -83,6 +83,8 @@ EXPERIMENTS = {
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "write_size_cap",
+                "write_size_policy",
             ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",
@@ -165,6 +167,8 @@ EXPERIMENTS = {
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "write_size_cap",
+                "write_size_policy",
             ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",
@@ -257,6 +261,8 @@ EXPERIMENTS = {
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "write_size_cap",
+                "write_size_policy",
             ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",

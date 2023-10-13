@@ -2772,7 +2772,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
           "cancel_before_initial_metadata",
           [error = std::move(error), this]() {
             server_to_client_messages_.sender.Close();
-            Finish(ServerMetadataFromStatus(error));
+            auto md = ServerMetadataFromStatus(error);
+            md->Set(GrpcCallWasCancelled(), true);
+            Finish(std::move(md));
             return Empty{};
           },
           [](Empty) {});
@@ -3008,9 +3010,12 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
     Party::BulkSpawner& spawner) {
   spawner.Spawn(
       "recv_initial_metadata",
-      Race(server_initial_metadata_.receiver.Next(),
-           Map(finished(),
-               [](Empty) { return NextResult<ServerMetadataHandle>(true); })),
+      [this]() {
+        return Race(server_initial_metadata_.receiver.Next(),
+                    Map(finished(), [](Empty) {
+                      return NextResult<ServerMetadataHandle>(true);
+                    }));
+      },
       [this, array,
        completion =
            AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata)](
@@ -3049,6 +3054,7 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
   client_to_server_messages_.receiver.CloseWithError();
   if (trailing_metadata->get(GrpcCallWasCancelled()).value_or(false)) {
     server_to_client_messages_.receiver.CloseWithError();
+    server_initial_metadata_.receiver.CloseWithError();
   }
   if (auto* channelz_channel = channel()->channelz_node()) {
     if (trailing_metadata->get(GrpcStatusMetadata())

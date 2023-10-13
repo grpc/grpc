@@ -314,6 +314,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/varint.h
+  - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
   - src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h
@@ -1146,6 +1147,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
+  - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_plugin.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
@@ -2062,6 +2064,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/varint.h
+  - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
   - src/core/ext/upb-generated/google/api/annotations.upb.h
@@ -2505,6 +2508,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
+  - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_plugin.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
@@ -2882,9 +2886,15 @@ libs:
   - third_party/googletest/googletest/src/gtest-typed-test.cc
   - third_party/googletest/googletest/src/gtest.cc
   deps:
+  - re2
+  - absl/container:flat_hash_set
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
+  - absl/flags:flag
+  - absl/flags:parse
+  - absl/flags:reflection
+  - absl/flags:usage
   - absl/strings:strings
   - absl/types:any
   - absl/types:optional
@@ -4894,7 +4904,6 @@ targets:
   - test/core/promise/activity_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_set
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -6831,7 +6840,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8625,7 +8633,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8742,7 +8749,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10157,7 +10163,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10732,7 +10737,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11129,7 +11133,6 @@ targets:
   - test/core/promise/mpsc_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_set
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -12532,7 +12535,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/flags:parse
   - grpc_test_util
   args:
   - --resolver=ares
@@ -12606,7 +12608,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/flags:parse
   - grpc_test_util
   args:
   - --resolver=native
@@ -15488,7 +15489,6 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_set
   - absl/hash:hash
   - absl/status:statusor
   - absl/utility:utility
@@ -16249,7 +16249,6 @@ targets:
   - z
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
@@ -17344,6 +17343,22 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: write_size_policy_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/write_size_policy.h
+  - src/core/lib/gprpp/time.h
+  src:
+  - src/core/ext/transport/chttp2/transport/write_size_policy.cc
+  - src/core/lib/gprpp/time.cc
+  - test/core/transport/chttp2/write_size_policy_test.cc
+  deps:
+  - gtest
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
 - name: writes_per_rpc_test
   gtest: true
   build: test
