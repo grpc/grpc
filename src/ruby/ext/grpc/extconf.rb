@@ -31,8 +31,14 @@ grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
 ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
 
+def debug_symbols_output_dir
+  d = ENV['GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR']
+  return nil if d.nil? or d.size == 0
+  d
+end
+
 def maybe_remove_strip_all_linker_flag(flags)
-  if ENV['GRPC_RUBY_REMOVE_STRIP_ALL_LINKER_FLAG'] == "true"
+  if debug_symbols_output_dir
     # Hack to prevent automatic stripping during shared library linking.
     # rake-compiler-dock sets the -s LDFLAG when building rubies for
     # cross compilation, and this -s flag propagates into RbConfig. Stripping
@@ -54,9 +60,9 @@ def inherit_env_or_rbconfig(name)
   ENV[name] = inherit_rbconfig(name) if env_unset?(name)
 end
 
-def inherit_rbconfig(name, remove_strip_all: false)
+def inherit_rbconfig(name, linker_flag: false)
   value = RbConfig::CONFIG[name] || ''
-  if remove_strip_all
+  if linker_flag
     value = maybe_remove_strip_all_linker_flag(value)
   end
   p "extconf.rb setting ENV[#{name}] = #{value}"
@@ -74,7 +80,7 @@ inherit_env_or_rbconfig 'CXX'
 inherit_env_or_rbconfig 'RANLIB'
 inherit_env_or_rbconfig 'STRIP'
 inherit_rbconfig 'CPPFLAGS'
-inherit_rbconfig('LDFLAGS', remove_strip_all: true)
+inherit_rbconfig('LDFLAGS', linker_flag: true)
 
 ENV['LD'] = ENV['CC'] if env_unset?('LD')
 ENV['LDXX'] = ENV['CXX'] if env_unset?('LDXX')
@@ -218,7 +224,6 @@ puts "extconf.rb $CFLAGS: #{$CFLAGS}"
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 
-debug_symbols_dir = ENV['GRPC_RUBY_DEBUG_SYMBOLS_DIR']
 ruby_major_minor = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
 debug_symbols = "grpc-#{GRPC::VERSION}-#{RUBY_PLATFORM}-ruby-#{ruby_major_minor}.dbg"
 
@@ -229,9 +234,9 @@ if grpc_config == 'opt'
     o.write(File.read('Makefile'))
     o.puts
     o.puts 'strip: $(DLLIB)'
-    if debug_symbols_dir and debug_symbols_dir.size > 0
-      o.puts "\t$(ECHO) Saving debug symbols in #{debug_symbols_dir}/#{debug_symbols}"
-      o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols_dir}/#{debug_symbols}"
+    if debug_symbols_output_dir
+      o.puts "\t$(ECHO) Saving debug symbols in #{debug_symbols_output_dir}/#{debug_symbols}"
+      o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols_output_dir}/#{debug_symbols}"
     end
     o.puts "\t$(ECHO) Stripping $(DLLIB)"
     o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
