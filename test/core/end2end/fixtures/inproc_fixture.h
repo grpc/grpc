@@ -15,6 +15,8 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_INPROC_FIXTURE_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_INPROC_FIXTURE_H
 
+#include "absl/functional/any_invocable.h"
+
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"

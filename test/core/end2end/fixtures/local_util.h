@@ -21,6 +21,8 @@
 
 #include <string>
 
+#include "absl/functional/any_invocable.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 
