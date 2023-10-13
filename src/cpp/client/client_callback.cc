@@ -23,6 +23,7 @@
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/status.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -33,27 +34,12 @@ namespace grpc {
 namespace internal {
 
 void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
-  // Unlike other uses of closure, do not Ref or Unref here since the reactor
-  // object's lifetime is controlled by user code.
-  grpc_core::ExecCtx exec_ctx;
-  struct ClosureWithArg {
-    grpc_closure closure;
-    ClientReactor* const reactor;
-    const grpc::Status status;
-    ClosureWithArg(ClientReactor* reactor_arg, grpc::Status s)
-        : reactor(reactor_arg), status(std::move(s)) {
-      GRPC_CLOSURE_INIT(
-          &closure,
-          [](void* void_arg, grpc_error_handle) {
-            ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
-            arg->reactor->OnDone(arg->status);
-            delete arg;
-          },
-          this, grpc_schedule_on_exec_ctx);
-    }
-  };
-  ClosureWithArg* arg = new ClosureWithArg(this, std::move(s));
-  grpc_core::Executor::Run(&arg->closure, absl::OkStatus());
+  // DO NOT SUBMIT(hork): an EventEngien must share a lifetime with this
+  // reactor, and be accessible
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto* engine_ptr = engine.get();
+  engine_ptr->Run(
+      [this, s = std::move(s), engine = std::move(engine)]() { OnDone(s); });
 }
 
 bool ClientReactor::InternalTrailersOnly(const grpc_call* call) const {

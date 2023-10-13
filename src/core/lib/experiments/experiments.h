@@ -80,6 +80,7 @@ inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
+inline bool IsEventEngineCompletionQueueEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -151,6 +152,7 @@ inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
+inline bool IsEventEngineCompletionQueueEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -222,6 +224,7 @@ inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
+inline bool IsEventEngineCompletionQueueEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -281,6 +284,7 @@ enum ExperimentIds {
   kExperimentIdClientPrivacy,
   kExperimentIdCombinerOffloadToEventEngine,
   kExperimentIdEventEngineClient,
+  kExperimentIdEventEngineCompletionQueue,
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineListener,
   kExperimentIdFreeLargeAllocator,
@@ -352,6 +356,10 @@ inline bool IsCombinerOffloadToEventEngineEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {
   return IsExperimentEnabled(kExperimentIdEventEngineClient);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_COMPLETION_QUEUE
+inline bool IsEventEngineCompletionQueueEnabled() {
+  return IsExperimentEnabled(kExperimentIdEventEngineCompletionQueue);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() {
