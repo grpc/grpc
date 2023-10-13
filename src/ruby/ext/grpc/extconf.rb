@@ -54,12 +54,12 @@ def inherit_env_or_rbconfig(name)
   ENV[name] = inherit_rbconfig(name) if env_unset?(name)
 end
 
-def inherit_rbconfig(name)
+def inherit_rbconfig(name, remove_strip_all: false)
   value = RbConfig::CONFIG[name] || ''
-  if name == 'LDFLAGS' or name == 'DLDFLAGS'
+  if remove_strip_all
     value = maybe_remove_strip_all_linker_flag(value)
   end
-  p "setting config #{name} = #{value}"
+  p "extconf.rb setting ENV[#{name}] = #{value}"
   ENV[name] = value
 end
 
@@ -74,8 +74,7 @@ inherit_env_or_rbconfig 'CXX'
 inherit_env_or_rbconfig 'RANLIB'
 inherit_env_or_rbconfig 'STRIP'
 inherit_rbconfig 'CPPFLAGS'
-inherit_rbconfig 'LDFLAGS'
-inherit_rbconfig 'DLDFLAGS'
+inherit_rbconfig('LDFLAGS', remove_strip_all: true)
 
 ENV['LD'] = ENV['CC'] if env_unset?('LD')
 ENV['LDXX'] = ENV['CXX'] if env_unset?('LDXX')
@@ -150,7 +149,7 @@ end
 
 # C-core built, generate Makefile for ruby extension
 $LDFLAGS = maybe_remove_strip_all_linker_flag($LDFLAGS)
-$DLDFLAGS = maybe_remove_strip_all_linker_flag($LDFLAGS)
+$DLDFLAGS = maybe_remove_strip_all_linker_flag($DLDFLAGS)
 
 $CFLAGS << ' -DGRPC_RUBY_WINDOWS_UCRT' if windows_ucrt
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
