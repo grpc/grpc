@@ -139,18 +139,6 @@ unless windows
   puts "Building grpc native library: #{cmd}"
   system(cmd)
   exit 1 unless $? == 0
-
-  # TODO(apolcyn): find an alternative fix for this
-  #if grpc_config == 'opt'
-  #  rm_obj_cmd = "rm -rf #{File.join(output_dir, 'objs')}"
-  #  puts "Removing grpc object files: #{rm_obj_cmd}"
-  #  system(rm_obj_cmd)
-  #  exit 1 unless $? == 0
-  #  strip_cmd = "#{strip_tool} #{grpc_lib_dir}/*.a"
-  #  puts "Stripping grpc native library: #{strip_cmd}"
-  #  system(strip_cmd)
-  #  exit 1 unless $? == 0
-  #end
 end
 
 # C-core built, generate Makefile for ruby extension
@@ -226,6 +214,23 @@ create_makefile(output)
 
 ruby_major_minor = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
 debug_symbols = "grpc-#{GRPC::VERSION}-#{RUBY_PLATFORM}-ruby-#{ruby_major_minor}.dbg"
+
+File.open('Makefile.new', 'w') do |o|
+  o.puts 'hijack_remove_unused_artifacts: all remove_unused_artifacts'
+  o.puts
+  o.write(File.read('Makefile'))
+  o.puts
+  o.puts 'remove_unused_artifacts: $(DLLIB)'
+  # Now that the extension library has been linked, we can remove unused artifacts
+  # that take up a lot of disk space.
+  rm_obj_cmd = "rm -rf #{File.join(output_dir, 'objs')}"
+  o.puts "\t$(ECHO) Removing unused object artifacts: #{rm_obj_cmd}"
+  o.puts "\t$(Q) #{rm_obj_cmd}"
+  rm_grpc_core_libs = "rm -f #{grpc_lib_dir}/*.a"
+  o.puts "\t$(ECHO) Removing unused grpc core libraries: #{rm_grpc_core_libs}"
+  o.puts "\t$(Q) #{rm_grpc_core_libs}"
+end
+File.rename('Makefile.new', 'Makefile')
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
