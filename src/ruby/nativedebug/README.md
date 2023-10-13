@@ -89,7 +89,7 @@ something like this:
 
 We could take the following steps to get more debug info:
 
-<h3>1) Fetch the correct `grpc-native-debug` gem:</h3>
+<h3>1) Fetch the correct grpc-native-debug gem</h3>
 
 ```
 cd /home
@@ -99,7 +99,7 @@ gem unpack grpc-native-debug-1.60.1.x86_64-linux.gem
 
 (note again the version and platform of `grpc-native-debug` must match the `grpc` gem)
 
-<h3>2) Load debug symbols (for ruby-3.0):</h3>
+<h3>2) Load debug symbols (for ruby-3.0)</h3>
 
 ```
 (gdb) info sharedlibrary
@@ -149,7 +149,7 @@ that source file information is still missing:
 (gdb)
 ```
 
-<h3>3) Resolve source files:</h3>
+<h3>3) Resolve source files</h3>
 
 First, we fetch the *source* `grpc` gem at the **exact same version** of our binary
 `grpc` gem:
