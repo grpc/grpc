@@ -27,12 +27,8 @@
 
 #include <openssl/bio.h>
 
-#ifdef OPENSSL_IS_BORING_SSL
-#include <openssl/mem.h>
-#else
+// IWYU pragma: no_include "openssl/mem.h"
 #include <openssl/crypto.h>  // For OPENSSL_free
-#endif                       // OPENSSL_IS_BORING_SSL
-
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 
