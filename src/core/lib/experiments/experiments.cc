@@ -114,6 +114,9 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_registered_methods_map =
+    "Use absl::flat_hash_map for registered methods.";
+const char* const additional_constraints_registered_methods_map = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -245,6 +248,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"registered_methods_map", description_registered_methods_map,
+     additional_constraints_registered_methods_map, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -377,6 +382,9 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_registered_methods_map =
+    "Use absl::flat_hash_map for registered methods.";
+const char* const additional_constraints_registered_methods_map = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -508,6 +516,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"registered_methods_map", description_registered_methods_map,
+     additional_constraints_registered_methods_map, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -640,6 +650,9 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_registered_methods_map =
+    "Use absl::flat_hash_map for registered methods.";
+const char* const additional_constraints_registered_methods_map = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -771,6 +784,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"registered_methods_map", description_registered_methods_map,
+     additional_constraints_registered_methods_map, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
