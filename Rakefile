@@ -220,6 +220,7 @@ task 'gem:native', [:plat] do |t, args|
       bundle && \
       bundle exec rake clean && \
       export GRPC_RUBY_DEBUG_SYMBOLS_DIR=#{debug_symbols_dir} && \
+      export GRPC_RUBY_REMOVE_STRIP_ALL_LINKER_FLAG=true && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{ruby_cc_versions} \
         V=#{verbose} \

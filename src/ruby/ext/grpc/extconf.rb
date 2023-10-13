@@ -40,7 +40,21 @@ def inherit_env_or_rbconfig(name)
 end
 
 def inherit_rbconfig(name)
-  ENV[name] = RbConfig::CONFIG[name] || ''
+  value = RbConfig::CONFIG[name] || ''
+  if ENV['GRPC_RUBY_REMOVE_STRIP_ALL_LINKER_FLAG'] == "true"
+    # Hack to prevent automatic stripping during shared library linking.
+    # rake-compiler-dock sets the -s LDFLAG when building rubies for
+    # cross compilation, and this -s flag propagates into RbConfig. Stripping
+    # during the link is problematic because it prevents us from saving
+    # debug symbols. We want to first link our shared library, then save
+    # debug symbols, and only after that strip.
+    if name == "LDFLAGS" or name == "DLDFLAGS"
+      value = value.split(' ')
+      value = value.reject {|flag| flag == '-s'}
+      value = value.join(' ')
+    end
+  end
+  ENV[name] = value
 end
 
 def env_append(name, string)
@@ -54,6 +68,7 @@ inherit_env_or_rbconfig 'RANLIB'
 inherit_env_or_rbconfig 'STRIP'
 inherit_rbconfig 'CPPFLAGS'
 inherit_rbconfig 'LDFLAGS'
+inherit_rbconfig 'DLDFLAGS'
 
 ENV['LD'] = ENV['CC'] if env_unset?('LD')
 ENV['LDXX'] = ENV['CXX'] if env_unset?('LDXX')
