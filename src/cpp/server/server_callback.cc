@@ -32,6 +32,8 @@ void ServerCallbackCall::ScheduleOnDone(bool inline_ondone) {
   if (inline_ondone) {
     CallOnDone();
   } else {
+    // Unlike other uses of closure, do not Ref or Unref here since at this
+    // point, all the Ref'fing and Unref'fing is done for this call.
     // DO NOT SUBMIT(hork): an EventEngien must share a lifetime with this
     // reactor, and be accessible
     auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
@@ -44,6 +46,9 @@ void ServerCallbackCall::CallOnCancel(ServerReactor* reactor) {
   if (reactor->InternalInlineable()) {
     reactor->OnCancel();
   } else {
+    // Ref to make sure that the closure executes before the whole call gets
+    // destructed, and Unref within the closure.
+    Ref();
     // DO NOT SUBMIT(hork): an EventEngien must share a lifetime with this
     // reactor, and be accessible
     auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();

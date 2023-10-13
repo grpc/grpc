@@ -34,6 +34,8 @@ namespace grpc {
 namespace internal {
 
 void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
+  // Unlike other uses of closure, do not Ref or Unref here since the reactor
+  // object's lifetime is controlled by user code.
   // DO NOT SUBMIT(hork): an EventEngien must share a lifetime with this
   // reactor, and be accessible
   auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
