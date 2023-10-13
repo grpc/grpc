@@ -124,7 +124,7 @@ class CensusFixture : public CoreTestFixture {
  private:
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override {
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
     auto* server = grpc_server_create(
@@ -154,7 +154,7 @@ class CompressionFixture : public CoreTestFixture {
  private:
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override {
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto* server = grpc_server_create(
         args.SetIfUnset(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                         GRPC_COMPRESS_GZIP)
@@ -252,7 +252,7 @@ class FdFixture : public CoreTestFixture {
  private:
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override {
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     ExecCtx exec_ctx;
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
@@ -306,7 +306,7 @@ class HttpProxyFilter : public CoreTestFixture {
  private:
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override {
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
@@ -375,7 +375,7 @@ class ProxyFixture : public CoreTestFixture {
 
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override {
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
@@ -455,7 +455,7 @@ class SslProxyFixture : public CoreTestFixture {
 
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override {
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     grpc_slice cert_slice, key_slice;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
@@ -520,8 +520,8 @@ class FixtureWithTracing final : public CoreTestFixture {
 
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override {
-    return fixture_->MakeServer(args, cq, std::move(pre_server_start));
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
+    return fixture_->MakeServer(args, cq, pre_server_start);
   }
 
   grpc_channel* MakeClient(const ChannelArgs& args,

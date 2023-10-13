@@ -25,7 +25,7 @@ class InprocFixture : public grpc_core::CoreTestFixture {
  private:
   grpc_server* MakeServer(
       const grpc_core::ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override {
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     if (made_server_ != nullptr) return made_server_;
     made_server_ = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(made_server_, cq, nullptr);
@@ -35,8 +35,13 @@ class InprocFixture : public grpc_core::CoreTestFixture {
   }
   grpc_channel* MakeClient(const grpc_core::ChannelArgs& args,
                            grpc_completion_queue* cq) override {
-    return grpc_inproc_channel_create(MakeServer(args, cq, [](grpc_server*) {}),
-                                      args.ToC().get(), nullptr);
+    // Registered method registration isn't going to work for tests that create
+    // the client first and use inproc transports.
+    absl::AnyInvocable<void(grpc_server*)>
+        not_sure_what_to_do_but_this_works_for_now = [](grpc_server*) {};
+    return grpc_inproc_channel_create(
+        MakeServer(args, cq, not_sure_what_to_do_but_this_works_for_now),
+        args.ToC().get(), nullptr);
   }
 
   grpc_server* made_server_ = nullptr;

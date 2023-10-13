@@ -51,7 +51,7 @@ class SecureFixture : public grpc_core::CoreTestFixture {
   }
   grpc_server* MakeServer(
       const grpc_core::ChannelArgs& in_args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override {
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto args = MutateServerArgs(in_args);
     auto* creds = MakeServerCreds(args);
     auto* server = grpc_server_create(args.ToC().get(), nullptr);

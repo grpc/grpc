@@ -34,7 +34,7 @@ class LocalTestFixture final : public grpc_core::CoreTestFixture {
  private:
   grpc_server* MakeServer(
       const grpc_core::ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override;
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override;
   grpc_channel* MakeClient(const grpc_core::ChannelArgs& args,
                            grpc_completion_queue* cq) override;
 

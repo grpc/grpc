@@ -41,7 +41,7 @@ LocalTestFixture::LocalTestFixture(std::string localaddr,
 
 grpc_server* LocalTestFixture::MakeServer(
     const grpc_core::ChannelArgs& args, grpc_completion_queue* cq,
-    absl::AnyInvocable<void(grpc_server*)> pre_server_start) {
+    absl::AnyInvocable<void(grpc_server*)>& pre_server_start) {
   grpc_server_credentials* server_creds =
       grpc_local_server_credentials_create(type_);
   auto* server = grpc_server_create(args.ToC().get(), nullptr);

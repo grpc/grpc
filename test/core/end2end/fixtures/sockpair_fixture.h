@@ -68,7 +68,7 @@ class SockpairFixture : public CoreTestFixture {
   virtual ChannelArgs MutateServerArgs(ChannelArgs args) { return args; }
   grpc_server* MakeServer(
       const ChannelArgs& in_args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) override {
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto args = MutateServerArgs(in_args);
     ExecCtx exec_ctx;
     grpc_transport* transport;

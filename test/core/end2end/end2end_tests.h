@@ -97,7 +97,7 @@ class CoreTestFixture {
 
   virtual grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)> pre_server_start) = 0;
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) = 0;
   virtual grpc_channel* MakeClient(const ChannelArgs& args,
                                    grpc_completion_queue* cq) = 0;
 };
@@ -648,7 +648,7 @@ class CoreEnd2endTest : public ::testing::Test {
     initialized_ = true;
     if (server_ != nullptr) ShutdownAndDestroyServer();
     auto& f = fixture();
-    server_ = f.MakeServer(args, cq_, std::move(pre_server_start_));
+    server_ = f.MakeServer(args, cq_, pre_server_start_);
     GPR_ASSERT(server_ != nullptr);
   }
   // Remove the client.
