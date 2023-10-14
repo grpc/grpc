@@ -77,8 +77,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   void RecordSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) override {
     // Only add labels to outgoing metadata if labels were received from peer.
-    if (OTelPluginState().labels_injector != nullptr &&
-        injected_labels_ != nullptr) {
+    if (OTelPluginState().labels_injector != nullptr && received_peer_labels_) {
       OTelPluginState().labels_injector->AddLabels(send_initial_metadata);
     }
   }
@@ -142,6 +141,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   absl::Duration elapsed_time_;
   grpc_core::Slice path_;
   std::unique_ptr<LabelsIterable> injected_labels_;
+  bool received_peer_labels_ = false;
   bool registered_method_;
 };
 
@@ -150,8 +150,8 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
   path_ =
       recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
   if (OTelPluginState().labels_injector != nullptr) {
-    injected_labels_ =
-        OTelPluginState().labels_injector->GetLabels(recv_initial_metadata);
+    injected_labels_ = OTelPluginState().labels_injector->GetLabels(
+        recv_initial_metadata, &received_peer_labels_);
   }
   registered_method_ =
       recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod())

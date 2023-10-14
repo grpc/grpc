@@ -130,8 +130,8 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordReceivedInitialMetadata(grpc_metadata_batch* recv_initial_metadata) {
   if (OTelPluginState().labels_injector != nullptr) {
-    injected_labels_ =
-        OTelPluginState().labels_injector->GetLabels(recv_initial_metadata);
+    injected_labels_ = OTelPluginState().labels_injector->GetLabels(
+        recv_initial_metadata, nullptr);
   }
 }
 

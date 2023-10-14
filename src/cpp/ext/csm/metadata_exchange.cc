@@ -395,14 +395,16 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
 }
 
 std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetLabels(
-    grpc_metadata_batch* incoming_initial_metadata) {
+    grpc_metadata_batch* incoming_initial_metadata,
+    bool* received_peer_metadata) {
   auto peer_metadata =
       incoming_initial_metadata->Take(grpc_core::XEnvoyPeerMetadata());
-  if (!peer_metadata.has_value()) {
-    return nullptr;
+  if (received_peer_metadata != nullptr) {
+    *received_peer_metadata = peer_metadata.has_value();
   }
-  return std::make_unique<MeshLabelsIterable>(local_labels_,
-                                              *std::move(peer_metadata));
+  return std::make_unique<MeshLabelsIterable>(
+      local_labels_, peer_metadata.has_value() ? *std::move(peer_metadata)
+                                               : grpc_core::Slice());
 }
 
 void ServiceMeshLabelsInjector::AddLabels(

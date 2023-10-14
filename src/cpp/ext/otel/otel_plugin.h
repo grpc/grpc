@@ -65,9 +65,11 @@ class LabelsInjector {
  public:
   virtual ~LabelsInjector() {}
   // Read the incoming initial metadata to get the set of labels to be added to
-  // metrics.
+  // metrics. If \a received_peer_metadata is not nullptr, it is set to true if
+  // peer's metadata was received on the wire, false otherwise.
   virtual std::unique_ptr<LabelsIterable> GetLabels(
-      grpc_metadata_batch* incoming_initial_metadata) = 0;
+      grpc_metadata_batch* incoming_initial_metadata,
+      bool* received_peer_metadata) = 0;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.

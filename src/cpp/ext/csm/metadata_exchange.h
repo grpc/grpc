@@ -43,7 +43,8 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
   // Read the incoming initial metadata to get the set of labels to be added to
   // metrics.
   std::unique_ptr<LabelsIterable> GetLabels(
-      grpc_metadata_batch* incoming_initial_metadata) override;
+      grpc_metadata_batch* incoming_initial_metadata,
+      bool* received_peer_metadata) override;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.
