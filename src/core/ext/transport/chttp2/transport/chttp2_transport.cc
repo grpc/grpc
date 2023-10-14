@@ -612,8 +612,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                             grpc_core::NonPolymorphicRefCount>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_refcount)
               ? "chttp2_refcount"
-              : nullptr,
-          1),
+              : nullptr),
       ep(ep),
       peer_string(
           grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep))),

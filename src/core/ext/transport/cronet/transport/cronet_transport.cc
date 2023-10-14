@@ -135,7 +135,9 @@ struct grpc_cronet_transport final : public grpc_core::Transport,
   size_t SizeOfStream() const override;
   void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
                   const void* server_data, grpc_core::Arena* arena) override;
-  bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override;
+  bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override {
+    return true;
+  }
   void PerformStreamOp(grpc_stream* gs,
                        grpc_transport_stream_op_batch* op) override;
   void DestroyStream(grpc_stream* gs,
