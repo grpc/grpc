@@ -144,6 +144,12 @@
   expiry: 2024/01/15
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+- name: no_exec_ctx_time_cache
+  description:
+    Eliminate time caching from the exec_ctx.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
 - name: peer_state_based_framing
   description:
     If set, the max sizes of frames sent to lower layers is controlled based

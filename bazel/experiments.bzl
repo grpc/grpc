@@ -23,11 +23,13 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_listener",
+                "no_exec_ctx_time_cache",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
+                "no_exec_ctx_time_cache",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -50,6 +52,7 @@ EXPERIMENTS = {
                 "promise_based_client_call",
             ],
             "lb_unit_test": [
+                "no_exec_ctx_time_cache",
                 "work_serializer_dispatch",
             ],
             "logging_test": [
@@ -61,6 +64,7 @@ EXPERIMENTS = {
                 "unconstrained_max_quota_buffer_size",
             ],
             "xds_end2end_test": [
+                "no_exec_ctx_time_cache",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -107,11 +111,13 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_listener",
+                "no_exec_ctx_time_cache",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
+                "no_exec_ctx_time_cache",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -134,6 +140,7 @@ EXPERIMENTS = {
                 "promise_based_client_call",
             ],
             "lb_unit_test": [
+                "no_exec_ctx_time_cache",
                 "work_serializer_dispatch",
             ],
             "logging_test": [
@@ -145,6 +152,7 @@ EXPERIMENTS = {
                 "unconstrained_max_quota_buffer_size",
             ],
             "xds_end2end_test": [
+                "no_exec_ctx_time_cache",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -195,11 +203,13 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_listener",
+                "no_exec_ctx_time_cache",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
+                "no_exec_ctx_time_cache",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -225,6 +235,7 @@ EXPERIMENTS = {
                 "promise_based_client_call",
             ],
             "lb_unit_test": [
+                "no_exec_ctx_time_cache",
                 "work_serializer_dispatch",
             ],
             "logging_test": [
@@ -239,6 +250,7 @@ EXPERIMENTS = {
                 "unconstrained_max_quota_buffer_size",
             ],
             "xds_end2end_test": [
+                "no_exec_ctx_time_cache",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],

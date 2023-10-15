@@ -83,6 +83,9 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_no_exec_ctx_time_cache =
+    "Eliminate time caching from the exec_ctx.";
+const char* const additional_constraints_no_exec_ctx_time_cache = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -230,6 +233,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"no_exec_ctx_time_cache", description_no_exec_ctx_time_cache,
+     additional_constraints_no_exec_ctx_time_cache, false, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
@@ -351,6 +356,9 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_no_exec_ctx_time_cache =
+    "Eliminate time caching from the exec_ctx.";
+const char* const additional_constraints_no_exec_ctx_time_cache = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -498,6 +506,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"no_exec_ctx_time_cache", description_no_exec_ctx_time_cache,
+     additional_constraints_no_exec_ctx_time_cache, false, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
@@ -619,6 +629,9 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_no_exec_ctx_time_cache =
+    "Eliminate time caching from the exec_ctx.";
+const char* const additional_constraints_no_exec_ctx_time_cache = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -766,6 +779,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"no_exec_ctx_time_cache", description_no_exec_ctx_time_cache,
+     additional_constraints_no_exec_ctx_time_cache, false, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
