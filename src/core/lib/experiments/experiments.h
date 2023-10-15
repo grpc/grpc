@@ -91,6 +91,8 @@ inline bool IsMemoryPressureControllerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
@@ -163,6 +165,8 @@ inline bool IsMemoryPressureControllerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
@@ -235,6 +239,8 @@ inline bool IsMemoryPressureControllerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
@@ -293,6 +299,7 @@ enum ExperimentIds {
   kExperimentIdMemoryPressureController,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
+  kExperimentIdOverloadProtection,
   kExperimentIdPeerStateBasedFraming,
   kExperimentIdPickFirstHappyEyeballs,
   kExperimentIdPingOnRstStream,
@@ -392,6 +399,10 @@ inline bool IsMonitoringExperimentEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MULTIPING
 inline bool IsMultipingEnabled() {
   return IsExperimentEnabled(kExperimentIdMultiping);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() {
+  return IsExperimentEnabled(kExperimentIdOverloadProtection);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PEER_STATE_BASED_FRAMING
 inline bool IsPeerStateBasedFramingEnabled() {

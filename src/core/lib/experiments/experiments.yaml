@@ -144,6 +144,13 @@
   expiry: 2024/01/15
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+- name: overload_protection
+  description:
+    If chttp2 has more streams than it can handle open, send RST_STREAM immediately
+    on new streams appearing.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: [flow_control_test]
 - name: peer_state_based_framing
   description:
     If set, the max sizes of frames sent to lower layers is controlled based

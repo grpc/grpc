@@ -844,6 +844,7 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
       initial_metadata_buffer(arena),
       trailing_metadata_buffer(arena),
       flow_control(&t->flow_control) {
+  ++t->streams_allocated;
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
     if (grpc_http_trace.enabled()) {
@@ -860,6 +861,7 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
 }
 
 grpc_chttp2_stream::~grpc_chttp2_stream() {
+  --t->streams_allocated;
   grpc_chttp2_list_remove_stalled_by_stream(t.get(), this);
   grpc_chttp2_list_remove_stalled_by_transport(t.get(), this);
 

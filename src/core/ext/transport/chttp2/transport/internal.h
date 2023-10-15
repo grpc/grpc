@@ -462,6 +462,8 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// grace period to wait for data after sending a ping before keepalives
   /// timeout
   grpc_core::Duration keepalive_timeout;
+  /// number of stream objects currently allocated by this transport
+  size_t streams_allocated = 0;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.
