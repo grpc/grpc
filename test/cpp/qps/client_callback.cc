@@ -34,7 +34,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
@@ -55,6 +55,7 @@ struct CallbackClientRpcContext {
   ClientContext context_;
   std::unique_ptr<Alarm> alarm_;
   BenchmarkService::Stub* stub_;
+  grpc_core::Mutex issue_mu_;
 };
 
 static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
@@ -70,6 +71,7 @@ class CallbackClient
             config, BenchmarkStubCreator) {
     num_threads_ = NumThreads(config);
     rpcs_done_ = 0;
+    cancel_rpcs_ = config.rpc_type() == CANCELLED_UNARY;
 
     //  Don't divide the fixed load among threads as the user threads
     //  only bootstrap the RPCs
@@ -100,6 +102,7 @@ class CallbackClient
   }
 
  protected:
+  bool cancel_rpcs_;
   size_t num_threads_;
   size_t total_outstanding_rpcs_;
   // The below mutex and condition variable is used by main benchmark thread to
@@ -188,6 +191,7 @@ class CallbackUnaryClient final : public CallbackClient {
 
   void IssueUnaryCallbackRpc(Thread* t, size_t vector_idx) {
     double start = UsageTimer::Now();
+    grpc_core::MutexLock lock(&ctx_[vector_idx]->issue_mu_);
     ctx_[vector_idx]->stub_->async()->UnaryCall(
         (&ctx_[vector_idx]->context_), &request_, &ctx_[vector_idx]->response_,
         [this, t, start, vector_idx](grpc::Status s) {
@@ -199,17 +203,21 @@ class CallbackUnaryClient final : public CallbackClient {
           entry.set_status(s.error_code());
           t->UpdateHistogram(&entry);
 
-          if (ThreadCompleted() || !s.ok()) {
+          if (ThreadCompleted() || (!cancel_rpcs_ && !s.ok())) {
             // Notify thread of completion
             NotifyMainThreadOfThreadCompletion();
           } else {
             // Reallocate ctx for next RPC
-            ctx_[vector_idx] = std::make_unique<CallbackClientRpcContext>(
-                ctx_[vector_idx]->stub_);
+            {
+              grpc_core::MutexLock lock(&ctx_[vector_idx]->issue_mu_);
+              ctx_[vector_idx] = std::make_unique<CallbackClientRpcContext>(
+                  ctx_[vector_idx]->stub_);
+            }
             // Schedule a new RPC
             ScheduleRpc(t, vector_idx);
           }
         });
+    if (cancel_rpcs_) ctx_[vector_idx]->context_.TryCancel();
   }
 };
 
@@ -371,6 +379,7 @@ class CallbackStreamingPingPongClientImpl final
 std::unique_ptr<Client> CreateCallbackClient(const ClientConfig& config) {
   switch (config.rpc_type()) {
     case UNARY:
+    case CANCELLED_UNARY:
       return std::unique_ptr<Client>(new CallbackUnaryClient(config));
     case STREAMING:
       return std::unique_ptr<Client>(

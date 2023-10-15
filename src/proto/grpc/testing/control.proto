@@ -43,6 +43,7 @@ enum RpcType {
   STREAMING_FROM_CLIENT = 2;
   STREAMING_FROM_SERVER = 3;
   STREAMING_BOTH_WAYS = 4;
+  CANCELLED_UNARY = 5; // Unary, but client cancels immediately
 }
 
 // Parameters of poisson process distribution, which is a good representation
