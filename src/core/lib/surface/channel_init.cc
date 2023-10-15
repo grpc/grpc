@@ -153,23 +153,31 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     GPR_ASSERT(filter_to_registration.count(registration->filter_) > 0);
     for (F after : registration->after_) {
       if (filter_to_registration.count(after) == 0) {
-        Crash(absl::StrCat(
-            "Filter ", NameFromChannelFilter(after),
-            " not registered, but is referenced in the after clause of ",
-            NameFromChannelFilter(registration->filter_),
-            " when building channel stack ",
-            grpc_channel_stack_type_string(type)));
+        gpr_log(
+            GPR_DEBUG, "%s",
+            absl::StrCat(
+                "Filter ", NameFromChannelFilter(after),
+                " not registered, but is referenced in the after clause of ",
+                NameFromChannelFilter(registration->filter_),
+                " when building channel stack ",
+                grpc_channel_stack_type_string(type))
+                .c_str());
+        continue;
       }
       dependencies[registration->filter_].insert(after);
     }
     for (F before : registration->before_) {
       if (filter_to_registration.count(before) == 0) {
-        Crash(absl::StrCat(
-            "Filter ", NameFromChannelFilter(before),
-            " not registered, but is referenced in the after clause of ",
-            NameFromChannelFilter(registration->filter_),
-            " when building channel stack ",
-            grpc_channel_stack_type_string(type)));
+        gpr_log(
+            GPR_DEBUG, "%s",
+            absl::StrCat(
+                "Filter ", NameFromChannelFilter(before),
+                " not registered, but is referenced in the before clause of ",
+                NameFromChannelFilter(registration->filter_),
+                " when building channel stack ",
+                grpc_channel_stack_type_string(type))
+                .c_str());
+        continue;
       }
       dependencies[before].insert(registration->filter_);
     }
