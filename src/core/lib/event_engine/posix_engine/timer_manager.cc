@@ -30,7 +30,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/thd.h"
 
 static thread_local bool g_timer_thread;
 
