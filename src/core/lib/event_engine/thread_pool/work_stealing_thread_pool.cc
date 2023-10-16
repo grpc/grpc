@@ -158,7 +158,7 @@ EventEngine::Closure* WorkStealingThreadPool::TheftRegistry::StealOne() {
   grpc_core::MutexLock lock(&mu_);
   EventEngine::Closure* closure;
   for (auto* queue : queues_) {
-    closure = queue->PopMostRecent();
+    closure = queue->PopOldest();
     if (closure != nullptr) return closure;
   }
   return nullptr;
