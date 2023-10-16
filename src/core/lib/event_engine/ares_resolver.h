@@ -16,8 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <utility>
-
 #include "src/core/lib/debug/trace.h"
 
 #if GRPC_ARES == 1

@@ -17,8 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gprpp/sync.h"
