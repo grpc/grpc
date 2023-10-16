@@ -71,9 +71,12 @@ struct grpc_binder_transport {
   grpc_core::Combiner* combiner;
 
   // The callback and the data for the callback when the stream is connected
-  // between client and server.
+  // between client and server. registered_method_matcher_cb is called before
+  // invoking the recv initial metadata callback.
   void (*accept_stream_fn)(void* user_data, grpc_transport* transport,
                            const void* server_data) = nullptr;
+  void (*registered_method_matcher_cb)(
+      void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* accept_stream_user_data = nullptr;
   // `accept_stream_locked()` could be called before `accept_stream_fn` has been
   // set, we need to remember those requests that comes too early and call them

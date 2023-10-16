@@ -16,6 +16,8 @@
 //
 //
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -27,7 +29,7 @@
 namespace grpc_core {
 // Client sends a request with payload, server reads then returns status.
 CORE_END2END_TEST(WriteBufferingTest, WriteBufferingWorks) {
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   c.NewBatch(1).SendInitialMetadata({});
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   c.NewBatch(2).RecvInitialMetadata(server_initial_metadata);

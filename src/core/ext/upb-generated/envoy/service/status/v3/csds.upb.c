@@ -27,20 +27,21 @@ static const upb_MiniTableSub envoy_service_status_v3_ClientStatusRequest_submsg
   {.submsg = &envoy_config_core_v3_Node_msg_init},
 };
 
-static const upb_MiniTableField envoy_service_status_v3_ClientStatusRequest__fields[2] = {
+static const upb_MiniTableField envoy_service_status_v3_ClientStatusRequest__fields[3] = {
   {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_service_status_v3_ClientStatusRequest_msg_init = {
   &envoy_service_status_v3_ClientStatusRequest_submsgs[0],
   &envoy_service_status_v3_ClientStatusRequest__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
     {0x0010000001010012, &upb_psm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000100003f000018, &upb_psb1_1bt},
   })
 };
 

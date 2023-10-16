@@ -32,6 +32,7 @@ grpc_proto_fuzzer(
         "//:grpc",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:proto_bit_gen",
     ],
 )
 
@@ -47,6 +48,7 @@ grpc_proto_fuzzer(
         "//:grpc",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:proto_bit_gen",
     ],
 )
 
@@ -75,6 +77,7 @@ grpc_fuzzer(
         "absl/cleanup",
         "absl/status:statusor",
         "absl/status",
+        "absl/random:mocking_bit_gen",
     ],
     tags = ["no_windows"],
     uses_polling = False,
@@ -216,6 +219,36 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "ping_callbacks_test",
+    srcs = ["ping_callbacks_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/random",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/event_engine:mock_event_engine",
+    ],
+)
+
+grpc_cc_test(
+    name = "write_size_policy_test",
+    srcs = ["write_size_policy_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/random",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//src/core:write_size_policy",
+    ],
+)
+
+grpc_cc_test(
     name = "flow_control_test",
     srcs = ["flow_control_test.cc"],
     external_deps = [
@@ -292,6 +325,16 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
+    name = "max_concurrent_streams_policy_test",
+    srcs = ["max_concurrent_streams_policy_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//src/core:max_concurrent_streams_policy",
     ],
 )
 

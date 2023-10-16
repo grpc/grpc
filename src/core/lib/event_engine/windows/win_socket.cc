@@ -93,12 +93,8 @@ void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
     thread_pool_->Run(closure);
     return;
   };
-  if (std::exchange(info.has_pending_iocp_, false)) {
-    thread_pool_->Run(closure);
-  } else {
-    EventEngine::Closure* prev = nullptr;
-    GPR_ASSERT(info.closure_.compare_exchange_strong(prev, closure));
-  }
+  // It is an error if any notification is already registered for this socket.
+  GPR_ASSERT(std::exchange(info.closure_, closure) == nullptr);
 }
 
 void WinSocket::NotifyOnRead(EventEngine::Closure* on_read) {
@@ -109,6 +105,14 @@ void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
   NotifyOnReady(write_info_, on_write);
 }
 
+void WinSocket::UnregisterReadCallback() {
+  GPR_ASSERT(std::exchange(read_info_.closure_, nullptr) != nullptr);
+}
+
+void WinSocket::UnregisterWriteCallback() {
+  GPR_ASSERT(std::exchange(write_info_.closure_, nullptr) != nullptr);
+}
+
 // ---- WinSocket::OpState ----
 
 WinSocket::OpState::OpState(WinSocket* win_socket) noexcept
@@ -117,13 +121,11 @@ WinSocket::OpState::OpState(WinSocket* win_socket) noexcept
 }
 
 void WinSocket::OpState::SetReady() {
-  GPR_ASSERT(!has_pending_iocp_);
-  auto* closure = closure_.exchange(nullptr);
-  if (closure) {
-    win_socket_->thread_pool_->Run(closure);
-  } else {
-    has_pending_iocp_ = true;
-  }
+  auto* closure = std::exchange(closure_, nullptr);
+  // If an IOCP event is returned for a socket, and no callback has been
+  // registered for notification, this is invalid usage.
+  GPR_ASSERT(closure != nullptr);
+  win_socket_->thread_pool_->Run(closure);
 }
 
 void WinSocket::OpState::SetError(int wsa_error) {
@@ -132,6 +134,11 @@ void WinSocket::OpState::SetError(int wsa_error) {
 
 void WinSocket::OpState::SetResult(OverlappedResult result) {
   result_ = result;
+}
+
+void WinSocket::OpState::SetErrorStatus(absl::Status error_status) {
+  result_ = OverlappedResult{/*wsa_error=*/0, /*bytes_transferred=*/0,
+                             /*error_status=*/error_status};
 }
 
 void WinSocket::OpState::GetOverlappedResult() {

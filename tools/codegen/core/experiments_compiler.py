@@ -70,6 +70,9 @@ def _EXPERIMENTS_TEST_SKELETON(defs, test_body):
 #include <grpc/support/port_platform.h>
 
 #include "test/core/experiments/fixtures/experiments.h"
+
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include "src/core/lib/experiments/config.h"
@@ -150,6 +153,18 @@ def PutCopyright(file, prefix):
                 break
             copyright.append(line)
         PutBanner([file], [line[2:].rstrip() for line in copyright], prefix)
+
+
+def AreExperimentsOrdered(experiments):
+    # Check that the experiments are ordered by name
+    for i in range(1, len(experiments)):
+        if experiments[i - 1]["name"] >= experiments[i]["name"]:
+            print(
+                "Experiments are unordered: %s should be after %s"
+                % (experiments[i - 1]["name"], experiments[i]["name"])
+            )
+            return False
+    return True
 
 
 class ExperimentDefinition(object):
@@ -370,7 +385,6 @@ class ExperimentsCompiler(object):
             print(file=H)
             print("#include <grpc/support/port_platform.h>", file=H)
             print(file=H)
-            print("#include <stddef.h>", file=H)
             print('#include "src/core/lib/experiments/config.h"', file=H)
             print(file=H)
             print("namespace grpc_core {", file=H)
@@ -391,34 +405,33 @@ class ExperimentsCompiler(object):
             self._GenerateExperimentsHdrForPlatform("posix", H)
             print("#endif", file=H)
             print("\n#else", file=H)
-            for i, (_, exp) in enumerate(self._experiment_definitions.items()):
-                print(
-                    "#define GRPC_EXPERIMENT_IS_INCLUDED_%s" % exp.name.upper(),
-                    file=H,
-                )
-                print(
-                    "inline bool Is%sEnabled() { return"
-                    " Is%sExperimentEnabled(%d); }"
-                    % (
-                        SnakeToPascal(exp.name),
-                        "Test" if mode == "test" else "",
-                        i,
-                    ),
-                    file=H,
-                )
-            print(file=H)
-
             if mode == "test":
                 num_experiments_var_name = "kNumTestExperiments"
                 experiments_metadata_var_name = "g_test_experiment_metadata"
             else:
                 num_experiments_var_name = "kNumExperiments"
                 experiments_metadata_var_name = "g_experiment_metadata"
-            print(
-                f"constexpr const size_t {num_experiments_var_name} = "
-                f"{len(self._experiment_definitions.keys())};",
-                file=H,
-            )
+            print("enum ExperimentIds {", file=H)
+            for exp in self._experiment_definitions.values():
+                print(f"  kExperimentId{SnakeToPascal(exp.name)},", file=H)
+            print(f"  {num_experiments_var_name}", file=H)
+            print("};", file=H)
+            for exp in self._experiment_definitions.values():
+                print(
+                    "#define GRPC_EXPERIMENT_IS_INCLUDED_%s" % exp.name.upper(),
+                    file=H,
+                )
+                print(
+                    "inline bool Is%sEnabled() { return"
+                    " Is%sExperimentEnabled(kExperimentId%s); }"
+                    % (
+                        SnakeToPascal(exp.name),
+                        "Test" if mode == "test" else "",
+                        SnakeToPascal(exp.name),
+                    ),
+                    file=H,
+                )
+            print(file=H)
             print(
                 (
                     "extern const ExperimentMetadata"

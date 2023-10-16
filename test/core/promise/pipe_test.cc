@@ -14,7 +14,6 @@
 
 #include "src/core/lib/promise/pipe.h"
 
-#include <initializer_list>
 #include <memory>
 #include <tuple>
 #include <utility>

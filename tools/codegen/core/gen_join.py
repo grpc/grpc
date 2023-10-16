@@ -69,7 +69,15 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
   Poll<Result> PollOnce() {
 % for i in range(0,n):
     if (!ready.is_set(${i})) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint ${i+1}/${n}", this);
+      }
       auto poll = promise${i}();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint ${i+1}/${n} %s", this, 
+                p != nullptr? (Traits::IsOk(*p)? "ready" : "early-error") : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(${i});
@@ -79,6 +87,8 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint ${i+1}/${n} already ready", this);
     }
 % endfor
     if (ready.all()) {
@@ -106,6 +116,7 @@ front_matter = """
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 namespace promise_detail {

@@ -31,6 +31,7 @@
 #include "opentelemetry/nostd/unique_ptr.h"
 
 #include <grpc/support/log.h>
+#include <grpcpp/version_info.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/call_tracer.h"
@@ -160,6 +161,21 @@ OpenTelemetryPluginBuilder::SetTargetAttributeFilter(
   return *this;
 }
 
+OpenTelemetryPluginBuilder&
+OpenTelemetryPluginBuilder::SetGenericMethodAttributeFilter(
+    absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+        generic_method_attribute_filter) {
+  generic_method_attribute_filter_ = std::move(generic_method_attribute_filter);
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetServerSelector(
+    absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
+        server_selector) {
+  server_selector_ = std::move(server_selector);
+  return *this;
+}
+
 void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider = meter_provider_;
@@ -168,54 +184,70 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   if (meter_provider == nullptr) {
     return;
   }
-  auto meter = meter_provider->GetMeter("grpc");
+  auto meter = meter_provider->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
   if (metrics_.contains(OTelClientAttemptStartedInstrumentName())) {
     g_otel_plugin_state_->client.attempt.started = meter->CreateUInt64Counter(
-        std::string(OTelClientAttemptStartedInstrumentName()));
+        std::string(OTelClientAttemptStartedInstrumentName()),
+        "Number of client call attempts started", "{attempt}");
   }
   if (metrics_.contains(OTelClientAttemptDurationInstrumentName())) {
     g_otel_plugin_state_->client.attempt.duration =
         meter->CreateDoubleHistogram(
-            std::string(OTelClientAttemptDurationInstrumentName()));
+            std::string(OTelClientAttemptDurationInstrumentName()),
+            "End-to-end time taken to complete a client call attempt", "s");
   }
   if (metrics_.contains(
           OTelClientAttemptSentTotalCompressedMessageSizeInstrumentName())) {
-    g_otel_plugin_state_->client.attempt.sent_total_compressed_message_size =
-        meter->CreateUInt64Histogram(std::string(
-            OTelClientAttemptSentTotalCompressedMessageSizeInstrumentName()));
+    g_otel_plugin_state_->client.attempt
+        .sent_total_compressed_message_size = meter->CreateUInt64Histogram(
+        std::string(
+            OTelClientAttemptSentTotalCompressedMessageSizeInstrumentName()),
+        "Compressed message bytes sent per client call attempt", "By");
   }
   if (metrics_.contains(
           OTelClientAttemptRcvdTotalCompressedMessageSizeInstrumentName())) {
-    g_otel_plugin_state_->client.attempt.rcvd_total_compressed_message_size =
-        meter->CreateUInt64Histogram(std::string(
-            OTelClientAttemptRcvdTotalCompressedMessageSizeInstrumentName()));
+    g_otel_plugin_state_->client.attempt
+        .rcvd_total_compressed_message_size = meter->CreateUInt64Histogram(
+        std::string(
+            OTelClientAttemptRcvdTotalCompressedMessageSizeInstrumentName()),
+        "Compressed message bytes received per call attempt", "By");
   }
   if (metrics_.contains(OTelServerCallStartedInstrumentName())) {
     g_otel_plugin_state_->server.call.started = meter->CreateUInt64Counter(
-        std::string(OTelServerCallStartedInstrumentName()));
+        std::string(OTelServerCallStartedInstrumentName()),
+        "Number of server calls started", "{call}");
   }
   if (metrics_.contains(OTelServerCallDurationInstrumentName())) {
     g_otel_plugin_state_->server.call.duration = meter->CreateDoubleHistogram(
-        std::string(OTelServerCallDurationInstrumentName()));
+        std::string(OTelServerCallDurationInstrumentName()),
+        "End-to-end time taken to complete a call from server transport's "
+        "perspective",
+        "s");
   }
   if (metrics_.contains(
           OTelServerCallSentTotalCompressedMessageSizeInstrumentName())) {
     g_otel_plugin_state_->server.call.sent_total_compressed_message_size =
-        meter->CreateUInt64Histogram(std::string(
-            OTelServerCallSentTotalCompressedMessageSizeInstrumentName()));
+        meter->CreateUInt64Histogram(
+            std::string(
+                OTelServerCallSentTotalCompressedMessageSizeInstrumentName()),
+            "Compressed message bytes sent per server call", "By");
   }
   if (metrics_.contains(
           OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName())) {
     g_otel_plugin_state_->server.call.rcvd_total_compressed_message_size =
-        meter->CreateUInt64Histogram(std::string(
-            OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName()));
+        meter->CreateUInt64Histogram(
+            std::string(
+                OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName()),
+            "Compressed message bytes received per server call", "By");
   }
   g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
   g_otel_plugin_state_->target_attribute_filter =
       std::move(target_attribute_filter_);
+  g_otel_plugin_state_->generic_method_attribute_filter =
+      std::move(generic_method_attribute_filter_);
   g_otel_plugin_state_->meter_provider = std::move(meter_provider);
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
-      new grpc::internal::OpenTelemetryServerCallTracerFactory);
+      new grpc::internal::OpenTelemetryServerCallTracerFactory());
   grpc_core::CoreConfiguration::RegisterBuilder(
       [target_selector = std::move(target_selector_)](
           grpc_core::CoreConfiguration::Builder* builder) mutable {

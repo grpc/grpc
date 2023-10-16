@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -41,6 +43,7 @@ class ConfigurationTest : public ::testing::Test {
  protected:
   ConfigurationTest() {
     mock_endpoint_ = grpc_mock_endpoint_create(DiscardWrite);
+    grpc_mock_endpoint_finish_put_reads(mock_endpoint_);
     args_ = args_.SetObject(ResourceQuota::Default());
     args_ = args_.SetObject(
         grpc_event_engine::experimental::GetDefaultEventEngine());
@@ -58,7 +61,7 @@ TEST_F(ConfigurationTest, ClientKeepaliveDefaults) {
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
       grpc_create_chttp2_transport(args_, mock_endpoint_, /*is_client=*/true));
   EXPECT_EQ(t->keepalive_time, Duration::Infinity());
-  EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(20));
+  EXPECT_EQ(t->keepalive_timeout, Duration::Infinity());
   EXPECT_EQ(t->keepalive_permit_without_calls, false);
   EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 2);
   grpc_transport_destroy(&t->base);

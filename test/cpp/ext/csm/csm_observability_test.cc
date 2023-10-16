@@ -21,6 +21,8 @@
 #include "google/cloud/opentelemetry/resource_detector.h"
 #include "gtest/gtest.h"
 
+#include <grpcpp/ext/csm_observability.h>
+
 #include "src/core/lib/gprpp/env.h"
 #include "test/core/util/test_config.h"
 
@@ -30,7 +32,7 @@ namespace {
 
 TEST(CsmObservabilityBuilderTest, Basic) {
   EXPECT_TRUE(
-      internal::CsmObservabilityBuilder().BuildAndRegister().status().ok());
+      experimental::CsmObservabilityBuilder().BuildAndRegister().status().ok());
 }
 
 TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {

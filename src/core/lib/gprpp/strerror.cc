@@ -18,8 +18,6 @@
 
 #include <string.h>
 
-#include <initializer_list>
-
 #include "absl/strings/str_format.h"
 
 namespace grpc_core {

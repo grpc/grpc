@@ -1,0 +1,54 @@
+network_input {
+  input_segments {
+    segments {
+      repeated_zeros: 67108864
+    }
+  }
+}
+api_actions {
+  create_call {
+    method {
+      value: "B"
+    }
+    host {
+      value: "B"
+    }
+    timeout: -2
+  }
+}
+api_actions {
+  get_target {
+  }
+}
+api_actions {
+  disable_tracer: "\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177"
+}
+api_actions {
+  queue_batch {
+    operations {
+    }
+    operations {
+      receive_message {
+      }
+    }
+    operations {
+      flags: 8192
+    }
+    operations {
+      receive_status_on_client {
+      }
+    }
+  }
+}
+event_engine_actions {
+  assign_ports: 0
+  assign_ports: 0
+  connections {
+  }
+}
+config_vars {
+  verbosity: "\177\177"
+  experiments: 8863084066665136128
+}
+channel_args {
+}

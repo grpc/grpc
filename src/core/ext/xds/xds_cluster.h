@@ -21,7 +21,6 @@
 
 #include <stdint.h>
 
-#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>
@@ -34,6 +33,8 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
 #include "upb/reflection/def.h"
 
+#include <grpc/support/json.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -45,8 +46,6 @@
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
-
-bool XdsOverrideHostEnabled();
 
 struct XdsClusterResource : public XdsResourceType::ResourceData {
   struct Eds {

@@ -193,6 +193,7 @@ class PythonDistribTest(object):
                 % (self.docker_suffix, self.arch),
                 "test/distrib/python/run_source_distrib_test.sh",
                 copy_rel_path="test/distrib",
+                timeout_seconds=45 * 60,
             )
         else:
             return create_docker_jobspec(
@@ -201,6 +202,7 @@ class PythonDistribTest(object):
                 % (self.docker_suffix, self.arch),
                 "test/distrib/python/run_binary_distrib_test.sh",
                 copy_rel_path="test/distrib",
+                timeout_seconds=45 * 60,
             )
 
     def __str__(self):
@@ -380,32 +382,35 @@ def targets():
     """Gets list of supported targets"""
     return [
         # C++
-        CppDistribTest("linux", "x64", "debian10", "cmake", presubmit=True),
+        # The "dummy" C++ distribtest so that the set of tasks to run isn't empty
+        # when grpc_distribtest_standalone runs on PRs.
+        CppDistribTest("linux", "x64", "debian10", "dummy", presubmit=True),
+        CppDistribTest("linux", "x64", "debian10", "cmake", presubmit=False),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_as_submodule", presubmit=True
+            "linux", "x64", "debian10", "cmake_as_submodule", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
             "debian10",
             "cmake_as_externalproject",
-            presubmit=True,
+            presubmit=False,
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_fetchcontent", presubmit=True
+            "linux", "x64", "debian10", "cmake_fetchcontent", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_module_install", presubmit=True
+            "linux", "x64", "debian10", "cmake_module_install", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_pkgconfig", presubmit=True
+            "linux", "x64", "debian10", "cmake_pkgconfig", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
             "debian10_aarch64_cross",
             "cmake_aarch64_cross",
-            presubmit=True,
+            presubmit=False,
         ),
         CppDistribTest("windows", "x86", testcase="cmake", presubmit=True),
         CppDistribTest(
@@ -414,11 +419,17 @@ def targets():
             testcase="cmake_as_externalproject",
             presubmit=True,
         ),
+        CppDistribTest(
+            "windows",
+            "x86",
+            testcase="cmake_for_dll",
+            presubmit=True,
+        ),
         # C#
         CSharpDistribTest(
             "linux", "x64", "debian10", use_dotnet_cli=True, presubmit=True
         ),
-        CSharpDistribTest("linux", "x64", "ubuntu1604", use_dotnet_cli=True),
+        CSharpDistribTest("linux", "x64", "ubuntu2204", use_dotnet_cli=True),
         CSharpDistribTest(
             "linux", "x64", "alpine", use_dotnet_cli=True, presubmit=True
         ),
@@ -434,10 +445,10 @@ def targets():
         # Python
         PythonDistribTest("linux", "x64", "buster", presubmit=True),
         PythonDistribTest("linux", "x86", "buster", presubmit=True),
-        PythonDistribTest("linux", "x64", "fedora34"),
+        PythonDistribTest("linux", "x64", "fedora36"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
-        PythonDistribTest("linux", "x64", "ubuntu2004"),
+        PythonDistribTest("linux", "x64", "ubuntu2204"),
         PythonDistribTest(
             "linux", "aarch64", "python38_buster", presubmit=True
         ),
@@ -450,9 +461,9 @@ def targets():
         PythonDistribTest(
             "linux", "x86", "buster", source=True, presubmit=True
         ),
-        PythonDistribTest("linux", "x64", "fedora34", source=True),
+        PythonDistribTest("linux", "x64", "fedora36", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
-        PythonDistribTest("linux", "x64", "ubuntu2004", source=True),
+        PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
         # Ruby
         RubyDistribTest(
             "linux",
@@ -466,8 +477,8 @@ def targets():
             "linux", "x64", "debian10", ruby_version="ruby_3_0", presubmit=True
         ),
         RubyDistribTest("linux", "x64", "centos7"),
-        RubyDistribTest("linux", "x64", "ubuntu1604"),
-        RubyDistribTest("linux", "x64", "ubuntu1804", presubmit=True),
+        RubyDistribTest("linux", "x64", "ubuntu1804"),
+        RubyDistribTest("linux", "x64", "ubuntu2204", presubmit=True),
         # PHP7
         PHP7DistribTest("linux", "x64", "debian10", presubmit=True),
         PHP7DistribTest("macos", "x64", presubmit=True),

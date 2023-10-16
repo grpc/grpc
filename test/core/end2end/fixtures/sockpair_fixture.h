@@ -17,6 +17,7 @@
 
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
@@ -66,13 +67,15 @@ class SockpairFixture : public CoreTestFixture {
  private:
   virtual ChannelArgs MutateClientArgs(ChannelArgs args) { return args; }
   virtual ChannelArgs MutateServerArgs(ChannelArgs args) { return args; }
-  grpc_server* MakeServer(const ChannelArgs& in_args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& in_args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto args = MutateServerArgs(in_args);
     ExecCtx exec_ctx;
     grpc_transport* transport;
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
+    pre_server_start(server);
     grpc_server_start(server);
     auto server_channel_args = CoreConfiguration::Get()
                                    .channel_args_preconditioning()

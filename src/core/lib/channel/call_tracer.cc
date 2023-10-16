@@ -20,7 +20,6 @@
 
 #include "src/core/lib/channel/call_tracer.h"
 
-#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -46,7 +45,13 @@ ServerCallTracerFactory* ServerCallTracerFactory::Get(
     const ChannelArgs& channel_args) {
   ServerCallTracerFactory* factory =
       channel_args.GetObject<ServerCallTracerFactory>();
-  return factory != nullptr ? factory : g_server_call_tracer_factory_;
+  if (factory == nullptr) {
+    factory = g_server_call_tracer_factory_;
+  }
+  if (factory && factory->IsServerTraced(channel_args)) {
+    return factory;
+  }
+  return nullptr;
 }
 
 void ServerCallTracerFactory::RegisterGlobal(ServerCallTracerFactory* factory) {

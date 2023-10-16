@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
