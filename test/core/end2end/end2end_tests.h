@@ -868,10 +868,6 @@ class CoreEnd2endTestRegistry {
   if (GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
   GTEST_SKIP() << "Skipping test for minstack"
 
-#define SKIP_IF_USES_EVENT_ENGINE_CLIENT()                                     \
-  if (!g_is_fuzzing_core_e2e_tests && grpc_core::IsEventEngineClientEnabled()) \
-  GTEST_SKIP() << "Skipping test to prevent it from using EventEngine client"
-
 #define SKIP_IF_FUZZING() \
   if (g_is_fuzzing_core_e2e_tests) GTEST_SKIP() << "Skipping test for fuzzing"
 
