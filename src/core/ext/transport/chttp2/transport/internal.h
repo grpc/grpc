@@ -28,7 +28,6 @@
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -56,6 +55,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
@@ -459,7 +459,8 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
       keepalive_ping_timer_handle;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
-  /// grace period for a ping to complete before watchdog kicks in
+  /// grace period to wait for data after sending a ping before keepalives
+  /// timeout
   grpc_core::Duration keepalive_timeout;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
@@ -476,12 +477,19 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   uint32_t num_pending_induced_frames = 0;
   uint32_t incoming_stream_id = 0;
 
+  /// grace period after sending a ping to wait for the ping ack
+  grpc_core::Duration ping_timeout;
+  grpc_event_engine::experimental::EventEngine::TaskHandle
+      keepalive_ping_timeout_handle =
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
   /// grace period before settings timeout expires
   grpc_core::Duration settings_timeout;
 
   /// how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
-  ///
   uint32_t write_buffer_size = grpc_core::chttp2::kDefaultWindow;
+
+  /// policy for how much data we're willing to put into one http2 write
+  grpc_core::Chttp2WriteSizePolicy write_size_policy;
 
   bool reading_paused_on_pending_induced_frames = false;
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
@@ -524,6 +532,8 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   bool bdp_ping_started = false;
   // True if pings should be acked
   bool ack_pings = true;
+  /// True if the keepalive system wants to see some data incoming
+  bool keepalive_incoming_data_wanted = false;
 
   // What percentage of rst_stream frames on the server should cause a ping
   // frame to be generated.
@@ -654,6 +664,8 @@ struct grpc_chttp2_stream {
   bool traced = false;
 };
 
+#define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
+
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to
 /// go out on the wire.
@@ -763,6 +775,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        const char* desc,
                                        grpc_core::DebugLocation whence = {});
 
+void grpc_chttp2_keepalive_timeout(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 void grpc_chttp2_ping_timeout(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 

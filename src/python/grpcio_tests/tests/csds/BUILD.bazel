@@ -13,10 +13,10 @@
 # limitations under the License.
 
 py_test(
-    name = "csds_test",
+    name = "test_csds",
     size = "small",
-    srcs = ["csds_test.py"],
-    main = "csds_test.py",
+    srcs = ["test_csds.py"],
+    main = "test_csds.py",
     python_version = "PY3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",

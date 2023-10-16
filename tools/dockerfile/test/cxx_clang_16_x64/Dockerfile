@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:15-bullseye
+FROM silkeh/clang:16-bullseye
 
 RUN apt-get update && apt-get install -y build-essential curl git time wget zip && apt-get clean
 #=================

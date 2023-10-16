@@ -19,6 +19,7 @@
 #include "src/core/lib/backoff/backoff.h"
 
 #include <algorithm>
+#include <memory>
 
 #include "gtest/gtest.h"
 

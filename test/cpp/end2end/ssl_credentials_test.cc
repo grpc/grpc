@@ -106,7 +106,8 @@ void DoRpc(const std::string& server_addr,
   grpc::testing::EchoResponse response;
   request.set_message(kMessage);
   ClientContext context;
-  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  context.set_deadline(grpc_timeout_milliseconds_to_deadline(
+      /*time_ms=*/5000 * grpc_test_slowdown_factor()));
   grpc::Status result = stub->Echo(&context, request, &response);
   EXPECT_TRUE(result.ok());
   if (!result.ok()) {

@@ -26,7 +26,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
 
@@ -34,6 +33,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 //
 // grpc_composite_channel_credentials

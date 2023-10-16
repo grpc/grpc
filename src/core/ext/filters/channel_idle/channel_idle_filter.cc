@@ -19,12 +19,11 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
-#include <stdint.h>
-
 #include <functional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/types/optional.h"
 
@@ -36,6 +35,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -54,14 +54,18 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
 namespace {
 
-// TODO(ctiller): The idle filter was disabled in client channel by default
-// due to b/143502997. Now the bug is fixed enable the filter by default.
-const auto kDefaultIdleTimeout = Duration::Infinity();
+// TODO(roth): This can go back to being a constant when the experiment
+// is removed.
+Duration DefaultIdleTimeout() {
+  if (IsClientIdlenessEnabled()) return Duration::Minutes(30);
+  return Duration::Infinity();
+}
 
 // If these settings change, make sure that we are not sending a GOAWAY for
 // inproc transport, since a GOAWAY to inproc ends up destroying the transport.
@@ -84,7 +88,7 @@ namespace {
 
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
-      .value_or(kDefaultIdleTimeout);
+      .value_or(DefaultIdleTimeout());
 }
 
 }  // namespace

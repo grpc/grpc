@@ -22,8 +22,6 @@
 
 #include <stddef.h>
 
-#include <initializer_list>
-
 #include "absl/random/distributions.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"

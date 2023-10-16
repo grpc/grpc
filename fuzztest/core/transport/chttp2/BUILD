@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC authors.
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+load("//fuzztest:grpc_fuzz_test.bzl", "grpc_fuzz_test")
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_bazel_distribtest_latest.sh"
-timeout_mins: 120
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+grpc_fuzz_test(
+    name = "write_size_policy_test",
+    srcs = ["write_size_policy_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:write_size_policy"],
+)

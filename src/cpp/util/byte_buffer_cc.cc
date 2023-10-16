@@ -16,6 +16,7 @@
 //
 //
 
+#include <algorithm>
 #include <vector>
 
 #include <grpc/byte_buffer.h>

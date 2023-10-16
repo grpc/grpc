@@ -305,7 +305,6 @@ GRPCXX_SRCS = [
     "src/cpp/client/create_channel_posix.cc",
     "src/cpp/common/alarm.cc",
     "src/cpp/common/channel_arguments.cc",
-    "src/cpp/common/channel_filter.cc",
     "src/cpp/common/completion_queue_cc.cc",
     "src/cpp/common/resource_quota_cc.cc",
     "src/cpp/common/rpc_method.cc",
@@ -332,7 +331,6 @@ GRPCXX_SRCS = [
 GRPCXX_HDRS = [
     "src/cpp/client/create_channel_internal.h",
     "src/cpp/client/client_stats_interceptor.h",
-    "src/cpp/common/channel_filter.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/external_connection_acceptor_impl.h",
     "src/cpp/server/health/default_health_check_service.h",
@@ -1489,6 +1487,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
+        "absl/hash",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -2340,7 +2339,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3163,7 +3161,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
@@ -3582,7 +3579,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4061,6 +4057,7 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:transport_fwd",
         "//src/core:useful",
+        "//src/core:write_size_policy",
     ],
 )
 
