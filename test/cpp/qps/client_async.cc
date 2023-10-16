@@ -16,6 +16,7 @@
 //
 //
 
+#include <chrono>
 #include <forward_list>
 #include <functional>
 #include <list>
@@ -93,6 +94,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     switch (next_state_) {
       case State::READY:
         start_ = UsageTimer::Now();
+        context_.set_deadline(gpr_time_from_millis(100, GPR_TIMESPAN));
         response_reader_ = prepare_req_(stub_, &context_, req_, cq_);
         response_reader_->StartCall();
         next_state_ = State::RESP_DONE;

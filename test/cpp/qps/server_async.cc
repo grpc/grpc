@@ -120,7 +120,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
         std::bind(process_rpc, config.payload_config(), std::placeholders::_1,
                   std::placeholders::_2);
 
-    for (int i = 0; i < 5000; i++) {
+    for (int i = 0; i < 50; i++) {
       for (int j = 0; j < num_cqs; j++) {
         if (request_unary_function) {
           auto request_unary = std::bind(

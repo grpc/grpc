@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
 #include <list>
 #include <new>
 #include <queue>
@@ -296,6 +297,8 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
   void RequestCallWithPossiblePublish(size_t request_queue_index,
                                       RequestedCall* call) override {
     if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
+      size_t n = push_firsts_.fetch_add(1, std::memory_order_relaxed) + 1;
+      GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p push_firsts:%" PRIdPTR, this, n);
       // this was the first queued request: we need to lock and start
       // matching calls
       struct NextPendingCall {
@@ -310,8 +313,16 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
             pending_call.rc = reinterpret_cast<RequestedCall*>(
                 requests_per_cq_[request_queue_index].Pop());
             if (pending_call.rc != nullptr) {
+              size_t n =
+                  pop_non_nulls_.fetch_add(1, std::memory_order_relaxed) + 1;
+              GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p pop_non_nulls:%" PRIdPTR,
+                                   this, n);
               pending_call.pending = std::move(pending_.front());
               pending_.pop();
+            } else {
+              size_t n = pop_nulls_.fetch_add(1, std::memory_order_relaxed) + 1;
+              GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p pop_nulls:%" PRIdPTR, this,
+                                   n);
             }
           }
         }
@@ -334,6 +345,9 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
               w->Finish(server(), request_queue_index, next_pending.rc);
             });
       }
+    } else {
+      size_t n = push_mores_.fetch_add(1, std::memory_order_relaxed) + 1;
+      GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p push_mores:%" PRIdPTR, this, n);
     }
   }
 
@@ -384,6 +398,10 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       RequestedCall* rc =
           reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].TryPop());
       if (rc != nullptr) {
+        size_t n =
+            matched_instantly_.fetch_add(1, std::memory_order_relaxed) + 1;
+        GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p matched_instantly:%" PRIdPTR,
+                             this, n);
         return Immediate(MatchResult(server(), cq_idx, rc));
       }
     }
@@ -402,6 +420,11 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
             (start_request_queue_index + loop_count) % requests_per_cq_.size();
         rc = reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].Pop());
         if (rc != nullptr) {
+          matched_immediately_++;
+          GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR,
+                               "%p matched_immediately:%" PRIdPTR
+                               " pending:%" PRIdPTR,
+                               this, matched_immediately_, pending_.size());
           break;
         }
       }
@@ -409,6 +432,8 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         auto w = std::make_shared<ActivityWaiter>(
             Activity::current()->MakeOwningWaker());
         pending_.push(w);
+        GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p pending:%" PRIdPTR, this,
+                             pending_.size());
         return [w]() -> Poll<absl::StatusOr<MatchResult>> {
           std::unique_ptr<absl::StatusOr<MatchResult>> r(
               w->result.exchange(nullptr, std::memory_order_acq_rel));
@@ -442,6 +467,12 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     std::atomic<absl::StatusOr<MatchResult>*> result{nullptr};
   };
   using PendingCall = absl::variant<CallData*, std::shared_ptr<ActivityWaiter>>;
+  size_t matched_immediately_ = 0;
+  std::atomic<size_t> matched_instantly_{0};
+  std::atomic<size_t> push_firsts_{0};
+  std::atomic<size_t> push_mores_{0};
+  std::atomic<size_t> pop_nulls_{0};
+  std::atomic<size_t> pop_non_nulls_{0};
   std::queue<PendingCall> pending_;
   std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
 };
