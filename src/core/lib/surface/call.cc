@@ -2569,7 +2569,10 @@ void PromiseBasedCall::ResetDeadline() {
 void PromiseBasedCall::Run() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
-  CancelWithError(absl::DeadlineExceededError("Deadline exceeded"));
+  Timestamp deadline = (MutexLock(&deadline_mu_), deadline_);
+  CancelWithError(absl::DeadlineExceededError(absl::StrCat(
+      "Deadline exceeded: ", (Timestamp::Now() - deadline).ToString(),
+      " late")));
   InternalUnref("deadline");
 }
 
@@ -3521,6 +3524,9 @@ grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,
 
 void ServerPromiseBasedCall::CancelWithError(absl::Status error) {
   cancelled_.store(true, std::memory_order_relaxed);
+  GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR,
+                       "ServerPromiseBasedCall::CancelWithError: %s",
+                       error.ToString().c_str());
   Spawn(
       "cancel_with_error",
       [this, error = std::move(error)]() {

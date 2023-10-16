@@ -62,6 +62,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
@@ -342,7 +343,10 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
               }
             },
             [&](const std::shared_ptr<ActivityWaiter>& w) {
-              w->Finish(server(), request_queue_index, next_pending.rc);
+              if (!w->Finish(server(), request_queue_index, next_pending.rc)) {
+                requests_per_cq_[request_queue_index].Push(
+                    &next_pending.rc->mpscq_node);
+              }
             });
       }
     } else {
@@ -414,7 +418,23 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     size_t cq_idx = 0;
     size_t loop_count;
     {
+      std::vector<std::shared_ptr<ActivityWaiter>> expunged_expired_waiters;
       MutexLock lock(&server_->mu_call_);
+      // Opportunistically expunge any expired waiters.
+      while (!pending_.empty()) {
+        auto& p = pending_.front();
+        if (auto* w = absl::get_if<std::shared_ptr<ActivityWaiter>>(&p)) {
+          if ((*w)->result.load(std::memory_order_acquire) != nullptr) {
+            expunged_expired_waiters.push_back(std::move(*w));
+            pending_.pop();
+            continue;
+          }
+          GRPC_LOG_EVERY_N_SEC(
+              1, GPR_ERROR, "oldest pending: %s",
+              (Timestamp::Now() - (*w)->queue_time).ToString().c_str());
+        }
+        break;
+      }
       for (loop_count = 0; loop_count < requests_per_cq_.size(); loop_count++) {
         cq_idx =
             (start_request_queue_index + loop_count) % requests_per_cq_.size();
@@ -434,12 +454,14 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         pending_.push(w);
         GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p pending:%" PRIdPTR, this,
                              pending_.size());
-        return [w]() -> Poll<absl::StatusOr<MatchResult>> {
-          std::unique_ptr<absl::StatusOr<MatchResult>> r(
-              w->result.exchange(nullptr, std::memory_order_acq_rel));
-          if (r == nullptr) return Pending{};
-          return std::move(*r);
-        };
+        return OnCancel(
+            [w]() -> Poll<absl::StatusOr<MatchResult>> {
+              std::unique_ptr<absl::StatusOr<MatchResult>> r(
+                  w->result.exchange(nullptr, std::memory_order_acq_rel));
+              if (r == nullptr) return Pending{};
+              return std::move(*r);
+            },
+            [w]() { w->Expire(); });
       }
     }
     return Immediate(MatchResult(server(), cq_idx, rc));
@@ -450,21 +472,35 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
  private:
   Server* const server_;
   struct ActivityWaiter {
+    using ResultType = absl::StatusOr<MatchResult>;
     explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
     ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
     void Finish(absl::Status status) {
-      result.store(new absl::StatusOr<MatchResult>(std::move(status)),
-                   std::memory_order_release);
-      waker.Wakeup();
+      delete result.exchange(new ResultType(std::move(status)),
+                             std::memory_order_acq_rel);
     }
-    void Finish(Server* server, size_t cq_idx, RequestedCall* requested_call) {
-      result.store(new absl::StatusOr<MatchResult>(
-                       MatchResult(server, cq_idx, requested_call)),
-                   std::memory_order_release);
+    // Returns true if requested_call consumed, false otherwise.
+    GRPC_MUST_USE_RESULT bool Finish(Server* server, size_t cq_idx,
+                                     RequestedCall* requested_call) {
+      ResultType* expected = nullptr;
+      ResultType* new_value =
+          new ResultType(MatchResult(server, cq_idx, requested_call));
+      if (!result.compare_exchange_strong(expected, new_value,
+                                          std::memory_order_acq_rel,
+                                          std::memory_order_acq_rel)) {
+        GPR_ASSERT(new_value->value().TakeCall() == requested_call);
+        return false;
+      }
       waker.Wakeup();
+      return true;
+    }
+    void Expire() {
+      delete result.exchange(new ResultType(absl::CancelledError()),
+                             std::memory_order_acq_rel);
     }
     Waker waker;
-    std::atomic<absl::StatusOr<MatchResult>*> result{nullptr};
+    Timestamp queue_time = Timestamp::Now();
+    std::atomic<ResultType*> result{nullptr};
   };
   using PendingCall = absl::variant<CallData*, std::shared_ptr<ActivityWaiter>>;
   size_t matched_immediately_ = 0;

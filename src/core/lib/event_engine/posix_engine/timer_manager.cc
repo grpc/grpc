@@ -62,6 +62,10 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
                              absl::Milliseconds((next - host_.Now()).millis()));
     ++wakeups_;
   }
+  auto delay = grpc_core::Timestamp::Now() - next;
+  if (delay > grpc_core::Duration::Milliseconds(10)) {
+    gpr_log(GPR_ERROR, "WaitUntil: delay=%s", delay.ToString().c_str());
+  }
   kicked_ = false;
   return true;
 }

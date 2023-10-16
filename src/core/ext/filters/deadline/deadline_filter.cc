@@ -363,6 +363,7 @@ const grpc_channel_filter grpc_server_deadline_filter = {
     deadline_server_start_transport_stream_op_batch,
     [](grpc_channel_element*, grpc_core::CallArgs call_args,
        grpc_core::NextPromiseFactory next_promise_factory) {
+      grpc_core::ExecCtx::Get()->InvalidateNow();
       auto deadline = call_args.client_initial_metadata->get(
           grpc_core::GrpcTimeoutMetadata());
       if (deadline.has_value()) {
