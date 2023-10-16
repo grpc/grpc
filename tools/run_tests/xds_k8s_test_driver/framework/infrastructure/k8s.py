@@ -816,7 +816,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                     f"\nThis indicates the NEG wasn't created OR"
                     f" the NEG creation event hasn't propagated to Kubernetes."
                     f" Service metadata:\n"
-                    f"{self.pretty_format_status(result, highlight=False)}"
+                    f"{self.pretty_format_metadata(result, highlight=False)}"
                     f"Service status:\n"
                     f"{self.pretty_format_status(result, highlight=False)}"
                 ),
@@ -1071,7 +1071,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
         return "\n".join(result) + "\n"
 
-    def _pretty_format_metadata(
+    def pretty_format_metadata(
         self,
         k8s_object: Optional[object],
         *,
