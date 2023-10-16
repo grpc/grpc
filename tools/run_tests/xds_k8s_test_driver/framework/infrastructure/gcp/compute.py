@@ -29,7 +29,6 @@ logger = logging.getLogger(__name__)
 
 DEBUG_HEADER_IN_RESPONSE = "x-encrypted-debug-headers"
 DEBUG_HEADER_KEY = "X-Return-Encrypted-Headers"
-HTTP_OK_STATUS = 200
 
 
 class ComputeV1(
@@ -586,7 +585,7 @@ class ComputeV1(
 
     @staticmethod
     def _log_debug_header(resp: httplib2.Response):
-        if DEBUG_HEADER_IN_RESPONSE in resp and resp.status != HTTP_OK_STATUS:
+        if DEBUG_HEADER_IN_RESPONSE in resp and resp.status >= 300:
             logger.info(
                 "Received GCP debug headers: %s",
                 resp[DEBUG_HEADER_IN_RESPONSE],
