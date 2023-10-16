@@ -74,10 +74,10 @@ URL_MAP_TEST_PREFIX = (
 
 KEEP_PERIOD_HOURS = flags.DEFINE_integer(
     "keep_hours",
-    default=168,
+    default=48,
     help=(
         "number of hours for a resource to keep. Resources older than this will"
-        " be deleted. Default is 168 (7 days)"
+        " be deleted. Default is 48 hours (2 days)"
     ),
 )
 DRY_RUN = flags.DEFINE_bool(

@@ -18,9 +18,8 @@ set -eo pipefail
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
 readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc/${TEST_DRIVER_BRANCH:-master}/tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
-# Keep last 7 days.
-readonly KEEP_HOURS="${KEEP_HOURS:-168}"
-
+# Keep orphaned resources last 2 days.
+readonly KEEP_HOURS="${KEEP_HOURS:-48}"
 
 cleanup::activate_cluster() {
   activate_gke_cluster "$1"
