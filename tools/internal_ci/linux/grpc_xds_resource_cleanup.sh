@@ -77,11 +77,23 @@ cleanup::job::cleanup_cluster_security() {
 
 #######################################
 # Set common variables for the cleanup script.
+# Globals:
+#   TEST_XML_OUTPUT_DIR: Output directory for the test xUnit XML report
+#   CLEANUP_KUBE_CONTEXT: The name of kubectl context with GKE cluster access.
+# Arguments:
+#   Test job name. Currently only used to generate asset path, and uses
+#   values from the cleanup_jobs array of main().
+#   TODO(sergiitk): turn job_name into action test methods of the cleanup.
+# Outputs:
+#   Writes the output of test execution to stdout, stderr,
+#   ${TEST_XML_OUTPUT_DIR}/${job_name}/sponge_log.log
 #######################################
 cleanup::run_clean() {
   local job_name="${1:?Usage: cleanup::run_clean job_name}"
   local out_dir="${TEST_XML_OUTPUT_DIR}/${job_name}"
   mkdir -pv "${out_dir}"
+  # TODO(sergiitk): use the flagfile instead
+  # TODO(sergiitk): make it a test, where job_name is a separate method.
   python3 -m bin.cleanup.cleanup \
     --project=grpc-testing \
     --network=default-vpc \
