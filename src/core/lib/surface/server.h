@@ -226,7 +226,8 @@ class Server : public InternallyRefCounted<Server>,
   };
 
   class RequestMatcherInterface;
-  class RealRequestMatcher;
+  class RealRequestMatcherFilterStack;
+  class RealRequestMatcherPromises;
   class AllocatingRequestMatcherBase;
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
@@ -265,7 +266,7 @@ class Server : public InternallyRefCounted<Server>,
     static void SetRegisteredMethodOnMetadata(void* arg,
                                               ServerMetadata* metadata);
 
-    void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
+    void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_ -> mu_global_);
 
     static void FinishDestroy(void* arg, grpc_error_handle error);
 

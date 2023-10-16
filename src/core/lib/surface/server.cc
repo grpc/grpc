@@ -26,6 +26,7 @@
 #include <atomic>
 #include <cstddef>
 #include <list>
+#include <memory>
 #include <new>
 #include <queue>
 #include <type_traits>
@@ -255,12 +256,12 @@ class Server::RequestMatcherInterface {
 // application to explicitly request RPCs and then matching those to incoming
 // RPCs, along with a slow path by which incoming RPCs are put on a locked
 // pending list if they aren't able to be matched to an application request.
-class Server::RealRequestMatcher : public RequestMatcherInterface {
+class Server::RealRequestMatcherFilterStack : public RequestMatcherInterface {
  public:
-  explicit RealRequestMatcher(Server* server)
+  explicit RealRequestMatcherFilterStack(Server* server)
       : server_(server), requests_per_cq_(server->cqs_.size()) {}
 
-  ~RealRequestMatcher() override {
+  ~RealRequestMatcherFilterStack() override {
     for (LockedMultiProducerSingleConsumerQueue& queue : requests_per_cq_) {
       GPR_ASSERT(queue.Pop() == nullptr);
     }
@@ -268,15 +269,8 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
 
   void ZombifyPending() override {
     while (!pending_.empty()) {
-      Match(
-          pending_.front(),
-          [](CallData* calld) {
-            calld->SetState(CallData::CallState::ZOMBIED);
-            calld->KillZombie();
-          },
-          [](const std::shared_ptr<ActivityWaiter>& w) {
-            w->Finish(absl::InternalError("Server closed"));
-          });
+      pending_.front()->SetState(CallData::CallState::ZOMBIED);
+      pending_.front()->KillZombie();
       pending_.pop();
     }
   }
@@ -298,15 +292,13 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
   void RequestCallWithPossiblePublish(size_t request_queue_index,
                                       RequestedCall* call) override {
     if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
-      size_t n = push_firsts_.fetch_add(1, std::memory_order_relaxed) + 1;
-      GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p push_firsts:%" PRIdPTR, this, n);
       // this was the first queued request: we need to lock and start
       // matching calls
       struct NextPendingCall {
         RequestedCall* rc = nullptr;
-        PendingCall pending;
+        CallData* pending;
       };
-      auto pop_next_pending = [this, request_queue_index] {
+      while (true) {
         NextPendingCall pending_call;
         {
           MutexLock lock(&server_->mu_call_);
@@ -314,44 +306,21 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
             pending_call.rc = reinterpret_cast<RequestedCall*>(
                 requests_per_cq_[request_queue_index].Pop());
             if (pending_call.rc != nullptr) {
-              size_t n =
-                  pop_non_nulls_.fetch_add(1, std::memory_order_relaxed) + 1;
-              GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p pop_non_nulls:%" PRIdPTR,
-                                   this, n);
-              pending_call.pending = std::move(pending_.front());
+              pending_call.pending = pending_.front();
               pending_.pop();
-            } else {
-              size_t n = pop_nulls_.fetch_add(1, std::memory_order_relaxed) + 1;
-              GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p pop_nulls:%" PRIdPTR, this,
-                                   n);
             }
           }
         }
-        return pending_call;
-      };
-      while (true) {
-        NextPendingCall next_pending = pop_next_pending();
-        if (next_pending.rc == nullptr) break;
-        Match(
-            next_pending.pending,
-            [&](CallData* calld) {
-              if (!calld->MaybeActivate()) {
-                // Zombied Call
-                calld->KillZombie();
-              } else {
-                calld->Publish(request_queue_index, next_pending.rc);
-              }
-            },
-            [&](const std::shared_ptr<ActivityWaiter>& w) {
-              if (!w->Finish(server(), request_queue_index, next_pending.rc)) {
-                requests_per_cq_[request_queue_index].Push(
-                    &next_pending.rc->mpscq_node);
-              }
-            });
+        if (pending_call.rc == nullptr) break;
+        if (!pending_call.pending->MaybeActivate()) {
+          // Zombied Call
+          pending_call.pending->KillZombie();
+          requests_per_cq_[request_queue_index].Push(
+              &pending_call.rc->mpscq_node);
+        } else {
+          pending_call.pending->Publish(request_queue_index, pending_call.rc);
+        }
       }
-    } else {
-      size_t n = push_mores_.fetch_add(1, std::memory_order_relaxed) + 1;
-      GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p push_mores:%" PRIdPTR, this, n);
     }
   }
 
@@ -397,15 +366,97 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
 
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t start_request_queue_index) override {
+    Crash("not implemented for filter stack request matcher");
+  }
+
+  Server* server() const final { return server_; }
+
+ private:
+  Server* const server_;
+  std::queue<CallData*> pending_;
+  std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
+};
+
+class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
+ public:
+  explicit RealRequestMatcherPromises(Server* server)
+      : server_(server), requests_per_cq_(server->cqs_.size()) {}
+
+  ~RealRequestMatcherPromises() override {
+    for (LockedMultiProducerSingleConsumerQueue& queue : requests_per_cq_) {
+      GPR_ASSERT(queue.Pop() == nullptr);
+    }
+  }
+
+  void ZombifyPending() override {
+    while (!pending_.empty()) {
+      pending_.front()->Finish(absl::InternalError("Server closed"));
+      pending_.pop_front();
+    }
+  }
+
+  void KillRequests(grpc_error_handle error) override {
+    for (size_t i = 0; i < requests_per_cq_.size(); i++) {
+      RequestedCall* rc;
+      while ((rc = reinterpret_cast<RequestedCall*>(
+                  requests_per_cq_[i].Pop())) != nullptr) {
+        server_->FailCall(i, rc, error);
+      }
+    }
+  }
+
+  size_t request_queue_count() const override {
+    return requests_per_cq_.size();
+  }
+
+  void RequestCallWithPossiblePublish(size_t request_queue_index,
+                                      RequestedCall* call) override {
+    if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
+      // this was the first queued request: we need to lock and start
+      // matching calls
+      struct NextPendingCall {
+        RequestedCall* rc = nullptr;
+        PendingCall pending;
+      };
+      auto pop_next_pending = [this, request_queue_index] {
+        NextPendingCall pending_call;
+        {
+          MutexLock lock(&server_->mu_call_);
+          if (!pending_.empty()) {
+            pending_call.rc = reinterpret_cast<RequestedCall*>(
+                requests_per_cq_[request_queue_index].Pop());
+            if (pending_call.rc != nullptr) {
+              pending_call.pending = std::move(pending_.front());
+              pending_.pop_front();
+            }
+          }
+        }
+        return pending_call;
+      };
+      while (true) {
+        NextPendingCall next_pending = pop_next_pending();
+        if (next_pending.rc == nullptr) break;
+        if (!next_pending.pending->Finish(server(), request_queue_index,
+                                          next_pending.rc)) {
+          requests_per_cq_[request_queue_index].Push(
+              &next_pending.rc->mpscq_node);
+        }
+      }
+    }
+  }
+
+  void MatchOrQueue(size_t start_request_queue_index,
+                    CallData* calld) override {
+    Crash("not implemented for promises");
+  }
+
+  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
+      size_t start_request_queue_index) override {
     for (size_t i = 0; i < requests_per_cq_.size(); i++) {
       size_t cq_idx = (start_request_queue_index + i) % requests_per_cq_.size();
       RequestedCall* rc =
           reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].TryPop());
       if (rc != nullptr) {
-        size_t n =
-            matched_instantly_.fetch_add(1, std::memory_order_relaxed) + 1;
-        GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p matched_instantly:%" PRIdPTR,
-                             this, n);
         return Immediate(MatchResult(server(), cq_idx, rc));
       }
     }
@@ -423,37 +474,28 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       // Opportunistically expunge any expired waiters.
       while (!pending_.empty()) {
         auto& p = pending_.front();
-        if (auto* w = absl::get_if<std::shared_ptr<ActivityWaiter>>(&p)) {
-          if ((*w)->result.load(std::memory_order_acquire) != nullptr) {
-            expunged_expired_waiters.push_back(std::move(*w));
-            pending_.pop();
-            continue;
-          }
-          GRPC_LOG_EVERY_N_SEC(
-              1, GPR_ERROR, "oldest pending: %s",
-              (Timestamp::Now() - (*w)->queue_time).ToString().c_str());
+        if (p->result.load(std::memory_order_acquire) != nullptr) {
+          expunged_expired_waiters.push_back(std::move(p));
+          pending_.pop_front();
+          continue;
         }
+        GRPC_LOG_EVERY_N_SEC(
+            1, GPR_ERROR,
+            "oldest pending:%s  count:%" PRIdPTR " expired:%" PRIdPTR,
+            (Timestamp::Now() - p->queue_time).ToString().c_str(),
+            pending_.size(), ExpiredCount());
         break;
       }
       for (loop_count = 0; loop_count < requests_per_cq_.size(); loop_count++) {
         cq_idx =
             (start_request_queue_index + loop_count) % requests_per_cq_.size();
         rc = reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].Pop());
-        if (rc != nullptr) {
-          matched_immediately_++;
-          GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR,
-                               "%p matched_immediately:%" PRIdPTR
-                               " pending:%" PRIdPTR,
-                               this, matched_immediately_, pending_.size());
-          break;
-        }
+        if (rc != nullptr) break;
       }
       if (rc == nullptr) {
         auto w = std::make_shared<ActivityWaiter>(
             Activity::current()->MakeOwningWaker());
-        pending_.push(w);
-        GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%p pending:%" PRIdPTR, this,
-                             pending_.size());
+        pending_.push_back(w);
         return OnCancel(
             [w]() -> Poll<absl::StatusOr<MatchResult>> {
               std::unique_ptr<absl::StatusOr<MatchResult>> r(
@@ -502,14 +544,15 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     Timestamp queue_time = Timestamp::Now();
     std::atomic<ResultType*> result{nullptr};
   };
-  using PendingCall = absl::variant<CallData*, std::shared_ptr<ActivityWaiter>>;
-  size_t matched_immediately_ = 0;
-  std::atomic<size_t> matched_instantly_{0};
-  std::atomic<size_t> push_firsts_{0};
-  std::atomic<size_t> push_mores_{0};
-  std::atomic<size_t> pop_nulls_{0};
-  std::atomic<size_t> pop_non_nulls_{0};
-  std::queue<PendingCall> pending_;
+  size_t ExpiredCount() {
+    size_t n = 0;
+    for (auto& p : pending_) {
+      if (p->result.load(std::memory_order_relaxed) != nullptr) n++;
+    }
+    return n;
+  }
+  using PendingCall = std::shared_ptr<ActivityWaiter>;
+  std::deque<PendingCall> pending_;
   std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
 };
 
@@ -783,6 +826,15 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
 }
 
 void Server::Start() {
+  auto make_real_request_matcher =
+      [this]() -> std::unique_ptr<RequestMatcherInterface> {
+    if (IsPromiseBasedServerCallEnabled()) {
+      return std::make_unique<RealRequestMatcherPromises>(this);
+    } else {
+      return std::make_unique<RealRequestMatcherFilterStack>(this);
+    }
+  };
+
   started_ = true;
   for (grpc_completion_queue* cq : cqs_) {
     if (grpc_cq_can_listen(cq)) {
@@ -790,11 +842,11 @@ void Server::Start() {
     }
   }
   if (unregistered_request_matcher_ == nullptr) {
-    unregistered_request_matcher_ = std::make_unique<RealRequestMatcher>(this);
+    unregistered_request_matcher_ = make_real_request_matcher();
   }
   for (std::unique_ptr<RegisteredMethod>& rm : registered_methods_) {
     if (rm->matcher == nullptr) {
-      rm->matcher = std::make_unique<RealRequestMatcher>(this);
+      rm->matcher = make_real_request_matcher();
     }
   }
   {
