@@ -189,6 +189,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
   if (g_local_queue != nullptr) {
     g_local_queue->Add(closure);
   } else {
+    GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "qsize:%" PRIdPTR, queue_.Size());
     queue_.Add(closure);
   }
   // Signal a worker in any case, even if work was added to a local queue. This
@@ -340,8 +341,11 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
   // No new work is done when forking needs to begin.
   if (pool_->forking_.load()) return;
   const auto living_thread_count = pool_->living_thread_count()->count();
+  const auto busy_thread_count = pool_->busy_thread_count()->count();
+  gpr_log(GPR_ERROR, "BUSY:%" PRIdPTR " LIVING:%" PRIdPTR, busy_thread_count,
+          living_thread_count);
   // Wake an idle worker thread if there's global work to be had.
-  if (pool_->busy_thread_count()->count() < living_thread_count) {
+  if (busy_thread_count < living_thread_count) {
     if (!pool_->queue_.Empty()) {
       pool_->work_signal()->Signal();
       backoff_.Reset();

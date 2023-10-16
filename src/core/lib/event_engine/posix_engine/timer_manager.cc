@@ -41,8 +41,25 @@ grpc_core::DebugOnlyTraceFlag grpc_event_engine_timer_trace(false, "timer");
 
 void TimerManager::RunSomeTimers(
     std::vector<experimental::EventEngine::Closure*> timers) {
+  class BenchmarkingClosure final : public EventEngine::Closure {
+   public:
+    explicit BenchmarkingClosure(EventEngine::Closure* inner) : inner_(inner) {}
+    void Run() override {
+      auto delay = grpc_core::Timestamp::Now() - creation_;
+      if (delay > grpc_core::Duration::Seconds(1)) {
+        gpr_log(GPR_ERROR, "BenchmarkingClosure: delay=%s",
+                delay.ToString().c_str());
+      }
+      inner_->Run();
+      delete this;
+    }
+
+   private:
+    grpc_core::Timestamp creation_ = grpc_core::Timestamp::Now();
+    EventEngine::Closure* const inner_;
+  };
   for (auto* timer : timers) {
-    thread_pool_->Run(timer);
+    thread_pool_->Run(new BenchmarkingClosure(timer));
   }
 }
 
@@ -71,6 +88,7 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
 }
 
 void TimerManager::MainLoop() {
+  GPR_ASSERT(!grpc_core::Timestamp::NowComesFromCache());
   for (;;) {
     grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
     absl::optional<std::vector<experimental::EventEngine::Closure*>>

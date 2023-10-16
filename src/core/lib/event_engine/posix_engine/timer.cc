@@ -221,6 +221,10 @@ Timer* TimerList::Shard::PopOne(grpc_core::Timestamp now) {
         grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
             timer->deadline);
     if (timer_deadline > now) return nullptr;
+    auto late = now - timer_deadline;
+    if (late > grpc_core::Duration::Seconds(1)) {
+      gpr_log(GPR_ERROR, "Pop timer %s late", late.ToString().c_str());
+    }
     timer->pending = false;
     heap.Pop();
     return timer;

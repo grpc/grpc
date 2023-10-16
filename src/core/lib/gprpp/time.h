@@ -37,7 +37,7 @@
     uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
                        gpr_now(GPR_CLOCK_MONOTONIC))            \
                        .milliseconds_after_process_epoch();     \
-    if (prev == 0 || now - prev > (n)*1000) {                   \
+    if (prev == 0 || now - prev > (n) * 1000) {                 \
       prev = now;                                               \
       gpr_log(severity, format, __VA_ARGS__);                   \
     }                                                           \
@@ -50,7 +50,7 @@
                        gpr_now(GPR_CLOCK_MONOTONIC))            \
                        .milliseconds_after_process_epoch();     \
     uint64_t prev_tsamp = prev.exchange(now);                   \
-    if (now - prev_tsamp > (n)*1000) {                          \
+    if (now - prev_tsamp > (n) * 1000) {                        \
       gpr_log(severity, format, __VA_ARGS__);                   \
     }                                                           \
   } while (0)
@@ -92,6 +92,7 @@ class Timestamp {
     // Return the current time.
     virtual Timestamp Now() = 0;
     virtual void InvalidateCache() {}
+    virtual bool IsCached() const { return false; }
 
    protected:
     // We don't delete through this interface, so non-virtual dtor is fine.
@@ -106,6 +107,7 @@ class Timestamp {
     ScopedSource(const ScopedSource&) = delete;
     ScopedSource& operator=(const ScopedSource&) = delete;
     void InvalidateCache() override { previous_->InvalidateCache(); }
+    bool IsCached() const override { return previous_->IsCached(); }
 
    protected:
     ~ScopedSource() { thread_local_time_source_ = previous_; }
@@ -125,6 +127,9 @@ class Timestamp {
   static Timestamp FromCycleCounterRoundDown(gpr_cycle_counter c);
 
   static Timestamp Now() { return thread_local_time_source_->Now(); }
+  static bool NowComesFromCache() {
+    return thread_local_time_source_->IsCached();
+  }
 
   static constexpr Timestamp FromMillisecondsAfterProcessEpoch(int64_t millis) {
     return Timestamp(millis);
@@ -183,6 +188,7 @@ class ScopedTimeCache final : public Timestamp::ScopedSource {
     cached_time_ = absl::nullopt;
     Timestamp::ScopedSource::InvalidateCache();
   }
+  bool IsCached() const override { return true; }
   void TestOnlySetNow(Timestamp now) { cached_time_ = now; }
 
  private:
