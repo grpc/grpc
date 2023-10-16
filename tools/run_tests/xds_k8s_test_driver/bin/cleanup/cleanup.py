@@ -75,7 +75,10 @@ URL_MAP_TEST_PREFIX = (
 KEEP_PERIOD_HOURS = flags.DEFINE_integer(
     "keep_hours",
     default=168,
-    help="number of hours for a resource to keep. Resources older than this will be deleted. Default is 168 (7 days)",
+    help=(
+        "number of hours for a resource to keep. Resources older than this will"
+        " be deleted. Default is 168 (7 days)"
+    ),
 )
 DRY_RUN = flags.DEFINE_bool(
     "dry_run",
@@ -85,17 +88,26 @@ DRY_RUN = flags.DEFINE_bool(
 TD_RESOURCE_PREFIXES = flags.DEFINE_list(
     "td_resource_prefixes",
     default=[PSM_INTEROP_PREFIX],
-    help="a comma-separated list of `prefixes for which the leaked TD resources will be deleted",
+    help=(
+        "a comma-separated list of prefixes for which the leaked TD resources"
+        " will be deleted"
+    ),
 )
 SERVER_PREFIXES = flags.DEFINE_list(
     "server_prefixes",
     default=[PSM_INTEROP_PREFIX],
-    help="a comma-separated list of prefixes for which the leaked servers will be deleted",
+    help=(
+        "a comma-separated list of prefixes for which the leaked servers will"
+        " be deleted"
+    ),
 )
 CLIENT_PREFIXES = flags.DEFINE_list(
     "client_prefixes",
     default=[PSM_INTEROP_PREFIX, URL_MAP_TEST_PREFIX],
-    help="a comma-separated list of prefixes for which the leaked clients will be deleted",
+    help=(
+        "a comma-separated list of prefixes for which the leaked clients will"
+        " be deleted"
+    ),
 )
 MODE = flags.DEFINE_enum(
     "mode",
@@ -104,7 +116,9 @@ MODE = flags.DEFINE_enum(
     help="Mode: Kubernetes or Traffic Director",
 )
 SECONDARY = flags.DEFINE_bool(
-    "secondary", default=False, help="Cleanup secondary (alternative) resources"
+    "secondary",
+    default=False,
+    help="Cleanup secondary (alternative) resources",
 )
 
 # The cleanup script performs some API calls directly, so some flags normally
@@ -660,6 +674,7 @@ def find_and_remove_leaked_td_resources(dry_run, project, network):
 
 
 def main(argv):
+    # TODO(sergiitk): instead, base on absltest so that result.xml is available.
     if len(argv) > 1:
         raise app.UsageError("Too many command-line arguments.")
     load_keep_config()

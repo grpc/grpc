@@ -18,6 +18,9 @@ set -eo pipefail
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
 readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc/${TEST_DRIVER_BRANCH:-master}/tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
+# Keep last 7 days.
+readonly KEEP_HOURS="${KEEP_HOURS:-168}"
+
 
 cleanup::activate_cluster() {
   activate_gke_cluster "$1"
@@ -45,7 +48,7 @@ cleanup::job::cleanup_td() {
 #######################################
 cleanup::job::cleanup_cluster_lb_primary() {
   cleanup::activate_cluster GKE_CLUSTER_PSM_LB
-  cleanup::run_clean "$1" --mode=k8s --keep_hours=6
+  cleanup::run_clean "$1" --mode=k8s
 }
 
 #######################################
@@ -54,7 +57,7 @@ cleanup::job::cleanup_cluster_lb_primary() {
 #######################################
 cleanup::job::cleanup_cluster_lb_secondary() {
   cleanup::activate_secondary_cluster_as_primary GKE_CLUSTER_PSM_LB
-  cleanup::run_clean "$1" --mode=k8s --secondary --keep_hours=6
+  cleanup::run_clean "$1" --mode=k8s --secondary
 }
 
 #######################################
@@ -64,7 +67,7 @@ cleanup::job::cleanup_cluster_lb_secondary() {
 #######################################
 cleanup::job::cleanup_cluster_url_map() {
   cleanup::activate_cluster GKE_CLUSTER_PSM_BASIC
-  cleanup::run_clean "$1" --mode=k8s --keep_hours=6
+  cleanup::run_clean "$1" --mode=k8s
 }
 
 #######################################
@@ -72,12 +75,13 @@ cleanup::job::cleanup_cluster_url_map() {
 #######################################
 cleanup::job::cleanup_cluster_security() {
   cleanup::activate_cluster GKE_CLUSTER_PSM_SECURITY
-  cleanup::run_clean "$1" --mode=k8s --keep_hours=6
+  cleanup::run_clean "$1" --mode=k8s
 }
 
 #######################################
 # Set common variables for the cleanup script.
 # Globals:
+#   TEST_DRIVER_FLAGFILE: Relative path to test driver flagfile
 #   TEST_XML_OUTPUT_DIR: Output directory for the test xUnit XML report
 #   CLEANUP_KUBE_CONTEXT: The name of kubectl context with GKE cluster access.
 # Arguments:
@@ -92,14 +96,11 @@ cleanup::run_clean() {
   local job_name="${1:?Usage: cleanup::run_clean job_name}"
   local out_dir="${TEST_XML_OUTPUT_DIR}/${job_name}"
   mkdir -pv "${out_dir}"
-  # TODO(sergiitk): use the flagfile instead
   # TODO(sergiitk): make it a test, where job_name is a separate method.
   python3 -m bin.cleanup.cleanup \
-    --project=grpc-testing \
-    --network=default-vpc \
-    --color_style=ansi16 \
-    --gcp_service_account=xds-k8s-interop-tests@grpc-testing.iam.gserviceaccount.com \
+    --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${CLEANUP_KUBE_CONTEXT:-unset}" \
+    --keep_hours="${KEEP_HOURS}" \
     "${@:2}" \
     |& tee "${out_dir}/sponge_log.log"
 }
