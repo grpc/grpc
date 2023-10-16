@@ -49,6 +49,7 @@ grpc_cc_binary(
     ],
     language = "C++",
     tags = ["no_windows"],
+    visibility = ["//visibility:public"],
     deps = [
         "//:grpc++",
         "//src/proto/grpc/testing:empty_proto",
@@ -68,6 +69,7 @@ grpc_cc_binary(
         "absl/flags:flag",
     ],
     language = "C++",
+    visibility = ["//visibility:public"],
     deps = [
         ":interop_server_lib",
         "//:grpc++",
@@ -133,6 +135,7 @@ grpc_cc_library(
 grpc_cc_binary(
     name = "interop_client",
     language = "C++",
+    visibility = ["//visibility:public"],
     deps = [
         ":interop_client_main",
         "//:grpc++",
