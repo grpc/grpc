@@ -80,7 +80,6 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
     TimerManager* const timer_manager_;
   };
 
-  void StartMainLoopThread();
   void RestartPostFork();
   void MainLoop();
   void RunSomeTimers(std::vector<experimental::EventEngine::Closure*> timers);
@@ -103,7 +102,6 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
   uint64_t wakeups_ ABSL_GUARDED_BY(mu_) = false;
   // actual timer implementation
   std::unique_ptr<TimerList> timer_list_;
-  grpc_core::Thread main_thread_;
   std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool_;
   absl::optional<grpc_core::Notification> main_loop_exit_signal_;
 };
