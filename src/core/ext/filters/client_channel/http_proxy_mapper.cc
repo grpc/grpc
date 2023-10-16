@@ -58,12 +58,8 @@
 namespace grpc_core {
 namespace {
 
-bool ServerInCIDRRange(absl::string_view server_host,
+bool ServerInCIDRRange(const grpc_resolved_address& server_address,
                        absl::string_view no_proxy_entry) {
-  auto server_address = StringToSockaddr(server_host, 0);
-  if (!server_address.ok()) {
-    return false;
-  }
   std::pair<absl::string_view, absl::string_view> possible_cidr =
       absl::StrSplit(no_proxy_entry, absl::MaxSplits('/', 2),
                      absl::SkipEmpty());
@@ -77,8 +73,25 @@ bool ServerInCIDRRange(absl::string_view server_host,
   uint32_t mask_bits = 0;
   if (absl::SimpleAtoi(possible_cidr.second, &mask_bits)) {
     grpc_sockaddr_mask_bits(&*proxy_address, mask_bits);
-    return grpc_sockaddr_match_subnet(&*server_address, &*proxy_address,
+    return grpc_sockaddr_match_subnet(&server_address, &*proxy_address,
                                       mask_bits);
+  }
+  return false;
+}
+
+bool AddressIncluded(
+    const absl::StatusOr<grpc_resolved_address>& target_address,
+    absl::string_view address_string, absl::string_view address_ranges) {
+  std::vector<absl::string_view> no_proxy_hosts =
+      absl::StrSplit(address_ranges, ',', absl::SkipEmpty());
+  for (const auto& no_proxy_entry : no_proxy_hosts) {
+    auto entry = absl::StripAsciiWhitespace(no_proxy_entry);
+    if (absl::EndsWithIgnoreCase(address_string, entry)) {
+      return true;
+    }
+    if (target_address.ok() && ServerInCIDRRange(*target_address, entry)) {
+      return true;
+    }
   }
   return false;
 }
@@ -157,11 +170,18 @@ std::string MaybeAddDefaultPort(absl::string_view target) {
   return std::string(target);
 }
 
-absl::optional<grpc_resolved_address> GetAddressProxyServer(ChannelArgs* args) {
-  auto address_value = args->GetOwnedString(GRPC_ARG_ADDRESS_HTTP_PROXY);
-  if (!address_value.has_value()) {
-    address_value = GetEnv(HttpProxyMapper::kAddressProxyEnvVar);
+absl::optional<std::string> GetChannelArgOrEnvVarValue(
+    ChannelArgs* args, absl::string_view channel_arg, const char* env_var) {
+  auto arg_value = args->GetString(channel_arg);
+  if (arg_value.has_value()) {
+    return std::string(*arg_value);
   }
+  return GetEnv(env_var);
+}
+
+absl::optional<grpc_resolved_address> GetAddressProxyServer(ChannelArgs* args) {
+  auto address_value = GetChannelArgOrEnvVarValue(
+      args, GRPC_ARG_ADDRESS_HTTP_PROXY, HttpProxyMapper::kAddressProxyEnvVar);
   if (!address_value.has_value()) {
     return absl::nullopt;
   }
@@ -209,7 +229,6 @@ absl::optional<std::string> HttpProxyMapper::MapName(
     no_proxy_str = GetEnv("no_proxy");
   }
   if (no_proxy_str.has_value()) {
-    bool use_proxy = true;
     std::string server_host;
     std::string server_port;
     if (!SplitHostPort(absl::StripPrefix(uri->path(), "/"), &server_host,
@@ -219,19 +238,12 @@ absl::optional<std::string> HttpProxyMapper::MapName(
               "host '%s'",
               std::string(server_uri).c_str());
     } else {
-      std::vector<absl::string_view> no_proxy_hosts =
-          absl::StrSplit(*no_proxy_str, ',', absl::SkipEmpty());
-      for (const auto& no_proxy_entry : no_proxy_hosts) {
-        auto entry = absl::StripAsciiWhitespace(no_proxy_entry);
-        if (absl::EndsWithIgnoreCase(server_host, entry) ||
-            ServerInCIDRRange(server_host, entry)) {
-          gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
-                  std::string(server_uri).c_str());
-          use_proxy = false;
-          break;
-        }
+      if (AddressIncluded(StringToSockaddr(server_host, 0), server_host,
+                          *no_proxy_str)) {
+        gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
+                std::string(server_uri).c_str());
+        return absl::nullopt;
       }
-      if (!use_proxy) return absl::nullopt;
     }
   }
   *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER,
@@ -253,14 +265,20 @@ absl::optional<grpc_resolved_address> HttpProxyMapper::MapAddress(
   if (!proxy_address.has_value()) {
     return absl::nullopt;
   }
+  auto enabled_addresses = GetChannelArgOrEnvVarValue(
+      args, GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES,
+      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar);
+  if (!enabled_addresses.has_value() ||
+      !AddressIncluded(address, "", *enabled_addresses)) {
+    return absl::nullopt;
+  }
   auto address_string = grpc_sockaddr_to_string(&address, true);
   if (!address_string.ok()) {
     gpr_log(GPR_ERROR, "Unable to convert address to string: %s",
             std::string(address_string.status().message()).c_str());
     return absl::nullopt;
-  } else {
-    *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER, *address_string);
   }
+  *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER, *address_string);
   return proxy_address;
 }
 

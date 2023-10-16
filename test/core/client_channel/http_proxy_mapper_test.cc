@@ -165,6 +165,8 @@ TEST(NoProxyTest, InvalidCIDREntries) {
 TEST(ProxyForAddressTest, SetByEnvVar) {
   ScopedEnvVar address_proxy(HttpProxyMapper::kAddressProxyEnvVar,
                              "192.168.0.100:2020");
+  ScopedEnvVar address_proxy_enabled(
+      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar, "0.0.0.0/0");
   auto args = ChannelArgs();
   auto address = StringToSockaddr("192.168.0.1:3333");
   ASSERT_TRUE(address.ok()) << address.status();
@@ -179,6 +181,8 @@ TEST(ProxyForAddressTest, SetByEnvVar) {
 TEST(ProxyForAddressTest, ChannelArgPreferred) {
   ScopedEnvVar address_proxy(HttpProxyMapper::kAddressProxyEnvVar,
                              "192.168.0.100:2020");
+  ScopedEnvVar address_proxy_enabled(
+      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar, "0.0.0.0/0");
   auto args =
       ChannelArgs().Set(GRPC_ARG_ADDRESS_HTTP_PROXY, "192.168.0.101:2020");
   auto address = StringToSockaddr("192.168.0.1:3333");
