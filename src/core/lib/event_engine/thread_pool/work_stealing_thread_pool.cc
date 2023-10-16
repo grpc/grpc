@@ -117,6 +117,8 @@ constexpr grpc_core::Duration kLifeguardMinSleepBetweenChecks{
 // Maximum time the lifeguard thread should sleep between checking for new work.
 constexpr grpc_core::Duration kLifeguardMaxSleepBetweenChecks{
     grpc_core::Duration::Seconds(1)};
+// Maximum size of the local queue, before enqueueing new work globally.
+constexpr size_t kMaxLocalQueueSize{10};
 }  // namespace
 
 thread_local WorkQueue* g_local_queue = nullptr;
@@ -186,7 +188,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
     EventEngine::Closure* closure) {
   GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
-  if (g_local_queue != nullptr) {
+  if (g_local_queue != nullptr && g_local_queue->Size() < kMaxLocalQueueSize) {
     g_local_queue->Add(closure);
   } else {
     queue_.Add(closure);
