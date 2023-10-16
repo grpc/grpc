@@ -79,7 +79,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-grpc_core::TraceFlag grpc_trace_ares_resolver(false, "cares_resolver");
+grpc_core::TraceFlag grpc_trace_ares_resolver(true, "cares_resolver");
 
 namespace {
 
