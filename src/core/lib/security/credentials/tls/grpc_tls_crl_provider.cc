@@ -25,10 +25,9 @@
 #include <memory>
 #include <utility>
 
+// IWYU pragma: no_include <openssl/mem.h>
 #include <openssl/bio.h>
-
-// IWYU pragma: no_include "openssl/mem.h"
-#include <openssl/crypto.h>  // For OPENSSL_free
+#include <openssl/crypto.h>  // IWYU pragma: keep
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 
