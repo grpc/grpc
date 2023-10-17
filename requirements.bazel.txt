@@ -5,7 +5,7 @@ protobuf>=3.5.0.post1, < 4.0dev
 wheel==0.38.1
 oauth2client==4.1.0
 requests==2.25.1
-urllib3==1.26.5
+urllib3==1.26.18
 chardet==3.0.4
 certifi==2023.7.22
 idna==2.7
