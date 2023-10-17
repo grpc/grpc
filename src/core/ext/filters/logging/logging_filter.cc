@@ -21,7 +21,6 @@
 #include "src/core/ext/filters/logging/logging_filter.h"
 
 #include <inttypes.h>
-#include <limits.h>
 
 #include <algorithm>
 #include <cstddef>
@@ -54,7 +53,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -73,6 +71,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/cpp/ext/filters/census/client_filter.h"
 
 namespace grpc_core {
 
@@ -553,28 +552,15 @@ const grpc_channel_filter ServerLoggingFilter::kFilter =
 void RegisterLoggingFilter(LoggingSink* sink) {
   g_logging_sink = sink;
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterStage(
-        GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
-          // TODO(yashykt) : Figure out a good place to place this channel
-          // arg
-          if (builder->channel_args()
-                  .GetInt("grpc.experimental.enable_observability")
-                  .value_or(true)) {
-            builder->PrependFilter(&ServerLoggingFilter::kFilter);
-          }
-          return true;
-        });
-    builder->channel_init()->RegisterStage(
-        GRPC_CLIENT_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
-          // TODO(yashykt) : Figure out a good place to place this channel
-          // arg
-          if (builder->channel_args()
-                  .GetInt("grpc.experimental.enable_observability")
-                  .value_or(true)) {
-            builder->PrependFilter(&ClientLoggingFilter::kFilter);
-          }
-          return true;
-        });
+    builder->channel_init()
+        ->RegisterFilter(GRPC_SERVER_CHANNEL, &ServerLoggingFilter::kFilter)
+        // TODO(yashykt) : Figure out a good place to place this channel arg
+        .IfChannelArg("grpc.experimental.enable_observability", true);
+    builder->channel_init()
+        ->RegisterFilter(GRPC_CLIENT_CHANNEL, &ClientLoggingFilter::kFilter)
+        // TODO(yashykt) : Figure out a good place to place this channel arg
+        .IfChannelArg("grpc.experimental.enable_observability", true)
+        .After({&grpc::internal::OpenCensusClientFilter::kFilter});
   });
 }
 

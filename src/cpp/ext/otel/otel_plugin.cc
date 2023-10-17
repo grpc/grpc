@@ -20,8 +20,6 @@
 
 #include "src/cpp/ext/otel/otel_plugin.h"
 
-#include <limits.h>
-
 #include <type_traits>
 #include <utility>
 
@@ -36,7 +34,6 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/cpp/ext/otel/otel_client_filter.h"
@@ -251,20 +248,17 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   grpc_core::CoreConfiguration::RegisterBuilder(
       [target_selector = std::move(target_selector_)](
           grpc_core::CoreConfiguration::Builder* builder) mutable {
-        builder->channel_init()->RegisterStage(
-            GRPC_CLIENT_CHANNEL, /*priority=*/INT_MAX,
-            [target_selector = std::move(target_selector)](
-                grpc_core::ChannelStackBuilder* builder) {
+        builder->channel_init()
+            ->RegisterFilter(
+                GRPC_CLIENT_CHANNEL,
+                &grpc::internal::OpenTelemetryClientFilter::kFilter)
+            .If([target_selector = std::move(target_selector)](
+                    const grpc_core::ChannelArgs& args) {
               // Only register the filter if no channel selector has been set or
               // the target selector returns true for the target.
-              if (target_selector == nullptr ||
-                  target_selector(builder->channel_args()
-                                      .GetString(GRPC_ARG_SERVER_URI)
-                                      .value_or(""))) {
-                builder->PrependFilter(
-                    &grpc::internal::OpenTelemetryClientFilter::kFilter);
-              }
-              return true;
+              return target_selector == nullptr ||
+                     target_selector(
+                         args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
             });
       });
 }

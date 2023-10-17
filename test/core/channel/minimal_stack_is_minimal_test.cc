@@ -54,19 +54,19 @@
 #include "test/core/util/test_config.h"
 
 std::vector<std::string> MakeStack(const char* transport_name,
-                                   const grpc_core::ChannelArgs& channel_args,
+                                   grpc_core::ChannelArgs channel_args,
                                    grpc_channel_stack_type channel_stack_type) {
   // create phony channel stack
-  grpc_core::ChannelStackBuilderImpl builder("test", channel_stack_type,
-                                             channel_args);
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = transport_name;
   grpc_transport fake_transport = {&fake_transport_vtable};
-  builder.SetTarget("foo.test.google.fr");
   if (transport_name != nullptr) {
-    builder.SetTransport(&fake_transport);
+    channel_args = channel_args.SetObject(&fake_transport);
   }
+  grpc_core::ChannelStackBuilderImpl builder("test", channel_stack_type,
+                                             channel_args);
+  builder.SetTarget("foo.test.google.fr");
   {
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(

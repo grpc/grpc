@@ -674,6 +674,7 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
+  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/channel_trace.h
   - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
@@ -1502,6 +1503,7 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
+  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/channel_trace.cc
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
@@ -2101,6 +2103,7 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
+  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/channel_trace.h
   - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
@@ -2543,6 +2546,7 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
+  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/channel_trace.cc
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
@@ -4127,6 +4131,7 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
+  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/channel_trace.h
   - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
@@ -4444,6 +4449,7 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
+  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/channel_trace.cc
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
@@ -6600,6 +6606,17 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: channel_init_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/channel_init_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: channel_stack_builder_test
   gtest: true
   build: test
@@ -15738,6 +15755,7 @@ targets:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
+  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/channel_trace.h
   - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
@@ -16037,6 +16055,7 @@ targets:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
+  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/channel_trace.cc
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc

@@ -90,14 +90,14 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   grpc_arg arg = channel_stack_modifier->MakeChannelArg();
   // Create a phony ChannelStackBuilder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  ChannelStackBuilderImpl builder("test", GRPC_SERVER_CHANNEL,
-                                  ChannelArgs::FromC(args));
-  grpc_channel_args_destroy(args);
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = "fake";
   grpc_transport fake_transport = {&fake_transport_vtable};
-  builder.SetTransport(&fake_transport);
+  ChannelStackBuilderImpl builder(
+      "test", GRPC_SERVER_CHANNEL,
+      ChannelArgs::FromC(args).SetObject<grpc_transport>(&fake_transport));
+  grpc_channel_args_destroy(args);
   // Construct channel stack and verify that the test filters were successfully
   // added
   {
