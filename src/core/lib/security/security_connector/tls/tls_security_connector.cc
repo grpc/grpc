@@ -550,7 +550,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
-      options_->crl_provider(), &client_handshaker_factory_);
+      &client_handshaker_factory_);
   // Free memory.
   if (pem_key_cert_pair != nullptr) {
     grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
@@ -817,8 +817,7 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()),
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
-      options_->send_client_ca_list(), options_->crl_provider(),
-      &server_handshaker_factory_);
+      options_->send_client_ca_list(), &server_handshaker_factory_);
   // Free memory.
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,
                                           num_key_cert_pairs);
