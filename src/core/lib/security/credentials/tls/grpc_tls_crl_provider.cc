@@ -67,15 +67,16 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
   if (!err.ok()) {
     // TODO(gtcooke94) log error differently?
     gpr_log(GPR_ERROR, "Error reading file %s", err.message().data());
+    grpc_slice_unref(crl_slice);
     return absl::InvalidArgumentError("Could not load file");
   }
   std::string raw_crl = std::string(StringViewFromSlice(crl_slice));
-  absl::StatusOr<std::unique_ptr<Crl>> result = Crl::Parse(raw_crl);
-  if (!result.ok()) {
+  absl::StatusOr<std::unique_ptr<Crl>> crl = Crl::Parse(raw_crl);
+  if (!crl.ok()) {
+    grpc_slice_unref(crl_slice);
     return absl::InvalidArgumentError(absl::StrCat(
-        "Parsing crl string failed with result ", result.status().ToString()));
+        "Parsing crl string failed with result ", crl.status().ToString()));
   }
-  std::shared_ptr<Crl> crl = std::move(*result);
   grpc_slice_unref(crl_slice);
   return crl;
 }
