@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <initializer_list>  // IWYU pragma: keep
@@ -31,6 +32,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
@@ -71,10 +73,11 @@ class ClientTransport {
                 [stream_id, initial_frame = true,
                  client_initial_metadata =
                      std::move(call_args.client_initial_metadata),
-                 outgoing_frames = outgoing_frames_.MakeSender(), this](
-                    MessageHandle result) mutable {
+                 outgoing_frames = outgoing_frames_.MakeSender(),
+                 this](MessageHandle result) mutable {
                   ClientFragmentFrame frame;
-                  // Construct frame header (flags, header_length and trailer_length will be added in serialization).
+                  // Construct frame header (flags, header_length and
+                  // trailer_length will be added in serialization).
                   uint32_t message_length = result->payload()->Length();
                   uint32_t message_padding = message_length % aligned_bytes;
                   frame.frame_header = FrameHeader{

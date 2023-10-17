@@ -83,7 +83,8 @@ struct ClientFragmentFrame final : public FrameInterface {
   bool end_of_stream = false;
 
   bool operator==(const ClientFragmentFrame& other) const {
-    return frame_header == other.frame_header && EqHdl(headers, other.headers) &&
+    return frame_header == other.frame_header &&
+           EqHdl(headers, other.headers) &&
            end_of_stream == other.end_of_stream;
   }
 };
@@ -99,8 +100,8 @@ struct ServerFragmentFrame final : public FrameInterface {
   ServerMetadataHandle trailers;
 
   bool operator==(const ServerFragmentFrame& other) const {
-    return frame_header == other.frame_header && EqHdl(headers, other.headers) &&
-           EqHdl(trailers, other.trailers);
+    return frame_header == other.frame_header &&
+           EqHdl(headers, other.headers) && EqHdl(trailers, other.trailers);
   }
 };
 

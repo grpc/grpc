@@ -20,10 +20,7 @@
 #include <string>
 #include <tuple>
 
-#include "absl/status/statusor.h"
-
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -65,8 +62,8 @@ ClientTransport::ClientTransport(
                 control_endpoint_write_buffer_.Append(
                     frame->Serialize(hpack_compressor_.get()));
                 if (frame->message != nullptr) {
-                  std::string message_padding(frame->frame_header.message_padding,
-                                              '0');
+                  std::string message_padding(
+                      frame->frame_header.message_padding, '0');
                   Slice slice(grpc_slice_from_cpp_string(message_padding));
                   // Append message padding to data_endpoint_buffer.
                   data_endpoint_write_buffer_.Append(std::move(slice));
