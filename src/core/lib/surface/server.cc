@@ -505,6 +505,7 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
             },
             [this, w]() {
               w->Expire();
+              server_->mu_call_.AssertNotHeld();
               MutexLock lock(&server_->mu_call_);
               pending_.erase(w);
             });

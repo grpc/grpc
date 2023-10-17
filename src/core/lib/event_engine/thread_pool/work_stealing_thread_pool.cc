@@ -342,8 +342,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
   if (pool_->forking_.load()) return;
   const auto living_thread_count = pool_->living_thread_count()->count();
   const auto busy_thread_count = pool_->busy_thread_count()->count();
-  gpr_log(GPR_ERROR, "BUSY:%" PRIdPTR " LIVING:%" PRIdPTR, busy_thread_count,
-          living_thread_count);
+  GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "BUSY:%" PRIdPTR " LIVING:%" PRIdPTR,
+                       busy_thread_count, living_thread_count);
   // Wake an idle worker thread if there's global work to be had.
   if (busy_thread_count < living_thread_count) {
     if (!pool_->queue_.Empty()) {

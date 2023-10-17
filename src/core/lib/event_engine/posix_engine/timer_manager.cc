@@ -32,8 +32,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/thd.h"
 
-static thread_local bool g_timer_thread;
-
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -87,35 +85,29 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
   return true;
 }
 
-void TimerManager::MainLoop() {
+void TimerManager::Main() {
   GPR_ASSERT(!grpc_core::Timestamp::NowComesFromCache());
-  for (;;) {
-    grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
-    absl::optional<std::vector<experimental::EventEngine::Closure*>>
-        check_result = timer_list_->TimerCheck(&next);
-    GPR_ASSERT(check_result.has_value() &&
-               "ERROR: More than one MainLoop is running.");
-    if (!check_result->empty()) {
-      RunSomeTimers(std::move(*check_result));
-      continue;
+  grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
+  absl::optional<std::vector<experimental::EventEngine::Closure*>>
+      check_result = timer_list_->TimerCheck(&next);
+  GPR_ASSERT(check_result.has_value() &&
+             "ERROR: More than one MainLoop is running.");
+  thread_pool_->Run([this, next]() {
+    if (!WaitUntil(next)) {
+      main_loop_exit_signal_->Notify();
+      return;
     }
-    if (!WaitUntil(next)) break;
+    Main();
+  });
+  if (!check_result->empty()) {
+    RunSomeTimers(std::move(*check_result));
   }
-  main_loop_exit_signal_->Notify();
 }
 
-bool TimerManager::IsTimerManagerThread() { return g_timer_thread; }
+bool TimerManager::IsTimerManagerThread() { return false; }
 
 void TimerManager::StartMainLoopThread() {
-  main_thread_ = grpc_core::Thread(
-      "timer_manager",
-      [](void* arg) {
-        auto self = static_cast<TimerManager*>(arg);
-        self->MainLoop();
-      },
-      this, nullptr,
-      grpc_core::Thread::Options().set_tracked(false).set_joinable(false));
-  main_thread_.Start();
+  thread_pool_->Run([this]() { Main(); });
 }
 
 TimerManager::TimerManager(
