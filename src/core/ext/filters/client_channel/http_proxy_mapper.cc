@@ -154,7 +154,7 @@ absl::optional<std::string> GetHttpProxyServer(
   for (size_t i = 0; i < authority_nstrs; i++) {
     gpr_free(authority_strs[i]);
   }
-  gpr_free(reinterpret_cast<void*>(authority_strs));
+  gpr_free(authority_strs);
   return proxy_name;
 }
 

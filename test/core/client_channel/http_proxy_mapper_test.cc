@@ -212,11 +212,10 @@ TEST(NoProxyTest, InvalidCIDREntries) {
 TEST(ProxyForAddressTest, ChannelArgPreferred) {
   ScopedEnvVar address_proxy(HttpProxyMapper::kAddressProxyEnvVar,
                              "192.168.0.100:2020");
-  ScopedEnvVar address_proxy_enabled(
-      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar,
-      "255.255.255.255/0");
-  auto args =
-      ChannelArgs().Set(GRPC_ARG_ADDRESS_HTTP_PROXY, "192.168.0.101:2020");
+  auto args = ChannelArgs()
+                  .Set(GRPC_ARG_ADDRESS_HTTP_PROXY, "192.168.0.101:2020")
+                  .Set(GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES,
+                       "255.255.255.255/0");
   auto address = StringToSockaddr("192.168.0.1:3333");
   ASSERT_TRUE(address.ok()) << address.status();
   EXPECT_THAT(HttpProxyMapper().MapAddress(*address, &args),
