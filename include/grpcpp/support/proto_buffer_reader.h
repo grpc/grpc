@@ -126,11 +126,14 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   /// Read the next `count` bytes and append it to the given Cord.
   // (override is conditionally omitted here to support old Protobuf which
   //  doesn't have ReadCord method)
-  // NOLINTNEXTLINE(modernize-use-override)
+  // NOLINTBEGIN(modernize-use-override,
+  // clang-diagnostic-inconsistent-missing-override)
   virtual bool ReadCord(absl::Cord* cord, int count)
-#if PROTOBUF_VERSION >= 4022000
+#if GOOGLE_PROTOBUF_VERSION >= 4022000
       override
 #endif
+  // NOLINTEND(modernize-use-override,
+  // clang-diagnostic-inconsistent-missing-override)
   {
     if (!status().ok()) {
       return false;

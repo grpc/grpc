@@ -58,6 +58,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/server_interface.h>
+#include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/interceptor.h>

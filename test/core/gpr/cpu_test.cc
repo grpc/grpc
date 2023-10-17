@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>

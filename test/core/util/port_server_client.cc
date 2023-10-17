@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include <cmath>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>

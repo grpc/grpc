@@ -15,6 +15,7 @@
 //
 
 #include <atomic>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"

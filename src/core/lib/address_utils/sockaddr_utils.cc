@@ -27,7 +27,6 @@
 #endif
 #include <string.h>
 
-#include <initializer_list>
 #include <string>
 #include <utility>
 

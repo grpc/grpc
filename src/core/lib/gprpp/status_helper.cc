@@ -22,7 +22,6 @@
 
 #include <string.h>
 
-#include <algorithm>
 #include <utility>
 
 #include "absl/strings/cord.h"

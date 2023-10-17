@@ -97,7 +97,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
 
     // Perform the low-level calls and execute the HandleReadClosure
     // asynchronously.
-    absl::Status DoTcpRead(SliceBuffer* buffer);
+    void DoTcpRead(SliceBuffer* buffer);
 
     WindowsEndpoint* const endpoint;
     std::unique_ptr<WinSocket> socket;
