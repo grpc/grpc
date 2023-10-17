@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -60,7 +61,7 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 // IWYU pragma: no_include <type_traits>
@@ -157,7 +158,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     void Orphan() override;
 
     absl::Status UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
-                              absl::StatusOr<ServerAddressList> addresses,
+                              absl::StatusOr<EndpointAddressesList> addresses,
                               const std::string& resolution_note,
                               const ChannelArgs& args);
     void ResetBackoffLocked();
@@ -337,7 +338,7 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
       target = MakeOrphanable<WeightedChild>(
           Ref(DEBUG_LOCATION, "WeightedChild"), name);
     }
-    absl::StatusOr<ServerAddressList> addresses;
+    absl::StatusOr<EndpointAddressesList> addresses;
     if (address_map.ok()) {
       auto it = address_map->find(name);
       if (it == address_map->end()) {
@@ -588,7 +589,7 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
 
 absl::Status WeightedTargetLb::WeightedChild::UpdateLocked(
     const WeightedTargetLbConfig::ChildConfig& config,
-    absl::StatusOr<ServerAddressList> addresses,
+    absl::StatusOr<EndpointAddressesList> addresses,
     const std::string& resolution_note, const ChannelArgs& args) {
   if (weighted_target_policy_->shutting_down_) return absl::OkStatus();
   // Update child weight.

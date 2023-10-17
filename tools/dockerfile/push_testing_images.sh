@@ -18,7 +18,7 @@
 # they simply provide an easily reproducible environment for running gRPC
 # tests.
 
-set -e
+set -ex
 
 cd $(dirname $0)/../..
 git_root=$(pwd)

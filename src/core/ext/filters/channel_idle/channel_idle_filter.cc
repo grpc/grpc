@@ -19,12 +19,11 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
-#include <stdint.h>
-
 #include <functional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/types/optional.h"
 
@@ -55,14 +54,18 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
 namespace {
 
-// TODO(ctiller): The idle filter was disabled in client channel by default
-// due to b/143502997. Now the bug is fixed enable the filter by default.
-const auto kDefaultIdleTimeout = Duration::Infinity();
+// TODO(roth): This can go back to being a constant when the experiment
+// is removed.
+Duration DefaultIdleTimeout() {
+  if (IsClientIdlenessEnabled()) return Duration::Minutes(30);
+  return Duration::Infinity();
+}
 
 // If these settings change, make sure that we are not sending a GOAWAY for
 // inproc transport, since a GOAWAY to inproc ends up destroying the transport.
@@ -85,7 +88,7 @@ namespace {
 
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
-      .value_or(kDefaultIdleTimeout);
+      .value_or(DefaultIdleTimeout());
 }
 
 }  // namespace
@@ -127,8 +130,7 @@ struct MaxAgeFilter::Config {
         1.0 - kMaxConnectionAgeJitter, 1.0 + kMaxConnectionAgeJitter);
     // GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
     // will not be cast to int implicitly before the comparison.
-    return Config{args_max_age * multiplier,
-                  args_max_idle * (IsJitterMaxIdleEnabled() ? multiplier : 1.0),
+    return Config{args_max_age * multiplier, args_max_idle * multiplier,
                   args_max_age_grace};
   }
 };

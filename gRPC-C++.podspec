@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.59.0-dev'
+  version = '1.60.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -231,6 +231,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
+    ss.dependency 'abseil/random/bit_gen_ref', abseil_version
+    ss.dependency 'abseil/random/distributions', abseil_version
     ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
@@ -378,10 +380,14 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
                       'src/core/ext/transport/chttp2/transport/legacy_frame.h',
+                      'src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h',
                       'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
+                      'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                       'src/core/ext/transport/chttp2/transport/varint.h',
+                      'src/core/ext/transport/chttp2/transport/write_size_policy.h',
                       'src/core/ext/transport/inproc/inproc_transport.h',
+                      'src/core/ext/transport/inproc/legacy_inproc_transport.h',
                       'src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h',
                       'src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.h',
                       'src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.h',
@@ -864,6 +870,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/unique_type_name.h',
                       'src/core/lib/gprpp/validation_errors.h',
                       'src/core/lib/gprpp/work_serializer.h',
+                      'src/core/lib/gprpp/xxhash_inline.h',
                       'src/core/lib/handshaker/proxy_mapper.h',
                       'src/core/lib/handshaker/proxy_mapper_registry.h',
                       'src/core/lib/http/format_request.h',
@@ -975,6 +982,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/sleep.h',
                       'src/core/lib/promise/trace.h',
                       'src/core/lib/promise/try_seq.h',
+                      'src/core/lib/resolver/endpoint_addresses.h',
                       'src/core/lib/resolver/resolver.h',
                       'src/core/lib/resolver/resolver_factory.h',
                       'src/core/lib/resolver/resolver_registry.h',
@@ -1138,8 +1146,6 @@ Pod::Spec.new do |s|
                       'src/cpp/common/alarm.cc',
                       'src/cpp/common/auth_property_iterator.cc',
                       'src/cpp/common/channel_arguments.cc',
-                      'src/cpp/common/channel_filter.cc',
-                      'src/cpp/common/channel_filter.h',
                       'src/cpp/common/completion_queue_cc.cc',
                       'src/cpp/common/resource_quota_cc.cc',
                       'src/cpp/common/rpc_method.cc',
@@ -1448,10 +1454,14 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
                               'src/core/ext/transport/chttp2/transport/legacy_frame.h',
+                              'src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h',
                               'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
+                              'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
                               'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                               'src/core/ext/transport/chttp2/transport/varint.h',
+                              'src/core/ext/transport/chttp2/transport/write_size_policy.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
+                              'src/core/ext/transport/inproc/legacy_inproc_transport.h',
                               'src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h',
                               'src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.h',
                               'src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.h',
@@ -1934,6 +1944,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/unique_type_name.h',
                               'src/core/lib/gprpp/validation_errors.h',
                               'src/core/lib/gprpp/work_serializer.h',
+                              'src/core/lib/gprpp/xxhash_inline.h',
                               'src/core/lib/handshaker/proxy_mapper.h',
                               'src/core/lib/handshaker/proxy_mapper_registry.h',
                               'src/core/lib/http/format_request.h',
@@ -2045,6 +2056,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/sleep.h',
                               'src/core/lib/promise/trace.h',
                               'src/core/lib/promise/try_seq.h',
+                              'src/core/lib/resolver/endpoint_addresses.h',
                               'src/core/lib/resolver/resolver.h',
                               'src/core/lib/resolver/resolver_factory.h',
                               'src/core/lib/resolver/resolver_registry.h',
@@ -2194,7 +2206,6 @@ Pod::Spec.new do |s|
                               'src/cpp/client/client_stats_interceptor.h',
                               'src/cpp/client/create_channel_internal.h',
                               'src/cpp/client/secure_credentials.h',
-                              'src/cpp/common/channel_filter.h',
                               'src/cpp/common/secure_auth_context.h',
                               'src/cpp/server/backend_metric_recorder.h',
                               'src/cpp/server/dynamic_thread_pool.h',

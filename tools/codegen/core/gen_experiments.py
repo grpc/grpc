@@ -105,8 +105,16 @@ def _GenerateExperimentFiles(args, mode):
     with open(_EXPERIMENTS_DEFS) as f:
         attrs = yaml.safe_load(f.read())
 
+    if not exp.AreExperimentsOrdered(attrs):
+        print("Experiments are not ordered")
+        sys.exit(1)
+
     with open(_EXPERIMENTS_ROLLOUTS) as f:
         rollouts = yaml.safe_load(f.read())
+
+    if not exp.AreExperimentsOrdered(rollouts):
+        print("Rollouts are not ordered")
+        sys.exit(1)
 
     compiler = exp.ExperimentsCompiler(
         DEFAULTS,

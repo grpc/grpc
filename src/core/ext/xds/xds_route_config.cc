@@ -21,7 +21,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <initializer_list>
 #include <limits>
 #include <map>
 #include <memory>

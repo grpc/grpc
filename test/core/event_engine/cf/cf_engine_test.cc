@@ -265,6 +265,41 @@ TEST(CFEventEngineTest, TestResolveCanceled) {
   resolve_signal.WaitForNotification();
 }
 
+TEST(CFEventEngineTest, TestResolveAgainInCallback) {
+  std::atomic<int> times{2};
+  grpc_core::Notification resolve_signal;
+
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = std::move(cf_engine->GetDNSResolver({})).value();
+
+  dns_resolver->LookupHostname(
+      [&resolve_signal, &times, &dns_resolver](auto result) {
+        EXPECT_TRUE(result.status().ok());
+        EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
+                    testing::UnorderedElementsAre("127.0.0.1:80", "[::1]:80"));
+
+        dns_resolver->LookupHostname(
+            [&resolve_signal, &times](auto result) {
+              EXPECT_TRUE(result.status().ok());
+              EXPECT_THAT(
+                  ResolvedAddressesToStrings(result.value()),
+                  testing::UnorderedElementsAre("127.0.0.1:443", "[::1]:443"));
+
+              if (--times == 0) {
+                resolve_signal.Notify();
+              }
+            },
+            "localhost", "443");
+
+        if (--times == 0) {
+          resolve_signal.Notify();
+        }
+      },
+      "localhost", "80");
+
+  resolve_signal.WaitForNotification();
+}
+
 TEST(CFEventEngineTest, TestResolveMany) {
   std::atomic<int> times{10};
   grpc_core::Notification resolve_signal;

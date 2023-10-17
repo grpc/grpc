@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <chrono>
 #include <string>
-#include <thread>
 #include <vector>
 
 #include <gmock/gmock.h>
@@ -24,15 +22,10 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/match.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/stateful_session.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/stateful_session.pb.h"
 #include "src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -91,8 +84,14 @@ class OverrideHostTest : public XdsEnd2endTest {
     std::vector<Cookie> values;
     auto pair = server_initial_metadata.equal_range("set-cookie");
     for (auto it = pair.first; it != pair.second; ++it) {
-      gpr_log(GPR_INFO, "set-cookie header: %s",
-              std::string(it->second).c_str());
+      std::pair<absl::string_view, absl::string_view> key_value =
+          absl::StrSplit(it->second, '=');
+      std::pair<absl::string_view, absl::string_view> key_value2 =
+          absl::StrSplit(key_value.second, ';');
+      std::string decoded;
+      EXPECT_TRUE(absl::Base64Unescape(key_value2.first, &decoded));
+      gpr_log(GPR_INFO, "set-cookie header: %s (decoded: %s)",
+              std::string(it->second).c_str(), decoded.c_str());
       values.emplace_back(ParseCookie(it->second));
       EXPECT_FALSE(values.back().value.empty());
       EXPECT_THAT(values.back().attributes, ::testing::Contains("HttpOnly"));
@@ -189,7 +188,7 @@ class OverrideHostTest : public XdsEnd2endTest {
   }
 
   RouteConfiguration BuildRouteConfigurationWithWeightedClusters(
-      const std::map<absl::string_view, uint32_t> clusters) {
+      const std::map<absl::string_view, uint32_t>& clusters) {
     RouteConfiguration new_route_config = default_route_config_;
     auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
     for (const auto& cluster : clusters) {
@@ -618,13 +617,63 @@ TEST_P(OverrideHostTest, TTLSetsMaxAge) {
               ::testing::UnorderedElementsAre("Max-Age=42", "HttpOnly"));
 }
 
+TEST_P(OverrideHostTest, MultipleAddressesPerEndpoint) {
+  if (!grpc_core::IsRoundRobinDelegateToPickFirstEnabled()) return;
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
+  // Create 3 backends, but leave backend 0 unstarted.
+  CreateBackends(3);
+  StartBackend(1);
+  StartBackend(2);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithStatefulSessionFilter(),
+                                   default_route_config_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0",
+                        {CreateEndpoint(0, HealthStatus::HEALTHY, 1, {1}),
+                         CreateEndpoint(2, HealthStatus::UNKNOWN)}}})));
+  WaitForAllBackends(DEBUG_LOCATION, 1);  // Wait for backends 1 and 2.
+  // Requests without a cookie should get round-robin across backends 1 and 2.
+  CheckRpcSendOk(DEBUG_LOCATION, 10);
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 0);
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 5);
+  EXPECT_EQ(backends_[2]->backend_service()->request_count(), 5);
+  ResetBackendCounters();
+  // Get cookie for backend 1.
+  auto cookies = GetCookiesForBackend(DEBUG_LOCATION, 1);
+  EXPECT_THAT(cookies,
+              ::testing::ElementsAre(::testing::AllOf(
+                  ::testing::Field("name", &Cookie::name, kCookieName),
+                  ::testing::Field("attributes", &Cookie::attributes,
+                                   ::testing::ElementsAre("HttpOnly")),
+                  ::testing::Field("value", &Cookie::value,
+                                   ::testing::Not(::testing::IsEmpty())))));
+  // Requests with the cookie always go to the same backend.
+  CheckRpcSendOk(DEBUG_LOCATION, 5,
+                 RpcOptions().set_metadata({cookies.front().Header()}));
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 5);
+  // Now start backend 0 and stop backend 1.
+  StartBackend(0);
+  ShutdownBackend(1);
+  // Wait for traffic to go to backend 0.
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Requests with no cookie should get round-robin across backends 0 and 2.
+  CheckRpcSendOk(DEBUG_LOCATION, 10);
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 5);
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
+  EXPECT_EQ(backends_[2]->backend_service()->request_count(), 5);
+  ResetBackendCounters();
+  // Requests with the same cookie should now go to backend 0.
+  CheckRpcSendOk(DEBUG_LOCATION, 5,
+                 RpcOptions().set_metadata({cookies.front().Header()}));
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 5);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_core::testing::ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up

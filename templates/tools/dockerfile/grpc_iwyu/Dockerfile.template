@@ -17,10 +17,10 @@
   # Docker file for running IWYU.
   # Updated: 2022-11-03
 
-  FROM silkeh/clang:15-bullseye
+  FROM silkeh/clang:16-bullseye
 
   # Install prerequisites for the iwyu script
-  RUN apt-get update && apt-get install -y python3 jq git cmake python zlib1g-dev libtinfo-dev libclang-15-dev && apt-get clean
+  RUN apt-get update && apt-get install -y python3 jq git cmake python zlib1g-dev libtinfo-dev libclang-16-dev && apt-get clean
   ADD iwyu.sh /
 
   # When running locally, we'll be impersonating the current user, so we need

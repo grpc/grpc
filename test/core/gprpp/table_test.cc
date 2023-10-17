@@ -16,6 +16,7 @@
 
 #include <string>
 #include <tuple>
+#include <variant>
 
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"

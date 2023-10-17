@@ -121,6 +121,7 @@ WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
   auto error = PrepareSocket(accept_socket);
   if (!error.ok()) return fail(error);
   // Start the "accept" asynchronously.
+  io_state_->listener_socket->NotifyOnRead(&io_state_->on_accept_cb);
   DWORD addrlen = sizeof(sockaddr_in6) + 16;
   DWORD bytes_received = 0;
   int success =
@@ -132,13 +133,11 @@ WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
   if (success != 0) {
     int last_error = WSAGetLastError();
     if (last_error != ERROR_IO_PENDING) {
+      io_state_->listener_socket->UnregisterReadCallback();
       return fail(GRPC_WSA_ERROR(last_error, "AcceptEx"));
     }
   }
-  // We're ready to do the accept. Calling NotifyOnRead may immediately process
-  // an accept that happened in the meantime.
   io_state_->accept_socket = accept_socket;
-  io_state_->listener_socket->NotifyOnRead(&io_state_->on_accept_cb);
   GRPC_EVENT_ENGINE_TRACE(
       "SinglePortSocketListener::%p listening. listener_socket::%p", this,
       io_state_->listener_socket.get());

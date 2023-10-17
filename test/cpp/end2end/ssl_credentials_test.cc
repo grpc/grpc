@@ -126,6 +126,31 @@ void DoRpc(const std::string& server_addr,
   }
 }
 
+TEST_F(SslCredentialsTest, SequentialResumption) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  notification.WaitForNotification();
+
+  std::string root_cert = ReadFile(kCaCertPath);
+  std::string client_key = ReadFile(kClientKeyPath);
+  std::string client_cert = ReadFile(kClientCertPath);
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs = root_cert;
+  ssl_options.pem_private_key = client_key;
+  ssl_options.pem_cert_chain = client_cert;
+
+  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
+
+  DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/false);
+  for (int i = 0; i < 10; i++) {
+    DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/true);
+  }
+
+  grpc_ssl_session_cache_destroy(cache);
+}
+
 TEST_F(SslCredentialsTest, ConcurrentResumption) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
@@ -154,6 +179,29 @@ TEST_F(SslCredentialsTest, ConcurrentResumption) {
   for (auto& t : threads) {
     t.join();
   }
+
+  grpc_ssl_session_cache_destroy(cache);
+}
+
+TEST_F(SslCredentialsTest, ResumptionFailsDueToNoCapacityInCache) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  notification.WaitForNotification();
+
+  std::string root_cert = ReadFile(kCaCertPath);
+  std::string client_key = ReadFile(kClientKeyPath);
+  std::string client_cert = ReadFile(kClientCertPath);
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs = root_cert;
+  ssl_options.pem_private_key = client_key;
+  ssl_options.pem_cert_chain = client_cert;
+
+  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(0);
+
+  DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/false);
+  DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/false);
 
   grpc_ssl_session_cache_destroy(cache);
 }

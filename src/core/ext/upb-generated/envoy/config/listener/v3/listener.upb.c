@@ -71,7 +71,7 @@ const upb_MiniTable envoy_config_listener_v3_ListenerCollection_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_listener_v3_Listener_submsgs[23] = {
+static const upb_MiniTableSub envoy_config_listener_v3_Listener_submsgs[24] = {
   {.submsg = &envoy_config_core_v3_Address_msg_init},
   {.submsg = &envoy_config_listener_v3_FilterChain_msg_init},
   {.submsg = &google_protobuf_BoolValue_msg_init},
@@ -95,10 +95,11 @@ static const upb_MiniTableSub envoy_config_listener_v3_Listener_submsgs[23] = {
   {.submsg = &google_protobuf_BoolValue_msg_init},
   {.submsg = &xds_type_matcher_v3_Matcher_msg_init},
   {.submsg = &envoy_config_listener_v3_AdditionalAddress_msg_init},
+  {.submsg = &google_protobuf_UInt32Value_msg_init},
 };
 
-static const upb_MiniTableField envoy_config_listener_v3_Listener__fields[31] = {
-  {1, UPB_SIZE(120, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_config_listener_v3_Listener__fields[32] = {
+  {1, UPB_SIZE(124, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(4, 40), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(8, 48), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(12, 56), 2, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -122,19 +123,20 @@ static const upb_MiniTableField envoy_config_listener_v3_Listener__fields[31] = 
   {24, UPB_SIZE(84, 168), 13, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {25, UPB_SIZE(88, 176), 14, 17, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {26, UPB_SIZE(92, 184), 15, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {27, UPB_SIZE(116, 232), UPB_SIZE(-97, -17), 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {28, UPB_SIZE(128, 192), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {27, UPB_SIZE(120, 240), UPB_SIZE(-97, -17), 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {28, UPB_SIZE(132, 192), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {29, UPB_SIZE(100, 208), 16, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {30, UPB_SIZE(104, 20), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {31, UPB_SIZE(105, 21), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {32, UPB_SIZE(108, 216), 17, 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {33, UPB_SIZE(112, 224), 0, 22, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {34, UPB_SIZE(116, 232), 18, 23, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_listener_v3_Listener_msg_init = {
   &envoy_config_listener_v3_Listener_submsgs[0],
   &envoy_config_listener_v3_Listener__fields[0],
-  UPB_SIZE(136, 240), 31, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(144, 248), 32, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(248), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001800003f00000a, &upb_pss_1bt},
@@ -163,7 +165,7 @@ const upb_MiniTable envoy_config_listener_v3_Listener_msg_init = {
     {0x00a800000d1001c2, &upb_psm_2bt_maxmaxb},
     {0x00b000000e1101ca, &upb_psm_2bt_maxmaxb},
     {0x00b800000f1201d2, &upb_psm_2bt_maxmaxb},
-    {0x00e800101b1301da, &upb_pom_2bt_max64b},
+    {0x00f000101b1301da, &upb_pom_2bt_max64b},
     {0x00c000003f0001e2, &upb_pss_2bt},
     {0x00d00000101401ea, &upb_psm_2bt_maxmaxb},
     {0x001400003f0001f0, &upb_psb1_2bt},

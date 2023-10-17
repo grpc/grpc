@@ -20,6 +20,8 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
+#include <memory>
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"

@@ -45,6 +45,7 @@
 #include "src/core/lib/gprpp/packed_table.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/type_list.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/custom_metadata.h"
@@ -507,6 +508,25 @@ struct GrpcTrailersOnly {
   static constexpr bool kRepeatable = false;
   using ValueType = bool;
   static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
+};
+
+// On the client-side, the value is a uintptr_t with a value of 1 if the call
+// has a registered/known method, or 0, if it's not known. On the server side,
+// the value is a (ChannelRegisteredMethod*).
+struct GrpcRegisteredMethod {
+  static absl::string_view DebugKey() { return "GrpcRegisteredMethod"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = void*;
+  static std::string DisplayValue(void* x);
+};
+
+// Annotation added by filters to inform the transport to tarpit this
+// response: add some random delay to thwart certain kinds of attacks.
+struct GrpcTarPit {
+  static absl::string_view DebugKey() { return "GrpcTarPit"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = Empty;
+  static absl::string_view DisplayValue(Empty) { return "tarpit"; }
 };
 
 namespace metadata_detail {
@@ -1486,7 +1506,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
     grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady,
-    grpc_core::GrpcTrailersOnly GRPC_CUSTOM_CLIENT_METADATA
+    grpc_core::GrpcTrailersOnly, grpc_core::GrpcTarPit,
+    grpc_core::GrpcRegisteredMethod GRPC_CUSTOM_CLIENT_METADATA
         GRPC_CUSTOM_SERVER_METADATA>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {

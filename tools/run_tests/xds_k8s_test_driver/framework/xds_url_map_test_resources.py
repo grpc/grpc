@@ -309,12 +309,15 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             replica_count=3,
         )
         # Add backend to default backend service
-        neg_name, neg_zones = self.k8s_namespace.get_service_neg(
+        neg_name, neg_zones = self.k8s_namespace.parse_service_neg_status(
             self.test_server_runner.service_name, self.server_port
         )
         self.td.backend_service_add_neg_backends(neg_name, neg_zones)
         # Add backend to alternative backend service
-        neg_name_alt, neg_zones_alt = self.k8s_namespace.get_service_neg(
+        (
+            neg_name_alt,
+            neg_zones_alt,
+        ) = self.k8s_namespace.parse_service_neg_status(
             self.test_server_alternative_runner.service_name, self.server_port
         )
         self.td.alternative_backend_service_add_neg_backends(
@@ -324,7 +327,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         (
             neg_name_affinity,
             neg_zones_affinity,
-        ) = self.k8s_namespace.get_service_neg(
+        ) = self.k8s_namespace.parse_service_neg_status(
             self.test_server_affinity_runner.service_name, self.server_port
         )
         self.td.affinity_backend_service_add_neg_backends(

@@ -18,6 +18,8 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
+#include <memory>
+
 #include "absl/container/flat_hash_set.h"
 #include "gtest/gtest.h"
 

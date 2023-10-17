@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -44,9 +43,9 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -127,7 +126,7 @@ void NativeClientChannelDNSResolver::OnResolved(
   // Convert result from iomgr DNS API into Resolver::Result.
   Result result;
   if (addresses_or.ok()) {
-    ServerAddressList addresses;
+    EndpointAddressesList addresses;
     for (auto& addr : *addresses_or) {
       addresses.emplace_back(addr, ChannelArgs());
     }

@@ -23,6 +23,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_listener",
+                "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -38,9 +39,15 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
+                "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "lame_client_test": [
+                "promise_based_client_call",
             ],
             "lb_unit_test": [
                 "work_serializer_dispatch",
@@ -59,21 +66,36 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "core_end2end_test": [
-                "work_stealing",
+            "bad_client_test": [
+                "block_excessive_requests_before_settings_ack",
+                "tarpit",
+            ],
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
             ],
             "cpp_lb_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "write_size_cap",
+                "write_size_policy",
             ],
             "lb_unit_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
+            "surface_registered_method_lookup": [
+                "registered_method_lookup_in_transport",
+            ],
             "xds_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -85,6 +107,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_listener",
+                "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -100,9 +123,15 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
+                "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "lame_client_test": [
+                "promise_based_client_call",
             ],
             "lb_unit_test": [
                 "work_serializer_dispatch",
@@ -121,21 +150,36 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "core_end2end_test": [
-                "work_stealing",
+            "bad_client_test": [
+                "block_excessive_requests_before_settings_ack",
+                "tarpit",
+            ],
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
             ],
             "cpp_lb_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "write_size_cap",
+                "write_size_policy",
             ],
             "lb_unit_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
+            "surface_registered_method_lookup": [
+                "registered_method_lookup_in_transport",
+            ],
             "xds_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -151,6 +195,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_listener",
+                "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -169,9 +214,15 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
+                "multiping",
                 "peer_state_based_framing",
+                "red_max_concurrent_streams",
+                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "lame_client_test": [
+                "promise_based_client_call",
             ],
             "lb_unit_test": [
                 "work_serializer_dispatch",
@@ -193,21 +244,36 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "core_end2end_test": [
-                "work_stealing",
+            "bad_client_test": [
+                "block_excessive_requests_before_settings_ack",
+                "tarpit",
+            ],
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
             ],
             "cpp_lb_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
+                "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "write_size_cap",
+                "write_size_policy",
             ],
             "lb_unit_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
+            "surface_registered_method_lookup": [
+                "registered_method_lookup_in_transport",
+            ],
             "xds_end2end_test": [
+                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],

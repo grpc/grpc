@@ -118,11 +118,6 @@ GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds) {
   return DoRPCAndGetPath(stub, deadline_seconds, FailFast);
 }
 
-GrpclbRouteType DoWaitForReadyRPCAndGetPath(TestService::Stub* stub,
-                                            int deadline_seconds) {
-  return DoRPCAndGetPath(stub, deadline_seconds, WaitForReady);
-}
-
 bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* /*mutator*/) {
   int timeout = 20000;  // 20 seconds
   gpr_log(GPR_INFO, "Setting socket option TCP_USER_TIMEOUT on fd: %d", fd);

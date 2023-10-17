@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/random/bit_gen_ref.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -101,6 +102,7 @@ class HPackParser {
   void StopBufferingFrame() { metadata_buffer_ = nullptr; }
   // Parse one slice worth of data
   grpc_error_handle Parse(const grpc_slice& slice, bool is_last,
+                          absl::BitGenRef bitsrc,
                           CallTracerAnnotationInterface* call_tracer);
   // Reset state ready for the next BeginFrame
   void FinishFrame();

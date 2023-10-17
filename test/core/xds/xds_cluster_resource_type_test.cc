@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -63,7 +62,6 @@
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 using envoy::config::cluster::v3::Cluster;
@@ -1328,33 +1326,7 @@ TEST_F(OutlierDetectionTest, InvalidValues) {
 
 using HostOverrideStatusTest = XdsClusterTest;
 
-TEST_F(HostOverrideStatusTest, IgnoredWhenNotEnabled) {
-  Cluster cluster;
-  cluster.set_name("foo");
-  cluster.set_type(cluster.EDS);
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  auto* status_set =
-      cluster.mutable_common_lb_config()->mutable_override_host_status();
-  status_set->add_statuses(envoy::config::core::v3::UNKNOWN);
-  status_set->add_statuses(envoy::config::core::v3::HEALTHY);
-  status_set->add_statuses(envoy::config::core::v3::DRAINING);
-  status_set->add_statuses(envoy::config::core::v3::UNHEALTHY);
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  ASSERT_TRUE(decode_result.name.has_value());
-  EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource =
-      static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.override_host_statuses, ::testing::ElementsAre());
-}
-
 TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);

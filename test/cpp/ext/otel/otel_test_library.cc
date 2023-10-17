@@ -30,8 +30,10 @@
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/util/byte_buffer_proto_helper.h"
 
 namespace grpc {
 namespace testing {
@@ -44,7 +46,9 @@ void OTelPluginEnd2EndTest::Init(
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_selector,
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-        target_attribute_filter) {
+        target_attribute_filter,
+    absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+        generic_method_attribute_filter) {
   // We are resetting the MeterProvider and OpenTelemetry plugin at the start
   // of each test to avoid test results from one test carrying over to another
   // test. (Some measurements can get arbitrarily delayed.)
@@ -70,6 +74,8 @@ void OTelPluginEnd2EndTest::Init(
   ot_builder.SetLabelsInjector(std::move(labels_injector));
   ot_builder.SetTargetSelector(std::move(target_selector));
   ot_builder.SetTargetAttributeFilter(std::move(target_attribute_filter));
+  ot_builder.SetGenericMethodAttributeFilter(
+      std::move(generic_method_attribute_filter));
   ot_builder.BuildAndRegisterGlobal();
   grpc_init();
   grpc::ServerBuilder builder;
@@ -84,8 +90,10 @@ void OTelPluginEnd2EndTest::Init(
   server_address_ = absl::StrCat("localhost:", port);
   canonical_server_address_ = absl::StrCat("dns:///", server_address_);
 
-  stub_ = EchoTestService::NewStub(
-      grpc::CreateChannel(server_address_, grpc::InsecureChannelCredentials()));
+  auto channel =
+      grpc::CreateChannel(server_address_, grpc::InsecureChannelCredentials());
+  stub_ = EchoTestService::NewStub(channel);
+  generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
 }
 
 void OTelPluginEnd2EndTest::TearDown() {
@@ -96,7 +104,8 @@ void OTelPluginEnd2EndTest::TearDown() {
 }
 
 void OTelPluginEnd2EndTest::ResetStub(std::shared_ptr<Channel> channel) {
-  stub_ = EchoTestService::NewStub(std::move(channel));
+  stub_ = EchoTestService::NewStub(channel);
+  generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
 }
 
 void OTelPluginEnd2EndTest::SendRPC() {
@@ -105,6 +114,18 @@ void OTelPluginEnd2EndTest::SendRPC() {
   EchoResponse response;
   grpc::ClientContext context;
   grpc::Status status = stub_->Echo(&context, request, &response);
+}
+
+void OTelPluginEnd2EndTest::SendGenericRPC() {
+  grpc::ClientContext context;
+  EchoRequest request;
+  std::unique_ptr<ByteBuffer> send_buf = SerializeToByteBuffer(&request);
+  ByteBuffer recv_buf;
+  grpc_core::Notification notify;
+  generic_stub_->UnaryCall(&context, absl::StrCat("/", kGenericMethodName),
+                           StubOptions(), send_buf.get(), &recv_buf,
+                           [&](grpc::Status /*s*/) { notify.Notify(); });
+  notify.WaitForNotificationWithTimeout(absl::Seconds(5));
 }
 
 absl::flat_hash_map<
