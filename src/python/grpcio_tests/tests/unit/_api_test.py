@@ -20,6 +20,7 @@ import unittest
 import grpc
 
 from tests.unit import _from_grpc_import_star
+from tests.unit import test_common
 
 
 class AllTest(unittest.TestCase):
@@ -117,19 +118,25 @@ class ChannelTest(unittest.TestCase):
         channel.close()
 
     def test_multiple_secure_channel(self):
+        _THREAD_COUNT = 10
+        wait_group = test_common.WaitGroup(_THREAD_COUNT)
+
         def create_secure_channel():
             channel_credentials = grpc.ssl_channel_credentials()
+            wait_group.done()
+            wait_group.wait()
             channel = grpc.secure_channel("google.com:443", channel_credentials)
             channel.close()
 
-        for _ in range(10):
-            thread1 = threading.Thread(target=create_secure_channel)
-            thread2 = threading.Thread(target=create_secure_channel)
+        threads = []
+        for _ in range(_THREAD_COUNT):
+            thread = threading.Thread(target=create_secure_channel)
+            thread.setDaemon(True)
+            thread.start()
+            threads.append(thread)
 
-            thread1.start()
-            thread2.start()
-            thread1.join()
-            thread2.join()
+        for thread in threads:
+            thread.join()
 
 
 if __name__ == "__main__":
