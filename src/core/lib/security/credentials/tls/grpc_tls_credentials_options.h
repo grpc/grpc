@@ -61,6 +61,8 @@ struct grpc_tls_credentials_options
   const std::string& identity_cert_name() const { return identity_cert_name_; }
   const std::string& tls_session_key_log_file_path() const { return tls_session_key_log_file_path_; }
   const std::string& crl_directory() const { return crl_directory_; }
+  // Returns the CRL Provider
+  std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider() const { return crl_provider_; }
   bool send_client_ca_list() const { return send_client_ca_list_; }
 
   // Setters for member fields.
@@ -82,6 +84,7 @@ struct grpc_tls_credentials_options
   void set_tls_session_key_log_file_path(std::string tls_session_key_log_file_path) { tls_session_key_log_file_path_ = std::move(tls_session_key_log_file_path); }
   //  gRPC will enforce CRLs on all handshakes from all hashed CRL files inside of the crl_directory. If not set, an empty string will be used, which will not enable CRL checking. Only supported for OpenSSL version > 1.1.
   void set_crl_directory(std::string crl_directory) { crl_directory_ = std::move(crl_directory); }
+  void set_crl_provider(std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider) { crl_provider_ = std::move(crl_provider); }
   void set_send_client_ca_list(bool send_client_ca_list) { send_client_ca_list_ = send_client_ca_list; }
 
   bool operator==(const grpc_tls_credentials_options& other) const {
@@ -98,6 +101,7 @@ struct grpc_tls_credentials_options
       identity_cert_name_ == other.identity_cert_name_ &&
       tls_session_key_log_file_path_ == other.tls_session_key_log_file_path_ &&
       crl_directory_ == other.crl_directory_ &&
+      (crl_provider_ == other.crl_provider_) &&
       send_client_ca_list_ == other.send_client_ca_list_;
   }
 
@@ -115,6 +119,7 @@ struct grpc_tls_credentials_options
   std::string identity_cert_name_;
   std::string tls_session_key_log_file_path_;
   std::string crl_directory_;
+  std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider_;
   bool send_client_ca_list_ = false;
 };
 
