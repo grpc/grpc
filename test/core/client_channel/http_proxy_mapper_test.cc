@@ -247,8 +247,7 @@ TEST(ProxyForAddressTest, BadProxy) {
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "192.168.0.0.100:2020");
   auto address = StringToSockaddr("192.168.0.1:3333");
   ASSERT_TRUE(address.ok()) << address.status();
-  auto mapped = HttpProxyMapper().MapAddress(*address, &args);
-  EXPECT_FALSE(mapped.has_value());
+  EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), absl::nullopt);
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
 }
 

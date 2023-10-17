@@ -271,7 +271,7 @@ absl::optional<grpc_resolved_address> HttpProxyMapper::MapAddress(
     return absl::nullopt;
   }
   std::string host_name, port;
-  if (!grpc_core::SplitHostPort(*address_string, &host_name, &port)) {
+  if (!SplitHostPort(*address_string, &host_name, &port)) {
     gpr_log(GPR_ERROR, "Address %s cannot be split in host and port",
             address_string->c_str());
     return absl::nullopt;
