@@ -36,9 +36,10 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -52,16 +53,17 @@ namespace grpc_core {
 class MyEndpointList : public EndpointList {
  public:
   MyEndpointList(RefCountedPtr<MyLbPolicy> lb_policy,
-                 const ServerAddressList& addresses, const ChannelArgs& args)
+                 const EndpointAddressesList& endpoints,
+                 const ChannelArgs& args)
       : EndpointList(std::move(lb_policy),
                      GRPC_TRACE_FLAG_ENABLED(grpc_my_tracer)
                          ? "MyEndpointList"
                          : nullptr) {
-    Init(addresses, args,
+    Init(endpoints, args,
          [&](RefCountedPtr<MyEndpointList> endpoint_list,
-             const ServerAddress& address, const ChannelArgs& args) {
+             const EndpointAddresses& addresses, const ChannelArgs& args) {
            return MakeOrphanable<MyEndpoint>(
-               std::move(endpoint_list), address, args,
+               std::move(endpoint_list), addresses, args,
                policy<MyLbPolicy>()->work_serializer());
          });
   }
@@ -70,10 +72,10 @@ class MyEndpointList : public EndpointList {
   class MyEndpoint : public Endpoint {
    public:
     MyEndpoint(RefCountedPtr<MyEndpointList> endpoint_list,
-               const ServerAddress& address, const ChannelArgs& args,
+               const EndpointAddresses& address, const ChannelArgs& args,
                std::shared_ptr<WorkSerializer> work_serializer)
         : Endpoint(std::move(endpoint_list)) {
-      Init(address, args, std::move(work_serializer));
+      Init(addresses, args, std::move(work_serializer));
     }
 
    private:
@@ -119,7 +121,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     explicit Endpoint(RefCountedPtr<EndpointList> endpoint_list)
         : endpoint_list_(std::move(endpoint_list)) {}
 
-    void Init(const ServerAddress& address, const ChannelArgs& args,
+    void Init(const EndpointAddresses& addresses, const ChannelArgs& args,
               std::shared_ptr<WorkSerializer> work_serializer);
 
     // Templated for convenience, to provide a short-hand for
@@ -150,7 +152,8 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
 
     // Called to create a subchannel.  Subclasses may override.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args);
+        const grpc_resolved_address& address,
+        const ChannelArgs& per_address_args, const ChannelArgs& args);
 
     RefCountedPtr<EndpointList> endpoint_list_;
 
@@ -181,9 +184,9 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   EndpointList(RefCountedPtr<LoadBalancingPolicy> policy, const char* tracer)
       : policy_(std::move(policy)), tracer_(tracer) {}
 
-  void Init(const ServerAddressList& addresses, const ChannelArgs& args,
+  void Init(const EndpointAddressesList& endpoints, const ChannelArgs& args,
             absl::AnyInvocable<OrphanablePtr<Endpoint>(
-                RefCountedPtr<EndpointList>, const ServerAddress&,
+                RefCountedPtr<EndpointList>, const EndpointAddresses&,
                 const ChannelArgs&)>
                 create_endpoint);
 

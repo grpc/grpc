@@ -158,6 +158,7 @@ grpc_cc_library(
         "tests/cancel_test_helpers.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -196,6 +197,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/strings:str_format",
@@ -445,6 +448,8 @@ grpc_core_end2end_test(name = "simple_request")
 
 grpc_core_end2end_test(name = "streaming_error_response")
 
+grpc_core_end2end_test(name = "timeout_before_request_call")
+
 grpc_core_end2end_test(name = "trailing_metadata")
 
 grpc_core_end2end_test(name = "write_buffering")
@@ -522,12 +527,12 @@ grpc_cc_test(
         "cq_verifier",
         "//:channel_arg_names",
         "//:debug_location",
+        "//:endpoint_addresses",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:grpc_resolver_dns_ares",
-        "//:server_address",
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:default_event_engine",

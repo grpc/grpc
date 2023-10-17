@@ -176,13 +176,11 @@ TEST_F(CrlProviderTest, CrlProviderValid) {
   options.set_identity_cert_name("identity");
   std::string root_crl = grpc_core::testing::GetFileContents(kRootCrlPath);
 
-  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
-      grpc_core::experimental::StaticCrlProvider::Create({root_crl});
-  ASSERT_TRUE(result.ok());
-  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
-      std::move(*result);
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
+      provider = grpc_core::experimental::CreateStaticCrlProvider({root_crl});
+  ASSERT_TRUE(provider.ok());
 
-  options.set_crl_provider(provider);
+  options.set_crl_provider(*provider);
   options.set_check_call_host(false);
   auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
   options.set_certificate_verifier(verifier);
@@ -220,13 +218,11 @@ TEST_F(CrlProviderTest, CrlProviderRevokedServer) {
   options.set_identity_cert_name("identity");
   std::string root_crl = grpc_core::testing::GetFileContents(kRootCrlPath);
 
-  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>> result =
-      grpc_core::experimental::StaticCrlProvider::Create({root_crl});
-  ASSERT_TRUE(result.ok());
-  std::shared_ptr<grpc_core::experimental::CrlProvider> provider =
-      std::move(*result);
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
+      provider = grpc_core::experimental::CreateStaticCrlProvider({root_crl});
+  ASSERT_TRUE(provider.ok());
 
-  options.set_crl_provider(provider);
+  options.set_crl_provider(*provider);
   options.set_check_call_host(false);
   auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
   options.set_certificate_verifier(verifier);

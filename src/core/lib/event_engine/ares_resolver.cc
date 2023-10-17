@@ -15,8 +15,6 @@
 
 #include "src/core/lib/event_engine/ares_resolver.h"
 
-#include <stdint.h>
-
 #include <string>
 #include <vector>
 
@@ -47,7 +45,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <initializer_list>
 #include <memory>
 #include <type_traits>
 #include <utility>

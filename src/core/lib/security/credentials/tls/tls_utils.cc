@@ -23,6 +23,8 @@
 #include <grpc/support/log.h>
 #include <algorithm>
 
+#include <algorithm>
+
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"

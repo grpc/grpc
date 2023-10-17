@@ -368,25 +368,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "filter_end2end_test",
-    srcs = ["filter_end2end_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    tags = ["cpp_end2end_test"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//src/proto/grpc/testing:echo_messages_proto",
-        "//src/proto/grpc/testing:echo_proto",
-        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "generic_end2end_test",
     srcs = ["generic_end2end_test.cc"],
     external_deps = [
@@ -1061,27 +1042,12 @@ grpc_cc_test(
     name = "crl_provider_test",
     srcs = ["crl_provider_test.cc"],
     data = [
-        "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:client.key",
-        "//src/core/tsi/test_creds:client.pem",
-        "//src/core/tsi/test_creds:server1.key",
-        "//src/core/tsi/test_creds:server1.pem",
         "//test/core/tsi/test_creds/crl_data:ca.pem",
-        "//test/core/tsi/test_creds/crl_data:intermediate_ca.key",
-        "//test/core/tsi/test_creds/crl_data:intermediate_ca.pem",
-        "//test/core/tsi/test_creds/crl_data:leaf_and_intermediate_chain.pem",
-        "//test/core/tsi/test_creds/crl_data:leaf_signed_by_intermediate.key",
-        "//test/core/tsi/test_creds/crl_data:leaf_signed_by_intermediate.pem",
         "//test/core/tsi/test_creds/crl_data:revoked.key",
         "//test/core/tsi/test_creds/crl_data:revoked.pem",
         "//test/core/tsi/test_creds/crl_data:valid.key",
         "//test/core/tsi/test_creds/crl_data:valid.pem",
-        "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
-        "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
         "//test/core/tsi/test_creds/crl_data/crls:current.crl",
-        "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
-        "//test/core/tsi/test_creds/crl_data/crls_missing_intermediate:ab06acdd.r0",
-        "//test/core/tsi/test_creds/crl_data/crls_missing_root:b9322cac.r0",
     ],
     external_deps = [
         "gtest",

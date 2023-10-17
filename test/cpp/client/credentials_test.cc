@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
@@ -398,22 +399,20 @@ TEST(CredentialsTest, TlsChannelCredentialsWithCrlDirectory) {
 }
 
 TEST(CredentialsTest, TlsChannelCredentialsWithCrlProvider) {
-  auto result = experimental::StaticCrlProvider::Create({});
-  ASSERT_TRUE(result.ok());
-  auto crl_provider = std::move(*result);
+  auto provider = experimental::CreateStaticCrlProvider({});
+  ASSERT_TRUE(provider.ok());
   grpc::experimental::TlsChannelCredentialsOptions options;
-  options.set_crl_provider(crl_provider);
+  options.set_crl_provider(*provider);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
 TEST(CredentialsTest, TlsChannelCredentialsWithCrlProviderAndDirectory) {
-  auto result = experimental::StaticCrlProvider::Create({});
-  ASSERT_TRUE(result.ok());
-  auto crl_provider = std::move(*result);
+  auto provider = experimental::CreateStaticCrlProvider({});
+  ASSERT_TRUE(provider.ok());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_crl_directory(CRL_DIR_PATH);
-  options.set_crl_provider(crl_provider);
+  options.set_crl_provider(*provider);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   // TODO(gtcooke94) - behavior might change to make this return nullptr in the
   // future

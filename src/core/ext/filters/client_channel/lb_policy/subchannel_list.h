@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -380,7 +379,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
   // Create a subchannel for each address.
   for (ServerAddress address : addresses) {
     RefCountedPtr<SubchannelInterface> subchannel =
-        helper->CreateSubchannel(address, args);
+        helper->CreateSubchannel(address.address(), address.args(), args);
     if (subchannel == nullptr) {
       // Subchannel could not be created.
       if (GPR_UNLIKELY(tracer_ != nullptr)) {

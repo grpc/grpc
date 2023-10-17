@@ -18,6 +18,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <numeric>
 #include <utility>
 #include <vector>
@@ -88,9 +89,23 @@ class BusyThreadCount {
   size_t NextIndex() { return next_idx_.fetch_add(1) % shards_.size(); }
 
  private:
+// We want to ensure that this data structure lands on different cachelines per
+// cpu. With C++17 we can do so explicitly with an `alignas` specifier. Prior
+// versions we can at best approximate it by padding the structure. It'll
+// probably work out ok, but it's not guaranteed across allocators.
+// TODO(ctiller): When we move to C++17 delete the duplicate definition.
+#if __cplusplus >= 201703L
   struct ShardedData {
     std::atomic<size_t> busy_count{0};
   } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
+#else
+  struct ShardedDataHeader {
+    std::atomic<size_t> busy_count{0};
+  };
+  struct ShardedData : public ShardedDataHeader {
+    uint8_t padding[GPR_CACHELINE_SIZE - sizeof(ShardedDataHeader)];
+  };
+#endif
 
   std::vector<ShardedData> shards_;
   std::atomic<size_t> next_idx_{0};

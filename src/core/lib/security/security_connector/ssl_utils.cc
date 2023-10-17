@@ -450,7 +450,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.min_tls_version = min_tls_version;
   options.max_tls_version = max_tls_version;
   options.crl_directory = crl_directory;
-  options.crl_provider = crl_provider;
+  options.crl_provider = std::move(crl_provider);
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -488,7 +488,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.max_tls_version = max_tls_version;
   options.key_logger = tls_session_key_logger;
   options.crl_directory = crl_directory;
-  options.crl_provider = crl_provider;
+  options.crl_provider = std::move(crl_provider);
   options.send_client_ca_list = send_client_ca_list;
   const tsi_result result =
       tsi_create_ssl_server_handshaker_factory_with_options(&options,

@@ -18,8 +18,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include <string>
-
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"

@@ -45,6 +45,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -134,7 +135,9 @@ TEST(ChannelStackFilters, LooksAsExpected) {
                                       "http-server", "compression",
                                       "server_call_tracer", "connected"}));
   EXPECT_EQ(MakeStack(nullptr, no_args, GRPC_CLIENT_CHANNEL),
-            std::vector<std::string>({"client-channel"}));
+            grpc_core::IsClientIdlenessEnabled()
+                ? std::vector<std::string>({"client_idle", "client-channel"})
+                : std::vector<std::string>({"client-channel"}));
 }
 
 int main(int argc, char** argv) {

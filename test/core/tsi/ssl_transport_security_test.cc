@@ -960,9 +960,6 @@ void test_tsi_ssl_client_handshaker_factory_refcounting() {
         TSI_OK);
   }
 
-  client_handshaker_factory =
-      tsi_ssl_client_handshaker_factory_ref(client_handshaker_factory);
-
   tsi_handshaker_destroy(handshaker[1]);
   ASSERT_FALSE(handshaker_factory_destructor_called);
 
@@ -973,10 +970,8 @@ void test_tsi_ssl_client_handshaker_factory_refcounting() {
   ASSERT_FALSE(handshaker_factory_destructor_called);
 
   tsi_handshaker_destroy(handshaker[2]);
-  ASSERT_FALSE(handshaker_factory_destructor_called);
-
-  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
   ASSERT_TRUE(handshaker_factory_destructor_called);
+
   gpr_free(cert_chain);
 }
 

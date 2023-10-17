@@ -560,8 +560,8 @@ class CLanguage(object):
 
         if compiler == "default" or compiler == "cmake":
             return ("debian11", [])
-        elif compiler == "gcc7":
-            return ("gcc_7", [])
+        elif compiler == "gcc8":
+            return ("gcc_8", [])
         elif compiler == "gcc10.2":
             return ("debian11", [])
         elif compiler == "gcc10.2_openssl102":
@@ -584,8 +584,8 @@ class CLanguage(object):
             return ("alpine", [])
         elif compiler == "clang6":
             return ("clang_6", self._clang_cmake_configure_extra_args())
-        elif compiler == "clang15":
-            return ("clang_15", self._clang_cmake_configure_extra_args())
+        elif compiler == "clang16":
+            return ("clang_16", self._clang_cmake_configure_extra_args())
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
@@ -1015,15 +1015,12 @@ class RubyLanguage(object):
                 "src/ruby/end2end/prefork_without_using_grpc_test.rb",
                 "src/ruby/end2end/prefork_postfork_loop_test.rb",
             ]:
-                if platform_string() == "mac":
-                    # Skip fork tests on mac, it's only supported on linux.
-                    continue
-                if self.config.build_config == "dbg":
-                    # There's a known issue with dbg builds that breaks fork
-                    # support: https://github.com/grpc/grpc/issues/31885.
-                    # TODO(apolcyn): unskip these tests on dbg builds after we
-                    # migrate to event engine and hence fix that issue.
-                    continue
+                # Skip fork tests in general until https://github.com/grpc/grpc/issues/34442
+                # is fixed. Otherwise we see too many flakes.
+                # After that's fixed, we should continue to skip on mac
+                # indefinitely, and on "dbg" builds until the Event Engine
+                # migration completes.
+                continue
             tests.append(
                 self.config.job_spec(
                     ["ruby", test],
@@ -1714,14 +1711,14 @@ argp.add_argument(
     "--compiler",
     choices=[
         "default",
-        "gcc7",
+        "gcc8",
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
         "clang6",
-        "clang15",
+        "clang16",
         # TODO: Automatically populate from supported version
         "python2.7",
         "python3.5",

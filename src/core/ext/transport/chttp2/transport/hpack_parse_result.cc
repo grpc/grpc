@@ -18,8 +18,6 @@
 
 #include <stddef.h>
 
-#include <initializer_list>
-
 #include "absl/strings/str_format.h"
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"

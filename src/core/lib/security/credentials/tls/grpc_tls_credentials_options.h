@@ -70,6 +70,10 @@ struct grpc_tls_credentials_options
     return tls_session_key_log_file_path_;
   }
   const std::string& crl_directory() const { return crl_directory_; }
+  // Returns the CRL Provider
+  std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider() const {
+    return crl_provider_;
+  }
   bool send_client_ca_list() const { return send_client_ca_list_; }
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider() const {
     return crl_provider_;
@@ -168,6 +172,7 @@ struct grpc_tls_credentials_options
            tls_session_key_log_file_path_ ==
                other.tls_session_key_log_file_path_ &&
            crl_directory_ == other.crl_directory_ &&
+           (crl_provider_ == other.crl_provider_) &&
            send_client_ca_list_ == other.send_client_ca_list_;
   }
 

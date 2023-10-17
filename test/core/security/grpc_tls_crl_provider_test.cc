@@ -50,9 +50,6 @@ const char* kIntermediateCrlPath =
 const absl::string_view kCrlIntermediateIssuer =
     "/CN=intermediatecert.example.com";
 
-namespace grpc_core {
-namespace testing {
-
 const std::string kCrlDirectory = "test/core/tsi/test_creds/crl_data/crls";
 const std::string kCrlDynamicDirectory =
     "test/core/tsi/test_creds/crl_data/crl_provider_test_dir";
@@ -63,44 +60,43 @@ using ::grpc_core::experimental::CrlImpl;
 using ::grpc_core::experimental::CrlProvider;
 using ::grpc_core::experimental::StaticCrlProvider;
 
+namespace grpc_core {
+namespace testing {
+
 TEST(CrlProviderTest, CanParseCrl) {
   std::string crl_string = GetFileContents(kCrlPath);
-  absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
-  ASSERT_TRUE(result.ok());
-  ASSERT_NE(*result, nullptr);
-  auto* crl = static_cast<CrlImpl*>(result->get());
-  EXPECT_EQ(crl->Issuer(), kCrlIssuer);
+  absl::StatusOr<std::shared_ptr<Crl>> crl = Crl::Parse(crl_string);
+  ASSERT_TRUE(crl.ok());
+  ASSERT_NE(*crl, nullptr);
+  EXPECT_EQ((*crl)->Issuer(), kCrlIssuer);
 }
 
 TEST(CrlProviderTest, InvalidFile) {
   std::string crl_string = "INVALID CRL FILE";
-  absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
-  EXPECT_EQ(result.status(),
+  absl::StatusOr<std::shared_ptr<Crl>> crl = Crl::Parse(crl_string);
+  EXPECT_EQ(crl.status(),
             absl::InvalidArgumentError(
                 "Conversion from PEM string to X509 CRL failed."));
 }
 
 TEST(CrlProviderTest, StaticCrlProviderLookup) {
   std::vector<std::string> crl_strings = {GetFileContents(kCrlPath)};
-  absl::StatusOr<std::shared_ptr<CrlProvider>> result =
-      StaticCrlProvider::Create(crl_strings);
-  ASSERT_TRUE(result.ok()) << result.status();
-  std::shared_ptr<CrlProvider> provider = std::move(*result);
+  absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
+      experimental::CreateStaticCrlProvider(crl_strings);
+  ASSERT_TRUE(provider.ok()) << provider.status();
   CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
-  auto crl = provider->GetCrl(cert);
+  auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
   EXPECT_EQ(crl->Issuer(), kCrlIssuer);
 }
 
 TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
   std::vector<std::string> crl_strings = {GetFileContents(kCrlPath)};
-  absl::StatusOr<std::shared_ptr<CrlProvider>> result =
-      StaticCrlProvider::Create(crl_strings);
-  ASSERT_TRUE(result.ok()) << result.status();
-  std::shared_ptr<CrlProvider> provider = std::move(*result);
-
+  absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
+      experimental::CreateStaticCrlProvider(crl_strings);
+  ASSERT_TRUE(provider.ok()) << provider.status();
   CertificateInfoImpl bad_cert = CertificateInfoImpl("BAD CERT");
-  auto crl = provider->GetCrl(bad_cert);
+  auto crl = (*provider)->GetCrl(bad_cert);
   EXPECT_EQ(crl, nullptr);
 }
 

@@ -21,16 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <map>
 #include <memory>
 #include <string>
-#include <thread>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
 
 namespace grpc_core {
@@ -68,19 +65,8 @@ class CrlProvider {
       const CertificateInfo& certificate_info) = 0;
 };
 
-class StaticCrlProvider : public CrlProvider {
- public:
-  // Each element of the input vector is expected to be the raw contents of a
-  // CRL file.
-  static absl::StatusOr<std::shared_ptr<CrlProvider>> Create(
-      absl::Span<const std::string> crls);
-  std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
-
- private:
-  explicit StaticCrlProvider(
-      absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls);
-  const absl::flat_hash_map<std::string, std::shared_ptr<Crl>> crls_;
-};
+absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
+    absl::Span<const std::string> crls);
 
 class DirectoryReloaderCrlProvider : public CrlProvider {
  public:
@@ -94,4 +80,14 @@ class DirectoryReloaderCrlProvider : public CrlProvider {
 }  // namespace experimental
 }  // namespace grpc_core
 
+// TODO(gtcooke94) - Mark with api macro when all wrapped langauges support C++
+// in core APIs
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets the crl provider in the options.
+ */
+void grpc_tls_credentials_options_set_crl_provider(
+    grpc_tls_credentials_options* options,
+    std::shared_ptr<grpc_core::experimental::CrlProvider> provider);
 #endif /* GRPC_GRPC_CRL_PROVIDER_H */
