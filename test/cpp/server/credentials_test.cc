@@ -20,9 +20,11 @@
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/security/tls_crl_provider.h>
 
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
@@ -175,6 +177,34 @@ TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials.get() != nullptr);
 }
+
+TEST(CredentialsTest, TlsServerCredentialsWithCrlProvider) {
+  auto provider = experimental::CreateStaticCrlProvider({});
+  ASSERT_TRUE(provider.ok());
+  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.set_crl_provider(*provider);
+  auto channel_credentials = grpc::experimental::TlsServerCredentials(options);
+  GPR_ASSERT(channel_credentials.get() != nullptr);
+}
+
+TEST(CredentialsTest, TlsServerCredentialsWithCrlProviderAndDirectory) {
+  auto provider = experimental::CreateStaticCrlProvider({});
+  ASSERT_TRUE(provider.ok());
+  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.set_crl_directory(CRL_DIR_PATH);
+  options.set_crl_provider(*provider);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  //   TODO(gtcooke94) - behavior might change to make this return nullptr in
+  //   the future
+  GPR_ASSERT(server_credentials != nullptr);
+}
+
+// TODO(gtcooke94) - Add test to make sure Tls*CredentialsOptions does not leak
+// when not moved into TlsCredentials
 
 }  // namespace
 }  // namespace testing
