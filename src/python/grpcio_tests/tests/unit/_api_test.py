@@ -14,6 +14,7 @@
 """Test of gRPC Python's application-layer API."""
 
 import logging
+import threading
 import unittest
 
 import grpc
@@ -114,6 +115,21 @@ class ChannelTest(unittest.TestCase):
         channel_credentials = grpc.ssl_channel_credentials()
         channel = grpc.secure_channel("google.com:443", channel_credentials)
         channel.close()
+
+    def test_multiple_secure_channel(self):
+        def create_secure_channel():
+            channel_credentials = grpc.ssl_channel_credentials()
+            channel = grpc.secure_channel("google.com:443", channel_credentials)
+            channel.close()
+
+        for _ in range(10):
+            thread1 = threading.Thread(target=create_secure_channel)
+            thread2 = threading.Thread(target=create_secure_channel)
+
+            thread1.start()
+            thread2.start()
+            thread1.join()
+            thread2.join()
 
 
 if __name__ == "__main__":
