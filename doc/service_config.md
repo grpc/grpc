@@ -89,7 +89,7 @@ Here is the same example service config in JSON form:
 
 ```
 {
-  "loadBalancingConfig": [ { "round_robin": {} } ],
+  "loadBalancingConfig": [ { "roundRobin": {} } ],
   "methodConfig": [
     {
       "name": [
