@@ -17,7 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <type_traits>
 #include <utility>
 
 #include <grpc/support/log.h>

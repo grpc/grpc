@@ -22,7 +22,6 @@
 
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/strings/str_cat.h"
@@ -31,7 +30,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
@@ -603,7 +601,10 @@ class PipeReceiver {
   // Checks closed from the receivers perspective: that is, if there is a value
   // in the pipe but the pipe is closed, reports open until that value is read.
   auto AwaitClosed() {
-    return [center = center_]() { return center->PollClosedForReceiver(); };
+    return [center = center_]() -> Poll<bool> {
+      if (center == nullptr) return false;
+      return center->PollClosedForReceiver();
+    };
   }
 
   auto AwaitEmpty() {

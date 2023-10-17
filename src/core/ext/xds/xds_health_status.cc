@@ -18,6 +18,8 @@
 
 #include "src/core/ext/xds/xds_health_status.h"
 
+#include <string>
+
 #include "envoy/config/core/v3/health_check.upb.h"
 
 namespace grpc_core {

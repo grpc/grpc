@@ -59,6 +59,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_impl.h"
 
 // IWYU pragma: no_include <type_traits>
 
@@ -223,8 +224,8 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
   }
   ChannelStackBuilderImpl builder(
       grpc_channel_stack_type_string(channel_stack_type), channel_stack_type,
-      args);
-  builder.SetTarget(target).SetTransport(optional_transport);
+      args.SetObject(optional_transport));
+  builder.SetTarget(target);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return nullptr;
   }

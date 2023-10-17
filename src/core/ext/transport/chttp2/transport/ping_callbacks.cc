@@ -23,6 +23,8 @@
 
 #include <grpc/support/log.h>
 
+grpc_core::TraceFlag grpc_ping_trace(false, "http2_ping");
+
 namespace grpc_core {
 
 void Chttp2PingCallbacks::OnPing(Callback on_start, Callback on_ack) {
@@ -90,16 +92,17 @@ void Chttp2PingCallbacks::CancelAll(
   ping_requested_ = false;
 }
 
-void Chttp2PingCallbacks::OnPingTimeout(
+absl::optional<uint64_t> Chttp2PingCallbacks::OnPingTimeout(
     Duration ping_timeout,
     grpc_event_engine::experimental::EventEngine* event_engine,
     Callback callback) {
   GPR_ASSERT(started_new_ping_without_setting_timeout_);
   started_new_ping_without_setting_timeout_ = false;
   auto it = inflight_.find(most_recent_inflight_);
-  if (it == inflight_.end()) return;
+  if (it == inflight_.end()) return absl::nullopt;
   it->second.on_timeout =
       event_engine->RunAfter(ping_timeout, std::move(callback));
+  return most_recent_inflight_;
 }
 
 }  // namespace grpc_core

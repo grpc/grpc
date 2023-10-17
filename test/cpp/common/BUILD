@@ -97,20 +97,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "channel_filter_test",
-    srcs = ["channel_filter_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:grpc++",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "secure_auth_context_test",
     srcs = ["secure_auth_context_test.cc"],
     external_deps = [

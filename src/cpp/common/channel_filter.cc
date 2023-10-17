@@ -18,6 +18,8 @@
 
 #include "src/cpp/common/channel_filter.h"
 
+#include <type_traits>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -25,7 +27,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -70,24 +71,14 @@ void CallData::SetPollsetOrPollsetSet(grpc_call_element* elem,
 namespace internal {
 
 void RegisterChannelFilter(
-    grpc_channel_stack_type stack_type, int priority,
+    grpc_channel_stack_type stack_type, int,
     std::function<bool(const grpc_core::ChannelArgs&)> include_filter,
     const grpc_channel_filter* filter) {
-  auto maybe_add_filter = [include_filter,
-                           filter](grpc_core::ChannelStackBuilder* builder) {
-    if (include_filter != nullptr) {
-      if (!include_filter(builder->channel_args())) {
-        return true;
-      }
-    }
-    builder->PrependFilter(filter);
-    return true;
-  };
   grpc_core::CoreConfiguration::RegisterBuilder(
-      [stack_type, priority,
-       maybe_add_filter](grpc_core::CoreConfiguration::Builder* builder) {
-        builder->channel_init()->RegisterStage(stack_type, priority,
-                                               maybe_add_filter);
+      [stack_type, filter, include_filter = std::move(include_filter)](
+          grpc_core::CoreConfiguration::Builder* builder) {
+        auto& f = builder->channel_init()->RegisterFilter(stack_type, filter);
+        if (include_filter) f.If(include_filter);
       });
 }
 

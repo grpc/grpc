@@ -21,7 +21,6 @@
 // IWYU pragma: no_include <bits/struct_stat.h>
 
 #include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 
 #ifdef GPR_POSIX_STAT
 

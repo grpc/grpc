@@ -21,8 +21,6 @@
 #include <inttypes.h>
 
 #include <functional>
-#include <initializer_list>
-#include <string>
 #include <utility>
 
 #include "absl/strings/str_format.h"
@@ -32,22 +30,20 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call_trace.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -248,45 +244,39 @@ ArenaPromise<ServerMetadataHandle> ServerMessageSizeFilter::MakeCallPromise(
 }
 
 namespace {
-// Used for GRPC_CLIENT_SUBCHANNEL
-bool MaybeAddMessageSizeFilterToSubchannel(ChannelStackBuilder* builder) {
-  if (builder->channel_args().WantMinimalStack()) {
-    return true;
-  }
-  builder->PrependFilter(&ClientMessageSizeFilter::kFilter);
-  return true;
-}
-
 // Used for GRPC_CLIENT_DIRECT_CHANNEL and GRPC_SERVER_CHANNEL. Adds the
 // filter only if message size limits or service config is specified.
-auto MaybeAddMessageSizeFilter(const grpc_channel_filter* filter) {
-  return [filter](ChannelStackBuilder* builder) {
-    auto channel_args = builder->channel_args();
-    if (channel_args.WantMinimalStack()) {
-      return true;
-    }
-    MessageSizeParsedConfig limits =
-        MessageSizeParsedConfig::GetFromChannelArgs(channel_args);
-    const bool enable =
-        limits.max_send_size().has_value() ||
-        limits.max_recv_size().has_value() ||
-        channel_args.GetString(GRPC_ARG_SERVICE_CONFIG).has_value();
-    if (enable) builder->PrependFilter(filter);
-    return true;
-  };
+bool HasMessageSizeLimits(const ChannelArgs& channel_args) {
+  MessageSizeParsedConfig limits =
+      MessageSizeParsedConfig::GetFromChannelArgs(channel_args);
+  return limits.max_send_size().has_value() ||
+         limits.max_recv_size().has_value() ||
+         channel_args.GetString(GRPC_ARG_SERVICE_CONFIG).has_value();
 }
 
 }  // namespace
 void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder) {
   MessageSizeParser::Register(builder);
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL,
-                                         GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                         MaybeAddMessageSizeFilterToSubchannel);
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      MaybeAddMessageSizeFilter(&ClientMessageSizeFilter::kFilter));
-  builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      MaybeAddMessageSizeFilter(&ServerMessageSizeFilter::kFilter));
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                       &ClientMessageSizeFilter::kFilter)
+      .ExcludeFromMinimalStack();
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
+                       &ClientMessageSizeFilter::kFilter)
+      .ExcludeFromMinimalStack()
+      .If(HasMessageSizeLimits)
+      // TODO(ctiller): ordering constraint is here to match the ordering that
+      // existed prior to ordering constraints did. Re-examine the ordering of
+      // filters from first principles.
+      .Before({&grpc_client_deadline_filter});
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &ServerMessageSizeFilter::kFilter)
+      .ExcludeFromMinimalStack()
+      .If(HasMessageSizeLimits)
+      // TODO(ctiller): ordering constraint is here to match the ordering that
+      // existed prior to ordering constraints did. Re-examine the ordering of
+      // filters from first principles.
+      .Before({&grpc_server_deadline_filter});
 }
 }  // namespace grpc_core

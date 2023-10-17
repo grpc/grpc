@@ -1057,15 +1057,18 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
     src/core/ext/transport/chttp2/transport/http_trace.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
+    src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
     src/core/ext/transport/chttp2/transport/ping_callbacks.cc \
     src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/write_size_policy.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
+    src/core/ext/transport/inproc/legacy_inproc_transport.cc \
     src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c \
@@ -1415,6 +1418,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_stack_builder_impl.cc \
+    src/core/lib/channel/channel_stack_trace.cc \
     src/core/lib/channel/channel_trace.cc \
     src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
@@ -1946,15 +1950,18 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
     src/core/ext/transport/chttp2/transport/http_trace.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
+    src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
     src/core/ext/transport/chttp2/transport/ping_callbacks.cc \
     src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/write_size_policy.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
+    src/core/ext/transport/inproc/legacy_inproc_transport.cc \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
@@ -1984,6 +1991,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_stack_builder_impl.cc \
+    src/core/lib/channel/channel_stack_trace.cc \
     src/core/lib/channel/channel_trace.cc \
     src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \

@@ -1090,6 +1090,8 @@ src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
 src/core/ext/transport/chttp2/transport/legacy_frame.h \
+src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc \
+src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h \
 src/core/ext/transport/chttp2/transport/parsing.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.h \
@@ -1100,10 +1102,14 @@ src/core/ext/transport/chttp2/transport/ping_rate_policy.h \
 src/core/ext/transport/chttp2/transport/stream_lists.cc \
 src/core/ext/transport/chttp2/transport/varint.cc \
 src/core/ext/transport/chttp2/transport/varint.h \
+src/core/ext/transport/chttp2/transport/write_size_policy.cc \
+src/core/ext/transport/chttp2/transport/write_size_policy.h \
 src/core/ext/transport/chttp2/transport/writing.cc \
 src/core/ext/transport/inproc/inproc_plugin.cc \
 src/core/ext/transport/inproc/inproc_transport.cc \
 src/core/ext/transport/inproc/inproc_transport.h \
+src/core/ext/transport/inproc/legacy_inproc_transport.cc \
+src/core/ext/transport/inproc/legacy_inproc_transport.h \
 src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c \
 src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h \
 src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c \
@@ -1811,6 +1817,8 @@ src/core/lib/channel/channel_stack_builder.cc \
 src/core/lib/channel/channel_stack_builder.h \
 src/core/lib/channel/channel_stack_builder_impl.cc \
 src/core/lib/channel/channel_stack_builder_impl.h \
+src/core/lib/channel/channel_stack_trace.cc \
+src/core/lib/channel/channel_stack_trace.h \
 src/core/lib/channel/channel_trace.cc \
 src/core/lib/channel/channel_trace.h \
 src/core/lib/channel/channelz.cc \
@@ -2055,6 +2063,7 @@ src/core/lib/gprpp/windows/stat.cc \
 src/core/lib/gprpp/windows/thd.cc \
 src/core/lib/gprpp/work_serializer.cc \
 src/core/lib/gprpp/work_serializer.h \
+src/core/lib/gprpp/xxhash_inline.h \
 src/core/lib/handshaker/proxy_mapper.h \
 src/core/lib/handshaker/proxy_mapper_registry.cc \
 src/core/lib/handshaker/proxy_mapper_registry.h \

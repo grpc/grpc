@@ -31,7 +31,11 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/hash/hash.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -202,6 +206,18 @@ class Server : public InternallyRefCounted<Server>,
   struct RequestedCall;
 
   struct ChannelRegisteredMethod {
+    ChannelRegisteredMethod() = default;
+    ChannelRegisteredMethod(RegisteredMethod* server_registered_method_arg,
+                            uint32_t flags_arg, bool has_host_arg,
+                            Slice method_arg, Slice host_arg)
+        : server_registered_method(server_registered_method_arg),
+          flags(flags_arg),
+          has_host(has_host_arg),
+          method(std::move(method_arg)),
+          host(std::move(host_arg)) {}
+
+    ~ChannelRegisteredMethod() = default;
+
     RegisteredMethod* server_registered_method = nullptr;
     uint32_t flags;
     bool has_host;
@@ -231,6 +247,9 @@ class Server : public InternallyRefCounted<Server>,
 
     ChannelRegisteredMethod* GetRegisteredMethod(const grpc_slice& host,
                                                  const grpc_slice& path);
+
+    ChannelRegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
+                                                 const absl::string_view& path);
     // Filter vtable functions.
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
@@ -250,6 +269,17 @@ class Server : public InternallyRefCounted<Server>,
 
     static void FinishDestroy(void* arg, grpc_error_handle error);
 
+    struct StringViewStringViewPairHash
+        : absl::flat_hash_set<
+              std::pair<absl::string_view, absl::string_view>>::hasher {
+      using is_transparent = void;
+    };
+
+    struct StringViewStringViewPairEq
+        : std::equal_to<std::pair<absl::string_view, absl::string_view>> {
+      using is_transparent = void;
+    };
+
     RefCountedPtr<Server> server_;
     RefCountedPtr<Channel> channel_;
     // The index into Server::cqs_ of the CQ used as a starting point for
@@ -260,7 +290,14 @@ class Server : public InternallyRefCounted<Server>,
     // TODO(vjpai): Convert this to an STL map type as opposed to a direct
     // bucket implementation. (Consider performance impact, hash function to
     // use, etc.)
-    std::unique_ptr<std::vector<ChannelRegisteredMethod>> registered_methods_;
+    std::unique_ptr<std::vector<ChannelRegisteredMethod>>
+        old_registered_methods_;
+    // Map of registered methods.
+    absl::flat_hash_map<std::pair<std::string, std::string> /*host, method*/,
+                        std::unique_ptr<ChannelRegisteredMethod>,
+                        StringViewStringViewPairHash,
+                        StringViewStringViewPairEq>
+        registered_methods_;
     uint32_t registered_method_max_probes_;
     grpc_closure finish_destroy_channel_closure_;
     intptr_t channelz_socket_uuid_;

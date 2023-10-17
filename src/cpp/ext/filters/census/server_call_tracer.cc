@@ -30,7 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"

@@ -24,7 +24,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <initializer_list>
 #include <ostream>
 #include <string>
 #include <tuple>
