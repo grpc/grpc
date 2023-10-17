@@ -87,7 +87,7 @@ std::vector<std::string> MakeStack(const char* transport_name,
   std::unique_ptr<FakeTransport> fake_transport;
   if (transport_name != nullptr) {
     fake_transport.reset(new FakeTransport(transport_name));
-    channel_args = channel_args.SetObject(&fake_transport);
+    channel_args = channel_args.SetObject(fake_transport.get());
   }
   grpc_core::ChannelStackBuilderImpl builder("test", channel_stack_type,
                                              channel_args);
