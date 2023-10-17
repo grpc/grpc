@@ -24,7 +24,7 @@ licenses(["reciprocal"])
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "layering_check",
+        "-layering_check",
     ],
 )
 

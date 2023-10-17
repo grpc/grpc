@@ -18,7 +18,7 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 grpc_package(
     name = "test/core/transport/binder/end2end/fuzzers",
     features = [
-        "layering_check",
+        "-layering_check",
     ],
 )
 
