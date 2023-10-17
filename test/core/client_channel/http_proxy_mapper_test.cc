@@ -18,7 +18,6 @@
 
 #include "src/core/ext/filters/client_channel/http_proxy_mapper.h"
 
-#include <optional>
 #include <ostream>
 
 #include "absl/status/status.h"
