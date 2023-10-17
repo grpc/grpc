@@ -389,10 +389,9 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
   }
 
   void ZombifyPending() override {
-    auto pending = std::move(pending_);
-    pending_.clear();
-    for (const auto& p : pending) {
-      p->Finish(absl::InternalError("Server closed"));
+    while (!pending_.empty()) {
+      pending_.front()->Finish(absl::InternalError("Server closed"));
+      pending_.pop();
     }
   }
 
@@ -412,6 +411,7 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
 
   void RequestCallWithPossiblePublish(size_t request_queue_index,
                                       RequestedCall* call) override {
+  loop:
     if (requests_per_cq_[request_queue_index].Push(&call->mpscq_node)) {
       // this was the first queued request: we need to lock and start
       // matching calls
@@ -427,16 +427,16 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
             pending_call.rc = reinterpret_cast<RequestedCall*>(
                 requests_per_cq_[request_queue_index].Pop());
             if (pending_call.rc != nullptr) {
-              pending_call.pending = *pending_.begin();
-              pending_.erase(pending_.begin());
+              pending_call.pending = std::move(pending_.front());
+              pending_.pop();
             }
           }
         }
         if (pending_call.rc == nullptr) break;
         if (!pending_call.pending->Finish(server(), request_queue_index,
                                           pending_call.rc)) {
-          requests_per_cq_[request_queue_index].Push(
-              &pending_call.rc->mpscq_node);
+          call = pending_call.rc;
+          goto loop;
         }
       }
     }
@@ -466,25 +466,16 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
     size_t cq_idx = 0;
     size_t loop_count;
     {
+      std::vector<std::shared_ptr<ActivityWaiter>> removed_pending;
       MutexLock lock(&server_->mu_call_);
-      // Opportunistically expunge any expired waiters.
-      size_t gc = 0;
-      while (!pending_.empty()) {
-        const auto oldest_age =
-            Timestamp::Now() - (*pending_.begin())->queue_time;
-        if (oldest_age > Duration::Seconds(30)) {
-          (*pending_.begin())
-              ->Finish(absl::CancelledError("too long in pending queue"));
-          pending_.erase(pending_.begin());
-          ++gc;
-          continue;
-        }
-        GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR,
-                             "oldest pending:%s  count:%" PRIdPTR
-                             " expired:%" PRIdPTR " gc:%" PRIdPTR,
-                             oldest_age.ToString().c_str(), pending_.size(),
-                             ExpiredCount(), gc);
-        break;
+      while (!pending_.empty() &&
+             pending_.front()->Age() > server_->max_time_in_pending_queue_) {
+        removed_pending.push_back(std::move(pending_.front()));
+        pending_.pop();
+      }
+      if (!pending_.empty()) {
+        GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "oldest pending: %s",
+                             pending_.front()->Age().ToString().c_str());
       }
       for (loop_count = 0; loop_count < requests_per_cq_.size(); loop_count++) {
         cq_idx =
@@ -493,9 +484,16 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
         if (rc != nullptr) break;
       }
       if (rc == nullptr) {
+        GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "pending queue size: %" PRIdPTR,
+                             pending_.size());
+        if (server_->pending_backlog_protector_.Reject(pending_.size(),
+                                                       server_->bitgen_)) {
+          return Immediate(absl::ResourceExhaustedError(
+              "Too many pending requests for this server"));
+        }
         auto w = std::make_shared<ActivityWaiter>(
-            Activity::current()->MakeOwningWaker(), next_index_++);
-        pending_.insert(w);
+            Activity::current()->MakeOwningWaker());
+        pending_.push(w);
         return OnCancel(
             [w]() -> Poll<absl::StatusOr<MatchResult>> {
               std::unique_ptr<absl::StatusOr<MatchResult>> r(
@@ -503,12 +501,7 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
               if (r == nullptr) return Pending{};
               return std::move(*r);
             },
-            [this, w]() {
-              w->Expire();
-              server_->mu_call_.AssertNotHeld();
-              MutexLock lock(&server_->mu_call_);
-              pending_.erase(w);
-            });
+            [w]() { w->Expire(); });
       }
     }
     return Immediate(MatchResult(server(), cq_idx, rc));
@@ -520,8 +513,7 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
   Server* const server_;
   struct ActivityWaiter {
     using ResultType = absl::StatusOr<MatchResult>;
-    ActivityWaiter(Waker waker, uint64_t index)
-        : waker(std::move(waker)), index(index) {}
+    explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
     ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
     void Finish(absl::Status status) {
       delete result.exchange(new ResultType(std::move(status)),
@@ -547,27 +539,14 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
       delete result.exchange(new ResultType(absl::CancelledError()),
                              std::memory_order_acq_rel);
     }
+    Duration Age() { return Timestamp::Now() - created; }
     Waker waker;
-    Timestamp queue_time = Timestamp::Now();
     std::atomic<ResultType*> result{nullptr};
-    uint64_t index;
+    const Timestamp created = Timestamp::Now();
   };
-  size_t ExpiredCount() {
-    size_t n = 0;
-    for (auto& p : pending_) {
-      if (p->result.load(std::memory_order_relaxed) != nullptr) n++;
-    }
-    return n;
-  }
   using PendingCall = std::shared_ptr<ActivityWaiter>;
-  struct ComparePendingCall {
-    bool operator()(const PendingCall& a, const PendingCall& b) {
-      return a->index < b->index;
-    }
-  };
-  std::set<PendingCall, ComparePendingCall> pending_;
+  std::queue<PendingCall> pending_;
   std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
-  uint64_t next_index_ = 0;
 };
 
 // AllocatingRequestMatchers don't allow the application to request an RPC in
