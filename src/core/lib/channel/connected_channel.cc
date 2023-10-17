@@ -41,6 +41,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/alloc.h"
@@ -904,31 +905,49 @@ const grpc_channel_filter kServerEmulatedFilter =
     MakeConnectedFilter<nullptr>();
 #endif
 
-}  // namespace
-}  // namespace grpc_core
+bool TransportSupportsPromiseBasedCalls(const ChannelArgs& args) {
+  auto* transport = args.GetObject<Transport>();
+  return transport->client_transport() != nullptr;
+}
 
-bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder) {
-  grpc_core::Transport* t = builder->transport();
-  GPR_ASSERT(t != nullptr);
-  // Choose the right vtable for the connected filter.
+}  // namespace
+
+void RegisterConnectedChannel(CoreConfiguration::Builder* builder) {
   // We can't know promise based call or not here (that decision needs the
   // collaboration of all of the filters on the channel, and we don't want
   // ordering constraints on when we add filters).
   // We can know if this results in a promise based call how we'll create
   // our promise (if indeed we can), and so that is the choice made here.
-  if (t->client_transport() != nullptr) {
-    // Option 1, and our ideal: the transport supports promise based calls,
-    // and so we simply use the transport directly.
-    builder->AppendFilter(&grpc_core::kPromiseBasedTransportFilter);
-  } else if (grpc_channel_stack_type_is_client(builder->channel_stack_type())) {
-    // Option 2: the transport does not support promise based calls, but
-    // we're on the client and so we have an implementation that we can use
-    // to convert to batches.
-    builder->AppendFilter(&grpc_core::kClientEmulatedFilter);
-  } else {
-    // Option 3: the transport does not support promise based calls, and
-    // we're on the server so we use the server filter.
-    builder->AppendFilter(&grpc_core::kServerEmulatedFilter);
-  }
-  return true;
+
+  // Option 1, and our ideal: the transport supports promise based calls,
+  // and so we simply use the transport directly.
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &kPromiseBasedTransportFilter)
+      .Terminal()
+      .If(TransportSupportsPromiseBasedCalls);
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
+                       &kPromiseBasedTransportFilter)
+      .Terminal()
+      .If(TransportSupportsPromiseBasedCalls);
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kPromiseBasedTransportFilter)
+      .Terminal()
+      .If(TransportSupportsPromiseBasedCalls);
+
+  // Option 2: the transport does not support promise based calls.
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &kClientEmulatedFilter)
+      .Terminal()
+      .IfNot(TransportSupportsPromiseBasedCalls);
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL, &kClientEmulatedFilter)
+      .Terminal()
+      .IfNot(TransportSupportsPromiseBasedCalls);
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kServerEmulatedFilter)
+      .Terminal()
+      .IfNot(TransportSupportsPromiseBasedCalls);
 }
+
+}  // namespace grpc_core

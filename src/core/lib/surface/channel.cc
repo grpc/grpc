@@ -222,8 +222,8 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
   }
   ChannelStackBuilderImpl builder(
       grpc_channel_stack_type_string(channel_stack_type), channel_stack_type,
-      args);
-  builder.SetTarget(target).SetTransport(optional_transport);
+      args.SetObject(optional_transport));
+  builder.SetTarget(target);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return nullptr;
   }

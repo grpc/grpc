@@ -81,16 +81,17 @@ class FakeTransport final : public grpc_core::Transport {
 }  // namespace
 
 std::vector<std::string> MakeStack(const char* transport_name,
-                                   const grpc_core::ChannelArgs& channel_args,
+                                   grpc_core::ChannelArgs channel_args,
                                    grpc_channel_stack_type channel_stack_type) {
   // create phony channel stack
+  std::unique_ptr<FakeTransport> fake_transport;
+  if (transport_name != nullptr) {
+    fake_transport.reset(new FakeTransport(transport_name));
+    channel_args = channel_args.SetObject(&fake_transport);
+  }
   grpc_core::ChannelStackBuilderImpl builder("test", channel_stack_type,
                                              channel_args);
-  FakeTransport fake_transport(transport_name);
   builder.SetTarget("foo.test.google.fr");
-  if (transport_name != nullptr) {
-    builder.SetTransport(&fake_transport);
-  }
   {
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(

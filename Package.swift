@@ -1036,6 +1036,8 @@ let package = Package(
         "src/core/lib/channel/channel_stack_builder.h",
         "src/core/lib/channel/channel_stack_builder_impl.cc",
         "src/core/lib/channel/channel_stack_builder_impl.h",
+        "src/core/lib/channel/channel_stack_trace.cc",
+        "src/core/lib/channel/channel_stack_trace.h",
         "src/core/lib/channel/channel_trace.cc",
         "src/core/lib/channel/channel_trace.h",
         "src/core/lib/channel/channelz.cc",

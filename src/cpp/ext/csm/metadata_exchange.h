@@ -47,7 +47,8 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.
-  void AddLabels(grpc_metadata_batch* outgoing_initial_metadata) override;
+  void AddLabels(grpc_metadata_batch* outgoing_initial_metadata,
+                 LabelsIterable* labels_from_incoming_metadata) override;
 
  private:
   std::vector<std::pair<absl::string_view, std::string>> local_labels_;

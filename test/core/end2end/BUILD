@@ -158,6 +158,7 @@ grpc_cc_library(
         "tests/cancel_test_helpers.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -195,6 +196,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -444,6 +446,8 @@ grpc_core_end2end_test(name = "simple_metadata")
 grpc_core_end2end_test(name = "simple_request")
 
 grpc_core_end2end_test(name = "streaming_error_response")
+
+grpc_core_end2end_test(name = "timeout_before_request_call")
 
 grpc_core_end2end_test(name = "trailing_metadata")
 

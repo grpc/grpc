@@ -1110,6 +1110,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:notification",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",
@@ -1486,6 +1487,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
+        "absl/hash",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -1539,6 +1541,7 @@ grpc_cc_library(
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
+        "//src/core:channel_stack_trace",
         "//src/core:channel_stack_type",
         "//src/core:chunked_vector",
         "//src/core:closure",
@@ -1839,6 +1842,7 @@ grpc_cc_library(
     visibility = ["@grpc:tsi_interface"],
     deps = [
         "gpr",
+        "grpc_public_hdrs",
         "grpc_trace",
     ],
 )
@@ -2354,7 +2358,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:grpc_opencensus_plugin"],
     deps = [
-        "channel_stack_builder",
         "config",
         "gpr",
         "grpc++_base",
@@ -2759,6 +2762,7 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
     ],
     tags = ["nofixdeps"],
     visibility = ["@grpc:iomgr_buffer_list"],
@@ -2876,7 +2880,6 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
-        "//src/core:transport_fwd",
     ],
 )
 
@@ -3058,7 +3061,6 @@ grpc_cc_library(
     deps = [
         "backoff",
         "channel_arg_names",
-        "channel_stack_builder",
         "config",
         "config_vars",
         "debug_location",
@@ -3105,6 +3107,7 @@ grpc_cc_library(
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_deadline_filter",
+        "//src/core:grpc_message_size_filter",
         "//src/core:grpc_service_config",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
@@ -3586,7 +3589,6 @@ grpc_cc_library(
     visibility = ["@grpc:http"],
     deps = [
         "channel_arg_names",
-        "channel_stack_builder",
         "config",
         "gpr",
         "grpc_base",
@@ -3599,7 +3601,6 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
-        "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:grpc_message_size_filter",
@@ -3671,6 +3672,7 @@ grpc_cc_library(
     deps = [
         "backoff",
         "debug_location",
+        "endpoint_addresses",
         "envoy_admin_upb",
         "envoy_config_core_upb",
         "envoy_config_endpoint_upb",

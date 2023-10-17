@@ -585,7 +585,7 @@ class ComputeV1(
 
     @staticmethod
     def _log_debug_header(resp: httplib2.Response):
-        if DEBUG_HEADER_IN_RESPONSE in resp:
+        if DEBUG_HEADER_IN_RESPONSE in resp and resp.status >= 300:
             logger.info(
                 "Received GCP debug headers: %s",
                 resp[DEBUG_HEADER_IN_RESPONSE],
