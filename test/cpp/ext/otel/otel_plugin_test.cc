@@ -121,6 +121,7 @@ TEST_F(OTelPluginEnd2EndTest, ClientAttemptSentTotalCompressedMessageSize) {
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
+  ASSERT_EQ(absl::get<int64_t>(point_data->max_), 5);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 3);
   const auto* method_value =
@@ -154,6 +155,7 @@ TEST_F(OTelPluginEnd2EndTest, ClientAttemptRcvdTotalCompressedMessageSize) {
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
+  ASSERT_EQ(absl::get<int64_t>(point_data->max_), 5);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 3);
   const auto* method_value =
@@ -238,6 +240,7 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallSentTotalCompressedMessageSize) {
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   EXPECT_EQ(point_data->count_, 1);
+  ASSERT_EQ(absl::get<int64_t>(point_data->max_), 5);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
@@ -267,6 +270,7 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallRcvdTotalCompressedMessageSize) {
           &data[kMetricName][0].point_data);
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
+  ASSERT_EQ(absl::get<int64_t>(point_data->max_), 5);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
