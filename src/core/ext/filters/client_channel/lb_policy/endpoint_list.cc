@@ -86,7 +86,7 @@ class EndpointList::Endpoint::Helper
 //
 
 void EndpointList::Endpoint::Init(
-    const EndpointAddresses& addresses, const ChannelArgs& args,
+    EndpointAddresses addresses, const ChannelArgs& args,
     std::shared_ptr<WorkSerializer> work_serializer) {
   ChannelArgs child_args =
       args.Set(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING, true)
@@ -117,8 +117,26 @@ void EndpointList::Endpoint::Init(
               {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
   GPR_ASSERT(config.ok());
   // Update child policy.
+  class EndpointIterator
+      : public LoadBalancingPolicy::EndpointAddressesIterator {
+   public:
+    explicit EndpointIterator(const EndpointAddresses& addresses)
+        : addresses_(addresses) {};
+
+    absl::optional<EndpointAddresses> Next() override {
+      if (done_) return absl::nullopt;
+      done_ = true;
+      return addresses_;
+    }
+
+   private:
+    const EndpointAddresses& addresses_;
+    bool done_ = false;
+  };
   LoadBalancingPolicy::UpdateArgs update_args;
-  update_args.addresses.emplace().emplace_back(addresses);
+  update_args.addresses = [addresses = std::move(addresses)]() {
+    return EndpointIterator(addresses);
+  };
   update_args.args = child_args;
   update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,
@@ -163,14 +181,15 @@ RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
 //
 
 void EndpointList::Init(
-    const EndpointAddressesList& endpoints, const ChannelArgs& args,
+    EndpointAddressesIterator endpoints, const ChannelArgs& args,
     absl::AnyInvocable<OrphanablePtr<Endpoint>(RefCountedPtr<EndpointList>,
-                                               const EndpointAddresses&,
+                                               EndpointAddresses,
                                                const ChannelArgs&)>
         create_endpoint) {
-  for (const EndpointAddresses& addresses : endpoints) {
+  while ((auto addresses = endpoints.Next()) != absl::nullopt) {
     endpoints_.push_back(
-        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), addresses, args));
+        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), std::move(*addresses),
+                        args));
   }
 }
 

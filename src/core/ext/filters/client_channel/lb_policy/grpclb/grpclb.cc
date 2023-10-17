@@ -571,7 +571,8 @@ class GrpcLb : public LoadBalancingPolicy {
   // Whether we're in fallback mode.
   bool fallback_mode_ = false;
   // The backend addresses from the resolver.
-  absl::StatusOr<EndpointAddressesList> fallback_backend_addresses_;
+  absl::StatusOr<absl::AnyInvocable<EndpointAddresses()>>
+      fallback_backend_addresses_;
   // The last resolution note from our parent.
   // To be passed to child policy when fallback_backend_addresses_ is empty.
   std::string resolution_note_;
@@ -1515,15 +1516,39 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   GPR_ASSERT(config_ != nullptr);
   args_ = std::move(args.args);
   // Update fallback address list.
-  fallback_backend_addresses_ = std::move(args.addresses);
-  if (fallback_backend_addresses_.ok()) {
-    // Add null LB token attributes.
-    for (EndpointAddresses& addresses : *fallback_backend_addresses_) {
-      addresses = EndpointAddresses(
-          addresses.addresses(),
-          addresses.args().SetObject(
-              MakeRefCounted<TokenAndClientStatsArg>("", nullptr)));
-    }
+  if (!args.addresses.ok()) {
+    fallback_backend_addresses_ = args.addresses.status();
+  } else {
+    // Iterator wrapper to add null LB token attribute.
+    class EndpointIterator
+        : public LoadBalancingPolicy::EndpointAddressesIterator {
+     public:
+      EndpointIterator(
+          LoadBalancingPolicy::EndpointAddressesIterator parent_it,
+          RefCountedPtr<TokenAndClientStatsArg> empty_token)
+          : parent_it_(std::move(parent_it)),
+            empty_token_(std::move(empty_token)) {}
+
+      absl::optional<EndpointAddresses> Next() override {
+        auto result = parent_it_.Next();
+        if (result.has_value()) {
+          result = EndpointAddresses(result->addresses(),
+                                     result->args().SetObject(empty_token_));
+        }
+        return result;
+      }
+
+      bool Empty() const override { return parent_it_.Empty(); }
+
+     private:
+      LoadBalancingPolicy::EndpointAddressesIterator parent_it_;
+      RefCountedPtr<TokenAndClientStatsArg> empty_token_;
+    };
+    fallback_backend_addresses_ =
+        [parent_it_factory = std::move(*args.addresses),
+         empty_token = MakeRefCounted<TokenAndClientStatsArg>("", nullptr)]() {
+          return EndpointIterator(parent_it_factory(), empty_token);
+        };
   }
   resolution_note_ = std::move(args.resolution_note);
   // Update balancer channel.

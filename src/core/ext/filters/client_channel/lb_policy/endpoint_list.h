@@ -53,17 +53,17 @@ namespace grpc_core {
 class MyEndpointList : public EndpointList {
  public:
   MyEndpointList(RefCountedPtr<MyLbPolicy> lb_policy,
-                 const EndpointAddressesList& endpoints,
+                 EndpointAddressesIterator endpoints,
                  const ChannelArgs& args)
       : EndpointList(std::move(lb_policy),
                      GRPC_TRACE_FLAG_ENABLED(grpc_my_tracer)
                          ? "MyEndpointList"
                          : nullptr) {
-    Init(endpoints, args,
+    Init(std::move(endpoints), args,
          [&](RefCountedPtr<MyEndpointList> endpoint_list,
-             const EndpointAddresses& addresses, const ChannelArgs& args) {
+             EndpointAddresses addresses, const ChannelArgs& args) {
            return MakeOrphanable<MyEndpoint>(
-               std::move(endpoint_list), addresses, args,
+               std::move(endpoint_list), std::move(addresses), args,
                policy<MyLbPolicy>()->work_serializer());
          });
   }
@@ -72,10 +72,10 @@ class MyEndpointList : public EndpointList {
   class MyEndpoint : public Endpoint {
    public:
     MyEndpoint(RefCountedPtr<MyEndpointList> endpoint_list,
-               const EndpointAddresses& address, const ChannelArgs& args,
+               EndpointAddresses address, const ChannelArgs& args,
                std::shared_ptr<WorkSerializer> work_serializer)
         : Endpoint(std::move(endpoint_list)) {
-      Init(addresses, args, std::move(work_serializer));
+      Init(std::move(addresses), args, std::move(work_serializer));
     }
 
    private:
@@ -121,7 +121,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     explicit Endpoint(RefCountedPtr<EndpointList> endpoint_list)
         : endpoint_list_(std::move(endpoint_list)) {}
 
-    void Init(const EndpointAddresses& addresses, const ChannelArgs& args,
+    void Init(EndpointAddresses addresses, const ChannelArgs& args,
               std::shared_ptr<WorkSerializer> work_serializer);
 
     // Templated for convenience, to provide a short-hand for
@@ -184,9 +184,9 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   EndpointList(RefCountedPtr<LoadBalancingPolicy> policy, const char* tracer)
       : policy_(std::move(policy)), tracer_(tracer) {}
 
-  void Init(const EndpointAddressesList& endpoints, const ChannelArgs& args,
+  void Init(EndpointAddressesIterator endpoints, const ChannelArgs& args,
             absl::AnyInvocable<OrphanablePtr<Endpoint>(
-                RefCountedPtr<EndpointList>, const EndpointAddresses&,
+                RefCountedPtr<EndpointList>, EndpointAddresses,
                 const ChannelArgs&)>
                 create_endpoint);
 
