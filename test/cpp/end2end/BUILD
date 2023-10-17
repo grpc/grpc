@@ -1061,7 +1061,6 @@ grpc_cc_test(
     name = "crl_provider_test",
     srcs = ["crl_provider_test.cc"],
     data = [
-        "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:client.key",
         "//src/core/tsi/test_creds:client.pem",
         "//src/core/tsi/test_creds:server1.key",
@@ -1076,12 +1075,8 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data:revoked.pem",
         "//test/core/tsi/test_creds/crl_data:valid.key",
         "//test/core/tsi/test_creds/crl_data:valid.pem",
-        "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
-        "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
         "//test/core/tsi/test_creds/crl_data/crls:current.crl",
         "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
-        "//test/core/tsi/test_creds/crl_data/crls_missing_intermediate:ab06acdd.r0",
-        "//test/core/tsi/test_creds/crl_data/crls_missing_root:b9322cac.r0",
     ],
     external_deps = [
         "gtest",
