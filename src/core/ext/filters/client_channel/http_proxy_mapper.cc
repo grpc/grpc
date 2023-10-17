@@ -26,7 +26,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -61,7 +60,7 @@ namespace {
 bool ServerInCIDRRange(const grpc_resolved_address& server_address,
                        absl::string_view no_proxy_entry) {
   std::pair<absl::string_view, absl::string_view> possible_cidr =
-      absl::StrSplit(no_proxy_entry, absl::MaxSplits('/', 2),
+      absl::StrSplit(no_proxy_entry, absl::MaxSplits('/', 1),
                      absl::SkipEmpty());
   if (possible_cidr.first.empty() || possible_cidr.second.empty()) {
     return false;
@@ -81,15 +80,15 @@ bool ServerInCIDRRange(const grpc_resolved_address& server_address,
 
 bool AddressIncluded(
     const absl::StatusOr<grpc_resolved_address>& target_address,
-    absl::string_view address_string, absl::string_view address_ranges) {
-  std::vector<absl::string_view> no_proxy_hosts =
-      absl::StrSplit(address_ranges, ',', absl::SkipEmpty());
-  for (const auto& no_proxy_entry : no_proxy_hosts) {
-    auto entry = absl::StripAsciiWhitespace(no_proxy_entry);
-    if (absl::EndsWithIgnoreCase(address_string, entry)) {
+    absl::string_view host_name, absl::string_view address_ranges) {
+  for (const auto& entry :
+       absl::StrSplit(address_ranges, ',', absl::SkipEmpty())) {
+    auto address_or_mask = absl::StripAsciiWhitespace(entry);
+    if (absl::EndsWithIgnoreCase(host_name, address_or_mask)) {
       return true;
     }
-    if (target_address.ok() && ServerInCIDRRange(*target_address, entry)) {
+    if (target_address.ok() &&
+        ServerInCIDRRange(*target_address, address_or_mask)) {
       return true;
     }
   }
@@ -265,17 +264,23 @@ absl::optional<grpc_resolved_address> HttpProxyMapper::MapAddress(
   if (!proxy_address.has_value()) {
     return absl::nullopt;
   }
-  auto enabled_addresses = GetChannelArgOrEnvVarValue(
-      args, GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES,
-      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar);
-  if (!enabled_addresses.has_value() ||
-      !AddressIncluded(address, "", *enabled_addresses)) {
-    return absl::nullopt;
-  }
   auto address_string = grpc_sockaddr_to_string(&address, true);
   if (!address_string.ok()) {
     gpr_log(GPR_ERROR, "Unable to convert address to string: %s",
             std::string(address_string.status().message()).c_str());
+    return absl::nullopt;
+  }
+  std::string host_name, port;
+  if (!grpc_core::SplitHostPort(*address_string, &host_name, &port)) {
+    gpr_log(GPR_ERROR, "Address %s cannot be split in host and port",
+            address_string->c_str());
+    return absl::nullopt;
+  }
+  auto enabled_addresses = GetChannelArgOrEnvVarValue(
+      args, GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES,
+      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar);
+  if (!enabled_addresses.has_value() ||
+      !AddressIncluded(address, host_name, *enabled_addresses)) {
     return absl::nullopt;
   }
   *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER, *address_string);

@@ -18,9 +18,13 @@
 
 #include "src/core/ext/filters/client_channel/http_proxy_mapper.h"
 
+#include <optional>
+#include <ostream>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/impl/channel_arg_names.h>
@@ -32,11 +36,54 @@
 #include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
+// Need to be in the same namespace as absl::optional...
+namespace absl {
+
+static void PrintTo(const absl::nullopt_t& /* value */, std::ostream* os) {
+  *os << "<nullopt>";
+}
+
+static void PrintTo(const optional<grpc_resolved_address>& value,
+                    std::ostream* os) {
+  if (!value.has_value()) {
+    PrintTo(absl::nullopt, os);
+    return;
+  }
+  auto address = grpc_sockaddr_to_string(&value.value(), true);
+  if (address.ok()) {
+    *os << *address;
+  } else {
+    *os << "impossible to stringify address (" << address.status() << ")";
+  }
+}
+
+static void PrintTo(const optional<absl::string_view>& value,
+                    std::ostream* os) {
+  if (value.has_value()) {
+    *os << "optional containing \"" << *value << "\"";
+  } else {
+    PrintTo(nullopt, os);
+  }
+}
+
+}  // namespace absl
+
 namespace grpc_core {
 namespace testing {
 namespace {
 
 const char* kNoProxyVarName = "no_proxy";
+
+MATCHER_P(AddressEq, address, absl::StrFormat("is address %s", address)) {
+  if (!arg.has_value()) {
+    return false;
+  }
+  auto address_string = grpc_sockaddr_to_string(&arg.value(), true);
+  if (!address_string.ok()) {
+    return false;
+  }
+  return *address_string == address;
+}
 
 // Test that an empty no_proxy works as expected, i.e., proxy is used.
 TEST(NoProxyTest, EmptyList) {
@@ -162,37 +209,39 @@ TEST(NoProxyTest, InvalidCIDREntries) {
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), "192.168.1.0:443");
 }
 
-TEST(ProxyForAddressTest, SetByEnvVar) {
-  ScopedEnvVar address_proxy(HttpProxyMapper::kAddressProxyEnvVar,
-                             "192.168.0.100:2020");
-  ScopedEnvVar address_proxy_enabled(
-      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar, "0.0.0.0/0");
-  auto args = ChannelArgs();
-  auto address = StringToSockaddr("192.168.0.1:3333");
-  ASSERT_TRUE(address.ok()) << address.status();
-  auto mapped = HttpProxyMapper().MapAddress(*address, &args);
-  ASSERT_TRUE(mapped.has_value());
-  auto addr_string = grpc_sockaddr_to_string(&mapped.value(), true);
-  ASSERT_TRUE(addr_string.ok()) << addr_string.status();
-  EXPECT_EQ(*addr_string, "192.168.0.100:2020");
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), "192.168.0.1:3333");
-}
-
 TEST(ProxyForAddressTest, ChannelArgPreferred) {
   ScopedEnvVar address_proxy(HttpProxyMapper::kAddressProxyEnvVar,
                              "192.168.0.100:2020");
   ScopedEnvVar address_proxy_enabled(
-      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar, "0.0.0.0/0");
+      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar,
+      "255.255.255.255/0");
   auto args =
       ChannelArgs().Set(GRPC_ARG_ADDRESS_HTTP_PROXY, "192.168.0.101:2020");
   auto address = StringToSockaddr("192.168.0.1:3333");
   ASSERT_TRUE(address.ok()) << address.status();
-  auto mapped = HttpProxyMapper().MapAddress(*address, &args);
-  ASSERT_TRUE(mapped.has_value());
-  auto address_string = grpc_sockaddr_to_string(&mapped.value(), true);
-  ASSERT_TRUE(address_string.ok()) << address.status();
-  EXPECT_EQ(*address_string, "192.168.0.101:2020");
+  EXPECT_THAT(HttpProxyMapper().MapAddress(*address, &args),
+              AddressEq("192.168.0.101:2020"));
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), "192.168.0.1:3333");
+}
+
+TEST(ProxyForAddressTest, AddressesNotIncluded) {
+  ScopedEnvVar address_proxy(HttpProxyMapper::kAddressProxyEnvVar,
+                             "192.168.0.100:2020");
+  ScopedEnvVar address_proxy_enabled(
+      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar,
+      " 192.168.0.0/24 , 192.168.1.1 , 2001:db8:1::0/48 , 2001:db8:2::5");
+  // v4 address
+  auto address = StringToSockaddr("192.168.2.1:3333");
+  ChannelArgs args;
+  ASSERT_TRUE(address.ok()) << address.status();
+  EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), absl::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
+  // v6 address
+  address = StringToSockaddr("[2001:db8:2::1]:3000");
+  args = ChannelArgs();
+  ASSERT_TRUE(address.ok()) << address.status();
+  EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), absl::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
 }
 
 TEST(ProxyForAddressTest, BadProxy) {
@@ -203,6 +252,36 @@ TEST(ProxyForAddressTest, BadProxy) {
   EXPECT_FALSE(mapped.has_value());
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
 }
+
+class IncludedAddressesTest
+    : public ::testing::TestWithParam<absl::string_view> {};
+
+INSTANTIATE_TEST_CASE_P(IncludedAddresses, IncludedAddressesTest,
+                        ::testing::Values(
+                            // IP v6 address in a proxied subnet
+                            "[2001:db8:1::1]:2020",
+                            // IP v6 address that is proxied
+                            "[2001:db8:2::5]:2020",
+                            // Proxied IP v4 address
+                            "192.168.1.1:3333",
+                            // IP v4 address in proxied subnet
+                            "192.168.0.1:3333"));
+
+TEST_P(IncludedAddressesTest, AddressIncluded) {
+  ScopedEnvVar address_proxy(HttpProxyMapper::kAddressProxyEnvVar,
+                             "[2001:db8::1111]:2020");
+  ScopedEnvVar address_proxy_enabled(
+      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar,
+      // Whitespaces are meaningful
+      " 192.168.0.0/24 , 192.168.1.1 , 2001:db8:1::0/48 , 2001:db8:2::5");
+  ChannelArgs args;
+  auto address = StringToSockaddr(GetParam());
+  ASSERT_TRUE(address.ok()) << GetParam() << ": " << address.status();
+  EXPECT_THAT(HttpProxyMapper().MapAddress(*address, &args),
+              AddressEq("[2001:db8::1111]:2020"));
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), GetParam());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
