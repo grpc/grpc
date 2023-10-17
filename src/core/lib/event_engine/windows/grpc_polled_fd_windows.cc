@@ -747,7 +747,7 @@ class CustomSockFuncs {
                                 from_len);
   }
 
-  static int CloseSocket(SOCKET s, void* user_data) {
+  static int CloseSocket(SOCKET s, void*) {
     GRPC_ARES_RESOLVER_TRACE_LOG("c-ares socket: %d CloseSocket", s);
     return 0;
   }
