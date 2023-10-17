@@ -303,6 +303,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     buffer.len = GRPC_SLICE_LENGTH(read_buf_);
     recv_from_source_addr_len_ = sizeof(recv_from_source_addr_);
     DWORD flags = 0;
+    winsocket_->NotifyOnRead(&outer_read_closure_);
     if (WSARecvFrom(winsocket_->raw_socket(), &buffer, 1, nullptr, &flags,
                     reinterpret_cast<sockaddr*>(recv_from_source_addr_),
                     &recv_from_source_addr_len_,
@@ -310,17 +311,18 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
       int wsa_last_error = WSAGetLastError();
       char* msg = gpr_format_message(wsa_last_error);
       GRPC_ARES_RESOLVER_TRACE_LOG(
-          "fd:|%s| RegisterForOnReadableLocked WSARecvFrom error code:|%d| "
+          "fd:|%s| ContinueRegisterForOnReadableLocked WSARecvFrom error "
+          "code:|%d| "
           "msg:|%s|",
           GetName(), wsa_last_error, msg);
       gpr_free(msg);
       if (wsa_last_error != WSA_IO_PENDING) {
+        winsocket_->UnregisterReadCallback();
         ScheduleAndNullReadClosure(
             GRPC_WSA_ERROR(wsa_last_error, "WSARecvFrom"));
         return;
       }
     }
-    winsocket_->NotifyOnRead(&outer_read_closure_);
   }
 
   void ContinueRegisterForOnWriteableLocked() {
@@ -346,13 +348,14 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
         break;
       case WRITE_REQUESTED:
         tcp_write_state_ = WRITE_PENDING;
+        winsocket_->NotifyOnWrite(&outer_write_closure_);
         if (SendWriteBuf(nullptr, winsocket_->write_info()->overlapped(),
                          &wsa_error_code) != 0) {
+          winsocket_->UnregisterWriteCallback();
           ScheduleAndNullWriteClosure(
               GRPC_WSA_ERROR(wsa_error_code, "WSASend (overlapped)"));
           return;
         }
-        winsocket_->NotifyOnWrite(&outer_write_closure_);
         break;
       case WRITE_PENDING:
       case WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY:
