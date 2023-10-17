@@ -35,19 +35,19 @@ popd
 RBE_CONFIGS_GEN_TOOL_PATH="${TEMP_DIR}/bazel-toolchains/rbe_configs_gen"
 
 # Actions on RBE will run under a dedicated docker image from our collection of testing docker images.
-LINUX_RBE_DOCKERFILE_DIR=tools/dockerfile/test/rbe_ubuntu2004
+LINUX_RBE_DOCKERFILE_DIR=tools/dockerfile/test/rbe_ubuntu2204
 # Use the "current version" of the above dockerfile.
 LINUX_RBE_DOCKER_IMAGE=$(cat ${LINUX_RBE_DOCKERFILE_DIR}.current_version)
 
 # Bazel version used for configuring
 # Needs to be one of the versions from bazel/supported_versions.txt chosen so that the result is compatible
 # with other supported bazel versions.
-BAZEL_VERSION=6.1.2
+BAZEL_VERSION=6.3.2
 
 # TODO(jtattermusch): experiment with --cpp_env_json to simplify bazel build configuration.
 
 # Where to store the generated configs (relative to repo root)
-CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_ubuntu2004
+CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_ubuntu2204
 
 # Delete old generated configs.
 rm -rf "${REPO_ROOT}/${CONFIG_OUTPUT_PATH}"
