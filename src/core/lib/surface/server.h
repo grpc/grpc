@@ -34,6 +34,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
+#include "absl/random/random.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -42,6 +43,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/backoff/random_early_detection.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -226,7 +228,8 @@ class Server : public InternallyRefCounted<Server>,
   };
 
   class RequestMatcherInterface;
-  class RealRequestMatcher;
+  class RealRequestMatcherFilterStack;
+  class RealRequestMatcherPromises;
   class AllocatingRequestMatcherBase;
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
@@ -506,6 +509,11 @@ class Server : public InternallyRefCounted<Server>,
   std::atomic<int> shutdown_refs_{1};
   bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
   std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
+
+  RandomEarlyDetection pending_backlog_protector_ ABSL_GUARDED_BY(mu_call_){
+      1000, 3000};
+  Duration max_time_in_pending_queue_{Duration::Seconds(30)};
+  absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> channels_;
 

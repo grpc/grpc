@@ -88,6 +88,14 @@ const char* const description_peer_state_based_framing =
     "on the peer's memory pressure which is reflected in its max http2 frame "
     "size.";
 const char* const additional_constraints_peer_state_based_framing = "{}";
+const char* const description_pending_queue_cap =
+    "In the sync & async apis (but not the callback api), cap the number of "
+    "received but unrequested requests in the server for each call type. A "
+    "received message is one that was read from the wire on the server. A "
+    "requested message is one explicitly requested by the application using "
+    "grpc_server_request_call or grpc_server_request_registered_call (or their "
+    "wrappers in the C++ API).";
+const char* const additional_constraints_pending_queue_cap = "{}";
 const char* const description_pick_first_happy_eyeballs =
     "Use Happy Eyeballs in pick_first.";
 const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
@@ -232,6 +240,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
+    {"pending_queue_cap", description_pending_queue_cap,
+     additional_constraints_pending_queue_cap, true, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
      additional_constraints_pick_first_happy_eyeballs, true, true},
     {"ping_on_rst_stream", description_ping_on_rst_stream,
@@ -356,6 +366,14 @@ const char* const description_peer_state_based_framing =
     "on the peer's memory pressure which is reflected in its max http2 frame "
     "size.";
 const char* const additional_constraints_peer_state_based_framing = "{}";
+const char* const description_pending_queue_cap =
+    "In the sync & async apis (but not the callback api), cap the number of "
+    "received but unrequested requests in the server for each call type. A "
+    "received message is one that was read from the wire on the server. A "
+    "requested message is one explicitly requested by the application using "
+    "grpc_server_request_call or grpc_server_request_registered_call (or their "
+    "wrappers in the C++ API).";
+const char* const additional_constraints_pending_queue_cap = "{}";
 const char* const description_pick_first_happy_eyeballs =
     "Use Happy Eyeballs in pick_first.";
 const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
@@ -500,6 +518,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
+    {"pending_queue_cap", description_pending_queue_cap,
+     additional_constraints_pending_queue_cap, true, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
      additional_constraints_pick_first_happy_eyeballs, true, true},
     {"ping_on_rst_stream", description_ping_on_rst_stream,
@@ -624,6 +644,14 @@ const char* const description_peer_state_based_framing =
     "on the peer's memory pressure which is reflected in its max http2 frame "
     "size.";
 const char* const additional_constraints_peer_state_based_framing = "{}";
+const char* const description_pending_queue_cap =
+    "In the sync & async apis (but not the callback api), cap the number of "
+    "received but unrequested requests in the server for each call type. A "
+    "received message is one that was read from the wire on the server. A "
+    "requested message is one explicitly requested by the application using "
+    "grpc_server_request_call or grpc_server_request_registered_call (or their "
+    "wrappers in the C++ API).";
+const char* const additional_constraints_pending_queue_cap = "{}";
 const char* const description_pick_first_happy_eyeballs =
     "Use Happy Eyeballs in pick_first.";
 const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
@@ -768,6 +796,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
+    {"pending_queue_cap", description_pending_queue_cap,
+     additional_constraints_pending_queue_cap, true, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
      additional_constraints_pick_first_happy_eyeballs, true, true},
     {"ping_on_rst_stream", description_ping_on_rst_stream,
