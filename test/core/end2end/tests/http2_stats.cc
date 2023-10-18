@@ -179,7 +179,7 @@ class FakeServerCallTracerFactory : public ServerCallTracerFactory {
   }
 };
 
-// This test verifies the HTTP2 stats for data bytes on a stream
+// This test verifies the HTTP2 stats on a stream
 CORE_END2END_TEST(Http2FullstackTest, StreamStats) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterStage(
