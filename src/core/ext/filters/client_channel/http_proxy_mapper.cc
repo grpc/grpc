@@ -57,11 +57,15 @@
 namespace grpc_core {
 namespace {
 
-bool ServerInCIDRRange(const grpc_resolved_address& server_address,
-                       absl::string_view no_proxy_entry) {
+bool ServerInCIDRRange(
+    const absl::StatusOr<grpc_resolved_address>& server_address,
+    absl::string_view cidr_range) {
+  if (!server_address.ok()) {
+    return false;
+  }
   std::pair<absl::string_view, absl::string_view> possible_cidr =
-      absl::StrSplit(no_proxy_entry, absl::MaxSplits('/', 1),
-                     absl::SkipEmpty());
+      absl::StrSplit(absl::StripAsciiWhitespace(cidr_range),
+                     absl::MaxSplits('/', 1), absl::SkipEmpty());
   if (possible_cidr.first.empty() || possible_cidr.second.empty()) {
     return false;
   }
@@ -72,23 +76,27 @@ bool ServerInCIDRRange(const grpc_resolved_address& server_address,
   uint32_t mask_bits = 0;
   if (absl::SimpleAtoi(possible_cidr.second, &mask_bits)) {
     grpc_sockaddr_mask_bits(&*proxy_address, mask_bits);
-    return grpc_sockaddr_match_subnet(&server_address, &*proxy_address,
+    return grpc_sockaddr_match_subnet(&*server_address, &*proxy_address,
                                       mask_bits);
   }
   return false;
 }
 
+bool ExactMatchOrSubdomain(absl::string_view host_name,
+                           absl::string_view host_name_or_domain) {
+  return absl::EndsWithIgnoreCase(
+      host_name, absl::StripAsciiWhitespace(host_name_or_domain));
+}
+
+// Parses the list of host names, addresses or subnet masks and returns true if
+// the target address or host matches any value.
 bool AddressIncluded(
     const absl::StatusOr<grpc_resolved_address>& target_address,
-    absl::string_view host_name, absl::string_view address_ranges) {
-  for (const auto& entry :
-       absl::StrSplit(address_ranges, ',', absl::SkipEmpty())) {
-    auto address_or_mask = absl::StripAsciiWhitespace(entry);
-    if (absl::EndsWithIgnoreCase(host_name, address_or_mask)) {
-      return true;
-    }
-    if (target_address.ok() &&
-        ServerInCIDRRange(*target_address, address_or_mask)) {
+    absl::string_view host_name, absl::string_view addresses_and_subnets) {
+  for (absl::string_view entry :
+       absl::StrSplit(addresses_and_subnets, ',', absl::SkipEmpty())) {
+    if (ExactMatchOrSubdomain(host_name, entry) ||
+        ServerInCIDRRange(target_address, entry)) {
       return true;
     }
   }
@@ -170,15 +178,17 @@ std::string MaybeAddDefaultPort(absl::string_view target) {
 }
 
 absl::optional<std::string> GetChannelArgOrEnvVarValue(
-    ChannelArgs* args, absl::string_view channel_arg, const char* env_var) {
-  auto arg_value = args->GetString(channel_arg);
+    const ChannelArgs& args, absl::string_view channel_arg,
+    const char* env_var) {
+  auto arg_value = args.GetOwnedString(channel_arg);
   if (arg_value.has_value()) {
-    return std::string(*arg_value);
+    return arg_value;
   }
   return GetEnv(env_var);
 }
 
-absl::optional<grpc_resolved_address> GetAddressProxyServer(ChannelArgs* args) {
+absl::optional<grpc_resolved_address> GetAddressProxyServer(
+    const ChannelArgs& args) {
   auto address_value = GetChannelArgOrEnvVarValue(
       args, GRPC_ARG_ADDRESS_HTTP_PROXY, HttpProxyMapper::kAddressProxyEnvVar);
   if (!address_value.has_value()) {
@@ -260,7 +270,7 @@ absl::optional<std::string> HttpProxyMapper::MapName(
 
 absl::optional<grpc_resolved_address> HttpProxyMapper::MapAddress(
     const grpc_resolved_address& address, ChannelArgs* args) {
-  auto proxy_address = GetAddressProxyServer(args);
+  auto proxy_address = GetAddressProxyServer(*args);
   if (!proxy_address.has_value()) {
     return absl::nullopt;
   }
@@ -277,8 +287,8 @@ absl::optional<grpc_resolved_address> HttpProxyMapper::MapAddress(
     return absl::nullopt;
   }
   auto enabled_addresses = GetChannelArgOrEnvVarValue(
-      args, GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES,
-      HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar);
+      *args, GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES,
+      kAddressProxyEnabledAddressesEnvVar);
   if (!enabled_addresses.has_value() ||
       !AddressIncluded(address, host_name, *enabled_addresses)) {
     return absl::nullopt;

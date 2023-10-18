@@ -18,9 +18,6 @@
 
 #include "src/core/ext/filters/client_channel/http_proxy_mapper.h"
 
-#include <ostream>
-
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
@@ -36,38 +33,6 @@
 #include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
-// Need to be in the same namespace as absl::optional...
-namespace absl {
-
-static void PrintTo(const absl::nullopt_t& /* value */, std::ostream* os) {
-  *os << "<nullopt>";
-}
-
-static void PrintTo(const optional<grpc_resolved_address>& value,
-                    std::ostream* os) {
-  if (!value.has_value()) {
-    PrintTo(absl::nullopt, os);
-    return;
-  }
-  auto address = grpc_sockaddr_to_string(&value.value(), true);
-  if (address.ok()) {
-    *os << *address;
-  } else {
-    *os << "impossible to stringify address (" << address.status() << ")";
-  }
-}
-
-static void PrintTo(const optional<absl::string_view>& value,
-                    std::ostream* os) {
-  if (value.has_value()) {
-    *os << "optional containing \"" << *value << "\"";
-  } else {
-    PrintTo(nullopt, os);
-  }
-}
-
-}  // namespace absl
-
 namespace grpc_core {
 namespace testing {
 namespace {
@@ -76,13 +41,20 @@ const char* kNoProxyVarName = "no_proxy";
 
 MATCHER_P(AddressEq, address, absl::StrFormat("is address %s", address)) {
   if (!arg.has_value()) {
+    *result_listener << "is empty";
     return false;
   }
   auto address_string = grpc_sockaddr_to_string(&arg.value(), true);
   if (!address_string.ok()) {
+    *result_listener << "unable to convert address to string: "
+                     << address_string.status();
     return false;
   }
-  return *address_string == address;
+  if (*address_string != address) {
+    *result_listener << "value: " << *address_string;
+    return false;
+  }
+  return true;
 }
 
 // Test that an empty no_proxy works as expected, i.e., proxy is used.
@@ -231,14 +203,14 @@ TEST(ProxyForAddressTest, AddressesNotIncluded) {
       " 192.168.0.0/24 , 192.168.1.1 , 2001:db8:1::0/48 , 2001:db8:2::5");
   // v4 address
   auto address = StringToSockaddr("192.168.2.1:3333");
-  ChannelArgs args;
   ASSERT_TRUE(address.ok()) << address.status();
+  ChannelArgs args;
   EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), absl::nullopt);
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
   // v6 address
   address = StringToSockaddr("[2001:db8:2::1]:3000");
-  args = ChannelArgs();
   ASSERT_TRUE(address.ok()) << address.status();
+  args = ChannelArgs();
   EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), absl::nullopt);
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
 }
@@ -270,11 +242,11 @@ TEST_P(IncludedAddressesTest, AddressIncluded) {
                              "[2001:db8::1111]:2020");
   ScopedEnvVar address_proxy_enabled(
       HttpProxyMapper::kAddressProxyEnabledAddressesEnvVar,
-      // Whitespaces are meaningful
+      // Whitespaces added to test that they are ignored as expected
       " 192.168.0.0/24 , 192.168.1.1 , 2001:db8:1::0/48 , 2001:db8:2::5");
-  ChannelArgs args;
   auto address = StringToSockaddr(GetParam());
   ASSERT_TRUE(address.ok()) << GetParam() << ": " << address.status();
+  ChannelArgs args;
   EXPECT_THAT(HttpProxyMapper().MapAddress(*address, &args),
               AddressEq("[2001:db8::1111]:2020"));
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), GetParam());
