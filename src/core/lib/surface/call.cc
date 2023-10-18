@@ -2907,6 +2907,8 @@ grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
       case GRPC_OP_RECV_MESSAGE:
+        if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         if (scheduled_send_close_) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
         if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
