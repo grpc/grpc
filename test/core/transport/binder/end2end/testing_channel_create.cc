@@ -60,15 +60,15 @@ class ServerSetupTransportHelper {
 };
 }  // namespace
 
-std::pair<grpc_transport*, grpc_transport*>
+std::pair<grpc_core::Transport*, grpc_core::Transport*>
 CreateClientServerBindersPairForTesting() {
   ServerSetupTransportHelper helper;
   std::unique_ptr<Binder> endpoint_binder = helper.GetEndpointBinderForClient();
-  grpc_transport* client_transport = nullptr;
+  grpc_core::Transport* client_transport = nullptr;
 
   struct ThreadArgs {
     std::unique_ptr<Binder> endpoint_binder;
-    grpc_transport** client_transport;
+    grpc_core::Transport** client_transport;
   } args;
 
   args.endpoint_binder = std::move(endpoint_binder);
@@ -87,7 +87,7 @@ CreateClientServerBindersPairForTesting() {
       },
       &args);
   client_thread.Start();
-  grpc_transport* server_transport = grpc_create_binder_transport_server(
+  grpc_core::Transport* server_transport = grpc_create_binder_transport_server(
       helper.WaitForClientBinder(),
       std::make_shared<grpc::experimental::binder::UntrustedSecurityPolicy>());
   client_thread.Join();
@@ -118,7 +118,7 @@ grpc_channel* grpc_binder_channel_create_for_testing(
   auto client_args =
       server_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
 
-  grpc_transport *client_transport, *server_transport;
+  grpc_core::Transport *client_transport, *server_transport;
   std::tie(client_transport, server_transport) =
       grpc_binder::end2end_testing::CreateClientServerBindersPairForTesting();
   grpc_error_handle error = grpc_core::Server::FromC(server)->SetupTransport(

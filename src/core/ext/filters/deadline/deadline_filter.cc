@@ -30,8 +30,6 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -41,7 +39,6 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -384,27 +381,15 @@ const grpc_channel_filter grpc_server_deadline_filter = {
     "deadline",
 };
 
-bool grpc_deadline_checking_enabled(
-    const grpc_core::ChannelArgs& channel_args) {
-  return channel_args.GetBool(GRPC_ARG_ENABLE_DEADLINE_CHECKS)
-      .value_or(!channel_args.WantMinimalStack());
-}
-
 namespace grpc_core {
 void RegisterDeadlineFilter(CoreConfiguration::Builder* builder) {
-  auto register_filter = [builder](grpc_channel_stack_type type,
-                                   const grpc_channel_filter* filter) {
-    builder->channel_init()->RegisterStage(
-        type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-        [filter](ChannelStackBuilder* builder) {
-          auto args = builder->channel_args();
-          if (grpc_deadline_checking_enabled(args)) {
-            builder->PrependFilter(filter);
-          }
-          return true;
-        });
-  };
-  register_filter(GRPC_CLIENT_DIRECT_CHANNEL, &grpc_client_deadline_filter);
-  register_filter(GRPC_SERVER_CHANNEL, &grpc_server_deadline_filter);
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL, &grpc_client_deadline_filter)
+      .ExcludeFromMinimalStack()
+      .IfChannelArg(GRPC_ARG_ENABLE_DEADLINE_CHECKS, true);
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &grpc_server_deadline_filter)
+      .ExcludeFromMinimalStack()
+      .IfChannelArg(GRPC_ARG_ENABLE_DEADLINE_CHECKS, true);
 }
 }  // namespace grpc_core

@@ -100,7 +100,8 @@ class WindowsEventEngine : public EventEngine,
     grpc_core::Mutex mu
         ABSL_ACQUIRED_BEFORE(WindowsEventEngine::connection_mu_);
     EventEngine::ConnectionHandle connection_handle ABSL_GUARDED_BY(mu);
-    EventEngine::TaskHandle timer_handle ABSL_GUARDED_BY(mu);
+    EventEngine::TaskHandle timer_handle ABSL_GUARDED_BY(mu) =
+        EventEngine::TaskHandle::kInvalid;
     EventEngine::OnConnectCallback on_connected_user_callback
         ABSL_GUARDED_BY(mu);
     EventEngine::Closure* on_connected ABSL_GUARDED_BY(mu);

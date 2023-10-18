@@ -70,6 +70,9 @@ def _EXPERIMENTS_TEST_SKELETON(defs, test_body):
 #include <grpc/support/port_platform.h>
 
 #include "test/core/experiments/fixtures/experiments.h"
+
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include "src/core/lib/experiments/config.h"

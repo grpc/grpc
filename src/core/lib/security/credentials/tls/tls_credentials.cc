@@ -23,7 +23,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>

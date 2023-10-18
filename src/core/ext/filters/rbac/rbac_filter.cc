@@ -38,8 +38,8 @@
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
-#include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -84,17 +84,17 @@ absl::StatusOr<RbacFilter> RbacFilter::Create(const ChannelArgs& args,
   if (auth_context == nullptr) {
     return GRPC_ERROR_CREATE("No auth context found");
   }
-  auto* transport = args.GetObject<grpc_transport>();
+  auto* transport = args.GetObject<Transport>();
   if (transport == nullptr) {
     // This should never happen since the transport is always set on the server
     // side.
     return GRPC_ERROR_CREATE("No transport configured");
   }
-  return RbacFilter(grpc_channel_stack_filter_instance_number(
-                        filter_args.channel_stack(),
-                        filter_args.uninitialized_channel_element()),
-                    EvaluateArgs::PerChannelArgs(
-                        auth_context, grpc_transport_get_endpoint(transport)));
+  return RbacFilter(
+      grpc_channel_stack_filter_instance_number(
+          filter_args.channel_stack(),
+          filter_args.uninitialized_channel_element()),
+      EvaluateArgs::PerChannelArgs(auth_context, transport->GetEndpoint()));
 }
 
 void RbacFilterRegister(CoreConfiguration::Builder* builder) {

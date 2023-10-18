@@ -64,7 +64,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -103,7 +102,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -141,7 +139,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -753,9 +750,11 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // The metadata value is a hack: we pretend the pointer points to
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.
+      // NOLINTBEGIN(bugprone-string-constructor)
       args.initial_metadata->Add(
           GrpcLbClientStatsMetadata::key(),
           absl::string_view(reinterpret_cast<const char*>(client_stats), 0));
+      // NOLINTEND(bugprone-string-constructor)
       // Update calls-started.
       client_stats->AddCallStarted();
     }
@@ -1871,16 +1870,10 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<GrpcLbFactory>());
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto enable = builder->channel_args().GetBool(
-            GRPC_ARG_GRPCLB_ENABLE_LOAD_REPORTING_FILTER);
-        if (enable.has_value() && *enable) {
-          builder->PrependFilter(&ClientLoadReportingFilter::kFilter);
-        }
-        return true;
-      });
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                       &ClientLoadReportingFilter::kFilter)
+      .IfChannelArg(GRPC_ARG_GRPCLB_ENABLE_LOAD_REPORTING_FILTER, false);
 }
 
 }  // namespace grpc_core

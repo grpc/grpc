@@ -151,9 +151,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/write_size_policy.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
+    src/core/ext/transport/inproc/legacy_inproc_transport.cc \
     src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c \
@@ -503,6 +505,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_stack_builder_impl.cc \
+    src/core/lib/channel/channel_stack_trace.cc \
     src/core/lib/channel/channel_trace.cc \
     src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \

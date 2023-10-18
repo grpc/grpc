@@ -17,7 +17,6 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <tuple>

@@ -145,14 +145,16 @@ void XdsStatsWatcher::GetCurrentRpcStats(
     StatsWatchers* stats_watchers) {
   std::unique_lock<std::mutex> lock(m_);
   response->CopyFrom(accumulated_stats_);
-  // TODO(@donnadionne): delete deprecated stats below when the test is no
+  // TODO(someone): delete deprecated stats below when the test is no
   // longer using them.
+  // NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
   auto& response_rpcs_started_by_method =
       *response->mutable_num_rpcs_started_by_method();
   auto& response_rpcs_succeeded_by_method =
       *response->mutable_num_rpcs_succeeded_by_method();
   auto& response_rpcs_failed_by_method =
       *response->mutable_num_rpcs_failed_by_method();
+  // NOLINTEND(clang-diagnostic-deprecated-declarations)
   for (const auto& rpc_by_type : rpcs_by_type_) {
     auto total_succeeded = 0;
     for (const auto& rpc_by_peer : rpc_by_type.second) {

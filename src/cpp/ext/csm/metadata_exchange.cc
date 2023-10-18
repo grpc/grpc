@@ -27,7 +27,6 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "absl/meta/type_traits.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
@@ -46,7 +45,6 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
@@ -217,9 +215,6 @@ class MeshLabelsIterable : public LabelsIterable {
     if (pos_ < local_labels_size) {
       return local_labels_[pos_++];
     }
-    if (struct_pb.struct_pb == nullptr) {
-      return absl::nullopt;
-    }
     if (++pos_ == local_labels_size + 1) {
       return std::make_pair(kPeerTypeAttribute,
                             GetStringValueFromUpbStruct(
@@ -227,7 +222,7 @@ class MeshLabelsIterable : public LabelsIterable {
                                 struct_pb.arena.ptr()));
     }
     // Only handle GKE type for now.
-    switch (type_) {
+    switch (remote_type_) {
       case GcpResourceType::kGke:
         if ((pos_ - 2 - local_labels_size) >= kGkeAttributeList.size()) {
           return absl::nullopt;
@@ -249,13 +244,19 @@ class MeshLabelsIterable : public LabelsIterable {
     if (struct_pb.struct_pb == nullptr) {
       return local_labels_.size();
     }
-    if (type_ != GcpResourceType::kGke) {
+    if (remote_type_ != GcpResourceType::kGke) {
       return local_labels_.size() + 1;
     }
     return local_labels_.size() + kGkeAttributeList.size() + 1;
   }
 
   void ResetIteratorPosition() override { pos_ = 0; }
+
+  // Returns true if the peer sent a non-empty base64 encoded
+  // "x-envoy-peer-metadata" metadata.
+  bool GotRemoteLabels() const {
+    return GetDecodedMetadata().struct_pb != nullptr;
+  }
 
  private:
   struct GkeAttribute {
@@ -285,6 +286,12 @@ class MeshLabelsIterable : public LabelsIterable {
     if (slice == nullptr) {
       return absl::get<StructPb>(metadata_);
     }
+    // Treat an empty slice as an invalid metadata value.
+    if (slice->empty()) {
+      metadata_ = StructPb{};
+      auto& struct_pb = absl::get<StructPb>(metadata_);
+      return struct_pb;
+    }
     std::string decoded_metadata;
     bool metadata_decoded =
         absl::Base64Unescape(slice->as_string_view(), &decoded_metadata);
@@ -294,7 +301,7 @@ class MeshLabelsIterable : public LabelsIterable {
       struct_pb.struct_pb = google_protobuf_Struct_parse(
           decoded_metadata.c_str(), decoded_metadata.size(),
           struct_pb.arena.ptr());
-      type_ = StringToGcpResourceType(GetStringValueFromUpbStruct(
+      remote_type_ = StringToGcpResourceType(GetStringValueFromUpbStruct(
           struct_pb.struct_pb, kMetadataExchangeTypeKey,
           struct_pb.arena.ptr()));
     }
@@ -304,7 +311,7 @@ class MeshLabelsIterable : public LabelsIterable {
   const std::vector<std::pair<absl::string_view, std::string>>& local_labels_;
   // Holds either the metadata slice or the decoded proto struct.
   mutable absl::variant<grpc_core::Slice, StructPb> metadata_;
-  mutable GcpResourceType type_;
+  mutable GcpResourceType remote_type_ = GcpResourceType::kUnknown;
   uint32_t pos_ = 0;
 };
 
@@ -400,15 +407,22 @@ std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetLabels(
     grpc_metadata_batch* incoming_initial_metadata) {
   auto peer_metadata =
       incoming_initial_metadata->Take(grpc_core::XEnvoyPeerMetadata());
-  if (!peer_metadata.has_value()) {
-    return nullptr;
-  }
-  return std::make_unique<MeshLabelsIterable>(local_labels_,
-                                              *std::move(peer_metadata));
+  return std::make_unique<MeshLabelsIterable>(
+      local_labels_, peer_metadata.has_value() ? *std::move(peer_metadata)
+                                               : grpc_core::Slice());
 }
 
 void ServiceMeshLabelsInjector::AddLabels(
-    grpc_metadata_batch* outgoing_initial_metadata) {
+    grpc_metadata_batch* outgoing_initial_metadata,
+    LabelsIterable* labels_from_incoming_metadata) {
+  // On the server, if the labels from incoming metadata did not have a
+  // non-empty base64 encoded "x-envoy-peer-metadata", do not perform metadata
+  // exchange.
+  if (labels_from_incoming_metadata != nullptr &&
+      !static_cast<MeshLabelsIterable*>(labels_from_incoming_metadata)
+           ->GotRemoteLabels()) {
+    return;
+  }
   outgoing_initial_metadata->Set(grpc_core::XEnvoyPeerMetadata(),
                                  serialized_labels_to_send_.Ref());
 }

@@ -37,9 +37,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#define XXH_INLINE_ALL
-#include "xxhash.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
@@ -58,6 +55,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/gprpp/xxhash_inline.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

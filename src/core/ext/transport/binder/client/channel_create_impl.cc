@@ -47,7 +47,7 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
         security_policy) {
   grpc_core::ExecCtx exec_ctx;
 
-  grpc_transport* transport = grpc_create_binder_transport_client(
+  grpc_core::Transport* transport = grpc_create_binder_transport_client(
       std::move(endpoint_binder), security_policy);
   GPR_ASSERT(transport != nullptr);
 
