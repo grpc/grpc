@@ -9848,6 +9848,42 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: http2_stats_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/http2_stats.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - gtest
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: http_proxy_mapper_test
   gtest: true
   build: test
@@ -14932,17 +14968,6 @@ targets:
   - absl/types:span
   - gpr
   uses_polling: false
-- name: stats_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/debug/stats_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  uses_polling: false
 - name: status_conversion_test
   gtest: true
   build: test
@@ -15367,6 +15392,17 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+- name: test_core_debug_stats_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/debug/stats_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: test_core_end2end_channelz_test
   gtest: true
   build: test
@@ -16269,6 +16305,16 @@ targets:
   - absl/types:span
   - gpr
   uses_polling: false
+- name: test_core_transport_chttp2_stats_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/stats_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: test_cpp_client_credentials_test
   gtest: true
   build: test

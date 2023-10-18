@@ -757,6 +757,8 @@ class CoreClientChannelTest : public CoreEnd2endTest {};
 class CoreDeadlineTest : public CoreEnd2endTest {};
 // Test suite for http2 tests that only work over a single hop (unproxyable)
 class Http2SingleHopTest : public CoreEnd2endTest {};
+// Test suite for fullstack http2 tests (require client channel)
+class Http2FullstackTest : public CoreEnd2endTest {};
 // Test suite for tests that require retry features
 class RetryTest : public CoreEnd2endTest {};
 // Test suite for write buffering
