@@ -22,7 +22,9 @@
 
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
@@ -31,14 +33,13 @@
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
+#include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/try_join.h"
-#include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -51,7 +52,8 @@ namespace grpc_core {
 namespace chaotic_good {
 
 ServerTransport::ServerTransport(
-    absl::AnyInvocable<ArenaPromise<ServerMetadataHandle>(CallArgs)> start_receive_callback,
+    absl::AnyInvocable<ArenaPromise<ServerMetadataHandle>(CallArgs)>
+        start_receive_callback,
     std::unique_ptr<PromiseEndpoint> control_endpoint,
     std::unique_ptr<PromiseEndpoint> data_endpoint,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
@@ -76,10 +78,10 @@ ServerTransport::ServerTransport(
         this->outgoing_frames_.Next(),
         // Construct data buffers that will be sent to the endpoints.
         [this](ServerFrame server_frame) {
-          ServerFragmentFrame frame = std::move(
-                          absl::get<ServerFragmentFrame>(server_frame));
+          ServerFragmentFrame frame =
+              std::move(absl::get<ServerFragmentFrame>(server_frame));
           control_endpoint_write_buffer_.Append(
-                    frame.Serialize(hpack_compressor_.get()));
+              frame.Serialize(hpack_compressor_.get()));
           if (frame.message != nullptr) {
             auto frame_header =
                 FrameHeader::Parse(
@@ -89,8 +91,7 @@ ServerTransport::ServerTransport(
                     .value();
             // TODO(ladynana): add message_padding calculation by
             // accumulating bytes sent.
-            std::string message_padding(frame_header.message_padding,
-                                        '0');
+            std::string message_padding(frame_header.message_padding, '0');
             Slice slice(grpc_slice_from_cpp_string(message_padding));
             // Append message payload to data_endpoint_buffer.
             data_endpoint_write_buffer_.Append(std::move(slice));
@@ -98,8 +99,8 @@ ServerTransport::ServerTransport(
             frame.message->payload()->MoveFirstNBytesIntoSliceBuffer(
                 frame.message->payload()->Length(),
                 data_endpoint_write_buffer_);
-        }
-        return absl::OkStatus();
+          }
+          return absl::OkStatus();
         },
         // Write buffers to corresponding endpoints concurrently.
         [this]() {
@@ -149,7 +150,7 @@ ServerTransport::ServerTransport(
                                    frame_header_->message_length));
         },
         // Construct and send the client frame to corresponding stream.
-        [this](std::tuple<SliceBuffer, SliceBuffer> ret) mutable  {
+        [this](std::tuple<SliceBuffer, SliceBuffer> ret) mutable {
           control_endpoint_read_buffer_ = std::move(std::get<0>(ret));
           // Discard message padding and only keep message in data read buffer.
           std::get<1>(ret).MoveLastNBytesIntoSliceBuffer(
@@ -166,26 +167,28 @@ ServerTransport::ServerTransport(
           GPR_ASSERT(status.ok());
           auto message = arena_->MakePooled<Message>(
               std::move(data_endpoint_read_buffer_), 0);
-          // Construct call args for stream. 
+          // Construct call args for stream.
           auto call_data = ConstructCallData(frame.stream_id);
-          auto call_args = CallArgs{std::move(frame.headers),
+          auto call_args =
+              CallArgs{std::move(frame.headers),
                        ClientInitialMetadataOutstandingToken::Empty(),
                        nullptr,
                        &call_data->pipe_server_intial_metadata_.sender,
                        &call_data->pipe_client_to_server_messages_.receiver,
                        &call_data->pipe_server_to_client_messages_.sender};
           return Join(
-            // Push message into pipe_client_to_server_messages_.
-            call_data->pipe_client_to_server_messages_.sender.Push(std::move(message)),
-            // Execute start_receive_callback.
-            start_receive_callback_(std::move(call_args))
-          );
-        }, 
-        [](std::tuple<bool, ServerMetadataHandle> ret)-> LoopCtl<absl::Status> {
+              // Push message into pipe_client_to_server_messages_.
+              call_data->pipe_client_to_server_messages_.sender.Push(
+                  std::move(message)),
+              // Execute start_receive_callback.
+              start_receive_callback_(std::move(call_args)));
+        },
+        [](std::tuple<bool, ServerMetadataHandle> ret)
+            -> LoopCtl<absl::Status> {
           // TODO(ladynana): figure out what to do with ServerMetadataHandle.
           if (std::get<0>(ret)) {
-          return Continue();
-          } else{
+            return Continue();
+          } else {
             return absl::InternalError("Send message to pipe failed.");
           }
         });

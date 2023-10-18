@@ -95,8 +95,6 @@ grpc_cc_test(
     language = "C++",
     # TODO(ladynana): remove the no_windows tag.
     tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:grpc",
         "//:grpc_public_hdrs",
@@ -124,14 +122,13 @@ grpc_cc_test(
     srcs = ["server_transport_test.cc"],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings:str_format",
         "absl/types:optional",
         "gtest",
     ],
     language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:grpc",
         "//:grpc_public_hdrs",
@@ -139,10 +136,8 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena",
-        "//src/core:chaotic_good_client_transport",
+        "//src/core:chaotic_good_server_transport",
         "//src/core:event_engine_wakeup_scheduler",
-        "//src/core:join",
-        "//src/core:map",
         "//src/core:memory_quota",
         "//src/core:pipe",
         "//src/core:resource_quota",
