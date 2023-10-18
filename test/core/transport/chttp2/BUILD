@@ -373,19 +373,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "stats_test",
-    srcs = ["stats_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "too_many_pings_test",
     timeout = "long",  # Required for internal test infrastructure (cl/325757166)
     srcs = ["too_many_pings_test.cc"],
