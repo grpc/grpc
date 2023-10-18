@@ -57,7 +57,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # * for sanitizers to work, we need MSAN and TSAN enabled versions of libc++
 # Check https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04/latest.txt
 # for the value of LLVM_LATEST.
-ARG LLVM_LATEST="f2b94bd7eaa83d853dc7568fac87b1f8bf4ddec6"
+ARG LLVM_LATEST="f3d0613d852a90563a1e8704930a6e79368f106a"
 RUN wget -q https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04/clang_r${LLVM_LATEST}.tar.gz -O /tmp/clang.tar.gz \
   && tar -xzf /tmp/clang.tar.gz -C /usr/local && rm /tmp/clang.tar.gz
 RUN wget -q https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04/libcxx_r${LLVM_LATEST}.tar.gz -O /tmp/libcxx.tar.gz \
