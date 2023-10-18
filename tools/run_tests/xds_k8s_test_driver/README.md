@@ -53,7 +53,7 @@ sudo apt-get install python3-venv
    ```
 
 #### Configure GKE cluster
-This is an example outlining minimal requirements to run the [baseline tests](xds-baseline-tests).
+This is an example outlining minimal requirements to run the [baseline tests](#xds-baseline-tests).
 Update gloud sdk:
 ```shell
 gcloud -q components update
