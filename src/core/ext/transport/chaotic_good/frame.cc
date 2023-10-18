@@ -28,6 +28,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -40,8 +41,8 @@ namespace chaotic_good {
 namespace {
 const NoDestruct<Slice> kZeroSlice{[] {
   // Frame header size is fixed to 24 bytes.
-  auto slice = GRPC_SLICE_MALLOC(24);
-  memset(GRPC_SLICE_START_PTR(slice), 0, 24);
+  auto slice = GRPC_SLICE_MALLOC(FrameHeader::frame_header_size_);
+  memset(GRPC_SLICE_START_PTR(slice), 0, FrameHeader::frame_header_size_);
   return slice;
 }()};
 
@@ -58,7 +59,7 @@ class FrameSerializer {
   // If called, must be called before Finish.
   SliceBuffer& AddTrailers() {
     header_.flags.set(1);
-    header_.header_length = output_.Length() - 24;
+    header_.header_length = output_.Length() - FrameHeader::frame_header_size_;
     return output_;
   }
 
@@ -66,12 +67,14 @@ class FrameSerializer {
     // Calculate frame header_length or trailer_length if available.
     if (header_.flags.is_set(1)) {
       // Header length is already known in AddTrailers().
-      header_.trailer_length = output_.Length() - header_.header_length - 24;
+      header_.trailer_length = output_.Length() - header_.header_length -
+                               FrameHeader::frame_header_size_;
     } else {
       if (header_.flags.is_set(0)) {
         // Calculate frame header length in Finish() since AddTrailers() isn't
         // called.
-        header_.header_length = output_.Length() - 24;
+        header_.header_length =
+            output_.Length() - FrameHeader::frame_header_size_;
       }
     }
     header_.Serialize(
