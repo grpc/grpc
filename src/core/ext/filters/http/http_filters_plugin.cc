@@ -32,7 +32,7 @@
 namespace grpc_core {
 namespace {
 bool IsBuildingHttpLikeTransport(const ChannelArgs& args) {
-  auto* t = args.GetObject<grpc_core::Transport>();
+  auto* t = args.GetObject<Transport>();
   return t != nullptr && absl::StrContains(t->GetTransportName(), "http");
 }
 }  // namespace
