@@ -44,6 +44,7 @@ _CsdsClient = grpc_csds.CsdsClient
 # Use in get_load_balancer_stats request to request all metadata.
 REQ_LB_STATS_METADATA_ALL = ("*",)
 
+DEFAULT_TD_XDS_URI = "trafficdirector.googleapis.com:443"
 
 class XdsTestClient(framework.rpc.grpc.GrpcApp):
     """
@@ -264,6 +265,8 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         timeout: Optional[_timedelta] = None,
         rpc_deadline: Optional[_timedelta] = None,
     ) -> _ChannelzChannel:
+        if not xds_server_uri:
+            xds_server_uri = DEFAULT_TD_XDS_URI
         # When polling for a state, prefer smaller wait times to avoid
         # exhausting all allowed time on a single long RPC.
         if rpc_deadline is None:
@@ -294,8 +297,8 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
     def find_active_xds_channel(
         self,
+        xds_server_uri: str,
         *,
-        xds_server_uri: Optional[str] = None,
         rpc_deadline: Optional[_timedelta] = None,
     ) -> _ChannelzChannel:
         rpc_params = {}
