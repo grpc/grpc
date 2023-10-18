@@ -892,6 +892,7 @@ include/grpc/event_engine/slice_buffer.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_audit_logging.h \
+include/grpc/grpc_crl_provider.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
 include/grpc/grpc_security_constants.h \
@@ -1047,6 +1048,7 @@ include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/tls_certificate_provider.h \
 include/grpcpp/security/tls_certificate_verifier.h \
 include/grpcpp/security/tls_credentials_options.h \
+include/grpcpp/security/tls_crl_provider.h \
 include/grpcpp/server.h \
 include/grpcpp/server_builder.h \
 include/grpcpp/server_context.h \
