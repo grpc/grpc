@@ -2836,6 +2836,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   Pipe<MessageHandle> client_to_server_messages_{arena()};
   Pipe<MessageHandle> server_to_client_messages_{arena()};
   bool is_trailers_only_ = false;
+  bool scheduled_receive_status_ = false;
   // True once the promise for the call is started.
   // This corresponds to sending initial metadata, or cancelling before doing
   // so.
@@ -2906,8 +2907,13 @@ grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
       case GRPC_OP_RECV_INITIAL_METADATA:
       case GRPC_OP_RECV_MESSAGE:
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
         if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (scheduled_receive_status_) {
+          return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        }
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
@@ -2950,6 +2956,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             spawner);
       } break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
+        scheduled_receive_status_ = true;
         StartRecvStatusOnClient(completion, op.data.recv_status_on_client,
                                 spawner);
       } break;

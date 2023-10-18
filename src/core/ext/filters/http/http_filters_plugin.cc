@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include "absl/strings/match.h"
 
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
@@ -27,14 +27,13 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 namespace {
 bool IsBuildingHttpLikeTransport(const ChannelArgs& args) {
-  grpc_transport* t = args.GetObject<grpc_transport>();
-  return t != nullptr && strstr(t->vtable->name, "http");
+  auto* t = args.GetObject<Transport>();
+  return t != nullptr && absl::StrContains(t->GetTransportName(), "http");
 }
 }  // namespace
 

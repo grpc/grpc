@@ -72,8 +72,7 @@ int64_t event_engine_tcp_client_connect(
       },
       CreateResolvedAddress(*addr), config,
       resource_quota != nullptr
-          ? resource_quota->memory_quota()->CreateMemoryOwner(
-                absl::StrCat("tcp-client:", addr_uri.value()))
+          ? resource_quota->memory_quota()->CreateMemoryOwner()
           : grpc_event_engine::experimental::MemoryAllocator(),
       std::max(grpc_core::Duration::Milliseconds(1),
                deadline - grpc_core::Timestamp::Now()));

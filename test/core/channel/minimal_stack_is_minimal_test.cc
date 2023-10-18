@@ -29,12 +29,13 @@
 // configurations and assess whether such a change is correct and desirable.
 //
 
-#include <string.h>
-
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -46,23 +47,49 @@
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
+#include "src/core/lib/transport/transport.h"
 #include "test/core/util/test_config.h"
+
+namespace {
+class FakeTransport final : public grpc_core::Transport {
+ public:
+  explicit FakeTransport(absl::string_view transport_name)
+      : transport_name_(transport_name) {}
+
+  grpc_core::FilterStackTransport* filter_stack_transport() override {
+    return nullptr;
+  }
+  grpc_core::ClientTransport* client_transport() override { return nullptr; }
+  grpc_core::ServerTransport* server_transport() override { return nullptr; }
+
+  absl::string_view GetTransportName() const override {
+    return transport_name_;
+  }
+  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
+  void SetPollsetSet(grpc_stream* stream,
+                     grpc_pollset_set* pollset_set) override {}
+  void PerformOp(grpc_transport_op* op) override {}
+  grpc_endpoint* GetEndpoint() override { return nullptr; }
+  void Orphan() override {}
+
+ private:
+  absl::string_view transport_name_;
+};
+}  // namespace
 
 std::vector<std::string> MakeStack(const char* transport_name,
                                    grpc_core::ChannelArgs channel_args,
                                    grpc_channel_stack_type channel_stack_type) {
   // create phony channel stack
-  grpc_transport_vtable fake_transport_vtable;
-  memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
-  fake_transport_vtable.name = transport_name;
-  grpc_transport fake_transport = {&fake_transport_vtable};
+  std::unique_ptr<FakeTransport> fake_transport;
   if (transport_name != nullptr) {
-    channel_args = channel_args.SetObject(&fake_transport);
+    fake_transport = absl::make_unique<FakeTransport>(transport_name);
+    channel_args = channel_args.SetObject(fake_transport.get());
   }
   grpc_core::ChannelStackBuilderImpl builder("test", channel_stack_type,
                                              channel_args);
