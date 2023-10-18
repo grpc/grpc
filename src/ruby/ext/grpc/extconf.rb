@@ -39,12 +39,8 @@ end
 
 def maybe_remove_strip_all_linker_flag(flags)
   if debug_symbols_output_dir
-    # Hack to prevent automatic stripping during shared library linking.
-    # rake-compiler-dock sets the -s LDFLAG when building rubies for
-    # cross compilation, and this -s flag propagates into RbConfig. Stripping
-    # during the link is problematic because it prevents us from saving
-    # debug symbols. We want to first link our shared library, then save
-    # debug symbols, and only after that strip.
+    # TODO(apolcyn): clean up this hack. See
+    # https://github.com/rake-compiler/rake-compiler-dock/issues/107
     flags = flags.split(' ')
     flags = flags.reject {|flag| flag == '-s'}
     flags = flags.join(' ')
