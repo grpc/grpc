@@ -57,15 +57,10 @@
 namespace grpc_core {
 namespace {
 
-bool ServerInCIDRRange(
-    const absl::StatusOr<grpc_resolved_address>& server_address,
-    absl::string_view cidr_range) {
-  if (!server_address.ok()) {
-    return false;
-  }
+bool ServerInCIDRRange(const grpc_resolved_address& server_address,
+                       absl::string_view cidr_range) {
   std::pair<absl::string_view, absl::string_view> possible_cidr =
-      absl::StrSplit(absl::StripAsciiWhitespace(cidr_range),
-                     absl::MaxSplits('/', 1), absl::SkipEmpty());
+      absl::StrSplit(cidr_range, absl::MaxSplits('/', 1), absl::SkipEmpty());
   if (possible_cidr.first.empty() || possible_cidr.second.empty()) {
     return false;
   }
@@ -76,7 +71,7 @@ bool ServerInCIDRRange(
   uint32_t mask_bits = 0;
   if (absl::SimpleAtoi(possible_cidr.second, &mask_bits)) {
     grpc_sockaddr_mask_bits(&*proxy_address, mask_bits);
-    return grpc_sockaddr_match_subnet(&*server_address, &*proxy_address,
+    return grpc_sockaddr_match_subnet(&server_address, &*proxy_address,
                                       mask_bits);
   }
   return false;
@@ -84,19 +79,20 @@ bool ServerInCIDRRange(
 
 bool ExactMatchOrSubdomain(absl::string_view host_name,
                            absl::string_view host_name_or_domain) {
-  return absl::EndsWithIgnoreCase(
-      host_name, absl::StripAsciiWhitespace(host_name_or_domain));
+  return absl::EndsWithIgnoreCase(host_name, host_name_or_domain);
 }
 
 // Parses the list of host names, addresses or subnet masks and returns true if
 // the target address or host matches any value.
 bool AddressIncluded(
-    const absl::StatusOr<grpc_resolved_address>& target_address,
+    const absl::optional<grpc_resolved_address>& target_address,
     absl::string_view host_name, absl::string_view addresses_and_subnets) {
   for (absl::string_view entry :
        absl::StrSplit(addresses_and_subnets, ',', absl::SkipEmpty())) {
-    if (ExactMatchOrSubdomain(host_name, entry) ||
-        ServerInCIDRRange(target_address, entry)) {
+    absl::string_view sanitized_entry = absl::StripAsciiWhitespace(entry);
+    if (ExactMatchOrSubdomain(host_name, sanitized_entry) ||
+        (target_address.has_value() &&
+         ServerInCIDRRange(*target_address, sanitized_entry))) {
       return true;
     }
   }
@@ -247,8 +243,11 @@ absl::optional<std::string> HttpProxyMapper::MapName(
               "host '%s'",
               std::string(server_uri).c_str());
     } else {
-      if (AddressIncluded(StringToSockaddr(server_host, 0), server_host,
-                          *no_proxy_str)) {
+      auto address = StringToSockaddr(server_host, 0);
+      if (AddressIncluded(address.ok()
+                              ? absl::optional<grpc_resolved_address>(*address)
+                              : absl::nullopt,
+                          server_host, *no_proxy_str)) {
         gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
                 std::string(server_uri).c_str());
         return absl::nullopt;
