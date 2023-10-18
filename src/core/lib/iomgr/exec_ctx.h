@@ -34,8 +34,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/time.h"
@@ -112,12 +111,14 @@ class GRPC_DLL ExecCtx {
   /// Default Constructor
 
   ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
+    if (!IsNoExecCtxTimeCacheEnabled()) time_cache_.emplace();
     Fork::IncExecCtxCount();
     Set(this);
   }
 
   /// Parameterised Constructor
   explicit ExecCtx(uintptr_t fl) : flags_(fl) {
+    if (!IsNoExecCtxTimeCacheEnabled()) time_cache_.emplace();
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
       Fork::IncExecCtxCount();
     }
@@ -188,7 +189,7 @@ class GRPC_DLL ExecCtx {
 
   void InvalidateNow() {
 #if !TARGET_OS_IPHONE
-    time_cache_.InvalidateCache();
+    if (time_cache_.has_value()) time_cache_->InvalidateCache();
 #endif
   }
 
@@ -196,13 +197,15 @@ class GRPC_DLL ExecCtx {
 #if !TARGET_OS_IPHONE
     // We get to do a test only set now on this path just because iomgr
     // is getting removed and no point adding more interfaces for it.
-    time_cache_.TestOnlySetNow(Timestamp::InfFuture());
+    if (!time_cache_.has_value()) time_cache_.emplace();
+    time_cache_->TestOnlySetNow(Timestamp::InfFuture());
 #endif
   }
 
   void TestOnlySetNow(Timestamp now) {
 #if !TARGET_OS_IPHONE
-    time_cache_.TestOnlySetNow(now);
+    if (!time_cache_.has_value()) time_cache_.emplace();
+    time_cache_->TestOnlySetNow(now);
 #endif
   }
 
@@ -230,7 +233,7 @@ class GRPC_DLL ExecCtx {
   uintptr_t flags_;
 
 #if !TARGET_OS_IPHONE
-  ScopedTimeCache time_cache_;
+  absl::optional<ScopedTimeCache> time_cache_;
 #endif
 
 #if !defined(_WIN32) || !defined(_DLL)

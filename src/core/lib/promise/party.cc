@@ -24,6 +24,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/trace.h"
@@ -228,6 +229,9 @@ bool Party::RunParty() {
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_);
   return sync_.RunParty([this](int i) {
+    // One poll of one participate gets a cached time, so if we query time
+    // repeatedly (say on the outbound path of a write) we get the same value.
+    ScopedTimeCache time_cache;
     // If the participant is null, skip.
     // This allows participants to complete whilst wakers still exist
     // somewhere.
