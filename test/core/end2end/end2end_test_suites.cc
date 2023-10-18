@@ -1045,8 +1045,6 @@ CORE_END2END_TEST_SUITE(
     ConfigQuery()
         .EnforceFeatures(FEATURE_MASK_IS_HTTP2)
         .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
-        .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
-                         FEATURE_MASK_ENABLES_TRACES)
         .Run());
 
 CORE_END2END_TEST_SUITE(
