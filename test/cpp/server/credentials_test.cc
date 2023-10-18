@@ -16,7 +16,6 @@
 
 #include <memory>
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
@@ -26,8 +25,6 @@
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_crl_provider.h>
 
-#include "src/cpp/client/secure_credentials.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
 

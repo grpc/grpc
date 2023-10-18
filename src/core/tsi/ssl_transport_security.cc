@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #endif
 
+#include <memory>
 #include <string>
 
 #include <openssl/bio.h>
@@ -48,6 +49,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
