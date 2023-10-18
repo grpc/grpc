@@ -259,11 +259,11 @@ def grpc_deps():
     if "com_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_google_googletest",
-            sha256 = "c8de6c60e12ad014a28225c5247ee735861d85cf906df617f6a29954ca05f547",
-            strip_prefix = "googletest-0e402173c97aea7a00749e825b194bfede4f2e45",
+            sha256 = "31bf78bd91b96dd5e24fab3bb1d7f3f7453ccbaceec9afb86d6e4816a15ab109",
+            strip_prefix = "googletest-2dd1c131950043a8ad5ab0d2dda0e0970596586a",
             urls = [
-                # 2022-02-09
-                "https://github.com/google/googletest/archive/0e402173c97aea7a00749e825b194bfede4f2e45.tar.gz",
+                # 2023-10-09
+                "https://github.com/google/googletest/archive/2dd1c131950043a8ad5ab0d2dda0e0970596586a.tar.gz",
             ],
         )
 
@@ -520,11 +520,11 @@ def grpc_deps():
     if "google_cloud_cpp" not in native.existing_rules():
         http_archive(
             name = "google_cloud_cpp",
-            sha256 = "371d01b03c7e2604d671b8fa1c86710abe3b524a78bc2705a6bb4de715696755",
-            strip_prefix = "google-cloud-cpp-2.14.0",
+            sha256 = "7ca7f583b60d2aa1274411fed3b9fb3887119b2e84244bb3fc69ea1db819e4e5",
+            strip_prefix = "google-cloud-cpp-2.16.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.14.0.tar.gz",
-                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.14.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.16.0.tar.gz",
+                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.16.0.tar.gz",
             ],
         )
 

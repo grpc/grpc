@@ -19,8 +19,6 @@
 #include <stdint.h>
 
 #include <atomic>
-#include <future>
-#include <initializer_list>
 #include <list>
 #include <memory>
 #include <utility>

@@ -42,6 +42,8 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 
+// IWYU pragma: no_include <ratio>
+
 // ## Thread Pool Fork-handling
 //
 // Thread-safety needs special attention with regard to fork() calls. The

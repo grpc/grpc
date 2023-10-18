@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -28,6 +29,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -40,7 +42,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
@@ -70,7 +72,7 @@ static void set_done_write(void* arg, grpc_error_handle /*error*/) {
   gpr_event_set(done_write, reinterpret_cast<void*>(1));
 }
 
-static void server_setup_transport(void* ts, grpc_transport* transport) {
+static void server_setup_transport(void* ts, grpc_core::Transport* transport) {
   thd_args* a = static_cast<thd_args*>(ts);
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Server* core_server = grpc_core::Server::FromC(a->server);
@@ -200,17 +202,21 @@ void grpc_run_bad_client_test(
     grpc_bad_client_arg args[], int num_args, uint32_t flags) {
   grpc_endpoint_pair sfd;
   thd_args a;
-  grpc_transport* transport;
+  grpc_core::Transport* transport;
   grpc_core::ExecCtx exec_ctx;
   grpc_completion_queue* shutdown_cq;
   grpc_completion_queue* client_cq;
+
+  const auto server_args = grpc_core::ChannelArgs().Set(
+      GRPC_ARG_MAX_CONCURRENT_STREAMS,
+      (flags & GRPC_BAD_CLIENT_MAX_CONCURRENT_REQUESTS_OF_ONE) ? 1 : 10000);
 
   // Init grpc
   grpc_init();
 
   sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
   // Create server, completion events
-  a.server = grpc_server_create(nullptr, nullptr);
+  a.server = grpc_server_create(server_args.ToC().get(), nullptr);
   a.cq = grpc_completion_queue_create_for_next(nullptr);
   client_cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(a.server, a.cq, nullptr);
@@ -219,11 +225,11 @@ void grpc_run_bad_client_test(
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  transport =
-      grpc_create_chttp2_transport(grpc_core::CoreConfiguration::Get()
-                                       .channel_args_preconditioning()
-                                       .PreconditionChannelArgs(nullptr),
-                                   sfd.server, false);
+  transport = grpc_create_chttp2_transport(
+      grpc_core::CoreConfiguration::Get()
+          .channel_args_preconditioning()
+          .PreconditionChannelArgs(server_args.ToC().get()),
+      sfd.server, false);
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 

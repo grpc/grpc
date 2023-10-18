@@ -58,7 +58,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//:channel_stack_builder",
         "//:config",
         "//:gpr",
         "//:gpr_platform",

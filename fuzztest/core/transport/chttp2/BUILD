@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2021 The gRPC authors.
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Build portability tests with an updated submodule
+load("//fuzztest:grpc_fuzz_test.bzl", "grpc_fuzz_test")
 
-set -ex
-
-# change to grpc repo root
-cd $(dirname $0)/../../..
-
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-
-export DOCKERFILE_DIR=tools/dockerfile/test/bazel
-export DOCKER_RUN_SCRIPT=/test/distrib/bazel/test_latest_bazel_version.sh
-exec tools/run_tests/dockerize/build_and_run_docker.sh
+grpc_fuzz_test(
+    name = "write_size_policy_test",
+    srcs = ["write_size_policy_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = ["//src/core:write_size_policy"],
+)

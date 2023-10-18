@@ -14,6 +14,8 @@
 
 #include "src/core/lib/avl/avl.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 namespace grpc_core {

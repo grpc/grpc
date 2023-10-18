@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -42,6 +43,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/health_check_client.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -55,6 +57,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -143,6 +146,8 @@ class PickFirst : public LoadBalancingPolicy {
       // Cancels any pending connectivity watch and unrefs the subchannel.
       void ShutdownLocked();
 
+      bool seen_transient_failure() const { return seen_transient_failure_; }
+
      private:
       // Watcher for subchannel connectivity state.
       class Watcher
@@ -196,6 +201,7 @@ class PickFirst : public LoadBalancingPolicy {
       // Data updated by the watcher.
       absl::optional<grpc_connectivity_state> connectivity_state_;
       absl::Status connectivity_status_;
+      bool seen_transient_failure_ = false;
     };
 
     SubchannelList(RefCountedPtr<PickFirst> policy,
@@ -211,6 +217,17 @@ class PickFirst : public LoadBalancingPolicy {
 
     void Orphan() override;
 
+    bool IsHappyEyeballsPassComplete() const {
+      // Checking attempting_index_ here is just an optimization -- if
+      // we haven't actually tried all subchannels yet, then we don't
+      // need to iterate.
+      if (attempting_index_ < size()) return false;
+      for (const SubchannelData& sd : subchannels_) {
+        if (!sd.seen_transient_failure()) return false;
+      }
+      return true;
+    }
+
    private:
     // Returns true if all subchannels have seen their initial
     // connectivity state notifications.
@@ -219,10 +236,15 @@ class PickFirst : public LoadBalancingPolicy {
     // Looks through subchannels_ starting from attempting_index_ to
     // find the first one not currently in TRANSIENT_FAILURE, then
     // triggers a connection attempt for that subchannel.  If there are
-    // no more subchannels not in TRANSIENT_FAILURE (i.e., the Happy
-    // Eyeballs pass is complete), transitions to a mode where we
-    // try to connect to all subchannels in parallel.
+    // no more subchannels not in TRANSIENT_FAILURE, calls
+    // MaybeFinishHappyEyeballsPass().
     void StartConnectingNextSubchannel();
+
+    // Checks to see if the initial Happy Eyeballs pass is complete --
+    // i.e., all subchannels have seen TRANSIENT_FAILURE state at least once.
+    // If so, transitions to a mode where we try to connect to all subchannels
+    // in parallel and returns true.
+    void MaybeFinishHappyEyeballsPass();
 
     // Backpointer to owning policy.
     RefCountedPtr<PickFirst> policy_;
@@ -251,6 +273,9 @@ class PickFirst : public LoadBalancingPolicy {
     // After the initial Happy Eyeballs pass, the number of failures
     // we've seen.  Every size() failures, we trigger re-resolution.
     size_t num_failures_ = 0;
+
+    // The status from the last subchannel that reported TRANSIENT_FAILURE.
+    absl::Status last_failure_;
   };
 
   class HealthWatcher
@@ -445,13 +470,49 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       absl::c_shuffle(*args.addresses, bit_gen_);
     }
     // Flatten the list so that we have one address per endpoint.
+    // While we're iterating, also determine the desired address family
+    // order and the index of the first element of each family, for use in
+    // the interleaving below.
+    auto get_address_family = [](const grpc_resolved_address& address) {
+      const char* uri_scheme = grpc_sockaddr_get_uri_scheme(&address);
+      return absl::string_view(uri_scheme == nullptr ? "other" : uri_scheme);
+    };
+    std::vector<absl::string_view> address_family_order;
+    std::map<absl::string_view, size_t> address_family_indexes;
     EndpointAddressesList endpoints;
     for (const auto& endpoint : *args.addresses) {
       for (const auto& address : endpoint.addresses()) {
         endpoints.emplace_back(address, endpoint.args());
+        if (IsPickFirstHappyEyeballsEnabled()) {
+          absl::string_view scheme = get_address_family(address);
+          bool inserted =
+              address_family_indexes.emplace(scheme, endpoints.size() - 1)
+                  .second;
+          if (inserted) address_family_order.push_back(scheme);
+        }
       }
     }
-    args.addresses = std::move(endpoints);
+    // Interleave addresses as per RFC-8305 section 4.
+    if (IsPickFirstHappyEyeballsEnabled()) {
+      EndpointAddressesList interleaved_endpoints;
+      for (size_t i = 0; i < endpoints.size(); ++i) {
+        absl::string_view scheme_to_use =
+            address_family_order[i % address_family_order.size()];
+        size_t& next_index = address_family_indexes[scheme_to_use];
+        for (; next_index < endpoints.size(); ++next_index) {
+          if (get_address_family(endpoints[next_index].address()) ==
+              scheme_to_use) {
+            break;
+          }
+        }
+        if (next_index == endpoints.size()) continue;
+        interleaved_endpoints.emplace_back(std::move(endpoints[next_index]));
+        next_index++;
+      }
+      args.addresses = std::move(interleaved_endpoints);
+    } else {
+      args.addresses = std::move(endpoints);
+    }
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
@@ -568,16 +629,17 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
         "[PF %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
         " (subchannel %p): connectivity changed: old_state=%s, new_state=%s, "
         "status=%s, shutting_down=%d, pending_watcher=%p, "
-        "p->selected_=%p, p->subchannel_list_=%p, "
-        "p->latest_pending_subchannel_list_=%p",
+        "seen_transient_failure=%d, p->selected_=%p, "
+        "p->subchannel_list_=%p, p->latest_pending_subchannel_list_=%p",
         p, subchannel_list_, Index(), subchannel_list_->size(),
         subchannel_.get(),
         (connectivity_state_.has_value()
              ? ConnectivityStateName(*connectivity_state_)
              : "N/A"),
         ConnectivityStateName(new_state), status.ToString().c_str(),
-        subchannel_list_->shutting_down_, pending_watcher_, p->selected_,
-        p->subchannel_list_.get(), p->latest_pending_subchannel_list_.get());
+        subchannel_list_->shutting_down_, pending_watcher_,
+        seen_transient_failure_, p->selected_, p->subchannel_list_.get(),
+        p->latest_pending_subchannel_list_.get());
   }
   if (subchannel_list_->shutting_down_ || pending_watcher_ == nullptr) return;
   // The notification must be for a subchannel in either the current or
@@ -587,7 +649,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
   absl::optional<grpc_connectivity_state> old_state = connectivity_state_;
   connectivity_state_ = new_state;
-  connectivity_status_ = status;
+  connectivity_status_ = std::move(status);
   // Handle updates for the currently selected subchannel.
   if (p->selected_ == this) {
     GPR_ASSERT(subchannel_list_ == p->subchannel_list_.get());
@@ -618,14 +680,12 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       // Set our state to that of the pending subchannel list.
       if (IsPickFirstHappyEyeballsEnabled()
-              ? (p->subchannel_list_->attempting_index_ ==
-                 p->subchannel_list_->size())
+              ? p->subchannel_list_->IsHappyEyeballsPassComplete()
               : p->subchannel_list_->in_transient_failure_) {
-        absl::Status status = absl::UnavailableError(absl::StrCat(
+        status = absl::UnavailableError(absl::StrCat(
             "selected subchannel failed; switching to pending update; "
             "last failure: ",
-            p->subchannel_list_->subchannels_.back()
-                .connectivity_status_.ToString()));
+            p->subchannel_list_->last_failure_.ToString()));
         p->UpdateState(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                        MakeRefCounted<TransientFailurePicker>(status));
       } else if (p->state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
@@ -659,6 +719,12 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     ProcessUnselectedReadyLocked();
     return;
   }
+  // Make sure we note when a subchannel has seen TRANSIENT_FAILURE.
+  bool prev_seen_transient_failure = seen_transient_failure_;
+  if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    seen_transient_failure_ = true;
+    subchannel_list_->last_failure_ = connectivity_status_;
+  }
   // If we haven't yet seen the initial connectivity state notification
   // for all subchannels, do nothing.
   if (!subchannel_list_->AllSubchannelsSeenInitialState()) return;
@@ -685,17 +751,24 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   // Otherwise, process connectivity state change.
   switch (*connectivity_state_) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      // If a connection attempt fails before the timer fires, then
-      // cancel the timer and start connecting on the next subchannel.
-      if (Index() == subchannel_list_->attempting_index_) {
-        if (subchannel_list_->timer_handle_.has_value()) {
-          p->channel_control_helper()->GetEventEngine()->Cancel(
-              *subchannel_list_->timer_handle_);
+      // If this is the first failure we've seen on this subchannel,
+      // then we're still in the Happy Eyeballs pass.
+      if (!prev_seen_transient_failure && seen_transient_failure_) {
+        // If a connection attempt fails before the timer fires, then
+        // cancel the timer and start connecting on the next subchannel.
+        if (Index() == subchannel_list_->attempting_index_) {
+          if (subchannel_list_->timer_handle_.has_value()) {
+            p->channel_control_helper()->GetEventEngine()->Cancel(
+                *subchannel_list_->timer_handle_);
+          }
+          ++subchannel_list_->attempting_index_;
+          subchannel_list_->StartConnectingNextSubchannel();
+        } else {
+          // If this was the last subchannel to fail, check if the Happy
+          // Eyeballs pass is complete.
+          subchannel_list_->MaybeFinishHappyEyeballsPass();
         }
-        ++subchannel_list_->attempting_index_;
-        subchannel_list_->StartConnectingNextSubchannel();
-      } else if (subchannel_list_->attempting_index_ ==
-                 subchannel_list_->size()) {
+      } else if (subchannel_list_->IsHappyEyeballsPassComplete()) {
         // We're done with the initial Happy Eyeballs pass and in a mode
         // where we're attempting to connect to every subchannel in
         // parallel.  We count the number of failed connection attempts,
@@ -710,7 +783,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
         ++subchannel_list_->num_failures_;
         if (subchannel_list_->num_failures_ % subchannel_list_->size() == 0) {
           p->channel_control_helper()->RequestReresolution();
-          absl::Status status = absl::UnavailableError(absl::StrCat(
+          status = absl::UnavailableError(absl::StrCat(
               (p->omit_status_message_prefix_
                    ? ""
                    : "failed to connect to all addresses; last error: "),
@@ -725,7 +798,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
       // If we've finished the first Happy Eyeballs pass, then we go
       // into a mode where we immediately try to connect to every
       // subchannel in parallel.
-      if (subchannel_list_->attempting_index_ == subchannel_list_->size()) {
+      if (subchannel_list_->IsHappyEyeballsPassComplete()) {
         subchannel_->RequestConnection();
       }
       break;
@@ -1043,6 +1116,15 @@ void PickFirst::SubchannelList::StartConnectingNextSubchannel() {
       return;
     }
   }
+  // If we didn't find a subchannel to request a connection on, check to
+  // see if the Happy Eyeballs pass is complete.
+  MaybeFinishHappyEyeballsPass();
+}
+
+void PickFirst::SubchannelList::MaybeFinishHappyEyeballsPass() {
+  // Make sure all subchannels have finished a connection attempt before
+  // we consider the Happy Eyeballs pass complete.
+  if (!IsHappyEyeballsPassComplete()) return;
   // We didn't find another subchannel not in state TRANSIENT_FAILURE,
   // so report TRANSIENT_FAILURE and switch to a mode in which we try to
   // connect to all addresses in parallel.
@@ -1076,7 +1158,7 @@ void PickFirst::SubchannelList::StartConnectingNextSubchannel() {
         absl::StrCat((policy_->omit_status_message_prefix_
                           ? ""
                           : "failed to connect to all addresses; last error: "),
-                     subchannels_.back().connectivity_status().ToString()));
+                     last_failure_.ToString()));
     policy_->UpdateState(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                          MakeRefCounted<TransientFailurePicker>(status));
   }

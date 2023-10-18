@@ -27,17 +27,16 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false,
                                                          "stream_refcount");
@@ -103,57 +102,20 @@ void grpc_transport_move_stats(grpc_transport_stream_stats* from,
   to->latency = std::exchange(from->latency, gpr_inf_future(GPR_TIMESPAN));
 }
 
-size_t grpc_transport_stream_size(grpc_transport* transport) {
-  return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(transport->vtable->sizeof_stream);
-}
-
-void grpc_transport_destroy(grpc_transport* transport) {
-  transport->vtable->destroy(transport);
-}
-
-int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
-                               grpc_stream_refcount* refcount,
-                               const void* server_data,
-                               grpc_core::Arena* arena) {
-  return transport->vtable->init_stream(transport, stream, refcount,
-                                        server_data, arena);
-}
-
-void grpc_transport_perform_stream_op(grpc_transport* transport,
-                                      grpc_stream* stream,
-                                      grpc_transport_stream_op_batch* op) {
-  transport->vtable->perform_stream_op(transport, stream, op);
-}
-
-void grpc_transport_perform_op(grpc_transport* transport,
-                               grpc_transport_op* op) {
-  transport->vtable->perform_op(transport, op);
-}
-
-void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
-                             grpc_polling_entity* pollent) {
-  grpc_pollset* pollset;
-  grpc_pollset_set* pollset_set;
-  if ((pollset = grpc_polling_entity_pollset(pollent)) != nullptr) {
-    transport->vtable->set_pollset(transport, stream, pollset);
-  } else if ((pollset_set = grpc_polling_entity_pollset_set(pollent)) !=
-             nullptr) {
-    transport->vtable->set_pollset_set(transport, stream, pollset_set);
+namespace grpc_core {
+void Transport::SetPollingEntity(grpc_stream* stream,
+                                 grpc_polling_entity* pollset_or_pollset_set) {
+  if (auto* pollset = grpc_polling_entity_pollset(pollset_or_pollset_set)) {
+    SetPollset(stream, pollset);
+  } else if (auto* pollset_set =
+                 grpc_polling_entity_pollset_set(pollset_or_pollset_set)) {
+    SetPollsetSet(stream, pollset_set);
   } else {
     // No-op for empty pollset. Empty pollset is possible when using
     // non-fd-based event engines such as CFStream.
   }
 }
-
-void grpc_transport_destroy_stream(grpc_transport* transport,
-                                   grpc_stream* stream,
-                                   grpc_closure* then_schedule_closure) {
-  transport->vtable->destroy_stream(transport, stream, then_schedule_closure);
-}
-
-grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
-  return transport->vtable->get_endpoint(transport);
-}
+}  // namespace grpc_core
 
 // This comment should be sung to the tune of
 // "Supercalifragilisticexpialidocious":

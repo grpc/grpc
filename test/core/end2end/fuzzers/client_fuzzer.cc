@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
+
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
@@ -31,7 +33,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
@@ -62,7 +64,7 @@ class ClientFuzzer final : public BasicFuzzer {
             .channel_args_preconditioning()
             .PreconditionChannelArgs(nullptr)
             .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
-    grpc_transport* transport =
+    Transport* transport =
         grpc_create_chttp2_transport(args, mock_endpoint_, true);
     channel_ = Channel::Create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
                                transport)
@@ -73,11 +75,10 @@ class ClientFuzzer final : public BasicFuzzer {
   ~ClientFuzzer() { GPR_ASSERT(channel_ == nullptr); }
 
  private:
-  Result CreateChannel(
-      const api_fuzzer::CreateChannel& create_channel) override {
+  Result CreateChannel(const api_fuzzer::CreateChannel&) override {
     return Result::kFailed;
   }
-  Result CreateServer(const api_fuzzer::CreateServer& create_server) override {
+  Result CreateServer(const api_fuzzer::CreateServer&) override {
     return Result::kFailed;
   }
   void DestroyServer() override {}

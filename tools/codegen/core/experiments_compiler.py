@@ -70,6 +70,9 @@ def _EXPERIMENTS_TEST_SKELETON(defs, test_body):
 #include <grpc/support/port_platform.h>
 
 #include "test/core/experiments/fixtures/experiments.h"
+
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include "src/core/lib/experiments/config.h"
@@ -150,6 +153,18 @@ def PutCopyright(file, prefix):
                 break
             copyright.append(line)
         PutBanner([file], [line[2:].rstrip() for line in copyright], prefix)
+
+
+def AreExperimentsOrdered(experiments):
+    # Check that the experiments are ordered by name
+    for i in range(1, len(experiments)):
+        if experiments[i - 1]["name"] >= experiments[i]["name"]:
+            print(
+                "Experiments are unordered: %s should be after %s"
+                % (experiments[i - 1]["name"], experiments[i]["name"])
+            )
+            return False
+    return True
 
 
 class ExperimentDefinition(object):
