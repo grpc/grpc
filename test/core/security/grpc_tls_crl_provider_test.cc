@@ -34,7 +34,7 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
-const char* kCrlPath = "test/core/tsi/test_creds/crl_data/crls/ab06acdd.r0";
+const char* kCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const absl::string_view kCrlIssuer =
     "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca";
 
