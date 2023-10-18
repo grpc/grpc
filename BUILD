@@ -1466,7 +1466,6 @@ grpc_cc_library(
         "//src/core:lib/transport/status_conversion.h",
         "//src/core:lib/transport/timeout_encoding.h",
         "//src/core:lib/transport/transport.h",
-        "//src/core:lib/transport/transport_impl.h",
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
@@ -3139,7 +3138,6 @@ grpc_cc_library(
         "//src/core:status_helper",
         "//src/core:subchannel_interface",
         "//src/core:time",
-        "//src/core:transport_fwd",
         "//src/core:try_seq",
         "//src/core:unique_type_name",
         "//src/core:useful",
@@ -3616,7 +3614,6 @@ grpc_cc_library(
         "//src/core:race",
         "//src/core:slice",
         "//src/core:slice_buffer",
-        "//src/core:transport_fwd",
     ],
 )
 

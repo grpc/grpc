@@ -105,7 +105,6 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -370,8 +369,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   }
 }
 
-static const grpc_transport_vtable* get_vtable(void);
-
 static void read_channel_args(grpc_chttp2_transport* t,
                               const grpc_core::ChannelArgs& channel_args,
                               bool is_client) {
@@ -458,7 +455,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             std::string(grpc_endpoint_get_local_address(t->ep)),
             std::string(t->peer_string.as_string_view()),
-            absl::StrCat(get_vtable()->name, " ",
+            absl::StrCat(t->GetTransportName(), " ",
                          t->peer_string.as_string_view()),
             channel_args
                 .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
@@ -611,9 +608,11 @@ static void init_keepalive_pings_if_enabled_locked(
 grpc_chttp2_transport::grpc_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
     bool is_client)
-    : refs(1, GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_refcount)
-                  ? "chttp2_refcount"
-                  : nullptr),
+    : grpc_core::RefCounted<grpc_chttp2_transport,
+                            grpc_core::NonPolymorphicRefCount>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_refcount)
+              ? "chttp2_refcount"
+              : nullptr),
       ep(ep),
       peer_string(
           grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep))),
@@ -640,7 +639,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   cl = new grpc_core::ContextList();
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
-  base.vtable = get_vtable();
 
   grpc_slice_buffer_init(&read_buffer);
   if (is_client) {
@@ -716,10 +714,9 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
   t->memory_owner.Reset();
 }
 
-static void destroy_transport(grpc_transport* gt) {
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
-  t->combiner->Run(GRPC_CLOSURE_CREATE(destroy_transport_locked, t, nullptr),
-                   absl::OkStatus());
+void grpc_chttp2_transport::Orphan() {
+  combiner->Run(GRPC_CLOSURE_CREATE(destroy_transport_locked, this, nullptr),
+                absl::OkStatus());
 }
 
 static void close_transport_locked(grpc_chttp2_transport* t,
@@ -894,12 +891,11 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_stream_arg, absl::OkStatus());
 }
 
-static int init_stream(grpc_transport* gt, grpc_stream* gs,
-                       grpc_stream_refcount* refcount, const void* server_data,
-                       grpc_core::Arena* arena) {
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
-  new (gs) grpc_chttp2_stream(t, refcount, server_data, arena);
-  return 0;
+void grpc_chttp2_transport::InitStream(grpc_stream* gs,
+                                       grpc_stream_refcount* refcount,
+                                       const void* server_data,
+                                       grpc_core::Arena* arena) {
+  new (gs) grpc_chttp2_stream(this, refcount, server_data, arena);
 }
 
 static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {
@@ -907,13 +903,12 @@ static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {
   s->~grpc_chttp2_stream();
 }
 
-static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
-                           grpc_closure* then_schedule_closure) {
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
+void grpc_chttp2_transport::DestroyStream(grpc_stream* gs,
+                                          grpc_closure* then_schedule_closure) {
   grpc_chttp2_stream* s = reinterpret_cast<grpc_chttp2_stream*>(gs);
 
   s->destroy_stream_arg = then_schedule_closure;
-  t->combiner->Run(
+  combiner->Run(
       GRPC_CLOSURE_INIT(&s->destroy_stream, destroy_stream_locked, s, nullptr),
       absl::OkStatus());
 }
@@ -926,7 +921,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   grpc_chttp2_stream* accepting = nullptr;
   GPR_ASSERT(t->accepting_stream == nullptr);
   t->accepting_stream = &accepting;
-  t->accept_stream_cb(t->accept_stream_cb_user_data, &t->base,
+  t->accept_stream_cb(t->accept_stream_cb_user_data, t,
                       reinterpret_cast<void*>(id));
   t->accepting_stream = nullptr;
   return accepting;
@@ -1663,12 +1658,11 @@ static void perform_stream_op_locked(void* stream_op,
   GRPC_CHTTP2_STREAM_UNREF(s, "perform_stream_op");
 }
 
-static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
-                              grpc_transport_stream_op_batch* op) {
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
+void grpc_chttp2_transport::PerformStreamOp(
+    grpc_stream* gs, grpc_transport_stream_op_batch* op) {
   grpc_chttp2_stream* s = reinterpret_cast<grpc_chttp2_stream*>(gs);
 
-  if (!t->is_client) {
+  if (!is_client) {
     if (op->send_initial_metadata) {
       GPR_ASSERT(!op->payload->send_initial_metadata.send_initial_metadata
                       ->get(grpc_core::GrpcTimeoutMetadata())
@@ -1688,9 +1682,9 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
   op->handler_private.extra_arg = gs;
-  t->combiner->Run(GRPC_CLOSURE_INIT(&op->handler_private.closure,
-                                     perform_stream_op_locked, op, nullptr),
-                   absl::OkStatus());
+  combiner->Run(GRPC_CLOSURE_INIT(&op->handler_private.closure,
+                                  perform_stream_op_locked, op, nullptr),
+                absl::OkStatus());
 }
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error) {
@@ -2024,14 +2018,13 @@ static void perform_transport_op_locked(void* stream_op,
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
 }
 
-static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
+void grpc_chttp2_transport::PerformOp(grpc_transport_op* op) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "perform_transport_op[t=%p]: %s", t,
+    gpr_log(GPR_INFO, "perform_transport_op[t=%p]: %s", this,
             grpc_transport_op_string(op).c_str());
   }
-  op->handler_private.extra_arg = gt;
-  t->Ref().release()->combiner->Run(
+  op->handler_private.extra_arg = this;
+  Ref().release()->combiner->Run(
       GRPC_CLOSURE_INIT(&op->handler_private.closure,
                         perform_transport_op_locked, op, nullptr),
       absl::OkStatus());
@@ -3078,16 +3071,14 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
 // POLLSET STUFF
 //
 
-static void set_pollset(grpc_transport* gt, grpc_stream* /*gs*/,
-                        grpc_pollset* pollset) {
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
-  grpc_endpoint_add_to_pollset(t->ep, pollset);
+void grpc_chttp2_transport::SetPollset(grpc_stream* /*gs*/,
+                                       grpc_pollset* pollset) {
+  grpc_endpoint_add_to_pollset(ep, pollset);
 }
 
-static void set_pollset_set(grpc_transport* gt, grpc_stream* /*gs*/,
-                            grpc_pollset_set* pollset_set) {
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
-  grpc_endpoint_add_to_pollset_set(t->ep, pollset_set);
+void grpc_chttp2_transport::SetPollsetSet(grpc_stream* /*gs*/,
+                                          grpc_pollset_set* pollset_set) {
+  grpc_endpoint_add_to_pollset_set(ep, pollset_set);
 }
 
 //
@@ -3245,41 +3236,36 @@ const char* grpc_chttp2_initiate_write_reason_string(
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
-static grpc_endpoint* chttp2_get_endpoint(grpc_transport* t) {
-  return (reinterpret_cast<grpc_chttp2_transport*>(t))->ep;
+grpc_endpoint* grpc_chttp2_transport::GetEndpoint() { return ep; }
+
+size_t grpc_chttp2_transport::SizeOfStream() const {
+  return sizeof(grpc_chttp2_stream);
 }
 
-static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
-                                             false,
-                                             "chttp2",
-                                             init_stream,
-                                             nullptr,
-                                             set_pollset,
-                                             set_pollset_set,
-                                             perform_stream_op,
-                                             perform_transport_op,
-                                             destroy_stream,
-                                             destroy_transport,
-                                             chttp2_get_endpoint};
+bool grpc_chttp2_transport::
+    HackyDisableStreamOpBatchCoalescingInConnectedChannel() const {
+  return false;
+}
 
-static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
+absl::string_view grpc_chttp2_transport::GetTransportName() const {
+  return "chttp2";
+}
 
 grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
-grpc_chttp2_transport_get_socket_node(grpc_transport* transport) {
+grpc_chttp2_transport_get_socket_node(grpc_core::Transport* transport) {
   grpc_chttp2_transport* t =
       reinterpret_cast<grpc_chttp2_transport*>(transport);
   return t->channelz_socket;
 }
 
-grpc_transport* grpc_create_chttp2_transport(
+grpc_core::Transport* grpc_create_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
     bool is_client) {
-  auto t = new grpc_chttp2_transport(channel_args, ep, is_client);
-  return &t->base;
+  return new grpc_chttp2_transport(channel_args, ep, is_client);
 }
 
 void grpc_chttp2_transport_start_reading(
-    grpc_transport* transport, grpc_slice_buffer* read_buffer,
+    grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
     grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close) {
   auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
   if (read_buffer != nullptr) {

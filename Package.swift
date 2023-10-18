@@ -1722,7 +1722,6 @@ let package = Package(
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_fwd.h",
-        "src/core/lib/transport/transport_impl.h",
         "src/core/lib/transport/transport_op_string.cc",
         "src/core/lib/uri/uri_parser.cc",
         "src/core/lib/uri/uri_parser.h",
