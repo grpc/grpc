@@ -6100,10 +6100,6 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    visibility = [
-        "//src/cpp/ext/gcp:__subpackages__",
-        "//test:__subpackages__",
-    ],
     deps = [
         "arena",
         "arena_promise",
@@ -6124,7 +6120,6 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_client_channel",
-        "//:grpc_opencensus_plugin",
         "//:grpc_public_hdrs",
         "//:grpc_resolver",
         "//:legacy_context",
