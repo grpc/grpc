@@ -115,6 +115,7 @@ constexpr grpc_core::Duration kLifeguardMinSleepBetweenChecks{
 // Maximum time the lifeguard thread should sleep between checking for new work.
 constexpr grpc_core::Duration kLifeguardMaxSleepBetweenChecks{
     grpc_core::Duration::Seconds(1)};
+
 }  // namespace
 
 thread_local WorkQueue* g_local_queue = nullptr;

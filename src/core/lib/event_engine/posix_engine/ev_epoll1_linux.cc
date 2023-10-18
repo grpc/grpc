@@ -368,10 +368,7 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
   ForkPollerListAddPoller(this);
 }
 
-void Epoll1Poller::Shutdown() {
-  ForkPollerListRemovePoller(this);
-  delete this;
-}
+void Epoll1Poller::Shutdown() { ForkPollerListRemovePoller(this); }
 
 void Epoll1Poller::Close() {
   grpc_core::MutexLock lock(&mu_);
@@ -565,10 +562,10 @@ void Epoll1Poller::Kick() {
   GPR_ASSERT(wakeup_fd_->Wakeup().ok());
 }
 
-Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler) {
   static bool kEpoll1PollerSupported = InitEpoll1PollerLinux();
   if (kEpoll1PollerSupported) {
-    return new Epoll1Poller(scheduler);
+    return std::make_shared<Epoll1Poller>(scheduler);
   }
   return nullptr;
 }

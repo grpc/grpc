@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <future>
 #include <initializer_list>
 #include <list>
 #include <memory>
@@ -74,7 +75,7 @@ using Events = absl::InlinedVector<PollEventHandle*, 5>;
 
 class PollEventHandle : public EventHandle {
  public:
-  PollEventHandle(int fd, PollPoller* poller)
+  PollEventHandle(int fd, std::shared_ptr<PollPoller> poller)
       : fd_(fd),
         pending_actions_(0),
         fork_fd_list_(this),
@@ -93,11 +94,10 @@ class PollEventHandle : public EventHandle {
         read_closure_(reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)),
         write_closure_(
             reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)) {
-    poller_->Ref();
     grpc_core::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListAddHandle(this);
   }
-  PollPoller* Poller() override { return poller_; }
+  PollPoller* Poller() override { return poller_.get(); }
   bool SetPendingActions(bool pending_read, bool pending_write) {
     pending_actions_ |= pending_read;
     if (pending_write) {
@@ -185,7 +185,6 @@ class PollEventHandle : public EventHandle {
       if (on_done_ != nullptr) {
         scheduler_->Run(on_done_);
       }
-      poller_->Unref();
       delete this;
     }
   }
@@ -211,7 +210,7 @@ class PollEventHandle : public EventHandle {
   int pending_actions_;
   PollPoller::HandlesList fork_fd_list_;
   PollPoller::HandlesList poller_handles_list_;
-  PollPoller* poller_;
+  std::shared_ptr<PollPoller> poller_;
   Scheduler* scheduler_;
   bool is_orphaned_;
   bool is_shutdown_;
@@ -344,7 +343,7 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
   // Avoid unused-parameter warning for debug-only parameter
   (void)track_err;
   GPR_DEBUG_ASSERT(track_err == false);
-  PollEventHandle* handle = new PollEventHandle(fd, this);
+  PollEventHandle* handle = new PollEventHandle(fd, shared_from_this());
   ForkFdListAddHandle(handle);
   // We need to send a kick to the thread executing Work(..) so that it can
   // add this new Fd into the list of Fds to poll.
@@ -829,10 +828,7 @@ Poller::WorkResult PollPoller::Work(
   return was_kicked_ext ? Poller::WorkResult::kKicked : Poller::WorkResult::kOk;
 }
 
-void PollPoller::Shutdown() {
-  ForkPollerListRemovePoller(this);
-  Unref();
-}
+void PollPoller::Shutdown() { ForkPollerListRemovePoller(this); }
 
 void PollPoller::PrepareFork() { Kick(); }
 // TODO(vigneshbabu): implement
@@ -845,10 +841,11 @@ void PollPoller::Close() {
   closed_ = true;
 }
 
-PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
+std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
+                                           bool use_phony_poll) {
   static bool kPollPollerSupported = InitPollPollerPosix();
   if (kPollPollerSupported) {
-    return new PollPoller(scheduler, use_phony_poll);
+    return std::make_shared<PollPoller>(scheduler, use_phony_poll);
   }
   return nullptr;
 }

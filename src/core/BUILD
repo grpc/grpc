@@ -1590,6 +1590,7 @@ grpc_cc_library(
         "event_engine_work_queue",
         "forkable",
         "notification",
+        "no_destruct",
         "time",
         "useful",
         "//:backoff",
@@ -1652,6 +1653,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_poller",
+        "forkable",
         "posix_event_engine_closure",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -1848,6 +1850,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "iomgr_port",
+        "no_destruct",
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_epoll1",
         "posix_event_engine_poller_posix_poll",

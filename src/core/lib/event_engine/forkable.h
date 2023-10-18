@@ -61,6 +61,14 @@ class Forkable {
   virtual void PostforkChild() = 0;
 };
 
+class ForkableInterface {
+ public:
+  virtual ~ForkableInterface() = default;
+  virtual void PrepareFork() = 0;
+  virtual void PostforkParent() = 0;
+  virtual void PostforkChild() = 0;
+};
+
 // Add Forkables from the set of objects that are supported.
 // Upon fork, each forkable will have its respective fork hooks called on
 // the thread that invoked the fork.

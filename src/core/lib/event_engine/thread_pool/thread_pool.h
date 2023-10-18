@@ -29,7 +29,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 // Interface for all EventEngine ThreadPool implementations
-class ThreadPool : public Forkable {
+class ThreadPool : public ForkableInterface {
  public:
   // Asserts Quiesce was called.
   ~ThreadPool() override = default;
