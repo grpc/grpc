@@ -91,10 +91,9 @@ class Fuzzer {
           memory_quotas_.erase(action.quota());
           break;
         case memory_quota_fuzzer::Action::kCreateAllocator:
-          WithQuota(action.quota(), [this, action, i](MemoryQuota* q) {
-            memory_allocators_.emplace(
-                action.allocator(),
-                q->CreateMemoryOwner(absl::StrCat("allocator-step-", i)));
+          WithQuota(action.quota(), [this, action](MemoryQuota* q) {
+            memory_allocators_.emplace(action.allocator(),
+                                       q->CreateMemoryOwner());
           });
           break;
         case memory_quota_fuzzer::Action::kDeleteAllocator:

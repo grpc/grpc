@@ -21,6 +21,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -83,6 +86,7 @@ EXPERIMENTS = {
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],
@@ -105,6 +109,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -167,6 +174,7 @@ EXPERIMENTS = {
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],
@@ -189,6 +197,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
@@ -261,6 +272,7 @@ EXPERIMENTS = {
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],

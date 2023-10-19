@@ -144,18 +144,18 @@ class Fixture {
 
   void FlushExecCtx() { grpc_core::ExecCtx::Get()->Flush(); }
 
-  ~Fixture() { grpc_transport_destroy(t_); }
+  ~Fixture() { t_->Orphan(); }
 
   grpc_chttp2_transport* chttp2_transport() {
     return reinterpret_cast<grpc_chttp2_transport*>(t_);
   }
-  grpc_transport* transport() { return t_; }
+  grpc_core::Transport* transport() { return t_; }
 
   void PushInput(grpc_slice slice) { ep_->PushInput(slice); }
 
  private:
   PhonyEndpoint* ep_;
-  grpc_transport* t_;
+  grpc_core::Transport* t_;
 };
 
 class TestClosure : public grpc_closure {
@@ -194,7 +194,7 @@ grpc_closure* MakeOnceClosure(F f) {
 class Stream {
  public:
   explicit Stream(Fixture* f) : f_(f) {
-    stream_size_ = grpc_transport_stream_size(f->transport());
+    stream_size_ = f->transport()->filter_stack_transport()->SizeOfStream();
     stream_ = gpr_malloc(stream_size_);
     arena_ = grpc_core::Arena::Create(4096, &memory_allocator_);
   }
@@ -214,9 +214,8 @@ class Stream {
       arena_->Destroy();
       arena_ = grpc_core::Arena::Create(4096, &memory_allocator_);
     }
-    grpc_transport_init_stream(f_->transport(),
-                               static_cast<grpc_stream*>(stream_), &refcount_,
-                               nullptr, arena_);
+    f_->transport()->filter_stack_transport()->InitStream(
+        static_cast<grpc_stream*>(stream_), &refcount_, nullptr, arena_);
   }
 
   void DestroyThen(grpc_closure* closure) {
@@ -229,8 +228,8 @@ class Stream {
   }
 
   void Op(grpc_transport_stream_op_batch* op) {
-    grpc_transport_perform_stream_op(f_->transport(),
-                                     static_cast<grpc_stream*>(stream_), op);
+    f_->transport()->filter_stack_transport()->PerformStreamOp(
+        static_cast<grpc_stream*>(stream_), op);
   }
 
   grpc_chttp2_stream* chttp2_stream() {
@@ -240,9 +239,8 @@ class Stream {
  private:
   static void FinishDestroy(void* arg, grpc_error_handle /*error*/) {
     auto stream = static_cast<Stream*>(arg);
-    grpc_transport_destroy_stream(stream->f_->transport(),
-                                  static_cast<grpc_stream*>(stream->stream_),
-                                  stream->destroy_closure_);
+    stream->f_->transport()->filter_stack_transport()->DestroyStream(
+        static_cast<grpc_stream*>(stream->stream_), stream->destroy_closure_);
     gpr_event_set(&stream->done_, reinterpret_cast<void*>(1));
   }
 

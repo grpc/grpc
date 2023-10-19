@@ -158,6 +158,7 @@ libs:
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_audit_logging.h
+  - include/grpc/grpc_crl_provider.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -937,6 +938,7 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
+  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/credentials/tls/tls_utils.h
   - src/core/lib/security/credentials/xds/xds_credentials.h
@@ -1002,7 +1004,6 @@ libs:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
   - src/core/tsi/alts/crypt/gsec.h
   - src/core/tsi/alts/frame_protector/alts_counter.h
@@ -1722,6 +1723,7 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/credentials/tls/tls_utils.cc
   - src/core/lib/security/credentials/xds/xds_credentials.cc
@@ -1921,6 +1923,7 @@ libs:
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_audit_logging.h
+  - include/grpc/grpc_crl_provider.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -2395,7 +2398,6 @@ libs:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/fake_transport_security.h
@@ -3531,6 +3533,7 @@ libs:
   - include/grpcpp/security/tls_certificate_provider.h
   - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
+  - include/grpcpp/security/tls_crl_provider.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
@@ -3954,6 +3957,7 @@ libs:
   - include/grpcpp/security/tls_certificate_provider.h
   - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
+  - include/grpcpp/security/tls_crl_provider.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
@@ -4052,6 +4056,7 @@ libs:
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_audit_logging.h
+  - include/grpc/grpc_crl_provider.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -4411,7 +4416,6 @@ libs:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/transport_security.h
@@ -7416,6 +7420,22 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: crl_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/crl_provider_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - gtest
+  - grpc++_test_util
 - name: crl_ssl_transport_security_test
   gtest: true
   build: test
@@ -9440,6 +9460,16 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: grpc_tls_crl_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/grpc_tls_crl_provider_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: grpc_tool_test
   gtest: true
   build: test
@@ -9872,7 +9902,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/scoped_env_var.h
   src:
   - test/core/client_channel/http_proxy_mapper_test.cc
   deps:
@@ -15982,7 +16013,6 @@ targets:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - third_party/upb/upb/generated_code_support.h

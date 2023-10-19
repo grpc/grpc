@@ -3073,6 +3073,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_crl_provider",
+    srcs = [
+        "lib/security/credentials/tls/grpc_tls_crl_provider.cc",
+    ],
+    hdrs = [
+        "lib/security/credentials/tls/grpc_tls_crl_provider.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:span",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_fake_credentials",
     srcs = [
         "lib/security/credentials/fake/fake_credentials.cc",
@@ -3953,7 +3976,6 @@ grpc_cc_library(
         "json_args",
         "json_object_loader",
         "service_config_parser",
-        "transport_fwd",
         "validation_errors",
         "//:config",
         "//:gpr",
@@ -5867,7 +5889,6 @@ grpc_cc_library(
         "status_helper",
         "tcp_connect_handshaker",
         "time",
-        "transport_fwd",
         "unique_type_name",
         "//:channel_arg_names",
         "//:config",
@@ -5919,7 +5940,6 @@ grpc_cc_library(
         "resource_quota",
         "status_helper",
         "time",
-        "transport_fwd",
         "unique_type_name",
         "//:channel_arg_names",
         "//:chttp2_legacy_frame",
@@ -5970,7 +5990,6 @@ grpc_cc_library(
         "slice_buffer",
         "status_helper",
         "time",
-        "transport_fwd",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
@@ -6100,10 +6119,6 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    visibility = [
-        "//src/cpp/ext/gcp:__subpackages__",
-        "//test:__subpackages__",
-    ],
     deps = [
         "arena",
         "arena_promise",
@@ -6124,7 +6139,6 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_client_channel",
-        "//:grpc_opencensus_plugin",
         "//:grpc_public_hdrs",
         "//:grpc_resolver",
         "//:legacy_context",
@@ -6169,7 +6183,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
-        "absl/status:statusor",
         "absl/types:variant",
     ],
     language = "c++",
