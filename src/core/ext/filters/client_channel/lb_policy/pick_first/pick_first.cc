@@ -460,10 +460,9 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
           flattened_endpoints.emplace_back(address, endpoint.args());
           if (IsPickFirstHappyEyeballsEnabled()) {
             absl::string_view scheme = get_address_family(address);
-            bool inserted =
-                address_family_indexes.emplace(scheme,
-                                               flattened_endpoints.size() - 1)
-                    .second;
+            bool inserted = address_family_indexes
+                                .emplace(scheme, flattened_endpoints.size() - 1)
+                                .second;
             if (inserted) address_family_order.push_back(scheme);
           }
         }
@@ -488,8 +487,8 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
         }
         endpoints = std::move(interleaved_endpoints);
       }
-      args.addresses = std::make_shared<EndpointAddressesListIterator>(
-          std::move(endpoints));
+      args.addresses =
+          std::make_shared<EndpointAddressesListIterator>(std::move(endpoints));
     }
   }
   // If the update contains a resolver error and we have a previous update

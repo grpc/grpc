@@ -554,8 +554,8 @@ void RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
   GPR_ASSERT(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
-  update_args.addresses = std::make_shared<SingleEndpointIterator>(
-      ring_hash_->endpoints_[index_]);
+  update_args.addresses =
+      std::make_shared<SingleEndpointIterator>(ring_hash_->endpoints_[index_]);
   update_args.args = ring_hash_->args_;
   update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,

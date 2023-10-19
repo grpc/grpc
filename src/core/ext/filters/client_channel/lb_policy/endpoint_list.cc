@@ -165,9 +165,8 @@ RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
 
 void EndpointList::Init(
     EndpointAddressesIterator* endpoints, const ChannelArgs& args,
-    absl::AnyInvocable<OrphanablePtr<Endpoint>(RefCountedPtr<EndpointList>,
-                                               EndpointAddresses,
-                                               const ChannelArgs&)>
+    absl::AnyInvocable<OrphanablePtr<Endpoint>(
+        RefCountedPtr<EndpointList>, EndpointAddresses, const ChannelArgs&)>
         create_endpoint) {
   if (endpoints == nullptr) return;
   endpoints->ForEach([&](const EndpointAddresses& endpoint) {

@@ -1859,8 +1859,7 @@ RlsLb::RlsLb(Args args) : LoadBalancingPolicy(std::move(args)), cache_(this) {
 }
 
 bool EndpointsEqual(
-    const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>>
-        endpoints1,
+    const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> endpoints1,
     const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>>
         endpoints2) {
   if (endpoints1.status() != endpoints2.status()) return false;

@@ -718,8 +718,8 @@ absl::Status OldWeightedRoundRobin::UpdateLocked(UpdateArgs args) {
             this, latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ =
-      MakeRefCounted<WeightedRoundRobinSubchannelList>(
-          this, addresses.get(), args.args);
+      MakeRefCounted<WeightedRoundRobinSubchannelList>(this, addresses.get(),
+                                                       args.args);
   latest_pending_subchannel_list_->StartWatchingLocked(args.args);
   // If the new list is empty, immediately promote it to
   // subchannel_list_ and report TRANSIENT_FAILURE.
@@ -1542,9 +1542,9 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
     (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
       ordered_addresses.insert(endpoint);
     });
-    addresses = std::make_shared<EndpointAddressesListIterator>(
-        EndpointAddressesList(ordered_addresses.begin(),
-                              ordered_addresses.end()));
+    addresses =
+        std::make_shared<EndpointAddressesListIterator>(EndpointAddressesList(
+            ordered_addresses.begin(), ordered_addresses.end()));
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO, "[WRR %p] received update with address error: %s", this,

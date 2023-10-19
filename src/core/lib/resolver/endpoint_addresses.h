@@ -156,7 +156,6 @@ class SingleEndpointIterator : public EndpointAddressesIterator {
   EndpointAddresses endpoint_;
 };
 
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_RESOLVER_ENDPOINT_ADDRESSES_H

@@ -717,8 +717,7 @@ std::string GrpcLb::Serverlist::AsText() const {
 
 // Returns addresses extracted from the serverlist.
 std::shared_ptr<EndpointAddressesIterator>
-GrpcLb::Serverlist::GetServerAddressList(
-    GrpcLbClientStats* client_stats) {
+GrpcLb::Serverlist::GetServerAddressList(GrpcLbClientStats* client_stats) {
   RefCountedPtr<GrpcLbClientStats> stats;
   if (client_stats != nullptr) stats = client_stats->Ref();
   return std::make_shared<AddressIterator>(Ref(), std::move(stats));

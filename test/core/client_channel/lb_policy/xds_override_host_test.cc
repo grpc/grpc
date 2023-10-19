@@ -104,8 +104,8 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       endpoints.push_back(MakeAddressWithHealthStatus(
           address_and_status.first, address_and_status.second));
     }
-    update.addresses = std::make_shared<EndpointAddressesListIterator>(
-        std::move(endpoints));
+    update.addresses =
+        std::make_shared<EndpointAddressesListIterator>(std::move(endpoints));
     EXPECT_EQ(ApplyUpdate(update, lb_policy()), absl::OkStatus());
   }
 

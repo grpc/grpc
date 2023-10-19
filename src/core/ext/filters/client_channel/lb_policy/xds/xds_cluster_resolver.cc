@@ -531,8 +531,8 @@ XdsClusterResolverLb::DiscoveryMechanismEntry::config() const {
 
 std::string MakeChildPolicyName(absl::string_view cluster_name,
                                 size_t child_number) {
-  return absl::StrCat("{cluster=", cluster_name, ", child_number=",
-                      child_number, "}");
+  return absl::StrCat("{cluster=", cluster_name,
+                      ", child_number=", child_number, "}");
 }
 
 std::string XdsClusterResolverLb::DiscoveryMechanismEntry::GetChildPolicyName(
@@ -787,7 +787,7 @@ class PriorityEndpointIterator : public EndpointAddressesIterator {
         : update(std::move(resource)),
           cluster_name(std::move(cluster)),
           priority_child_numbers(std::move(child_numbers)) {}
-                             
+
     std::string GetChildPolicyName(size_t priority) const {
       return MakeChildPolicyName(cluster_name,
                                  priority_child_numbers[priority]);

@@ -542,8 +542,7 @@ class RoundRobin : public LoadBalancingPolicy {
     class RoundRobinEndpoint : public Endpoint {
      public:
       RoundRobinEndpoint(RefCountedPtr<RoundRobinEndpointList> endpoint_list,
-                         EndpointAddresses addresses,
-                         const ChannelArgs& args,
+                         EndpointAddresses addresses, const ChannelArgs& args,
                          std::shared_ptr<WorkSerializer> work_serializer)
           : Endpoint(std::move(endpoint_list)) {
         Init(std::move(addresses), args, std::move(work_serializer));

@@ -184,11 +184,11 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   EndpointList(RefCountedPtr<LoadBalancingPolicy> policy, const char* tracer)
       : policy_(std::move(policy)), tracer_(tracer) {}
 
-  void Init(EndpointAddressesIterator* endpoints, const ChannelArgs& args,
-            absl::AnyInvocable<OrphanablePtr<Endpoint>(
-                RefCountedPtr<EndpointList>, EndpointAddresses,
-                const ChannelArgs&)>
-                create_endpoint);
+  void Init(
+      EndpointAddressesIterator* endpoints, const ChannelArgs& args,
+      absl::AnyInvocable<OrphanablePtr<Endpoint>(
+          RefCountedPtr<EndpointList>, EndpointAddresses, const ChannelArgs&)>
+          create_endpoint);
 
   // Templated for convenience, to provide a short-hand for down-casting
   // in the caller.

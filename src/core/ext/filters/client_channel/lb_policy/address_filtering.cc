@@ -56,8 +56,7 @@ class HierarchicalAddressIterator : public EndpointAddressesIterator {
       const override {
     RefCountedPtr<HierarchicalPathArg> remaining_path_attr;
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
-      const auto* path_arg =
-          endpoint.args().GetObject<HierarchicalPathArg>();
+      const auto* path_arg = endpoint.args().GetObject<HierarchicalPathArg>();
       if (path_arg == nullptr) return;
       const std::vector<RefCountedStringValue>& path = path_arg->path();
       auto it = path.begin();
@@ -90,8 +89,7 @@ absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
   if (!addresses.ok()) return addresses.status();
   HierarchicalAddressMap result;
   (*addresses)->ForEach([&](const EndpointAddresses& endpoint) {
-    const auto* path_arg =
-        endpoint.args().GetObject<HierarchicalPathArg>();
+    const auto* path_arg = endpoint.args().GetObject<HierarchicalPathArg>();
     if (path_arg == nullptr) return;
     const std::vector<RefCountedStringValue>& path = path_arg->path();
     auto it = path.begin();
