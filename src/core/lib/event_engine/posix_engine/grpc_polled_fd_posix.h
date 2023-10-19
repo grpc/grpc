@@ -82,8 +82,9 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
            bytes_available > 0;
   }
 
-  void ShutdownLocked(absl::Status error) override {
+  bool ShutdownLocked(absl::Status error) override {
     handle_->ShutdownHandle(error);
+    return true;
   }
 
   ares_socket_t GetWrappedAresSocketLocked() override { return as_; }

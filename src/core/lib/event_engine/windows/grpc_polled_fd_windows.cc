@@ -181,18 +181,19 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
 
   bool IsFdStillReadableLocked() override { return read_buf_has_data_; }
 
-  void ShutdownLocked(absl::Status error) override {
+  bool ShutdownLocked(absl::Status error) override {
     GPR_ASSERT(!shutdown_called_);
-    if (absl::IsCancelled(error)) {
-      GRPC_ARES_RESOLVER_TRACE_LOG("fd:|%s| ShutdownLocked", GetName());
-      shutdown_called_ = true;
-      // The socket is disconnected and closed here since this is an external
-      // cancel request, e.g. a timeout. c-ares shouldn't do anything on the
-      // socket after this point except calling close which should then destroy
-      // the GrpcPolledFdWindows object.
-      winsocket_->Shutdown(DEBUG_LOCATION,
-                           "GrpcPolledFdWindows::ShutdownLocked");
+    if (!absl::IsCancelled(error)) {
+      return false;
     }
+    GRPC_ARES_RESOLVER_TRACE_LOG("fd:|%s| ShutdownLocked", GetName());
+    shutdown_called_ = true;
+    // The socket is disconnected and closed here since this is an external
+    // cancel request, e.g. a timeout. c-ares shouldn't do anything on the
+    // socket after this point except calling close which should then destroy
+    // the GrpcPolledFdWindows object.
+    winsocket_->Shutdown(DEBUG_LOCATION, "GrpcPolledFdWindows::ShutdownLocked");
+    return true;
   }
 
   ares_socket_t GetWrappedAresSocketLocked() override {
@@ -773,7 +774,7 @@ class GrpcPolledFdWrapper : public GrpcPolledFd {
     return polled_fd_->IsFdStillReadableLocked();
   }
 
-  void ShutdownLocked(absl::Status error) override {
+  bool ShutdownLocked(absl::Status error) override {
     return polled_fd_->ShutdownLocked(error);
   }
 

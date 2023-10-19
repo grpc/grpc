@@ -48,8 +48,9 @@ class GrpcPolledFd {
   // Indicates if there is data left even after just being read from
   virtual bool IsFdStillReadableLocked() = 0;
   // Called once and only once. Must cause cancellation of any pending
-  // read/write callbacks.
-  virtual void ShutdownLocked(absl::Status error) = 0;
+  // read/write callbacks. Return true when the Shutdown is confirmed, false
+  // otherwise.
+  virtual bool ShutdownLocked(absl::Status error) = 0;
   // Get the underlying ares_socket_t that this was created from
   virtual ares_socket_t GetWrappedAresSocketLocked() = 0;
   // A unique name, for logging

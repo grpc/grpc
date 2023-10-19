@@ -422,8 +422,8 @@ void AresResolver::CheckSocketsLocked() {
     if (!fd_node->already_shutdown) {
       GRPC_ARES_RESOLVER_TRACE_LOG("resolver: %p shutdown fd: %s", this,
                                    fd_node->polled_fd->GetName());
-      fd_node->polled_fd->ShutdownLocked(absl::OkStatus());
-      fd_node->already_shutdown = true;
+      fd_node->already_shutdown =
+          fd_node->polled_fd->ShutdownLocked(absl::OkStatus());
     }
     if (!fd_node->readable_registered && !fd_node->writable_registered) {
       GRPC_ARES_RESOLVER_TRACE_LOG("resolver: %p delete fd: %s", this,
