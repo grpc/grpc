@@ -1,0 +1,27 @@
+api_actions {
+  create_call {
+    method {
+      value: "="
+    }
+    timeout: -2045050880
+  }
+}
+api_actions {
+  queue_batch {
+    operations {
+      send_close_from_client {
+      }
+    }
+  }
+}
+api_actions {
+  queue_batch {
+    operations {
+      send_close_from_client {
+      }
+    }
+  }
+}
+config_vars {
+  experiments: 72057594037927935
+}
