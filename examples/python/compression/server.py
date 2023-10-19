@@ -23,7 +23,6 @@ import logging
 import threading
 
 import grpc
-
 import helloworld_pb2
 import helloworld_pb2_grpc
 
@@ -41,7 +40,7 @@ _SERVER_HOST = "localhost"
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
     def __init__(self, no_compress_every_n):
         super(Greeter, self).__init__()
-        self._no_compress_every_n = 0
+        self._no_compress_every_n = no_compress_every_n
         self._request_counter = 0
         self._counter_lock = threading.RLock()
 
@@ -57,7 +56,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
         return suppress_compression
 
     def SayHello(self, request, context):
-        if not self._should_suppress_compression():
+        if self._should_suppress_compression():
             context.set_compression(grpc.Compression.NoCompression)
         return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
 

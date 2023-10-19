@@ -21,7 +21,6 @@ import argparse
 import logging
 
 import grpc
-
 import helloworld_pb2
 import helloworld_pb2_grpc
 
@@ -40,12 +39,13 @@ def run_client(channel_compression, call_compression, target):
         target, compression=channel_compression
     ) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
-        response = stub.SayHello(
-            helloworld_pb2.HelloRequest(name="you"),
-            compression=call_compression,
-            wait_for_ready=True,
-        )
-        print("Response: {}".format(response))
+        for _ in range(10):
+            response = stub.SayHello(
+                helloworld_pb2.HelloRequest(name="you"),
+                compression=call_compression,
+                wait_for_ready=True,
+            )
+            print("Response: {}".format(response))
 
 
 def main():
