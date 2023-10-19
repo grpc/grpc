@@ -20,14 +20,11 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H
 
 #include <grpc/support/port_platform.h>
-
+#include <grpc/slice.h>
 #include <cstdint>
 #include <string>
 
 #include "absl/types/optional.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -39,7 +36,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_keepalive_trace;
 extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
