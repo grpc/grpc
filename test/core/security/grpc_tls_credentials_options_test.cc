@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -560,6 +561,44 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest, CrlProvider) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = experimental::CreateStaticCrlProvider({});
+  ASSERT_TRUE(provider.ok());
+  options->set_crl_provider(std::move(*provider));
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  ChannelArgs new_args;
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", &new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest, CrlProviderWithServerCredentials) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
+      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
+  options->set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  auto crl_provider = experimental::CreateStaticCrlProvider({});
+  ASSERT_TRUE(crl_provider.ok());
+  options->set_crl_provider(std::move(*crl_provider));
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  ChannelArgs new_args;
+  auto connector = credentials->create_security_connector(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
 }  // namespace testing
