@@ -16,6 +16,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -32,6 +33,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -46,6 +48,8 @@
 
 namespace grpc_core {
 namespace {
+
+static Mutex* g_mu;
 
 class FakeCallTracer : public ClientCallTracer {
  public:
@@ -70,6 +74,7 @@ class FakeCallTracer : public ClientCallTracer {
     void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) override {
+      MutexLock lock(g_mu);
       transport_stream_stats_ = *transport_stream_stats;
     }
 
@@ -79,11 +84,13 @@ class FakeCallTracer : public ClientCallTracer {
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
 
     static grpc_transport_stream_stats transport_stream_stats() {
+      MutexLock lock(g_mu);
       return transport_stream_stats_;
     }
 
    private:
-    static grpc_transport_stream_stats transport_stream_stats_;
+    static grpc_transport_stream_stats transport_stream_stats_
+        ABSL_GUARDED_BY(g_mu);
   };
 
   explicit FakeCallTracer() {}
@@ -150,6 +157,7 @@ class FakeServerCallTracer : public ServerCallTracer {
       grpc_metadata_batch* /*recv_trailing_metadata*/) override {}
 
   void RecordEnd(const grpc_call_final_info* final_info) override {
+    MutexLock lock(g_mu);
     transport_stream_stats_ = final_info->stats.transport_stream_stats;
   }
 
@@ -160,11 +168,13 @@ class FakeServerCallTracer : public ServerCallTracer {
   bool IsSampled() override { return false; }
 
   static grpc_transport_stream_stats transport_stream_stats() {
+    MutexLock lock(g_mu);
     return transport_stream_stats_;
   }
 
  private:
-  static grpc_transport_stream_stats transport_stream_stats_;
+  static grpc_transport_stream_stats transport_stream_stats_
+      ABSL_GUARDED_BY(g_mu);
 };
 
 grpc_transport_stream_stats FakeServerCallTracer::transport_stream_stats_;
@@ -178,6 +188,7 @@ class FakeServerCallTracerFactory : public ServerCallTracerFactory {
 
 // This test verifies the HTTP2 stats on a stream
 CORE_END2END_TEST(Http2FullstackTest, StreamStats) {
+  g_mu = new Mutex();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterFilter(GRPC_CLIENT_CHANNEL,
                                             &FakeClientFilter::kFilter);
@@ -236,6 +247,8 @@ CORE_END2END_TEST(Http2FullstackTest, StreamStats) {
 
   delete ServerCallTracerFactory::Get(ChannelArgs());
   ServerCallTracerFactory::RegisterGlobal(nullptr);
+  delete g_mu;
+  g_mu = nullptr;
 }
 
 }  // namespace
