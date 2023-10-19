@@ -462,7 +462,19 @@ class Party : public Activity, private Wakeable {
       Construct(&factory_, std::move(promise_factory));
     }
 
-    ~PromiseParticipantImpl() {}
+    ~PromiseParticipantImpl() {
+      switch (state_.load(std::memory_order_acquire)) {
+        case State::kFactory:
+          Destruct(&factory_);
+          break;
+        case State::kPromise:
+          Destruct(&promise_);
+          break;
+        case State::kResult:
+          Destruct(&result_);
+          break;
+      }
+    }
 
     // Inside party poll: drive from factory -> promise -> result
     bool PollParticipantPromise() override {
