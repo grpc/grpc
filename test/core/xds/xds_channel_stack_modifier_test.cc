@@ -81,10 +81,9 @@ class FakeTransport final : public Transport {
   ServerTransport* server_transport() override { return nullptr; }
 
   absl::string_view GetTransportName() const override { return "fake"; }
-  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
-  void SetPollsetSet(grpc_stream* stream,
-                     grpc_pollset_set* pollset_set) override {}
-  void PerformOp(grpc_transport_op* op) override {}
+  void SetPollset(grpc_stream*, grpc_pollset*) override {}
+  void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
+  void PerformOp(grpc_transport_op*) override {}
   grpc_endpoint* GetEndpoint() override { return nullptr; }
   void Orphan() override {}
 };
