@@ -169,7 +169,7 @@
   description:
     If set, use the new gRPC promise based call code when it's appropriate
     (ie when all filters in a stack are promise based)
-  expiry: 2023/11/01
+  expiry: 2024/06/14
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
 - name: promise_based_inproc_transport
@@ -183,7 +183,7 @@
   description:
     If set, use the new gRPC promise based call code when it's appropriate
     (ie when all filters in a stack are promise based)
-  expiry: 2023/11/01
+  expiry: 2024/06/14
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
 - name: red_max_concurrent_streams
