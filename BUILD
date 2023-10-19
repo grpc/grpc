@@ -2341,7 +2341,6 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/server_call_tracer.h",
     ],
     external_deps = [
-        "absl/base",
         "absl/base:core_headers",
         "absl/base:endian",
         "absl/status",
