@@ -77,7 +77,7 @@ Only requests for certain hosts must go through the proxy. Requests to other
 servers work without the proxy. Custom logic is used to determine which hosts
 the proxy will be used for.
 
-To use the address proxy, following parameters need to be specified:
+To use the address proxy, both of the following parameters need to be specified:
 1. Address of the proxy can be specified using `GRPC_ARG_ADDRESS_HTTP_PROXY`
 channel argument or `GRPC_ADDRESS_HTTP_PROXY` environment variable. Value of
 the channel argument is preferred if both values are specified.
