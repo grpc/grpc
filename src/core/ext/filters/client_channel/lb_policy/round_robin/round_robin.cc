@@ -531,9 +531,9 @@ class RoundRobin : public LoadBalancingPolicy {
                            : nullptr) {
       Init(endpoints, args,
            [&](RefCountedPtr<RoundRobinEndpointList> endpoint_list,
-               EndpointAddresses addresses, const ChannelArgs& args) {
+               const EndpointAddresses& addresses, const ChannelArgs& args) {
              return MakeOrphanable<RoundRobinEndpoint>(
-                 std::move(endpoint_list), std::move(addresses), args,
+                 std::move(endpoint_list), addresses, args,
                  policy<RoundRobin>()->work_serializer());
            });
     }
@@ -542,10 +542,11 @@ class RoundRobin : public LoadBalancingPolicy {
     class RoundRobinEndpoint : public Endpoint {
      public:
       RoundRobinEndpoint(RefCountedPtr<RoundRobinEndpointList> endpoint_list,
-                         EndpointAddresses addresses, const ChannelArgs& args,
+                         const EndpointAddresses& addresses,
+                         const ChannelArgs& args,
                          std::shared_ptr<WorkSerializer> work_serializer)
           : Endpoint(std::move(endpoint_list)) {
-        Init(std::move(addresses), args, std::move(work_serializer));
+        Init(addresses, args, std::move(work_serializer));
       }
 
      private:

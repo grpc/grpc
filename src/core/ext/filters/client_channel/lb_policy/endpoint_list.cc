@@ -86,7 +86,7 @@ class EndpointList::Endpoint::Helper
 //
 
 void EndpointList::Endpoint::Init(
-    EndpointAddresses addresses, const ChannelArgs& args,
+    const EndpointAddresses& addresses, const ChannelArgs& args,
     std::shared_ptr<WorkSerializer> work_serializer) {
   ChannelArgs child_args =
       args.Set(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING, true)
@@ -118,8 +118,7 @@ void EndpointList::Endpoint::Init(
   GPR_ASSERT(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
-  update_args.addresses =
-      std::make_shared<SingleEndpointIterator>(std::move(addresses));
+  update_args.addresses = std::make_shared<SingleEndpointIterator>(addresses);
   update_args.args = child_args;
   update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,
@@ -165,8 +164,9 @@ RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
 
 void EndpointList::Init(
     EndpointAddressesIterator* endpoints, const ChannelArgs& args,
-    absl::AnyInvocable<OrphanablePtr<Endpoint>(
-        RefCountedPtr<EndpointList>, EndpointAddresses, const ChannelArgs&)>
+    absl::AnyInvocable<OrphanablePtr<Endpoint>(RefCountedPtr<EndpointList>,
+                                               const EndpointAddresses&,
+                                               const ChannelArgs&)>
         create_endpoint) {
   if (endpoints == nullptr) return;
   endpoints->ForEach([&](const EndpointAddresses& endpoint) {
