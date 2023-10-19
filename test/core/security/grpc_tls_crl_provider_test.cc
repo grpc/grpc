@@ -102,9 +102,8 @@ TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
 }
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
-  auto result = experimental::DirectoryReloaderCrlProvider::
-      CreateDirectoryReloaderProvider(kCrlDirectory, std::chrono::seconds(1),
-                                      nullptr);
+  auto result = experimental::CreateDirectoryReloaderProvider(
+      kCrlDirectory, std::chrono::seconds(1), nullptr);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);
 
@@ -121,9 +120,8 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
 }
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
-  auto result = experimental::DirectoryReloaderCrlProvider::
-      CreateDirectoryReloaderProvider(kCrlDirectory, std::chrono::seconds(1),
-                                      nullptr);
+  auto result = experimental::CreateDirectoryReloaderProvider(
+      kCrlDirectory, std::chrono::seconds(1), nullptr);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);
 
@@ -147,9 +145,8 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   std::string dir_path = MakeTempDir();
   std::string dir_name = TempDirNameFromPath(dir_path);
 
-  auto result = experimental::DirectoryReloaderCrlProvider::
-      CreateDirectoryReloaderProvider(dir_path, std::chrono::seconds(1),
-                                      nullptr);
+  auto result = experimental::CreateDirectoryReloaderProvider(
+      dir_path, std::chrono::seconds(1), nullptr);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);
   CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
@@ -186,9 +183,8 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   std::function<void(absl::Status)> reload_error_callback =
       [&](const absl::Status& status) { reload_errors.push_back(status); };
 
-  auto result = experimental::DirectoryReloaderCrlProvider::
-      CreateDirectoryReloaderProvider(dir_path, std::chrono::seconds(1),
-                                      reload_error_callback);
+  auto result = experimental::CreateDirectoryReloaderProvider(
+      dir_path, std::chrono::seconds(1), reload_error_callback);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);
 

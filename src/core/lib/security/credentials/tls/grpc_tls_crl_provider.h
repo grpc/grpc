@@ -79,6 +79,15 @@ class CertificateInfoImpl : public CertificateInfo {
   const std::string issuer_;
 };
 
+class DirectoryReloaderCrlProvider : public CrlProvider {
+ public:
+  static absl::StatusOr<std::shared_ptr<CrlProvider>>
+  CreateDirectoryReloaderProvider(
+      absl::string_view directory, std::chrono::seconds refresh_duration,
+      std::function<void(absl::Status)> reload_error_callback);
+  // ~DirectoryReloaderCrlProvider() override;
+};
+
 // Defining this here lets us hide implementation details (and includes) from
 // the header in include
 class DirectoryReloaderCrlProviderImpl

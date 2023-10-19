@@ -290,8 +290,7 @@ DirectoryReloaderCrlProviderImpl::~DirectoryReloaderCrlProviderImpl() {
   }
 }
 
-absl::StatusOr<std::shared_ptr<CrlProvider>>
-DirectoryReloaderCrlProvider::CreateDirectoryReloaderProvider(
+absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
     std::function<void(absl::Status)> reload_error_callback) {
   // TODO(gtcooke94) validate directory, inputs, etc

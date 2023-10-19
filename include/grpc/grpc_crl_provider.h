@@ -68,14 +68,9 @@ class CrlProvider {
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
     absl::Span<const std::string> crls);
 
-class DirectoryReloaderCrlProvider : public CrlProvider {
- public:
-  static absl::StatusOr<std::shared_ptr<CrlProvider>>
-  CreateDirectoryReloaderProvider(
-      absl::string_view directory, std::chrono::seconds refresh_duration,
-      std::function<void(absl::Status)> reload_error_callback);
-  // ~DirectoryReloaderCrlProvider() override;
-};
+absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderProvider(
+    absl::string_view directory, std::chrono::seconds refresh_duration,
+    std::function<void(absl::Status)> reload_error_callback);
 
 }  // namespace experimental
 }  // namespace grpc_core
