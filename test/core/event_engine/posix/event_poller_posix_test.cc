@@ -695,7 +695,7 @@ TEST_F(EventPollerTest, TestMultipleHandles) {
   if (g_event_poller == nullptr) {
     return;
   }
-  Worker* worker = new Worker(Scheduler(), g_event_poller, kNumHandles,
+  Worker* worker = new Worker(Scheduler(), g_event_poller.get(), kNumHandles,
                               kNumWakeupsPerHandle);
   worker->Start();
   worker->Wait();

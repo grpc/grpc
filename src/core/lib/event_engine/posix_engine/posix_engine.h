@@ -104,7 +104,8 @@ class PosixEnginePollerManager
  public:
   explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
   explicit PosixEnginePollerManager(
-      grpc_event_engine::experimental::PosixEventPoller* poller);
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+          poller);
   grpc_event_engine::experimental::PosixEventPoller* Poller() {
     return poller_.get();
   }

@@ -303,7 +303,8 @@ PosixEnginePollerManager::PosixEnginePollerManager(
       executor_(std::move(executor)),
       trigger_shutdown_called_(false) {}
 
-PosixEnginePollerManager::PosixEnginePollerManager(PosixEventPoller* poller)
+PosixEnginePollerManager::PosixEnginePollerManager(
+    std::shared_ptr<PosixEventPoller> poller)
     : poller_(poller),
       poller_state_(PollerState::kExternal),
       executor_(nullptr),
@@ -348,7 +349,7 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
       timer_manager_(executor_) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller.get());
+  poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
 #endif
 }
 
