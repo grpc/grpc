@@ -21,6 +21,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -68,7 +71,6 @@ EXPERIMENTS = {
         "on": {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
-                "rfc_max_concurrent_streams",
                 "tarpit",
             ],
             "cpp_end2end_test": [
@@ -106,6 +108,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -153,7 +158,6 @@ EXPERIMENTS = {
         "on": {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
-                "rfc_max_concurrent_streams",
                 "tarpit",
             ],
             "cpp_end2end_test": [
@@ -191,6 +195,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
@@ -248,7 +255,6 @@ EXPERIMENTS = {
         "on": {
             "bad_client_test": [
                 "block_excessive_requests_before_settings_ack",
-                "rfc_max_concurrent_streams",
                 "tarpit",
             ],
             "cpp_end2end_test": [
