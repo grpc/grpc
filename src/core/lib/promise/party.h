@@ -300,7 +300,7 @@ class Party : public Activity, private Wakeable {
     explicit Participant(absl::string_view name) : name_(name) {}
     // Poll the participant. Return true if complete.
     // Participant should take care of its own deallocation in this case.
-    virtual bool Poll() = 0;
+    virtual bool PollParticipantPromise() = 0;
 
     // Destroy the participant before finishing.
     virtual void Destroy() = 0;
@@ -419,7 +419,7 @@ class Party : public Activity, private Wakeable {
       }
     }
 
-    bool Poll() override {
+    bool PollParticipantPromise() override {
       if (!started_) {
         auto p = factory_.Make();
         Destruct(&factory_);
@@ -465,7 +465,7 @@ class Party : public Activity, private Wakeable {
     ~PromiseParticipantImpl() {}
 
     // Inside party poll: drive from factory -> promise -> result
-    bool Poll() override {
+    bool PollParticipantPromise() override {
       switch (state_.load(std::memory_order_relaxed)) {
         case State::kFactory: {
           auto p = factory_.Make();
