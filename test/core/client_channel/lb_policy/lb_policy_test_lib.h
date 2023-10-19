@@ -773,7 +773,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Span<const EndpointAddresses> endpoints,
       RefCountedPtr<LoadBalancingPolicy::Config> config) {
     LoadBalancingPolicy::UpdateArgs update;
-    update.addresses.emplace(endpoints.begin(), endpoints.end());
+    update.addresses = std::make_shared<EndpointAddressesListIterator>(
+        EndpointAddressesList(endpoints.begin(), endpoints.end()));
     update.config = std::move(config);
     return update;
   }
