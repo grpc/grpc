@@ -1212,7 +1212,9 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
 ClientChannel::ClientChannel(grpc_channel_element_args* args,
                              grpc_error_handle* error)
     : channel_args_(args->channel_args),
-      deadline_checking_enabled_(grpc_deadline_checking_enabled(channel_args_)),
+      deadline_checking_enabled_(
+          channel_args_.GetBool(GRPC_ARG_ENABLE_DEADLINE_CHECKS)
+              .value_or(!channel_args_.WantMinimalStack())),
       owning_stack_(args->channel_stack),
       client_channel_factory_(channel_args_.GetObject<ClientChannelFactory>()),
       channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),

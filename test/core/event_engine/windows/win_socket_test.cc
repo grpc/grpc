@@ -27,6 +27,7 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
@@ -38,59 +39,79 @@ using ::grpc_event_engine::experimental::ThreadPool;
 using ::grpc_event_engine::experimental::WinSocket;
 }  // namespace
 
-class WinSocketTest : public testing::Test {};
+class WinSocketTest : public testing::Test {
+ public:
+  WinSocketTest()
+      : thread_pool_(grpc_event_engine::experimental::MakeThreadPool(8)) {
+    CreateSockpair(sockpair_, IOCP::GetDefaultSocketFlags());
+    wrapped_client_socket_ =
+        std::make_unique<WinSocket>(sockpair_[0], thread_pool_.get());
+    wrapped_server_socket_ =
+        std::make_unique<WinSocket>(sockpair_[1], thread_pool_.get());
+  }
+
+  ~WinSocketTest() override {
+    wrapped_client_socket_->Shutdown();
+    wrapped_server_socket_->Shutdown();
+    thread_pool_->Quiesce();
+  }
+
+ protected:
+  std::shared_ptr<ThreadPool> thread_pool_;
+  SOCKET sockpair_[2];
+  std::unique_ptr<WinSocket> wrapped_client_socket_;
+  std::unique_ptr<WinSocket> wrapped_server_socket_;
+};
 
 TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
-  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
-  SOCKET sockpair[2];
-  CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
-  WinSocket wrapped_client_socket(sockpair[0], thread_pool.get());
-  WinSocket wrapped_server_socket(sockpair[1], thread_pool.get());
-  bool read_called = false;
-  AnyInvocableClosure on_read([&read_called]() { read_called = true; });
-  wrapped_client_socket.NotifyOnRead(&on_read);
+  grpc_core::Notification read_called;
+  AnyInvocableClosure on_read([&read_called]() { read_called.Notify(); });
+  wrapped_client_socket_->NotifyOnRead(&on_read);
   AnyInvocableClosure on_write([] { FAIL() << "No Write expected"; });
-  wrapped_client_socket.NotifyOnWrite(&on_write);
-  ASSERT_FALSE(read_called);
-  wrapped_client_socket.read_info()->SetReady();
-  absl::Time deadline = absl::Now() + absl::Seconds(10);
-  while (!read_called) {
-    absl::SleepFor(absl::Milliseconds(42));
-    if (deadline < absl::Now()) {
-      FAIL() << "Deadline exceeded";
-    }
-  }
-  ASSERT_TRUE(read_called);
-  wrapped_client_socket.Shutdown();
-  wrapped_server_socket.Shutdown();
-  thread_pool->Quiesce();
+  wrapped_client_socket_->NotifyOnWrite(&on_write);
+  wrapped_client_socket_->read_info()->SetReady();
+  read_called.WaitForNotification();
 }
 
 TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
-  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
-  SOCKET sockpair[2];
-  CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
-  WinSocket wrapped_client_socket(sockpair[0], thread_pool.get());
-  wrapped_client_socket.Shutdown();
-  bool read_called = false;
-  AnyInvocableClosure closure([&wrapped_client_socket, &read_called] {
-    ASSERT_EQ(wrapped_client_socket.read_info()->result().bytes_transferred,
+  wrapped_client_socket_->Shutdown();
+  grpc_core::Notification read_called;
+  AnyInvocableClosure closure([this, &read_called] {
+    ASSERT_EQ(wrapped_client_socket_->read_info()->result().bytes_transferred,
               0u);
-    ASSERT_EQ(wrapped_client_socket.read_info()->result().wsa_error,
+    ASSERT_EQ(wrapped_client_socket_->read_info()->result().wsa_error,
               WSAESHUTDOWN);
-    read_called = true;
+    read_called.Notify();
   });
-  wrapped_client_socket.NotifyOnRead(&closure);
-  absl::Time deadline = absl::Now() + absl::Seconds(3);
-  while (!read_called) {
-    absl::SleepFor(absl::Milliseconds(42));
-    if (deadline < absl::Now()) {
-      FAIL() << "Deadline exceeded";
-    }
-  }
-  ASSERT_TRUE(read_called);
-  closesocket(sockpair[1]);
-  thread_pool->Quiesce();
+  wrapped_client_socket_->NotifyOnRead(&closure);
+  read_called.WaitForNotification();
+}
+
+TEST_F(WinSocketTest, UnsetNotificationWorks) {
+  AnyInvocableClosure read_closure{
+      []() { grpc_core::Crash("read callback called"); }};
+  wrapped_client_socket_->NotifyOnRead(&read_closure);
+  AnyInvocableClosure write_closure{
+      []() { grpc_core::Crash("write callback called"); }};
+  wrapped_client_socket_->NotifyOnWrite(&write_closure);
+  wrapped_client_socket_->UnregisterReadCallback();
+  wrapped_client_socket_->UnregisterWriteCallback();
+  // Give this time to fail.
+  absl::SleepFor(absl::Seconds(1));
+}
+
+TEST_F(WinSocketTest, UnsetNotificationCanBeDoneRepeatedly) {
+  // This should crash if a callback is already registered.
+  AnyInvocableClosure closure{
+      []() { grpc_core::Crash("read callback 1 called"); }};
+  wrapped_client_socket_->NotifyOnRead(&closure);
+  wrapped_client_socket_->UnregisterReadCallback();
+  wrapped_client_socket_->NotifyOnRead(&closure);
+  wrapped_client_socket_->UnregisterReadCallback();
+  wrapped_client_socket_->NotifyOnRead(&closure);
+  wrapped_client_socket_->UnregisterReadCallback();
+  // Give this time to fail.
+  absl::SleepFor(absl::Seconds(1));
 }
 
 int main(int argc, char** argv) {

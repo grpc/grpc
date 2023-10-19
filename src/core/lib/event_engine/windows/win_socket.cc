@@ -93,20 +93,8 @@ void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
     thread_pool_->Run(closure);
     return;
   };
-  {
-    grpc_core::MutexLock lock(&info.ready_mu_);
-    if (!std::exchange(info.has_pending_iocp_, false)) {
-      // No overlapped results have been returned for this socket. Assert that
-      // there is no notification callback yet, set the notification callback,
-      // and return.
-      EventEngine::Closure* prev = nullptr;
-      GPR_ASSERT(std::exchange(info.closure_, closure) == nullptr);
-      return;
-    }
-  }
-  // Overlapped results are already available. Schedule the callback
-  // immediately.
-  thread_pool_->Run(closure);
+  // It is an error if any notification is already registered for this socket.
+  GPR_ASSERT(std::exchange(info.closure_, closure) == nullptr);
 }
 
 void WinSocket::NotifyOnRead(EventEngine::Closure* on_read) {
@@ -117,6 +105,14 @@ void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
   NotifyOnReady(write_info_, on_write);
 }
 
+void WinSocket::UnregisterReadCallback() {
+  GPR_ASSERT(std::exchange(read_info_.closure_, nullptr) != nullptr);
+}
+
+void WinSocket::UnregisterWriteCallback() {
+  GPR_ASSERT(std::exchange(write_info_.closure_, nullptr) != nullptr);
+}
+
 // ---- WinSocket::OpState ----
 
 WinSocket::OpState::OpState(WinSocket* win_socket) noexcept
@@ -125,16 +121,11 @@ WinSocket::OpState::OpState(WinSocket* win_socket) noexcept
 }
 
 void WinSocket::OpState::SetReady() {
-  EventEngine::Closure* closure;
-  {
-    grpc_core::MutexLock lock(&ready_mu_);
-    GPR_ASSERT(!has_pending_iocp_);
-    closure = std::exchange(closure_, nullptr);
-    if (!closure) {
-      has_pending_iocp_ = true;
-    }
-  }
-  if (closure) win_socket_->thread_pool_->Run(closure);
+  auto* closure = std::exchange(closure_, nullptr);
+  // If an IOCP event is returned for a socket, and no callback has been
+  // registered for notification, this is invalid usage.
+  GPR_ASSERT(closure != nullptr);
+  win_socket_->thread_pool_->Run(closure);
 }
 
 void WinSocket::OpState::SetError(int wsa_error) {
@@ -143,6 +134,11 @@ void WinSocket::OpState::SetError(int wsa_error) {
 
 void WinSocket::OpState::SetResult(OverlappedResult result) {
   result_ = result;
+}
+
+void WinSocket::OpState::SetErrorStatus(absl::Status error_status) {
+  result_ = OverlappedResult{/*wsa_error=*/0, /*bytes_transferred=*/0,
+                             /*error_status=*/error_status};
 }
 
 void WinSocket::OpState::GetOverlappedResult() {

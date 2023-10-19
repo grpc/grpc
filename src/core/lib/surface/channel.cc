@@ -76,7 +76,7 @@ Channel::Channel(bool is_client, bool is_promising, std::string target,
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
       allocator_(channel_args.GetObject<ResourceQuota>()
                      ->memory_quota()
-                     ->CreateMemoryOwner(target)),
+                     ->CreateMemoryOwner()),
       target_(std::move(target)),
       channel_stack_(std::move(channel_stack)) {
   // We need to make sure that grpc_shutdown() does not shut things down
@@ -175,8 +175,7 @@ const grpc_arg_pointer_vtable channelz_node_arg_vtable = {
 
 absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
     const char* target, ChannelArgs args,
-    grpc_channel_stack_type channel_stack_type,
-    grpc_transport* optional_transport) {
+    grpc_channel_stack_type channel_stack_type, Transport* optional_transport) {
   if (!args.GetString(GRPC_ARG_DEFAULT_AUTHORITY).has_value()) {
     auto ssl_override = args.GetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
     if (ssl_override.has_value()) {
@@ -223,8 +222,8 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
   }
   ChannelStackBuilderImpl builder(
       grpc_channel_stack_type_string(channel_stack_type), channel_stack_type,
-      args);
-  builder.SetTarget(target).SetTransport(optional_transport);
+      args.SetObject(optional_transport));
+  builder.SetTarget(target);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return nullptr;
   }

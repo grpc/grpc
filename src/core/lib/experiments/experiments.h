@@ -93,6 +93,8 @@ inline bool IsMemoryPressureControllerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
@@ -104,6 +106,8 @@ inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+inline bool IsRegisteredMethodsMapEnabled() { return false; }
+inline bool IsRfcMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
@@ -166,6 +170,8 @@ inline bool IsMemoryPressureControllerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
@@ -177,6 +183,8 @@ inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+inline bool IsRegisteredMethodsMapEnabled() { return false; }
+inline bool IsRfcMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
@@ -239,6 +247,8 @@ inline bool IsMemoryPressureControllerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
@@ -250,6 +260,8 @@ inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
+inline bool IsRegisteredMethodsMapEnabled() { return false; }
+inline bool IsRfcMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
@@ -297,6 +309,7 @@ enum ExperimentIds {
   kExperimentIdMemoryPressureController,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
+  kExperimentIdOverloadProtection,
   kExperimentIdPeerStateBasedFraming,
   kExperimentIdPickFirstHappyEyeballs,
   kExperimentIdPingOnRstStream,
@@ -305,6 +318,8 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedServerCall,
   kExperimentIdRedMaxConcurrentStreams,
   kExperimentIdRegisteredMethodLookupInTransport,
+  kExperimentIdRegisteredMethodsMap,
+  kExperimentIdRfcMaxConcurrentStreams,
   kExperimentIdRoundRobinDelegateToPickFirst,
   kExperimentIdRstpit,
   kExperimentIdScheduleCancellationOverWrite,
@@ -400,6 +415,10 @@ inline bool IsMonitoringExperimentEnabled() {
 inline bool IsMultipingEnabled() {
   return IsExperimentEnabled(kExperimentIdMultiping);
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() {
+  return IsExperimentEnabled(kExperimentIdOverloadProtection);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_PEER_STATE_BASED_FRAMING
 inline bool IsPeerStateBasedFramingEnabled() {
   return IsExperimentEnabled(kExperimentIdPeerStateBasedFraming);
@@ -431,6 +450,14 @@ inline bool IsRedMaxConcurrentStreamsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() {
   return IsExperimentEnabled(kExperimentIdRegisteredMethodLookupInTransport);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHODS_MAP
+inline bool IsRegisteredMethodsMapEnabled() {
+  return IsExperimentEnabled(kExperimentIdRegisteredMethodsMap);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RFC_MAX_CONCURRENT_STREAMS
+inline bool IsRfcMaxConcurrentStreamsEnabled() {
+  return IsExperimentEnabled(kExperimentIdRfcMaxConcurrentStreams);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() {
