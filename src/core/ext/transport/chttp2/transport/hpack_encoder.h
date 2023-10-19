@@ -276,8 +276,8 @@ class Compressor<MetadataTrait, SmallSetOfValuesCompressor> {
 };
 
 struct PreviousTimeout {
-  Timeout timeout;
-  uint32_t index;
+  Timeout timeout = Timeout::FromDuration(Duration::Zero());
+  uint32_t index = 0;
 };
 
 class TimeoutCompressorImpl {
@@ -285,7 +285,9 @@ class TimeoutCompressorImpl {
   void EncodeWith(absl::string_view key, Timestamp deadline, Encoder* encoder);
 
  private:
-  std::vector<PreviousTimeout> previous_timeouts_;
+  enum { kNumPreviousValues = 5 };
+  PreviousTimeout previous_timeouts_[kNumPreviousValues];
+  uint32_t next_previous_value_ = 0;
 };
 
 template <typename MetadataTrait>

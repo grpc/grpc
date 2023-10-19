@@ -475,31 +475,26 @@ void Encoder::EncodeRepeatingSliceValue(const absl::string_view& key,
 
 void TimeoutCompressorImpl::EncodeWith(absl::string_view key,
                                        Timestamp deadline, Encoder* encoder) {
-  Timeout timeout = Timeout::FromDuration(deadline - Timestamp::Now());
+  const Timeout timeout = Timeout::FromDuration(deadline - Timestamp::Now());
   auto& table = encoder->hpack_table();
-  for (auto it = previous_timeouts_.begin(); it != previous_timeouts_.end();
-       ++it) {
-    double ratio = timeout.RatioVersus(it->timeout);
+  for (size_t i = 0; i < kNumPreviousValues; i++) {
+    const auto& previous = previous_timeouts_[i];
+    if (!table.ConvertableToDynamicIndex(previous.index)) continue;
+    const double ratio = timeout.RatioVersus(previous.timeout);
     // If the timeout we're sending is shorter than a previous timeout, but
     // within 3% of it, we'll consider sending it.
-    if (ratio > -3 && ratio <= 0 &&
-        table.ConvertableToDynamicIndex(it->index)) {
-      encoder->EmitIndexed(table.DynamicIndex(it->index));
-      // Put this timeout to the front of the queue - forces common timeouts to
-      // be considered earlier.
-      std::swap(*it, *previous_timeouts_.begin());
+    if (ratio > -3 && ratio <= 0) {
+      encoder->EmitIndexed(table.DynamicIndex(previous.index));
       return;
     }
   }
-  // Clean out some expired timeouts.
-  while (!previous_timeouts_.empty() &&
-         !table.ConvertableToDynamicIndex(previous_timeouts_.back().index)) {
-    previous_timeouts_.pop_back();
-  }
   Slice encoded = timeout.Encode();
+  gpr_log(GPR_ERROR, "XX:%s", std::string(encoded.as_string_view()).c_str());
   uint32_t index = encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
       Slice::FromStaticString(key), std::move(encoded));
-  previous_timeouts_.push_back(PreviousTimeout{timeout, index});
+  uint32_t i = next_previous_value_;
+  ++next_previous_value_;
+  previous_timeouts_[i % kNumPreviousValues] = PreviousTimeout{timeout, index};
 }
 
 Encoder::Encoder(HPackCompressor* compressor, bool use_true_binary_metadata,
