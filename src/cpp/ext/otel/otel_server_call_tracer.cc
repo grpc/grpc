@@ -76,10 +76,9 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   // arguments.
   void RecordSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) override {
-    // Only add labels to outgoing metadata if labels were received from peer.
-    if (OTelPluginState().labels_injector != nullptr &&
-        injected_labels_ != nullptr) {
-      OTelPluginState().labels_injector->AddLabels(send_initial_metadata);
+    if (OTelPluginState().labels_injector != nullptr) {
+      OTelPluginState().labels_injector->AddLabels(send_initial_metadata,
+                                                   injected_labels_.get());
     }
   }
 

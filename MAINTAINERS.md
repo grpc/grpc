@@ -21,6 +21,7 @@ for general contribution guidelines.
 - [guantaol](https://github.com/guantaol), Google LLC
 - [hcaseyal](https://github.com/hcaseyal), Google LLC
 - [jtattermusch](https://github.com/jtattermusch), Google LLC
+- [kevinnilson](https://github.com/kevinnilson), Google LLC
 - [LittleCVR](https://github.com/littlecvr), Google LLC
 - [markdroth](https://github.com/markdroth), Google LLC
 - [matthewstevenson88](https://github.com/matthewstevenson88), Google LLC

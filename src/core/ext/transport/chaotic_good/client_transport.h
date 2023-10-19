@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <initializer_list>  // IWYU pragma: keep
@@ -31,6 +32,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
@@ -60,7 +62,7 @@ class ClientTransport {
   auto AddStream(CallArgs call_args) {
     // At this point, the connection is set up.
     // Start sending data frames.
-    uint64_t stream_id;
+    uint32_t stream_id;
     {
       MutexLock lock(&mu_);
       stream_id = next_stream_id_++;
@@ -71,10 +73,16 @@ class ClientTransport {
                 [stream_id, initial_frame = true,
                  client_initial_metadata =
                      std::move(call_args.client_initial_metadata),
-                 outgoing_frames = outgoing_frames_.MakeSender()](
-                    MessageHandle result) mutable {
+                 outgoing_frames = outgoing_frames_.MakeSender(),
+                 this](MessageHandle result) mutable {
                   ClientFragmentFrame frame;
-                  frame.stream_id = stream_id;
+                  // Construct frame header (flags, header_length and
+                  // trailer_length will be added in serialization).
+                  uint32_t message_length = result->payload()->Length();
+                  uint32_t message_padding = message_length % aligned_bytes;
+                  frame.frame_header = FrameHeader{
+                      FrameType::kFragment, {}, stream_id, 0, message_length,
+                      message_padding,      0};
                   frame.message = std::move(result);
                   if (initial_frame) {
                     // Send initial frame with client intial metadata.
@@ -99,6 +107,8 @@ class ClientTransport {
   MpscReceiver<ClientFrame> outgoing_frames_;
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
+  // Assigned aligned bytes from setting frame.
+  size_t aligned_bytes = 64;
   ActivityPtr writer_;
   ActivityPtr reader_;
   std::unique_ptr<PromiseEndpoint> control_endpoint_;

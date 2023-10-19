@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:22.04
+FROM ubuntu:20.04
 
-# Workaround the "tzdata hangs apt-get install during docker image build" issue for ubuntu22.04
+# Workaround the "tzdata hangs apt-get install during docker image build" issue for ubuntu20.04
 # by setting timezone to "Etc/UTC" in advance.
 RUN echo "Etc/UTC" > /etc/timezone
 
@@ -57,7 +57,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # * for sanitizers to work, we need MSAN and TSAN enabled versions of libc++
 # Check https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04/latest.txt
 # for the value of LLVM_LATEST.
-ARG LLVM_LATEST="f3d0613d852a90563a1e8704930a6e79368f106a"
+ARG LLVM_LATEST="f2b94bd7eaa83d853dc7568fac87b1f8bf4ddec6"
 RUN wget -q https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04/clang_r${LLVM_LATEST}.tar.gz -O /tmp/clang.tar.gz \
   && tar -xzf /tmp/clang.tar.gz -C /usr/local && rm /tmp/clang.tar.gz
 RUN wget -q https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04/libcxx_r${LLVM_LATEST}.tar.gz -O /tmp/libcxx.tar.gz \
