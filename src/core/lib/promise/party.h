@@ -330,6 +330,9 @@ class Party : public Activity, private Wakeable {
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
 
+  template <typename Factory>
+  auto SpawnWaitable(absl::string_view name, Factory factory);
+
   void Orphan() final { Crash("unused"); }
 
   // Activity implementation: not allowed to be overridden by derived types.
@@ -441,6 +444,12 @@ class Party : public Activity, private Wakeable {
     bool started_ = false;
   };
 
+  template <typename SuppliedFactory>
+  class PromiseParticipantImpl final
+      : public RefCounted<PromiseParticipantImpl<SuppliedFactory>,
+                          NonPolymorphicRefCount>,
+        public Participant {};
+
   // Notification that the party has finished and this instance can be deleted.
   // Derived types should arrange to call CancelRemainingParticipants during
   // this sequence.
@@ -500,6 +509,17 @@ void Party::Spawn(absl::string_view name, Factory promise_factory,
                   OnComplete on_complete) {
   BulkSpawner(this).Spawn(name, std::move(promise_factory),
                           std::move(on_complete));
+}
+
+template <typename Factory>
+auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
+  auto participant = MakeRefCounted<PromiseParticipantImpl<Factory>>(
+      name, std::move(promise_factory));
+  Participant* p = participant.Ref().release();
+  AddParticipants(&p, 1);
+  return [participant = std::move(participant)]() mutable {
+    return participant->Poll();
+  };
 }
 
 }  // namespace grpc_core

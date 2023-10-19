@@ -55,6 +55,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -631,6 +632,55 @@ class FilterStackTransport {
   ~FilterStackTransport() = default;
 };
 
+class CallPart : public RefCounted<CallPart> {
+ public:
+  auto OnClientMessage(MessageHandle message) {
+    return party_->SpawnWaitable(
+        "client_message", [this, message = std::move(message)]() mutable {
+          return client_to_server_messages_.Push(std::move(message));
+        });
+  };
+  auto OnClientClose() {
+    return party_->SpawnWaitable("client_close", [this]() {
+      return client_to_server_messages_.Close();
+    });
+  }
+
+  auto GetServerInitialMetadata() {
+    return party_->SpawnWaitable("server_initial_metadata", [this]() {
+      return server_initial_metadata_.Next();
+    });
+  }
+  auto NextServerMessage() {
+    return party_->SpawnWaitable("server_message", [this]() {
+      return server_to_client_messages_.Next();
+    });
+  }
+  auto GetServerTrailingMetadata() {
+    return party_->SpawnWaitable("server_trailing_metadata", [this]() {
+      return server_trailing_metadata_.Next();
+    });
+  }
+
+ private:
+  Party* const party_;
+  PipeSender<MessageHandle> client_to_server_messages_;
+  PipeReceiver<ServerMetadataHandle> server_initial_metadata_;
+  PipeReceiver<ServerMetadataHandle> server_to_client_messages_;
+  PipeReceiver<ServerMetadataHandle> server_trailing_metadata_;
+};
+
+// Adapter to turn CallPart into a Reader for ForEach
+class ServerMessageReader {
+ public:
+  explicit ServerMessageReader(RefCountedPtr<CallPart> call)
+      : call_(std::move(call)) {}
+  auto Next() { return call_->NextServerMessage(); }
+
+ private:
+  RefCountedPtr<CallPart> call_;
+};
+
 class ClientTransport {
  public:
   // Create a promise to execute one client call.
@@ -643,10 +693,12 @@ class ClientTransport {
 
 class ServerTransport {
  public:
+  using AcceptFn =
+      absl::AnyInvocable<RefCountedPtr<CallPart>(ClientMetadataHandle) const>;
+
   // Register the factory function for the filter stack part of a call
   // promise.
-  void SetCallPromiseFactory(
-      absl::AnyInvocable<ArenaPromise<ServerMetadataHandle>(CallArgs) const>);
+  void SetAccept(AcceptFn accept);
 
  protected:
   ~ServerTransport() = default;

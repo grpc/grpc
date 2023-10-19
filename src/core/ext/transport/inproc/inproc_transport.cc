@@ -16,15 +16,95 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
+#include <cstddef>
+#include <memory>
+
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/party.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
 namespace {
+
+class InprocTransport : public Transport {
+ public:
+  FilterStackTransport* filter_stack_transport() final { return nullptr; }
+  absl::string_view GetTransportName() const final { return "inproc"; }
+  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) final {}
+  void SetPollsetSet(grpc_stream* stream, grpc_pollset_set* pollset_set) final {
+  }
+  grpc_endpoint* GetEndpoint() final { return nullptr; }
+  void PerformOp(grpc_transport_op* op) final;
+};
+
+class InprocClientTransport;
+class InprocServerTransport;
+
+class InprocClientTransport final : public InprocTransport,
+                                    public ClientTransport {
+ public:
+  ClientTransport* client_transport() override { return this; }
+  ServerTransport* server_transport() override { return nullptr; }
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args) override;
+
+ private:
+  InprocServerTransport* server();
+};
+
+class InprocServerTransport final : public InprocTransport,
+                                    public ServerTransport {
+ public:
+  ClientTransport* client_transport() override { return nullptr; }
+  ServerTransport* server_transport() override { return this; }
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs client_call_args);
+
+ private:
+  AcceptFn accept_fn_;
+};
+
+ArenaPromise<ServerMetadataHandle> InprocClientTransport::MakeCallPromise(
+    CallArgs call_args) {
+  return server()->MakeCallPromise(std::move(call_args));
+}
+
+ArenaPromise<ServerMetadataHandle> InprocServerTransport::MakeCallPromise(
+    CallArgs client_call_args) {
+  RefCountedPtr<CallPart> server_call =
+      accept_fn_(std::move(client_call_args.client_initial_metadata));
+  Party* client_party = static_cast<Party*>(Activity::current());
+  client_party->Spawn(
+      "client_to_server",
+      Seq(ForEach(std::move(*client_call_args.client_to_server_messages),
+                  [server_call](MessageHandle message) {
+                    return server_call->OnClientMessage(std::move(message));
+                  }),
+          [server_call] { return server_call->OnClientClose(); }),
+      []() {});
+  return Seq(
+      server_call->GetServerInitialMetadata(),
+      [server_initial_metadata_pipe = client_call_args.server_initial_metadata](
+          ServerMetadataHandle server_initial_metadata) {
+        return server_initial_metadata_pipe->Push(
+            std::move(server_initial_metadata));
+      },
+      ForEach(ServerMessageReader(server_call),
+              [server_to_client_message_pipe =
+                   client_call_args.server_to_client_messages](
+                  MessageHandle message) {
+                return server_to_client_message_pipe->Push(std::move(message));
+              }),
+      [server_call] { return server_call->GetServerTrailingMetadata(); });
+}
+
 bool UsePromiseBasedTransport() {
   if (!IsPromiseBasedInprocTransportEnabled()) return false;
   if (!IsPromiseBasedClientCallEnabled()) {
