@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <limits.h>
-
 #include <functional>
 #include <string>
 #include <utility>
@@ -31,7 +29,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -182,12 +179,8 @@ class FakeServerCallTracerFactory : public ServerCallTracerFactory {
 // This test verifies the HTTP2 stats on a stream
 CORE_END2END_TEST(Http2FullstackTest, StreamStats) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterStage(
-        GRPC_CLIENT_CHANNEL, /*priority=*/INT_MAX,
-        [](ChannelStackBuilder* builder) {
-          builder->PrependFilter(&FakeClientFilter::kFilter);
-          return true;
-        });
+    builder->channel_init()->RegisterFilter(GRPC_CLIENT_CHANNEL,
+                                            &FakeClientFilter::kFilter);
   });
   ServerCallTracerFactory::RegisterGlobal(new FakeServerCallTracerFactory);
 
