@@ -24,6 +24,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 
@@ -38,6 +39,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
 
@@ -478,6 +480,7 @@ class Party : public Activity, private Wakeable {
             Destruct(&promise_);
             Construct(&result_, std::move(*r));
             state_.store(State::kResult, std::memory_order_release);
+            waiter_.Wakeup();
             this->Unref();
             return true;
           }

@@ -420,6 +420,27 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "inter_activity_latch_test",
+    srcs = ["inter_activity_latch_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_wakeup_scheduler",
+        "//src/core:inter_activity_latch",
+        "//src/core:notification",
+        "//src/core:seq",
+    ],
+)
+
+grpc_cc_test(
     name = "mpsc_test",
     srcs = ["mpsc_test.cc"],
     external_deps = [
@@ -563,6 +584,7 @@ grpc_cc_test(
         "//src/core:context",
         "//src/core:default_event_engine",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:inter_activity_latch",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:poll",

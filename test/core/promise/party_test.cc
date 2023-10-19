@@ -36,7 +36,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/sleep.h"
@@ -303,7 +303,7 @@ TEST_F(PartyTest, CanSpawnWaitableAndRun) {
   auto party1 = MakeRefCounted<TestParty>();
   auto party2 = MakeRefCounted<TestParty>();
   Notification n;
-  Latch<Empty> done;
+  InterActivityLatch<void> done;
   // Spawn a task on party1 that will wait for a task on party2.
   // The party2 task will wait on the latch `done`.
   party1->Spawn(
@@ -317,7 +317,7 @@ TEST_F(PartyTest, CanSpawnWaitableAndRun) {
   party1->Spawn(
       "party1_notify_latch",
       [&done]() {
-        done.Set(Empty{});
+        done.Set();
         return Empty{};
       },
       [](Empty) {});
