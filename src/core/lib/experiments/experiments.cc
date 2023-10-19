@@ -83,6 +83,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -235,6 +239,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
@@ -358,6 +364,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -510,6 +520,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
@@ -633,6 +645,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -785,6 +801,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
