@@ -330,6 +330,9 @@ class Party : public Activity, private Wakeable {
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
 
+  template <typename Factory>
+  auto SpawnWaitable(absl::string_view name, Factory factory);
+
   void Orphan() final { Crash("unused"); }
 
   // Activity implementation: not allowed to be overridden by derived types.
@@ -441,6 +444,76 @@ class Party : public Activity, private Wakeable {
     bool started_ = false;
   };
 
+  template <typename SuppliedFactory>
+  class PromiseParticipantImpl final
+      : public RefCounted<PromiseParticipantImpl<SuppliedFactory>,
+                          NonPolymorphicRefCount>,
+        public Participant {
+    using Factory = promise_detail::OncePromiseFactory<void, SuppliedFactory>;
+    using Promise = typename Factory::Promise;
+    using Result = typename Promise::Result;
+
+   public:
+    PromiseParticipantImpl(absl::string_view name,
+                           SuppliedFactory promise_factory)
+        : Participant(name) {
+      Construct(&factory_, std::move(promise_factory));
+    }
+
+    ~PromiseParticipantImpl() {}
+
+    // Inside party poll: drive from factory -> promise -> result
+    bool Poll() override {
+      switch (state_.load(std::memory_order_relaxed)) {
+        case State::kFactory: {
+          auto p = factory_.Make();
+          Destruct(&factory_);
+          Construct(&promise_, std::move(p));
+          state_.store(State::kPromise, std::memory_order_relaxed);
+        }
+          ABSL_FALLTHROUGH_INTENDED;
+        case State::kPromise: {
+          auto p = promise_();
+          if (auto* r = p.value_if_ready()) {
+            Destruct(&promise_);
+            Construct(&result_, std::move(*r));
+            state_.store(State::kResult, std::memory_order_release);
+            this->Unref();
+            return true;
+          }
+          return false;
+        }
+        case State::kResult:
+          Crash(
+              "unreachable: promises should not be repolled after completion");
+      }
+    }
+
+    // Outside party poll: check whether the spawning party has completed this
+    // promise.
+    ::grpc_core::Poll<Result> PollCompletion() {
+      switch (state_.load(std::memory_order_acquire)) {
+        case State::kFactory:
+        case State::kPromise:
+          return Pending{};
+        case State::kResult:
+          return std::move(result_);
+      }
+    }
+
+    void Destroy() override { this->Unref(); }
+
+   private:
+    enum class State : uint8_t { kFactory, kPromise, kResult };
+    union {
+      GPR_NO_UNIQUE_ADDRESS Factory factory_;
+      GPR_NO_UNIQUE_ADDRESS Promise promise_;
+      GPR_NO_UNIQUE_ADDRESS Result result_;
+    };
+    Waker waiter_{Activity::current()->MakeOwningWaker()};
+    std::atomic<State> state_{State::kFactory};
+  };
+
   // Notification that the party has finished and this instance can be deleted.
   // Derived types should arrange to call CancelRemainingParticipants during
   // this sequence.
@@ -500,6 +573,17 @@ void Party::Spawn(absl::string_view name, Factory promise_factory,
                   OnComplete on_complete) {
   BulkSpawner(this).Spawn(name, std::move(promise_factory),
                           std::move(on_complete));
+}
+
+template <typename Factory>
+auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
+  auto participant = MakeRefCounted<PromiseParticipantImpl<Factory>>(
+      name, std::move(promise_factory));
+  Participant* p = participant->Ref().release();
+  AddParticipants(&p, 1);
+  return [participant = std::move(participant)]() mutable {
+    return participant->PollCompletion();
+  };
 }
 
 }  // namespace grpc_core
