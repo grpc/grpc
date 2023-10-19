@@ -153,6 +153,13 @@
   owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: overload_protection
+  description:
+    If chttp2 has more streams than it can handle open, send RST_STREAM immediately
+    on new streams appearing.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: [flow_control_test]
 - name: separate_ping_from_keepalive
   description:
     Keep a different keepalive timeout (resolution is seeing data after sending a ping)

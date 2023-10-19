@@ -88,6 +88,10 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_separate_ping_from_keepalive =
     "Keep a different keepalive timeout (resolution is seeing data after "
     "sending a ping) from a ping timeout (resolution is getting a ping ack "
@@ -208,6 +212,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
      additional_constraints_separate_ping_from_keepalive, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
@@ -321,6 +327,10 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_separate_ping_from_keepalive =
     "Keep a different keepalive timeout (resolution is seeing data after "
     "sending a ping) from a ping timeout (resolution is getting a ping ack "
@@ -441,6 +451,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
      additional_constraints_separate_ping_from_keepalive, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
@@ -554,6 +566,10 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_separate_ping_from_keepalive =
     "Keep a different keepalive timeout (resolution is seeing data after "
     "sending a ping) from a ping timeout (resolution is getting a ping ack "
@@ -674,6 +690,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
      additional_constraints_separate_ping_from_keepalive, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,

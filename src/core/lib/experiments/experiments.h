@@ -77,6 +77,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
 inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -133,6 +135,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
 inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -189,6 +193,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
 inline bool IsSeparatePingFromKeepaliveEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -246,6 +252,7 @@ enum ExperimentIds {
   kExperimentIdServerPrivacy,
   kExperimentIdKeepaliveFix,
   kExperimentIdKeepaliveServerFix,
+  kExperimentIdOverloadProtection,
   kExperimentIdSeparatePingFromKeepalive,
   kExperimentIdWorkSerializerDispatch,
   kExperimentIdLazierStreamUpdates,
@@ -342,6 +349,10 @@ inline bool IsKeepaliveFixEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_SERVER_FIX
 inline bool IsKeepaliveServerFixEnabled() {
   return IsExperimentEnabled(kExperimentIdKeepaliveServerFix);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
+inline bool IsOverloadProtectionEnabled() {
+  return IsExperimentEnabled(kExperimentIdOverloadProtection);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
 inline bool IsSeparatePingFromKeepaliveEnabled() {

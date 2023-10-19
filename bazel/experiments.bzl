@@ -80,6 +80,7 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],
@@ -159,6 +160,7 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],
@@ -248,6 +250,7 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],
