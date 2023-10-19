@@ -49,7 +49,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   ~GrpcPolledFdFactoryWindows() override = default;
 
   void Initialize(grpc_core::Mutex* mutex, EventEngine* event_engine) override;
-  GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override;
+  std::unique_ptr<GrpcPolledFd> NewGrpcPolledFdLocked(
+      ares_socket_t as) override;
   void ConfigureAresChannelLocked(ares_channel channel) override;
 
  private:

@@ -696,7 +696,7 @@ class CustomSockFuncs {
       GRPC_ARES_RESOLVER_TRACE_LOG(
           "WSASocket failed with params af:%d type:%d protocol:%d", af, type,
           protocol);
-      return s;
+      return INVALID_SOCKET;
     }
     if (type == SOCK_STREAM) {
       absl::Status error = PrepareSocket(s);
@@ -753,6 +753,40 @@ class CustomSockFuncs {
   }
 };
 
+// Adapter to hold the ownership of GrpcPolledFdWindows internally.
+class GrpcPolledFdWrapper : public GrpcPolledFd {
+ public:
+  explicit GrpcPolledFdWrapper(GrpcPolledFdWindows* polled_fd)
+      : polled_fd_(polled_fd) {}
+
+  void RegisterForOnReadableLocked(
+      absl::AnyInvocable<void(absl::Status)> read_closure) override {
+    polled_fd_->RegisterForOnReadableLocked(std::move(read_closure));
+  }
+
+  void RegisterForOnWriteableLocked(
+      absl::AnyInvocable<void(absl::Status)> write_closure) override {
+    polled_fd_->RegisterForOnWriteableLocked(std::move(write_closure));
+  }
+
+  bool IsFdStillReadableLocked() override {
+    return polled_fd_->IsFdStillReadableLocked();
+  }
+
+  void ShutdownLocked(absl::Status error) override {
+    return polled_fd_->ShutdownLocked(error);
+  }
+
+  ares_socket_t GetWrappedAresSocketLocked() override {
+    return polled_fd_->GetWrappedAresSocketLocked();
+  }
+
+  const char* GetName() const override { return polled_fd_->GetName(); }
+
+ private:
+  GrpcPolledFdWindows* polled_fd_;
+};
+
 GrpcPolledFdFactoryWindows::GrpcPolledFdFactoryWindows(IOCP* iocp)
     : iocp_(iocp) {}
 
@@ -762,11 +796,11 @@ void GrpcPolledFdFactoryWindows::Initialize(grpc_core::Mutex* mutex,
   event_engine_ = event_engine;
 }
 
-GrpcPolledFd* GrpcPolledFdFactoryWindows::NewGrpcPolledFdLocked(
+std::unique_ptr<GrpcPolledFd> GrpcPolledFdFactoryWindows::NewGrpcPolledFdLocked(
     ares_socket_t as) {
   auto it = sockets_.find(as);
   GPR_ASSERT(it != sockets_.end());
-  return it->second.get();
+  return std::make_unique<GrpcPolledFdWrapper>(it->second.get());
 }
 
 void GrpcPolledFdFactoryWindows::ConfigureAresChannelLocked(

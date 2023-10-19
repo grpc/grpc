@@ -87,14 +87,10 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
   // close the socket (possibly through ares_destroy).
   struct FdNode {
     FdNode() = default;
-    FdNode(ares_socket_t as, GrpcPolledFd* pf) : as(as), polled_fd(pf) {}
+    FdNode(ares_socket_t as, std::unique_ptr<GrpcPolledFd> pf)
+        : as(as), polled_fd(std::move(pf)) {}
     ares_socket_t as;
-#ifdef GPR_WINDOWS
-    // On Windows, GrpcPolledFd is owned by the GrpcPolledFdFactory.
-    GrpcPolledFd* polled_fd;
-#else
     std::unique_ptr<GrpcPolledFd> polled_fd;
-#endif  // GPR_WINDOWS
     // true if the readable closure has been registered
     bool readable_registered = false;
     // true if the writable closure has been registered
