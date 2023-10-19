@@ -99,11 +99,13 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
                                                                   "HEALTHY"}) {
     LoadBalancingPolicy::UpdateArgs update;
     update.config = MakeXdsOverrideHostConfig(override_host_status);
-    update.addresses.emplace();
+    EndpointAddressesList endpoints;
     for (auto address_and_status : addresses_and_statuses) {
-      update.addresses->push_back(MakeAddressWithHealthStatus(
+      endpoints.push_back(MakeAddressWithHealthStatus(
           address_and_status.first, address_and_status.second));
     }
+    update.addresses = std::make_shared<EndpointAddressesListIterator>(
+        std::move(endpoints));
     EXPECT_EQ(ApplyUpdate(update, lb_policy()), absl::OkStatus());
   }
 
