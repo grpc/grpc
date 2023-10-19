@@ -234,7 +234,7 @@ then
   # through setup.py, but we can optimize it with "bdist_wheel" command, which
   # skips the wheel building step.
 
-  # Build grpcio_reflection source distribution
+  # Build xds_protos source distribution
   ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/build.py
   ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/setup.py \
       sdist bdist_wheel install

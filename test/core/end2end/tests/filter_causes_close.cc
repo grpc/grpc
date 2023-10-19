@@ -28,7 +28,6 @@
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -117,11 +116,7 @@ const grpc_channel_filter test_filter = {
 
 CORE_END2END_TEST(CoreEnd2endTest, FilterCausesClose) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterStage(
-        GRPC_SERVER_CHANNEL, 0, [](ChannelStackBuilder* builder) {
-          builder->PrependFilter(&test_filter);
-          return true;
-        });
+    builder->channel_init()->RegisterFilter(GRPC_SERVER_CHANNEL, &test_filter);
   });
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;

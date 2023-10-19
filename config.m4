@@ -505,6 +505,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_stack_builder_impl.cc \
+    src/core/lib/channel/channel_stack_trace.cc \
     src/core/lib/channel/channel_trace.cc \
     src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
@@ -770,6 +771,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/credentials/tls/tls_utils.cc \
     src/core/lib/security/credentials/xds/xds_credentials.cc \

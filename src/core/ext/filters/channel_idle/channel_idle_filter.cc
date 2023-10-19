@@ -31,7 +31,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -51,7 +50,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -300,25 +298,17 @@ const grpc_channel_filter MaxAgeFilter::kFilter =
     MakePromiseBasedFilter<MaxAgeFilter, FilterEndpoint::kServer>("max_age");
 
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto channel_args = builder->channel_args();
-        if (!channel_args.WantMinimalStack() &&
-            GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
-          builder->PrependFilter(&ClientIdleFilter::kFilter);
-        }
-        return true;
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_CHANNEL, &ClientIdleFilter::kFilter)
+      .ExcludeFromMinimalStack()
+      .If([](const ChannelArgs& channel_args) {
+        return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
-  builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto channel_args = builder->channel_args();
-        if (!channel_args.WantMinimalStack() &&
-            MaxAgeFilter::Config::FromChannelArgs(channel_args).enable()) {
-          builder->PrependFilter(&MaxAgeFilter::kFilter);
-        }
-        return true;
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &MaxAgeFilter::kFilter)
+      .ExcludeFromMinimalStack()
+      .If([](const ChannelArgs& channel_args) {
+        return MaxAgeFilter::Config::FromChannelArgs(channel_args).enable();
       });
 }
 

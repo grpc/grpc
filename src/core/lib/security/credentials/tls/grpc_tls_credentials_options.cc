@@ -22,6 +22,7 @@
 
 #include <memory>
 
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -129,4 +130,11 @@ void grpc_tls_credentials_options_set_send_client_ca_list(
     return;
   }
   options->set_send_client_ca_list(send_client_ca_list);
+}
+
+void grpc_tls_credentials_options_set_crl_provider(
+    grpc_tls_credentials_options* options,
+    std::shared_ptr<grpc_core::experimental::CrlProvider> provider) {
+  GPR_ASSERT(options != nullptr);
+  options->set_crl_provider(std::move(provider));
 }
