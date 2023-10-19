@@ -24,8 +24,8 @@ import threading
 
 import grpc
 
-from examples.protos import helloworld_pb2
-from examples.protos import helloworld_pb2_grpc
+import helloworld_pb2
+import helloworld_pb2_grpc
 
 _DESCRIPTION = "A server capable of compression."
 _COMPRESSION_OPTIONS = {
@@ -57,8 +57,8 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
         return suppress_compression
 
     def SayHello(self, request, context):
-        if self._should_suppress_compression():
-            context.set_response_compression(grpc.Compression.NoCompression)
+        if not self._should_suppress_compression():
+            context.set_compression(grpc.Compression.NoCompression)
         return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
 
 
