@@ -650,7 +650,17 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                    t->stream_map.size() + t->extra_streams >=
                    t->settings[GRPC_ACKED_SETTINGS]
                               [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])) {
-      return GRPC_ERROR_CREATE("Max stream count exceeded");
+      if (grpc_core::IsRfcMaxConcurrentStreamsEnabled()) {
+        ++t->num_pending_induced_frames;
+        grpc_slice_buffer_add(
+            &t->qbuf,
+            grpc_chttp2_rst_stream_create(t->incoming_stream_id,
+                                          GRPC_HTTP2_REFUSED_STREAM, nullptr));
+        grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
+        return init_header_skip_frame_parser(t, priority_type, is_eoh);
+      } else {
+        return GRPC_ERROR_CREATE("Max stream count exceeded");
+      }
     } else if (GPR_UNLIKELY(
                    grpc_core::IsRedMaxConcurrentStreamsEnabled() &&
                    t->stream_map.size() >=

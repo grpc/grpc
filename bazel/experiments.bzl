@@ -21,6 +21,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -105,6 +108,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -189,6 +195,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "bad_client_test": [
+                "rfc_max_concurrent_streams",
+            ],
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],

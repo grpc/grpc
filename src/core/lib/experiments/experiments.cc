@@ -117,6 +117,11 @@ const char* const additional_constraints_registered_method_lookup_in_transport =
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
+const char* const description_rfc_max_concurrent_streams =
+    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
+const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -250,6 +255,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_registered_method_lookup_in_transport, true, true},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, false, true},
+    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
+     additional_constraints_rfc_max_concurrent_streams, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -385,6 +392,11 @@ const char* const additional_constraints_registered_method_lookup_in_transport =
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
+const char* const description_rfc_max_concurrent_streams =
+    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
+const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -518,6 +530,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_registered_method_lookup_in_transport, true, true},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, false, true},
+    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
+     additional_constraints_rfc_max_concurrent_streams, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -653,6 +667,11 @@ const char* const additional_constraints_registered_method_lookup_in_transport =
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
+const char* const description_rfc_max_concurrent_streams =
+    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
+const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -786,6 +805,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_registered_method_lookup_in_transport, true, true},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, false, true},
+    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
+     additional_constraints_rfc_max_concurrent_streams, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
