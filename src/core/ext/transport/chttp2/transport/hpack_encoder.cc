@@ -489,7 +489,6 @@ void TimeoutCompressorImpl::EncodeWith(absl::string_view key,
     }
   }
   Slice encoded = timeout.Encode();
-  gpr_log(GPR_ERROR, "XX:%s", std::string(encoded.as_string_view()).c_str());
   uint32_t index = encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
       Slice::FromStaticString(key), std::move(encoded));
   uint32_t i = next_previous_value_;
