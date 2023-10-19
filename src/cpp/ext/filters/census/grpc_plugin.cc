@@ -20,8 +20,6 @@
 
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 
-#include <limits.h>
-
 #include <atomic>
 
 #include "absl/base/attributes.h"
@@ -32,8 +30,8 @@
 #include <grpcpp/opencensus.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/ext/filters/logging/logging_filter.h"
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
@@ -47,13 +45,10 @@ void RegisterOpenCensusPlugin() {
       new grpc::internal::OpenCensusServerCallTracerFactory);
   grpc_core::CoreConfiguration::RegisterBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
-        builder->channel_init()->RegisterStage(
-            GRPC_CLIENT_CHANNEL, /*priority=*/INT_MAX,
-            [](grpc_core::ChannelStackBuilder* builder) {
-              builder->PrependFilter(
-                  &grpc::internal::OpenCensusClientFilter::kFilter);
-              return true;
-            });
+        builder->channel_init()
+            ->RegisterFilter(GRPC_CLIENT_CHANNEL,
+                             &grpc::internal::OpenCensusClientFilter::kFilter)
+            .Before({&grpc_core::ClientLoggingFilter::kFilter});
       });
 
   // Access measures to ensure they are initialized. Otherwise, creating a view

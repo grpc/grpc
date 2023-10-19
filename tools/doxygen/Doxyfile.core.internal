@@ -1818,6 +1818,8 @@ src/core/lib/channel/channel_stack_builder.cc \
 src/core/lib/channel/channel_stack_builder.h \
 src/core/lib/channel/channel_stack_builder_impl.cc \
 src/core/lib/channel/channel_stack_builder_impl.h \
+src/core/lib/channel/channel_stack_trace.cc \
+src/core/lib/channel/channel_stack_trace.h \
 src/core/lib/channel/channel_trace.cc \
 src/core/lib/channel/channel_trace.h \
 src/core/lib/channel/channelz.cc \
@@ -2505,7 +2507,6 @@ src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.cc \
 src/core/lib/transport/transport.h \
 src/core/lib/transport/transport_fwd.h \
-src/core/lib/transport/transport_impl.h \
 src/core/lib/transport/transport_op_string.cc \
 src/core/lib/uri/uri_parser.cc \
 src/core/lib/uri/uri_parser.h \

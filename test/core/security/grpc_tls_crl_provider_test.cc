@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
 #include <dirent.h>
@@ -33,16 +31,19 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_crl_provider.h>
 
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
-const char* kCrlPath = "test/core/tsi/test_creds/crl_data/crls/ab06acdd.r0";
+const char* kCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const absl::string_view kCrlIssuer =
     "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca";
 const char* kIntermediateCrlPath =

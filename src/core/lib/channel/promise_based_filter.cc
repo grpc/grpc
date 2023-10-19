@@ -1314,10 +1314,13 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
 }
 
 ClientCallData::~ClientCallData() {
+  ScopedActivity scoped_activity(this);
   GPR_ASSERT(poll_ctx_ == nullptr);
   if (recv_initial_metadata_ != nullptr) {
     recv_initial_metadata_->~RecvInitialMetadata();
   }
+  initial_metadata_outstanding_token_ =
+      ClientInitialMetadataOutstandingToken::Empty();
 }
 
 std::string ClientCallData::DebugTag() const {

@@ -51,8 +51,7 @@ class StressTest {
     std::random_device g;
     std::uniform_int_distribution<size_t> dist(0, num_quotas - 1);
     for (size_t i = 0; i < num_allocators; ++i) {
-      allocators_.emplace_back(quotas_[dist(g)].CreateMemoryOwner(
-          absl::StrCat("allocator[", i, "]")));
+      allocators_.emplace_back(quotas_[dist(g)].CreateMemoryOwner());
     }
   }
 

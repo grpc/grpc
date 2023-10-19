@@ -66,6 +66,10 @@ RUN git config --global protocol.file.allow always
 RUN mkdir /var/local/jenkins
 
 
+# Python test coverage requires libsqlite3, and it have
+# to be installed before Python.
+RUN apt-get update && apt-get install -y libsqlite3-dev
+
 # 3.9 is the default python3 version on debian11
 RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip
 

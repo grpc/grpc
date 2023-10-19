@@ -32,7 +32,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/transport/transport.h"
 #include "test/core/util/mock_endpoint.h"
 #include "test/core/util/test_config.h"
 
@@ -64,7 +63,7 @@ TEST_F(ConfigurationTest, ClientKeepaliveDefaults) {
   EXPECT_EQ(t->keepalive_timeout, Duration::Infinity());
   EXPECT_EQ(t->keepalive_permit_without_calls, false);
   EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 2);
-  grpc_transport_destroy(&t->base);
+  t->Orphan();
 }
 
 TEST_F(ConfigurationTest, ClientKeepaliveExplicitArgs) {
@@ -79,7 +78,7 @@ TEST_F(ConfigurationTest, ClientKeepaliveExplicitArgs) {
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
   EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 3);
-  grpc_transport_destroy(&t->base);
+  t->Orphan();
 }
 
 TEST_F(ConfigurationTest, ServerKeepaliveDefaults) {
@@ -94,7 +93,7 @@ TEST_F(ConfigurationTest, ServerKeepaliveDefaults) {
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Minutes(5));
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 2);
-  grpc_transport_destroy(&t->base);
+  t->Orphan();
 }
 
 TEST_F(ConfigurationTest, ServerKeepaliveExplicitArgs) {
@@ -116,7 +115,7 @@ TEST_F(ConfigurationTest, ServerKeepaliveExplicitArgs) {
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Seconds(20));
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 0);
-  grpc_transport_destroy(&t->base);
+  t->Orphan();
 }
 
 // This test modifies the defaults of the client side settings, so it would
@@ -139,7 +138,7 @@ TEST_F(ConfigurationTest, ModifyClientDefaults) {
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
   EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 3);
-  grpc_transport_destroy(&t->base);
+  t->Orphan();
 }
 
 // This test modifies the defaults of the client side settings, so it would
@@ -168,7 +167,7 @@ TEST_F(ConfigurationTest, ModifyServerDefaults) {
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Seconds(20));
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 0);
-  grpc_transport_destroy(&t->base);
+  t->Orphan();
 }
 
 }  // namespace
