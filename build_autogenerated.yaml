@@ -6970,6 +6970,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/client_fork_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   - grpc++_test_config

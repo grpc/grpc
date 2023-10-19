@@ -165,7 +165,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   // constructor directly. Instead use the MakeTestOnlyPosixEventEngine static
   // method. Its expected to be used only in tests.
   explicit PosixEventEngine(
-      grpc_event_engine::experimental::PosixEventPoller* poller);
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+          poller);
   PosixEventEngine();
 #else   // GRPC_POSIX_SOCKET_TCP
   PosixEventEngine();
@@ -217,7 +218,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   // EventEngine will also not attempt to shutdown the poller since it does not
   // own it.
   static std::shared_ptr<PosixEventEngine> MakeTestOnlyPosixEventEngine(
-      grpc_event_engine::experimental::PosixEventPoller* test_only_poller) {
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+          test_only_poller) {
     return std::make_shared<PosixEventEngine>(test_only_poller);
   }
 #endif  // GRPC_POSIX_SOCKET_TCP

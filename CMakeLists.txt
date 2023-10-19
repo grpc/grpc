@@ -9163,8 +9163,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
     test/cpp/end2end/client_fork_test.cc
-    third_party/googletest/googletest/src/gtest-all.cc
-    third_party/googletest/googlemock/src/gmock-all.cc
   )
   target_compile_features(client_fork_test PUBLIC cxx_std_14)
   target_include_directories(client_fork_test
@@ -9187,10 +9185,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(client_fork_test
-    ${_gRPC_BASELIB_LIBRARIES}
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    gtest
     grpc++
     grpc_test_util
     grpc++_test_config

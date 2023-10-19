@@ -71,8 +71,8 @@
 #include "test/core/util/port.h"
 
 static gpr_mu g_mu;
-static grpc_event_engine::experimental::PosixEventPoller* g_event_poller =
-    nullptr;
+static std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+    g_event_poller = nullptr;
 
 // buffer size used to send and receive data.
 // 1024 is the minimal value to set TCP send and receive buffer.

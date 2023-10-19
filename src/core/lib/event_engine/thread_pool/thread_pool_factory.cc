@@ -16,9 +16,12 @@
 #include <stddef.h>
 
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include <grpc/support/cpu.h>
 
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/lib/gpr/useful.h"
