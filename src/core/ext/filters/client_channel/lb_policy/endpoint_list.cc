@@ -117,26 +117,9 @@ void EndpointList::Endpoint::Init(
               {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
   GPR_ASSERT(config.ok());
   // Update child policy.
-  class EndpointIterator
-      : public LoadBalancingPolicy::EndpointAddressesIterator {
-   public:
-    explicit EndpointIterator(const EndpointAddresses& addresses)
-        : addresses_(addresses) {};
-
-    absl::optional<EndpointAddresses> Next() override {
-      if (done_) return absl::nullopt;
-      done_ = true;
-      return addresses_;
-    }
-
-   private:
-    const EndpointAddresses& addresses_;
-    bool done_ = false;
-  };
   LoadBalancingPolicy::UpdateArgs update_args;
-  update_args.addresses = [addresses = std::move(addresses)]() {
-    return EndpointIterator(addresses);
-  };
+  update_args.addresses =
+      std::make_shared<SingleEndpointIterator>(std::move(addresses));
   update_args.args = child_args;
   update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,
@@ -181,16 +164,16 @@ RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
 //
 
 void EndpointList::Init(
-    EndpointAddressesIterator endpoints, const ChannelArgs& args,
+    EndpointAddressesIterator* endpoints, const ChannelArgs& args,
     absl::AnyInvocable<OrphanablePtr<Endpoint>(RefCountedPtr<EndpointList>,
                                                EndpointAddresses,
                                                const ChannelArgs&)>
         create_endpoint) {
-  while ((auto addresses = endpoints.Next()) != absl::nullopt) {
+  if (endpoints == nullptr) return;
+  endpoints->ForEach([&](const EndpointAddresses& endpoint) {
     endpoints_.push_back(
-        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), std::move(*addresses),
-                        args));
-  }
+        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args));
+  });
 }
 
 void EndpointList::ResetBackoffLocked() {

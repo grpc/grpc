@@ -53,13 +53,13 @@ namespace grpc_core {
 class MyEndpointList : public EndpointList {
  public:
   MyEndpointList(RefCountedPtr<MyLbPolicy> lb_policy,
-                 EndpointAddressesIterator endpoints,
+                 EndpointAddressesIterator* endpoints,
                  const ChannelArgs& args)
       : EndpointList(std::move(lb_policy),
                      GRPC_TRACE_FLAG_ENABLED(grpc_my_tracer)
                          ? "MyEndpointList"
                          : nullptr) {
-    Init(std::move(endpoints), args,
+    Init(endpoints, args,
          [&](RefCountedPtr<MyEndpointList> endpoint_list,
              EndpointAddresses addresses, const ChannelArgs& args) {
            return MakeOrphanable<MyEndpoint>(
@@ -184,7 +184,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   EndpointList(RefCountedPtr<LoadBalancingPolicy> policy, const char* tracer)
       : policy_(std::move(policy)), tracer_(tracer) {}
 
-  void Init(EndpointAddressesIterator endpoints, const ChannelArgs& args,
+  void Init(EndpointAddressesIterator* endpoints, const ChannelArgs& args,
             absl::AnyInvocable<OrphanablePtr<Endpoint>(
                 RefCountedPtr<EndpointList>, EndpointAddresses,
                 const ChannelArgs&)>

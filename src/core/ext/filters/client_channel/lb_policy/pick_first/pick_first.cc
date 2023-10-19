@@ -202,7 +202,8 @@ class PickFirst : public LoadBalancingPolicy {
     };
 
     SubchannelList(RefCountedPtr<PickFirst> policy,
-                   EndpointAddressesList addresses, const ChannelArgs& args);
+                   EndpointAddressesIterator* addresses,
+                   const ChannelArgs& args);
 
     ~SubchannelList() override;
 
@@ -386,9 +387,9 @@ void PickFirst::ResetBackoffLocked() {
 
 void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // Create a subchannel list from latest_update_args_.
-  EndpointAddressesList addresses;
+  EndpointAddressesIterator* addresses = nullptr;
   if (latest_update_args_.addresses.ok()) {
-    addresses = *latest_update_args_.addresses;
+    addresses = latest_update_args_.addresses->get();
   }
   // Replace latest_pending_subchannel_list_.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) &&
@@ -398,7 +399,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
             latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<SubchannelList>(
-      Ref(), std::move(addresses), latest_update_args_.args);
+      Ref(), addresses, latest_update_args_.args);
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE and request re-resolution.
   if (latest_pending_subchannel_list_->size() == 0) {
@@ -427,9 +428,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
 absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     if (args.addresses.ok()) {
-      gpr_log(GPR_INFO,
-              "Pick First %p received update with %" PRIuPTR " addresses", this,
-              args.addresses->size());
+      gpr_log(GPR_INFO, "Pick First %p received update", this);
     } else {
       gpr_log(GPR_INFO, "Pick First %p received update with address error: %s",
               this, args.addresses.status().ToString().c_str());
@@ -439,13 +438,18 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   absl::Status status;
   if (!args.addresses.ok()) {
     status = args.addresses.status();
-  } else if (args.addresses->empty()) {
-    status = absl::UnavailableError("address list must not be empty");
   } else {
+    EndpointAddressesList endpoints;
+    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
+      endpoints.push_back(endpoint);
+    });
+    if (endpoints.empty()) {
+      status = absl::UnavailableError("address list must not be empty");
+    }
     // Shuffle the list if needed.
     auto config = static_cast<PickFirstConfig*>(args.config.get());
     if (config->shuffle_addresses()) {
-      absl::c_shuffle(*args.addresses, bit_gen_);
+      absl::c_shuffle(endpoints, bit_gen_);
     }
     // Flatten the list so that we have one address per endpoint.
     // While we're iterating, also determine the desired address family
@@ -457,10 +461,10 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     };
     std::vector<absl::string_view> address_family_order;
     std::map<absl::string_view, size_t> address_family_indexes;
-    EndpointAddressesList endpoints;
-    for (const auto& endpoint : *args.addresses) {
+    EndpointAddressesList flattened_endpoints;
+    for (const auto& endpoint : endpoints) {
       for (const auto& address : endpoint.addresses()) {
-        endpoints.emplace_back(address, endpoint.args());
+        flattened_endpoints.emplace_back(address, endpoint.args());
         if (IsPickFirstHappyEyeballsEnabled()) {
           absl::string_view scheme = get_address_family(address);
           bool inserted =
@@ -470,6 +474,7 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
         }
       }
     }
+    endpoints = std::move(flattened_endpoints);
     // Interleave addresses as per RFC-8305 section 4.
     if (IsPickFirstHappyEyeballsEnabled()) {
       EndpointAddressesList interleaved_endpoints;
@@ -487,10 +492,10 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
         interleaved_endpoints.emplace_back(std::move(endpoints[next_index]));
         next_index++;
       }
-      args.addresses = std::move(interleaved_endpoints);
-    } else {
-      args.addresses = std::move(endpoints);
+      endpoints = std::move(interleaved_endpoints);
     }
+    args.addresses = std::make_shared<EndpointAddressesListIterator>(
+        std::move(endpoints));
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
@@ -990,7 +995,7 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
 //
 
 PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
-                                          EndpointAddressesList addresses,
+                                          EndpointAddressesIterator* addresses,
                                           const ChannelArgs& args)
     : InternallyRefCounted<SubchannelList>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) ? "SubchannelList"
@@ -1000,14 +1005,12 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
                 .Remove(
                     GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-    gpr_log(GPR_INFO,
-            "[PF %p] Creating subchannel list %p for %" PRIuPTR
-            " subchannels - channel args: %s",
-            policy_.get(), this, addresses.size(), args_.ToString().c_str());
+    gpr_log(GPR_INFO, "[PF %p] Creating subchannel list %p - channel args: %s",
+            policy_.get(), this, args_.ToString().c_str());
   }
-  subchannels_.reserve(addresses.size());
+  if (addresses == nullptr) return;
   // Create a subchannel for each address.
-  for (const EndpointAddresses& address : addresses) {
+  addresses->ForEach([&](const EndpointAddresses& address) {
     GPR_ASSERT(address.addresses().size() == 1);
     RefCountedPtr<SubchannelInterface> subchannel =
         policy_->channel_control_helper()->CreateSubchannel(
@@ -1019,7 +1022,7 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
                 "[PF %p] could not create subchannel for address %s, ignoring",
                 policy_.get(), address.ToString().c_str());
       }
-      continue;
+      return;
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
       gpr_log(GPR_INFO,
@@ -1029,7 +1032,7 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
               address.ToString().c_str());
     }
     subchannels_.emplace_back(this, std::move(subchannel));
-  }
+  });
 }
 
 PickFirst::SubchannelList::~SubchannelList() {

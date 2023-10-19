@@ -43,32 +43,65 @@ int HierarchicalPathArg::ChannelArgsCompare(const HierarchicalPathArg* a,
   return 0;
 }
 
+namespace {
+
+class HierarchicalAddressIterator : public EndpointAddressesIterator {
+ public:
+  HierarchicalAddressIterator(
+      std::shared_ptr<EndpointAddressesIterator> parent_it,
+      RefCountedStringValue child_name)
+      : parent_it_(std::move(parent_it)), child_name_(std::move(child_name)) {}
+
+  void ForEach(absl::AnyInvocable<void(const EndpointAddresses&)> callback)
+      const override {
+    RefCountedPtr<HierarchicalPathArg> remaining_path_attr;
+    parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
+      const auto* path_arg =
+          endpoint.args().GetObject<HierarchicalPathArg>();
+      if (path_arg == nullptr) return;
+      const std::vector<RefCountedStringValue>& path = path_arg->path();
+      auto it = path.begin();
+      if (it == path.end()) return;
+      if (*it != child_name_) return;
+      ChannelArgs args = endpoint.args();
+      ++it;
+      if (it != path.end()) {
+        std::vector<RefCountedStringValue> remaining_path(it, path.end());
+        if (remaining_path_attr == nullptr ||
+            remaining_path_attr->path() != remaining_path) {
+          remaining_path_attr =
+              MakeRefCounted<HierarchicalPathArg>(std::move(remaining_path));
+        }
+        args = args.SetObject(remaining_path_attr);
+      }
+      callback(EndpointAddresses(endpoint.addresses(), args));
+    });
+  }
+
+ private:
+  std::shared_ptr<EndpointAddressesIterator> parent_it_;
+  RefCountedStringValue child_name_;
+};
+
+}  // namespace
+
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
-    const absl::StatusOr<EndpointAddressesList>& addresses) {
+    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses) {
   if (!addresses.ok()) return addresses.status();
   HierarchicalAddressMap result;
-  RefCountedPtr<HierarchicalPathArg> remaining_path_attr;
-  for (const EndpointAddresses& endpoint_addresses : *addresses) {
+  (*addresses)->ForEach([&](const EndpointAddresses& endpoint) {
     const auto* path_arg =
-        endpoint_addresses.args().GetObject<HierarchicalPathArg>();
-    if (path_arg == nullptr) continue;
+        endpoint.args().GetObject<HierarchicalPathArg>();
+    if (path_arg == nullptr) return;
     const std::vector<RefCountedStringValue>& path = path_arg->path();
     auto it = path.begin();
-    if (it == path.end()) continue;
-    EndpointAddressesList& target_list = result[*it];
-    ChannelArgs args = endpoint_addresses.args();
-    ++it;
-    if (it != path.end()) {
-      std::vector<RefCountedStringValue> remaining_path(it, path.end());
-      if (remaining_path_attr == nullptr ||
-          remaining_path_attr->path() != remaining_path) {
-        remaining_path_attr =
-            MakeRefCounted<HierarchicalPathArg>(std::move(remaining_path));
-      }
-      args = args.SetObject(remaining_path_attr);
+    if (it == path.end()) return;
+    auto& target_list = result[*it];
+    if (target_list == nullptr) {
+      target_list =
+          std::make_shared<HierarchicalAddressIterator>(*addresses, *it);
     }
-    target_list.emplace_back(endpoint_addresses.addresses(), args);
-  }
+  });
   return result;
 }
 

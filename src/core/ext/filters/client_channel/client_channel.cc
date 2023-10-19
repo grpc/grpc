@@ -1600,10 +1600,8 @@ absl::Status ClientChannel::CreateOrUpdateLbPolicyLocked(
   if (!result.addresses.ok()) {
     update_args.addresses = result.addresses.status();
   } else {
-    update_args.addresses = [addresses = std::move(*result.addresses)]() {
-      return std::make_unique<
-          LoadBalancingPolicy::EndpointAddressesListIterator>(addresses);
-    };
+    update_args.addresses = std::make_shared<EndpointAddressesListIterator>(
+        std::move(*result.addresses));
   }
   update_args.config = std::move(lb_policy_config);
   update_args.resolution_note = std::move(result.resolution_note);

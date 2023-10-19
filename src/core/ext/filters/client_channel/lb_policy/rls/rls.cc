@@ -707,7 +707,7 @@ class RlsLb : public LoadBalancingPolicy {
   OrphanablePtr<RlsChannel> rls_channel_ ABSL_GUARDED_BY(mu_);
 
   // Accessed only from within WorkSerializer.
-  absl::StatusOr<EndpointAddressesList> addresses_;
+  absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses_;
   ChannelArgs channel_args_;
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
@@ -1858,6 +1858,28 @@ RlsLb::RlsLb(Args args) : LoadBalancingPolicy(std::move(args)), cache_(this) {
   }
 }
 
+bool EndpointsEqual(
+    const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>>
+        endpoints1,
+    const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>>
+        endpoints2) {
+  if (endpoints1.status() != endpoints2.status()) return false;
+  if (endpoints1.ok()) {
+    std::vector<EndpointAddresses> e1_list;
+    (*endpoints1)->ForEach([&](const EndpointAddresses& endpoint) {
+      e1_list.push_back(endpoint);
+    });
+    size_t i = 0;
+    bool different = false;
+    (*endpoints2)->ForEach([&](const EndpointAddresses& endpoint) {
+      if (endpoint != e1_list[i++]) different = true;
+    });
+    if (different) return false;
+    if (i != e1_list.size()) return false;
+  }
+  return true;
+}
+
 absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
@@ -1875,7 +1897,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   // Swap out addresses.
   // If the new address list is an error and we have an existing address list,
   // stick with the existing addresses.
-  absl::StatusOr<EndpointAddressesList> old_addresses;
+  absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> old_addresses;
   if (args.addresses.ok()) {
     old_addresses = std::move(addresses_);
     addresses_ = std::move(args.addresses);
@@ -1888,7 +1910,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   bool update_child_policies =
       old_config == nullptr ||
       old_config->child_policy_config() != config_->child_policy_config() ||
-      old_addresses != addresses_ || args.args != channel_args_;
+      !EndpointsEqual(old_addresses, addresses_) || args.args != channel_args_;
   // If default target changes, swap out child policy.
   bool created_default_child = false;
   if (old_config == nullptr ||

@@ -208,7 +208,7 @@ class SubchannelList : public DualRefCounted<SubchannelListType> {
 
  protected:
   SubchannelList(LoadBalancingPolicy* policy, const char* tracer,
-                 ServerAddressList addresses,
+                 EndpointAddressesIterator* addresses,
                  LoadBalancingPolicy::ChannelControlHelper* helper,
                  const ChannelArgs& args);
 
@@ -365,19 +365,18 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     LoadBalancingPolicy* policy, const char* tracer,
-    ServerAddressList addresses,
+    EndpointAddressesIterator* addresses,
     LoadBalancingPolicy::ChannelControlHelper* helper, const ChannelArgs& args)
     : DualRefCounted<SubchannelListType>(tracer),
       policy_(policy),
       tracer_(tracer) {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
-    gpr_log(GPR_INFO,
-            "[%s %p] Creating subchannel list %p for %" PRIuPTR " subchannels",
-            tracer_, policy, this, addresses.size());
+    gpr_log(GPR_INFO, "[%s %p] Creating subchannel list %p", tracer_, policy,
+            this);
   }
-  subchannels_.reserve(addresses.size());
+  if (addresses == nullptr) return;
   // Create a subchannel for each address.
-  for (ServerAddress address : addresses) {
+  addresses->ForEach([&](const EndpointAddresses& address) {
     RefCountedPtr<SubchannelInterface> subchannel =
         helper->CreateSubchannel(address.address(), address.args(), args);
     if (subchannel == nullptr) {
@@ -387,7 +386,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
                 "[%s %p] could not create subchannel for address %s, ignoring",
                 tracer_, policy_, address.ToString().c_str());
       }
-      continue;
+      return;
     }
     if (GPR_UNLIKELY(tracer_ != nullptr)) {
       gpr_log(GPR_INFO,
@@ -398,7 +397,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     }
     subchannels_.emplace_back();
     subchannels_.back().Init(this, std::move(address), std::move(subchannel));
-  }
+  });
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>

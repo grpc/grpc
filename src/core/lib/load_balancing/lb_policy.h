@@ -342,42 +342,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual absl::string_view name() const = 0;
   };
 
-  class EndpointAddressesIterator {
-   public:
-    virtual ~EndpointAddressesIterator() = default;
-
-    // Returns nullopt when at the end of the list.
-    virtual absl::optional<EndpointAddresses> Next() = 0;
-
-    virtual bool Empty() const = 0;
-  };
-
-  class EndpointAddressesListIterator : public EndpointAddressesIterator {
-   public:
-    explicit EndpointAddressesListIterator(
-        const EndpointAddressesList& endpoints)
-        : endpoints_(endpoints), it_(endpoints_.begin()) {}
-
-    absl::optional<EndpointAddresses> Next() override {
-      if (it_ == endpoints_.end()) return absl::nullopt;
-      return *it_++;
-    }
-
-    bool Empty() const override { return endpoints_.empty(); }
-
-   private:
-    const EndpointAddressesList& endpoints_;
-    EndpointAddressesList::iterator it_;
-  };
-
   /// Data passed to the UpdateLocked() method when new addresses and
   /// config are available.
   struct UpdateArgs {
     /// A list of endpoints, each with one or more address, or an error
     /// indicating a failure to obtain the list of addresses.
-    absl::StatusOr<
-        absl::AnyInvocable<std::unique_ptr<EndpointAddressesIterator>()>>
-        addresses;
+    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses;
     /// The LB policy config.
     RefCountedPtr<Config> config;
     /// A human-readable note providing context about the name resolution that
