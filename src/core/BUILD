@@ -5955,6 +5955,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "1999",
         "arena",
         "channel_args",
         "channel_args_preconditioning",
@@ -5962,6 +5963,7 @@ grpc_cc_library(
         "closure",
         "error",
         "experiments",
+        "for_each",
         "iomgr_fwd",
         "slice",
         "slice_buffer",
