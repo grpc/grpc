@@ -58,9 +58,8 @@ struct grpc_binder_transport final : public grpc_core::Transport,
   absl::string_view GetTransportName() const override { return "binder"; }
   void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
                   const void* server_data, grpc_core::Arena* arena) override;
-  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
-  void SetPollsetSet(grpc_stream* stream,
-                     grpc_pollset_set* pollset_set) override {}
+  void SetPollset(grpc_stream*, grpc_pollset*) override {}
+  void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override;
   grpc_endpoint* GetEndpoint() override;
   size_t SizeOfStream() const override;
