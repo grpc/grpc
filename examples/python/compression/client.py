@@ -21,9 +21,10 @@ import argparse
 import logging
 
 import grpc
-
 import helloworld_pb2
 import helloworld_pb2_grpc
+
+import sys; sys.stderr.write(f"sys.path at client: {sys.path}\n"); sys.stderr.flush()
 
 _DESCRIPTION = "A client capable of compression."
 _COMPRESSION_OPTIONS = {
