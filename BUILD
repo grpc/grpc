@@ -4078,7 +4078,6 @@ grpc_cc_library(
         "//src/core:stats_data",
         "//src/core:status_helper",
         "//src/core:time",
-        "//src/core:transport_fwd",
         "//src/core:useful",
         "//src/core:write_size_policy",
     ],
