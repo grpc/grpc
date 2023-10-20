@@ -33,6 +33,14 @@ class StatusFlag {
 
 inline bool IsStatusOk(StatusFlag flag) { return flag.ok(); }
 
+template <>
+struct StatusCastImpl<absl::Status, StatusFlag> {
+ public:
+  static absl::Status Cast(StatusFlag flag) {
+    return flag.ok() ? absl::OkStatus() : absl::CancelledError();
+  }
+};
+
 }  // namespace grpc_core
 
 #endif

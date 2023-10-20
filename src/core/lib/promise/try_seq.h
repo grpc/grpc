@@ -102,7 +102,7 @@ struct TrySeqTraitsWithSfinae<
   static bool IsOk(const T& status) { return IsStatusOk(status); }
   template <typename R>
   static R ReturnValue(T&& status) {
-    return R(std::move(status));
+    return StatusCast<R>(std::move(status));
   }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {

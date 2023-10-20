@@ -639,7 +639,8 @@ class CallPart : public RefCounted<CallPart> {
   auto OnClientMessage(MessageHandle message) {
     return party_->SpawnWaitable(
         "client_message", [this, message = std::move(message)]() mutable {
-          return client_to_server_messages_.Push(std::move(message));
+          return Map(client_to_server_messages_.Push(std::move(message)),
+                     [](bool ok) { return StatusFlag(ok); });
         });
   };
   auto OnClientClose() {
@@ -650,9 +651,16 @@ class CallPart : public RefCounted<CallPart> {
   }
 
   auto GetServerInitialMetadata() {
-    return party_->SpawnWaitable("server_initial_metadata", [this]() {
-      return server_initial_metadata_.Next();
-    });
+    return Map(party_->SpawnWaitable(
+                   "server_initial_metadata",
+                   [this]() { return server_initial_metadata_.Next(); }),
+               [](NextResult<ServerMetadataHandle> initial_metadata)
+                   -> absl::StatusOr<ServerMetadataHandle> {
+                 if (initial_metadata.has_value()) {
+                   return std::move(initial_metadata.value());
+                 }
+                 return absl::CancelledError();
+               });
   }
   auto NextServerMessage() {
     return party_->SpawnWaitable("server_message", [this]() {
@@ -660,16 +668,23 @@ class CallPart : public RefCounted<CallPart> {
     });
   }
   auto GetServerTrailingMetadata() {
-    return party_->SpawnWaitable("server_trailing_metadata", [this]() {
-      return server_trailing_metadata_.Next();
-    });
+    return Map(party_->SpawnWaitable(
+                   "server_trailing_metadata",
+                   [this]() { return server_trailing_metadata_.Next(); }),
+               [](NextResult<ServerMetadataHandle> initial_metadata)
+                   -> ServerMetadataHandle {
+                 if (initial_metadata.has_value()) {
+                   return std::move(initial_metadata.value());
+                 }
+                 return ServerMetadataFromStatus(absl::CancelledError());
+               });
   }
 
  private:
   Party* const party_;
   PipeSender<MessageHandle> client_to_server_messages_;
   PipeReceiver<ServerMetadataHandle> server_initial_metadata_;
-  PipeReceiver<ServerMetadataHandle> server_to_client_messages_;
+  PipeReceiver<MessageHandle> server_to_client_messages_;
   PipeReceiver<ServerMetadataHandle> server_trailing_metadata_;
 };
 

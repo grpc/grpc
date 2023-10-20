@@ -26,7 +26,9 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -90,26 +92,32 @@ ArenaPromise<ServerMetadataHandle> InprocServerTransport::MakeCallPromise(
       "client_to_server",
       Seq(ForEach(std::move(*client_call_args.client_to_server_messages),
                   [server_call](MessageHandle message) {
-                    return Map(server_call->OnClientMessage(std::move(message)),
-                               [](bool ok) { return StatusFlag(ok); });
+                    return server_call->OnClientMessage(std::move(message));
                   }),
           [server_call] { return server_call->OnClientClose(); }),
       [](Empty) {});
   return Seq(
-      server_call->GetServerInitialMetadata(),
-      [server_initial_metadata_pipe = client_call_args.server_initial_metadata](
-          ServerMetadataHandle server_initial_metadata) {
-        return server_initial_metadata_pipe->Push(
-            std::move(server_initial_metadata));
-      },
-      ForEach(ServerMessageReader(server_call),
-              [server_to_client_message_pipe =
-                   client_call_args.server_to_client_messages](
-                  MessageHandle message) {
-                return Map(
-                    server_to_client_message_pipe->Push(std::move(message)),
-                    [](bool ok) { return StatusFlag(ok); });
-              }),
+      TrySeq(
+          server_call->GetServerInitialMetadata(),
+          [server_initial_metadata_pipe =
+               client_call_args.server_initial_metadata](
+              ServerMetadataHandle server_initial_metadata) {
+            return Map(server_initial_metadata_pipe->Push(
+                           std::move(server_initial_metadata)),
+                       [](bool ok) { return StatusFlag(ok); });
+          },
+          [server_call, server_to_client_message_pipe =
+                            client_call_args.server_to_client_messages] {
+            return ForEach(
+                ServerMessageReader(server_call),
+                [server_to_client_message_pipe](MessageHandle message) {
+                  return Map(
+                      server_to_client_message_pipe->Push(std::move(message)),
+                      [](bool ok) {
+                        return ok ? absl::OkStatus() : absl::CancelledError();
+                      });
+                });
+          }),
       [server_call] { return server_call->GetServerTrailingMetadata(); });
 }
 
