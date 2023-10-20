@@ -1482,6 +1482,7 @@ let package = Package(
         "src/core/lib/promise/seq.h",
         "src/core/lib/promise/sleep.cc",
         "src/core/lib/promise/sleep.h",
+        "src/core/lib/promise/status_flag.h",
         "src/core/lib/promise/trace.cc",
         "src/core/lib/promise/trace.h",
         "src/core/lib/promise/try_seq.h",

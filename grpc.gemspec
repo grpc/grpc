@@ -1488,6 +1488,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/seq.h )
   s.files += %w( src/core/lib/promise/sleep.cc )
   s.files += %w( src/core/lib/promise/sleep.h )
+  s.files += %w( src/core/lib/promise/status_flag.h )
   s.files += %w( src/core/lib/promise/trace.cc )
   s.files += %w( src/core/lib/promise/trace.h )
   s.files += %w( src/core/lib/promise/try_seq.h )
