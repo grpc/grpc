@@ -33,5 +33,8 @@ grpc_fuzz_test(
         "fuzztest_main",
         "gtest",
     ],
-    deps = ["//:hpack_encoder", "//:hpack_parser"],
+    deps = [
+        "//:hpack_encoder",
+        "//:hpack_parser",
+    ],
 )

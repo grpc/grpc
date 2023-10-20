@@ -14,16 +14,25 @@
 
 // Test to verify Fuzztest integration
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <vector>
+#include <memory>
+#include <optional>
 
 #include "absl/random/random.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
-
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
