@@ -66,7 +66,7 @@ _INTERESTING = {
     "channel/xds-client": (
         rb"^xds client channel memory usage: ([0-9\.]+) bytes per channel",
         float,
-    )
+    ),
 }
 
 _SCENARIOS = {
