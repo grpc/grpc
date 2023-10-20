@@ -418,6 +418,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "status_flag",
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/status_flag.h",
+    ],
+    deps = ["promise_status"],
+)
+
+grpc_cc_library(
     name = "1999",
     srcs = [
         "lib/promise/party.cc",
@@ -966,6 +975,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_trace",
+        "status_flag",
         "//:gpr",
         "//:gpr_platform",
     ],
@@ -5987,6 +5997,7 @@ grpc_cc_library(
         "iomgr_fwd",
         "slice",
         "slice_buffer",
+        "status_flag",
         "status_helper",
         "time",
         "//:channel_arg_names",

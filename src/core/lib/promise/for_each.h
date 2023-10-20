@@ -31,6 +31,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
@@ -46,6 +47,11 @@ struct Done;
 template <>
 struct Done<absl::Status> {
   static absl::Status Make() { return absl::OkStatus(); }
+};
+
+template <>
+struct Done<StatusFlag> {
+  static StatusFlag Make() { return StatusFlag(true); }
 };
 
 template <typename Reader, typename Action>

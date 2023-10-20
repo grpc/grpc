@@ -26,6 +26,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -55,6 +56,8 @@ class InprocClientTransport final : public InprocTransport,
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args) override;
 
+  void Orphan() override;
+
  private:
   InprocServerTransport* server();
 };
@@ -66,6 +69,8 @@ class InprocServerTransport final : public InprocTransport,
   ServerTransport* server_transport() override { return this; }
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs client_call_args);
+
+  void Orphan() override;
 
  private:
   AcceptFn accept_fn_;
@@ -85,10 +90,11 @@ ArenaPromise<ServerMetadataHandle> InprocServerTransport::MakeCallPromise(
       "client_to_server",
       Seq(ForEach(std::move(*client_call_args.client_to_server_messages),
                   [server_call](MessageHandle message) {
-                    return server_call->OnClientMessage(std::move(message));
+                    return Map(server_call->OnClientMessage(std::move(message)),
+                               [](bool ok) { return StatusFlag(ok); });
                   }),
           [server_call] { return server_call->OnClientClose(); }),
-      []() {});
+      [](Empty) {});
   return Seq(
       server_call->GetServerInitialMetadata(),
       [server_initial_metadata_pipe = client_call_args.server_initial_metadata](
@@ -100,7 +106,9 @@ ArenaPromise<ServerMetadataHandle> InprocServerTransport::MakeCallPromise(
               [server_to_client_message_pipe =
                    client_call_args.server_to_client_messages](
                   MessageHandle message) {
-                return server_to_client_message_pipe->Push(std::move(message));
+                return Map(
+                    server_to_client_message_pipe->Push(std::move(message)),
+                    [](bool ok) { return StatusFlag(ok); });
               }),
       [server_call] { return server_call->GetServerTrailingMetadata(); });
 }

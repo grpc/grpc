@@ -634,6 +634,8 @@ class FilterStackTransport {
 
 class CallPart : public RefCounted<CallPart> {
  public:
+  CallPart();
+
   auto OnClientMessage(MessageHandle message) {
     return party_->SpawnWaitable(
         "client_message", [this, message = std::move(message)]() mutable {
@@ -642,7 +644,8 @@ class CallPart : public RefCounted<CallPart> {
   };
   auto OnClientClose() {
     return party_->SpawnWaitable("client_close", [this]() {
-      return client_to_server_messages_.Close();
+      client_to_server_messages_.Close();
+      return Empty{};
     });
   }
 
