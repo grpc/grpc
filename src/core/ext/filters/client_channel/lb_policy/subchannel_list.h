@@ -42,6 +42,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -396,7 +397,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
               address.ToString().c_str());
     }
     subchannels_.emplace_back();
-    subchannels_.back().Init(this, std::move(address), std::move(subchannel));
+    subchannels_.back().Init(this, address, std::move(subchannel));
   });
 }
 

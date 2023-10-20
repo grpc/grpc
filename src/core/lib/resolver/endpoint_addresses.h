@@ -23,7 +23,10 @@
 
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
+
+#include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
