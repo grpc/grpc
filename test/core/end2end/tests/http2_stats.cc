@@ -49,7 +49,7 @@
 namespace grpc_core {
 namespace {
 
-static Mutex* g_mu;
+Mutex* g_mu;
 
 class FakeCallTracer : public ClientCallTracer {
  public:
@@ -139,7 +139,7 @@ const grpc_channel_filter FakeClientFilter::kFilter =
 
 class FakeServerCallTracer : public ServerCallTracer {
  public:
-  ~FakeServerCallTracer() override { gpr_log(GPR_ERROR, "here"); }
+  ~FakeServerCallTracer() override {}
   void RecordSendInitialMetadata(
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
   void RecordSendTrailingMetadata(
@@ -187,7 +187,7 @@ class FakeServerCallTracerFactory : public ServerCallTracerFactory {
 };
 
 // This test verifies the HTTP2 stats on a stream
-CORE_END2END_TEST(Http2FullstackTest, StreamStats) {
+CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   g_mu = new Mutex();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterFilter(GRPC_CLIENT_CHANNEL,
