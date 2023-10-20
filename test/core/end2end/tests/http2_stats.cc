@@ -59,7 +59,7 @@ class FakeCallTracer : public ClientCallTracer {
     std::string SpanId() override { return ""; }
     bool IsSampled() override { return false; }
     void RecordSendInitialMetadata(
-        grpc_metadata_batch* send_initial_metadata) override {}
+        grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const SliceBuffer& /*send_message*/) override {}
@@ -72,13 +72,14 @@ class FakeCallTracer : public ClientCallTracer {
         const SliceBuffer& /*recv_decompressed_message*/) override {}
 
     void RecordReceivedTrailingMetadata(
-        absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
+        absl::Status /*status*/,
+        grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) override {
       MutexLock lock(g_mu);
       transport_stream_stats_ = *transport_stream_stats;
     }
 
-    void RecordCancel(grpc_error_handle cancel_error) override {}
+    void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
     void RecordEnd(const gpr_timespec& /*latency*/) override { delete this; }
     void RecordAnnotation(absl::string_view /*annotation*/) override {}
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
@@ -99,7 +100,8 @@ class FakeCallTracer : public ClientCallTracer {
   std::string SpanId() override { return ""; }
   bool IsSampled() override { return false; }
 
-  FakeCallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override {
+  FakeCallAttemptTracer* StartNewAttempt(
+      bool /*is_transparent_retry*/) override {
     return new FakeCallAttemptTracer;
   }
 
