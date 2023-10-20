@@ -46,6 +46,7 @@ REQ_LB_STATS_METADATA_ALL = ("*",)
 
 DEFAULT_TD_XDS_URI = "trafficdirector.googleapis.com:443"
 
+
 class XdsTestClient(framework.rpc.grpc.GrpcApp):
     """
     Represents RPC services implemented in Client component of the xds test app.
@@ -313,7 +314,9 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             )
 
             try:
-                channel = self.check_channel_active(channel, **rpc_params)
+                channel = self.check_channel_successful_calls(
+                    channel, **rpc_params
+                )
                 logger.info(
                     "[%s] Detected successful calls to xDS control plane: %s",
                     self.hostname,
@@ -414,10 +417,10 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                     subchannels.append(subchannel)
         return subchannels
 
-    def check_channel_active(
+    def check_channel_successful_calls(
         self, channel: _ChannelzChannel, **kwargs
     ) -> _ChannelzChannel:
-        """Checks if the channel is active.
+        """Checks if the channel has any successful calls.
 
         We consider the channel is active if channel is in READY state and calls_started is
         greater than calls_failed.
