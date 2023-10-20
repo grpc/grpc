@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -61,6 +62,7 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -837,6 +839,7 @@ class PriorityEndpointIterator : public EndpointAddressesIterator {
 std::shared_ptr<EndpointAddressesIterator>
 XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
   std::vector<PriorityEndpointIterator::DiscoveryMechanismResult> entries;
+  entries.reserve(discovery_mechanisms_.size());
   for (const auto& discovery_entry : discovery_mechanisms_) {
     entries.emplace_back(discovery_entry.latest_update,
                          discovery_entry.config().cluster_name,

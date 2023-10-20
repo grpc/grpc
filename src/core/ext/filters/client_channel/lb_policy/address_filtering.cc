@@ -20,11 +20,13 @@
 
 #include <stddef.h>
 
-#include <algorithm>
 #include <utility>
+
+#include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 
