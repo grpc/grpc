@@ -97,7 +97,6 @@ struct ServerFragmentFrame final : public FrameInterface {
 
   FrameHeader frame_header;
   ServerMetadataHandle headers;
-  MessageHandle message;
   ServerMetadataHandle trailers;
 
   bool operator==(const ServerFragmentFrame& other) const {

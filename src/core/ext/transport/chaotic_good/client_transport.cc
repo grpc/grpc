@@ -20,26 +20,17 @@
 #include <string>
 #include <tuple>
 
-#include "absl/random/bit_gen_ref.h"
-#include "absl/random/random.h"
-#include "absl/status/statusor.h"
-
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
+#include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/try_join.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -58,14 +49,9 @@ ClientTransport::ClientTransport(
       control_endpoint_write_buffer_(SliceBuffer()),
       data_endpoint_write_buffer_(SliceBuffer()),
       hpack_compressor_(std::make_unique<HPackCompressor>()),
-      hpack_parser_(std::make_unique<HPackParser>()),
-      memory_allocator_(
-          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-              "client_transport")),
-      arena_(MakeScopedArena(1024, &memory_allocator_)),
       event_engine_(event_engine) {
   auto write_loop = Loop([this] {
-    return TrySeq(
+    return Seq(
         // Get next outgoing frame.
         this->outgoing_frames_.Next(),
         // Construct data buffers that will be sent to the endpoints.
@@ -95,16 +81,20 @@ ClientTransport::ClientTransport(
         },
         // Write buffers to corresponding endpoints concurrently.
         [this]() {
-          return TryJoin(
-              control_endpoint_->Write(
-                  std::move(control_endpoint_write_buffer_)),
-              data_endpoint_->Write(std::move(data_endpoint_write_buffer_)));
+          return Join(this->control_endpoint_->Write(
+                          std::move(control_endpoint_write_buffer_)),
+                      this->data_endpoint_->Write(
+                          std::move(data_endpoint_write_buffer_)));
         },
-        // Finish writes to difference endpoints and continue the loop.
-        []() -> LoopCtl<absl::Status> {
-          // The write failures will be caught in TrySeq and exit loop.
-          // Therefore, only need to return Continue() in the last lambda
-          // function.
+        // Finish writes and return status.
+        [](std::tuple<absl::Status, absl::Status> ret)
+            -> LoopCtl<absl::Status> {
+          // If writes failed, return failure status.
+          if (!(std::get<0>(ret).ok() || std::get<1>(ret).ok())) {
+            // TODO(ladynana): handle the promise endpoint write failures with
+            // closing the transport.
+            return absl::InternalError("Promise endpoint writes failed.");
+          }
           return Continue();
         });
   });
@@ -114,79 +104,7 @@ ClientTransport::ClientTransport(
       [](absl::Status status) {
         GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
                    status.code() == absl::StatusCode::kInternal);
-        // TODO(ladynana): handle the promise endpoint write failures with
-        // outgoing_frames.close() once available.
-      },
-      // Hold Arena in activity for GetContext<Arena> usage.
-      arena_.get());
-  auto read_loop = Loop([this] {
-    return TrySeq(
-        // Read frame header from control endpoint.
-        // TODO(ladynana): remove memcpy in ReadSlice.
-        this->control_endpoint_->ReadSlice(FrameHeader::frame_header_size_),
-        // Read different parts of the server frame from control/data endpoints
-        // based on frame header.
-        [this](Slice read_buffer) mutable {
-          frame_header_ = std::make_shared<FrameHeader>(
-              FrameHeader::Parse(
-                  reinterpret_cast<const uint8_t*>(
-                      GRPC_SLICE_START_PTR(read_buffer.c_slice())))
-                  .value());
-          // Read header and trailers from control endpoint.
-          // Read message padding and message from data endpoint.
-          return TryJoin(
-              control_endpoint_->Read(frame_header_->GetFrameLength()),
-              data_endpoint_->Read(frame_header_->message_padding +
-                                   frame_header_->message_length));
-        },
-        // Construct and send the server frame to corresponding stream.
-        [this](std::tuple<SliceBuffer, SliceBuffer> ret) mutable {
-          control_endpoint_read_buffer_ = std::move(std::get<0>(ret));
-          // Discard message padding and only keep message in data read buffer.
-          std::get<1>(ret).MoveLastNBytesIntoSliceBuffer(
-              frame_header_->message_length, data_endpoint_read_buffer_);
-          ServerFragmentFrame frame;
-          // Initialized to get this_cpu() info in global_stat().
-          ExecCtx exec_ctx;
-          // Deserialize frame from read buffer.
-          absl::BitGen bitgen;
-          auto status = frame.Deserialize(hpack_parser_.get(), *frame_header_,
-                                          absl::BitGenRef(bitgen),
-                                          control_endpoint_read_buffer_);
-          GPR_ASSERT(status.ok());
-          // Move message into frame.
-          frame.message = arena_->MakePooled<Message>(
-              std::move(data_endpoint_read_buffer_), 0);
-          std::shared_ptr<
-              InterActivityPipe<ServerFrame, server_frame_queue_size_>::Sender>
-              sender;
-          {
-            MutexLock lock(&mu_);
-            sender = stream_map_[frame.frame_header.stream_id];
-          }
-          return sender->Push(ServerFrame(std::move(frame)));
-        },
-        // Check if send frame to corresponding stream successfully.
-        [](bool ret) -> LoopCtl<absl::Status> {
-          if (ret) {
-            // Send incoming frames successfully.
-            return Continue();
-          } else {
-            return absl::InternalError("Send incoming frames failed.");
-          }
-        });
-  });
-  reader_ = MakeActivity(
-      // Continuously read next incoming frames from promise endpoints.
-      std::move(read_loop), EventEngineWakeupScheduler(event_engine_),
-      [](absl::Status status) {
-        GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
-                   status.code() == absl::StatusCode::kInternal);
-        // TODO(ladynana): handle the promise endpoint read failures with
-        // iterating stream_map_ and close all the pipes once available.
-      },
-      // Hold Arena in activity for GetContext<Arena> usage.
-      arena_.get());
+      });
 }
 
 }  // namespace chaotic_good
