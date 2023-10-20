@@ -279,7 +279,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         )
 
         logger.info(
-            "[%s] Waiting to report an active channel to %s",
+            "[%s] ADS: Waiting for successful calls to xDS control plane to %s",
             self.hostname,
             xds_server_uri,
         )
@@ -289,7 +289,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             rpc_deadline=rpc_deadline,
         )
         logger.info(
-            "[%s] Channel to %s transitioned to active",
+            "[%s] ADS: Detected successful calls to xDS control plane %s",
             self.hostname,
             xds_server_uri,
         )
@@ -307,7 +307,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
         for channel in self.get_server_channels(xds_server_uri, **rpc_params):
             logger.info(
-                "[%s] xds channel: %s",
+                "[%s] xDS control plane channel: %s",
                 self.hostname,
                 _ChannelzServiceClient.channel_repr(channel),
             )
@@ -315,8 +315,9 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             try:
                 channel = self.check_channel_active(channel, **rpc_params)
                 logger.info(
-                    "[%s] Found an active XDS channel",
+                    "[%s] Detected successful calls to xDS control plane: %s",
                     self.hostname,
+                    xds_server_uri,
                 )
             except self.NotFound as e:
                 # Otherwise, keep searching.
@@ -428,7 +429,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             return channel
 
         raise self.NotFound(
-            f"[{self.hostname}] Not found an active XDS channel."
+            f"[{self.hostname}] Not found successful calls over the channel."
         )
 
     class ChannelNotFound(framework.rpc.grpc.GrpcApp.NotFound):
