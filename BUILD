@@ -2046,6 +2046,7 @@ grpc_cc_library(
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:socket_mutator",
+        "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
     ],
@@ -2309,6 +2310,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
+        "absl/base:endian",
         "absl/meta:type_traits",
         "absl/status",
         "absl/strings",
@@ -2342,8 +2344,8 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/server_call_tracer.h",
     ],
     external_deps = [
-        "absl/base",
         "absl/base:core_headers",
+        "absl/base:endian",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
