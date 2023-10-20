@@ -211,6 +211,33 @@ TEST(CredentialsTest, TlsCredentialsOptionsDoesNotLeak) {
     TlsServerCredentialsOptions options(provider);
     (void)options;
   }
+  // Multiple options with same provider.
+  {
+    auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
+    TlsServerCredentialsOptions options_1(provider);
+    (void)options_1;
+    TlsServerCredentialsOptions options_2(provider);
+    (void)options_2;
+  }
+  // Multiple options with same verifier.
+  {
+    auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
+    auto verifier = std::make_shared<NoOpCertificateVerifier>();
+    TlsServerCredentialsOptions options_1(provider);
+    options_1.set_certificate_verifier(verifier);
+    TlsServerCredentialsOptions options_2(provider);
+    options_2.set_certificate_verifier(verifier);
+  }
+  // Multiple options with same CRL provider.
+  {
+    auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
+    auto crl_provider = CreateStaticCrlProvider(/*crls=*/{});
+    EXPECT_TRUE(crl_provider.ok());
+    TlsServerCredentialsOptions options_1(provider);
+    options_1.set_crl_provider(*crl_provider);
+    TlsServerCredentialsOptions options_2(provider);
+    options_2.set_crl_provider(*crl_provider);
+  }
 }
 
 TEST(CredentialsTest, TlsServerCredentialsDoesNotLeak) {

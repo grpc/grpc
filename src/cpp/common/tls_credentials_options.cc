@@ -18,7 +18,6 @@
 
 #include <memory>
 #include <string>
-#include <utility>
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
