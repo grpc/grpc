@@ -506,7 +506,7 @@ class Party : public Activity, private Wakeable {
 
     // Outside party poll: check whether the spawning party has completed this
     // promise.
-    ::grpc_core::Poll<Result> PollCompletion() {
+    Poll<Result> PollCompletion() {
       switch (state_.load(std::memory_order_acquire)) {
         case State::kFactory:
         case State::kPromise:
