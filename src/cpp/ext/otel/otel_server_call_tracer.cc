@@ -38,6 +38,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -124,6 +125,10 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
 
   void RecordAnnotation(const Annotation& /*annotation*/) override {
     // Not implemented
+  }
+  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+    // No TCP trace.
+    return nullptr;
   }
 
  private:

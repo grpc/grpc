@@ -682,6 +682,7 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -2110,6 +2111,7 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -4137,6 +4139,7 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -15761,6 +15764,7 @@ targets:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
