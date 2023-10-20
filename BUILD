@@ -254,6 +254,7 @@ GPR_PUBLIC_HDRS = [
 
 GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc_audit_logging.h",
+    "include/grpc/grpc_crl_provider.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
@@ -421,6 +422,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/sync.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/security/audit_logging.h",
+    "include/grpcpp/security/tls_crl_provider.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
     "include/grpcpp/security/credentials.h",
@@ -1967,6 +1969,7 @@ grpc_cc_library(
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_audit_logging",
         "//src/core:grpc_backend_metric_provider",
+        "//src/core:grpc_crl_provider",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
@@ -2043,6 +2046,7 @@ grpc_cc_library(
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:socket_mutator",
+        "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
     ],
@@ -2306,6 +2310,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
+        "absl/base:endian",
         "absl/meta:type_traits",
         "absl/status",
         "absl/strings",
@@ -2339,8 +2344,8 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/server_call_tracer.h",
     ],
     external_deps = [
-        "absl/base",
         "absl/base:core_headers",
+        "absl/base:endian",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3557,6 +3562,7 @@ grpc_cc_library(
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
         "//src/core:error",
+        "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:ref_counted",
         "//src/core:slice",

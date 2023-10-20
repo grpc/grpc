@@ -120,7 +120,6 @@ class TestCsds(unittest.TestCase):
                             break
             except KeyError as e:
                 logging.debug("Invalid config: %s\n%s: %s", config, type(e), e)
-                pass
             if ok:
                 break
             time.sleep(1)

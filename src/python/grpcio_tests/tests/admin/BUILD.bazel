@@ -13,10 +13,10 @@
 # limitations under the License.
 
 py_test(
-    name = "test_admin",
+    name = "admin_test",
     size = "small",
-    srcs = ["test_admin.py"],
-    main = "test_admin.py",
+    srcs = ["admin_test.py"],
+    main = "admin_test.py",
     python_version = "PY3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
