@@ -73,7 +73,9 @@
     # not tested on iOS at all
     ios: broken
     posix: true
-    windows: false
+    windows: true
+- name: free_large_allocator
+  default: false
 - name: jitter_max_idle
   default: true
 - name: keepalive_fix
