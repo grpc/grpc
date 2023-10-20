@@ -44,6 +44,7 @@ class TlsCredentialsOptions {
   // @param certificate_provider the provider which fetches TLS credentials that
   // will be used in the TLS handshake
   TlsCredentialsOptions();
+  ~TlsCredentialsOptions();
   // ---- Setters for member fields ----
   // Sets the certificate provider used to store root certs and identity certs.
   void set_certificate_provider(
@@ -108,10 +109,14 @@ class TlsCredentialsOptions {
   void set_crl_provider(std::shared_ptr<CrlProvider> crl_provider);
 
   // ----- Getters for member fields ----
-  // Get the internal c options. This function shall be used only internally.
-  grpc_tls_credentials_options* c_credentials_options() const {
+  // Returns the internal c options. The caller does not take ownership of the
+  // returned pointer. This function shall be used only internally.
+  grpc_tls_credentials_options* mutable_c_credentials_options() {
     return c_credentials_options_;
   }
+  // Returns a deep copy of the internal c options. The caller takes ownership
+  // of the returned pointer. This function shall be used only internally.
+  grpc_tls_credentials_options* c_credentials_options() const;
 
  private:
   std::shared_ptr<CertificateProviderInterface> certificate_provider_;
