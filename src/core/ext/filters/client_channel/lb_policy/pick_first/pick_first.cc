@@ -437,8 +437,8 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // Replace subchannel_list_.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) &&
       subchannel_list_ != nullptr) {
-    gpr_log(GPR_INFO, "[PF %p] Shutting down previous subchannel list %p",
-            this, subchannel_list_.get());
+    gpr_log(GPR_INFO, "[PF %p] Shutting down previous subchannel list %p", this,
+            subchannel_list_.get());
   }
   subchannel_list_ = MakeOrphanable<SubchannelList>(
       Ref(DEBUG_LOCATION, "SubchannelList"), std::move(addresses),
@@ -568,9 +568,8 @@ void PickFirst::GoIdle() {
   // ExitIdleLocked() instead.
   channel_control_helper()->RequestReresolution();
   // Enter idle.
-  UpdateState(
-      GRPC_CHANNEL_IDLE, absl::Status(),
-      MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
+  UpdateState(GRPC_CHANNEL_IDLE, absl::Status(),
+              MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
 }
 
 //
@@ -647,8 +646,8 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Orphan() {
 
 void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-    gpr_log(GPR_INFO, "Pick First %p selected subchannel %p",
-            pick_first_.get(), subchannel_.get());
+    gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", pick_first_.get(),
+            subchannel_.get());
   }
   pick_first_->selected_ = std::move(subchannel_data_->subchannel_state_);
   // If health checking is enabled, start the health watch, but don't
@@ -678,10 +677,9 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
   pick_first_->subchannel_list_.reset();
 }
 
-void
-PickFirst::SubchannelList::SubchannelData::SubchannelState::
-    OnConnectivityStateChange(
-    grpc_connectivity_state new_state, absl::Status status) {
+void PickFirst::SubchannelList::SubchannelData::SubchannelState::
+    OnConnectivityStateChange(grpc_connectivity_state new_state,
+                              absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO,
             "[PF %p] subchannel state %p (subchannel %p): connectivity "
@@ -700,8 +698,7 @@ PickFirst::SubchannelList::SubchannelData::SubchannelState::
     if (new_state == GRPC_CHANNEL_READY) {
       Select();
     } else {
-      subchannel_data_->OnConnectivityStateChange(
-          new_state, std::move(status));
+      subchannel_data_->OnConnectivityStateChange(new_state, std::move(status));
     }
     return;
   }
@@ -1055,8 +1052,8 @@ PickFirst::SubchannelList::~SubchannelList() {
 
 void PickFirst::SubchannelList::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-    gpr_log(GPR_INFO, "[PF %p] Shutting down subchannel_list %p",
-            policy_.get(), this);
+    gpr_log(GPR_INFO, "[PF %p] Shutting down subchannel_list %p", policy_.get(),
+            this);
   }
   GPR_ASSERT(!shutting_down_);
   shutting_down_ = true;
