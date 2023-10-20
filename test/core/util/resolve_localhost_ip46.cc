@@ -59,4 +59,20 @@ void LocalhostResolves(bool* ipv4, bool* ipv6) {
   *ipv6 = localhost_to_ipv6;
 }
 
+bool RunningWithIPv6Only() {
+  bool localhost_resolves_to_ipv4 = false;
+  bool localhost_resolves_to_ipv6 = false;
+  LocalhostResolves(&localhost_resolves_to_ipv4, &localhost_resolves_to_ipv6);
+  return !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
+}
+
+absl::string_view LocalIp() {
+  return RunningWithIPv6Only() ? "[::1]" : "127.0.0.1";
+}
+
+std::string LocalIpUri(int port) {
+  return absl::StrCat(
+      RunningWithIPv6Only() ? "ipv6:%5b::1%5d:" : "ipv4:127.0.0.1:", port);
+}
+
 }  // namespace grpc_core

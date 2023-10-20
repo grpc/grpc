@@ -24,6 +24,7 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
+#include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -1045,8 +1046,7 @@ TEST_P(XdsFederationTest, FederationServer) {
     Listener server_listener = default_server_listener_;
     server_listener.set_name(absl::StrCat(
         "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
-        ipv6_only_ ? "%5B::1%5D:" : "127.0.0.1:", port,
-        "?psm_project_id=1234"));
+        grpc_core::LocalIp(), ":", port, "?psm_project_id=1234"));
     server_listener.mutable_address()->mutable_socket_address()->set_port_value(
         port);
     SetListenerAndRouteConfiguration(authority_balancer_.get(), server_listener,

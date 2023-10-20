@@ -34,6 +34,7 @@
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
+#include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -240,8 +241,8 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
   ClientStatusDiscoveryServiceTest() {
     admin_server_thread_ = std::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
-    std::string admin_server_address = absl::StrCat(
-        ipv6_only_ ? "[::1]:" : "127.0.0.1:", admin_server_thread_->port());
+    std::string admin_server_address =
+        absl::StrCat(grpc_core::LocalIp(), ":", admin_server_thread_->port());
     admin_channel_ = grpc::CreateChannel(
         admin_server_address,
         std::make_shared<SecureChannelCredentials>(
