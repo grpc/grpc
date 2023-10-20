@@ -16,19 +16,31 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
-#include <cstddef>
-#include <memory>
+#include <utility>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
