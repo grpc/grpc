@@ -14,6 +14,7 @@
 
 #include "src/core/lib/gprpp/notification.h"
 
+#include <memory>
 #include <thread>
 
 #include "gtest/gtest.h"

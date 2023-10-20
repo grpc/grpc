@@ -17,9 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
 #include <stdint.h>
 
-#include <cstddef>
 #include <initializer_list>  // IWYU pragma: keep
 #include <map>
 #include <memory>
@@ -54,6 +54,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -77,7 +78,7 @@ class ClientTransport {
   auto AddStream(CallArgs call_args) {
     // At this point, the connection is set up.
     // Start sending data frames.
-    uint64_t stream_id;
+    uint32_t stream_id;
     InterActivityPipe<ServerFrame, server_frame_queue_size_> server_frames;
     {
       MutexLock lock(&mu_);
@@ -93,30 +94,37 @@ class ClientTransport {
     return TrySeq(
         TryJoin(
             // Continuously send client frame with client to server messages.
-            ForEach(std::move(*call_args.client_to_server_messages),
-                    [stream_id, initial_frame = true,
-                     client_initial_metadata =
-                         std::move(call_args.client_initial_metadata),
-                     outgoing_frames = outgoing_frames_.MakeSender()](
-                        MessageHandle result) mutable {
-                      ClientFragmentFrame frame;
-                      frame.stream_id = stream_id;
-                      frame.message = std::move(result);
-                      if (initial_frame) {
-                        // Send initial frame with client intial metadata.
-                        frame.headers = std::move(client_initial_metadata);
-                        initial_frame = false;
-                      }
-                      return TrySeq(
-                          outgoing_frames.Send(ClientFrame(std::move(frame))),
-                          [](bool success) -> absl::Status {
-                            if (!success) {
-                              return absl::InternalError(
-                                  "Send frame to outgoing_frames failed.");
-                            }
-                            return absl::OkStatus();
-                          });
-                    }),
+            ForEach(
+                std::move(*call_args.client_to_server_messages),
+                [stream_id, initial_frame = true,
+                 client_initial_metadata =
+                     std::move(call_args.client_initial_metadata),
+                 outgoing_frames = outgoing_frames_.MakeSender(),
+                 this](MessageHandle result) mutable {
+                  ClientFragmentFrame frame;
+                  // Construct frame header (flags, header_length and
+                  // trailer_length will be added in serialization).
+                  uint32_t message_length = result->payload()->Length();
+                  uint32_t message_padding = message_length % aligned_bytes;
+                  frame.frame_header = FrameHeader{
+                      FrameType::kFragment, {}, stream_id, 0, message_length,
+                      message_padding,      0};
+                  frame.message = std::move(result);
+                  if (initial_frame) {
+                    // Send initial frame with client intial metadata.
+                    frame.headers = std::move(client_initial_metadata);
+                    initial_frame = false;
+                  }
+                  return TrySeq(
+                      outgoing_frames.Send(ClientFrame(std::move(frame))),
+                      [](bool success) -> absl::Status {
+                        if (!success) {
+                          return absl::InternalError(
+                              "Send frame to outgoing_frames failed.");
+                        }
+                        return absl::OkStatus();
+                      });
+                }),
             // Continuously receive server frames from endpoints and save
             // results to call_args.
             Loop([server_initial_metadata = call_args.server_initial_metadata,
@@ -169,6 +177,8 @@ class ClientTransport {
   // Queue size of each stream pipe is set to 2, so that for each stream read it
   // will queue at most 2 frames.
   static const size_t server_frame_queue_size_ = 2;
+  // Assigned aligned bytes from setting frame.
+  size_t aligned_bytes = 64;
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.

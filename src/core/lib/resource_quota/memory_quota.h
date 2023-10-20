@@ -392,7 +392,7 @@ class BasicMemoryQuota final
 class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
  public:
   explicit GrpcMemoryAllocatorImpl(
-      std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name);
+      std::shared_ptr<BasicMemoryQuota> memory_quota);
   ~GrpcMemoryAllocatorImpl() override;
 
   // Reserve bytes from the quota.
@@ -445,9 +445,6 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     return memory_quota_->GetPressureInfo();
   }
 
-  // Name of this allocator
-  absl::string_view name() const { return name_; }
-
   size_t GetFreeBytes() const {
     return free_bytes_.load(std::memory_order_relaxed);
   }
@@ -494,9 +491,6 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   OrphanablePtr<ReclaimerQueue::Handle>
       reclamation_handles_[kNumReclamationPasses] ABSL_GUARDED_BY(
           reclaimer_mu_);
-
-  // Name of this allocator.
-  std::string name_;
 };
 
 // MemoryOwner is an enhanced MemoryAllocator that can also reclaim memory, and
@@ -531,9 +525,6 @@ class MemoryOwner final : public MemoryAllocator {
     return OrphanablePtr<T>(New<T>(std::forward<Args>(args)...));
   }
 
-  // Name of this object
-  absl::string_view name() const { return impl()->name(); }
-
   // Is this object valid (ie has not been moved out of or reset)
   bool is_valid() const { return impl() != nullptr; }
 
@@ -565,7 +556,7 @@ class MemoryQuota final
   MemoryQuota& operator=(MemoryQuota&&) = default;
 
   MemoryAllocator CreateMemoryAllocator(absl::string_view name) override;
-  MemoryOwner CreateMemoryOwner(absl::string_view name);
+  MemoryOwner CreateMemoryOwner();
 
   // Resize the quota to new_size.
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }

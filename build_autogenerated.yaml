@@ -158,6 +158,7 @@ libs:
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_audit_logging.h
+  - include/grpc/grpc_crl_provider.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -314,7 +315,9 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/varint.h
+  - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
+  - src/core/ext/transport/inproc/legacy_inproc_transport.h
   - src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.h
@@ -671,6 +674,7 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
+  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/channel_trace.h
   - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
@@ -770,6 +774,7 @@ libs:
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
+  - src/core/lib/gprpp/xxhash_inline.h
   - src/core/lib/handshaker/proxy_mapper.h
   - src/core/lib/handshaker/proxy_mapper_registry.h
   - src/core/lib/http/format_request.h
@@ -932,6 +937,7 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
+  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/credentials/tls/tls_utils.h
   - src/core/lib/security/credentials/xds/xds_credentials.h
@@ -997,7 +1003,6 @@ libs:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
   - src/core/tsi/alts/crypt/gsec.h
   - src/core/tsi/alts/frame_protector/alts_counter.h
@@ -1143,9 +1148,11 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
+  - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_plugin.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
+  - src/core/ext/transport/inproc/legacy_inproc_transport.cc
   - src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c
@@ -1495,6 +1502,7 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
+  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/channel_trace.cc
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
@@ -1714,6 +1722,7 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/credentials/tls/tls_utils.cc
   - src/core/lib/security/credentials/xds/xds_credentials.cc
@@ -1913,6 +1922,7 @@ libs:
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_audit_logging.h
+  - include/grpc/grpc_crl_provider.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -2057,7 +2067,9 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/varint.h
+  - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
+  - src/core/ext/transport/inproc/legacy_inproc_transport.h
   - src/core/ext/upb-generated/google/api/annotations.upb.h
   - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
@@ -2090,6 +2102,7 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
+  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/channel_trace.h
   - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
@@ -2383,7 +2396,6 @@ libs:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/fake_transport_security.h
@@ -2498,9 +2510,11 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
+  - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_plugin.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
+  - src/core/ext/transport/inproc/legacy_inproc_transport.cc
   - src/core/ext/upb-generated/google/api/annotations.upb.c
   - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -2530,6 +2544,7 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
+  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/channel_trace.cc
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
@@ -2873,9 +2888,15 @@ libs:
   - third_party/googletest/googletest/src/gtest-typed-test.cc
   - third_party/googletest/googletest/src/gtest.cc
   deps:
+  - re2
+  - absl/container:flat_hash_set
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
+  - absl/flags:flag
+  - absl/flags:parse
+  - absl/flags:reflection
+  - absl/flags:usage
   - absl/strings:strings
   - absl/types:any
   - absl/types:optional
@@ -3510,6 +3531,7 @@ libs:
   - include/grpcpp/security/tls_certificate_provider.h
   - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
+  - include/grpcpp/security/tls_crl_provider.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
@@ -3565,7 +3587,6 @@ libs:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -3607,7 +3628,6 @@ libs:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -3935,6 +3955,7 @@ libs:
   - include/grpcpp/security/tls_certificate_provider.h
   - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
+  - include/grpcpp/security/tls_crl_provider.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
@@ -3967,7 +3988,6 @@ libs:
   headers:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -3986,7 +4006,6 @@ libs:
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/insecure_create_auth_context.cc
   - src/cpp/common/resource_quota_cc.cc
@@ -4035,6 +4054,7 @@ libs:
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_audit_logging.h
+  - include/grpc/grpc_crl_provider.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -4109,6 +4129,7 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
+  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/channel_trace.h
   - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
@@ -4392,7 +4413,6 @@ libs:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/transport_security.h
@@ -4426,6 +4446,7 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
+  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/channel_trace.cc
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
@@ -4887,7 +4908,6 @@ targets:
   - test/core/promise/activity_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_set
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -5715,7 +5735,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -5757,7 +5776,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -6585,16 +6603,15 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: channel_filter_test
+- name: channel_init_test
   gtest: true
   build: test
   language: c++
   headers: []
   src:
-  - test/cpp/common/channel_filter_test.cc
+  - test/core/surface/channel_init_test.cc
   deps:
   - gtest
-  - grpc++
   - grpc_test_util
   uses_polling: false
 - name: channel_stack_builder_test
@@ -6827,7 +6844,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -7405,6 +7421,22 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: crl_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/crl_provider_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - gtest
+  - grpc++_test_util
 - name: crl_ssl_transport_security_test
   gtest: true
   build: test
@@ -7708,7 +7740,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -7750,7 +7781,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -8192,7 +8222,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -8234,7 +8263,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -8414,21 +8442,6 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
-- name: filter_end2end_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
-  - src/proto/grpc/testing/echo.proto
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
-  - test/cpp/end2end/filter_end2end_test.cc
-  deps:
-  - gtest
-  - grpc++_test_util
 - name: filter_init_fails_test
   gtest: true
   build: test
@@ -8644,7 +8657,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8761,7 +8773,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9450,6 +9461,16 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: grpc_tls_crl_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/grpc_tls_crl_provider_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: grpc_tool_test
   gtest: true
   build: test
@@ -9882,7 +9903,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/scoped_env_var.h
   src:
   - test/core/client_channel/http_proxy_mapper_test.cc
   deps:
@@ -10176,7 +10198,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10751,7 +10772,6 @@ targets:
   deps:
   - gtest
   - upb
-  - absl/container:flat_hash_set
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11148,7 +11168,6 @@ targets:
   - test/core/promise/mpsc_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_set
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -12551,7 +12570,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/flags:parse
   - grpc_test_util
   args:
   - --resolver=ares
@@ -12625,7 +12643,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/flags:parse
   - grpc_test_util
   args:
   - --resolver=native
@@ -15507,7 +15524,6 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_set
   - absl/hash:hash
   - absl/status:statusor
   - absl/utility:utility
@@ -15741,6 +15757,7 @@ targets:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
+  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/channel_trace.h
   - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
@@ -15996,7 +16013,6 @@ targets:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - third_party/upb/upb/generated_code_support.h
@@ -16040,6 +16056,7 @@ targets:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
+  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/channel_trace.cc
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
@@ -16266,7 +16283,6 @@ targets:
   - z
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
@@ -16492,6 +16508,42 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: timeout_before_request_call_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/timeout_before_request_call.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - gtest
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: timeout_encoding_test
   gtest: true
   build: test
@@ -16720,7 +16772,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -16761,7 +16812,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -17088,7 +17138,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -17130,7 +17179,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -17197,7 +17245,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -17239,7 +17286,6 @@ targets:
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -17367,6 +17413,22 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: write_size_policy_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/write_size_policy.h
+  - src/core/lib/gprpp/time.h
+  src:
+  - src/core/ext/transport/chttp2/transport/write_size_policy.cc
+  - src/core/lib/gprpp/time.cc
+  - test/core/transport/chttp2/write_size_policy_test.cc
+  deps:
+  - gtest
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
 - name: writes_per_rpc_test
   gtest: true
   build: test

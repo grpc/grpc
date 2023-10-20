@@ -41,6 +41,9 @@ const char* const additional_constraints_chttp2_batch_requests = "{}";
 const char* const description_chttp2_offload_on_rst_stream =
     "Offload work on RST_STREAM.";
 const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const char* const description_client_idleness =
+    "If enabled, client channel idleness is enabled by default.";
+const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_combiner_offload_to_event_engine =
@@ -59,11 +62,6 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
-const char* const description_jitter_max_idle =
-    "Enable jitter on connection max idle times. Historically this jitter was "
-    "only on max connection age, but it seems like this could smooth out some "
-    "herding problems.";
-const char* const additional_constraints_jitter_max_idle = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -85,6 +83,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -101,6 +103,9 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -113,6 +118,14 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_registered_methods_map =
+    "Use absl::flat_hash_map for registered methods.";
+const char* const additional_constraints_registered_methods_map = "{}";
+const char* const description_rfc_max_concurrent_streams =
+    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
+const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -126,6 +139,12 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
 const char* const description_settings_timeout =
@@ -159,6 +178,12 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const char* const description_write_size_policy =
+    "Try to size writes such that they don't create too large of a backlog";
+const char* const additional_constraints_write_size_policy = "{}";
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -187,6 +212,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
      additional_constraints_chttp2_offload_on_rst_stream, true, true},
+    {"client_idleness", description_client_idleness,
+     additional_constraints_client_idleness, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"combiner_offload_to_event_engine",
@@ -200,8 +227,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, false, true},
-    {"jitter_max_idle", description_jitter_max_idle,
-     additional_constraints_jitter_max_idle, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -214,6 +239,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
@@ -222,6 +249,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_ping_on_rst_stream, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call, false, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport, false, false},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, false, true},
     {"red_max_concurrent_streams", description_red_max_concurrent_streams,
@@ -229,6 +259,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"registered_methods_map", description_registered_methods_map,
+     additional_constraints_registered_methods_map, false, true},
+    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
+     additional_constraints_rfc_max_concurrent_streams, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -236,6 +270,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, false, true},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, true, true},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, false, false},
     {"settings_timeout", description_settings_timeout,
@@ -255,6 +291,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, true, true},
+    {"write_size_policy", description_write_size_policy,
+     additional_constraints_write_size_policy, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
 };
@@ -282,6 +322,9 @@ const char* const additional_constraints_chttp2_batch_requests = "{}";
 const char* const description_chttp2_offload_on_rst_stream =
     "Offload work on RST_STREAM.";
 const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const char* const description_client_idleness =
+    "If enabled, client channel idleness is enabled by default.";
+const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_combiner_offload_to_event_engine =
@@ -300,11 +343,6 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
-const char* const description_jitter_max_idle =
-    "Enable jitter on connection max idle times. Historically this jitter was "
-    "only on max connection age, but it seems like this could smooth out some "
-    "herding problems.";
-const char* const additional_constraints_jitter_max_idle = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -326,6 +364,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -342,6 +384,9 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -354,6 +399,14 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_registered_methods_map =
+    "Use absl::flat_hash_map for registered methods.";
+const char* const additional_constraints_registered_methods_map = "{}";
+const char* const description_rfc_max_concurrent_streams =
+    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
+const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -367,6 +420,12 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
 const char* const description_settings_timeout =
@@ -400,6 +459,12 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const char* const description_write_size_policy =
+    "Try to size writes such that they don't create too large of a backlog";
+const char* const additional_constraints_write_size_policy = "{}";
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -428,6 +493,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
      additional_constraints_chttp2_offload_on_rst_stream, true, true},
+    {"client_idleness", description_client_idleness,
+     additional_constraints_client_idleness, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"combiner_offload_to_event_engine",
@@ -441,8 +508,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, false, true},
-    {"jitter_max_idle", description_jitter_max_idle,
-     additional_constraints_jitter_max_idle, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -455,6 +520,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
@@ -463,6 +530,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_ping_on_rst_stream, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call, false, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport, false, false},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, false, true},
     {"red_max_concurrent_streams", description_red_max_concurrent_streams,
@@ -470,6 +540,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"registered_methods_map", description_registered_methods_map,
+     additional_constraints_registered_methods_map, false, true},
+    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
+     additional_constraints_rfc_max_concurrent_streams, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -477,6 +551,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, false, true},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, true, true},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, false, false},
     {"settings_timeout", description_settings_timeout,
@@ -496,6 +572,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, true, true},
+    {"write_size_policy", description_write_size_policy,
+     additional_constraints_write_size_policy, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
 };
@@ -523,6 +603,9 @@ const char* const additional_constraints_chttp2_batch_requests = "{}";
 const char* const description_chttp2_offload_on_rst_stream =
     "Offload work on RST_STREAM.";
 const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const char* const description_client_idleness =
+    "If enabled, client channel idleness is enabled by default.";
+const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_combiner_offload_to_event_engine =
@@ -541,11 +624,6 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
-const char* const description_jitter_max_idle =
-    "Enable jitter on connection max idle times. Historically this jitter was "
-    "only on max connection age, but it seems like this could smooth out some "
-    "herding problems.";
-const char* const additional_constraints_jitter_max_idle = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -567,6 +645,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -583,6 +665,9 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -595,6 +680,14 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_registered_methods_map =
+    "Use absl::flat_hash_map for registered methods.";
+const char* const additional_constraints_registered_methods_map = "{}";
+const char* const description_rfc_max_concurrent_streams =
+    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
+const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -608,6 +701,12 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
 const char* const description_settings_timeout =
@@ -641,6 +740,12 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const char* const description_write_size_policy =
+    "Try to size writes such that they don't create too large of a backlog";
+const char* const additional_constraints_write_size_policy = "{}";
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -669,6 +774,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chttp2_batch_requests, true, true},
     {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
      additional_constraints_chttp2_offload_on_rst_stream, true, true},
+    {"client_idleness", description_client_idleness,
+     additional_constraints_client_idleness, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"combiner_offload_to_event_engine",
@@ -682,8 +789,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, false, true},
-    {"jitter_max_idle", description_jitter_max_idle,
-     additional_constraints_jitter_max_idle, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -696,6 +801,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
@@ -704,6 +811,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_ping_on_rst_stream, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call, false, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport, false, false},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, false, true},
     {"red_max_concurrent_streams", description_red_max_concurrent_streams,
@@ -711,6 +821,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"registered_methods_map", description_registered_methods_map,
+     additional_constraints_registered_methods_map, false, true},
+    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
+     additional_constraints_rfc_max_concurrent_streams, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -718,6 +832,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, false, true},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, true, true},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, false, false},
     {"settings_timeout", description_settings_timeout,
@@ -737,6 +853,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, true, true},
+    {"write_size_policy", description_write_size_policy,
+     additional_constraints_write_size_policy, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
 };

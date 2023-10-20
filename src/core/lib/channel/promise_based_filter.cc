@@ -17,7 +17,6 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 
 #include <algorithm>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -721,7 +720,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
       Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kForwardedBatchNoPipe:
       state_ = State::kBatchCompletedNoPipe;
-      return;
+      break;
     case State::kForwardedBatch:
       state_ = State::kBatchCompleted;
       break;
@@ -784,6 +783,8 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
       }
     } break;
     case State::kBatchCompletedNoPipe:
+      state_ = State::kBatchCompletedButCancelledNoPipe;
+      break;
     case State::kBatchCompletedButCancelled:
     case State::kBatchCompletedButCancelledNoPipe:
       Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
@@ -1313,10 +1314,13 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
 }
 
 ClientCallData::~ClientCallData() {
+  ScopedActivity scoped_activity(this);
   GPR_ASSERT(poll_ctx_ == nullptr);
   if (recv_initial_metadata_ != nullptr) {
     recv_initial_metadata_->~RecvInitialMetadata();
   }
+  initial_metadata_outstanding_token_ =
+      ClientInitialMetadataOutstandingToken::Empty();
 }
 
 std::string ClientCallData::DebugTag() const {

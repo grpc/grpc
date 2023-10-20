@@ -21,6 +21,8 @@
 
 #include <stddef.h>
 
+#include <string>
+
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"

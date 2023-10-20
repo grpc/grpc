@@ -31,10 +31,10 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -46,7 +46,6 @@
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/service_config/service_config_parser.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -108,17 +107,12 @@ const grpc_channel_filter kServiceConfigChannelArgFilter =
 
 void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto channel_args = builder->channel_args();
-        if (channel_args.WantMinimalStack() ||
-            !channel_args.GetString(GRPC_ARG_SERVICE_CONFIG).has_value()) {
-          return true;
-        }
-        builder->PrependFilter(&kServiceConfigChannelArgFilter);
-        return true;
-      });
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
+                       &kServiceConfigChannelArgFilter)
+      .ExcludeFromMinimalStack()
+      .IfHasChannelArg(GRPC_ARG_SERVICE_CONFIG)
+      .Before({&ClientMessageSizeFilter::kFilter});
 }
 
 }  // namespace grpc_core

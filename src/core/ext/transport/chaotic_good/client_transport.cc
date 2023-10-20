@@ -76,18 +76,10 @@ ClientTransport::ClientTransport(
                 control_endpoint_write_buffer_.Append(
                     frame->Serialize(hpack_compressor_.get()));
                 if (frame->message != nullptr) {
-                  auto frame_header =
-                      FrameHeader::Parse(
-                          reinterpret_cast<const uint8_t*>(GRPC_SLICE_START_PTR(
-                              control_endpoint_write_buffer_.c_slice_buffer()
-                                  ->slices[0])))
-                          .value();
-                  // TODO(ladynana): add message_padding calculation by
-                  // accumulating bytes sent.
-                  std::string message_padding(frame_header.message_padding,
-                                              '0');
+                  std::string message_padding(
+                      frame->frame_header.message_padding, '0');
                   Slice slice(grpc_slice_from_cpp_string(message_padding));
-                  // Append message payload to data_endpoint_buffer.
+                  // Append message padding to data_endpoint_buffer.
                   data_endpoint_write_buffer_.Append(std::move(slice));
                   // Append message payload to data_endpoint_buffer.
                   frame->message->payload()->MoveFirstNBytesIntoSliceBuffer(
@@ -170,7 +162,7 @@ ClientTransport::ClientTransport(
               sender;
           {
             MutexLock lock(&mu_);
-            sender = stream_map_[frame.stream_id];
+            sender = stream_map_[frame.frame_header.stream_id];
           }
           return sender->Push(ServerFrame(std::move(frame)));
         },

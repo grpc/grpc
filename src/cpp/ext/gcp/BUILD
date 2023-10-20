@@ -153,7 +153,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",

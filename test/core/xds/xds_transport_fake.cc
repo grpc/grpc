@@ -18,8 +18,6 @@
 
 #include "test/core/xds/xds_transport_fake.h"
 
-#include <stdint.h>
-
 #include <functional>
 #include <memory>
 #include <type_traits>

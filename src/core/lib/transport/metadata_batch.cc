@@ -19,7 +19,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <initializer_list>
 
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"

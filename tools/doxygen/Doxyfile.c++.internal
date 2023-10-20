@@ -892,6 +892,7 @@ include/grpc/event_engine/slice_buffer.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_audit_logging.h \
+include/grpc/grpc_crl_provider.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
 include/grpc/grpc_security_constants.h \
@@ -1047,6 +1048,7 @@ include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/tls_certificate_provider.h \
 include/grpcpp/security/tls_certificate_verifier.h \
 include/grpcpp/security/tls_credentials_options.h \
+include/grpcpp/security/tls_crl_provider.h \
 include/grpcpp/server.h \
 include/grpcpp/server_builder.h \
 include/grpcpp/server_context.h \
@@ -1326,10 +1328,14 @@ src/core/ext/transport/chttp2/transport/ping_rate_policy.h \
 src/core/ext/transport/chttp2/transport/stream_lists.cc \
 src/core/ext/transport/chttp2/transport/varint.cc \
 src/core/ext/transport/chttp2/transport/varint.h \
+src/core/ext/transport/chttp2/transport/write_size_policy.cc \
+src/core/ext/transport/chttp2/transport/write_size_policy.h \
 src/core/ext/transport/chttp2/transport/writing.cc \
 src/core/ext/transport/inproc/inproc_plugin.cc \
 src/core/ext/transport/inproc/inproc_transport.cc \
 src/core/ext/transport/inproc/inproc_transport.h \
+src/core/ext/transport/inproc/legacy_inproc_transport.cc \
+src/core/ext/transport/inproc/legacy_inproc_transport.h \
 src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c \
 src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h \
 src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c \
@@ -2036,6 +2042,8 @@ src/core/lib/channel/channel_stack_builder.cc \
 src/core/lib/channel/channel_stack_builder.h \
 src/core/lib/channel/channel_stack_builder_impl.cc \
 src/core/lib/channel/channel_stack_builder_impl.h \
+src/core/lib/channel/channel_stack_trace.cc \
+src/core/lib/channel/channel_stack_trace.h \
 src/core/lib/channel/channel_trace.cc \
 src/core/lib/channel/channel_trace.h \
 src/core/lib/channel/channelz.cc \
@@ -2277,6 +2285,7 @@ src/core/lib/gprpp/windows/stat.cc \
 src/core/lib/gprpp/windows/thd.cc \
 src/core/lib/gprpp/work_serializer.cc \
 src/core/lib/gprpp/work_serializer.h \
+src/core/lib/gprpp/xxhash_inline.h \
 src/core/lib/handshaker/proxy_mapper.h \
 src/core/lib/handshaker/proxy_mapper_registry.cc \
 src/core/lib/handshaker/proxy_mapper_registry.h \
@@ -2587,6 +2596,8 @@ src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
 src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
+src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc \
+src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h \
 src/core/lib/security/credentials/tls/tls_credentials.cc \
 src/core/lib/security/credentials/tls/tls_credentials.h \
 src/core/lib/security/credentials/tls/tls_utils.cc \
@@ -2715,7 +2726,6 @@ src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.cc \
 src/core/lib/transport/transport.h \
 src/core/lib/transport/transport_fwd.h \
-src/core/lib/transport/transport_impl.h \
 src/core/lib/transport/transport_op_string.cc \
 src/core/lib/uri/uri_parser.cc \
 src/core/lib/uri/uri_parser.h \
@@ -2797,8 +2807,6 @@ src/cpp/client/xds_credentials.cc \
 src/cpp/common/alarm.cc \
 src/cpp/common/auth_property_iterator.cc \
 src/cpp/common/channel_arguments.cc \
-src/cpp/common/channel_filter.cc \
-src/cpp/common/channel_filter.h \
 src/cpp/common/completion_queue_cc.cc \
 src/cpp/common/resource_quota_cc.cc \
 src/cpp/common/rpc_method.cc \

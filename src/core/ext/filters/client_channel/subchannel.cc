@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <memory>
 #include <new>
-#include <string>
 #include <utility>
 
 #include "absl/status/statusor.h"
@@ -67,6 +66,7 @@
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/transport.h"
 
 // Backoff parameters.
 #define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -769,10 +769,11 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL,
-                                  connecting_result_.channel_args);
   // Builder takes ownership of transport.
-  builder.SetTransport(std::exchange(connecting_result_.transport, nullptr));
+  ChannelStackBuilderImpl builder(
+      "subchannel", GRPC_CLIENT_SUBCHANNEL,
+      connecting_result_.channel_args.SetObject(
+          std::exchange(connecting_result_.transport, nullptr)));
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return false;
   }

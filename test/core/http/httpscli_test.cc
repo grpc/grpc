@@ -20,7 +20,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <thread>
@@ -57,7 +56,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"

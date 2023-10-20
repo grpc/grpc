@@ -19,7 +19,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <ratio>
 #include <string>
 #include <utility>
 #include <vector>

@@ -28,7 +28,6 @@
 #include <sys/un.h>
 
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "absl/status/statusor.h"

@@ -70,8 +70,11 @@ class LabelsInjector {
       grpc_metadata_batch* incoming_initial_metadata) = 0;
 
   // Modify the outgoing initial metadata with metadata information to be sent
-  // to the peer.
-  virtual void AddLabels(grpc_metadata_batch* outgoing_initial_metadata) = 0;
+  // to the peer. On the server side, \a labels_from_incoming_metadata returned
+  // from `GetLabels` should be provided as input here. On the client side, this
+  // should be nullptr.
+  virtual void AddLabels(grpc_metadata_batch* outgoing_initial_metadata,
+                         LabelsIterable* labels_from_incoming_metadata) = 0;
 };
 
 struct OTelPluginState {
