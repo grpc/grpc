@@ -132,11 +132,62 @@ grpc_cc_binary(
     ],
 )
 
+grpc_cc_binary(
+    name = "memory_usage_xds_client",
+    srcs = ["xds_client.cc"],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/flags:parse",
+        "absl/time",
+    ],
+    tags = [
+        "bazel_only",
+        "no_mac",
+        "no_windows",
+    ],
+    deps = [
+        ":memstats",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:benchmark_service_proto",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_binary(
+    name = "memory_usage_xds_server",
+    srcs = ["xds_server.cc"],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/flags:parse",
+    ],
+    tags = [
+        "bazel_only",
+        "no_mac",
+        "no_windows",
+    ],
+    deps = [
+        ":memstats",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:benchmark_service_proto",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
+    ],
+)
+
 MEMORY_USAGE_DATA = [
     ":memory_usage_callback_client",
     ":memory_usage_callback_server",
     ":memory_usage_client",
     ":memory_usage_server",
+    ":memory_usage_xds_client",
+    ":memory_usage_xds_server",
 ]
 
 MEMORY_USAGE_TAGS = [

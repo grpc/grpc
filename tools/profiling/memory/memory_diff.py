@@ -48,21 +48,25 @@ args = argp.parse_args()
 
 _INTERESTING = {
     "call/client": (
-        rb"client call memory usage: ([0-9\.]+) bytes per call",
+        rb"^client call memory usage: ([0-9\.]+) bytes per call",
         float,
     ),
     "call/server": (
-        rb"server call memory usage: ([0-9\.]+) bytes per call",
+        rb"^server call memory usage: ([0-9\.]+) bytes per call",
         float,
     ),
     "channel/client": (
-        rb"client channel memory usage: ([0-9\.]+) bytes per channel",
+        rb"^client channel memory usage: ([0-9\.]+) bytes per channel",
         float,
     ),
     "channel/server": (
-        rb"server channel memory usage: ([0-9\.]+) bytes per channel",
+        rb"^server channel memory usage: ([0-9\.]+) bytes per channel",
         float,
     ),
+    "channel/xds-client": (
+        rb"^xds client channel memory usage: ([0-9\.]+) bytes per channel",
+        float,
+    )
 }
 
 _SCENARIOS = {

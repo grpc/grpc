@@ -50,6 +50,7 @@ class ServerCallbackImpl final
     reactor->Finish(grpc::Status::OK);
     return reactor;
   }
+
   grpc::ServerUnaryReactor* GetBeforeSnapshot(
       grpc::CallbackServerContext* context,
       const grpc::testing::SimpleRequest* /* request */,

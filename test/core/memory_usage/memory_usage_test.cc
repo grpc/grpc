@@ -42,7 +42,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-ABSL_FLAG(std::string, benchmark_names, "call,channel",
+ABSL_FLAG(std::string, benchmark_names, "call,channel,xds",
           "Which benchmark to run");  // Default all benchmarks in order to
                                       // trigger CI testing for each one
 ABSL_FLAG(int, size, 1000, "Number of channels/calls");
@@ -149,6 +149,42 @@ int RunChannelBenchmark(char* root) {
   return svr.Join() == 0 ? 0 : 2;
 }
 
+// XDS benchmark
+int RunXdsBenchmark(char* root) {
+  // TODO(chennancy) Add the scenario specific flags
+  int status;
+  int port = grpc_pick_unused_port_or_die();
+
+  // start the server
+  std::vector<std::string> server_flags = {
+      absl::StrCat(root, "/memory_usage_xds_server",
+                   gpr_subprocess_binary_extension()),
+      "--bind", grpc_core::JoinHostPort("::", port)};
+  Subprocess svr(server_flags);
+
+  // Wait one second before starting client to avoid possible race condition
+  // of client sending an RPC before the server is set up
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+
+  // start the client
+  std::vector<std::string> client_flags = {
+      absl::StrCat(root, "/memory_usage_xds_client",
+                   gpr_subprocess_binary_extension()),
+      "--target",
+      grpc_core::JoinHostPort("localhost", port),
+      "--nosecure",
+      absl::StrCat("--server_pid=", svr.GetPID()),
+      absl::StrCat("--size=", absl::GetFlag(FLAGS_size))};
+  Subprocess cli(client_flags);
+  // wait for completion
+  if ((status = cli.Join()) != 0) {
+    printf("client failed with: %d", status);
+    return 1;
+  }
+  svr.Interrupt();
+  return svr.Join() == 0 ? 0 : 2;
+}
+
 int RunBenchmark(char* root, absl::string_view benchmark,
                  std::vector<std::string> server_scenario_flags,
                  std::vector<std::string> client_scenario_flags) {
@@ -156,6 +192,8 @@ int RunBenchmark(char* root, absl::string_view benchmark,
     return RunCallBenchmark(root, server_scenario_flags, client_scenario_flags);
   } else if (benchmark == "channel") {
     return RunChannelBenchmark(root);
+  } else if (benchmark == "xds") {
+    return RunXdsBenchmark(root);
   } else {
     gpr_log(GPR_INFO, "Not a valid benchmark name");
     return 4;
