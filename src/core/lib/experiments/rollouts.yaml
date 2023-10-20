@@ -69,7 +69,11 @@
     # implemented
     windows: broken
 - name: event_engine_listener
-  default: false
+  default:
+    # not tested on iOS at all
+    ios: broken
+    posix: false
+    windows: true
 - name: free_large_allocator
   default: false
 - name: jitter_max_idle
@@ -85,7 +89,7 @@
 - name: monitoring_experiment
   default: true
 - name: overload_protection
-  default: true
+  default: false
 - name: peer_state_based_framing
   default: false
 - name: pick_first_happy_eyeballs
