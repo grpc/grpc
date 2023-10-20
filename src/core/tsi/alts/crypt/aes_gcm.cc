@@ -43,7 +43,7 @@ char kEvpDigest[] = "SHA-256";
 /* Struct for additional data required if rekeying is enabled. */
 struct gsec_aes_gcm_aead_rekey_data {
   uint8_t kdf_counter[kKdfCounterLen];
-  uint8_t nonce_mask[kAesGcmNonceLength];
+  uint8_t* nonce_mask;
 };
 
 // Main struct for AES_GCM crypter interface.
@@ -55,6 +55,7 @@ struct gsec_aes_gcm_aead_crypter {
   uint8_t* key;
   gsec_aes_gcm_aead_rekey_data* rekey_data;
   EVP_CIPHER_CTX* ctx;
+  bool is_key_owner;
 };
 
 static char* aes_gcm_get_openssl_errors() {
@@ -603,7 +604,12 @@ static void gsec_aes_gcm_aead_crypter_destroy(gsec_aead_crypter* crypter) {
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
       reinterpret_cast<gsec_aes_gcm_aead_crypter*>(
           const_cast<gsec_aead_crypter*>(crypter));
-  gpr_free(aes_gcm_crypter->key);
+  if (aes_gcm_crypter->is_key_owner) {
+    gpr_free(aes_gcm_crypter->key);
+    if (aes_gcm_crypter->rekey_data != nullptr) {
+      gpr_free(aes_gcm_crypter->rekey_data->nonce_mask);
+    }
+  }
   gpr_free(aes_gcm_crypter->rekey_data);
   EVP_CIPHER_CTX_free(aes_gcm_crypter->ctx);
 }
@@ -655,12 +661,10 @@ static grpc_status_code aes_gcm_new_evp_cipher_ctx(
   return GRPC_STATUS_OK;
 }
 
-grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key,
-                                                  size_t key_length,
-                                                  size_t nonce_length,
-                                                  size_t tag_length, bool rekey,
-                                                  gsec_aead_crypter** crypter,
-                                                  char** error_details) {
+grpc_status_code gsec_aes_gcm_aead_crypter_create(
+    uint8_t* key, size_t key_length, bool copy_key, size_t nonce_length,
+    size_t tag_length, bool rekey, gsec_aead_crypter** crypter,
+    char** error_details) {
   if (key == nullptr) {
     aes_gcm_format_errors("key is nullptr.", error_details);
     return GRPC_STATUS_FAILED_PRECONDITION;
@@ -687,21 +691,32 @@ grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key,
   aes_gcm_crypter->crypter.vtable = &vtable;
   aes_gcm_crypter->nonce_length = nonce_length;
   aes_gcm_crypter->tag_length = tag_length;
+  aes_gcm_crypter->is_key_owner = copy_key;
   if (rekey) {
     aes_gcm_crypter->key_length = kKdfKeyLen;
     aes_gcm_crypter->rekey_data = static_cast<gsec_aes_gcm_aead_rekey_data*>(
         gpr_malloc(sizeof(gsec_aes_gcm_aead_rekey_data)));
-    memcpy(aes_gcm_crypter->rekey_data->nonce_mask, key + kKdfKeyLen,
-           kAesGcmNonceLength);
+    if (copy_key) {
+      aes_gcm_crypter->rekey_data->nonce_mask =
+          static_cast<uint8_t*>(gpr_malloc(kAesGcmNonceLength));
+      memcpy(aes_gcm_crypter->rekey_data->nonce_mask, key + kKdfKeyLen,
+             kAesGcmNonceLength);
+    } else {
+      aes_gcm_crypter->rekey_data->nonce_mask = key + kKdfKeyLen;
+    }
     // Set kdf_counter to all-zero for initial key derivation.
     memset(aes_gcm_crypter->rekey_data->kdf_counter, 0, kKdfCounterLen);
   } else {
     aes_gcm_crypter->key_length = key_length;
     aes_gcm_crypter->rekey_data = nullptr;
   }
-  aes_gcm_crypter->key =
-      static_cast<uint8_t*>(gpr_malloc(aes_gcm_crypter->key_length));
-  memcpy(aes_gcm_crypter->key, key, aes_gcm_crypter->key_length);
+  if (copy_key) {
+    aes_gcm_crypter->key =
+        static_cast<uint8_t*>(gpr_malloc(aes_gcm_crypter->key_length));
+    memcpy(aes_gcm_crypter->key, key, aes_gcm_crypter->key_length);
+  } else {
+    aes_gcm_crypter->key = key;
+  }
   aes_gcm_crypter->ctx = EVP_CIPHER_CTX_new();
   grpc_status_code status =
       aes_gcm_new_evp_cipher_ctx(aes_gcm_crypter, error_details);

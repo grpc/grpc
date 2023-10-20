@@ -354,17 +354,17 @@ static void create_random_alts_seal_crypter(
   size_t key_length = rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
   uint8_t* key;
   gsec_test_random_array(&key, key_length);
-  gsec_aes_gcm_aead_crypter_create(key, key_length, kAesGcmNonceLength,
-                                   kAesGcmTagLength, rekey, server_crypter_seal,
-                                   nullptr);
-  gsec_aes_gcm_aead_crypter_create(key, key_length, kAesGcmNonceLength,
-                                   kAesGcmTagLength, rekey,
+  gsec_aes_gcm_aead_crypter_create(key, key_length, /*copy_key=*/true,
+                                   kAesGcmNonceLength, kAesGcmTagLength, rekey,
+                                   server_crypter_seal, nullptr);
+  gsec_aes_gcm_aead_crypter_create(key, key_length, /*copy_key=*/true,
+                                   kAesGcmNonceLength, kAesGcmTagLength, rekey,
                                    server_crypter_unseal, nullptr);
-  gsec_aes_gcm_aead_crypter_create(key, key_length, kAesGcmNonceLength,
-                                   kAesGcmTagLength, rekey, client_crypter_seal,
-                                   nullptr);
-  gsec_aes_gcm_aead_crypter_create(key, key_length, kAesGcmNonceLength,
-                                   kAesGcmTagLength, rekey,
+  gsec_aes_gcm_aead_crypter_create(key, key_length, /*copy_key=*/true,
+                                   kAesGcmNonceLength, kAesGcmTagLength, rekey,
+                                   client_crypter_seal, nullptr);
+  gsec_aes_gcm_aead_crypter_create(key, key_length, /*copy_key=*/true,
+                                   kAesGcmNonceLength, kAesGcmTagLength, rekey,
                                    client_crypter_unseal, nullptr);
 
   size_t overflow_size = rekey ? 8 : 5;

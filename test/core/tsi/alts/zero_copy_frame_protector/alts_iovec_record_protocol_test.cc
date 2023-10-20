@@ -106,8 +106,8 @@ alts_iovec_record_protocol_test_fixture_create(bool rekey,
   gsec_aead_crypter* crypter = nullptr;
   // Create client record protocol for protect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
-                key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                &crypter, nullptr),
+                key, key_length, /*copy_key=*/true, kAesGcmNonceLength,
+                kAesGcmTagLength, rekey, &crypter, nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_iovec_record_protocol_create(
                 crypter, overflow_size, /*is_client=*/true, integrity_only,
@@ -115,8 +115,8 @@ alts_iovec_record_protocol_test_fixture_create(bool rekey,
             GRPC_STATUS_OK);
   // Create client record protocol for unprotect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
-                key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                &crypter, nullptr),
+                key, key_length, /*copy_key=*/true, kAesGcmNonceLength,
+                kAesGcmTagLength, rekey, &crypter, nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_iovec_record_protocol_create(
                 crypter, overflow_size, /*is_client=*/true, integrity_only,
@@ -124,8 +124,8 @@ alts_iovec_record_protocol_test_fixture_create(bool rekey,
             GRPC_STATUS_OK);
   // Create server record protocol for protect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
-                key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                &crypter, nullptr),
+                key, key_length, /*copy_key=*/true, kAesGcmNonceLength,
+                kAesGcmTagLength, rekey, &crypter, nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_iovec_record_protocol_create(
                 crypter, overflow_size, /*is_client=*/false, integrity_only,
@@ -133,8 +133,8 @@ alts_iovec_record_protocol_test_fixture_create(bool rekey,
             GRPC_STATUS_OK);
   // Create server record protocol for unprotect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
-                key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                &crypter, nullptr),
+                key, key_length, /*copy_key=*/true, kAesGcmNonceLength,
+                kAesGcmTagLength, rekey, &crypter, nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_iovec_record_protocol_create(
                 crypter, overflow_size, /*is_client=*/false, integrity_only,

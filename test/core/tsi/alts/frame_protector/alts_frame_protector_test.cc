@@ -34,7 +34,7 @@
 const size_t kChannelSize = 32768;
 
 static void alts_test_do_round_trip_check_frames(
-    tsi_test_frame_protector_fixture* fixture, const uint8_t* key,
+    tsi_test_frame_protector_fixture* fixture, uint8_t* key,
     const size_t key_size, bool rekey, const uint8_t* client_message,
     const size_t client_message_size, const uint8_t* client_expected_frames,
     const size_t client_frame_size, const uint8_t* server_message,
@@ -120,8 +120,8 @@ static void alts_test_do_round_trip_check_frames(
 }
 
 static void alts_test_do_round_trip_vector_tests() {
-  const uint8_t key[] = {0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
-                         0x6d, 0x6a, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08};
+  uint8_t key[] = {0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
+                   0x6d, 0x6a, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08};
   const char small_message[] = {'C', 'h', 'a', 'p', 'i', ' ',
                                 'C', 'h', 'a', 'p', 'o'};
   const uint8_t large_message[] = {

@@ -329,23 +329,22 @@ static void alts_destroy(tsi_frame_protector* self) {
 static const tsi_frame_protector_vtable alts_frame_protector_vtable = {
     alts_protect, alts_protect_flush, alts_unprotect, alts_destroy};
 
-static grpc_status_code create_alts_crypters(const uint8_t* key,
-                                             size_t key_size, bool is_client,
-                                             bool is_rekey,
+static grpc_status_code create_alts_crypters(uint8_t* key, size_t key_size,
+                                             bool is_client, bool is_rekey,
                                              alts_frame_protector* impl,
                                              char** error_details) {
   grpc_status_code status;
   gsec_aead_crypter* aead_crypter_seal = nullptr;
   gsec_aead_crypter* aead_crypter_unseal = nullptr;
-  status = gsec_aes_gcm_aead_crypter_create(key, key_size, kAesGcmNonceLength,
-                                            kAesGcmTagLength, is_rekey,
-                                            &aead_crypter_seal, error_details);
+  status = gsec_aes_gcm_aead_crypter_create(
+      key, key_size, /*copy_key=*/true, kAesGcmNonceLength, kAesGcmTagLength,
+      is_rekey, &aead_crypter_seal, error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
   status = gsec_aes_gcm_aead_crypter_create(
-      key, key_size, kAesGcmNonceLength, kAesGcmTagLength, is_rekey,
-      &aead_crypter_unseal, error_details);
+      key, key_size, /*copy_key=*/true, kAesGcmNonceLength, kAesGcmTagLength,
+      is_rekey, &aead_crypter_unseal, error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
@@ -362,7 +361,7 @@ static grpc_status_code create_alts_crypters(const uint8_t* key,
   return status;
 }
 
-tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
+tsi_result alts_create_frame_protector(uint8_t* key, size_t key_size,
                                        bool is_client, bool is_rekey,
                                        size_t* max_protected_frame_size,
                                        tsi_frame_protector** self) {

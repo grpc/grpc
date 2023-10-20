@@ -40,13 +40,11 @@ constexpr size_t kMinFrameLength = 1024;
 constexpr size_t kDefaultFrameLength = 16 * 1024;
 constexpr size_t kMaxFrameLength = 16 * 1024 * 1024;
 
-///
-/// Main struct for alts_zero_copy_grpc_protector.
-/// We choose to have two alts_grpc_record_protocol objects and two sets of
-/// slice buffers: one for protect and the other for unprotect, so that protect
-/// and unprotect can be executed in parallel. Implementations of this object
-/// must be thread compatible.
-///
+// Main struct for alts_zero_copy_grpc_protector.
+// We choose to have two alts_grpc_record_protocol objects and two sets of
+// slice buffers: one for protect and the other for unprotect, so that protect
+// and unprotect can be executed in parallel. Implementations of this object
+// must be thread compatible.
 typedef struct alts_zero_copy_grpc_protector {
   tsi_zero_copy_grpc_protector base;
   alts_grpc_record_protocol* record_protocol;
@@ -59,12 +57,10 @@ typedef struct alts_zero_copy_grpc_protector {
   uint32_t parsed_frame_size;
 } alts_zero_copy_grpc_protector;
 
-///
-/// Given a slice buffer, parses the first 4 bytes little-endian unsigned frame
-/// size and returns the total frame size including the frame field. Caller
-/// needs to make sure the input slice buffer has at least 4 bytes. Returns true
-/// on success and false on failure.
-///
+// Given a slice buffer, parses the first 4 bytes little-endian unsigned frame
+// size and returns the total frame size including the frame field. Caller
+// needs to make sure the input slice buffer has at least 4 bytes. Returns true
+// on success and false on failure.
 static bool read_frame_size(const grpc_slice_buffer* sb,
                             uint32_t* total_frame_size) {
   if (sb == nullptr || sb->length < kZeroCopyFrameLengthFieldSize) {
@@ -102,15 +98,16 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
   return true;
 }
 
-///
-/// Creates an alts_grpc_record_protocol object, given key, key size, and flags
-/// to indicate whether the record_protocol object uses the rekeying AEAD,
-/// whether the object is for client or server, whether the object is for
-/// integrity-only or privacy-integrity mode, and whether the object is used
-/// for protect or unprotect.
-///
+// Creates an alts_grpc_record_protocol object, given key, key size, and flags
+// to indicate whether the record_protocol object uses the rekeying AEAD,
+// whether the object is for client or server, whether the object is for
+// integrity-only or privacy-integrity mode, and whether the object is used
+// for protect or unprotect.
+// When copy_key is true, the given key will not be mutated and a copy of it
+// will be made for the underlying encrypter. If false, the caller must ensure
+// the given key is available throughout the lifetime of the record_protocol.
 static tsi_result create_alts_grpc_record_protocol(
-    const uint8_t* key, size_t key_size, bool is_rekey, bool is_client,
+    uint8_t* key, size_t key_size, bool copy_key, bool is_rekey, bool is_client,
     bool is_integrity_only, bool is_protect, bool enable_extra_copy,
     alts_grpc_record_protocol** record_protocol) {
   if (key == nullptr || record_protocol == nullptr) {
@@ -119,9 +116,9 @@ static tsi_result create_alts_grpc_record_protocol(
   grpc_status_code status;
   gsec_aead_crypter* crypter = nullptr;
   char* error_details = nullptr;
-  status = gsec_aes_gcm_aead_crypter_create(key, key_size, kAesGcmNonceLength,
-                                            kAesGcmTagLength, is_rekey,
-                                            &crypter, &error_details);
+  status = gsec_aes_gcm_aead_crypter_create(
+      key, key_size, copy_key, kAesGcmNonceLength, kAesGcmTagLength, is_rekey,
+      &crypter, &error_details);
   if (status != GRPC_STATUS_OK) {
     gpr_log(GPR_ERROR, "Failed to create AEAD crypter, %s", error_details);
     gpr_free(error_details);
@@ -259,7 +256,7 @@ static const tsi_zero_copy_grpc_protector_vtable
         alts_zero_copy_grpc_protector_max_frame_size};
 
 tsi_result alts_zero_copy_grpc_protector_create(
-    const uint8_t* key, size_t key_size, bool is_rekey, bool is_client,
+    uint8_t* key, size_t key_size, bool copy_key, bool is_rekey, bool is_client,
     bool is_integrity_only, bool enable_extra_copy,
     size_t* max_protected_frame_size,
     tsi_zero_copy_grpc_protector** protector) {
@@ -275,11 +272,11 @@ tsi_result alts_zero_copy_grpc_protector_create(
           gpr_zalloc(sizeof(alts_zero_copy_grpc_protector)));
   // Creates alts_grpc_record_protocol objects.
   tsi_result status = create_alts_grpc_record_protocol(
-      key, key_size, is_rekey, is_client, is_integrity_only,
+      key, key_size, copy_key, is_rekey, is_client, is_integrity_only,
       /*is_protect=*/true, enable_extra_copy, &impl->record_protocol);
   if (status == TSI_OK) {
     status = create_alts_grpc_record_protocol(
-        key, key_size, is_rekey, is_client, is_integrity_only,
+        key, key_size, copy_key, is_rekey, is_client, is_integrity_only,
         /*is_protect=*/false, enable_extra_copy, &impl->unrecord_protocol);
     if (status == TSI_OK) {
       // Sets maximum frame size.

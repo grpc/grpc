@@ -18,6 +18,8 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 
+#include <cstdint>
+
 #include <gtest/gtest.h>
 
 #include <grpc/slice_buffer.h>
@@ -45,6 +47,7 @@ constexpr size_t kChannelMinSize = 128;
 struct alts_zero_copy_grpc_protector_test_fixture {
   tsi_zero_copy_grpc_protector* client;
   tsi_zero_copy_grpc_protector* server;
+  uint8_t* key;
 };
 
 // Test input variables for protect/unprotect operations.
@@ -106,7 +109,8 @@ static bool are_slice_buffers_equal(grpc_slice_buffer* first,
 static alts_zero_copy_grpc_protector_test_fixture*
 alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
                                                   bool integrity_only,
-                                                  bool enable_extra_copy) {
+                                                  bool enable_extra_copy,
+                                                  bool copy_key) {
   alts_zero_copy_grpc_protector_test_fixture* fixture =
       static_cast<alts_zero_copy_grpc_protector_test_fixture*>(
           gpr_zalloc(sizeof(alts_zero_copy_grpc_protector_test_fixture)));
@@ -115,23 +119,24 @@ alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
   size_t max_protected_frame_size = 1024;
   size_t actual_max_protected_frame_size;
   gsec_test_random_array(&key, key_length);
-  EXPECT_EQ(alts_zero_copy_grpc_protector_create(
-                key, key_length, rekey, /*is_client=*/true, integrity_only,
-                enable_extra_copy, &max_protected_frame_size, &fixture->client),
-            TSI_OK);
+  EXPECT_EQ(
+      alts_zero_copy_grpc_protector_create(
+          key, key_length, copy_key, rekey, /*is_client=*/true, integrity_only,
+          enable_extra_copy, &max_protected_frame_size, &fixture->client),
+      TSI_OK);
   EXPECT_EQ(tsi_zero_copy_grpc_protector_max_frame_size(
                 fixture->client, &actual_max_protected_frame_size),
             TSI_OK);
   EXPECT_EQ(actual_max_protected_frame_size, max_protected_frame_size);
-  EXPECT_EQ(alts_zero_copy_grpc_protector_create(
-                key, key_length, rekey, /*is_client=*/false, integrity_only,
-                enable_extra_copy, &max_protected_frame_size, &fixture->server),
-            TSI_OK);
+  EXPECT_EQ(
+      alts_zero_copy_grpc_protector_create(
+          key, key_length, copy_key, rekey, /*is_client=*/false, integrity_only,
+          enable_extra_copy, &max_protected_frame_size, &fixture->server),
+      TSI_OK);
   EXPECT_EQ(tsi_zero_copy_grpc_protector_max_frame_size(
                 fixture->server, &actual_max_protected_frame_size),
             TSI_OK);
   EXPECT_EQ(actual_max_protected_frame_size, max_protected_frame_size);
-  gpr_free(key);
   return fixture;
 }
 
@@ -142,6 +147,7 @@ static void alts_zero_copy_grpc_protector_test_fixture_destroy(
   }
   tsi_zero_copy_grpc_protector_destroy(fixture->client);
   tsi_zero_copy_grpc_protector_destroy(fixture->server);
+  gpr_free(fixture->key);
   gpr_free(fixture);
 }
 
@@ -251,56 +257,58 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
 // --- Test cases. ---
 
 static void alts_zero_copy_protector_seal_unseal_small_buffer_tests(
-    bool enable_extra_copy) {
+    bool enable_extra_copy, bool copy_key) {
   alts_zero_copy_grpc_protector_test_fixture* fixture =
       alts_zero_copy_grpc_protector_test_fixture_create(
-          /*rekey=*/false, /*integrity_only=*/true, enable_extra_copy);
+          /*rekey=*/false, /*integrity_only=*/true, enable_extra_copy,
+          copy_key);
   seal_unseal_small_buffer(fixture->client, fixture->server);
   seal_unseal_small_buffer(fixture->server, fixture->client);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
-      /*rekey=*/false, /*integrity_only=*/false, enable_extra_copy);
+      /*rekey=*/false, /*integrity_only=*/false, enable_extra_copy, copy_key);
   seal_unseal_small_buffer(fixture->client, fixture->server);
   seal_unseal_small_buffer(fixture->server, fixture->client);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
-      /*rekey=*/true, /*integrity_only=*/true, enable_extra_copy);
+      /*rekey=*/true, /*integrity_only=*/true, enable_extra_copy, copy_key);
   seal_unseal_small_buffer(fixture->client, fixture->server);
   seal_unseal_small_buffer(fixture->server, fixture->client);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
-      /*rekey=*/true, /*integrity_only=*/false, enable_extra_copy);
+      /*rekey=*/true, /*integrity_only=*/false, enable_extra_copy, copy_key);
   seal_unseal_small_buffer(fixture->client, fixture->server);
   seal_unseal_small_buffer(fixture->server, fixture->client);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 }
 
 static void alts_zero_copy_protector_seal_unseal_large_buffer_tests(
-    bool enable_extra_copy) {
+    bool enable_extra_copy, bool copy_key) {
   alts_zero_copy_grpc_protector_test_fixture* fixture =
       alts_zero_copy_grpc_protector_test_fixture_create(
-          /*rekey=*/false, /*integrity_only=*/true, enable_extra_copy);
+          /*rekey=*/false, /*integrity_only=*/true, enable_extra_copy,
+          copy_key);
   seal_unseal_large_buffer(fixture->client, fixture->server);
   seal_unseal_large_buffer(fixture->server, fixture->client);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
-      /*rekey=*/false, /*integrity_only=*/false, enable_extra_copy);
+      /*rekey=*/false, /*integrity_only=*/false, enable_extra_copy, copy_key);
   seal_unseal_large_buffer(fixture->client, fixture->server);
   seal_unseal_large_buffer(fixture->server, fixture->client);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
-      /*rekey=*/true, /*integrity_only=*/true, enable_extra_copy);
+      /*rekey=*/true, /*integrity_only=*/true, enable_extra_copy, copy_key);
   seal_unseal_large_buffer(fixture->client, fixture->server);
   seal_unseal_large_buffer(fixture->server, fixture->client);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
-      /*rekey=*/true, /*integrity_only=*/false, enable_extra_copy);
+      /*rekey=*/true, /*integrity_only=*/false, enable_extra_copy, copy_key);
   seal_unseal_large_buffer(fixture->client, fixture->server);
   seal_unseal_large_buffer(fixture->server, fixture->client);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
@@ -309,13 +317,13 @@ static void alts_zero_copy_protector_seal_unseal_large_buffer_tests(
 TEST(AltsZeroCopyGrpcProtectorTest, MainTest) {
   grpc_init();
   alts_zero_copy_protector_seal_unseal_small_buffer_tests(
-      /*enable_extra_copy=*/false);
+      /*enable_extra_copy=*/false, /*copy_key=*/true);
   alts_zero_copy_protector_seal_unseal_small_buffer_tests(
-      /*enable_extra_copy=*/true);
+      /*enable_extra_copy=*/true, /*copy_key=*/true);
   alts_zero_copy_protector_seal_unseal_large_buffer_tests(
-      /*enable_extra_copy=*/false);
+      /*enable_extra_copy=*/false, /*copy_key=*/false);
   alts_zero_copy_protector_seal_unseal_large_buffer_tests(
-      /*enable_extra_copy=*/true);
+      /*enable_extra_copy=*/true, /*copy_key=*/false);
   grpc_shutdown();
 }
 
