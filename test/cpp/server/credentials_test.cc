@@ -46,8 +46,8 @@ using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::NoOpCertificateVerifier;
 using ::grpc::experimental::StaticDataCertificateProvider;
-using ::grpc::experimental::TlsServerCredentialsOptions;
 using ::grpc::experimental::TlsServerCredentials;
+using ::grpc::experimental::TlsServerCredentialsOptions;
 
 }  // namespace
 

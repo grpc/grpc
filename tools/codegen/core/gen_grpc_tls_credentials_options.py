@@ -410,7 +410,7 @@ for i in range(len(_DATA_MEMBERS)):
         )
     else:
         operator_equal_content += (
-            _DATA_MEMBERS[i].name + "(other." + _DATA_MEMBERS[i].name + "),"
+            _DATA_MEMBERS[i].name + "(other." + _DATA_MEMBERS[i].name + "),\n"
         )
 print(operator_equal_content + "  {}", file=H)
 
