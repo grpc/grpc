@@ -884,6 +884,13 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   }
 }
 
+// FIXME: add tests:
+// - we have a selected subchannel and get a resolver update that
+//   removes that address from the list (should go IDLE)
+// - we have a selected subchannel and get a resolver update that
+//   includes that address in the list (should trigger another READY
+//   update but not change behavior)
+
 TEST_F(PickFirstTest, WithShuffle) {
   constexpr std::array<absl::string_view, 6> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
