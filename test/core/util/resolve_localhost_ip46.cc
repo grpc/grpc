@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>

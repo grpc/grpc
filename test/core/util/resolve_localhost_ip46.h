@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CORE_UTIL_RESOLVE_LOCALHOST_IP46_H
 #define GRPC_TEST_CORE_UTIL_RESOLVE_LOCALHOST_IP46_H
 
+#include <string>
+
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
