@@ -133,6 +133,11 @@ CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreams) {
   live_call = (live_call == 300) ? 400 : 300;
   Expect(live_call + 1, true);
   Step();
+  // Spin for a little: we expect to see no events now - and this time allows
+  // any overload protection machinery in the transport to settle (chttp2 tries
+  // to ensure calls are finished deleting before allowing more requests
+  // through).
+  Step();
   auto s2 = RequestCall(201);
   Expect(201, true);
   Step();
