@@ -89,7 +89,7 @@
 - name: monitoring_experiment
   default: true
 - name: overload_protection
-  default: false
+  default: true
 - name: peer_state_based_framing
   default: false
 - name: pick_first_happy_eyeballs
