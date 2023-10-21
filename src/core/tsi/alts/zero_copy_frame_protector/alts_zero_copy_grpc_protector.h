@@ -32,7 +32,7 @@
 //  mutated if copy_key is set to false.
 //- key_size: the size of symmetric key.
 //- copy_key: when true, the given key will not be mutated and a copy of it
-//  will be made for the underlying encrypter. If false, the caller must ensure
+//  will be made for the underlying crypter. If false, the caller must ensure
 //  the given key is available throughout the lifetime of the record_protocol.
 //- is_rekey: use rekeying AEAD crypter.
 //- is_client: a flag indicating if the protector will be used at client or
