@@ -39,7 +39,6 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "multiping",
-                "overload_protection",
                 "peer_state_based_framing",
                 "red_max_concurrent_streams",
                 "rstpit",
@@ -89,6 +88,7 @@ EXPERIMENTS = {
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],
@@ -129,7 +129,6 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "multiping",
-                "overload_protection",
                 "peer_state_based_framing",
                 "red_max_concurrent_streams",
                 "rstpit",
@@ -173,6 +172,7 @@ EXPERIMENTS = {
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],
@@ -224,7 +224,6 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "multiping",
-                "overload_protection",
                 "peer_state_based_framing",
                 "red_max_concurrent_streams",
                 "rstpit",
@@ -271,6 +270,7 @@ EXPERIMENTS = {
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
                 "lazier_stream_updates",
+                "overload_protection",
                 "write_size_cap",
                 "write_size_policy",
             ],
