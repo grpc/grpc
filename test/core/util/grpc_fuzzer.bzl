@@ -16,7 +16,8 @@
 Includes fuzzer rules.
 """
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+load("//bazel:grpc_build_system_test.bzl", "grpc_cc_test")
 
 def grpc_fuzzer(name, corpus, owner = "grpc", srcs = [], tags = [], external_deps = [], deps = [], data = [], size = "large", **kwargs):
     """Instantiates a fuzzer test.

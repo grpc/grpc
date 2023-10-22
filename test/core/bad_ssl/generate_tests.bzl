@@ -17,7 +17,8 @@
 Houses grpc_bad_ssl_tests.
 """
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
+load("//bazel:grpc_build_system_test.bzl", "grpc_cc_test")
 
 def test_options():
     return struct()
