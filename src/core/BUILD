@@ -904,6 +904,7 @@ grpc_cc_library(
         "poll",
         "promise_trace",
         "seq",
+        "status_flag",
         "//:debug_location",
         "//:gpr",
         "//:ref_counted_ptr",

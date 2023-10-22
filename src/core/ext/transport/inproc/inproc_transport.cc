@@ -29,6 +29,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -43,7 +44,6 @@ class InprocTransport : public Transport {
   void SetPollsetSet(grpc_stream* stream, grpc_pollset_set* pollset_set) final {
   }
   grpc_endpoint* GetEndpoint() final { return nullptr; }
-  void PerformOp(grpc_transport_op* op) final;
 };
 
 class InprocClientTransport;
@@ -52,31 +52,45 @@ class InprocServerTransport;
 class InprocClientTransport final : public InprocTransport,
                                     public ClientTransport {
  public:
+  explicit InprocClientTransport(RefCountedPtr<InprocServerTransport> server);
+
   ClientTransport* client_transport() override { return this; }
   ServerTransport* server_transport() override { return nullptr; }
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args) override;
 
-  void Orphan() override;
+  void Orphan() override { delete this; }
+
+  void PerformOp(grpc_transport_op* op) final;
 
  private:
-  InprocServerTransport* server();
+  InprocServerTransport* server() { return server_.get(); }
+
+  RefCountedPtr<InprocServerTransport> server_;
 };
 
-class InprocServerTransport final : public InprocTransport,
-                                    public ServerTransport {
+class InprocServerTransport final
+    : public InprocTransport,
+      public ServerTransport,
+      public RefCounted<InprocServerTransport, NonPolymorphicRefCount> {
  public:
   ClientTransport* client_transport() override { return nullptr; }
   ServerTransport* server_transport() override { return this; }
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs client_call_args);
 
-  void Orphan() override;
+  void Orphan() override { Unref(); }
+
+  void PerformOp(grpc_transport_op* op) final;
 
  private:
   AcceptFn accept_fn_;
 };
+
+InprocClientTransport::InprocClientTransport(
+    RefCountedPtr<InprocServerTransport> server)
+    : server_(server) {}
 
 ArenaPromise<ServerMetadataHandle> InprocClientTransport::MakeCallPromise(
     CallArgs call_args) {
@@ -137,6 +151,23 @@ bool UsePromiseBasedTransport() {
   }
   return true;
 }
+
+RefCountedPtr<Channel> CreateInprocChannel(Server* server, ChannelArgs args) {
+  auto server_transport = MakeRefCounted<InprocServerTransport>();
+  auto client_transport =
+      MakeOrphanable<InprocClientTransport>(server_transport);
+  auto setup_error =
+      server->SetupTransport(server_transport.get(), nullptr,
+                             server->channel_args()
+                                 .Remove(GRPC_ARG_MAX_CONNECTION_IDLE_MS)
+                                 .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS),
+                             nullptr);
+  if (!setup_error.ok()) return nullptr;
+  return Channel::Create("inproc", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                         client_transport.release())
+      .value_or(nullptr);
+}
+
 }  // namespace
 
 }  // namespace grpc_core
@@ -147,5 +178,11 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   if (!grpc_core::UsePromiseBasedTransport()) {
     return grpc_legacy_inproc_channel_create(server, args, reserved);
   }
-  grpc_core::Crash("unimplemented");
+  auto p = grpc_core::CreateInprocChannel(grpc_core::Server::FromC(server),
+                                          grpc_core::CoreConfiguration::Get()
+                                              .channel_args_preconditioning()
+                                              .PreconditionChannelArgs(args));
+  if (p != nullptr) return p.release()->c_ptr();
+  return grpc_lame_client_channel_create(nullptr, GRPC_STATUS_UNAVAILABLE,
+                                         "Failed to create client channel");
 }
