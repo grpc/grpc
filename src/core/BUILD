@@ -419,6 +419,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "status_flag",
+    external_deps = ["absl/status"],
     language = "c++",
     public_hdrs = [
         "lib/promise/status_flag.h",
@@ -6002,6 +6003,7 @@ grpc_cc_library(
         "ext/transport/inproc/legacy_inproc_transport.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6010,7 +6012,9 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "1999",
+        "activity",
         "arena",
+        "arena_promise",
         "channel_args",
         "channel_args_preconditioning",
         "channel_stack_type",
@@ -6019,6 +6023,9 @@ grpc_cc_library(
         "experiments",
         "for_each",
         "iomgr_fwd",
+        "map",
+        "pipe",
+        "poll",
         "seq",
         "slice",
         "slice_buffer",
