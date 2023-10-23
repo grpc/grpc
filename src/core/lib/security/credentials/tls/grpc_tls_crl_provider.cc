@@ -24,6 +24,7 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 // IWYU pragma: no_include <openssl/mem.h>
 #include <dirent.h>
@@ -99,11 +100,12 @@ std::vector<FileData> GetFilesInDirectory(
     const std::string& crl_directory_path) {
   DIR* crl_directory;
   if ((crl_directory = opendir(crl_directory_path.c_str())) == nullptr) {
-    // Try getting full absolute path of crl_directory_path
+    // TODO(gtcooke94) - directory has gone bad, what should we do? Status
+    // return here?
+    return std::vector<FileData>();
   }
   std::vector<FileData> crl_files;
   struct dirent* directory_entry;
-  // bool all_files_successful = true;
   while ((directory_entry = readdir(crl_directory)) != nullptr) {
     const char* file_name = directory_entry->d_name;
 
@@ -129,16 +131,9 @@ std::vector<FileData> GetFilesInDirectory(
 // TODO(gtcooke94) How to best test this?
 #include <windows.h>
 
-void GetAbsoluteFilePath(const char* valid_file_dir,
-                         const char* file_entry_name, char* path_buffer) {
-  if (valid_file_dir != nullptr && file_entry_name != nullptr) {
-    int path_len = snprintf(path_buffer, MAXPATHLEN, "%s\%s", valid_file_dir,
-                            file_entry_name);
-    if (path_len == 0) {
-      gpr_log(GPR_ERROR, "failed to get absolute path for file: %s",
-              file_entry_name);
-    }
-  }
+std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
+                                absl::string_view file_entry_name) {
+  return absl::StrFormat("%s\%s", valid_file_dir, file_entry_name);
 }
 
 // Reference for reading directory in Windows:
@@ -161,53 +156,6 @@ std::vector<FileData> GetFilesInDirectory(
     } while (::FindNextFile(hFind, &find_data));
     ::FindClose(hFind);
   }
-  return crl_files;
-
-  vector<string> names;
-  string search_path = folder + "/*.*";
-  WIN32_FIND_DATA fd;
-  HANDLE hFind = ::FindFirstFile(search_path.c_str(), &fd);
-  if (hFind != INVALID_HANDLE_VALUE) {
-    do {
-      // read all (real) files in current folder
-      // , delete '!' read other 2 default folder . and ..
-      if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        names.push_back(fd.cFileName);
-      }
-    } while (::FindNextFile(hFind, &fd));
-    ::FindClose(hFind);
-  }
-  return names;
-
-  DIR* crl_directory;
-  if ((crl_directory = opendir(crl_directory_.c_str())) == nullptr) {
-    // Try getting full absolute path of crl_directory_
-  }
-  std::vector<FileData> crl_files;
-  struct dirent* directory_entry;
-  // bool all_files_successful = true;
-  while ((directory_entry = readdir(crl_directory)) != nullptr) {
-    const char* file_name = directory_entry->d_name;
-
-    FileData file_data;
-    GetAbsoluteFilePath(crl_directory_.c_str(), file_name, file_data.path);
-    struct stat dir_entry_stat;
-    int stat_return = stat(file_data.path, &dir_entry_stat);
-    if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
-      // TODO(gtcooke94) More checks here
-      // no subdirectories.
-      if (stat_return == -1) {
-        // TODO(gtcooke94) does this constitute a failure to read? What cases
-        // will this fail on?
-        // all_files_successful = false;
-        gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
-      }
-      continue;
-    }
-    file_data.size = dir_entry_stat.st_size;
-    crl_files.push_back(file_data);
-  }
-  closedir(crl_directory);
   return crl_files;
 }
 
@@ -294,6 +242,8 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderProvider(
   }
   auto provider = std::make_shared<DirectoryReloaderCrlProviderImpl>(
       directory, refresh_duration, reload_error_callback);
+  // TODO(gtcooke94) this could be slow to do at startup, but I think we want to
+  // make sure it's done before the provider is used.
   absl::Status initial_status = provider->Update();
   if (!initial_status.ok()) {
     return initial_status;
@@ -360,7 +310,9 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
         "Not all files in CRL directory read successfully during async "
         "update.");
   } else {
+    mu_.Lock();
     crls_ = std::move(new_crls);
+    mu_.Unlock();
   }
   return absl::OkStatus();
 }

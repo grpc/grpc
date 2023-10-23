@@ -85,7 +85,6 @@ class DirectoryReloaderCrlProvider : public CrlProvider {
   CreateDirectoryReloaderProvider(
       absl::string_view directory, std::chrono::seconds refresh_duration,
       std::function<void(absl::Status)> reload_error_callback);
-  // ~DirectoryReloaderCrlProvider() override;
 };
 
 // Defining this here lets us hide implementation details (and includes) from
@@ -94,9 +93,9 @@ class DirectoryReloaderCrlProviderImpl
     : public DirectoryReloaderCrlProvider,
       public std::enable_shared_from_this<DirectoryReloaderCrlProviderImpl> {
  public:
-  DirectoryReloaderCrlProviderImpl(::absl::string_view directory,
-                                   ::std::chrono::seconds duration,
-                                   ::std::function<void(absl::Status)> callback)
+  DirectoryReloaderCrlProviderImpl(absl::string_view directory,
+                                   std::chrono::seconds duration,
+                                   std::function<void(absl::Status)> callback)
       : crl_directory_(directory),
         refresh_duration_(duration),
         reload_error_callback_(callback),
@@ -104,13 +103,20 @@ class DirectoryReloaderCrlProviderImpl
             grpc_event_engine::experimental::GetDefaultEventEngine()) {}
   ~DirectoryReloaderCrlProviderImpl() override;
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
+  // Schedules the next reload using event engine.
   void ScheduleReload();
+  // Reads the configured directory and updates the internal crls_ map, called
+  // asynchronously by event engine.
+  absl::Status Update();
+
+ private:
   void OnNextUpdateTimer();
 
-  absl::Status Update();
-  absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_;
-  std::string crl_directory_;
+  // guards the crls_ map
   absl::Mutex mu_;
+  absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_
+      ABSL_GUARDED_BY(mu_);
+  std::string crl_directory_;
   std::chrono::seconds refresh_duration_;
   std::function<void(::absl::Status)> reload_error_callback_;
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
