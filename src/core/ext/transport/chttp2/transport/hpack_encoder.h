@@ -285,7 +285,7 @@ class TimeoutCompressorImpl {
   void EncodeWith(absl::string_view key, Timestamp deadline, Encoder* encoder);
 
  private:
-  enum { kNumPreviousValues = 5 };
+  static constexpr const size_t kNumPreviousValues = 5;
   PreviousTimeout previous_timeouts_[kNumPreviousValues];
   uint32_t next_previous_value_ = 0;
 };
