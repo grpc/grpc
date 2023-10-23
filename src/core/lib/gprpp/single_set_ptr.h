@@ -74,6 +74,8 @@ class SingleSetPtr {
 
   T& operator*() const { return *operator->(); }
 
+  T* get() { return p_.load(std::memory_order_acquire); }
+
  private:
   static void Delete(T* p) {
     if (p == nullptr) return;

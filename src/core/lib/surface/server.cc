@@ -1212,20 +1212,50 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     server_->channels_.push_front(this);
     list_position_ = server_->channels_.begin();
   }
-  // Start accept_stream transport op.
-  grpc_transport_op* op = grpc_make_transport_op(nullptr);
-  op->set_accept_stream = true;
-  op->set_accept_stream_fn = AcceptStream;
-  if (IsRegisteredMethodLookupInTransportEnabled()) {
-    op->set_registered_method_matcher_fn = SetRegisteredMethodOnMetadata;
+  // Start accept_stream transport op if the transport is filter based.
+  if (transport->filter_stack_transport() != nullptr) {
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->set_accept_stream = true;
+    op->set_accept_stream_fn = AcceptStream;
+    if (IsRegisteredMethodLookupInTransportEnabled()) {
+      op->set_registered_method_matcher_fn = SetRegisteredMethodOnMetadata;
+    }
+    // op->set_registered_method_matcher_fn = Registered
+    op->set_accept_stream_user_data = this;
+    op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);
+    if (server_->ShutdownCalled()) {
+      op->disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");
+    }
+    transport->PerformOp(op);
   }
-  // op->set_registered_method_matcher_fn = Registered
-  op->set_accept_stream_user_data = this;
-  op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);
-  if (server_->ShutdownCalled()) {
-    op->disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");
+  if (transport->server_transport() != nullptr) {
+    transport->server_transport()->SetAccept(
+        [this](ClientMetadataHandle metadata)
+            -> absl::StatusOr<RefCountedPtr<CallPart>> {
+          auto* authority = metadata->get_pointer(HttpAuthorityMetadata());
+          if (authority == nullptr) {
+            authority = metadata->get_pointer(HostMetadata());
+            if (authority == nullptr) {
+              // Authority not being set is an RPC error.
+              return absl::InternalError("No host header");
+            }
+          }
+          auto* path = metadata->get_pointer(HttpPathMetadata());
+          if (path == nullptr) {
+            // Path not being set would result in an RPC error.
+            return absl::InternalError("No :path header");
+          }
+          ChannelRegisteredMethod* method;
+          if (!IsRegisteredMethodsMapEnabled()) {
+            method = GetRegisteredMethod(authority->c_slice(), path->c_slice());
+          } else {
+            method = GetRegisteredMethod(authority->as_string_view(),
+                                         path->as_string_view());
+          }
+          // insert in metadata
+          metadata->Set(GrpcRegisteredMethod(), method);
+        });
   }
-  transport->PerformOp(op);
 }
 
 Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(

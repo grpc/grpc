@@ -537,9 +537,6 @@ typedef struct grpc_transport_op {
   void (*set_registered_method_matcher_fn)(
       void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* set_accept_stream_user_data = nullptr;
-  void (*set_make_promise_fn)(void* user_data, grpc_core::Transport* transport,
-                              const void* server_data) = nullptr;
-  void* set_make_promise_user_data = nullptr;
   /// add this transport to a pollset
   grpc_pollset* bind_pollset = nullptr;
   /// add this transport to a pollset_set
@@ -567,12 +564,6 @@ typedef struct grpc_transport_op {
   /// detects an error in the stream, invoking
   /// `set_registered_method_matcher_fn` can be skipped.
   bool set_accept_stream = false;
-
-  /// set the callback for accepting new streams based upon promises;
-  /// this is a permanent callback, unlike the other one-shot closures.
-  /// If true, the callback is set to set_make_promise_fn, with its
-  /// user_data argument set to set_make_promise_data
-  bool set_make_promise = false;
 
   //**************************************************************************
   // remaining fields are initialized and used at the discretion of the
@@ -718,12 +709,12 @@ class ClientTransport {
 
 class ServerTransport {
  public:
-  using AcceptFn =
-      absl::AnyInvocable<RefCountedPtr<CallPart>(ClientMetadataHandle) const>;
+  using AcceptFn = absl::AnyInvocable<absl::StatusOr<RefCountedPtr<CallPart>>(
+      ClientMetadataHandle) const>;
 
   // Register the factory function for the filter stack part of a call
   // promise.
-  void SetAccept(AcceptFn accept);
+  virtual void SetAccept(AcceptFn accept) = 0;
 
  protected:
   ~ServerTransport() = default;
