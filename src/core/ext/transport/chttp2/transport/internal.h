@@ -552,6 +552,9 @@ struct grpc_chttp2_transport final
   bool ack_pings = true;
   /// True if the keepalive system wants to see some data incoming
   bool keepalive_incoming_data_wanted = false;
+  /// True if we count stream allocation (instead of HTTP2 concurrency) for
+  /// MAX_CONCURRENT_STREAMS
+  bool max_concurrent_streams_overload_protection = false;
 
   // What percentage of rst_stream frames on the server should cause a ping
   // frame to be generated.
@@ -689,6 +692,12 @@ struct grpc_chttp2_stream {
 };
 
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
+
+// EXPERIMENTAL: provide protection against overloading a server with too many
+// requests: wait for streams to be deallocated before they stop counting
+// against MAX_CONCURRENT_STREAMS
+#define GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION \
+  "grpc.http.overload_protection"
 
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to

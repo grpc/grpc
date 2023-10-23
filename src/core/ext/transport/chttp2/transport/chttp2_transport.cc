@@ -638,6 +638,10 @@ static void read_channel_args(grpc_chttp2_transport* t,
       channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
           .value_or(1),
       0, 100);
+
+  t->max_concurrent_streams_overload_protection =
+      channel_args.GetBool(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION)
+          .value_or(grpc_core::IsOverloadProtectionEnabled());
 }
 
 static void init_keepalive_pings_if_enabled_locked(
