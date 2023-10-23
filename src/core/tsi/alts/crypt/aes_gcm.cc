@@ -256,7 +256,7 @@ static grpc_status_code aes_gcm_rekey_if_required(
   // TODO(lwge): This local buffer needs protection against memory dumps. We
   // have two options:
   //    1. Use some secure API such as SecretData from tink-cc.
-  //    2. Have the caller pass a second buffer to store this derived key.
+  //    2. Have the caller pass a separate buffer to store this derived key.
   uint8_t aead_key[kRekeyAeadKeyLen];
   if (aes_gcm_derive_aead_key(aead_key, aes_gcm_crypter->key,
                               aes_gcm_crypter->rekey_data->kdf_counter) !=
@@ -641,6 +641,11 @@ static grpc_status_code aes_gcm_new_evp_cipher_ctx(
       break;
   }
   const uint8_t* aead_key = aes_gcm_crypter->key;
+  // TODO(lwge): This local buffer needs protection against memory dumps. We
+  // have two options:
+  //    1. Use some secure API such as SecretData from tink-cc.
+  //    2. Have the caller pass a separate buffer to store this derived key.
+
   uint8_t aead_key_rekey[kRekeyAeadKeyLen];
   if (is_rekey) {
     if (aes_gcm_derive_aead_key(aead_key_rekey, aes_gcm_crypter->key,
