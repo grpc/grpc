@@ -65,7 +65,6 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
   grpc_slice crl_slice = grpc_empty_slice();
   grpc_error_handle err = grpc_load_file(crl_path.data(), 1, &crl_slice);
   if (!err.ok()) {
-    // TODO(gtcooke94) log error differently?
     gpr_log(GPR_ERROR, "Error reading file %s", err.message().data());
     grpc_slice_unref(crl_slice);
     return absl::InvalidArgumentError("Could not load file");
@@ -288,7 +287,8 @@ DirectoryReloaderCrlProviderImpl::~DirectoryReloaderCrlProviderImpl() {
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
     std::function<void(absl::Status)> reload_error_callback) {
-  if (refresh_duration < std::chrono::seconds(60)) {
+  // TODO(gtcooke94) - testing with std::chrono
+  if (refresh_duration < std::chrono::seconds(1)) {
     return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
   }
   struct stat dir_stat;

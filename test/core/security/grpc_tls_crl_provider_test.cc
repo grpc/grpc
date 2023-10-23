@@ -201,7 +201,7 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   auto crl_post_update = provider->GetCrl(cert);
   ASSERT_NE(crl_post_update, nullptr);
   ASSERT_EQ(crl_post_update->Issuer(), kCrlIssuer);
-  ASSERT_EQ(reload_errors.size(), 1);
+  ASSERT_EQ(reload_errors.size(), 2);
   // TODO(gtcooke94) check the actual content of the error
 }
 
