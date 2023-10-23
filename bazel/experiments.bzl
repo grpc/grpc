@@ -205,7 +205,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_client",
-                "event_engine_listener",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
@@ -217,9 +216,6 @@ EXPERIMENTS = {
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_listener_test": [
-                "event_engine_listener",
             ],
             "flow_control_test": [
                 "multiping",
@@ -250,6 +246,7 @@ EXPERIMENTS = {
                 "tarpit",
             ],
             "core_end2end_test": [
+                "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
             ],
@@ -262,6 +259,9 @@ EXPERIMENTS = {
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
+            ],
+            "event_engine_listener_test": [
+                "event_engine_listener",
             ],
             "flow_control_test": [
                 "chttp2_batch_requests",
