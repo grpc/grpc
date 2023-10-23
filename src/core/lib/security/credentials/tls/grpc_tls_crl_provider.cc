@@ -117,12 +117,7 @@ std::vector<FileData> GetFilesInDirectory(
     struct stat dir_entry_stat;
     int stat_return = stat(file_data.path, &dir_entry_stat);
     if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
-      // TODO(gtcooke94) More checks here
-      // no subdirectories.
       if (stat_return == -1) {
-        // TODO(gtcooke94) does this constitute a failure to read? What cases
-        // will this fail on?
-        // all_files_successful = false;
         gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
       }
       continue;
@@ -293,29 +288,31 @@ DirectoryReloaderCrlProviderImpl::~DirectoryReloaderCrlProviderImpl() {
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
     std::function<void(absl::Status)> reload_error_callback) {
-  // TODO(gtcooke94) validate directory, inputs, etc
-  // TODO(gtcooke94) do first load here or in the thread?
-  // TODO(gtcooke94) now that it's an internal impl we can have more //
-  // constructors
+  if (refresh_duration < std::chrono::seconds(60)) {
+    return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
+  }
+  struct stat dir_stat;
+  if (stat(directory.data(), &dir_stat) != 0) {
+    return absl::InvalidArgumentError("The directory path is not valid.");
+  }
   auto provider = std::make_shared<DirectoryReloaderCrlProviderImpl>(
       directory, refresh_duration, reload_error_callback);
   absl::Status initial_status = provider->Update();
-  // TODO(gtcooke94) Return for bad initial status?
+  if (!initial_status.ok()) {
+    return initial_status;
+  }
   provider->ScheduleReload();
   return provider;
 }
 
-bool DirectoryReloaderCrlProviderImpl::OnNextUpdateTimer() {
-  // absl::Status status = absl::OkStatus();
+void DirectoryReloaderCrlProviderImpl::OnNextUpdateTimer() {
   absl::Status status = Update();
   if (!status.ok()) {
-    // TODO(gtcooke94) log here or just in the Update loop per file?
-    // if (reload_error_callback_ != nullptr) {
-    //   reload_error_callback_(status);
-    // }
+    if (reload_error_callback_ != nullptr) {
+      reload_error_callback_(status);
+    }
   }
   ScheduleReload();
-  return false;
 }
 
 void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
@@ -326,18 +323,13 @@ void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
     {
       if (std::shared_ptr<DirectoryReloaderCrlProviderImpl> valid_ptr =
               self.lock()) {
-        if (valid_ptr->OnNextUpdateTimer()) {
-          // TODO(gtcooke94)
-        }
-      } else {
+        valid_ptr->OnNextUpdateTimer();
       }
     }
   });
 }
 
 absl::Status DirectoryReloaderCrlProviderImpl::Update() {
-  // for () absl::MutexLock lock(&mu_);
-  // TODO(gtcooke94) reading directory in C++ on windows vs. unix
   std::vector<FileData> crl_files = GetFilesInDirectory(crl_directory_);
   bool all_files_successful = true;
 
@@ -348,8 +340,10 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
     absl::StatusOr<std::shared_ptr<Crl>> result = ReadCrlFromFile(file.path);
     if (!result.ok()) {
       all_files_successful = false;
-      reload_error_callback_(absl::InvalidArgumentError(
-          absl::StrFormat("CRL Reloader failed to read file: %s", file.path)));
+      if (reload_error_callback_ != nullptr) {
+        reload_error_callback_(absl::InvalidArgumentError(absl::StrFormat(
+            "CRL Reloader failed to read file: %s", file.path)));
+      }
       continue;
     }
     // Now we have a good CRL to update in our map

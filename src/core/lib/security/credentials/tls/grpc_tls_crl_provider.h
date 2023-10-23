@@ -105,7 +105,7 @@ class DirectoryReloaderCrlProviderImpl
   ~DirectoryReloaderCrlProviderImpl() override;
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
   void ScheduleReload();
-  bool OnNextUpdateTimer();
+  void OnNextUpdateTimer();
 
   absl::Status Update();
   absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_;
