@@ -88,6 +88,16 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
     "callback, instead of running things inline in the first thread that "
@@ -107,6 +117,12 @@ const char* const description_round_robin_delegate_to_pick_first =
     "backend design.";
 const char* const additional_constraints_round_robin_delegate_to_pick_first =
     "{}";
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const char* const description_write_size_policy =
+    "Try to size writes such that they don't create too large of a backlog";
+const char* const additional_constraints_write_size_policy = "{}";
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -115,10 +131,42 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_multiping =
+    "Allow more than one ping to be in flight at a time by default.";
+const char* const additional_constraints_multiping = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_tarpit =
+    "If set, tarpit invalid requests for some amount of time";
+const char* const additional_constraints_tarpit = "{}";
+const char* const description_settings_timeout =
+    "If set, use the settings timeout to send settings frame to the peer.";
+const char* const additional_constraints_settings_timeout = "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
+const char* const description_chttp2_batch_requests =
+    "Cap the number of requests received by one transport read prior to "
+    "offload.";
+const char* const additional_constraints_chttp2_batch_requests = "{}";
+const char* const description_chttp2_offload_on_rst_stream =
+    "Offload work on RST_STREAM.";
+const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const char* const description_block_excessive_requests_before_settings_ack =
+    "If set, block excessive requests before receiving SETTINGS ACK.";
+const char* const
+    additional_constraints_block_excessive_requests_before_settings_ack = "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -164,6 +212,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
@@ -173,14 +225,36 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, true, true},
+    {"write_size_policy", description_write_size_policy,
+     additional_constraints_write_size_policy, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"multiping", description_multiping, additional_constraints_multiping,
+     false, true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, true, true},
+    {"settings_timeout", description_settings_timeout,
+     additional_constraints_settings_timeout, true, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, false, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
+    {"chttp2_batch_requests", description_chttp2_batch_requests,
+     additional_constraints_chttp2_batch_requests, true, true},
+    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
+     additional_constraints_chttp2_offload_on_rst_stream, true, true},
+    {"block_excessive_requests_before_settings_ack",
+     description_block_excessive_requests_before_settings_ack,
+     additional_constraints_block_excessive_requests_before_settings_ack, true,
+     true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core
@@ -253,6 +327,16 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
     "callback, instead of running things inline in the first thread that "
@@ -272,6 +356,12 @@ const char* const description_round_robin_delegate_to_pick_first =
     "backend design.";
 const char* const additional_constraints_round_robin_delegate_to_pick_first =
     "{}";
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const char* const description_write_size_policy =
+    "Try to size writes such that they don't create too large of a backlog";
+const char* const additional_constraints_write_size_policy = "{}";
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -280,10 +370,42 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_multiping =
+    "Allow more than one ping to be in flight at a time by default.";
+const char* const additional_constraints_multiping = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_tarpit =
+    "If set, tarpit invalid requests for some amount of time";
+const char* const additional_constraints_tarpit = "{}";
+const char* const description_settings_timeout =
+    "If set, use the settings timeout to send settings frame to the peer.";
+const char* const additional_constraints_settings_timeout = "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
+const char* const description_chttp2_batch_requests =
+    "Cap the number of requests received by one transport read prior to "
+    "offload.";
+const char* const additional_constraints_chttp2_batch_requests = "{}";
+const char* const description_chttp2_offload_on_rst_stream =
+    "Offload work on RST_STREAM.";
+const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const char* const description_block_excessive_requests_before_settings_ack =
+    "If set, block excessive requests before receiving SETTINGS ACK.";
+const char* const
+    additional_constraints_block_excessive_requests_before_settings_ack = "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -329,6 +451,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
@@ -338,14 +464,36 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, true, true},
+    {"write_size_policy", description_write_size_policy,
+     additional_constraints_write_size_policy, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"multiping", description_multiping, additional_constraints_multiping,
+     false, true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, true, true},
+    {"settings_timeout", description_settings_timeout,
+     additional_constraints_settings_timeout, true, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, false, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
+    {"chttp2_batch_requests", description_chttp2_batch_requests,
+     additional_constraints_chttp2_batch_requests, true, true},
+    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
+     additional_constraints_chttp2_offload_on_rst_stream, true, true},
+    {"block_excessive_requests_before_settings_ack",
+     description_block_excessive_requests_before_settings_ack,
+     additional_constraints_block_excessive_requests_before_settings_ack, true,
+     true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core
@@ -418,6 +566,16 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
+const char* const description_separate_ping_from_keepalive =
+    "Keep a different keepalive timeout (resolution is seeing data after "
+    "sending a ping) from a ping timeout (resolution is getting a ping ack "
+    "after sending a ping) The first can be short and determines liveness. The "
+    "second can be longer and determines protocol correctness.";
+const char* const additional_constraints_separate_ping_from_keepalive = "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
     "callback, instead of running things inline in the first thread that "
@@ -437,6 +595,12 @@ const char* const description_round_robin_delegate_to_pick_first =
     "backend design.";
 const char* const additional_constraints_round_robin_delegate_to_pick_first =
     "{}";
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const char* const description_write_size_policy =
+    "Try to size writes such that they don't create too large of a backlog";
+const char* const additional_constraints_write_size_policy = "{}";
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -445,10 +609,42 @@ const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
+const char* const description_multiping =
+    "Allow more than one ping to be in flight at a time by default.";
+const char* const additional_constraints_multiping = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_tarpit =
+    "If set, tarpit invalid requests for some amount of time";
+const char* const additional_constraints_tarpit = "{}";
+const char* const description_settings_timeout =
+    "If set, use the settings timeout to send settings frame to the peer.";
+const char* const additional_constraints_settings_timeout = "{}";
+const char* const description_rstpit =
+    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
+    "duration";
+const char* const additional_constraints_rstpit = "{}";
+const char* const description_red_max_concurrent_streams =
+    "Perform random early rejection of requests that would exceed a newly "
+    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
+const char* const additional_constraints_red_max_concurrent_streams = "{}";
+const char* const description_chttp2_batch_requests =
+    "Cap the number of requests received by one transport read prior to "
+    "offload.";
+const char* const additional_constraints_chttp2_batch_requests = "{}";
+const char* const description_chttp2_offload_on_rst_stream =
+    "Offload work on RST_STREAM.";
+const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const char* const description_block_excessive_requests_before_settings_ack =
+    "If set, block excessive requests before receiving SETTINGS ACK.";
+const char* const
+    additional_constraints_block_excessive_requests_before_settings_ack = "{}";
+const char* const description_ping_on_rst_stream =
+    "Send a ping on receiving some RST_STREAM frames on the server (proportion "
+    "configurable via grpc.http2.ping_on_rst_stream_percent channel arg).";
+const char* const additional_constraints_ping_on_rst_stream = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -494,6 +690,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
+    {"separate_ping_from_keepalive", description_separate_ping_from_keepalive,
+     additional_constraints_separate_ping_from_keepalive, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
@@ -503,14 +703,36 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, true, true},
+    {"write_size_policy", description_write_size_policy,
+     additional_constraints_write_size_policy, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
+    {"multiping", description_multiping, additional_constraints_multiping,
+     false, true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, true, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, true, true},
+    {"settings_timeout", description_settings_timeout,
+     additional_constraints_settings_timeout, true, true},
+    {"rstpit", description_rstpit, additional_constraints_rstpit, false, true},
+    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
+     additional_constraints_red_max_concurrent_streams, false, true},
+    {"chttp2_batch_requests", description_chttp2_batch_requests,
+     additional_constraints_chttp2_batch_requests, true, true},
+    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
+     additional_constraints_chttp2_offload_on_rst_stream, true, true},
+    {"block_excessive_requests_before_settings_ack",
+     description_block_excessive_requests_before_settings_ack,
+     additional_constraints_block_excessive_requests_before_settings_ack, true,
+     true},
+    {"ping_on_rst_stream", description_ping_on_rst_stream,
+     additional_constraints_ping_on_rst_stream, true, true},
 };
 
 }  // namespace grpc_core
