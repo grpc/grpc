@@ -44,6 +44,8 @@ _CsdsClient = grpc_csds.CsdsClient
 # Use in get_load_balancer_stats request to request all metadata.
 REQ_LB_STATS_METADATA_ALL = ("*",)
 
+DEFAULT_TD_XDS_URI = "trafficdirector.googleapis.com:443"
+
 
 class XdsTestClient(framework.rpc.grpc.GrpcApp):
     """
@@ -129,7 +131,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             timeout_sec=timeout_sec
         )
 
-    def wait_for_active_server_channel(
+    def wait_for_server_channel_ready(
         self,
         *,
         timeout: Optional[_timedelta] = None,
@@ -151,6 +153,33 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                 retry_err.add_note(
                     framework.errors.FrameworkError.note_blanket_error(
                         "The client couldn't connect to the server."
+                    )
+                )
+            raise
+
+    def wait_for_active_xds_channel(
+        self,
+        *,
+        xds_server_uri: Optional[str] = None,
+        timeout: Optional[_timedelta] = None,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
+        """Wait until the xds channel is active or timeout.
+
+        Raises:
+            GrpcApp.NotFound: If the channel to xds never transitioned to active.
+        """
+        try:
+            return self.wait_for_xds_channel_active(
+                xds_server_uri=xds_server_uri,
+                timeout=timeout,
+                rpc_deadline=rpc_deadline,
+            )
+        except retryers.RetryError as retry_err:
+            if isinstance(retry_err.exception(), self.ChannelNotFound):
+                retry_err.add_note(
+                    framework.errors.FrameworkError.note_blanket_error(
+                        "The client couldn't connect to the xDS control plane."
                     )
                 )
             raise
@@ -229,6 +258,82 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             _ChannelzServiceClient.channel_repr(channel),
         )
         return channel
+
+    def wait_for_xds_channel_active(
+        self,
+        *,
+        xds_server_uri: Optional[str] = None,
+        timeout: Optional[_timedelta] = None,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
+        if not xds_server_uri:
+            xds_server_uri = DEFAULT_TD_XDS_URI
+        # When polling for a state, prefer smaller wait times to avoid
+        # exhausting all allowed time on a single long RPC.
+        if rpc_deadline is None:
+            rpc_deadline = _timedelta(seconds=30)
+
+        retryer = retryers.exponential_retryer_with_timeout(
+            wait_min=_timedelta(seconds=10),
+            wait_max=_timedelta(seconds=25),
+            timeout=_timedelta(minutes=5) if timeout is None else timeout,
+        )
+
+        logger.info(
+            "[%s] ADS: Waiting for successful calls to xDS control plane to %s",
+            self.hostname,
+            xds_server_uri,
+        )
+        channel = retryer(
+            self.find_active_xds_channel,
+            xds_server_uri=xds_server_uri,
+            rpc_deadline=rpc_deadline,
+        )
+        logger.info(
+            "[%s] ADS: Detected successful calls to xDS control plane %s",
+            self.hostname,
+            xds_server_uri,
+        )
+        return channel
+
+    def find_active_xds_channel(
+        self,
+        xds_server_uri: str,
+        *,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
+        rpc_params = {}
+        if rpc_deadline is not None:
+            rpc_params["deadline_sec"] = rpc_deadline.total_seconds()
+
+        for channel in self.get_server_channels(xds_server_uri, **rpc_params):
+            logger.info(
+                "[%s] xDS control plane channel: %s",
+                self.hostname,
+                _ChannelzServiceClient.channel_repr(channel),
+            )
+
+            try:
+                channel = self.check_channel_successful_calls(
+                    channel, **rpc_params
+                )
+                logger.info(
+                    "[%s] Detected successful calls to xDS control plane: %s",
+                    self.hostname,
+                    xds_server_uri,
+                )
+            except self.NotFound as e:
+                # Otherwise, keep searching.
+                continue
+
+            return channel
+
+        raise self.ChannelNotActive(
+            f"[{self.hostname}] Client has no"
+            f" active channel with xds server {xds_server_uri}",
+            src=self.hostname,
+            dst=xds_server_uri,
+        )
 
     def find_server_channel_with_state(
         self,
@@ -312,6 +417,24 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                     subchannels.append(subchannel)
         return subchannels
 
+    def check_channel_successful_calls(
+        self, channel: _ChannelzChannel, **kwargs
+    ) -> _ChannelzChannel:
+        """Checks if the channel has any successful calls.
+
+        We consider the channel is active if channel is in READY state and calls_started is
+        greater than calls_failed.
+        """
+        if (
+            channel.data.state.state is _ChannelzChannelState.READY
+            and channel.data.calls_started > channel.data.calls_failed
+        ):
+            return channel
+
+        raise self.NotFound(
+            f"[{self.hostname}] Not found successful calls over the channel."
+        )
+
     class ChannelNotFound(framework.rpc.grpc.GrpcApp.NotFound):
         """Channel with expected status not found"""
 
@@ -332,3 +455,21 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             self.dst = dst
             self.expected_state = expected_state
             super().__init__(message, src, dst, expected_state, **kwargs)
+
+    class ChannelNotActive(framework.rpc.grpc.GrpcApp.NotFound):
+        """No active channel was found"""
+
+        src: str
+        dst: str
+
+        def __init__(
+            self,
+            message: str,
+            *,
+            src: str,
+            dst: str,
+            **kwargs,
+        ):
+            self.src = src
+            self.dst = dst
+            super().__init__(message, src, dst, **kwargs)
