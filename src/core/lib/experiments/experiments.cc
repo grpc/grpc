@@ -786,7 +786,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
     {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, false, true},
+     additional_constraints_event_engine_listener, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, false, true},
     {"keepalive_fix", description_keepalive_fix,
