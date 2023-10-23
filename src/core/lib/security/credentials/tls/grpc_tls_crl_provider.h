@@ -107,13 +107,12 @@ class DirectoryReloaderCrlProviderImpl
   void ScheduleReload();
   bool OnNextUpdateTimer();
 
-  ::absl::Status Update();
-  ::absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_;
-  ::std::string crl_directory_;
-  ::absl::Mutex mu_;
-  ::std::chrono::seconds refresh_duration_;
-  ::std::function<void(::absl::Status)> reload_error_callback_;
-  gpr_event shutdown_event_;
+  absl::Status Update();
+  absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_;
+  std::string crl_directory_;
+  absl::Mutex mu_;
+  std::chrono::seconds refresh_duration_;
+  std::function<void(::absl::Status)> reload_error_callback_;
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       refresh_handle_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
