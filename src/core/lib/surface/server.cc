@@ -1230,17 +1230,17 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   }
   if (transport->server_transport() != nullptr) {
     transport->server_transport()->SetAccept(
-        [this](ClientMetadataHandle metadata)
+        [this](ClientMetadata& metadata)
             -> absl::StatusOr<RefCountedPtr<CallPart>> {
-          auto* authority = metadata->get_pointer(HttpAuthorityMetadata());
+          auto* authority = metadata.get_pointer(HttpAuthorityMetadata());
           if (authority == nullptr) {
-            authority = metadata->get_pointer(HostMetadata());
+            authority = metadata.get_pointer(HostMetadata());
             if (authority == nullptr) {
               // Authority not being set is an RPC error.
               return absl::InternalError("No host header");
             }
           }
-          auto* path = metadata->get_pointer(HttpPathMetadata());
+          auto* path = metadata.get_pointer(HttpPathMetadata());
           if (path == nullptr) {
             // Path not being set would result in an RPC error.
             return absl::InternalError("No :path header");
@@ -1253,7 +1253,8 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
                                          path->as_string_view());
           }
           // insert in metadata
-          metadata->Set(GrpcRegisteredMethod(), method);
+          metadata.Set(GrpcRegisteredMethod(), method);
+          Crash("unimplemented");
         });
   }
 }

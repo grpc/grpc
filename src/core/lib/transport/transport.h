@@ -630,28 +630,38 @@ class FilterStackTransport {
   ~FilterStackTransport() = default;
 };
 
-class CallPart : public RefCounted<CallPart> {
+class CallPart : public Party {
  public:
   CallPart();
 
-  auto OnClientMessage(MessageHandle message) {
-    return party_->SpawnWaitable(
-        "client_message", [this, message = std::move(message)]() mutable {
-          return Map(client_to_server_messages_.Push(std::move(message)),
+  auto PushClientInitialMetadata(ClientMetadataHandle client_initial_metadata) {
+    return SpawnWaitable("push_client_initial_metadata",
+                         [this, client_initial_metadata = std::move(
+                                    client_initial_metadata)]() mutable {
+                           return Map(client_initial_metadata_.sender.Push(
+                                          std::move(client_initial_metadata)),
+                                      [](bool ok) { return StatusFlag(ok); });
+                         });
+  }
+  auto PushClientMessage(MessageHandle message) {
+    return SpawnWaitable(
+        "push_client_message", [this, message = std::move(message)]() mutable {
+          return Map(client_to_server_messages_.sender.Push(std::move(message)),
                      [](bool ok) { return StatusFlag(ok); });
         });
   };
-  auto OnClientClose() {
-    return party_->SpawnWaitable("client_close", [this]() {
-      client_to_server_messages_.Close();
+  auto PushClientClose() {
+    return SpawnWaitable("push_client_close", [this]() {
+      client_to_server_messages_.sender.Close();
       return Empty{};
     });
   }
 
-  auto GetServerInitialMetadata() {
-    return Map(party_->SpawnWaitable(
-                   "server_initial_metadata",
-                   [this]() { return server_initial_metadata_.Next(); }),
+  auto PullServerInitialMetadata() {
+    return Map(SpawnWaitable("pull_server_initial_metadata",
+                             [this]() {
+                               return server_initial_metadata_.receiver.Next();
+                             }),
                [](NextResult<ServerMetadataHandle> initial_metadata)
                    -> absl::StatusOr<ServerMetadataHandle> {
                  if (initial_metadata.has_value()) {
@@ -660,15 +670,16 @@ class CallPart : public RefCounted<CallPart> {
                  return absl::CancelledError();
                });
   }
-  auto NextServerMessage() {
-    return party_->SpawnWaitable("server_message", [this]() {
-      return server_to_client_messages_.Next();
+  auto PullServerMessage() {
+    return SpawnWaitable("pull_server_message", [this]() {
+      return server_to_client_messages_.receiver.Next();
     });
   }
-  auto GetServerTrailingMetadata() {
-    return Map(party_->SpawnWaitable(
-                   "server_trailing_metadata",
-                   [this]() { return server_trailing_metadata_.Next(); }),
+  auto PullServerTrailingMetadata() {
+    return Map(SpawnWaitable("pull_server_trailing_metadata",
+                             [this]() {
+                               return server_trailing_metadata_.receiver.Next();
+                             }),
                [](NextResult<ServerMetadataHandle> initial_metadata)
                    -> ServerMetadataHandle {
                  if (initial_metadata.has_value()) {
@@ -679,11 +690,11 @@ class CallPart : public RefCounted<CallPart> {
   }
 
  private:
-  Party* const party_;
-  PipeSender<MessageHandle> client_to_server_messages_;
-  PipeReceiver<ServerMetadataHandle> server_initial_metadata_;
-  PipeReceiver<MessageHandle> server_to_client_messages_;
-  PipeReceiver<ServerMetadataHandle> server_trailing_metadata_;
+  Pipe<ClientMetadataHandle> client_initial_metadata_;
+  Pipe<MessageHandle> client_to_server_messages_;
+  Pipe<ServerMetadataHandle> server_initial_metadata_;
+  Pipe<MessageHandle> server_to_client_messages_;
+  Pipe<ServerMetadataHandle> server_trailing_metadata_;
 };
 
 // Adapter to turn CallPart into a Reader for ForEach
@@ -691,7 +702,7 @@ class ServerMessageReader {
  public:
   explicit ServerMessageReader(RefCountedPtr<CallPart> call)
       : call_(std::move(call)) {}
-  auto Next() { return call_->NextServerMessage(); }
+  auto Next() { return call_->PullServerMessage(); }
 
  private:
   RefCountedPtr<CallPart> call_;
@@ -710,7 +721,7 @@ class ClientTransport {
 class ServerTransport {
  public:
   using AcceptFn = absl::AnyInvocable<absl::StatusOr<RefCountedPtr<CallPart>>(
-      ClientMetadataHandle) const>;
+      ClientMetadata&) const>;
 
   // Register the factory function for the filter stack part of a call
   // promise.

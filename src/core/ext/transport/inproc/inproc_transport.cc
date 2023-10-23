@@ -209,7 +209,7 @@ ArenaPromise<ServerMetadataHandle> InprocServerTransport::MakeCallPromise(
       break;
   }
   absl::StatusOr<RefCountedPtr<CallPart>> server_call_status =
-      accept_fn_(std::move(client_call_args.client_initial_metadata));
+      accept_fn_(*client_call_args.client_initial_metadata);
   if (!server_call_status.ok()) {
     return Immediate(ServerMetadataFromStatus(server_call_status.status()));
   }
@@ -217,15 +217,17 @@ ArenaPromise<ServerMetadataHandle> InprocServerTransport::MakeCallPromise(
   Party* client_party = static_cast<Party*>(Activity::current());
   client_party->Spawn(
       "client_to_server",
-      Seq(ForEach(std::move(*client_call_args.client_to_server_messages),
+      Seq(server_call->PushClientInitialMetadata(
+              std::move(client_call_args.client_initial_metadata)),
+          ForEach(std::move(*client_call_args.client_to_server_messages),
                   [server_call](MessageHandle message) {
-                    return server_call->OnClientMessage(std::move(message));
+                    return server_call->PushClientMessage(std::move(message));
                   }),
-          [server_call] { return server_call->OnClientClose(); }),
+          [server_call] { return server_call->PushClientClose(); }),
       [](Empty) {});
   return Seq(
       TrySeq(
-          server_call->GetServerInitialMetadata(),
+          server_call->PullServerInitialMetadata(),
           [server_initial_metadata_pipe =
                client_call_args.server_initial_metadata](
               ServerMetadataHandle server_initial_metadata) {
@@ -245,7 +247,7 @@ ArenaPromise<ServerMetadataHandle> InprocServerTransport::MakeCallPromise(
                       });
                 });
           }),
-      [server_call] { return server_call->GetServerTrailingMetadata(); });
+      [server_call] { return server_call->PullServerTrailingMetadata(); });
 }
 
 bool UsePromiseBasedTransport() {
@@ -276,8 +278,9 @@ RefCountedPtr<Channel> CreateInprocChannel(Server* server, ChannelArgs args) {
                                  .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS),
                              nullptr);
   if (!setup_error.ok()) return nullptr;
-  return Channel::Create("inproc", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                         client_transport.release())
+  return Channel::Create(
+             "inproc", args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority"),
+             GRPC_CLIENT_DIRECT_CHANNEL, client_transport.release())
       .value_or(nullptr);
 }
 
