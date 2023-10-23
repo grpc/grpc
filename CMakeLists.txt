@@ -26822,6 +26822,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_cluster_end2end_test.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_cluster_end2end_test PUBLIC cxx_std_14)
@@ -27089,6 +27090,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_cluster_type_end2end_test.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_cluster_type_end2end_test PUBLIC cxx_std_14)
@@ -27328,6 +27330,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_core_end2end_test.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_core_end2end_test PUBLIC cxx_std_14)
@@ -27593,6 +27596,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_csds_end2end_test.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_csds_end2end_test PUBLIC cxx_std_14)
@@ -27777,6 +27781,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_end2end_test.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_end2end_test PUBLIC cxx_std_14)
@@ -28004,6 +28009,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_fault_injection_end2end_test.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_fault_injection_end2end_test PUBLIC cxx_std_14)
@@ -28747,6 +28753,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_outlier_detection_end2end_test.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_outlier_detection_end2end_test PUBLIC cxx_std_14)
@@ -28922,6 +28929,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_override_host_end2end_test.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_override_host_end2end_test PUBLIC cxx_std_14)
@@ -29167,6 +29175,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_pick_first_end2end_test.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_pick_first_end2end_test PUBLIC cxx_std_14)
@@ -29335,6 +29344,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_ring_hash_end2end_test.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_ring_hash_end2end_test PUBLIC cxx_std_14)
@@ -29507,6 +29517,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_rls_end2end_test.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_rls_end2end_test PUBLIC cxx_std_14)
@@ -29790,6 +29801,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_routing_end2end_test.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
   target_compile_features(xds_routing_end2end_test PUBLIC cxx_std_14)
@@ -30028,6 +30040,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_server.cc
+    test/cpp/end2end/xds/xds_utils.cc
     test/cpp/end2end/xds/xds_wrr_end2end_test.cc
     test/cpp/util/tls_test_utils.cc
   )
