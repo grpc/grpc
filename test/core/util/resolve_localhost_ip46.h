@@ -36,6 +36,9 @@ bool RunningWithIPv6Only();
 // otherwise, returns the IPv4 address.
 absl::string_view LocalIp();
 
+// Returns LocalIp() with a port.
+std::string LocalIpAndPort(int port);
+
 // Returns the URI of the IP address of localhost with the given port.
 // If RunningWithIPv6Only() is true, returns the IPv6 address;
 // otherwise, returns the IPv4 address.

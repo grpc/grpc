@@ -71,6 +71,10 @@ absl::string_view LocalIp() {
   return RunningWithIPv6Only() ? "[::1]" : "127.0.0.1";
 }
 
+std::string LocalIpAndPort(int port) {
+  return absl::StrCat(LocalIp(), ":", port);
+}
+
 std::string LocalIpUri(int port) {
   return absl::StrCat(
       RunningWithIPv6Only() ? "ipv6:%5b::1%5d:" : "ipv4:127.0.0.1:", port);

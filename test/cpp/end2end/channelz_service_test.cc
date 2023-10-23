@@ -199,8 +199,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     // We set up a proxy server with channelz enabled.
     proxy_port_ = grpc_pick_unused_port_or_die();
     ServerBuilder proxy_builder;
-    std::string proxy_server_address =
-        absl::StrCat(grpc_core::LocalIp(), ":", proxy_port_);
+    std::string proxy_server_address = grpc_core::LocalIpAndPort(proxy_port_);
     proxy_builder.AddListeningPort(proxy_server_address,
                                    GetServerCredentials(GetParam()));
     // forces channelz and channel tracing to be enabled.
@@ -227,7 +226,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
       backends_[i].port = grpc_pick_unused_port_or_die();
       ServerBuilder backend_builder;
       std::string backend_server_address =
-          absl::StrCat(grpc_core::LocalIp(), ":", backends_[i].port);
+          grpc_core::LocalIpAndPort(backends_[i].port);
       backend_builder.AddListeningPort(backend_server_address,
                                        GetServerCredentials(GetParam()));
       backends_[i].service = std::make_unique<TestServiceImpl>();

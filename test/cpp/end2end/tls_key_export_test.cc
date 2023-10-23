@@ -195,11 +195,9 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     server_thread_ =
         std::thread(&TlsKeyLoggingEnd2EndTest::RunServerLoop, this);
 
-    absl::string_view local_ip = grpc_core::LocalIp();
-
     for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       ASSERT_NE(0, ports_[i]);
-      server_addresses_.push_back(absl::StrCat(local_ip, ":", ports_[i]));
+      server_addresses_.push_back(grpc_core::LocalIpAndPort(ports_[i]));
 
       // Configure tls credential options for each stub. Each stub connects to
       // a separate port on the server.

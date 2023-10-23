@@ -242,7 +242,7 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
     admin_server_thread_ = std::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
     std::string admin_server_address =
-        absl::StrCat(grpc_core::LocalIp(), ":", admin_server_thread_->port());
+        grpc_core::LocalIpAndPort(admin_server_thread_->port());
     admin_channel_ = grpc::CreateChannel(
         admin_server_address,
         std::make_shared<SecureChannelCredentials>(
