@@ -51,6 +51,9 @@ namespace experimental {
 
 namespace {
 std::string IssuerFromCrl(X509_CRL* crl) {
+  if (crl == nullptr) {
+    return "";
+  }
   char* buf = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
   std::string ret;
   if (buf != nullptr) {
@@ -69,8 +72,8 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
     grpc_slice_unref(crl_slice);
     return absl::InvalidArgumentError("Could not load file");
   }
-  std::string raw_crl = std::string(StringViewFromSlice(crl_slice));
-  absl::StatusOr<std::unique_ptr<Crl>> crl = Crl::Parse(raw_crl);
+  absl::StatusOr<std::unique_ptr<Crl>> crl =
+      Crl::Parse(std::string(StringViewFromSlice(crl_slice)));
   if (!crl.ok()) {
     grpc_slice_unref(crl_slice);
     return absl::InvalidArgumentError(absl::StrCat(
@@ -81,22 +84,15 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
 }
 
 struct FileData {
-  char path[MAXPATHLEN];
+  std::string path;
   off_t size;
 };
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
     defined(GPR_APPLE)
-void GetAbsoluteFilePath(const char* valid_file_dir,
-                         const char* file_entry_name, char* path_buffer) {
-  if (valid_file_dir != nullptr && file_entry_name != nullptr) {
-    int path_len = snprintf(path_buffer, MAXPATHLEN, "%s/%s", valid_file_dir,
-                            file_entry_name);
-    if (path_len == 0) {
-      gpr_log(GPR_ERROR, "failed to get absolute path for file: %s",
-              file_entry_name);
-    }
-  }
+std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
+                                absl::string_view file_entry_name) {
+  return absl::StrFormat("%s/%s", valid_file_dir, file_entry_name);
 }
 
 std::vector<FileData> GetFilesInDirectory(
@@ -112,12 +108,13 @@ std::vector<FileData> GetFilesInDirectory(
     const char* file_name = directory_entry->d_name;
 
     FileData file_data;
-    GetAbsoluteFilePath(crl_directory_path.c_str(), file_name, file_data.path);
+    file_data.path = GetAbsoluteFilePath(crl_directory_path.c_str(), file_name);
     struct stat dir_entry_stat;
-    int stat_return = stat(file_data.path, &dir_entry_stat);
+    int stat_return = stat(file_data.path.c_str(), &dir_entry_stat);
     if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
       if (stat_return == -1) {
-        gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
+        gpr_log(GPR_ERROR, "failed to get status for file: %s",
+                file_data.path.c_str());
       }
       continue;
     }
