@@ -21,11 +21,11 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
+#include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 
 namespace grpc {
