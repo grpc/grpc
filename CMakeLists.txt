@@ -1345,9 +1345,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx status_conversion_test)
   add_dependencies(buildtests_cxx status_helper_test)
   add_dependencies(buildtests_cxx status_util_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx stranded_event_test)
-  endif()
   add_dependencies(buildtests_cxx stream_leak_with_queued_flow_control_update_test)
   add_dependencies(buildtests_cxx streaming_error_response_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -22981,52 +22978,6 @@ target_link_libraries(status_util_test
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(stranded_event_test
-    test/core/end2end/cq_verifier.cc
-    test/core/iomgr/stranded_event_test.cc
-    test/core/util/cmdline.cc
-    test/core/util/fuzzer_util.cc
-    test/core/util/grpc_profiler.cc
-    test/core/util/histogram.cc
-    test/core/util/mock_endpoint.cc
-    test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
-    test/core/util/resolve_localhost_ip46.cc
-    test/core/util/slice_splitter.cc
-    test/core/util/tracer_util.cc
-  )
-  target_compile_features(stranded_event_test PUBLIC cxx_std_14)
-  target_include_directories(stranded_event_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(stranded_event_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    grpc_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
