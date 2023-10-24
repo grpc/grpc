@@ -89,10 +89,12 @@ class DirectoryReloaderCrlProvider
                                std::chrono::seconds duration,
                                std::function<void(absl::Status)> callback)
       : crl_directory_(directory),
-        refresh_duration_(duration),
         reload_error_callback_(callback),
         event_engine_(
-            grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+            grpc_event_engine::experimental::GetDefaultEventEngine()) {
+    refresh_duration_ = Duration::FromSecondsAsDouble(duration.count());
+  }
+
   ~DirectoryReloaderCrlProvider() override;
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
   // Schedules the next reload using event engine.
@@ -104,16 +106,17 @@ class DirectoryReloaderCrlProvider
  private:
   void OnNextUpdateTimer();
 
+  std::string crl_directory_;
+  // std::chrono::seconds refresh_duration_;
+  grpc_core::Duration refresh_duration_;
+  std::function<void(::absl::Status)> reload_error_callback_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   // guards the crls_ map
   grpc_core::Mutex mu_;
   absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_
       ABSL_GUARDED_BY(mu_);
-  std::string crl_directory_;
-  std::chrono::seconds refresh_duration_;
-  std::function<void(::absl::Status)> reload_error_callback_;
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       refresh_handle_;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
 
 }  // namespace experimental
