@@ -20,6 +20,7 @@
 
 #include <atomic>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -135,8 +136,8 @@ class InprocServerTransport final
   AcceptFn accept_fn_;
   absl::Status disconnect_error_;
   /// connectivity tracking
-  grpc_core::ConnectivityStateTracker state_tracker_
-      ABSL_GUARDED_BY(state_set_mutex_){"inproc", GRPC_CHANNEL_READY};
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_set_mutex_){
+      "inproc", GRPC_CHANNEL_READY};
 };
 
 InprocClientTransport::InprocClientTransport(
