@@ -81,11 +81,6 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
   return crl;
 }
 
-struct FileData {
-  std::string path;
-  off_t size;
-};
-
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
     defined(GPR_APPLE)
 std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
@@ -93,32 +88,38 @@ std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
   return absl::StrFormat("%s/%s", valid_file_dir, file_entry_name);
 }
 
-std::vector<FileData> GetFilesInDirectory(
+absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
     const std::string& crl_directory_path) {
   DIR* crl_directory;
+  // Open the dir for reading
   if ((crl_directory = opendir(crl_directory_path.c_str())) == nullptr) {
-    // TODO(gtcooke94) - directory has gone bad, what should we do? Status
-    // return here?
-    return std::vector<FileData>();
+    return absl::InternalError("Could not read crl directory.");
   }
-  std::vector<FileData> crl_files;
+  std::vector<std::string> crl_files;
   struct dirent* directory_entry;
+  // Iterate over everything in the directory
   while ((directory_entry = readdir(crl_directory)) != nullptr) {
     const char* file_name = directory_entry->d_name;
 
-    FileData file_data;
-    file_data.path = GetAbsoluteFilePath(crl_directory_path.c_str(), file_name);
+    std::string file_path =
+        GetAbsoluteFilePath(crl_directory_path.c_str(), file_name);
     struct stat dir_entry_stat;
-    int stat_return = stat(file_data.path.c_str(), &dir_entry_stat);
+    int stat_return = stat(file_path.c_str(), &dir_entry_stat);
+    // S_ISREG(dir_entry_stat.st_mode) returns true if this entry is a regular
+    // file
+    // https://stackoverflow.com/questions/40163270/what-is-s-isreg-and-what-does-it-do
+    // This lets us skip over either bad files or things that aren't files to
+    // read. For example, this will properly skip over `..` and `.` which show
+    // up during this iteration, as well as symlinks and sub directories.
     if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
       if (stat_return == -1) {
         gpr_log(GPR_ERROR, "failed to get status for file: %s",
-                file_data.path.c_str());
+                file_path.c_str());
       }
+      // If stat_return != -1, this just isn't a file so we continue
       continue;
     }
-    file_data.size = dir_entry_stat.st_size;
-    crl_files.push_back(file_data);
+    crl_files.push_back(file_path);
   }
   closedir(crl_directory);
   return crl_files;
@@ -136,24 +137,26 @@ std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
 // Reference for reading directory in Windows:
 // https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 // https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
-std::vector<FileData> GetFilesInDirectory(
+absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
     const std::string& crl_directory_path) {
   std::string search_path = crl_directory_path + "/*.*";
-  std::vector<FileData> crl_files;
+  std::vector<std::string> crl_files;
   windows::WIN32_FIND_DATA find_data;
   HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
   if (hFind != windows::INVALID_HANDLE_VALUE) {
     do {
       if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        FileData file_data;
+        std::string file_path;
         GetAbsoluteFilePath(crl_directory_path.c_str(), find_data.cFileName,
-                            file_data.path);
-        crl_files.push_back(file_data);
+                            file_path);
+        crl_files.push_back(file_path);
       }
     } while (::FindNextFile(hFind, &find_data));
     ::FindClose(hFind);
+    return crl_files;
+  } else {
+    return absl::InternalError("Could not read crl directory.");
   }
-  return crl_files;
 }
 
 #endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE
@@ -274,19 +277,21 @@ void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
 }
 
 absl::Status DirectoryReloaderCrlProviderImpl::Update() {
-  std::vector<FileData> crl_files = GetFilesInDirectory(crl_directory_);
+  auto crl_files = GetFilesInDirectory(crl_directory_);
+  if (!crl_files.ok()) {
+    return crl_files.status();
+  }
   bool all_files_successful = true;
-
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> new_crls;
-  for (const FileData& file : crl_files) {
+  for (const std::string& file_path : *crl_files) {
     // Build a map of new_crls to update to. If all files successful, do a
     // full swap of the map. Otherwise update in place
-    absl::StatusOr<std::shared_ptr<Crl>> result = ReadCrlFromFile(file.path);
+    absl::StatusOr<std::shared_ptr<Crl>> result = ReadCrlFromFile(file_path);
     if (!result.ok()) {
       all_files_successful = false;
       if (reload_error_callback_ != nullptr) {
         reload_error_callback_(absl::InvalidArgumentError(absl::StrFormat(
-            "CRL Reloader failed to read file: %s", file.path)));
+            "CRL Reloader failed to read file: %s", file_path)));
       }
       continue;
     }

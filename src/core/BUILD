@@ -3091,6 +3091,7 @@ grpc_cc_library(
     ],
     deps = [
         "default_event_engine",
+        "load_file",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
