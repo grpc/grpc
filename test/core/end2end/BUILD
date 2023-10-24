@@ -184,7 +184,6 @@ grpc_cc_library(
         "//src/core:grpc_tls_credentials",
         "//src/core:grpc_transport_inproc",
         "//src/core:slice",
-        "//src/core:transport_fwd",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -318,6 +317,8 @@ grpc_core_end2end_test(
     name = "hpack_size",
     shard_count = 50,
 )
+
+grpc_core_end2end_test(name = "http2_stats")
 
 grpc_core_end2end_test(name = "invoke_large_request")
 

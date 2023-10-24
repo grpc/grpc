@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "absl/strings/match.h"
@@ -31,6 +32,7 @@
 #include "absl/strings/str_split.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

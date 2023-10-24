@@ -1008,18 +1008,18 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Expects a state update for the specified state and status, and then
   // expects the resulting picker to queue picks.
-  void ExpectStateAndQueuingPicker(
+  bool ExpectStateAndQueuingPicker(
       grpc_connectivity_state expected_state,
       absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    ExpectPickQueued(picker.get(), {}, location);
+    return ExpectPickQueued(picker.get(), {}, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
-  void ExpectConnectingUpdate(SourceLocation location = SourceLocation()) {
-    ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                                location);
+  bool ExpectConnectingUpdate(SourceLocation location = SourceLocation()) {
+    return ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING,
+                                       absl::OkStatus(), location);
   }
 
   static std::unique_ptr<LoadBalancingPolicy::MetadataInterface> MakeMetadata(
@@ -1038,15 +1038,18 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   // Requests a pick on picker and expects a Queue result.
-  void ExpectPickQueued(LoadBalancingPolicy::SubchannelPicker* picker,
+  bool ExpectPickQueued(LoadBalancingPolicy::SubchannelPicker* picker,
                         const CallAttributes call_attributes = {},
                         SourceLocation location = SourceLocation()) {
-    ASSERT_NE(picker, nullptr);
+    EXPECT_NE(picker, nullptr) << location.file() << ":" << location.line();
+    if (picker == nullptr) return false;
     auto pick_result = DoPick(picker, call_attributes);
-    ASSERT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+    EXPECT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
         << PickResultString(pick_result) << "\nat " << location.file() << ":"
         << location.line();
+    return absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+        pick_result.result);
   }
 
   // Requests a pick on picker and expects a Complete result.
@@ -1257,7 +1260,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   void DrainConnectingUpdates(SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Draining CONNECTING updates...");
     while (!helper_->QueueEmpty()) {
-      ExpectConnectingUpdate(location);
+      ASSERT_TRUE(ExpectConnectingUpdate(location));
     }
     gpr_log(GPR_INFO, "Done draining CONNECTING updates");
   }

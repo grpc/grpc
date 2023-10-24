@@ -203,8 +203,8 @@ Poll<RefCountedPtr<ReclaimerQueue::Handle>> ReclaimerQueue::PollNext() {
 //
 
 GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
-    std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name)
-    : memory_quota_(memory_quota), name_(std::move(name)) {
+    std::shared_ptr<BasicMemoryQuota> memory_quota)
+    : memory_quota_(memory_quota) {
   memory_quota_->Take(
       /*allocator=*/this, taken_bytes_);
   memory_quota_->AddNewAllocator(this);
@@ -314,8 +314,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-        gpr_log(GPR_INFO, "[%p|%s] Early return %" PRIdPTR " bytes", this,
-                name_.c_str(), ret);
+        gpr_log(GPR_INFO, "[%p] Early return %" PRIdPTR " bytes", this, ret);
       }
       GPR_ASSERT(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
       memory_quota_->Return(ret);
@@ -735,15 +734,19 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
 // MemoryQuota
 //
 
-MemoryAllocator MemoryQuota::CreateMemoryAllocator(absl::string_view name) {
-  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
-      memory_quota_, absl::StrCat(memory_quota_->name(), "/allocator/", name));
+MemoryAllocator MemoryQuota::CreateMemoryAllocator(
+    GRPC_UNUSED absl::string_view name) {
+  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
   return MemoryAllocator(std::move(impl));
 }
 
-MemoryOwner MemoryQuota::CreateMemoryOwner(absl::string_view name) {
-  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
-      memory_quota_, absl::StrCat(memory_quota_->name(), "/owner/", name));
+MemoryOwner MemoryQuota::CreateMemoryOwner() {
+  // Note: we will likely want to add a name or some way to distinguish
+  // between memory owners once resource quota is fully rolled out and we need
+  // full metrics. One thing to note, however, is that manipulating the name
+  // here (e.g. concatenation) can add significant memory increase when many
+  // owners are created.
+  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
   return MemoryOwner(std::move(impl));
 }
 

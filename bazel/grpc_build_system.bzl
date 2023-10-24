@@ -114,6 +114,7 @@ def _update_visibility(visibility):
         "json_reader_legacy": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
+        "tcp_tracer": PRIVATE,
         "trace": PRIVATE,
         "tsi_interface": PRIVATE,
         "tsi": PRIVATE,

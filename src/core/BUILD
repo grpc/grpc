@@ -2613,6 +2613,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "channel_stack_trace",
+    srcs = [
+        "lib/channel/channel_stack_trace.cc",
+    ],
+    hdrs = [
+        "lib/channel/channel_stack_trace.h",
+    ],
+    language = "c++",
+    deps = [
+        "//:gpr_platform",
+        "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "channel_init",
     srcs = [
         "lib/surface/channel_init.cc",
@@ -2620,12 +2635,22 @@ grpc_cc_library(
     hdrs = [
         "lib/surface/channel_init.h",
     ],
-    external_deps = ["absl/functional:any_invocable"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+        "absl/types:optional",
+    ],
     language = "c++",
     deps = [
+        "channel_args",
+        "channel_fwd",
+        "channel_stack_trace",
         "channel_stack_type",
         "//:channel_stack_builder",
+        "//:debug_location",
+        "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -3740,7 +3765,6 @@ grpc_cc_library(
         "arena_promise",
         "channel_args",
         "channel_fwd",
-        "channel_init",
         "channel_stack_type",
         "closure",
         "error",
@@ -3758,7 +3782,6 @@ grpc_cc_library(
         "time",
         "try_seq",
         "//:channel_arg_names",
-        "//:channel_stack_builder",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",
@@ -3787,9 +3810,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "arena_promise",
-        "channel_args",
         "channel_fwd",
-        "channel_init",
         "channel_stack_type",
         "closure",
         "context",
@@ -3797,7 +3818,6 @@ grpc_cc_library(
         "status_helper",
         "time",
         "//:channel_arg_names",
-        "//:channel_stack_builder",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",
@@ -3830,10 +3850,10 @@ grpc_cc_library(
         "channel_stack_type",
         "slice",
         "//:channel_arg_names",
-        "//:channel_stack_builder",
         "//:config",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:grpc_security_base",
     ],
 )
 
@@ -3858,9 +3878,9 @@ grpc_cc_library(
         "arena_promise",
         "channel_args",
         "channel_fwd",
-        "channel_init",
         "channel_stack_type",
         "context",
+        "grpc_deadline_filter",
         "grpc_service_config",
         "json",
         "json_args",
@@ -3872,7 +3892,6 @@ grpc_cc_library(
         "slice_buffer",
         "validation_errors",
         "//:channel_arg_names",
-        "//:channel_stack_builder",
         "//:config",
         "//:gpr",
         "//:grpc_base",
@@ -3957,7 +3976,6 @@ grpc_cc_library(
         "json_args",
         "json_object_loader",
         "service_config_parser",
-        "transport_fwd",
         "validation_errors",
         "//:config",
         "//:gpr",
@@ -4042,7 +4060,6 @@ grpc_cc_library(
         "arena_promise",
         "channel_args",
         "channel_fwd",
-        "channel_init",
         "channel_stack_type",
         "closure",
         "context",
@@ -4071,7 +4088,6 @@ grpc_cc_library(
         "validation_errors",
         "//:backoff",
         "//:channel_arg_names",
-        "//:channel_stack_builder",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
@@ -4408,6 +4424,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "channel_fwd",
+        "channel_init",
         "channel_stack_type",
         "ref_counted",
         "useful",
@@ -5284,7 +5301,6 @@ grpc_cc_library(
         "seq",
         "slice",
         "//:channel_arg_names",
-        "//:channel_stack_builder",
         "//:config",
         "//:gpr",
         "//:gpr_platform",
@@ -5324,7 +5340,6 @@ grpc_cc_library(
         "map",
         "slice",
         "//:channel_arg_names",
-        "//:channel_stack_builder",
         "//:config",
         "//:gpr",
         "//:gpr_platform",
@@ -5874,7 +5889,6 @@ grpc_cc_library(
         "status_helper",
         "tcp_connect_handshaker",
         "time",
-        "transport_fwd",
         "unique_type_name",
         "//:channel_arg_names",
         "//:config",
@@ -5926,7 +5940,6 @@ grpc_cc_library(
         "resource_quota",
         "status_helper",
         "time",
-        "transport_fwd",
         "unique_type_name",
         "//:channel_arg_names",
         "//:chttp2_legacy_frame",
@@ -5977,7 +5990,6 @@ grpc_cc_library(
         "slice_buffer",
         "status_helper",
         "time",
-        "transport_fwd",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
@@ -6107,10 +6119,6 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    visibility = [
-        "//src/cpp/ext/gcp:__subpackages__",
-        "//test:__subpackages__",
-    ],
     deps = [
         "arena",
         "arena_promise",
@@ -6126,7 +6134,6 @@ grpc_cc_library(
         "slice_buffer",
         "time",
         "//:channel_arg_names",
-        "//:channel_stack_builder",
         "//:config",
         "//:gpr",
         "//:gpr_platform",

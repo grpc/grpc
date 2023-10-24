@@ -31,7 +31,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
@@ -70,7 +70,7 @@ class ServerFuzzer final : public BasicFuzzer {
                     msg.channel_args(), FuzzingEnvironment{resource_quota()})
                     .ToC()
                     .get());
-    grpc_transport* transport =
+    Transport* transport =
         grpc_create_chttp2_transport(channel_args, mock_endpoint_, false);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "SetupTransport", Server::FromC(server_)->SetupTransport(
