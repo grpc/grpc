@@ -120,7 +120,6 @@ constexpr grpc_core::Duration kLifeguardMaxSleepBetweenChecks{
 }  // namespace
 
 thread_local WorkQueue* g_local_queue = nullptr;
-thread_local void* g_my_pool_id = nullptr;
 
 // -------- WorkStealingThreadPool --------
 
@@ -175,7 +174,7 @@ void WorkStealingThreadPool::PostforkChild() { pool_->Postfork(); }
 
 WorkStealingThreadPool::WorkStealingThreadPoolImpl::WorkStealingThreadPoolImpl(
     size_t reserve_threads)
-    : reserve_threads_(reserve_threads), lifeguard_(this) {}
+    : reserve_threads_(reserve_threads), queue_(this), lifeguard_(this) {}
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
   for (size_t i = 0; i < reserve_threads_; i++) {
@@ -187,7 +186,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
     EventEngine::Closure* closure) {
   GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
-  if (g_local_queue != nullptr && g_my_pool_id == this) {
+  if (g_local_queue != nullptr && g_local_queue->owner() == this) {
     g_local_queue->Add(closure);
   } else {
     queue_.Add(closure);
@@ -387,8 +386,7 @@ WorkStealingThreadPool::ThreadState::ThreadState(
       busy_count_idx_(pool_->busy_thread_count()->NextIndex()) {}
 
 void WorkStealingThreadPool::ThreadState::ThreadBody() {
-  g_local_queue = new BasicWorkQueue();
-  g_my_pool_id = pool_.get();
+  g_local_queue = new BasicWorkQueue(this);
   pool_->theft_registry()->Enroll(g_local_queue);
   ThreadLocal::SetIsEventEngineThread(true);
   while (Step()) {
