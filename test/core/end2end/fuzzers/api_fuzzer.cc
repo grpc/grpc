@@ -126,7 +126,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       if (name_ == "server") {
         std::vector<grpc_resolved_address> addrs;
         grpc_resolved_address addr;
-        addr.len = 0;
+        memset(&addr, 0, sizeof(addr));
         addrs.push_back(addr);
         on_done_(std::move(addrs));
       } else {
