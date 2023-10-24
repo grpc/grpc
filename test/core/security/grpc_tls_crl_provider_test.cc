@@ -141,7 +141,6 @@ std::string TempDirNameFromPath(absl::string_view dir_path) {
 TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   std::string dir_path = MakeTempDir();
   std::string dir_name = TempDirNameFromPath(dir_path);
-
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       dir_path, std::chrono::seconds(1), nullptr);
   ASSERT_TRUE(provider.ok());
@@ -157,38 +156,31 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
     ASSERT_NE(crl, nullptr);
     ASSERT_EQ(crl->Issuer(), kCrlIssuer);
   }
-
   // After this provider shouldn't give a CRL, because everything should be
   // read cleanly and there is no CRL because TmpFile went out of scope and
   // was deleted
   sleep(2);
   auto crl_should_be_deleted = (*provider)->GetCrl(cert);
   ASSERT_EQ(crl_should_be_deleted, nullptr);
-
   rmdir(dir_path.c_str());
 }
 
 TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   std::string dir_path = MakeTempDir();
   std::string dir_name = TempDirNameFromPath(dir_path);
-
   std::string raw_crl = GetFileContents(kCrlPath);
   TmpFile tmp_crl(raw_crl, dir_name);
-
   std::vector<absl::Status> reload_errors;
   std::function<void(absl::Status)> reload_error_callback =
       [&](const absl::Status& status) { reload_errors.push_back(status); };
-
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       dir_path, std::chrono::seconds(1), reload_error_callback);
   ASSERT_TRUE(provider.ok());
-
   CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
   ASSERT_EQ(crl->Issuer(), kCrlIssuer);
   ASSERT_EQ(reload_errors.size(), 0);
-
   // Rewrite the crl file with invalid data for a crl
   // Should result in the CRL Reloader keeping the old CRL data
   tmp_crl.RewriteFile("BAD_DATA");
