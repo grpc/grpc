@@ -113,8 +113,10 @@ def _run():
                 argv = (
                     ["bazel-bin/test/core/memory_usage/memory_usage_test"]
                     + benchmark_args
-                    + extra_args)
-                if use_xds: argv.append("--use_xds")
+                    + extra_args
+                )
+                if use_xds:
+                    argv.append("--use_xds")
                 try:
                     output = subprocess.check_output(argv)
                 except subprocess.CalledProcessError as e:
