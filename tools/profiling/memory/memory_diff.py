@@ -154,8 +154,6 @@ else:
     print(cur, old)
     call_diff_size = 0
     channel_diff_size = 0
-    xds_call_diff_size = 0
-    xds_channel_diff_size = 0
     for scenario in _SCENARIOS.keys():
         for key, value in sorted(_INTERESTING.items()):
             key = scenario + ": " + key
@@ -164,32 +162,18 @@ else:
                     text += "{}: {}\n".format(key, cur[key])
                 else:
                     text += "{}: {} -> {}\n".format(key, old[key], cur[key])
-                    if "xds" in key:
-                        if "call" in key:
-                            xds_call_diff_size += cur[key] - old[key]
-                        else:
-                            xds_channel_diff_size += cur[key] - old[key]
+                    if "call" in key:
+                        call_diff_size += cur[key] - old[key]
                     else:
-                        if "call" in key:
-                            call_diff_size += cur[key] - old[key]
-                        else:
-                            channel_diff_size += cur[key] - old[key]
+                        channel_diff_size += cur[key] - old[key]
 
     print("CALL_DIFF_SIZE: %f" % call_diff_size)
     print("CHANNEL_DIFF_SIZE: %f" % channel_diff_size)
-    print("XDS_CALL_DIFF_SIZE: %f" % xds_call_diff_size)
-    print("XDS_CHANNEL_DIFF_SIZE: %f" % xds_channel_diff_size)
     check_on_pr.label_increase_decrease_on_pr(
         "per-call-memory", call_diff_size, 64
     )
     check_on_pr.label_increase_decrease_on_pr(
         "per-channel-memory", channel_diff_size, 1000
-    )
-    check_on_pr.label_increase_decrease_on_pr(
-        "xds-per-call-memory", xds_call_diff_size, 64
-    )
-    check_on_pr.label_increase_decrease_on_pr(
-        "xds-per-channel-memory", xds_channel_diff_size, 1000
     )
     # TODO(chennancy)Change significant value when minstack also runs for channel
 
