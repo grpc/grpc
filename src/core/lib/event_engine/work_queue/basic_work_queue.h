@@ -36,6 +36,7 @@ namespace experimental {
 // closures are added to the back.
 class BasicWorkQueue : public WorkQueue {
  public:
+  BasicWorkQueue() : owner_(nullptr) {}
   explicit BasicWorkQueue(void* owner);
   // Returns whether the queue is empty
   bool Empty() const override ABSL_LOCKS_EXCLUDED(mu_);
