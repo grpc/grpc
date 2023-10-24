@@ -102,7 +102,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
 }
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
-  auto result = experimental::CreateDirectoryReloaderProvider(
+  auto result = experimental::CreateDirectoryReloaderCrlProvider(
       kCrlDirectory, std::chrono::seconds(1), nullptr);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);
@@ -120,7 +120,7 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
 }
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
-  auto result = experimental::CreateDirectoryReloaderProvider(
+  auto result = experimental::CreateDirectoryReloaderCrlProvider(
       kCrlDirectory, std::chrono::seconds(1), nullptr);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);
@@ -145,7 +145,7 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   std::string dir_path = MakeTempDir();
   std::string dir_name = TempDirNameFromPath(dir_path);
 
-  auto result = experimental::CreateDirectoryReloaderProvider(
+  auto result = experimental::CreateDirectoryReloaderCrlProvider(
       dir_path, std::chrono::seconds(1), nullptr);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);
@@ -183,7 +183,7 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   std::function<void(absl::Status)> reload_error_callback =
       [&](const absl::Status& status) { reload_errors.push_back(status); };
 
-  auto result = experimental::CreateDirectoryReloaderProvider(
+  auto result = experimental::CreateDirectoryReloaderCrlProvider(
       dir_path, std::chrono::seconds(1), reload_error_callback);
   ASSERT_TRUE(result.ok());
   std::shared_ptr<CrlProvider> provider = std::move(*result);

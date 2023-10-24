@@ -82,7 +82,7 @@ class CertificateInfoImpl : public CertificateInfo {
 class DirectoryReloaderCrlProvider : public CrlProvider {
  public:
   static absl::StatusOr<std::shared_ptr<CrlProvider>>
-  CreateDirectoryReloaderProvider(
+  CreateDirectoryReloaderCrlProvider(
       absl::string_view directory, std::chrono::seconds refresh_duration,
       std::function<void(absl::Status)> reload_error_callback);
 };

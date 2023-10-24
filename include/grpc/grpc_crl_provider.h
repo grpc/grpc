@@ -75,7 +75,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
 // and not on the main codepath, the grpc process will continue to run through
 // reloading errors, so this mechanism is an important way to provide signals to
 // your monitoring and alerting setup.
-absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderProvider(
+absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
     std::function<void(absl::Status)> reload_error_callback);
 
