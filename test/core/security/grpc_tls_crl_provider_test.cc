@@ -91,7 +91,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookup) {
   EXPECT_EQ(crl->Issuer(), kCrlIssuer);
 }
 
-TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
+TEST(CrlProviderTest, StaticCrlProviderLookupIssuerNotFound) {
   std::vector<std::string> crl_strings = {GetFileContents(kCrlPath)};
   absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
       experimental::CreateStaticCrlProvider(crl_strings);
@@ -127,14 +127,14 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
 }
 
 std::string MakeTempDir() {
-  char templ[] = "/tmp/tmpdir.XXXXXX";
-  std::string dir_path = mkdtemp(templ);
+  char directory_template[] = "/tmp/tmpdir.XXXXXX";
+  std::string dir_path = mkdtemp(directory_template);
   return dir_path;
 }
 
 std::string TempDirNameFromPath(absl::string_view dir_path) {
-  std::vector<std::string> split = absl::StrSplit(dir_path, "/");
-  return split[2] + "/";
+  std::vector<absl::string_view> split = absl::StrSplit(dir_path, "/");
+  return absl::StrCat("%s/", split[2]);
 }
 
 TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
