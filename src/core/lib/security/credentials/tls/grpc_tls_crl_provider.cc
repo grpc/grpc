@@ -284,8 +284,8 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
   for (const std::string& file_path : *crl_files) {
     // Build a map of new_crls to update to. If all files successful, do a
     // full swap of the map. Otherwise update in place.
-    absl::StatusOr<std::shared_ptr<Crl>> result = ReadCrlFromFile(file_path);
-    if (!result.ok()) {
+    absl::StatusOr<std::shared_ptr<Crl>> crl = ReadCrlFromFile(file_path);
+    if (!crl.ok()) {
       all_files_successful = false;
       if (reload_error_callback_ != nullptr) {
         reload_error_callback_(absl::InvalidArgumentError(absl::StrFormat(
@@ -293,17 +293,24 @@ absl::Status DirectoryReloaderCrlProviderImpl::Update() {
       }
       continue;
     }
-    // Now we have a good CRL to update in our map
-    std::shared_ptr<Crl> crl = *result;
-    new_crls[crl->Issuer()] = std::move(crl);
+    // Now we have a good CRL to update in our map.
+    // It's not safe to say crl->Issuer() on the LHS and std::move(crl) on the
+    // RHS, because C++ does not guarantee which of those will be executed
+    // first.
+    std::string issuer((*crl)->Issuer());
+    new_crls[issuer] = std::move(*crl);
   }
   absl::MutexLock lock(&mu_);
   if (!all_files_successful) {
     // Need to make sure CRLs we read successfully into new_crls are still
-    // in-place updated in crls_
+    // in-place updated in crls_.
     for (auto& kv : new_crls) {
-      std::shared_ptr<Crl> crl = kv.second;
-      crls_[crl->Issuer()] = std::move(crl);
+      std::shared_ptr<Crl>& crl = kv.second;
+      // It's not safe to say crl->Issuer() on the LHS and std::move(crl) on the
+      // RHS, because C++ does not guarantee which of those will be executed
+      // first.
+      std::string issuer(crl->Issuer());
+      crls_[issuer] = std::move(crl);
     }
     return absl::UnknownError(
         "Not all files in CRL directory read successfully during async "
