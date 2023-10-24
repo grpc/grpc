@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -32,6 +33,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
