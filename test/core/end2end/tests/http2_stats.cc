@@ -80,6 +80,9 @@ class FakeCallTracer : public ClientCallTracer {
     }
 
     void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
+    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+      return nullptr;
+    }
     void RecordEnd(const gpr_timespec& /*latency*/) override { delete this; }
     void RecordAnnotation(absl::string_view /*annotation*/) override {}
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
@@ -155,6 +158,9 @@ class FakeServerCallTracer : public ServerCallTracer {
   void RecordReceivedDecompressedMessage(
       const SliceBuffer& /*recv_decompressed_message*/) override {}
   void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
+  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+    return nullptr;
+  }
   void RecordReceivedTrailingMetadata(
       grpc_metadata_batch* /*recv_trailing_metadata*/) override {}
 
