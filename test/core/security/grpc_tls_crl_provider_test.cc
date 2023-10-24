@@ -134,7 +134,7 @@ std::string MakeTempDir() {
 
 std::string TempDirNameFromPath(absl::string_view dir_path) {
   std::vector<absl::string_view> split = absl::StrSplit(dir_path, "/");
-  return absl::StrCat("%s/", split[2]);
+  return absl::StrCat(split[2], "/");
 }
 
 TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
