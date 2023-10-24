@@ -102,31 +102,28 @@ TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
 }
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
-  auto result = experimental::CreateDirectoryReloaderCrlProvider(
+  auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       kCrlDirectory, std::chrono::seconds(1), nullptr);
-  ASSERT_TRUE(result.ok());
-  std::shared_ptr<CrlProvider> provider = std::move(*result);
-
+  ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
-  auto crl = provider->GetCrl(cert);
+  auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
   ASSERT_EQ(crl->Issuer(), kCrlIssuer);
 
   CertificateInfoImpl intermediate =
       CertificateInfoImpl(kCrlIntermediateIssuer);
-  auto intermediate_crl = provider->GetCrl(intermediate);
+  auto intermediate_crl = (*provider)->GetCrl(intermediate);
   ASSERT_NE(intermediate_crl, nullptr);
   ASSERT_EQ(intermediate_crl->Issuer(), kCrlIntermediateIssuer);
 }
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
-  auto result = experimental::CreateDirectoryReloaderCrlProvider(
+  auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       kCrlDirectory, std::chrono::seconds(1), nullptr);
-  ASSERT_TRUE(result.ok());
-  std::shared_ptr<CrlProvider> provider = std::move(*result);
+  ASSERT_TRUE(provider.ok());
 
   CertificateInfoImpl bad_cert = CertificateInfoImpl("BAD CERT");
-  auto crl = provider->GetCrl(bad_cert);
+  auto crl = (*provider)->GetCrl(bad_cert);
   ASSERT_EQ(crl, nullptr);
 }
 
@@ -145,19 +142,18 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   std::string dir_path = MakeTempDir();
   std::string dir_name = TempDirNameFromPath(dir_path);
 
-  auto result = experimental::CreateDirectoryReloaderCrlProvider(
+  auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       dir_path, std::chrono::seconds(1), nullptr);
-  ASSERT_TRUE(result.ok());
-  std::shared_ptr<CrlProvider> provider = std::move(*result);
+  ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
-  auto should_be_no_crl = provider->GetCrl(cert);
+  auto should_be_no_crl = (*provider)->GetCrl(cert);
   ASSERT_EQ(should_be_no_crl, nullptr);
 
   {
     std::string raw_crl = GetFileContents(kCrlPath);
     TmpFile tmp_crl(raw_crl, dir_name);
     sleep(2);
-    auto crl = provider->GetCrl(cert);
+    auto crl = (*provider)->GetCrl(cert);
     ASSERT_NE(crl, nullptr);
     ASSERT_EQ(crl->Issuer(), kCrlIssuer);
   }
@@ -166,7 +162,7 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   // read cleanly and there is no CRL because TmpFile went out of scope and
   // was deleted
   sleep(2);
-  auto crl_should_be_deleted = provider->GetCrl(cert);
+  auto crl_should_be_deleted = (*provider)->GetCrl(cert);
   ASSERT_EQ(crl_should_be_deleted, nullptr);
 
   rmdir(dir_path.c_str());
@@ -183,13 +179,12 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   std::function<void(absl::Status)> reload_error_callback =
       [&](const absl::Status& status) { reload_errors.push_back(status); };
 
-  auto result = experimental::CreateDirectoryReloaderCrlProvider(
+  auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       dir_path, std::chrono::seconds(1), reload_error_callback);
-  ASSERT_TRUE(result.ok());
-  std::shared_ptr<CrlProvider> provider = std::move(*result);
+  ASSERT_TRUE(provider.ok());
 
   CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
-  auto crl = provider->GetCrl(cert);
+  auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
   ASSERT_EQ(crl->Issuer(), kCrlIssuer);
   ASSERT_EQ(reload_errors.size(), 0);
@@ -198,7 +193,7 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   // Should result in the CRL Reloader keeping the old CRL data
   tmp_crl.RewriteFile("BAD_DATA");
   sleep(2);
-  auto crl_post_update = provider->GetCrl(cert);
+  auto crl_post_update = (*provider)->GetCrl(cert);
   ASSERT_NE(crl_post_update, nullptr);
   ASSERT_EQ(crl_post_update->Issuer(), kCrlIssuer);
   ASSERT_EQ(reload_errors.size(), 2);
