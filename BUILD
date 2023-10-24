@@ -1112,6 +1112,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:notification",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",
@@ -1467,7 +1468,6 @@ grpc_cc_library(
         "//src/core:lib/transport/status_conversion.h",
         "//src/core:lib/transport/timeout_encoding.h",
         "//src/core:lib/transport/transport.h",
-        "//src/core:lib/transport/transport_impl.h",
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
@@ -1530,6 +1530,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "sockaddr_utils",
         "stats",
+        "tcp_tracer",
         "uri_parser",
         "work_serializer",
         "//src/core:1999",
@@ -1544,6 +1545,7 @@ grpc_cc_library(
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
+        "//src/core:channel_stack_trace",
         "//src/core:channel_stack_type",
         "//src/core:chunked_vector",
         "//src/core:closure",
@@ -1845,6 +1847,7 @@ grpc_cc_library(
     visibility = ["@grpc:tsi_interface"],
     deps = [
         "gpr",
+        "grpc_public_hdrs",
         "grpc_trace",
     ],
 )
@@ -2046,6 +2049,7 @@ grpc_cc_library(
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:socket_mutator",
+        "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
     ],
@@ -2309,6 +2313,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
+        "absl/base:endian",
         "absl/meta:type_traits",
         "absl/status",
         "absl/strings",
@@ -2342,8 +2347,8 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/server_call_tracer.h",
     ],
     external_deps = [
-        "absl/base",
         "absl/base:core_headers",
+        "absl/base:endian",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2361,13 +2366,13 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:grpc_opencensus_plugin"],
     deps = [
-        "channel_stack_builder",
         "config",
         "gpr",
         "grpc++_base",
         "grpc_base",
         "grpc_public_hdrs",
         "legacy_context",
+        "tcp_tracer",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
@@ -2375,6 +2380,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:logging_filter",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
@@ -2766,6 +2772,7 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
     ],
     tags = ["nofixdeps"],
     visibility = ["@grpc:iomgr_buffer_list"],
@@ -2883,7 +2890,6 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
-        "//src/core:transport_fwd",
     ],
 )
 
@@ -3065,7 +3071,6 @@ grpc_cc_library(
     deps = [
         "backoff",
         "channel_arg_names",
-        "channel_stack_builder",
         "config",
         "config_vars",
         "debug_location",
@@ -3112,6 +3117,7 @@ grpc_cc_library(
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_deadline_filter",
+        "//src/core:grpc_message_size_filter",
         "//src/core:grpc_service_config",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
@@ -3141,7 +3147,6 @@ grpc_cc_library(
         "//src/core:status_helper",
         "//src/core:subchannel_interface",
         "//src/core:time",
-        "//src/core:transport_fwd",
         "//src/core:try_seq",
         "//src/core:unique_type_name",
         "//src/core:useful",
@@ -3595,7 +3600,6 @@ grpc_cc_library(
     visibility = ["@grpc:http"],
     deps = [
         "channel_arg_names",
-        "channel_stack_builder",
         "config",
         "gpr",
         "grpc_base",
@@ -3608,7 +3612,6 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
-        "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:grpc_message_size_filter",
@@ -3621,7 +3624,6 @@ grpc_cc_library(
         "//src/core:race",
         "//src/core:slice",
         "//src/core:slice_buffer",
-        "//src/core:transport_fwd",
     ],
 )
 
@@ -3681,6 +3683,7 @@ grpc_cc_library(
     deps = [
         "backoff",
         "debug_location",
+        "endpoint_addresses",
         "envoy_admin_upb",
         "envoy_config_core_upb",
         "envoy_config_endpoint_upb",
@@ -3965,6 +3968,23 @@ grpc_cc_library(
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/context_list_entry.h",
     ],
+    deps = [
+        "gpr",
+        "tcp_tracer",
+    ],
+)
+
+grpc_cc_library(
+    name = "tcp_tracer",
+    hdrs = [
+        "//src/core:lib/channel/tcp_tracer.h",
+    ],
+    external_deps = [
+        "absl/time",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    visibility = ["@grpc:tcp_tracer"],
     deps = ["gpr"],
 )
 
@@ -4031,6 +4051,7 @@ grpc_cc_library(
         "legacy_context",
         "ref_counted_ptr",
         "stats",
+        "tcp_tracer",
         "//src/core:arena",
         "//src/core:bdp_estimator",
         "//src/core:bitset",
@@ -4061,7 +4082,6 @@ grpc_cc_library(
         "//src/core:stats_data",
         "//src/core:status_helper",
         "//src/core:time",
-        "//src/core:transport_fwd",
         "//src/core:useful",
         "//src/core:write_size_policy",
     ],

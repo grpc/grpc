@@ -464,11 +464,6 @@ const char XdsEnd2endTest::kServerKeyPath[] =
 const char XdsEnd2endTest::kRequestMessage[] = "Live long and prosper.";
 
 XdsEnd2endTest::XdsEnd2endTest() : balancer_(CreateAndStartBalancer()) {
-  bool localhost_resolves_to_ipv4 = false;
-  bool localhost_resolves_to_ipv6 = false;
-  grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
-                               &localhost_resolves_to_ipv6);
-  ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
   // Initialize default xDS resources.
   // Construct LDS resource.
   default_listener_.set_name(kServerName);
@@ -510,7 +505,7 @@ XdsEnd2endTest::XdsEnd2endTest() : balancer_(CreateAndStartBalancer()) {
   // Construct a default server-side Listener resource
   default_server_listener_.mutable_address()
       ->mutable_socket_address()
-      ->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+      ->set_address(grpc_core::LocalIp());
   default_server_listener_.mutable_default_filter_chain()
       ->add_filters()
       ->mutable_typed_config()
@@ -541,7 +536,7 @@ XdsEnd2endTest::CreateAndStartBalancer() {
 
 std::string XdsEnd2endTest::GetServerListenerName(int port) {
   return absl::StrCat("grpc/server?xds.resource.listening_address=",
-                      ipv6_only_ ? "[::1]:" : "127.0.0.1:", port);
+                      grpc_core::LocalIp(), ":", port);
 }
 
 Listener XdsEnd2endTest::PopulateServerListenerNameAndPort(
@@ -654,13 +649,13 @@ ClusterLoadAssignment XdsEnd2endTest::BuildEdsResource(
       auto* endpoint_proto = lb_endpoints->mutable_endpoint();
       auto* socket_address =
           endpoint_proto->mutable_address()->mutable_socket_address();
-      socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+      socket_address->set_address(grpc_core::LocalIp());
       socket_address->set_port_value(endpoint.port);
       for (int port : endpoint.additional_ports) {
         socket_address = endpoint_proto->add_additional_addresses()
                              ->mutable_address()
                              ->mutable_socket_address();
-        socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+        socket_address->set_address(grpc_core::LocalIp());
         socket_address->set_port_value(port);
       }
     }

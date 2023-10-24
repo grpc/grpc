@@ -1107,8 +1107,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // credentials for XdsCredentials.
   static std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials();
 
-  bool ipv6_only_ = false;
-
   std::unique_ptr<BalancerServerThread> balancer_;
 
   std::shared_ptr<Channel> channel_;

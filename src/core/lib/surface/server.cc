@@ -867,7 +867,7 @@ void Server::Start() {
 }
 
 grpc_error_handle Server::SetupTransport(
-    grpc_transport* transport, grpc_pollset* accepting_pollset,
+    Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
@@ -1270,8 +1270,7 @@ Server::ChannelData::~ChannelData() {
 
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
                                         RefCountedPtr<Channel> channel,
-                                        size_t cq_idx,
-                                        grpc_transport* transport,
+                                        size_t cq_idx, Transport* transport,
                                         intptr_t channelz_socket_uuid) {
   server_ = std::move(server);
   channel_ = channel;
@@ -1340,7 +1339,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   if (server_->ShutdownCalled()) {
     op->disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");
   }
-  grpc_transport_perform_op(transport, op);
+  transport->PerformOp(op);
 }
 
 Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
@@ -1414,7 +1413,7 @@ void Server::ChannelData::SetRegisteredMethodOnMetadata(
   metadata->Set(GrpcRegisteredMethod(), method);
 }
 
-void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
+void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
                                        const void* transport_server_data) {
   auto* chand = static_cast<Server::ChannelData*>(arg);
   // create a call

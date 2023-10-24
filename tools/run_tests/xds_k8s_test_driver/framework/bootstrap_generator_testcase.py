@@ -178,5 +178,5 @@ class BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
         test_client = self.client_runner.run(
             server_target=test_server.xds_uri, **kwargs
         )
-        test_client.wait_for_active_server_channel()
+        test_client.wait_for_server_channel_ready()
         return test_client

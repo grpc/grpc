@@ -29,6 +29,7 @@ cdef class RPCState(GrpcCallWrapper):
     cdef bint metadata_sent
     cdef bint status_sent
     cdef grpc_status_code status_code
+    cdef object py_status_code
     cdef str status_details
     cdef tuple trailing_metadata
     cdef object compression_algorithm
