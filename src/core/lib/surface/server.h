@@ -68,6 +68,10 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
+#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
+#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
+  "grpc.server.max_pending_requests_hard_limit"
+
 namespace grpc_core {
 
 extern TraceFlag grpc_server_channel_trace;
@@ -266,7 +270,7 @@ class Server : public InternallyRefCounted<Server>,
     static void SetRegisteredMethodOnMetadata(void* arg,
                                               ServerMetadata* metadata);
 
-    void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
+    void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_ -> mu_global_);
 
     static void FinishDestroy(void* arg, grpc_error_handle error);
 
@@ -509,7 +513,13 @@ class Server : public InternallyRefCounted<Server>,
   std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
 
   RandomEarlyDetection pending_backlog_protector_ ABSL_GUARDED_BY(mu_call_){
-      1000, 3000};
+      static_cast<uint64_t>(
+          std::max(0, channel_args_.GetInt(GRPC_ARG_SERVER_MAX_PENDING_REQUESTS)
+                          .value_or(1000))),
+      static_cast<uint64_t>(std::max(
+          0,
+          channel_args_.GetInt(GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT)
+              .value_or(3000)))};
   Duration max_time_in_pending_queue_{Duration::Seconds(30)};
   absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
