@@ -20,17 +20,16 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
+#include <dirent.h>
 #include <limits.h>
+#include <sys/param.h>
+#include <sys/stat.h>
 
 #include <memory>
 #include <utility>
 #include <vector>
 
 // IWYU pragma: no_include <openssl/mem.h>
-#include <dirent.h>
-#include <sys/param.h>
-#include <sys/stat.h>
-
 #include <openssl/bio.h>
 #include <openssl/crypto.h>  // IWYU pragma: keep
 #include <openssl/pem.h>
@@ -45,7 +44,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/load_file.h"
+// #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/gprpp/load_file.h"
 
 namespace grpc_core {
 namespace experimental {
@@ -65,22 +65,19 @@ std::string IssuerFromCrl(X509_CRL* crl) {
 }
 
 absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
-    absl::string_view crl_path) {
-  grpc_slice crl_slice = grpc_empty_slice();
-  grpc_error_handle err = grpc_load_file(crl_path.data(), 1, &crl_slice);
-  if (!err.ok()) {
-    gpr_log(GPR_ERROR, "Error reading file %s", err.message().data());
-    grpc_slice_unref(crl_slice);
+    const std::string& crl_path) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(crl_path, false);
+  if (!crl_slice.ok()) {
+    gpr_log(GPR_ERROR, "Error reading file %s",
+            crl_slice.status().ToString().c_str());
     return absl::InvalidArgumentError("Could not load file");
   }
   absl::StatusOr<std::unique_ptr<Crl>> crl =
-      Crl::Parse(std::string(StringViewFromSlice(crl_slice)));
+      Crl::Parse(crl_slice->as_string_view());
   if (!crl.ok()) {
-    grpc_slice_unref(crl_slice);
     return absl::InvalidArgumentError(absl::StrCat(
         "Parsing crl string failed with result ", crl.status().ToString()));
   }
-  grpc_slice_unref(crl_slice);
   return crl;
 }
 
