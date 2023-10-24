@@ -42,12 +42,12 @@ namespace grpc_core {
 
 namespace {
 
-constexpr size_t kDataFrameHeaderSize = 9;
+constexpr size_t kHeadersFrameHeaderSize = 9;
 
 }  // namespace
 
-// fills p (which is expected to be kDataFrameHeaderSize bytes long)
-// with a data frame header
+// fills p (which is expected to be kHeadersFrameHeaderSize bytes long)
+// with a headers frame header
 static void FillHeader(uint8_t* p, uint8_t type, uint32_t id, size_t len,
                        uint8_t flags) {
   // len is the current frame size (i.e. for the frame we're finishing).
@@ -99,9 +99,9 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
     } else {
       len = options.max_frame_size;
     }
-    FillHeader(grpc_slice_buffer_tiny_add(output, kDataFrameHeaderSize),
+    FillHeader(grpc_slice_buffer_tiny_add(output, kHeadersFrameHeaderSize),
                frame_type, options.stream_id, len, flags);
-    options.stats->framing_bytes += kDataFrameHeaderSize;
+    options.stats->framing_bytes += kHeadersFrameHeaderSize;
     grpc_slice_buffer_move_first(raw.c_slice_buffer(), len, output);
 
     frame_type = GRPC_CHTTP2_FRAME_CONTINUATION;

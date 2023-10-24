@@ -244,16 +244,27 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
 
   auto client_transport_stats =
       FakeCallTracer::FakeCallAttemptTracer::transport_stream_stats();
+  auto server_transport_stats = FakeServerCallTracer::transport_stream_stats();
   EXPECT_EQ(client_transport_stats.outgoing.data_bytes,
             send_from_client.size());
   EXPECT_EQ(client_transport_stats.incoming.data_bytes,
             send_from_server.size());
-  auto server_transport_stats = FakeServerCallTracer::transport_stream_stats();
   EXPECT_EQ(server_transport_stats.outgoing.data_bytes,
             send_from_server.size());
   EXPECT_EQ(server_transport_stats.incoming.data_bytes,
             send_from_client.size());
-  // TODO(yashykt): Add tests for framing bytes as well
+  // At the very minimum, we should have 9 bytes from header frame, 9 bytes from
+  // data header frame and 5 bytes from the grpc header on data. The actual
+  // number might be more due to RST_STREAM (13 bytes) and WINDOW_UPDATE (13
+  // bytes) frames.
+  EXPECT_GE(client_transport_stats.outgoing.framing_bytes, 23);
+  EXPECT_LE(client_transport_stats.outgoing.framing_bytes, 46);
+  EXPECT_GE(client_transport_stats.incoming.framing_bytes, 23);
+  EXPECT_LE(client_transport_stats.incoming.framing_bytes, 46);
+  EXPECT_GE(server_transport_stats.outgoing.framing_bytes, 23);
+  EXPECT_LE(server_transport_stats.outgoing.framing_bytes, 46);
+  EXPECT_GE(server_transport_stats.incoming.framing_bytes, 23);
+  EXPECT_LE(server_transport_stats.incoming.framing_bytes, 46);
 
   delete ServerCallTracerFactory::Get(ChannelArgs());
   ServerCallTracerFactory::RegisterGlobal(nullptr);
