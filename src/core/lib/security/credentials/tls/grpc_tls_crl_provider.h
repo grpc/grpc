@@ -79,29 +79,21 @@ class CertificateInfoImpl : public CertificateInfo {
   const std::string issuer_;
 };
 
-class DirectoryReloaderCrlProvider : public CrlProvider {
- public:
-  static absl::StatusOr<std::shared_ptr<CrlProvider>>
-  CreateDirectoryReloaderCrlProvider(
-      absl::string_view directory, std::chrono::seconds refresh_duration,
-      std::function<void(absl::Status)> reload_error_callback);
-};
-
 // Defining this here lets us hide implementation details (and includes) from
 // the header in include
-class DirectoryReloaderCrlProviderImpl
-    : public DirectoryReloaderCrlProvider,
-      public std::enable_shared_from_this<DirectoryReloaderCrlProviderImpl> {
+class DirectoryReloaderCrlProvider
+    : public CrlProvider,
+      public std::enable_shared_from_this<DirectoryReloaderCrlProvider> {
  public:
-  DirectoryReloaderCrlProviderImpl(absl::string_view directory,
-                                   std::chrono::seconds duration,
-                                   std::function<void(absl::Status)> callback)
+  DirectoryReloaderCrlProvider(absl::string_view directory,
+                               std::chrono::seconds duration,
+                               std::function<void(absl::Status)> callback)
       : crl_directory_(directory),
         refresh_duration_(duration),
         reload_error_callback_(callback),
         event_engine_(
             grpc_event_engine::experimental::GetDefaultEventEngine()) {}
-  ~DirectoryReloaderCrlProviderImpl() override;
+  ~DirectoryReloaderCrlProvider() override;
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
   // Schedules the next reload using event engine.
   void ScheduleReload();
