@@ -63,6 +63,22 @@ _INTERESTING = {
         rb"server channel memory usage: ([0-9\.]+) bytes per channel",
         float,
     ),
+    "call/xds_client": (
+        rb"xds client call memory usage: ([0-9\.]+) bytes per call",
+        float,
+    ),
+    "call/xds_server": (
+        rb"xds server call memory usage: ([0-9\.]+) bytes per call",
+        float,
+    ),
+    "channel/xds_client": (
+        rb"xds client channel memory usage: ([0-9\.]+) bytes per channel",
+        float,
+    ),
+    "channel/xds_server": (
+        rb"xds server channel memory usage: ([0-9\.]+) bytes per channel",
+        float,
+    ),
 }
 
 _SCENARIOS = {
@@ -89,26 +105,26 @@ def _run():
     )
     ret = {}
     for name, benchmark_args in _BENCHMARKS.items():
-        for scenario, extra_args in _SCENARIOS.items():
-            # TODO(chenancy) Remove when minstack is implemented for channel
-            if name == "channel" and scenario == "minstack":
-                continue
-            try:
-                output = subprocess.check_output(
-                    [
-                        "bazel-bin/test/core/memory_usage/memory_usage_test",
-                    ]
+        for use_xds in (False, True):
+            for scenario, extra_args in _SCENARIOS.items():
+                # TODO(chenancy) Remove when minstack is implemented for channel
+                if name == "channel" and scenario == "minstack":
+                    continue
+                argv = (
+                    ["bazel-bin/test/core/memory_usage/memory_usage_test"]
                     + benchmark_args
-                    + extra_args
-                )
-            except subprocess.CalledProcessError as e:
-                print("Error running benchmark:", e)
-                continue
-            for line in output.splitlines():
-                for key, (pattern, conversion) in _INTERESTING.items():
-                    m = re.match(pattern, line)
-                    if m:
-                        ret[scenario + ": " + key] = conversion(m.group(1))
+                    + extra_args)
+                if use_xds: argv.append("--use_xds")
+                try:
+                    output = subprocess.check_output(argv)
+                except subprocess.CalledProcessError as e:
+                    print("Error running benchmark:", e)
+                    continue
+                for line in output.splitlines():
+                    for key, (pattern, conversion) in _INTERESTING.items():
+                        m = re.match(pattern, line)
+                        if m:
+                            ret[scenario + ": " + key] = conversion(m.group(1))
     return ret
 
 
@@ -138,6 +154,8 @@ else:
     print(cur, old)
     call_diff_size = 0
     channel_diff_size = 0
+    xds_call_diff_size = 0
+    xds_channel_diff_size = 0
     for scenario in _SCENARIOS.keys():
         for key, value in sorted(_INTERESTING.items()):
             key = scenario + ": " + key
@@ -146,18 +164,32 @@ else:
                     text += "{}: {}\n".format(key, cur[key])
                 else:
                     text += "{}: {} -> {}\n".format(key, old[key], cur[key])
-                    if "call" in key:
-                        call_diff_size += cur[key] - old[key]
+                    if "xds" in key:
+                        if "call" in key:
+                            xds_call_diff_size += cur[key] - old[key]
+                        else:
+                            xds_channel_diff_size += cur[key] - old[key]
                     else:
-                        channel_diff_size += cur[key] - old[key]
+                        if "call" in key:
+                            call_diff_size += cur[key] - old[key]
+                        else:
+                            channel_diff_size += cur[key] - old[key]
 
     print("CALL_DIFF_SIZE: %f" % call_diff_size)
     print("CHANNEL_DIFF_SIZE: %f" % channel_diff_size)
+    print("XDS_CALL_DIFF_SIZE: %f" % xds_call_diff_size)
+    print("XDS_CHANNEL_DIFF_SIZE: %f" % xds_channel_diff_size)
     check_on_pr.label_increase_decrease_on_pr(
         "per-call-memory", call_diff_size, 64
     )
     check_on_pr.label_increase_decrease_on_pr(
         "per-channel-memory", channel_diff_size, 1000
+    )
+    check_on_pr.label_increase_decrease_on_pr(
+        "xds-per-call-memory", xds_call_diff_size, 64
+    )
+    check_on_pr.label_increase_decrease_on_pr(
+        "xds-per-channel-memory", xds_channel_diff_size, 1000
     )
     # TODO(chennancy)Change significant value when minstack also runs for channel
 
