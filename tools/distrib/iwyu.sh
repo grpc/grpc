@@ -33,6 +33,7 @@ tools/distrib/gen_compilation_database.py \
   "//:*" \
   "//src/core/..." \
   "//src/cpp/ext/csm/..." \
+  "//src/cpp/ext/gcp/..." \
   "//src/cpp/ext/otel/..." \
   "//src/compiler/..." \
   "//test/core/..." \

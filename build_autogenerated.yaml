@@ -682,6 +682,7 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -2110,6 +2111,7 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -4137,6 +4139,7 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -9895,6 +9898,42 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: http2_stats_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/http2_stats.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - gtest
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: http_proxy_mapper_test
   gtest: true
   build: test
@@ -15761,6 +15800,7 @@ targets:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
