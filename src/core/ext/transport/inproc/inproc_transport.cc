@@ -217,17 +217,36 @@ ArenaPromise<ServerMetadataHandle> InprocServerTransport::MakeCallPromise(
   Party* client_party = static_cast<Party*>(Activity::current());
   client_party->Spawn(
       "client_to_server",
-      Seq(server_call->PushClientInitialMetadata(
-              std::move(client_call_args.client_initial_metadata)),
+      Seq(server_call->SpawnWaitableWithPromisor(
+              "push_client_initial_metadata",
+              [client_initial_metadata =
+                   std::move(client_call_args.client_initial_metadata)](
+                  CallPart::Promisor p) mutable {
+                return p.PushClientInitialMetadata(
+                    std::move(client_initial_metadata));
+              }),
           ForEach(std::move(*client_call_args.client_to_server_messages),
                   [server_call](MessageHandle message) {
-                    return server_call->PushClientMessage(std::move(message));
+                    return server_call->SpawnWaitableWithPromisor(
+                        "push_client_message",
+                        [message =
+                             std::move(message)](CallPart::Promisor p) mutable {
+                          return p.PushClientMessage(std::move(message));
+                        });
                   }),
-          [server_call] { return server_call->PushClientClose(); }),
+          [server_call] {
+            return server_call->SpawnWaitableWithPromisor(
+                "push_client_close",
+                [](CallPart::Promisor p) { return p.PushClientClose(); });
+          }),
       [](Empty) {});
   return Seq(
       TrySeq(
-          server_call->PullServerInitialMetadata(),
+          server_call->SpawnWaitableWithPromisor(
+              "pull_server_initial_metadata",
+              [](CallPart::Promisor p) {
+                return p.PullServerInitialMetadata();
+              }),
           [server_initial_metadata_pipe =
                client_call_args.server_initial_metadata](
               ServerMetadataHandle server_initial_metadata) {
@@ -247,7 +266,12 @@ ArenaPromise<ServerMetadataHandle> InprocServerTransport::MakeCallPromise(
                       });
                 });
           }),
-      [server_call] { return server_call->PullServerTrailingMetadata(); });
+      [server_call] {
+        return server_call->SpawnWaitableWithPromisor(
+            "pull_server_trailing_metadata", [](CallPart::Promisor p) {
+              return p.PullServerTrailingMetadata();
+            });
+      });
 }
 
 bool UsePromiseBasedTransport() {

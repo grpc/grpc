@@ -632,64 +632,79 @@ class FilterStackTransport {
 
 class CallPart : public Party {
  public:
+  class ServerMessageReader;
+
+  class Promisor {
+   public:
+    auto PushClientInitialMetadata(
+        ClientMetadataHandle client_initial_metadata) {
+      return Map(call_part_.client_initial_metadata_.sender.Push(
+                     std::move(client_initial_metadata)),
+                 [](bool ok) { return StatusFlag(ok); });
+    }
+    auto PushClientMessage(MessageHandle message) {
+      return Map(
+          call_part_.client_to_server_messages_.sender.Push(std::move(message)),
+          [](bool ok) { return StatusFlag(ok); });
+    };
+    auto PushClientClose() {
+      call_part_.client_to_server_messages_.sender.Close();
+      return Empty{};
+    }
+
+    auto PullServerInitialMetadata() {
+      return Map(call_part_.server_initial_metadata_.receiver.Next(),
+                 [](NextResult<ServerMetadataHandle> initial_metadata)
+                     -> absl::StatusOr<ServerMetadataHandle> {
+                   if (initial_metadata.has_value()) {
+                     return std::move(initial_metadata.value());
+                   }
+                   return absl::CancelledError();
+                 });
+    }
+    auto PullServerMessage() {
+      return call_part_.server_to_client_messages_.receiver.Next();
+    }
+    auto PullServerTrailingMetadata() {
+      return Map(call_part_.server_trailing_metadata_.receiver.Next(),
+                 [](NextResult<ServerMetadataHandle> initial_metadata)
+                     -> ServerMetadataHandle {
+                   if (initial_metadata.has_value()) {
+                     return std::move(initial_metadata.value());
+                   }
+                   return ServerMetadataFromStatus(absl::CancelledError());
+                 });
+    }
+
+   private:
+    friend class CallPart;
+    explicit Promisor(CallPart& call_part) : call_part_(call_part) {}
+
+    CallPart& call_part_;
+  };
+
   CallPart();
 
-  auto PushClientInitialMetadata(ClientMetadataHandle client_initial_metadata) {
-    return SpawnWaitable("push_client_initial_metadata",
-                         [this, client_initial_metadata = std::move(
-                                    client_initial_metadata)]() mutable {
-                           return Map(client_initial_metadata_.sender.Push(
-                                          std::move(client_initial_metadata)),
-                                      [](bool ok) { return StatusFlag(ok); });
-                         });
-  }
-  auto PushClientMessage(MessageHandle message) {
-    return SpawnWaitable(
-        "push_client_message", [this, message = std::move(message)]() mutable {
-          return Map(client_to_server_messages_.sender.Push(std::move(message)),
-                     [](bool ok) { return StatusFlag(ok); });
-        });
-  };
-  auto PushClientClose() {
-    return SpawnWaitable("push_client_close", [this]() {
-      client_to_server_messages_.sender.Close();
-      return Empty{};
-    });
+  template <typename F, typename Done>
+  void SpawnWithPromisor(absl::string_view name, F promise_factory, Done done) {
+    Spawn(name, CallPromiseFactoryWithPromisor(std::move(promise_factory)),
+          std::move(done));
   }
 
-  auto PullServerInitialMetadata() {
-    return Map(SpawnWaitable("pull_server_initial_metadata",
-                             [this]() {
-                               return server_initial_metadata_.receiver.Next();
-                             }),
-               [](NextResult<ServerMetadataHandle> initial_metadata)
-                   -> absl::StatusOr<ServerMetadataHandle> {
-                 if (initial_metadata.has_value()) {
-                   return std::move(initial_metadata.value());
-                 }
-                 return absl::CancelledError();
-               });
-  }
-  auto PullServerMessage() {
-    return SpawnWaitable("pull_server_message", [this]() {
-      return server_to_client_messages_.receiver.Next();
-    });
-  }
-  auto PullServerTrailingMetadata() {
-    return Map(SpawnWaitable("pull_server_trailing_metadata",
-                             [this]() {
-                               return server_trailing_metadata_.receiver.Next();
-                             }),
-               [](NextResult<ServerMetadataHandle> initial_metadata)
-                   -> ServerMetadataHandle {
-                 if (initial_metadata.has_value()) {
-                   return std::move(initial_metadata.value());
-                 }
-                 return ServerMetadataFromStatus(absl::CancelledError());
-               });
+  template <typename F>
+  auto SpawnWaitableWithPromisor(absl::string_view name, F promise_factory) {
+    return SpawnWaitable(
+        name, CallPromiseFactoryWithPromisor(std::move(promise_factory)));
   }
 
  private:
+  template <typename F>
+  auto CallPromiseFactoryWithPromisor(F promise_factory) {
+    return [this, f = std::move(promise_factory)]() mutable {
+      return f(Promisor(*this));
+    };
+  }
+
   Pipe<ClientMetadataHandle> client_initial_metadata_;
   Pipe<MessageHandle> client_to_server_messages_;
   Pipe<ServerMetadataHandle> server_initial_metadata_;
@@ -697,12 +712,16 @@ class CallPart : public Party {
   Pipe<ServerMetadataHandle> server_trailing_metadata_;
 };
 
-// Adapter to turn CallPart into a Reader for ForEach
+// Adapter to turn Promisor into a Reader of server messages for ForEach
 class ServerMessageReader {
  public:
-  explicit ServerMessageReader(RefCountedPtr<CallPart> call)
-      : call_(std::move(call)) {}
-  auto Next() { return call_->PullServerMessage(); }
+  explicit ServerMessageReader(RefCountedPtr<CallPart> call_part)
+      : call_(std::move(call_part)) {}
+  auto Next() {
+    return call_->SpawnWaitableWithPromisor(
+        "pull_server_message",
+        [](CallPart::Promisor p) { return p.PullServerMessage(); });
+  }
 
  private:
   RefCountedPtr<CallPart> call_;
