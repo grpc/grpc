@@ -188,7 +188,7 @@ struct XdsServer {
   std::unique_ptr<grpc::Server> server;
 };
 
-XdsServer StartXdsServerAndConfigureBootstrap(int server_port, char* root) {
+XdsServer StartXdsServerAndConfigureBootstrap(int server_port) {
   XdsServer xds_server;
   int xds_server_port = grpc_pick_unused_port_or_die();
   gpr_log(GPR_INFO, "xDS server port: %d", xds_server_port);
@@ -240,7 +240,7 @@ int RunBenchmark(char* root, absl::string_view benchmark,
   gpr_log(GPR_INFO, "server port: %d", server_port);
   XdsServer xds_server;
   if (absl::GetFlag(FLAGS_use_xds)) {
-    xds_server = StartXdsServerAndConfigureBootstrap(server_port, root);
+    xds_server = StartXdsServerAndConfigureBootstrap(server_port);
   }
   int retval;
   if (benchmark == "call") {
