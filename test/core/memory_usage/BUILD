@@ -77,6 +77,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//src/core:xds_enabled_server",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",

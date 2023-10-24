@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <string>
 #include <utility>
@@ -89,22 +90,32 @@ int RunCallBenchmark(int port, char* root,
   int status;
 
   // start the server
+  gpr_log(GPR_INFO, "starting server");
   std::vector<std::string> server_flags = {
       absl::StrCat(root, "/memory_usage_server",
                    gpr_subprocess_binary_extension()),
       "--grpc_experiments",
       std::string(grpc_core::ConfigVars::Get().Experiments()), "--bind",
       grpc_core::LocalIpAndPort(port)};
+  if (absl::GetFlag(FLAGS_use_xds)) server_flags.emplace_back("--use_xds");
   // Add scenario-specific server flags to the end of the server_flags
   absl::c_move(server_scenario_flags, std::back_inserter(server_flags));
   Subprocess svr(server_flags);
+  gpr_log(GPR_INFO, "server started, pid %d", svr.GetPID());
+
+  // Wait one second before starting client to give the server a chance
+  // to start up.
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
   // start the client
+  gpr_log(GPR_INFO, "starting client");
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_client",
                    gpr_subprocess_binary_extension()),
       "--target",
-      grpc_core::JoinHostPort("localhost", port),
+      absl::GetFlag(FLAGS_use_xds)
+          ? absl::StrCat("xds:", XdsResourceUtils::kServerName)
+          : grpc_core::LocalIpAndPort(port),
       "--grpc_experiments",
       std::string(grpc_core::ConfigVars::Get().Experiments()),
       absl::StrCat("--warmup=", 10000),
@@ -112,6 +123,7 @@ int RunCallBenchmark(int port, char* root,
   // Add scenario-specific client flags to the end of the client_flags
   absl::c_move(client_scenario_flags, std::back_inserter(client_flags));
   Subprocess cli(client_flags);
+  gpr_log(GPR_INFO, "client started, pid %d", cli.GetPID());
   // wait for completion
   if ((status = cli.Join()) != 0) {
     printf("client failed with: %d", status);
@@ -128,29 +140,33 @@ int RunChannelBenchmark(int port, char* root) {
   int status;
 
   // start the server
+  gpr_log(GPR_INFO, "starting server");
   std::vector<std::string> server_flags = {
       absl::StrCat(root, "/memory_usage_callback_server",
                    gpr_subprocess_binary_extension()),
       "--bind", grpc_core::LocalIpAndPort(port)};
   if (absl::GetFlag(FLAGS_use_xds)) server_flags.emplace_back("--use_xds");
   Subprocess svr(server_flags);
+  gpr_log(GPR_INFO, "server started, pid %d", svr.GetPID());
 
   // Wait one second before starting client to avoid possible race condition
   // of client sending an RPC before the server is set up
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
   // start the client
+  gpr_log(GPR_INFO, "starting client");
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_callback_client",
                    gpr_subprocess_binary_extension()),
       "--target",
       absl::GetFlag(FLAGS_use_xds)
           ? absl::StrCat("xds:", XdsResourceUtils::kServerName)
-          : grpc_core::JoinHostPort("localhost", port),
+          : grpc_core::LocalIpAndPort(port),
       "--nosecure",
       absl::StrCat("--server_pid=", svr.GetPID()),
       absl::StrCat("--size=", absl::GetFlag(FLAGS_size))};
   Subprocess cli(client_flags);
+  gpr_log(GPR_INFO, "client started, pid %d", cli.GetPID());
   // wait for completion
   if ((status = cli.Join()) != 0) {
     printf("client failed with: %d", status);
@@ -185,7 +201,10 @@ XdsServer StartXdsServerAndConfigureBootstrap(
   XdsResourceUtils::SetListenerAndRouteConfiguration(
       xds_server.ads_service.get(), XdsResourceUtils::DefaultListener(),
       XdsResourceUtils::DefaultRouteConfig());
-  xds_server.ads_service->SetCdsResource(XdsResourceUtils::DefaultCluster());
+  auto cluster = XdsResourceUtils::DefaultCluster();
+  cluster.mutable_circuit_breakers()->add_thresholds()->mutable_max_requests()
+      ->set_value(std::numeric_limits<uint32_t>::max());
+  xds_server.ads_service->SetCdsResource(cluster);
   xds_server.ads_service->SetEdsResource(XdsResourceUtils::BuildEdsResource(
       XdsResourceUtils::EdsResourceArgs(
           {XdsResourceUtils::EdsResourceArgs::Locality(
