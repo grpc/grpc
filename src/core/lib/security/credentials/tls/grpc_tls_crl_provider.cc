@@ -131,7 +131,7 @@ absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
 
 std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
                                 absl::string_view file_entry_name) {
-  return absl::StrFormat("%s\\%s", valid_file_dir, file_entry_name);
+  return absl::StrFormat("%s\\t%s", valid_file_dir, file_entry_name);
 }
 
 // Reference for reading directory in Windows:
@@ -223,7 +223,6 @@ std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
 }
 
 DirectoryReloaderCrlProviderImpl::~DirectoryReloaderCrlProviderImpl() {
-  // TODO(gtcooke94) do we need to worry about a race here?
   if (refresh_handle_.has_value()) {
     event_engine_->Cancel(refresh_handle_.value());
   }
@@ -242,7 +241,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
   }
   auto provider = std::make_shared<DirectoryReloaderCrlProviderImpl>(
       directory, refresh_duration, reload_error_callback);
-  // TODO(gtcooke94) this could be slow to do at startup, but I think we want to
+  // This could be slow to do at startup, but we want to
   // make sure it's done before the provider is used.
   absl::Status initial_status = provider->Update();
   if (!initial_status.ok()) {
@@ -254,26 +253,25 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
 
 void DirectoryReloaderCrlProviderImpl::OnNextUpdateTimer() {
   absl::Status status = Update();
-  if (!status.ok()) {
-    if (reload_error_callback_ != nullptr) {
-      reload_error_callback_(status);
-    }
+  if (!status.ok() && reload_error_callback_ != nullptr) {
+    reload_error_callback_(status);
   }
   ScheduleReload();
 }
 
 void DirectoryReloaderCrlProviderImpl::ScheduleReload() {
   std::weak_ptr<DirectoryReloaderCrlProviderImpl> self = shared_from_this();
-  refresh_handle_ = event_engine_->RunAfter(refresh_duration_, [self]() {
-    ApplicationCallbackExecCtx callback_exec_ctx;
-    ExecCtx exec_ctx;
-    {
-      if (std::shared_ptr<DirectoryReloaderCrlProviderImpl> valid_ptr =
-              self.lock()) {
-        valid_ptr->OnNextUpdateTimer();
-      }
-    }
-  });
+  refresh_handle_ =
+      event_engine_->RunAfter(refresh_duration_, [self = std::move(self)]() {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        {
+          if (std::shared_ptr<DirectoryReloaderCrlProviderImpl> valid_ptr =
+                  self.lock()) {
+            valid_ptr->OnNextUpdateTimer();
+          }
+        }
+      });
 }
 
 absl::Status DirectoryReloaderCrlProviderImpl::Update() {
