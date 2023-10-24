@@ -162,6 +162,7 @@ grpc_cc_test(
         "//:subprocess",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
+        "//test/cpp/end2end/xds:xds_utils",
     ],
 )
 
@@ -182,5 +183,6 @@ grpc_cc_binary(
         "//:subprocess",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
+        "//test/cpp/end2end/xds:xds_utils",
     ],
 )
