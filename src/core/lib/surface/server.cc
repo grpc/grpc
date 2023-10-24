@@ -532,6 +532,7 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
                                           std::memory_order_acq_rel,
                                           std::memory_order_acq_rel)) {
         GPR_ASSERT(new_value->value().TakeCall() == requested_call);
+        delete new_value;
         return false;
       }
       waker.WakeupAsync();
