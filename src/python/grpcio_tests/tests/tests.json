@@ -9,6 +9,7 @@
   "tests.health_check._health_servicer_test.HealthServicerTest",
   "tests.interop._insecure_intraop_test.InsecureIntraopTest",
   "tests.interop._secure_intraop_test.SecureIntraopTest",
+  "tests.observability._observability_test.ObservabilityTest",
   "tests.protoc_plugin._python_plugin_test.ModuleMainTest",
   "tests.protoc_plugin._python_plugin_test.PythonPluginTest",
   "tests.protoc_plugin._python_plugin_test.SimpleStubsPluginTest",
@@ -91,6 +92,5 @@
   "tests.unit.beta._implementations_test.ChannelCredentialsTest",
   "tests.unit.beta._not_found_test.NotFoundTest",
   "tests.unit.beta._utilities_test.ChannelConnectivityTest",
-  "tests.unit.framework.foundation._logging_pool_test.LoggingPoolTest",
-  "tests.observability._observability_test.ObservabilityTest"
+  "tests.unit.framework.foundation._logging_pool_test.LoggingPoolTest"
 ]

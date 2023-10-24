@@ -132,9 +132,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
     elif "linux" in sys.platform or "darwin" in sys.platform:
-        EXTRA_ENV_COMPILE_ARGS += (
-            " -fno-wrapv -frtti -fvisibility=hidden"
-        )
+        EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti -fvisibility=hidden"
 
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ""
@@ -255,8 +253,9 @@ def extension_modules():
     if BUILD_WITH_CYTHON:
         from Cython import Build
 
-        return Build.cythonize(extensions,
-                               compiler_directives={'language_level' : "3"})
+        return Build.cythonize(
+            extensions, compiler_directives={"language_level": "3"}
+        )
     else:
         return extensions
 
