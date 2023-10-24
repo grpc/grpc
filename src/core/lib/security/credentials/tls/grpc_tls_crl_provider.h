@@ -105,7 +105,7 @@ class DirectoryReloaderCrlProvider
   void OnNextUpdateTimer();
 
   // guards the crls_ map
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_
       ABSL_GUARDED_BY(mu_);
   std::string crl_directory_;
