@@ -33,10 +33,7 @@ namespace grpc_core {
 
 namespace testing {
 
-TmpFile::TmpFile(absl::string_view data) : TmpFile(data, "test") {
-  name_ = CreateTmpFileAndWriteData(data);
-  GPR_ASSERT(!name_.empty());
-}
+TmpFile::TmpFile(absl::string_view data) : TmpFile(data, "test") {}
 
 TmpFile::TmpFile(absl::string_view data, absl::string_view prefix)
     : prefix_(prefix) {
