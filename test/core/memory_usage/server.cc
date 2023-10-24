@@ -212,8 +212,8 @@ int main(int argc, char** argv) {
 
   if (absl::GetFlag(FLAGS_use_xds)) {
     grpc_server_config_fetcher* config_fetcher =
-        grpc_server_config_fetcher_xds_create(
-            {OnServingStatusUpdate, nullptr}, &args);
+        grpc_server_config_fetcher_xds_create({OnServingStatusUpdate, nullptr},
+                                              &args);
     if (config_fetcher != nullptr) {
       grpc_server_set_config_fetcher(server, config_fetcher);
     }

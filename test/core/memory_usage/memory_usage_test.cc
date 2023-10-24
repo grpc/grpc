@@ -181,8 +181,7 @@ struct XdsServer {
   std::unique_ptr<grpc::Server> server;
 };
 
-XdsServer StartXdsServerAndConfigureBootstrap(
-    int server_port, char* root) {
+XdsServer StartXdsServerAndConfigureBootstrap(int server_port, char* root) {
   XdsServer xds_server;
   int xds_server_port = grpc_pick_unused_port_or_die();
   gpr_log(GPR_INFO, "xDS server port: %d", xds_server_port);
@@ -202,14 +201,16 @@ XdsServer StartXdsServerAndConfigureBootstrap(
       xds_server.ads_service.get(), XdsResourceUtils::DefaultListener(),
       XdsResourceUtils::DefaultRouteConfig());
   auto cluster = XdsResourceUtils::DefaultCluster();
-  cluster.mutable_circuit_breakers()->add_thresholds()->mutable_max_requests()
+  cluster.mutable_circuit_breakers()
+      ->add_thresholds()
+      ->mutable_max_requests()
       ->set_value(std::numeric_limits<uint32_t>::max());
   xds_server.ads_service->SetCdsResource(cluster);
-  xds_server.ads_service->SetEdsResource(XdsResourceUtils::BuildEdsResource(
-      XdsResourceUtils::EdsResourceArgs(
+  xds_server.ads_service->SetEdsResource(
+      XdsResourceUtils::BuildEdsResource(XdsResourceUtils::EdsResourceArgs(
           {XdsResourceUtils::EdsResourceArgs::Locality(
-              "here", {XdsResourceUtils::EdsResourceArgs::Endpoint(
-                          server_port)})})));
+              "here",
+              {XdsResourceUtils::EdsResourceArgs::Endpoint(server_port)})})));
   XdsResourceUtils::SetServerListenerNameAndRouteConfiguration(
       xds_server.ads_service.get(), XdsResourceUtils::DefaultServerListener(),
       server_port, XdsResourceUtils::DefaultServerRouteConfig());
@@ -237,7 +238,7 @@ int RunBenchmark(char* root, absl::string_view benchmark,
   int retval;
   if (benchmark == "call") {
     retval = RunCallBenchmark(server_port, root, server_scenario_flags,
-                            client_scenario_flags);
+                              client_scenario_flags);
   } else if (benchmark == "channel") {
     retval = RunChannelBenchmark(server_port, root);
   } else {

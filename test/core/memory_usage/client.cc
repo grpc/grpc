@@ -160,8 +160,7 @@ static MemStats send_snapshot_request(int call_idx, grpc_slice call_type) {
                                                    (void*)nullptr, nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
-  gpr_log(GPR_INFO, "Call %d status %d (%s)", call_idx,
-          calls[call_idx].status,
+  gpr_log(GPR_INFO, "Call %d status %d (%s)", call_idx, calls[call_idx].status,
           std::string(grpc_core::StringViewFromSlice(calls[call_idx].details))
               .c_str());
 
@@ -293,15 +292,13 @@ int main(int argc, char** argv) {
   const char* prefix = "";
   if (absl::StartsWith(absl::GetFlag(FLAGS_target), "xds:")) prefix = "xds ";
   printf("---------client stats--------\n");
-  printf("%sclient call memory usage: %f bytes per call\n",
-         prefix,
+  printf("%sclient call memory usage: %f bytes per call\n", prefix,
          static_cast<double>(client_calls_inflight.rss -
                              client_benchmark_calls_start.rss) /
              benchmark_iterations * 1024);
 
   printf("---------server stats--------\n");
-  printf("%sserver call memory usage: %f bytes per call\n",
-         prefix,
+  printf("%sserver call memory usage: %f bytes per call\n", prefix,
          static_cast<double>(server_calls_inflight.rss -
                              server_benchmark_calls_start.rss) /
              benchmark_iterations * 1024);
