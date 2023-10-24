@@ -85,7 +85,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookup) {
   absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
       experimental::CreateStaticCrlProvider(crl_strings);
   ASSERT_TRUE(provider.ok()) << provider.status();
-  CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
+  CertificateInfoImpl cert(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
   EXPECT_EQ(crl->Issuer(), kCrlIssuer);
@@ -96,7 +96,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookupBad) {
   absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
       experimental::CreateStaticCrlProvider(crl_strings);
   ASSERT_TRUE(provider.ok()) << provider.status();
-  CertificateInfoImpl bad_cert = CertificateInfoImpl("BAD CERT");
+  CertificateInfoImpl bad_cert("BAD CERT");
   auto crl = (*provider)->GetCrl(bad_cert);
   EXPECT_EQ(crl, nullptr);
 }
@@ -105,16 +105,15 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       kCrlDirectory, std::chrono::seconds(1), nullptr);
   ASSERT_TRUE(provider.ok());
-  CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
+  CertificateInfoImpl cert(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
-  ASSERT_EQ(crl->Issuer(), kCrlIssuer);
+  EXPECT_EQ(crl->Issuer(), kCrlIssuer);
 
-  CertificateInfoImpl intermediate =
-      CertificateInfoImpl(kCrlIntermediateIssuer);
+  CertificateInfoImpl intermediate(kCrlIntermediateIssuer);
   auto intermediate_crl = (*provider)->GetCrl(intermediate);
   ASSERT_NE(intermediate_crl, nullptr);
-  ASSERT_EQ(intermediate_crl->Issuer(), kCrlIntermediateIssuer);
+  EXPECT_EQ(intermediate_crl->Issuer(), kCrlIntermediateIssuer);
 }
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
@@ -122,7 +121,7 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
       kCrlDirectory, std::chrono::seconds(1), nullptr);
   ASSERT_TRUE(provider.ok());
 
-  CertificateInfoImpl bad_cert = CertificateInfoImpl("BAD CERT");
+  CertificateInfoImpl bad_cert("BAD CERT");
   auto crl = (*provider)->GetCrl(bad_cert);
   ASSERT_EQ(crl, nullptr);
 }
@@ -144,7 +143,7 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       dir_path, std::chrono::seconds(1), nullptr);
   ASSERT_TRUE(provider.ok());
-  CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
+  CertificateInfoImpl cert(kCrlIssuer);
   auto should_be_no_crl = (*provider)->GetCrl(cert);
   ASSERT_EQ(should_be_no_crl, nullptr);
 
@@ -154,7 +153,7 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
     sleep(2);
     auto crl = (*provider)->GetCrl(cert);
     ASSERT_NE(crl, nullptr);
-    ASSERT_EQ(crl->Issuer(), kCrlIssuer);
+    EXPECT_EQ(crl->Issuer(), kCrlIssuer);
   }
   // After this provider shouldn't give a CRL, because everything should be
   // read cleanly and there is no CRL because TmpFile went out of scope and
@@ -176,19 +175,19 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       dir_path, std::chrono::seconds(1), reload_error_callback);
   ASSERT_TRUE(provider.ok());
-  CertificateInfoImpl cert = CertificateInfoImpl(kCrlIssuer);
+  CertificateInfoImpl cert(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
-  ASSERT_EQ(crl->Issuer(), kCrlIssuer);
-  ASSERT_EQ(reload_errors.size(), 0);
+  EXPECT_EQ(crl->Issuer(), kCrlIssuer);
+  EXPECT_EQ(reload_errors.size(), 0);
   // Rewrite the crl file with invalid data for a crl
   // Should result in the CRL Reloader keeping the old CRL data
   tmp_crl.RewriteFile("BAD_DATA");
   sleep(2);
   auto crl_post_update = (*provider)->GetCrl(cert);
   ASSERT_NE(crl_post_update, nullptr);
-  ASSERT_EQ(crl_post_update->Issuer(), kCrlIssuer);
-  ASSERT_EQ(reload_errors.size(), 2);
+  EXPECT_EQ(crl_post_update->Issuer(), kCrlIssuer);
+  EXPECT_EQ(reload_errors.size(), 2);
   // TODO(gtcooke94) check the actual content of the error
 }
 
