@@ -16,6 +16,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <vector>
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -34,49 +37,34 @@ extern grpc_core::TraceFlag grpc_trace_fork;
 
 #define GRPC_FORK_TRACE_LOG_STRING(format) GRPC_FORK_TRACE_LOG("%s", format)
 
-// Register fork handlers with the system, enabling fork support.
-//
-// This provides pthread-based support for fork events. Any objects that
-// implement Forkable can register themselves with this system using
-// ManageForkable, and their respective methods will be called upon fork.
-//
-// This should be called once upon grpc_initialization.
-void RegisterForkHandlers();
-
-// Global callback for pthread_atfork's *prepare argument
-void PrepareFork();
-// Global callback for pthread_atfork's *parent argument
-void PostforkParent();
-// Global callback for pthread_atfork's *child argument
-void PostforkChild();
-
 // An interface to be implemented by EventEngines that wish to have managed fork
 // support.
 class Forkable {
  public:
-  Forkable();
-  virtual ~Forkable();
+  virtual ~Forkable() = default;
   virtual void PrepareFork() = 0;
   virtual void PostforkParent() = 0;
   virtual void PostforkChild() = 0;
 };
 
-class ForkableInterface {
+#ifndef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+// no-op ObjectGroupForkHandler impl
+#else
+class ObjectGroupForkHandler {
  public:
-  virtual ~ForkableInterface() = default;
-  virtual void PrepareFork() = 0;
-  virtual void PostforkParent() = 0;
-  virtual void PostforkChild() = 0;
-};
+  // adds forkable to set of forkables
+  // asserts if IsForking() == true
+  void RegisterForkable(std::shared_ptr<Forkable> forkable);
 
-// Add Forkables from the set of objects that are supported.
-// Upon fork, each forkable will have its respective fork hooks called on
-// the thread that invoked the fork.
-//
-// Relative ordering of fork callback operations is not guaranteed.
-void ManageForkable(Forkable* forkable);
-// Remove a forkable from the managed set.
-void StopManagingForkable(Forkable* forkable);
+  void Prefork();
+  void PostforkParent();
+  void PostforkChild();
+
+ private:
+  bool is_forking_ = false;
+  std::vector<std::weak_ptr<Forkable> > forkables_;
+};
+#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

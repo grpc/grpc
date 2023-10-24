@@ -37,47 +37,17 @@ namespace experimental {
 #ifdef GRPC_POSIX_SOCKET_TCP
 namespace {
 
-grpc_core::NoDestruct<std::vector<std::weak_ptr<ForkableInterface>>>
-    g_forkable_instances;
-
-bool g_registered{false};
-
 bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
   return strategy == "all" || strategy == want;
 }
 
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+grpc_core::NoDestruct<ObjectGroupForkHandler> g_poller_fork_manager;
+bool g_registered = false;
 
-void grpc_prefork() {
-  gpr_log(GPR_INFO, "grpc_prefork()");
-  for (auto& instance : *g_forkable_instances) {
-    auto shared = instance.lock();
-    if (shared) {
-      shared->PrepareFork();
-    }
-  }
-}
-
-void grpc_postfork_parent() {
-  gpr_log(GPR_INFO, "grpc_postfork_parent()");
-  for (auto& instance : *g_forkable_instances) {
-    auto shared = instance.lock();
-    if (shared) {
-      shared->PostforkParent();
-    }
-  }
-}
-
-void grpc_postfork_child() {
-  gpr_log(GPR_INFO, "grpc_postfork_child()");
-  for (auto& instance : *g_forkable_instances) {
-    auto shared = instance.lock();
-    if (shared) {
-      shared->PostforkChild();
-    }
-  }
-}
-
+void Prefork() { g_poller_fork_manager->Prefork(); }
+void PostforkParent() { g_poller_fork_manager->PostforkParent(); }
+void PostforkChild() { g_poller_fork_manager->PostforkChild(); }
 #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 }  // namespace
@@ -100,12 +70,13 @@ std::shared_ptr<PosixEventPoller> MakeDefaultPoller(Scheduler* scheduler) {
       poller = MakePollPoller(scheduler, /*use_phony_poll=*/true);
     }
   }
-  if (!std::exchange(g_registered, true)) {
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-    pthread_atfork(grpc_prefork, grpc_postfork_parent, grpc_postfork_child);
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  gpr_log(GPR_INFO, "poller register forkable");
+  g_poller_fork_manager->RegisterForkable(poller);
+  if (!std::exchange(g_registered, true)) {
+    pthread_atfork(Prefork, PostforkParent, PostforkChild);
   }
-  g_forkable_instances->emplace_back(poller);
+#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   return poller;
 }
 

@@ -32,43 +32,13 @@ namespace experimental {
 
 namespace {
 
-grpc_core::NoDestruct<std::vector<std::weak_ptr<ForkableInterface>>>
-    g_forkable_instances;
-
-bool g_registered{false};
-
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+grpc_core::NoDestruct<ObjectGroupForkHandler> g_thread_pool_fork_manager;
+bool g_registered = false;
 
-void grpc_prefork() {
-  gpr_log(GPR_INFO, "grpc_prefork()");
-  for (auto& instance : *g_forkable_instances) {
-    auto shared = instance.lock();
-    if (shared) {
-      shared->PrepareFork();
-    }
-  }
-}
-
-void grpc_postfork_parent() {
-  gpr_log(GPR_INFO, "grpc_postfork_parent()");
-  for (auto& instance : *g_forkable_instances) {
-    auto shared = instance.lock();
-    if (shared) {
-      shared->PostforkParent();
-    }
-  }
-}
-
-void grpc_postfork_child() {
-  gpr_log(GPR_INFO, "grpc_postfork_child()");
-  for (auto& instance : *g_forkable_instances) {
-    auto shared = instance.lock();
-    if (shared) {
-      shared->PostforkChild();
-    }
-  }
-}
-
+void Prefork() { g_thread_pool_fork_manager->Prefork(); }
+void PostforkParent() { g_thread_pool_fork_manager->PostforkParent(); }
+void PostforkChild() { g_thread_pool_fork_manager->PostforkChild(); }
 #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 }  // namespace
@@ -76,12 +46,13 @@ void grpc_postfork_child() {
 std::shared_ptr<ThreadPool> MakeThreadPool(size_t /* reserve_threads */) {
   auto shared = std::make_shared<WorkStealingThreadPool>(
       grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
-  if (!std::exchange(g_registered, true)) {
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-    pthread_atfork(grpc_prefork, grpc_postfork_parent, grpc_postfork_child);
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  gpr_log(GPR_INFO, "thread pool register forkable");
+  g_thread_pool_fork_manager->RegisterForkable(shared);
+  if (!std::exchange(g_registered, true)) {
+    pthread_atfork(Prefork, PostforkParent, PostforkChild);
   }
-  g_forkable_instances->emplace_back(shared);
+#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   return shared;
 }
 

@@ -96,7 +96,6 @@ static void do_basic_init(void) {
   gpr_time_init();
   grpc_core::PrintExperimentsList();
   grpc_core::Fork::GlobalInit();
-  grpc_event_engine::experimental::RegisterForkHandlers();
   grpc_fork_handlers_auto_register();
   grpc_tracer_init();
   grpc_client_channel_global_init_backup_polling();

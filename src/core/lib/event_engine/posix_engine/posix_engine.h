@@ -259,7 +259,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
   std::shared_ptr<ThreadPool> executor_;
-  TimerManager timer_manager_;
+  std::shared_ptr<TimerManager> timer_manager_;
 #ifdef GRPC_POSIX_SOCKET_TCP
   std::shared_ptr<PosixEnginePollerManager> poller_manager_;
 #endif  // GRPC_POSIX_SOCKET_TCP
