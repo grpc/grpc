@@ -282,7 +282,7 @@ FakeCertificateProvider::CertDataMapWrapper* g_fake2_cert_data_map = nullptr;
 class XdsSecurityTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    BootstrapBuilder builder = BootstrapBuilder();
+    XdsBootstrapBuilder builder;
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
     builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
     std::vector<std::string> fields;
@@ -734,7 +734,7 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {}  // No-op -- individual tests do this themselves.
 
-  void DoSetUp(BootstrapBuilder builder = BootstrapBuilder()) {
+  void DoSetUp(XdsBootstrapBuilder builder = XdsBootstrapBuilder()) {
     InitClient(builder);
     CreateBackends(1, /*xds_enabled=*/true);
     EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -749,7 +749,7 @@ TEST_P(XdsEnabledServerTest, Basic) {
 }
 
 TEST_P(XdsEnabledServerTest, ListenerDeletionIgnored) {
-  DoSetUp(BootstrapBuilder().SetIgnoreResourceDeletion());
+  DoSetUp(XdsBootstrapBuilder().SetIgnoreResourceDeletion());
   backends_[0]->Start();
   WaitForBackend(DEBUG_LOCATION, 0);
   // Check that we ACKed.
@@ -843,7 +843,7 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    BootstrapBuilder builder = BootstrapBuilder();
+    XdsBootstrapBuilder builder;
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
     builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
     std::vector<std::string> fields;

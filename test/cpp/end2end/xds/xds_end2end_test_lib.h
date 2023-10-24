@@ -468,9 +468,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   void SetRouteConfiguration(BalancerServerThread* balancer,
                              const RouteConfiguration& route_config,
                              const Listener* listener_to_copy = nullptr) {
-    XdsResourceUtils::SetRouteConfiguration(balancer->ads_service(),
-                                    route_config, GetParam().enable_rds_testing(),
-                                    listener_to_copy);
+    XdsResourceUtils::SetRouteConfiguration(
+        balancer->ads_service(), route_config, GetParam().enable_rds_testing(),
+        listener_to_copy);
   }
 
   // Helper method for generating an endpoint for a backend, for use in

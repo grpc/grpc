@@ -50,10 +50,10 @@
 namespace grpc {
 namespace testing {
 
+using ::envoy::config::cluster::v3::Cluster;
 using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
 using ::envoy::config::listener::v3::Listener;
-using ::envoy::config::cluster::v3::Cluster;
 using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
@@ -206,7 +206,8 @@ void XdsResourceUtils::ServerHcmAccessor::Pack(const HttpConnectionManager& hcm,
 
 const char XdsResourceUtils::kDefaultLocalityRegion[] =
     "xds_default_locality_region";
-const char XdsResourceUtils::kDefaultLocalityZone[] = "xds_default_locality_zone";
+const char XdsResourceUtils::kDefaultLocalityZone[] =
+    "xds_default_locality_zone";
 
 const char XdsResourceUtils::kServerName[] = "server.example.com";
 const char XdsResourceUtils::kDefaultRouteConfigurationName[] =
@@ -247,9 +248,8 @@ Cluster XdsResourceUtils::DefaultCluster() {
 
 Listener XdsResourceUtils::DefaultServerListener() {
   Listener listener;
-  listener.mutable_address()
-      ->mutable_socket_address()
-      ->set_address(grpc_core::LocalIp());
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      grpc_core::LocalIp());
   ServerHcmAccessor().Pack(DefaultHcm(), &listener);
   return listener;
 }

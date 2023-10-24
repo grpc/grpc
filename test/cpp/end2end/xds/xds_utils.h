@@ -100,11 +100,13 @@ class XdsBootstrapBuilder {
 // Utilities for constructing xDS resources.
 class XdsResourceUtils {
  public:
-  using HttpConnectionManager = envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager;
+  using HttpConnectionManager = envoy::extensions::filters::network::
+      http_connection_manager::v3::HttpConnectionManager;
   using Listener = envoy::config::listener::v3::Listener;
   using RouteConfiguration = envoy::config::route::v3::RouteConfiguration;
   using Cluster = envoy::config::cluster::v3::Cluster;
-  using ClusterLoadAssignment = envoy::config::endpoint::v3::ClusterLoadAssignment;
+  using ClusterLoadAssignment =
+      envoy::config::endpoint::v3::ClusterLoadAssignment;
 
   // Interface for accessing HttpConnectionManager config in Listener.
   class HcmAccessor {
