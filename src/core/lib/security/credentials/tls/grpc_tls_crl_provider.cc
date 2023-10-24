@@ -131,7 +131,7 @@ absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
 
 std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
                                 absl::string_view file_entry_name) {
-  return absl::StrFormat("%s\%s", valid_file_dir, file_entry_name);
+  return absl::StrFormat("%s\\%s", valid_file_dir, file_entry_name);
 }
 
 // Reference for reading directory in Windows:
