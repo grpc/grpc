@@ -16,6 +16,7 @@
 //
 //
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -26,6 +27,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <memory>
 
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
@@ -33,19 +35,24 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "google/protobuf/wrappers.pb.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/server_builder.h>
+#include <grpc/grpc.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/subprocess.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
+#include "test/cpp/end2end/xds/xds_server.h"
 
 using grpc::testing::XdsResourceUtils;
 

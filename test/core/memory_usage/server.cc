@@ -21,13 +21,14 @@
 #include <stdlib.h>
 #include <time.h>
 
+#ifndef _WIN32
+// This is for _exit() below, which is temporary.
+#include <unistd.h>
+#endif
+
 #include <algorithm>
 #include <string>
 #include <vector>
-
-#include "absl/base/attributes.h"
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -35,16 +36,15 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-
-#include "test/core/memory_usage/memstats.h"
-#ifndef _WIN32
-// This is for _exit() below, which is temporary.
-#include <unistd.h>
-#endif
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
+#include "absl/base/attributes.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "test/core/memory_usage/memstats.h"
+#include "absl/status/status.h"
 
 #include "src/core/ext/xds/xds_enabled_server.h"
 #include "src/core/lib/channel/channel_args.h"
