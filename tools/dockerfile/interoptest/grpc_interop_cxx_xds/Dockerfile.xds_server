@@ -27,12 +27,9 @@ COPY . .
 RUN tools/bazel build //test/cpp/interop:xds_interop_server
 RUN cp -rL /workdir/bazel-bin/test/cpp/interop/xds_interop_server /artifacts/
 
-# Download grpcurl
-RUN curl -L https://github.com/fullstorydev/grpcurl/releases/download/v1.8.7/grpcurl_1.8.7_linux_x86_64.tar.gz -o grpcurl.tar.gz && \
-  echo "bb462fb022cb041725eaf6d5d4b4726c  grpcurl.tar.gz" | md5sum --check && \
-  tar xzvf grpcurl.tar.gz && \
-  chmod +x grpcurl
-
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
 
 FROM python:3.9-slim-bookworm
 
@@ -45,14 +42,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=0 /artifacts ./
-COPY --from=0 /workdir/grpcurl /bin/grpcurl
 
-# TODO: The reflection server is not currently fully functional. Copying the
-# protos is required for CLI RPC tools run against localhost of this container
-# image until this is fixed.
-COPY --from=0 /workdir/src/proto  /src/proto/
+# tini serves as PID 1 and enables the server to properly respond to signals.
+COPY --from=0 /tini /tini
 
-# TODO: Replace with a premade pid 1 process such as tini.
-COPY tools/dockerfile/interoptest/grpc_interop_cxx_xds/xds_server_entrypoint.sh /
-
-ENTRYPOINT ["/xds_server_entrypoint.sh"]
+ENTRYPOINT ["/tini", "--",  "/xds_interop_server"]
