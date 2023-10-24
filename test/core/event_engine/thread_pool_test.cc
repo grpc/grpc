@@ -266,14 +266,24 @@ TYPED_TEST(ThreadPoolTest, WorkerThreadLocalRunWorksWithOtherPools) {
   TypeParam p1(8);
   TypeParam p2(8);
   std::vector<gpr_thd_id> tid(p1_run_iterations);
+  std::atomic<size_t> iter_count{0};
+  grpc_core::Notification finished_all_iterations;
   for (size_t p1_i = 0; p1_i < p1_run_iterations; p1_i++) {
-    p1.Run([&tid, &p2, p1_i] {
+    // p1.Run([&tid, &p2, &iter_count, &finished_all_iterations, p1_i,
+    p1.Run([&, p1_i, total_iterations = p1_run_iterations * p2_run_iterations] {
       tid[p1_i] = gpr_thd_currentid();
       for (size_t p2_i = 0; p2_i < p2_run_iterations; p2_i++) {
-        p2.Run([&tid, p1_i] { ASSERT_NE(tid[p1_i], gpr_thd_currentid()); });
+        // p2.Run([&tid, &iter_count, &finished_all_iterations, p1_i,
+        p2.Run([&, p1_i, total_iterations] {
+          EXPECT_NE(tid[p1_i], gpr_thd_currentid());
+          if (total_iterations == iter_count.fetch_add(1) + 1) {
+            finished_all_iterations.Notify();
+          }
+        });
       }
     });
   }
+  finished_all_iterations.WaitForNotification();
   p2.Quiesce();
   p1.Quiesce();
 }
