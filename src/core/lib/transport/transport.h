@@ -28,7 +28,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -63,6 +62,7 @@
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
