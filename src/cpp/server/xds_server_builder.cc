@@ -16,7 +16,10 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/xds_server_builder.h>
 
 #include "src/core/ext/xds/xds_enabled_server.h"
