@@ -34,18 +34,21 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/directory.h"
+
 namespace grpc_core {
 
+namespace {
 std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
                                 absl::string_view file_entry_name) {
   return absl::StrFormat("%s/%s", valid_file_dir, file_entry_name);
 }
+}  // namespace
 
-absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
-    const std::string& crl_directory_path) {
+absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory() {
   DIR* crl_directory;
   // Open the dir for reading
-  if ((crl_directory = opendir(crl_directory_path.c_str())) == nullptr) {
+  if ((crl_directory = opendir(directory_path_.c_str())) == nullptr) {
     return absl::InternalError("Could not read crl directory.");
   }
   std::vector<std::string> crl_files;
@@ -55,7 +58,7 @@ absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
     const char* file_name = directory_entry->d_name;
 
     std::string file_path =
-        GetAbsoluteFilePath(crl_directory_path.c_str(), file_name);
+        GetAbsoluteFilePath(directory_path_.c_str(), file_name);
     struct stat dir_entry_stat;
     int stat_return = stat(file_path.c_str(), &dir_entry_stat);
     // S_ISREG(dir_entry_stat.st_mode) returns true if this entry is a regular

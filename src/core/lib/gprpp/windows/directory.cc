@@ -31,10 +31,12 @@
 
 #include <grpc/support/log.h>
 
+namespace {
 std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
                                 absl::string_view file_entry_name) {
   return absl::StrFormat("%s\\t%s", valid_file_dir, file_entry_name);
 }
+}  // namespace
 
 // Reference for reading directory in Windows:
 // https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c

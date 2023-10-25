@@ -28,8 +28,15 @@
 
 namespace grpc_core {
 
-absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
-    const std::string& crl_directory_path);
+class Directory {
+ public:
+  explicit Directory(absl::string_view directory_path)
+      : directory_path_(directory_path) {}
+  virtual absl::StatusOr<std::vector<std::string>> GetFilesInDirectory();
+
+ private:
+  std::string directory_path_;
+};
 
 }  // namespace grpc_core
 
