@@ -1181,6 +1181,7 @@ Pod::Spec.new do |s|
                       'src/cpp/server/server_context.cc',
                       'src/cpp/server/server_posix.cc',
                       'src/cpp/server/thread_pool_interface.h',
+                      'src/cpp/server/xds_server_builder.cc',
                       'src/cpp/server/xds_server_credentials.cc',
                       'src/cpp/thread_manager/thread_manager.cc',
                       'src/cpp/thread_manager/thread_manager.h',
