@@ -297,6 +297,7 @@
   option(gRPC_BUILD_TESTS "Build tests" OFF)
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
   option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
+  option(gRPC_DOWNLOAD_ARCHIVES "Download archives for empty 3rd party directories" ON)
 
   set(gRPC_INSTALL_default ON)
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -493,7 +494,7 @@
   # Setup external proto library at ${external_proto_library.destination} if it doesn't exist
   % endif
   % for download_url in external_proto_library.urls:
-  if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination})
+  if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination} AND gRPC_DOWNLOAD_ARCHIVES)
     # Download the archive via HTTP, validate the checksum, and extract to ${external_proto_library.destination}.
     download_archive(
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination}
