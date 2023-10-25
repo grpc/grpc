@@ -4874,6 +4874,7 @@ add_library(grpc_authorization_provider
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
+  src/core/lib/backoff/random_early_detection.cc
   src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
@@ -5176,6 +5177,8 @@ target_link_libraries(grpc_authorization_provider
   absl::function_ref
   absl::hash
   absl::type_traits
+  absl::random_bit_gen_ref
+  absl::random_distributions
   absl::statusor
   absl::span
   absl::utility
