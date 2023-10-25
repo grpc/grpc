@@ -43,6 +43,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/directory.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -80,50 +81,53 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
   return crl;
 }
 
-#if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
-    defined(GPR_APPLE)
-std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
-                                absl::string_view file_entry_name) {
-  return absl::StrFormat("%s/%s", valid_file_dir, file_entry_name);
-}
+// #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
+//     defined(GPR_APPLE)
+// std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
+//                                 absl::string_view file_entry_name) {
+//   return absl::StrFormat("%s/%s", valid_file_dir, file_entry_name);
+// }
 
-absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
-    const std::string& crl_directory_path) {
-  DIR* crl_directory;
-  // Open the dir for reading
-  if ((crl_directory = opendir(crl_directory_path.c_str())) == nullptr) {
-    return absl::InternalError("Could not read crl directory.");
-  }
-  std::vector<std::string> crl_files;
-  struct dirent* directory_entry;
-  // Iterate over everything in the directory
-  while ((directory_entry = readdir(crl_directory)) != nullptr) {
-    const char* file_name = directory_entry->d_name;
+// absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
+//     const std::string& crl_directory_path) {
+//   DIR* crl_directory;
+//   // Open the dir for reading
+//   if ((crl_directory = opendir(crl_directory_path.c_str())) == nullptr) {
+//     return absl::InternalError("Could not read crl directory.");
+//   }
+//   std::vector<std::string> crl_files;
+//   struct dirent* directory_entry;
+//   // Iterate over everything in the directory
+//   while ((directory_entry = readdir(crl_directory)) != nullptr) {
+//     const char* file_name = directory_entry->d_name;
 
-    std::string file_path =
-        GetAbsoluteFilePath(crl_directory_path.c_str(), file_name);
-    struct stat dir_entry_stat;
-    int stat_return = stat(file_path.c_str(), &dir_entry_stat);
-    // S_ISREG(dir_entry_stat.st_mode) returns true if this entry is a regular
-    // file
-    // https://stackoverflow.com/questions/40163270/what-is-s-isreg-and-what-does-it-do
-    // This lets us skip over either bad files or things that aren't files to
-    // read. For example, this will properly skip over `..` and `.` which show
-    // up during this iteration, as well as symlinks and sub directories.
-    if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
-      if (stat_return == -1) {
-        gpr_log(GPR_ERROR, "failed to get status for file: %s",
-                file_path.c_str());
-      }
-      // If stat_return != -1, this just isn't a file so we continue
-      continue;
-    }
-    crl_files.push_back(file_path);
-  }
-  closedir(crl_directory);
-  return crl_files;
-}
-#elif defined(GPR_WINDOWS)
+//     std::string file_path =
+//         GetAbsoluteFilePath(crl_directory_path.c_str(), file_name);
+//     struct stat dir_entry_stat;
+//     int stat_return = stat(file_path.c_str(), &dir_entry_stat);
+//     // S_ISREG(dir_entry_stat.st_mode) returns true if this entry is a
+//     regular
+//     // file
+//     //
+//     https://stackoverflow.com/questions/40163270/what-is-s-isreg-and-what-does-it-do
+//     // This lets us skip over either bad files or things that aren't files to
+//     // read. For example, this will properly skip over `..` and `.` which
+//     show
+//     // up during this iteration, as well as symlinks and sub directories.
+//     if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
+//       if (stat_return == -1) {
+//         gpr_log(GPR_ERROR, "failed to get status for file: %s",
+//                 file_path.c_str());
+//       }
+//       // If stat_return != -1, this just isn't a file so we continue
+//       continue;
+//     }
+//     crl_files.push_back(file_path);
+//   }
+//   closedir(crl_directory);
+//   return crl_files;
+// }
+#if defined(GPR_WINDOWS)
 
 // TODO(gtcooke94) How to best test this?
 #include <windows.h>

@@ -240,6 +240,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "directory",
+    srcs = [
+        "lib/gprpp/posix/directory.cc",
+    ],
+    hdrs = [
+        "lib/gprpp/directory.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings:string_view",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:gpr",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "chunked_vector",
     hdrs = ["lib/gprpp/chunked_vector.h"],
     deps = [
@@ -3091,6 +3110,7 @@ grpc_cc_library(
     ],
     deps = [
         "default_event_engine",
+        "directory",
         "load_file",
         "//:exec_ctx",
         "//:gpr",
