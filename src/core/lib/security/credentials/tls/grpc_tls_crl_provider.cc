@@ -159,7 +159,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     return absl::InvalidArgumentError("The directory path is not valid.");
   }
   auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
-      directory, refresh_duration, reload_error_callback,
+      refresh_duration, reload_error_callback,
       grpc_event_engine::experimental::GetDefaultEventEngine(),
       std::make_shared<Directory>(directory));
   // This could be slow to do at startup, but we want to
@@ -196,7 +196,7 @@ void DirectoryReloaderCrlProvider::ScheduleReload() {
 }
 
 absl::Status DirectoryReloaderCrlProvider::Update() {
-  auto crl_files = directory_->GetFilesInDirectory();
+  auto crl_files = crl_directory_->GetFilesInDirectory();
   if (!crl_files.ok()) {
     return crl_files.status();
   }

@@ -87,15 +87,13 @@ class DirectoryReloaderCrlProvider
       public std::enable_shared_from_this<DirectoryReloaderCrlProvider> {
  public:
   DirectoryReloaderCrlProvider(
-      absl::string_view directory, std::chrono::seconds duration,
-      std::function<void(absl::Status)> callback,
+      std::chrono::seconds duration, std::function<void(absl::Status)> callback,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       std::shared_ptr<Directory> directory_impl)
-      : crl_directory_(directory),
-        reload_error_callback_(callback),
+      : reload_error_callback_(callback),
         event_engine_(event_engine),
-        directory_(directory_impl) {
+        crl_directory_(directory_impl) {
     refresh_duration_ = Duration::FromSecondsAsDouble(duration.count());
   }
 
@@ -110,11 +108,10 @@ class DirectoryReloaderCrlProvider
  private:
   void OnNextUpdateTimer();
 
-  std::string crl_directory_;
   grpc_core::Duration refresh_duration_;
   std::function<void(::absl::Status)> reload_error_callback_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
-  std::shared_ptr<Directory> directory_;
+  std::shared_ptr<Directory> crl_directory_;
   // guards the crls_ map
   grpc_core::Mutex mu_;
   absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_

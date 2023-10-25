@@ -75,7 +75,7 @@ CreateDirectoryReloaderCrlProviderWithEngine(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>
         event_engine) {
   auto provider = std::make_shared<experimental::DirectoryReloaderCrlProvider>(
-      directory, refresh_duration, reload_error_callback, event_engine,
+      refresh_duration, reload_error_callback, event_engine,
       std::make_shared<Directory>(directory));
   absl::Status initial_status = provider->Update();
   if (!initial_status.ok()) {
