@@ -142,21 +142,23 @@ std::string TempDirNameFromPath(absl::string_view dir_path) {
 TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   std::string dir_path = MakeTempDir();
   std::string dir_name = TempDirNameFromPath(dir_path);
+  auto fuzzing_ee =
+      std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+          grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+          fuzzing_event_engine::Actions());
+  int refresh_duration = 60;
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
-      dir_path, std::chrono::seconds(1), nullptr, nullptr);
+      dir_path, std::chrono::seconds(refresh_duration), nullptr, fuzzing_ee);
   ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert(kCrlIssuer);
   auto should_be_no_crl = (*provider)->GetCrl(cert);
   ASSERT_EQ(should_be_no_crl, nullptr);
-  // auto fuzzing_ee =
-  //     std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-  //         grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-  //         fuzzing_event_engine::Actions());
 
   {
     std::string raw_crl = GetFileContents(kCrlPath);
     TmpFile tmp_crl(raw_crl, dir_name);
-    sleep(2);
+    fuzzing_ee->TickForDuration(
+        Duration::FromSecondsAsDouble(refresh_duration));
     auto crl = (*provider)->GetCrl(cert);
     ASSERT_NE(crl, nullptr);
     EXPECT_EQ(crl->Issuer(), kCrlIssuer);
@@ -164,7 +166,7 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   // After this provider shouldn't give a CRL, because everything should be
   // read cleanly and there is no CRL because TmpFile went out of scope and
   // was deleted
-  sleep(2);
+  fuzzing_ee->TickForDuration(Duration::FromSecondsAsDouble(refresh_duration));
   auto crl_should_be_deleted = (*provider)->GetCrl(cert);
   ASSERT_EQ(crl_should_be_deleted, nullptr);
   rmdir(dir_path.c_str());
@@ -175,11 +177,17 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   std::string dir_name = TempDirNameFromPath(dir_path);
   std::string raw_crl = GetFileContents(kCrlPath);
   TmpFile tmp_crl(raw_crl, dir_name);
+  int refresh_duration = 60;
+  auto fuzzing_ee =
+      std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+          grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+          fuzzing_event_engine::Actions());
   std::vector<absl::Status> reload_errors;
   std::function<void(absl::Status)> reload_error_callback =
       [&](const absl::Status& status) { reload_errors.push_back(status); };
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
-      dir_path, std::chrono::seconds(1), reload_error_callback, nullptr);
+      dir_path, std::chrono::seconds(refresh_duration), reload_error_callback,
+      fuzzing_ee);
   ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);
@@ -189,7 +197,7 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   // Rewrite the crl file with invalid data for a crl
   // Should result in the CRL Reloader keeping the old CRL data
   tmp_crl.RewriteFile("BAD_DATA");
-  sleep(2);
+  fuzzing_ee->TickForDuration(Duration::FromSecondsAsDouble(refresh_duration));
   auto crl_post_update = (*provider)->GetCrl(cert);
   ASSERT_NE(crl_post_update, nullptr);
   EXPECT_EQ(crl_post_update->Issuer(), kCrlIssuer);
