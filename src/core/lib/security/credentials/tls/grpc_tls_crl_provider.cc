@@ -81,43 +81,6 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
   return crl;
 }
 
-#if defined(GPR_WINDOWS)
-
-// TODO(gtcooke94) How to best test this?
-#include <windows.h>
-
-std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
-                                absl::string_view file_entry_name) {
-  return absl::StrFormat("%s\\t%s", valid_file_dir, file_entry_name);
-}
-
-// Reference for reading directory in Windows:
-// https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
-// https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
-absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
-    const std::string& crl_directory_path) {
-  std::string search_path = crl_directory_path + "/*.*";
-  std::vector<std::string> crl_files;
-  windows::WIN32_FIND_DATA find_data;
-  HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
-  if (hFind != windows::INVALID_HANDLE_VALUE) {
-    do {
-      if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        std::string file_path;
-        GetAbsoluteFilePath(crl_directory_path.c_str(), find_data.cFileName,
-                            file_path);
-        crl_files.push_back(file_path);
-      }
-    } while (::FindNextFile(hFind, &find_data));
-    ::FindClose(hFind);
-    return crl_files;
-  } else {
-    return absl::InternalError("Could not read crl directory.");
-  }
-}
-
-#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE
-
 }  // namespace
 
 absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
@@ -187,9 +150,7 @@ DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
 
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
-    std::function<void(absl::Status)> reload_error_callback,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-        event_engine) {
+    std::function<void(absl::Status)> reload_error_callback) {
   if (refresh_duration < std::chrono::seconds(60)) {
     return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
   }
@@ -197,12 +158,11 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
   if (stat(directory.data(), &dir_stat) != 0) {
     return absl::InvalidArgumentError("The directory path is not valid.");
   }
-  if (event_engine == nullptr) {
-    event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
-  }
+  auto event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
 
   auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
-      directory, refresh_duration, reload_error_callback, event_engine);
+      directory, refresh_duration, reload_error_callback,
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   // This could be slow to do at startup, but we want to
   // make sure it's done before the provider is used.
   absl::Status initial_status = provider->Update();

@@ -78,8 +78,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
 // your monitoring and alerting setup.
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
-    std::function<void(absl::Status)> reload_error_callback,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine);
+    std::function<void(absl::Status)> reload_error_callback);
 
 }  // namespace experimental
 }  // namespace grpc_core
