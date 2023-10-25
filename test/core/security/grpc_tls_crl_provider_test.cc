@@ -105,7 +105,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookupIssuerNotFound) {
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
-      kCrlDirectory, std::chrono::seconds(1), nullptr, nullptr);
+      kCrlDirectory, std::chrono::seconds(60), nullptr, nullptr);
   ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);
@@ -120,7 +120,7 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
-      kCrlDirectory, std::chrono::seconds(1), nullptr, nullptr);
+      kCrlDirectory, std::chrono::seconds(60), nullptr, nullptr);
   ASSERT_TRUE(provider.ok());
 
   CertificateInfoImpl bad_cert("BAD CERT");

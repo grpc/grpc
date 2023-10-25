@@ -233,8 +233,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     std::function<void(absl::Status)> reload_error_callback,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>
         event_engine) {
-  // TODO(gtcooke94) - testing with std::chrono
-  if (refresh_duration < std::chrono::seconds(1)) {
+  if (refresh_duration < std::chrono::seconds(60)) {
     return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
   }
   struct stat dir_stat;
