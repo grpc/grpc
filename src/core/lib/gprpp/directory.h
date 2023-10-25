@@ -25,12 +25,8 @@
 #include <vector>
 
 #include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
-std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
-                                absl::string_view file_entry_name);
 
 absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
     const std::string& crl_directory_path);
