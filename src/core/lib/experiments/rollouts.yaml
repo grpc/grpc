@@ -72,7 +72,7 @@
   default:
     # not tested on iOS at all
     ios: broken
-    posix: true
+    posix: false
     windows: true
 - name: free_large_allocator
   default: false
