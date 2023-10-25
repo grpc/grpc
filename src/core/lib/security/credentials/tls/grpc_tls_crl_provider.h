@@ -108,7 +108,6 @@ class DirectoryReloaderCrlProvider
   void OnNextUpdateTimer();
 
   std::string crl_directory_;
-  // std::chrono::seconds refresh_duration_;
   grpc_core::Duration refresh_duration_;
   std::function<void(::absl::Status)> reload_error_callback_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;

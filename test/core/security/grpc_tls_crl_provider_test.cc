@@ -45,16 +45,18 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
-const char* kCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
-const absl::string_view kCrlIssuer =
+static constexpr absl::string_view kCrlPath =
+    "test/core/tsi/test_creds/crl_data/crls/current.crl";
+static constexpr absl::string_view kCrlIssuer =
     "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca";
-const char* kIntermediateCrlPath =
+static constexpr absl::string_view kIntermediateCrlPath =
     "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
-const absl::string_view kCrlIntermediateIssuer =
+static constexpr absl::string_view kCrlIntermediateIssuer =
     "/CN=intermediatecert.example.com";
 
-const std::string kCrlDirectory = "test/core/tsi/test_creds/crl_data/crls";
-const std::string kCrlDynamicDirectory =
+static constexpr absl::string_view kCrlDirectory =
+    "test/core/tsi/test_creds/crl_data/crls";
+static constexpr absl::string_view kCrlDynamicDirectory =
     "test/core/tsi/test_creds/crl_data/crl_provider_test_dir";
 
 using ::grpc_core::experimental::CertificateInfoImpl;
@@ -67,7 +69,7 @@ namespace grpc_core {
 namespace testing {
 
 TEST(CrlProviderTest, CanParseCrl) {
-  std::string crl_string = GetFileContents(kCrlPath);
+  std::string crl_string = GetFileContents(kCrlPath.data());
   absl::StatusOr<std::shared_ptr<Crl>> crl = Crl::Parse(crl_string);
   ASSERT_TRUE(crl.ok());
   ASSERT_NE(*crl, nullptr);
@@ -83,7 +85,7 @@ TEST(CrlProviderTest, InvalidFile) {
 }
 
 TEST(CrlProviderTest, StaticCrlProviderLookup) {
-  std::vector<std::string> crl_strings = {GetFileContents(kCrlPath)};
+  std::vector<std::string> crl_strings = {GetFileContents(kCrlPath.data())};
   absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
       experimental::CreateStaticCrlProvider(crl_strings);
   ASSERT_TRUE(provider.ok()) << provider.status();
@@ -94,7 +96,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookup) {
 }
 
 TEST(CrlProviderTest, StaticCrlProviderLookupIssuerNotFound) {
-  std::vector<std::string> crl_strings = {GetFileContents(kCrlPath)};
+  std::vector<std::string> crl_strings = {GetFileContents(kCrlPath.data())};
   absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
       experimental::CreateStaticCrlProvider(crl_strings);
   ASSERT_TRUE(provider.ok()) << provider.status();
@@ -118,7 +120,7 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
   EXPECT_EQ(intermediate_crl->Issuer(), kCrlIntermediateIssuer);
 }
 
-TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
+TEST(CrlProviderTest, DirectoryReloaderCrlLookupMissingIssuer) {
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       kCrlDirectory, std::chrono::seconds(60), nullptr, nullptr);
   ASSERT_TRUE(provider.ok());
@@ -155,7 +157,7 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   ASSERT_EQ(should_be_no_crl, nullptr);
 
   {
-    std::string raw_crl = GetFileContents(kCrlPath);
+    std::string raw_crl = GetFileContents(kCrlPath.data());
     TmpFile tmp_crl(raw_crl, dir_name);
     fuzzing_ee->TickForDuration(
         Duration::FromSecondsAsDouble(refresh_duration));
@@ -175,7 +177,7 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
 TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   std::string dir_path = MakeTempDir();
   std::string dir_name = TempDirNameFromPath(dir_path);
-  std::string raw_crl = GetFileContents(kCrlPath);
+  std::string raw_crl = GetFileContents(kCrlPath.data());
   TmpFile tmp_crl(raw_crl, dir_name);
   int refresh_duration = 60;
   auto fuzzing_ee =
