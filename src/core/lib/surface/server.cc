@@ -24,7 +24,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstddef>
 #include <list>
 #include <memory>
 #include <new>
@@ -37,7 +36,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -57,7 +55,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
