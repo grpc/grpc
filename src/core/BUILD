@@ -243,6 +243,7 @@ grpc_cc_library(
     name = "directory",
     srcs = [
         "lib/gprpp/posix/directory.cc",
+        "lib/gprpp/windows/directory.cc",
     ],
     hdrs = [
         "lib/gprpp/directory.h",
@@ -252,8 +253,8 @@ grpc_cc_library(
         "absl/strings:string_view",
     ],
     deps = [
-        "//:gpr_platform",
         "//:gpr",
+        "//:gpr_platform",
         "//:grpc_base",
     ],
 )

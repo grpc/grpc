@@ -79,4 +79,4 @@ absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
 }
 }  // namespace grpc_core
 
-#endif
+#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE
