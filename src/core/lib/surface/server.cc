@@ -368,8 +368,7 @@ class Server::RealRequestMatcherFilterStack : public RequestMatcherInterface {
     calld->Publish(cq_idx, rc);
   }
 
-  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
-      size_t start_request_queue_index) override {
+  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(size_t) override {
     Crash("not implemented for filter stack request matcher");
   }
 
@@ -450,8 +449,7 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
     }
   }
 
-  void MatchOrQueue(size_t start_request_queue_index,
-                    CallData* calld) override {
+  void MatchOrQueue(size_t, CallData*) override {
     Crash("not implemented for promises");
   }
 
