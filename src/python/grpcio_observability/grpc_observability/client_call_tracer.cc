@@ -69,15 +69,13 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
   }
 
   switch (annotation.type()) {
-    case AnnotationType::kMetadataSizes:
-      // This annotation is expensive to create. We should only create it if
-      // the call is being sampled, not just recorded.
+    // Annotations are expensive to create. We should only create it if the call
+    // is being sampled by default.
+    default:
       if (IsSampled()) {
         context_.AddSpanAnnotation(annotation.ToString());
       }
       break;
-    default:
-      context_.AddSpanAnnotation(annotation.ToString());
   }
 }
 
@@ -185,6 +183,11 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordReceivedMessage(const grpc_core::SliceBuffer& /*recv_message*/) {
   ++recv_message_count_;
+}
+
+std::shared_ptr<grpc_core::TcpTracerInterface> PythonOpenCensusCallTracer::
+    PythonOpenCensusCallAttemptTracer::StartNewTcpTrace() {
+  return nullptr;
 }
 
 namespace {
@@ -299,15 +302,13 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   }
 
   switch (annotation.type()) {
-    case AnnotationType::kMetadataSizes:
-      // This annotation is expensive to create. We should only create it if
-      // the call is being sampled, not just recorded.
+    // Annotations are expensive to create. We should only create it if the call
+    // is being sampled by default.
+    default:
       if (IsSampled()) {
         context_.AddSpanAnnotation(annotation.ToString());
       }
       break;
-    default:
-      context_.AddSpanAnnotation(annotation.ToString());
   }
 }
 

@@ -21,17 +21,25 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstdint>
+#include <string>
+
+#include "absl/types/optional.h"
+
 #include <grpc/slice.h>
 
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_keepalive_trace;
 extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
@@ -91,6 +99,32 @@ CopyContextFn GrpcHttp2GetCopyContextFn();
 // operation.
 void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
                                     grpc_error_handle error);
+
+class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
+ public:
+  enum class Type : uint8_t {
+    kUnknown = 0,
+    // When the first byte enters the HTTP transport.
+    kStart,
+    // When the first byte leaves the HTTP transport.
+    kHeadWritten,
+    // When the last byte leaves the HTTP transport.
+    kEnd,
+  };
+
+  HttpAnnotation(
+      Type type, Timestamp time,
+      absl::optional<chttp2::TransportFlowControl::Stats> transport_stats,
+      absl::optional<chttp2::StreamFlowControl::Stats> stream_stats);
+
+  std::string ToString() const override;
+
+ private:
+  const Type type_;
+  const Timestamp time_;
+  absl::optional<chttp2::TransportFlowControl::Stats> transport_stats_;
+  absl::optional<chttp2::StreamFlowControl::Stats> stream_stats_;
+};
 
 }  // namespace grpc_core
 

@@ -153,7 +153,7 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
 
         # Start the client, but don't wait for it to report a healthy channel.
         test_client: _XdsTestClient = self.startSecureTestClient(
-            test_server, wait_for_active_server_channel=False
+            test_server, wait_for_server_channel_ready=False
         )
 
         self.assertClientCannotReachServerRepeatedly(test_client)
@@ -205,7 +205,7 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
 
         # Start the client, but don't wait for it to report a healthy channel.
         test_client: _XdsTestClient = self.startSecureTestClient(
-            test_server, wait_for_active_server_channel=False
+            test_server, wait_for_server_channel_ready=False
         )
 
         self.assertClientCannotReachServerRepeatedly(test_client)

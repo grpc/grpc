@@ -1529,6 +1529,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "sockaddr_utils",
         "stats",
+        "tcp_tracer",
         "uri_parser",
         "work_serializer",
         "//src/core:1999",
@@ -2046,6 +2047,7 @@ grpc_cc_library(
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:socket_mutator",
+        "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
     ],
@@ -2309,6 +2311,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base",
         "absl/base:core_headers",
+        "absl/base:endian",
         "absl/meta:type_traits",
         "absl/status",
         "absl/strings",
@@ -2342,8 +2345,8 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/server_call_tracer.h",
     ],
     external_deps = [
-        "absl/base",
         "absl/base:core_headers",
+        "absl/base:endian",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2367,6 +2370,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "legacy_context",
+        "tcp_tracer",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
@@ -3963,6 +3967,23 @@ grpc_cc_library(
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/context_list_entry.h",
     ],
+    deps = [
+        "gpr",
+        "tcp_tracer",
+    ],
+)
+
+grpc_cc_library(
+    name = "tcp_tracer",
+    hdrs = [
+        "//src/core:lib/channel/tcp_tracer.h",
+    ],
+    external_deps = [
+        "absl/time",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    visibility = ["@grpc:tcp_tracer"],
     deps = ["gpr"],
 )
 
@@ -4029,6 +4050,7 @@ grpc_cc_library(
         "legacy_context",
         "ref_counted_ptr",
         "stats",
+        "tcp_tracer",
         "//src/core:arena",
         "//src/core:bdp_estimator",
         "//src/core:bitset",
@@ -4059,7 +4081,6 @@ grpc_cc_library(
         "//src/core:stats_data",
         "//src/core:status_helper",
         "//src/core:time",
-        "//src/core:transport_fwd",
         "//src/core:useful",
         "//src/core:write_size_policy",
     ],
