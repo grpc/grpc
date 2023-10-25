@@ -40,6 +40,8 @@
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_crl_provider.h>
 
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
@@ -103,7 +105,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookupIssuerNotFound) {
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
-      kCrlDirectory, std::chrono::seconds(1), nullptr);
+      kCrlDirectory, std::chrono::seconds(1), nullptr, nullptr);
   ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);
@@ -118,7 +120,7 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
 
 TEST(CrlProviderTest, DirectoryReloaderCrlLookupBad) {
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
-      kCrlDirectory, std::chrono::seconds(1), nullptr);
+      kCrlDirectory, std::chrono::seconds(1), nullptr, nullptr);
   ASSERT_TRUE(provider.ok());
 
   CertificateInfoImpl bad_cert("BAD CERT");
@@ -141,11 +143,15 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   std::string dir_path = MakeTempDir();
   std::string dir_name = TempDirNameFromPath(dir_path);
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
-      dir_path, std::chrono::seconds(1), nullptr);
+      dir_path, std::chrono::seconds(1), nullptr, nullptr);
   ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert(kCrlIssuer);
   auto should_be_no_crl = (*provider)->GetCrl(cert);
   ASSERT_EQ(should_be_no_crl, nullptr);
+  // auto fuzzing_ee =
+  //     std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+  //         grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+  //         fuzzing_event_engine::Actions());
 
   {
     std::string raw_crl = GetFileContents(kCrlPath);
@@ -173,7 +179,7 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   std::function<void(absl::Status)> reload_error_callback =
       [&](const absl::Status& status) { reload_errors.push_back(status); };
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
-      dir_path, std::chrono::seconds(1), reload_error_callback);
+      dir_path, std::chrono::seconds(1), reload_error_callback, nullptr);
   ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);

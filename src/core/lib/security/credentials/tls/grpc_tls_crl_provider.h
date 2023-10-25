@@ -85,13 +85,14 @@ class DirectoryReloaderCrlProvider
     : public CrlProvider,
       public std::enable_shared_from_this<DirectoryReloaderCrlProvider> {
  public:
-  DirectoryReloaderCrlProvider(absl::string_view directory,
-                               std::chrono::seconds duration,
-                               std::function<void(absl::Status)> callback)
+  DirectoryReloaderCrlProvider(
+      absl::string_view directory, std::chrono::seconds duration,
+      std::function<void(absl::Status)> callback,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine)
       : crl_directory_(directory),
         reload_error_callback_(callback),
-        event_engine_(
-            grpc_event_engine::experimental::GetDefaultEventEngine()) {
+        event_engine_(event_engine) {
     refresh_duration_ = Duration::FromSecondsAsDouble(duration.count());
   }
 

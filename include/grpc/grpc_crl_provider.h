@@ -27,6 +27,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
 
@@ -77,7 +78,8 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
 // your monitoring and alerting setup.
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
-    std::function<void(absl::Status)> reload_error_callback);
+    std::function<void(absl::Status)> reload_error_callback,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine);
 
 }  // namespace experimental
 }  // namespace grpc_core

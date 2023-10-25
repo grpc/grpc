@@ -230,7 +230,9 @@ DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
 
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
-    std::function<void(absl::Status)> reload_error_callback) {
+    std::function<void(absl::Status)> reload_error_callback,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
   // TODO(gtcooke94) - testing with std::chrono
   if (refresh_duration < std::chrono::seconds(1)) {
     return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
@@ -239,8 +241,12 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
   if (stat(directory.data(), &dir_stat) != 0) {
     return absl::InvalidArgumentError("The directory path is not valid.");
   }
+  if (event_engine == nullptr) {
+    event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  }
+
   auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
-      directory, refresh_duration, reload_error_callback);
+      directory, refresh_duration, reload_error_callback, event_engine);
   // This could be slow to do at startup, but we want to
   // make sure it's done before the provider is used.
   absl::Status initial_status = provider->Update();
