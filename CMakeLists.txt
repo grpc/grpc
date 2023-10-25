@@ -3895,6 +3895,7 @@ add_library(grpc++
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
   src/cpp/server/server_posix.cc
+  src/cpp/server/xds_server_builder.cc
   src/cpp/server/xds_server_credentials.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
