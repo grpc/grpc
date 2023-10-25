@@ -1144,6 +1144,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_xds_server",
     srcs = [
+        "src/cpp/server/xds_server_builder.cc",
         "src/cpp/server/xds_server_credentials.cc",
     ],
     hdrs = [
@@ -1155,6 +1156,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:xds"],
     deps = [
+        "channel_arg_names",
         "gpr",
         "grpc",
         "grpc++_base",
@@ -1491,13 +1493,13 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/hash",
         "absl/meta:type_traits",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
         "absl/types:optional",
-        "absl/types:variant",
         "absl/utility",
         "madler_zlib",
     ],
@@ -1576,7 +1578,6 @@ grpc_cc_library(
         "//src/core:latch",
         "//src/core:loop",
         "//src/core:map",
-        "//src/core:match",
         "//src/core:memory_quota",
         "//src/core:metadata_compression_traits",
         "//src/core:no_destruct",
@@ -1588,6 +1589,7 @@ grpc_cc_library(
         "//src/core:posix_event_engine_base_hdrs",
         "//src/core:promise_status",
         "//src/core:race",
+        "//src/core:random_early_detection",
         "//src/core:ref_counted",
         "//src/core:ref_counted_string",
         "//src/core:resolved_address",
