@@ -44,9 +44,6 @@ bool IsForkEnabled() {
 }
 }  // namespace
 
-#ifndef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-#else
-
 void ObjectGroupForkHandler::RegisterForkable(
     std::shared_ptr<Forkable> forkable) {
   GPR_ASSERT(!is_forking_);
@@ -54,42 +51,46 @@ void ObjectGroupForkHandler::RegisterForkable(
 }
 
 void ObjectGroupForkHandler::Prefork() {
-  GPR_ASSERT(!is_forking_);
-  is_forking_ = true;
-  gpr_log(GPR_INFO, "grpc_prefork()");
-  for (auto& instance : forkables_) {
-    auto shared = instance.lock();
-    if (shared) {
-      shared->PrepareFork();
+  if (IsForkEnabled()) {
+    GPR_ASSERT(!is_forking_);
+    is_forking_ = true;
+    GRPC_FORK_TRACE_LOG_STRING("PrepareFork");
+    for (auto& instance : forkables_) {
+      auto shared = instance.lock();
+      if (shared) {
+        shared->PrepareFork();
+      }
     }
   }
 }
 
 void ObjectGroupForkHandler::PostforkParent() {
-  GPR_ASSERT(is_forking_);
-  gpr_log(GPR_INFO, "grpc_postfork_parent()");
-  for (auto& instance : forkables_) {
-    auto shared = instance.lock();
-    if (shared) {
-      shared->PostforkParent();
+  if (IsForkEnabled()) {
+    GPR_ASSERT(is_forking_);
+    GRPC_FORK_TRACE_LOG_STRING("PostforkParent");
+    for (auto& instance : forkables_) {
+      auto shared = instance.lock();
+      if (shared) {
+        shared->PostforkParent();
+      }
     }
+    is_forking_ = false;
   }
-  is_forking_ = false;
 }
 
 void ObjectGroupForkHandler::PostforkChild() {
-  GPR_ASSERT(is_forking_);
-  gpr_log(GPR_INFO, "grpc_postfork_child()");
-  for (auto& instance : forkables_) {
-    auto shared = instance.lock();
-    if (shared) {
-      shared->PostforkChild();
+  if (IsForkEnabled()) {
+    GPR_ASSERT(is_forking_);
+    GRPC_FORK_TRACE_LOG_STRING("PostforkChild");
+    for (auto& instance : forkables_) {
+      auto shared = instance.lock();
+      if (shared) {
+        shared->PostforkChild();
+      }
     }
+    is_forking_ = false;
   }
-  is_forking_ = false;
 }
-
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

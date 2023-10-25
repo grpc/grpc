@@ -17,7 +17,6 @@
 
 #include <memory>
 #include <utility>
-#include <vector>
 
 #include <grpc/support/cpu.h>
 
@@ -47,7 +46,7 @@ std::shared_ptr<ThreadPool> MakeThreadPool(size_t /* reserve_threads */) {
   auto shared = std::make_shared<WorkStealingThreadPool>(
       grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-  gpr_log(GPR_INFO, "thread pool register forkable");
+  GRPC_FORK_TRACE_LOG_STRING("ThreadPool register forkable");
   g_thread_pool_fork_manager->RegisterForkable(shared);
   if (!std::exchange(g_registered, true)) {
     pthread_atfork(Prefork, PostforkParent, PostforkChild);

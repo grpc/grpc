@@ -39,6 +39,7 @@ extern grpc_core::TraceFlag grpc_trace_fork;
 
 // An interface to be implemented by EventEngines that wish to have managed fork
 // support.
+// The child class must guarantee that those methods are thread-safe.
 class Forkable {
  public:
   virtual ~Forkable() = default;
@@ -47,13 +48,19 @@ class Forkable {
   virtual void PostforkChild() = 0;
 };
 
-#ifndef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-// no-op ObjectGroupForkHandler impl
-#else
+// ObjectGroupForkHandler is meant to be used as a static object in each
+// translation unit where Forkables are created and registered with the
+// ObjectGroupForkHandler. It essentially provides storage for Forkables'
+// instances (as a vector of weak pointers) and helper methods that are meant to
+// be invoked inside the fork handlers (see pthread_atfork(3)). The idea is to
+// have different Forkables (e.g. PosixEventPoller) to store their instances
+// (e.g. a PosixEventPoller object) in a single place separated from other
+// Forkables. Forkables need to register their pthread fork handlers and manage
+// the ordering themselves. This object is thread-unsafe.
 class ObjectGroupForkHandler {
  public:
-  // adds forkable to set of forkables
-  // asserts if IsForking() == true
+  // Registers a Forkable with this ObjectGroupForkHandler, the Forkable must be
+  // created as a shared pointer.
   void RegisterForkable(std::shared_ptr<Forkable> forkable);
 
   void Prefork();
@@ -64,7 +71,6 @@ class ObjectGroupForkHandler {
   bool is_forking_ = false;
   std::vector<std::weak_ptr<Forkable> > forkables_;
 };
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

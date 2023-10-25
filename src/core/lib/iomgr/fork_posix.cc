@@ -32,7 +32,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/thd.h"

@@ -71,7 +71,7 @@ std::shared_ptr<PosixEventPoller> MakeDefaultPoller(Scheduler* scheduler) {
     }
   }
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-  gpr_log(GPR_INFO, "poller register forkable");
+  GRPC_FORK_TRACE_LOG_STRING("Poller register forkable");
   g_poller_fork_manager->RegisterForkable(poller);
   if (!std::exchange(g_registered, true)) {
     pthread_atfork(Prefork, PostforkParent, PostforkChild);
