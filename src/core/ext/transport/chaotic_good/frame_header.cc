@@ -60,9 +60,15 @@ absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) {
   header.flags = BitSet<2>::FromInt(flags);
   header.stream_id = ReadLittleEndianUint32(data + 4);
   header.header_length = ReadLittleEndianUint32(data + 8);
+  if (header.flags.is_set(0) && !(header.header_length > 0)) {
+    return absl::InvalidArgumentError("Invalid header length");
+  }
   header.message_length = ReadLittleEndianUint32(data + 12);
   header.message_padding = ReadLittleEndianUint32(data + 16);
   header.trailer_length = ReadLittleEndianUint32(data + 20);
+  if (header.flags.is_set(1) && !(header.trailer_length > 0)) {
+    return absl::InvalidArgumentError("Invalid trailer length");
+  }
   return header;
 }
 
