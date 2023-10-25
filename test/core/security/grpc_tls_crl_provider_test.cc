@@ -69,14 +69,20 @@ namespace grpc_core {
 namespace testing {
 
 absl::StatusOr<std::shared_ptr<CrlProvider>>
-CreateDirectoryReloaderCrlProviderWithEngine(
+CreateDirectoryReloaderCrlProviderForTest(
     absl::string_view directory, std::chrono::seconds refresh_duration,
     std::function<void(absl::Status)> reload_error_callback,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-        event_engine) {
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    std::shared_ptr<Directory> directory_impl) {
+  if (directory_impl == nullptr) {
+    directory_impl = std::make_shared<Directory>(directory);
+  }
+  if (event_engine == nullptr) {
+    event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  }
+
   auto provider = std::make_shared<experimental::DirectoryReloaderCrlProvider>(
-      refresh_duration, reload_error_callback, event_engine,
-      std::make_shared<Directory>(directory));
+      refresh_duration, reload_error_callback, event_engine, directory_impl);
   absl::Status initial_status = provider->Update();
   if (!initial_status.ok()) {
     return initial_status;
@@ -166,8 +172,9 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
           grpc_event_engine::experimental::FuzzingEventEngine::Options(),
           fuzzing_event_engine::Actions());
   int refresh_duration = 60;
-  auto provider = CreateDirectoryReloaderCrlProviderWithEngine(
-      dir_path, std::chrono::seconds(refresh_duration), nullptr, fuzzing_ee);
+  auto provider = CreateDirectoryReloaderCrlProviderForTest(
+      dir_path, std::chrono::seconds(refresh_duration), nullptr, fuzzing_ee,
+      nullptr);
   ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert(kCrlIssuer);
   auto should_be_no_crl = (*provider)->GetCrl(cert);
@@ -204,9 +211,9 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   std::vector<absl::Status> reload_errors;
   std::function<void(absl::Status)> reload_error_callback =
       [&](const absl::Status& status) { reload_errors.push_back(status); };
-  auto provider = CreateDirectoryReloaderCrlProviderWithEngine(
+  auto provider = CreateDirectoryReloaderCrlProviderForTest(
       dir_path, std::chrono::seconds(refresh_duration), reload_error_callback,
-      fuzzing_ee);
+      fuzzing_ee, nullptr);
   ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);
