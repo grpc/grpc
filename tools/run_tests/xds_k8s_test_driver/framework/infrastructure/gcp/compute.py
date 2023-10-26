@@ -190,15 +190,15 @@ class ComputeV1(
         backends,
         max_rate_per_endpoint: Optional[int] = None,
     ):
-        if max_rate_per_endpoint is None:
-            max_rate_per_endpoint = 5
+        backend_attrs = {
+            "balancingMode": "RATE",
+        }
+        if max_rate_per_endpoint is not None:
+            backend_attrs["maxRatePerEndpoint"] = max_rate_per_endpoint
+
+        # Note that the backend_attrs dict is copied per backend.
         backend_list = [
-            {
-                "group": backend.url,
-                "balancingMode": "RATE",
-                "maxRatePerEndpoint": max_rate_per_endpoint,
-            }
-            for backend in backends
+            backend_attrs | {"group": backend.url} for backend in backends
         ]
 
         self._patch_resource(
