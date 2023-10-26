@@ -20,14 +20,8 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
-#include <dirent.h>
-#include <limits.h>
-#include <sys/param.h>
-#include <sys/stat.h>
-
 #include <memory>
 #include <utility>
-#include <vector>
 
 // IWYU pragma: no_include <openssl/mem.h>
 #include <openssl/bio.h>
@@ -154,10 +148,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
   if (refresh_duration < std::chrono::seconds(60)) {
     return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
   }
-  struct stat dir_stat;
-  if (stat(directory.data(), &dir_stat) != 0) {
-    return absl::InvalidArgumentError("The directory path is not valid.");
-  }
+  // TODO(gtcooke94) check if directory exists
   auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
       refresh_duration, reload_error_callback,
       grpc_event_engine::experimental::GetDefaultEventEngine(),
