@@ -46,15 +46,15 @@ std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
 }  // namespace
 
 absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory() {
-  DIR* crl_directory;
+  DIR* directory;
   // Open the dir for reading
-  if ((crl_directory = opendir(directory_path_.c_str())) == nullptr) {
+  if ((directory = opendir(directory_path_.c_str())) == nullptr) {
     return absl::InternalError("Could not read crl directory.");
   }
-  std::vector<std::string> crl_files;
+  std::vector<std::string> files;
   struct dirent* directory_entry;
   // Iterate over everything in the directory
-  while ((directory_entry = readdir(crl_directory)) != nullptr) {
+  while ((directory_entry = readdir(directory)) != nullptr) {
     const char* file_name = directory_entry->d_name;
 
     std::string file_path =
@@ -75,10 +75,10 @@ absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory() {
       // If stat_return != -1, this just isn't a file so we continue
       continue;
     }
-    crl_files.push_back(file_path);
+    files.push_back(file_path);
   }
-  closedir(crl_directory);
-  return crl_files;
+  closedir(directory);
+  return files;
 }
 
 bool Directory::DirectoryExists(const std::string& directory_path) {
@@ -87,12 +87,12 @@ bool Directory::DirectoryExists(const std::string& directory_path) {
     return false;
   }
   return S_ISDIR(dir_stat.st_mode);
-  // DIR* crl_directory;
+  // DIR* directory;
   // // Open the dir for reading
-  // if ((crl_directory = opendir(directory_path_.c_str())) == nullptr) {
+  // if ((directory = opendir(directory_path_.c_str())) == nullptr) {
   //   return false;
   // }
-  // closedir(crl_directory);
+  // closedir(directory);
   // return true;
 }
 }  // namespace grpc_core

@@ -46,33 +46,38 @@ std::string BuildAbsoluteFilePath(absl::string_view valid_file_dir,
 // https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 // https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
 absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory(
-    const std::string& crl_directory_path) {
-  std::string search_path = crl_directory_path + "/*.*";
-  std::vector<std::string> crl_files;
+    const std::string& directory_path) {
+  std::string search_path = directory_path + "/*.*";
+  std::vector<std::string> files;
   WIN32_FIND_DATA find_data;
   HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
   if (hFind != INVALID_HANDLE_VALUE) {
     do {
       if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
         std::string file_path;
-        BuildAbsoluteFilePath(crl_directory_path.c_str(), find_data.cFileName,
+        BuildAbsoluteFilePath(directory_path.c_str(), find_data.cFileName,
                               file_path);
-        crl_files.push_back(file_path);
+        files.push_back(file_path);
       }
     } while (::FindNextFile(hFind, &find_data));
     ::FindClose(hFind);
-    return crl_files;
+    return files;
   } else {
     return absl::InternalError("Could not read crl directory.");
   }
 }
 
 bool Directory::DirectoryExists(const std::string& directory_path) {
-  struct _stat dir_stat;
-  if (_stat(directory_path.c_str(), &dir_stat) != 0) {
-    return false;
-  }
-  return _S_ISDIR(dir_stat.st_mode);
+  std::string search_path = directory_path + "/*.*";
+  std::vector<std::string> files;
+  WIN32_FIND_DATA find_data;
+  HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
+  return hFind == INVALID_HANDLE_VALUE;
+  // struct _stat dir_stat;
+  // if (_stat(directory_path.c_str(), &dir_stat) != 0) {
+  //   return false;
+  // }
+  // return _S_ISDIR(dir_stat.st_mode);
 }
 }  // namespace grpc_core
 
