@@ -21,25 +21,38 @@
 #include <stdint.h>
 
 #include <initializer_list>  // IWYU pragma: keep
+#include <map>
 #include <memory>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
+#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/inter_activity_pipe.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/try_join.h"
+#include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -58,18 +71,31 @@ class ClientTransport {
     if (writer_ != nullptr) {
       writer_.reset();
     }
+    if (reader_ != nullptr) {
+      reader_.reset();
+    }
   }
   auto AddStream(CallArgs call_args) {
     // At this point, the connection is set up.
     // Start sending data frames.
     uint32_t stream_id;
+    InterActivityPipe<ServerFrame, server_frame_queue_size_> server_frames;
     {
       MutexLock lock(&mu_);
       stream_id = next_stream_id_++;
+      stream_map_.insert(
+          std::pair<uint32_t,
+                    std::shared_ptr<InterActivityPipe<
+                        ServerFrame, server_frame_queue_size_>::Sender>>(
+              stream_id, std::make_shared<InterActivityPipe<
+                             ServerFrame, server_frame_queue_size_>::Sender>(
+                             std::move(server_frames.sender))));
     }
-    return Seq(
-        // Continuously send data frame with client to server messages.
-        ForEach(std::move(*call_args.client_to_server_messages),
+    return TrySeq(
+        TryJoin(
+            // Continuously send client frame with client to server messages.
+            ForEach(
+                std::move(*call_args.client_to_server_messages),
                 [stream_id, initial_frame = true,
                  client_initial_metadata =
                      std::move(call_args.client_initial_metadata),
@@ -89,7 +115,7 @@ class ClientTransport {
                     frame.headers = std::move(client_initial_metadata);
                     initial_frame = false;
                   }
-                  return Seq(
+                  return TrySeq(
                       outgoing_frames.Send(ClientFrame(std::move(frame))),
                       [](bool success) -> absl::Status {
                         if (!success) {
@@ -98,24 +124,80 @@ class ClientTransport {
                         }
                         return absl::OkStatus();
                       });
-                }));
+                }),
+            // Continuously receive server frames from endpoints and save
+            // results to call_args.
+            Loop([server_initial_metadata = call_args.server_initial_metadata,
+                  server_to_client_messages =
+                      call_args.server_to_client_messages,
+                  receiver = std::move(server_frames.receiver)]() mutable {
+              return TrySeq(
+                  // Receive incoming server frame.
+                  receiver.Next(),
+                  // Save incomming frame results to call_args.
+                  [server_initial_metadata, server_to_client_messages](
+                      absl::optional<ServerFrame> server_frame) mutable {
+                    GPR_ASSERT(server_frame.has_value());
+                    auto frame = std::move(
+                        absl::get<ServerFragmentFrame>(*server_frame));
+                    return TrySeq(
+                        If((frame.headers != nullptr),
+                           [server_initial_metadata,
+                            headers = std::move(frame.headers)]() mutable {
+                             return server_initial_metadata->Push(
+                                 std::move(headers));
+                           },
+                           [] { return false; }),
+                        If((frame.message != nullptr),
+                           [server_to_client_messages,
+                            message = std::move(frame.message)]() mutable {
+                             return server_to_client_messages->Push(
+                                 std::move(message));
+                           },
+                           [] { return false; }),
+                        If((frame.trailers != nullptr),
+                           [trailers = std::move(frame.trailers)]() mutable
+                           -> LoopCtl<ServerMetadataHandle> {
+                             return std::move(trailers);
+                           },
+                           []() -> LoopCtl<ServerMetadataHandle> {
+                             return Continue();
+                           }));
+                  });
+            })),
+        [](std::tuple<Empty, ServerMetadataHandle> ret) {
+          return std::move(std::get<1>(ret));
+        });
   }
 
  private:
   // Max buffer is set to 4, so that for stream writes each time it will queue
   // at most 2 frames.
   MpscReceiver<ClientFrame> outgoing_frames_;
-  Mutex mu_;
-  uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
+  // Queue size of each stream pipe is set to 2, so that for each stream read it
+  // will queue at most 2 frames.
+  static const size_t server_frame_queue_size_ = 2;
   // Assigned aligned bytes from setting frame.
   size_t aligned_bytes = 64;
+  Mutex mu_;
+  uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
+  // Map of stream incoming server frames, key is stream_id.
+  std::map<uint32_t, std::shared_ptr<InterActivityPipe<
+                         ServerFrame, server_frame_queue_size_>::Sender>>
+      stream_map_ ABSL_GUARDED_BY(mu_);
   ActivityPtr writer_;
   ActivityPtr reader_;
   std::unique_ptr<PromiseEndpoint> control_endpoint_;
   std::unique_ptr<PromiseEndpoint> data_endpoint_;
   SliceBuffer control_endpoint_write_buffer_;
   SliceBuffer data_endpoint_write_buffer_;
+  SliceBuffer control_endpoint_read_buffer_;
+  SliceBuffer data_endpoint_read_buffer_;
   std::unique_ptr<HPackCompressor> hpack_compressor_;
+  std::unique_ptr<HPackParser> hpack_parser_;
+  std::shared_ptr<FrameHeader> frame_header_;
+  MemoryAllocator memory_allocator_;
+  ScopedArenaPtr arena_;
   // Use to synchronize writer_ and reader_ activity with outside activities;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
