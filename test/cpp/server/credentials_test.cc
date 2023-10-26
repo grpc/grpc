@@ -205,75 +205,76 @@ TEST(CredentialsTest, TlsServerCredentialsWithCrlProviderAndDirectory) {
 }
 
 TEST(CredentialsTest, TlsCredentialsOptionsDoesNotLeak) {
-    auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
-    TlsServerCredentialsOptions options(provider);
-    (void)options;
+  auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
+  TlsServerCredentialsOptions options(provider);
+  (void)options;
 }
 
 TEST(CredentialsTest, MultipleOptionsOneCertificateProviderDoesNotLeak) {
-    auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
-    TlsServerCredentialsOptions options_1(provider);
-    (void)options_1;
-    TlsServerCredentialsOptions options_2(provider);
-    (void)options_2;
+  auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
+  TlsServerCredentialsOptions options_1(provider);
+  (void)options_1;
+  TlsServerCredentialsOptions options_2(provider);
+  (void)options_2;
 }
 
 TEST(CredentialsTest, MultipleOptionsOneCertificateVerifierDoesNotLeak) {
-    auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
-    auto verifier = std::make_shared<NoOpCertificateVerifier>();
-    TlsServerCredentialsOptions options_1(provider);
-    options_1.set_certificate_verifier(verifier);
-    TlsServerCredentialsOptions options_2(provider);
-    options_2.set_certificate_verifier(verifier);
+  auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
+  auto verifier = std::make_shared<NoOpCertificateVerifier>();
+  TlsServerCredentialsOptions options_1(provider);
+  options_1.set_certificate_verifier(verifier);
+  TlsServerCredentialsOptions options_2(provider);
+  options_2.set_certificate_verifier(verifier);
 }
 
 TEST(CredentialsTest, MultipleOptionsOneCrlProviderDoesNotLeak) {
-    auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
-    auto crl_provider = CreateStaticCrlProvider(/*crls=*/{});
-    EXPECT_TRUE(crl_provider.ok());
-    TlsServerCredentialsOptions options_1(provider);
-    options_1.set_crl_provider(*crl_provider);
-    TlsServerCredentialsOptions options_2(provider);
-    options_2.set_crl_provider(*crl_provider);
+  auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
+  auto crl_provider = CreateStaticCrlProvider(/*crls=*/{});
+  EXPECT_TRUE(crl_provider.ok());
+  TlsServerCredentialsOptions options_1(provider);
+  options_1.set_crl_provider(*crl_provider);
+  TlsServerCredentialsOptions options_2(provider);
+  options_2.set_crl_provider(*crl_provider);
 }
 
 TEST(CredentialsTest, TlsServerCredentialsDoesNotLeak) {
-    auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
-    TlsServerCredentialsOptions options(provider);
-    auto server_creds = TlsServerCredentials(options);
-    EXPECT_NE(server_creds, nullptr);
+  auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
+  TlsServerCredentialsOptions options(provider);
+  auto server_creds = TlsServerCredentials(options);
+  EXPECT_NE(server_creds, nullptr);
 }
 
 TEST(CredentialsTest, MultipleServerCredentialsOneOptionsDoesNotLeak) {
-    auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
-    TlsServerCredentialsOptions options(provider);
-    auto server_creds_1 = TlsServerCredentials(options);
-    EXPECT_NE(server_creds_1, nullptr);
-    auto server_creds_2 = TlsServerCredentials(options);
-    EXPECT_NE(server_creds_2, nullptr);
+  auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
+  TlsServerCredentialsOptions options(provider);
+  auto server_creds_1 = TlsServerCredentials(options);
+  EXPECT_NE(server_creds_1, nullptr);
+  auto server_creds_2 = TlsServerCredentials(options);
+  EXPECT_NE(server_creds_2, nullptr);
 }
 
-TEST(CredentialsTest, MultipleServerCredentialsOneCertificateVerifierDoesNotLeak) {
-    auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
-    TlsServerCredentialsOptions options(provider);
-    auto verifier = std::make_shared<NoOpCertificateVerifier>();
-    options.set_certificate_verifier(verifier);
-    auto server_creds_1 = TlsServerCredentials(options);
-    EXPECT_NE(server_creds_1, nullptr);
-    auto server_creds_2 = TlsServerCredentials(options);
-    EXPECT_NE(server_creds_2, nullptr);
+TEST(CredentialsTest,
+     MultipleServerCredentialsOneCertificateVerifierDoesNotLeak) {
+  auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
+  TlsServerCredentialsOptions options(provider);
+  auto verifier = std::make_shared<NoOpCertificateVerifier>();
+  options.set_certificate_verifier(verifier);
+  auto server_creds_1 = TlsServerCredentials(options);
+  EXPECT_NE(server_creds_1, nullptr);
+  auto server_creds_2 = TlsServerCredentials(options);
+  EXPECT_NE(server_creds_2, nullptr);
 }
 
 TEST(CredentialsTest, MultipleServerCredentialsOneCrlProviderDoesNotLeak) {
-    auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
-    TlsServerCredentialsOptions options(provider);
-    auto crl_provider = CreateStaticCrlProvider(/*crls=*/{});
-    EXPECT_TRUE(crl_provider.ok());
-    options.set_crl_provider(*crl_provider);
-    auto server_creds_1 = TlsServerCredentials(options);
-    EXPECT_NE(server_creds_1, nullptr);
-    auto server_creds_2 = TlsServerCredentials(options);
-    EXPECT_NE(server_creds_2, nullptr);
+  auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
+  TlsServerCredentialsOptions options(provider);
+  auto crl_provider = CreateStaticCrlProvider(/*crls=*/{});
+  EXPECT_TRUE(crl_provider.ok());
+  options.set_crl_provider(*crl_provider);
+  auto server_creds_1 = TlsServerCredentials(options);
+  EXPECT_NE(server_creds_1, nullptr);
+  auto server_creds_2 = TlsServerCredentials(options);
+  EXPECT_NE(server_creds_2, nullptr);
 }
 
 }  // namespace
