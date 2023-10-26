@@ -7092,10 +7092,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: cmdline_test
   gtest: true
   build: test

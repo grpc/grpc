@@ -93,8 +93,6 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    # TODO(ladynana): remove the no_windows tag.
-    tags = ["no_windows"],
     deps = [
         "//:grpc",
         "//:grpc_public_hdrs",
