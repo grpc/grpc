@@ -108,12 +108,12 @@ class DirectoryReloaderCrlProvider
  private:
   void OnNextUpdateTimer();
 
-  grpc_core::Duration refresh_duration_;
+  Duration refresh_duration_;
   std::function<void(::absl::Status)> reload_error_callback_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::shared_ptr<Directory> crl_directory_;
   // guards the crls_ map
-  grpc_core::Mutex mu_;
+  Mutex mu_;
   absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_
       ABSL_GUARDED_BY(mu_);
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>

@@ -37,7 +37,7 @@ std::string DirectoryPathFromFilePath(const std::string& path) {
 
 TEST(DIRECTORY, DirectoryExists) {
   FILE* tmp = nullptr;
-  absl::StatusOr<grpc_core::Slice> result;
+  absl::StatusOr<Slice> result;
   char* tmp_name;
 
   tmp = gpr_tmpfile(prefix, &tmp_name);

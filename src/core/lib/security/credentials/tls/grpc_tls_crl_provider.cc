@@ -215,7 +215,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
     std::string issuer((*crl)->Issuer());
     new_crls[issuer] = std::move(*crl);
   }
-  grpc_core::MutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   if (!all_files_successful) {
     // Need to make sure CRLs we read successfully into new_crls are still
     // in-place updated in crls_.
@@ -238,7 +238,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
 
 std::shared_ptr<Crl> DirectoryReloaderCrlProvider::GetCrl(
     const CertificateInfo& certificate_info) {
-  grpc_core::MutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   auto it = crls_.find(certificate_info.Issuer());
   if (it == crls_.end()) {
     return nullptr;
