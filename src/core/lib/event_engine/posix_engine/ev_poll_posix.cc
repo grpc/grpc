@@ -78,7 +78,7 @@ class PollEventHandle : public EventHandle {
         pending_actions_(0),
         fork_fd_list_(this),
         poller_handles_list_(this),
-        poller_(std::move(poller)),
+        poller_(poller),
         scheduler_(poller->GetScheduler()),
         is_orphaned_(false),
         is_shutdown_(false),
