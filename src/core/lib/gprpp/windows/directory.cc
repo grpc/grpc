@@ -44,8 +44,7 @@ std::string BuildAbsoluteFilePath(absl::string_view valid_file_dir,
 // Reference for reading directory in Windows:
 // https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 // https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
-absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory(
-    const std::string& directory_path) {
+absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory() {
   std::string search_path = directory_path + "/*.*";
   std::vector<std::string> files;
   WIN32_FIND_DATA find_data;
@@ -53,9 +52,8 @@ absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory(
   if (hFind != INVALID_HANDLE_VALUE) {
     do {
       if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        std::string file_path;
-        BuildAbsoluteFilePath(directory_path.c_str(), find_data.cFileName,
-                              file_path);
+        std::string file_path BuildAbsoluteFilePath(directory_path.c_str(),
+                                                    find_data.cFileName, );
         files.push_back(file_path);
       }
     } while (::FindNextFile(hFind, &find_data));
