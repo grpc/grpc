@@ -1554,7 +1554,6 @@ grpc_cc_library(
         "//src/core:event_engine_memory_allocator_factory",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
-        "//src/core:event_engine_thread_pool",
         "//src/core:event_engine_trace",
         "//src/core:event_log",
         "//src/core:experiments",

@@ -23,14 +23,9 @@
 #endif
 
 #include <algorithm>
-#include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {

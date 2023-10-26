@@ -16,15 +16,15 @@
 #include <stddef.h>
 
 #include <memory>
-#include <utility>
+#include <utility>  // IWYU pragma: keep
 
 #include <grpc/support/cpu.h>
 
-#include "src/core/lib/event_engine/forkable.h"
+#include "src/core/lib/event_engine/forkable.h"  // IWYU pragma: keep
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/lib/gprpp/no_destruct.h"  // IWYU pragma: keep
 
 namespace grpc_event_engine {
 namespace experimental {

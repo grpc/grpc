@@ -32,7 +32,6 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/fork.h"

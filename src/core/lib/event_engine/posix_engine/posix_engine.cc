@@ -37,7 +37,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/forkable.h"
+#include "src/core/lib/event_engine/forkable.h"  // IWYU pragma: keep
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
@@ -319,7 +319,7 @@ PosixEnginePollerManager::PosixEnginePollerManager(
 
 PosixEnginePollerManager::PosixEnginePollerManager(
     std::shared_ptr<PosixEventPoller> poller)
-    : poller_(poller),
+    : poller_(std::move(poller)),
       poller_state_(PollerState::kExternal),
       executor_(nullptr),
       trigger_shutdown_called_(false) {

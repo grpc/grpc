@@ -14,21 +14,19 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <algorithm>
 #include <memory>
 #include <string>
-#include <utility>
-#include <vector>
+#include <utility>  // IWYU pragma: keep
 
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/event_engine/forkable.h"
+#include "src/core/lib/event_engine/forkable.h"  // IWYU pragma: keep
 #include "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h"
 #include "src/core/lib/event_engine/posix_engine/ev_poll_posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
-#include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/lib/gprpp/no_destruct.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
