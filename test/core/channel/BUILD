@@ -27,6 +27,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//src/core/lib/channel/tcp_tracer:tcp_tracer",
         "//test/core/util:grpc_test_util",
     ],
 )

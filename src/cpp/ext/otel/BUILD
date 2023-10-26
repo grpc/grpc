@@ -66,7 +66,6 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_public_hdrs",
         "//:legacy_context",
-        "//:tcp_tracer",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
@@ -76,5 +75,6 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/core/lib/channel/tcp_tracer:tcp_tracer",
     ],
 )
