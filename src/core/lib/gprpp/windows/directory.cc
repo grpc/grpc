@@ -52,8 +52,8 @@ absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory() {
   if (hFind != INVALID_HANDLE_VALUE) {
     do {
       if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        std::string file_path BuildAbsoluteFilePath(directory_path_.c_str(),
-                                                    find_data.cFileName);
+        std::string file_path =
+            BuildAbsoluteFilePath(directory_path_.c_str(), find_data.cFileName);
         files.push_back(file_path);
       }
     } while (::FindNextFile(hFind, &find_data));
@@ -65,7 +65,7 @@ absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory() {
 }
 
 bool Directory::DirectoryExists(const std::string& directory_path) {
-  std::string search_path = absl::StrCat(directory_path_, "/*.*");
+  std::string search_path = absl::StrCat(directory_path, "/*.*");
   std::vector<std::string> files;
   WIN32_FIND_DATA find_data;
   HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
