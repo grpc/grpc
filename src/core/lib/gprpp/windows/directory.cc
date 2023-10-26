@@ -46,9 +46,9 @@ absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
     const std::string& crl_directory_path) {
   std::string search_path = crl_directory_path + "/*.*";
   std::vector<std::string> crl_files;
-  windows::WIN32_FIND_DATA find_data;
+  WIN32_FIND_DATA find_data;
   HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
-  if (hFind != windows::INVALID_HANDLE_VALUE) {
+  if (hFind != INVALID_HANDLE_VALUE) {
     do {
       if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
         std::string file_path;
