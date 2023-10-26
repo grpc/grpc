@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#if defined(GPR_WINDOWS)
+// #if defined(GPR_WINDOWS)
 
 // TODO(gtcooke94) How to best test this?
 #include <sys/stat.h>
@@ -32,9 +32,12 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/directory.h"
+namespace grpc_core {
+
 namespace {
-std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
-                                absl::string_view file_entry_name) {
+std::string BuildAbsoluteFilePath(absl::string_view valid_file_dir,
+                                  absl::string_view file_entry_name) {
   return absl::StrFormat("%s\\t%s", valid_file_dir, file_entry_name);
 }
 }  // namespace
@@ -42,7 +45,7 @@ std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
 // Reference for reading directory in Windows:
 // https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 // https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
-absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
+absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory(
     const std::string& crl_directory_path) {
   std::string search_path = crl_directory_path + "/*.*";
   std::vector<std::string> crl_files;
@@ -52,8 +55,8 @@ absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
     do {
       if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
         std::string file_path;
-        GetAbsoluteFilePath(crl_directory_path.c_str(), find_data.cFileName,
-                            file_path);
+        BuildAbsoluteFilePath(crl_directory_path.c_str(), find_data.cFileName,
+                              file_path);
         crl_files.push_back(file_path);
       }
     } while (::FindNextFile(hFind, &find_data));
@@ -62,14 +65,15 @@ absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
   } else {
     return absl::InternalError("Could not read crl directory.");
   }
-
-  bool Directory::DirectoryExists(const std::string& directory_path) {
-    struct _stat dir_stat;
-    if (_stat(directory_path.c_str(), &dir_stat) != 0) {
-      return false;
-    }
-    return S_ISDIR(dir_stat.st_mode);
-  }
 }
 
-#endif  // GPR_WINDOWS
+bool Directory::DirectoryExists(const std::string& directory_path) {
+  struct _stat dir_stat;
+  if (_stat(directory_path.c_str(), &dir_stat) != 0) {
+    return false;
+  }
+  return _S_ISDIR(dir_stat.st_mode);
+}
+}  // namespace grpc_core
+
+// #endif  // GPR_WINDOWS
