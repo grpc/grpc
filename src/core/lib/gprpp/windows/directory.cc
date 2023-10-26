@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-// #if defined(GPR_WINDOWS)
+#if defined(GPR_WINDOWS)
 
 // TODO(gtcooke94) How to best test this?
 #include <sys/stat.h>
@@ -81,4 +81,4 @@ bool Directory::DirectoryExists(const std::string& directory_path) {
 }
 }  // namespace grpc_core
 
-// #endif  // GPR_WINDOWS
+#endif  // GPR_WINDOWS
