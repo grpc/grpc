@@ -32,6 +32,7 @@ class Directory {
  public:
   explicit Directory(absl::string_view directory_path)
       : directory_path_(directory_path) {}
+  virtual ~Directory() = default;
   virtual absl::StatusOr<std::vector<std::string>> GetFilesInDirectory();
 
  private:
