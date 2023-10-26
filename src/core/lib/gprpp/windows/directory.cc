@@ -20,7 +20,6 @@
 
 #if defined(GPR_WINDOWS)
 
-// TODO(gtcooke94) How to best test this?
 #include <sys/stat.h>
 #include <windows.h>
 
