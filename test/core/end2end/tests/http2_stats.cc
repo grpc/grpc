@@ -21,6 +21,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
@@ -35,6 +36,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
@@ -52,6 +54,8 @@ namespace grpc_core {
 namespace {
 
 Mutex* g_mu;
+Notification* g_client_call_ended_notify;
+Notification* g_server_call_ended_notify;
 
 class FakeCallTracer : public ClientCallTracer {
  public:
@@ -85,7 +89,10 @@ class FakeCallTracer : public ClientCallTracer {
     std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
-    void RecordEnd(const gpr_timespec& /*latency*/) override { delete this; }
+    void RecordEnd(const gpr_timespec& /*latency*/) override {
+      g_client_call_ended_notify->Notify();
+      delete this;
+    }
     void RecordAnnotation(absl::string_view /*annotation*/) override {}
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
 
@@ -169,6 +176,7 @@ class FakeServerCallTracer : public ServerCallTracer {
   void RecordEnd(const grpc_call_final_info* final_info) override {
     MutexLock lock(g_mu);
     transport_stream_stats_ = final_info->stats.transport_stream_stats;
+    g_server_call_ended_notify->Notify();
   }
 
   void RecordAnnotation(absl::string_view /*annotation*/) override {}
@@ -199,6 +207,8 @@ class FakeServerCallTracerFactory : public ServerCallTracerFactory {
 // This test verifies the HTTP2 stats on a stream
 CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   g_mu = new Mutex();
+  g_client_call_ended_notify = new Notification();
+  g_server_call_ended_notify = new Notification();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterFilter(GRPC_CLIENT_CHANNEL,
                                             &FakeClientFilter::kFilter);
@@ -241,6 +251,9 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), send_from_client);
   EXPECT_EQ(server_message.payload(), send_from_server);
+  // Make sure that the calls have ended for the stats to have been collected
+  g_client_call_ended_notify->WaitForNotificationWithTimeout(absl::Seconds(5));
+  g_server_call_ended_notify->WaitForNotificationWithTimeout(absl::Seconds(5));
 
   auto client_transport_stats =
       FakeCallTracer::FakeCallAttemptTracer::transport_stream_stats();
@@ -253,21 +266,25 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
             send_from_server.size());
   EXPECT_EQ(server_transport_stats.incoming.data_bytes,
             send_from_client.size());
-  // At the very minimum, we should have 9 bytes from header frame, 9 bytes from
-  // data header frame and 5 bytes from the grpc header on data. The actual
-  // number might be more due to RST_STREAM (13 bytes) and WINDOW_UPDATE (13
-  // bytes) frames.
-  EXPECT_GE(client_transport_stats.outgoing.framing_bytes, 23);
-  EXPECT_LE(client_transport_stats.outgoing.framing_bytes, 46);
-  EXPECT_GE(client_transport_stats.incoming.framing_bytes, 23);
-  EXPECT_LE(client_transport_stats.incoming.framing_bytes, 46);
-  EXPECT_GE(server_transport_stats.outgoing.framing_bytes, 23);
-  EXPECT_LE(server_transport_stats.outgoing.framing_bytes, 46);
-  EXPECT_GE(server_transport_stats.incoming.framing_bytes, 23);
-  EXPECT_LE(server_transport_stats.incoming.framing_bytes, 46);
+  // At the very minimum, we should have 9 bytes from initial header frame, 9
+  // bytes from data header frame, 5 bytes from the grpc header on data and 9
+  // bytes from the trailing header frame. The actual number might be more due
+  // to RST_STREAM (13 bytes) and WINDOW_UPDATE (13 bytes) frames.
+  EXPECT_GE(client_transport_stats.outgoing.framing_bytes, 32);
+  EXPECT_LE(client_transport_stats.outgoing.framing_bytes, 58);
+  EXPECT_GE(client_transport_stats.incoming.framing_bytes, 32);
+  EXPECT_LE(client_transport_stats.incoming.framing_bytes, 58);
+  EXPECT_GE(server_transport_stats.outgoing.framing_bytes, 32);
+  EXPECT_LE(server_transport_stats.outgoing.framing_bytes, 58);
+  EXPECT_GE(server_transport_stats.incoming.framing_bytes, 32);
+  EXPECT_LE(server_transport_stats.incoming.framing_bytes, 58);
 
   delete ServerCallTracerFactory::Get(ChannelArgs());
   ServerCallTracerFactory::RegisterGlobal(nullptr);
+  delete g_client_call_ended_notify;
+  g_client_call_ended_notify = nullptr;
+  delete g_server_call_ended_notify;
+  g_server_call_ended_notify = nullptr;
   delete g_mu;
   g_mu = nullptr;
 }
