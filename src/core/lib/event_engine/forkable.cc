@@ -50,10 +50,13 @@ void ObjectGroupForkHandler::Prefork() {
     GPR_ASSERT(!is_forking_);
     is_forking_ = true;
     GRPC_FORK_TRACE_LOG_STRING("PrepareFork");
-    for (auto& instance : forkables_) {
-      auto shared = instance.lock();
+    for (auto it = forkables_.begin(); it != forkables_.end();) {
+      auto shared = it->lock();
       if (shared) {
         shared->PrepareFork();
+        ++it;
+      } else {
+        it = forkables_.erase(it);
       }
     }
   }
@@ -63,10 +66,13 @@ void ObjectGroupForkHandler::PostforkParent() {
   if (IsForkEnabled()) {
     GPR_ASSERT(is_forking_);
     GRPC_FORK_TRACE_LOG_STRING("PostforkParent");
-    for (auto& instance : forkables_) {
-      auto shared = instance.lock();
+    for (auto it = forkables_.begin(); it != forkables_.end();) {
+      auto shared = it->lock();
       if (shared) {
         shared->PostforkParent();
+        ++it;
+      } else {
+        it = forkables_.erase(it);
       }
     }
     is_forking_ = false;
@@ -77,10 +83,13 @@ void ObjectGroupForkHandler::PostforkChild() {
   if (IsForkEnabled()) {
     GPR_ASSERT(is_forking_);
     GRPC_FORK_TRACE_LOG_STRING("PostforkChild");
-    for (auto& instance : forkables_) {
-      auto shared = instance.lock();
+    for (auto it = forkables_.begin(); it != forkables_.end();) {
+      auto shared = it->lock();
       if (shared) {
         shared->PostforkChild();
+        ++it;
+      } else {
+        it = forkables_.erase(it);
       }
     }
     is_forking_ = false;
