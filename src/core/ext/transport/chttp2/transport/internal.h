@@ -60,7 +60,7 @@
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/lib/channel/tcp_tracer/tcp_tracer.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"

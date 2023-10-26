@@ -16,10 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_CHANNEL_TCP_TRACER_H
-#define GRPC_SRC_CORE_LIB_CHANNEL_TCP_TRACER_H
-
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_TCP_TRACER_TCP_TRACER_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_TCP_TRACER_TCP_TRACER_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -137,4 +135,4 @@ class TcpTracerInterface {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_CHANNEL_TCP_TRACER_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_TCP_TRACER_TCP_TRACER_H

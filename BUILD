@@ -1531,7 +1531,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "sockaddr_utils",
         "stats",
-        "tcp_tracer",
         "uri_parser",
         "work_serializer",
         "//src/core:1999",
@@ -1612,6 +1611,7 @@ grpc_cc_library(
         "//src/core:useful",
         "//src/core:windows_event_engine",
         "//src/core:windows_event_engine_listener",
+        "//src/core/lib/channel/tcp_tracer:tcp_tracer",
     ],
 )
 
@@ -2372,7 +2372,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "legacy_context",
-        "tcp_tracer",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
@@ -2384,6 +2383,7 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
+        "//src/core/lib/channel/tcp_tracer:tcp_tracer",
     ],
 )
 
@@ -3970,22 +3970,8 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
-        "tcp_tracer",
+        "//src/core/lib/channel/tcp_tracer:tcp_tracer",
     ],
-)
-
-grpc_cc_library(
-    name = "tcp_tracer",
-    hdrs = [
-        "//src/core:lib/channel/tcp_tracer.h",
-    ],
-    external_deps = [
-        "absl/time",
-        "absl/types:optional",
-    ],
-    language = "c++",
-    visibility = ["@grpc:tcp_tracer"],
-    deps = ["gpr"],
 )
 
 grpc_cc_library(
@@ -4051,7 +4037,6 @@ grpc_cc_library(
         "legacy_context",
         "ref_counted_ptr",
         "stats",
-        "tcp_tracer",
         "//src/core:arena",
         "//src/core:bdp_estimator",
         "//src/core:bitset",
@@ -4084,6 +4069,7 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:useful",
         "//src/core:write_size_policy",
+        "//src/core/lib/channel/tcp_tracer:tcp_tracer",
     ],
 )
 

@@ -75,7 +75,7 @@
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/lib/channel/tcp_tracer/tcp_tracer.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/experiments/experiments.h"

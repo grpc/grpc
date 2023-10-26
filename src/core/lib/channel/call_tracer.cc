@@ -26,7 +26,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/lib/channel/tcp_tracer/tcp_tracer.h"
 #include "src/core/lib/promise/context.h"
 
 namespace grpc_core {

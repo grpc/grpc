@@ -26,7 +26,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/lib/channel/tcp_tracer/tcp_tracer.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
