@@ -22,12 +22,12 @@
 #include <string.h>
 
 #include <algorithm>
-#include <map>
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <set>
 
 #include "absl/algorithm/container.h"
 #include "absl/random/random.h"
@@ -526,8 +526,8 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       for (size_t i = 0; i < endpoints.size(); ++i) {
         EndpointAddresses* endpoint;
         do {
-          auto& iterator = address_family_order[
-              scheme_index++ % address_family_order.size()];
+          auto& iterator = address_family_order[scheme_index++ %
+                                                address_family_order.size()];
           endpoint = iterator.Next(endpoints, &endpoints_moved);
         } while (endpoint == nullptr);
         interleaved_endpoints.emplace_back(std::move(*endpoint));
