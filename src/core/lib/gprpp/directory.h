@@ -20,6 +20,8 @@
 #define GRPC_SRC_CORE_LIB_GPRPP_DIRECTORY_H
 
 #include <grpc/support/port_platform.h>
+
+#include <grpc/support/port_platform.h>
 #include <string>
 #include <vector>
 
