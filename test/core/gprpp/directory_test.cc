@@ -28,7 +28,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-static const char prefix[] = "file_test";
+const char prefix[] = "file_test";
 
 std::string DirectoryPathFromFilePath(const std::string& path) {
   int last_separator = path.find_last_of("/\\");

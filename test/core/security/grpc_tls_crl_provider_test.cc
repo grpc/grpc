@@ -86,7 +86,7 @@ CreateDirectoryReloaderCrlProviderForTest(
 class DirectoryForTest : public Directory {
  public:
   DirectoryForTest() : Directory("") {}
-  ~DirectoryForTest() = default;
+  ~DirectoryForTest() override = default;
   absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() override {
     return files_in_directory_;
   }
