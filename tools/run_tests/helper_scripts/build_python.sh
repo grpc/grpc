@@ -178,7 +178,7 @@ pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"
 
 # Build/install Observability
 # Observability does not support Windows.
-if [ ! "$(is_msys)" ]; then
+if [ "$(is_msys)" ]; then
   echo "Skip building grpcio_observability for Windows"
 else
   $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
