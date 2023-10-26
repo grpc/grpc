@@ -53,6 +53,7 @@
 #include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::MockFunction;
 using testing::Return;
@@ -361,9 +362,7 @@ TEST_F(ClientTransportTest, AddOneStream) {
             EXPECT_TRUE(std::get<2>(ret).ok());
             return absl::OkStatus();
           }),
-      EventEngineWakeupScheduler(
-          std::static_pointer_cast<
-              grpc_event_engine::experimental::EventEngine>(event_engine_)),
+      InlineWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   // Wait until ClientTransport's internal activities to finish.
   event_engine_->TickUntilIdle();
@@ -461,9 +460,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
             EXPECT_TRUE(std::get<2>(ret).ok());
             return absl::OkStatus();
           }),
-      EventEngineWakeupScheduler(
-          std::static_pointer_cast<
-              grpc_event_engine::experimental::EventEngine>(event_engine_)),
+      InlineWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   // Wait until ClientTransport's internal activities to finish.
   event_engine_->TickUntilIdle();
@@ -552,9 +549,7 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
             EXPECT_TRUE(std::get<2>(ret).ok());
             return absl::OkStatus();
           }),
-      EventEngineWakeupScheduler(
-          std::static_pointer_cast<
-              grpc_event_engine::experimental::EventEngine>(event_engine_)),
+      InlineWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   // Wait until ClientTransport's internal activities to finish.
   event_engine_->TickUntilIdle();
@@ -713,9 +708,7 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
             EXPECT_TRUE(std::get<5>(ret).ok());
             return absl::OkStatus();
           }),
-      EventEngineWakeupScheduler(
-          std::static_pointer_cast<
-              grpc_event_engine::experimental::EventEngine>(event_engine_)),
+      EventEngineWakeupScheduler(event_engine_),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   // Wait until ClientTransport's internal activities to finish.
   event_engine_->TickUntilIdle();
@@ -882,9 +875,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
             EXPECT_TRUE(std::get<5>(ret).ok());
             return absl::OkStatus();
           }),
-      EventEngineWakeupScheduler(
-          std::static_pointer_cast<
-              grpc_event_engine::experimental::EventEngine>(event_engine_)),
+      EventEngineWakeupScheduler(event_engine_),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   // Wait until ClientTransport's internal activities to finish.
   event_engine_->TickUntilIdle();
