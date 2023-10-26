@@ -80,6 +80,21 @@ absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory() {
   closedir(crl_directory);
   return crl_files;
 }
+
+bool Directory::DirectoryExists(const std::string& directory_path) {
+  struct stat dir_stat;
+  if (stat(directory_path.c_str(), &dir_stat) != 0) {
+    return false;
+  }
+  return S_ISDIR(dir_stat.st_mode);
+  // DIR* crl_directory;
+  // // Open the dir for reading
+  // if ((crl_directory = opendir(directory_path_.c_str())) == nullptr) {
+  //   return false;
+  // }
+  // closedir(crl_directory);
+  // return true;
+}
 }  // namespace grpc_core
 
 #endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE

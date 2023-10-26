@@ -34,6 +34,7 @@ class Directory {
       : directory_path_(directory_path) {}
   virtual ~Directory() = default;
   virtual absl::StatusOr<std::vector<std::string>> GetFilesInDirectory();
+  static bool DirectoryExists(const std::string& directory_path);
 
  private:
   std::string directory_path_;

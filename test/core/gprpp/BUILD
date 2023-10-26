@@ -21,6 +21,22 @@ licenses(["notice"])
 grpc_package(name = "test/core/gprpp")
 
 grpc_cc_test(
+    name = "directory_test",
+    srcs = ["directory_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "examine_stack_test",
     srcs = ["examine_stack_test.cc"],
     external_deps = [

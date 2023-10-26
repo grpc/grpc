@@ -21,6 +21,7 @@
 #if defined(GPR_WINDOWS)
 
 // TODO(gtcooke94) How to best test this?
+#include <sys/stat.h>
 #include <windows.h>
 
 #include <string>
@@ -60,6 +61,14 @@ absl::StatusOr<std::vector<std::string>> GetFilesInDirectory(
     return crl_files;
   } else {
     return absl::InternalError("Could not read crl directory.");
+  }
+
+  bool Directory::DirectoryExists(const std::string& directory_path) {
+    struct _stat dir_stat;
+    if (_stat(directory_path.c_str(), &dir_stat) != 0) {
+      return false;
+    }
+    return S_ISDIR(dir_stat.st_mode);
   }
 }
 
