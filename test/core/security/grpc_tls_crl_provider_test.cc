@@ -35,6 +35,7 @@
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_crl_provider.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/test_config.h"

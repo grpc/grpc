@@ -250,7 +250,9 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status:statusor",
+        "absl/status:status",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "//:gpr",
@@ -3104,6 +3106,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
         "absl/types:span",
         "libcrypto",
         "libssl",
@@ -3112,6 +3115,7 @@ grpc_cc_library(
         "default_event_engine",
         "directory",
         "load_file",
+        "slice",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
