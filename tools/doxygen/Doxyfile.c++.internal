@@ -2227,6 +2227,7 @@ src/core/lib/gprpp/cpp_impl_of.h \
 src/core/lib/gprpp/crash.cc \
 src/core/lib/gprpp/crash.h \
 src/core/lib/gprpp/debug_location.h \
+src/core/lib/gprpp/directory.h \
 src/core/lib/gprpp/dual_ref_counted.h \
 src/core/lib/gprpp/env.h \
 src/core/lib/gprpp/examine_stack.cc \
@@ -2251,6 +2252,7 @@ src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/packed_table.h \
 src/core/lib/gprpp/per_cpu.cc \
 src/core/lib/gprpp/per_cpu.h \
+src/core/lib/gprpp/posix/directory.cc \
 src/core/lib/gprpp/posix/env.cc \
 src/core/lib/gprpp/posix/stat.cc \
 src/core/lib/gprpp/posix/thd.cc \
@@ -2280,6 +2282,7 @@ src/core/lib/gprpp/type_list.h \
 src/core/lib/gprpp/unique_type_name.h \
 src/core/lib/gprpp/validation_errors.cc \
 src/core/lib/gprpp/validation_errors.h \
+src/core/lib/gprpp/windows/directory.cc \
 src/core/lib/gprpp/windows/env.cc \
 src/core/lib/gprpp/windows/stat.cc \
 src/core/lib/gprpp/windows/thd.cc \

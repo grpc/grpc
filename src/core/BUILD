@@ -250,12 +250,11 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status:statusor",
-        "absl/strings:string_view",
+        "absl/strings",
     ],
     deps = [
         "//:gpr",
         "//:gpr_platform",
-        "//:grpc_base",
     ],
 )
 

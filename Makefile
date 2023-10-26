@@ -1484,11 +1484,13 @@ LIBGRPC_SRC = \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/load_file.cc \
     src/core/lib/gprpp/per_cpu.cc \
+    src/core/lib/gprpp/posix/directory.cc \
     src/core/lib/gprpp/ref_counted_string.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/gprpp/validation_errors.cc \
+    src/core/lib/gprpp/windows/directory.cc \
     src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/handshaker/proxy_mapper_registry.cc \
     src/core/lib/http/format_request.cc \
@@ -3663,6 +3665,8 @@ src/core/ext/xds/xds_route_config.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_routing.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_server_config_fetcher.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_transport_grpc.cc: $(OPENSSL_DEP)
+src/core/lib/gprpp/posix/directory.cc: $(OPENSSL_DEP)
+src/core/lib/gprpp/windows/directory.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/json/json_util.cc: $(OPENSSL_DEP)
 src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
