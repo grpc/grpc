@@ -20,11 +20,11 @@
 #define GRPC_SRC_CORE_LIB_GPRPP_DIRECTORY_H
 
 #include <grpc/support/port_platform.h>
-
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
