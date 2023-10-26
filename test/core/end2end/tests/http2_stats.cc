@@ -21,6 +21,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
@@ -35,6 +36,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
@@ -52,6 +54,8 @@ namespace grpc_core {
 namespace {
 
 Mutex* g_mu;
+Notification* g_client_call_ended_notify;
+Notification* g_server_call_ended_notify;
 
 class FakeCallTracer : public ClientCallTracer {
  public:
@@ -85,7 +89,10 @@ class FakeCallTracer : public ClientCallTracer {
     std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
-    void RecordEnd(const gpr_timespec& /*latency*/) override { delete this; }
+    void RecordEnd(const gpr_timespec& /*latency*/) override {
+      g_client_call_ended_notify->Notify();
+      delete this;
+    }
     void RecordAnnotation(absl::string_view /*annotation*/) override {}
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
 
@@ -169,6 +176,7 @@ class FakeServerCallTracer : public ServerCallTracer {
   void RecordEnd(const grpc_call_final_info* final_info) override {
     MutexLock lock(g_mu);
     transport_stream_stats_ = final_info->stats.transport_stream_stats;
+    g_server_call_ended_notify->Notify();
   }
 
   void RecordAnnotation(absl::string_view /*annotation*/) override {}
@@ -199,6 +207,8 @@ class FakeServerCallTracerFactory : public ServerCallTracerFactory {
 // This test verifies the HTTP2 stats on a stream
 CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   g_mu = new Mutex();
+  g_client_call_ended_notify = new Notification();
+  g_server_call_ended_notify = new Notification();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterFilter(GRPC_CLIENT_CHANNEL,
                                             &FakeClientFilter::kFilter);
@@ -241,6 +251,9 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), send_from_client);
   EXPECT_EQ(server_message.payload(), send_from_server);
+  // Make sure that the calls have ended for the stats to have been collected
+  g_client_call_ended_notify->WaitForNotificationWithTimeout(absl::Seconds(5));
+  g_server_call_ended_notify->WaitForNotificationWithTimeout(absl::Seconds(5));
 
   auto client_transport_stats =
       FakeCallTracer::FakeCallAttemptTracer::transport_stream_stats();
@@ -268,6 +281,10 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
 
   delete ServerCallTracerFactory::Get(ChannelArgs());
   ServerCallTracerFactory::RegisterGlobal(nullptr);
+  delete g_client_call_ended_notify;
+  g_client_call_ended_notify = nullptr;
+  delete g_server_call_ended_notify;
+  g_server_call_ended_notify = nullptr;
   delete g_mu;
   g_mu = nullptr;
 }
