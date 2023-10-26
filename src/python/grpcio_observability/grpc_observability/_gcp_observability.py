@@ -24,8 +24,6 @@ from grpc_observability import _cyobservability
 from grpc_observability import _observability_config
 
 # pytype: enable=pyi-error
-from grpc_observability._open_census_exporter import CENSUS_UPLOAD_INTERVAL_SECS
-from grpc_observability._open_census_exporter import OpenCensusExporter
 from opencensus.trace import execution_context
 from opencensus.trace import span_context as span_context_module
 from opencensus.trace import trace_options as trace_options_module
@@ -78,12 +76,10 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
 
     config: _observability_config.GcpObservabilityConfig
     exporter: "grpc_observability.Exporter"
-    use_open_census_exporter: bool
 
     def __init__(self, exporter: "grpc_observability.Exporter" = None):
         self.exporter = None
         self.config = _observability_config.GcpObservabilityConfig.get()
-        self.use_open_census_exporter = False
         try:
             self.config = _observability_config.read_config()
             _cyobservability.activate_config(self.config)
@@ -92,9 +88,6 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
 
         if exporter:
             self.exporter = exporter
-        else:
-            self.exporter = OpenCensusExporter(self.config)
-            self.use_open_census_exporter = True
 
         if self.config.tracing_enabled:
             self.set_tracing(True)
@@ -124,9 +117,6 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         # TODO(xuanwn): explicit synchronization
         # https://github.com/grpc/grpc/issues/33262
         time.sleep(_cyobservability.CENSUS_EXPORT_BATCH_INTERVAL_SECS)
-        if self.use_open_census_exporter:
-            # Sleep so StackDriver can upload data to GCP.
-            time.sleep(CENSUS_UPLOAD_INTERVAL_SECS)
         self.set_tracing(False)
         self.set_stats(False)
         _cyobservability.observability_deinit()
