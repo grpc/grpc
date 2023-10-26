@@ -22,7 +22,6 @@
 #include <pthread.h>
 #endif
 
-#include <algorithm>
 #include <vector>
 
 #include "src/core/lib/config/config_vars.h"

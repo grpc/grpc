@@ -49,6 +49,7 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP

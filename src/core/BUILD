@@ -2055,6 +2055,7 @@ grpc_cc_library(
         "forkable",
         "init_internally",
         "iomgr_port",
+        "no_destruct",
         "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
