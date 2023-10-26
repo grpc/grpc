@@ -49,8 +49,6 @@ static constexpr absl::string_view kCrlPath =
     "test/core/tsi/test_creds/crl_data/crls/current.crl";
 static constexpr absl::string_view kCrlIssuer =
     "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca";
-static constexpr absl::string_view kIntermediateCrlPath =
-    "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
 static constexpr absl::string_view kCrlIntermediateIssuer =
     "/CN=intermediatecert.example.com";
 static constexpr absl::string_view kCrlDirectory =
