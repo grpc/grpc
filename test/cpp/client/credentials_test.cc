@@ -424,56 +424,50 @@ TEST(CredentialsTest, TlsChannelCredentialsWithCrlProviderAndDirectory) {
 }
 
 TEST(CredentialsTest, TlsCredentialsOptionsDoesNotLeak) {
-  // TlsCredentialsOptions does not leak.
-  {
     TlsCredentialsOptions options;
     (void)options;
-  }
-  // Multiple options with same provider.
-  {
+}
+
+TEST(CredentialsTest, MultipleOptionsOneCertificateProviderDoesNotLeak) {
     auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
     TlsCredentialsOptions options_1;
     options_1.set_certificate_provider(provider);
     TlsCredentialsOptions options_2;
     options_2.set_certificate_provider(provider);
-  }
-  // Multiple options with same verifier.
-  {
+}
+
+TEST(CredentialsTest, MultipleOptionsOneCertificateVerifierDoesNotLeak) {
     auto verifier = std::make_shared<NoOpCertificateVerifier>();
     TlsCredentialsOptions options_1;
     options_1.set_certificate_verifier(verifier);
     TlsCredentialsOptions options_2;
     options_2.set_certificate_verifier(verifier);
-  }
-  // Multiple options with same CRL provider.
-  {
+}
+
+TEST(CredentialsTest, MultipleOptionsOneCrlProviderDoesNotLeak) {
     auto crl_provider = CreateStaticCrlProvider(/*crls=*/{});
     EXPECT_TRUE(crl_provider.ok());
     TlsCredentialsOptions options_1;
     options_1.set_crl_provider(*crl_provider);
     TlsCredentialsOptions options_2;
     options_2.set_crl_provider(*crl_provider);
-  }
 }
 
 TEST(CredentialsTest, TlsChannelCredentialsDoesNotLeak) {
-  // Creating a channel credentials does not leak.
-  {
     TlsChannelCredentialsOptions options;
     auto channel_creds = TlsCredentials(options);
     EXPECT_NE(channel_creds, nullptr);
-  }
-  // Creating multiple channel credentials from the same options does not leak.
-  {
+}
+
+TEST(CredentialsTest, MultipleChannelCredentialsSameOptionsDoesNotLeak) {
     TlsChannelCredentialsOptions options;
     auto channel_creds_1 = TlsCredentials(options);
     EXPECT_NE(channel_creds_1, nullptr);
     auto channel_creds_2 = TlsCredentials(options);
     EXPECT_NE(channel_creds_2, nullptr);
-  }
-  // Creating multiple channel credentials from the same options and with a
-  // certificate provider does not leak.
-  {
+}
+
+TEST(CredentialsTest, MultipleChannelCredentialsOneCertificateProviderDoesNotLeak) {
     TlsChannelCredentialsOptions options;
     auto provider = std::make_shared<StaticDataCertificateProvider>("root-pem");
     options.set_certificate_provider(provider);
@@ -481,10 +475,9 @@ TEST(CredentialsTest, TlsChannelCredentialsDoesNotLeak) {
     EXPECT_NE(channel_creds_1, nullptr);
     auto channel_creds_2 = TlsCredentials(options);
     EXPECT_NE(channel_creds_2, nullptr);
-  }
-  // Creating multiple channel credentials from the same options and with a
-  // certificate verifier does not leak.
-  {
+}
+
+TEST(CredentialsTest, MultipleChannelCredentialsOneCertificateVerifierDoesNotLeak) {
     TlsChannelCredentialsOptions options;
     auto verifier = std::make_shared<NoOpCertificateVerifier>();
     options.set_certificate_verifier(verifier);
@@ -492,10 +485,9 @@ TEST(CredentialsTest, TlsChannelCredentialsDoesNotLeak) {
     EXPECT_NE(channel_creds_1, nullptr);
     auto channel_creds_2 = TlsCredentials(options);
     EXPECT_NE(channel_creds_2, nullptr);
-  }
-  // Creating multiple channel credentials from the same options and with a
-  // CRL provider does not leak.
-  {
+}
+
+TEST(CredentialsTest, MultipleChannelCredentialsOneCrlProviderDoesNotLeak) {
     TlsChannelCredentialsOptions options;
     auto provider = CreateStaticCrlProvider(/*crls=*/{});
     EXPECT_TRUE(provider.ok());
@@ -504,7 +496,6 @@ TEST(CredentialsTest, TlsChannelCredentialsDoesNotLeak) {
     EXPECT_NE(channel_creds_1, nullptr);
     auto channel_creds_2 = TlsCredentials(options);
     EXPECT_NE(channel_creds_2, nullptr);
-  }
 }
 
 }  // namespace
