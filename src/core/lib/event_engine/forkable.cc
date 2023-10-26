@@ -39,12 +39,6 @@ bool IsForkEnabled() {
 }
 }  // namespace
 
-void ObjectGroupForkHandler::RegisterForkable(
-    std::shared_ptr<Forkable> forkable) {
-  GPR_ASSERT(!is_forking_);
-  forkables_.emplace_back(forkable);
-}
-
 void ObjectGroupForkHandler::Prefork() {
   if (IsForkEnabled()) {
     GPR_ASSERT(!is_forking_);

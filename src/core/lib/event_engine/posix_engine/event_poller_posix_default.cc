@@ -34,20 +34,18 @@ namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 namespace {
+grpc_core::NoDestruct<ObjectGroupForkHandler> g_poller_fork_manager;
+
+class Capture {
+ public:
+  static void Prefork() { g_poller_fork_manager->Prefork(); }
+  static void PostforkParent() { g_poller_fork_manager->PostforkParent(); }
+  static void PostforkChild() { g_poller_fork_manager->PostforkChild(); }
+};
 
 bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
   return strategy == "all" || strategy == want;
 }
-
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-grpc_core::NoDestruct<ObjectGroupForkHandler> g_poller_fork_manager;
-bool g_registered = false;
-
-void Prefork() { g_poller_fork_manager->Prefork(); }
-void PostforkParent() { g_poller_fork_manager->PostforkParent(); }
-void PostforkChild() { g_poller_fork_manager->PostforkChild(); }
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-
 }  // namespace
 
 std::shared_ptr<PosixEventPoller> MakeDefaultPoller(Scheduler* scheduler) {
@@ -68,13 +66,7 @@ std::shared_ptr<PosixEventPoller> MakeDefaultPoller(Scheduler* scheduler) {
       poller = MakePollPoller(scheduler, /*use_phony_poll=*/true);
     }
   }
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-  GRPC_FORK_TRACE_LOG_STRING("Poller register forkable");
-  g_poller_fork_manager->RegisterForkable(poller);
-  if (!std::exchange(g_registered, true)) {
-    pthread_atfork(Prefork, PostforkParent, PostforkChild);
-  }
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  g_poller_fork_manager->RegisterForkable<Capture>(poller);
   return poller;
 }
 

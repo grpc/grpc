@@ -30,28 +30,20 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 grpc_core::NoDestruct<ObjectGroupForkHandler> g_thread_pool_fork_manager;
-bool g_registered = false;
 
-void Prefork() { g_thread_pool_fork_manager->Prefork(); }
-void PostforkParent() { g_thread_pool_fork_manager->PostforkParent(); }
-void PostforkChild() { g_thread_pool_fork_manager->PostforkChild(); }
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-
+class Capture {
+ public:
+  static void Prefork() { g_thread_pool_fork_manager->Prefork(); }
+  static void PostforkParent() { g_thread_pool_fork_manager->PostforkParent(); }
+  static void PostforkChild() { g_thread_pool_fork_manager->PostforkChild(); }
+};
 }  // namespace
 
 std::shared_ptr<ThreadPool> MakeThreadPool(size_t /* reserve_threads */) {
   auto shared = std::make_shared<WorkStealingThreadPool>(
       grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-  GRPC_FORK_TRACE_LOG_STRING("ThreadPool register forkable");
-  g_thread_pool_fork_manager->RegisterForkable(shared);
-  if (!std::exchange(g_registered, true)) {
-    pthread_atfork(Prefork, PostforkParent, PostforkChild);
-  }
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  g_thread_pool_fork_manager->RegisterForkable<Capture>(shared);
   return shared;
 }
 

@@ -17,6 +17,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <utility>  // IWYU pragma: keep
 #include <vector>
 
 #include <grpc/support/log.h>
@@ -61,13 +62,23 @@ class ObjectGroupForkHandler {
  public:
   // Registers a Forkable with this ObjectGroupForkHandler, the Forkable must be
   // created as a shared pointer.
-  void RegisterForkable(std::shared_ptr<Forkable> forkable);
+  template <typename T>
+  void RegisterForkable(std::shared_ptr<Forkable> forkable) {
+    GPR_ASSERT(!is_forking_);
+    forkables_.emplace_back(forkable);
+    if (!std::exchange(registered_, true)) {
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+      pthread_atfork(T::Prefork, T::PostforkParent, T::PostforkChild);
+#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+    }
+  }
 
   void Prefork();
   void PostforkParent();
   void PostforkChild();
 
  private:
+  bool registered_ = false;
   bool is_forking_ = false;
   std::vector<std::weak_ptr<Forkable> > forkables_;
 };
