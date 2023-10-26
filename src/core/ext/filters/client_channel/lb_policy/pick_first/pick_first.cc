@@ -446,6 +446,35 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   }
 }
 
+absl::string_view GetAddressFamily(const grpc_resolved_address& address) {
+  const char* uri_scheme = grpc_sockaddr_get_uri_scheme(&address);
+  return absl::string_view(uri_scheme == nullptr ? "other" : uri_scheme);
+};
+
+// An endpoint list iterator that returns only entries for a specific
+// address family, as indicated by the URI scheme.
+class AddressFamilyIterator {
+ public:
+  AddressFamilyIterator(absl::string_view scheme, size_t index)
+      : scheme_(scheme), index_(index) {}
+
+  EndpointAddresses* Next(EndpointAddressesList& endpoints,
+                          std::vector<bool>* endpoints_moved) {
+    for (; index_ < endpoints.size(); ++index_) {
+      if (!(*endpoints_moved)[index_] &&
+          GetAddressFamily(endpoints[index_].address()) == scheme_) {
+        (*endpoints_moved)[index_] = true;
+        return &endpoints[index_++];
+      }
+    }
+    return nullptr;
+  }
+
+ private:
+  absl::string_view scheme_;
+  size_t index_;
+};
+
 absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     if (args.addresses.ok()) {
@@ -473,41 +502,35 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     // While we're iterating, also determine the desired address family
     // order and the index of the first element of each family, for use in
     // the interleaving below.
-    auto get_address_family = [](const grpc_resolved_address& address) {
-      const char* uri_scheme = grpc_sockaddr_get_uri_scheme(&address);
-      return absl::string_view(uri_scheme == nullptr ? "other" : uri_scheme);
-    };
-    std::vector<absl::string_view> address_family_order;
-    std::map<absl::string_view, size_t> address_family_indexes;
+    std::set<absl::string_view> address_families;
+    std::vector<AddressFamilyIterator> address_family_order;
     EndpointAddressesList endpoints;
     for (const auto& endpoint : *args.addresses) {
       for (const auto& address : endpoint.addresses()) {
         endpoints.emplace_back(address, endpoint.args());
         if (IsPickFirstHappyEyeballsEnabled()) {
-          absl::string_view scheme = get_address_family(address);
-          bool inserted =
-              address_family_indexes.emplace(scheme, endpoints.size() - 1)
-                  .second;
-          if (inserted) address_family_order.push_back(scheme);
+          absl::string_view scheme = GetAddressFamily(address);
+          bool inserted = address_families.insert(scheme).second;
+          if (inserted) {
+            address_family_order.emplace_back(scheme, endpoints.size() - 1);
+          }
         }
       }
     }
     // Interleave addresses as per RFC-8305 section 4.
     if (IsPickFirstHappyEyeballsEnabled()) {
       EndpointAddressesList interleaved_endpoints;
+      interleaved_endpoints.reserve(endpoints.size());
+      std::vector<bool> endpoints_moved(endpoints.size());
+      size_t scheme_index = 0;
       for (size_t i = 0; i < endpoints.size(); ++i) {
-        absl::string_view scheme_to_use =
-            address_family_order[i % address_family_order.size()];
-        size_t& next_index = address_family_indexes[scheme_to_use];
-        for (; next_index < endpoints.size(); ++next_index) {
-          if (get_address_family(endpoints[next_index].address()) ==
-              scheme_to_use) {
-            break;
-          }
-        }
-        if (next_index == endpoints.size()) continue;
-        interleaved_endpoints.emplace_back(std::move(endpoints[next_index]));
-        next_index++;
+        EndpointAddresses* endpoint;
+        do {
+          auto& iterator = address_family_order[
+              scheme_index++ % address_family_order.size()];
+          endpoint = iterator.Next(endpoints, &endpoints_moved);
+        } while (endpoint == nullptr);
+        interleaved_endpoints.emplace_back(std::move(*endpoint));
       }
       args.addresses = std::move(interleaved_endpoints);
     } else {
