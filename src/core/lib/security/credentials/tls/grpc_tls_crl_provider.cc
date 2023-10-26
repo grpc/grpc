@@ -19,12 +19,14 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
-
 // IWYU pragma: no_include <openssl/mem.h>
 #include <limits.h>
 
 #include <memory>
+#include <ratio>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 #include <openssl/bio.h>
 #include <openssl/crypto.h>  // IWYU pragma: keep
