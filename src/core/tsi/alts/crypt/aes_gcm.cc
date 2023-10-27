@@ -81,6 +81,11 @@ absl::Span<uint8_t> GsecKey::kdf_buffer() {
 
 }  // namespace grpc_core
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+const char kEvpMacAlgorithm[] = "HMAC";
+char kEvpDigest[] = "SHA-256";
+#endif
+
 static grpc_status_code aes_gcm_derive_aead_key(
     absl::Span<uint8_t> dst, uint8_t* buf, absl::Span<const uint8_t> kdf_key,
     absl::Span<const uint8_t> kdf_counter) {
@@ -133,11 +138,6 @@ static grpc_status_code aes_gcm_derive_aead_key(
   memcpy(dst.data(), buf, dst.size());
   return GRPC_STATUS_OK;
 }
-
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-const char kEvpMacAlgorithm[] = "HMAC";
-char kEvpDigest[] = "SHA-256";
-#endif
 
 // Main struct for AES_GCM crypter interface.
 struct gsec_aes_gcm_aead_crypter {
