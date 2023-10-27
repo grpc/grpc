@@ -125,8 +125,7 @@ class PosixEnginePollerManager
 
  private:
   enum class PollerState { kExternal, kOk, kShuttingDown };
-  std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_ =
-      nullptr;
+  std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
   std::atomic<PollerState> poller_state_{PollerState::kOk};
   std::shared_ptr<ThreadPool> executor_;
   bool trigger_shutdown_called_;

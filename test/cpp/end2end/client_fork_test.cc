@@ -46,10 +46,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::grpc::testing::EchoRequest;
-using ::grpc::testing::EchoResponse;
-using ::grpc::testing::EchoTestService;
-
 class ServiceImpl final : public EchoTestService::Service {
   Status BidiStream(
       ServerContext* /*context*/,
@@ -115,7 +111,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
   pid_t child_client_pid = fork();
   switch (child_client_pid) {
     case -1:  // fork failed
-      FAIL() << "fork failed";
+      GTEST_FAIL() << "fork failed";
     case 0:  // post-fork child
     {
       gpr_log(GPR_DEBUG, "In post-fork child");

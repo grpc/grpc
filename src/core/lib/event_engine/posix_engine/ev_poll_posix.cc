@@ -78,8 +78,8 @@ class PollEventHandle : public EventHandle {
         pending_actions_(0),
         fork_fd_list_(this),
         poller_handles_list_(this),
-        poller_(poller),
         scheduler_(poller->GetScheduler()),
+        poller_(std::move(poller)),
         is_orphaned_(false),
         is_shutdown_(false),
         closed_(false),
@@ -208,8 +208,8 @@ class PollEventHandle : public EventHandle {
   int pending_actions_;
   PollPoller::HandlesList fork_fd_list_;
   PollPoller::HandlesList poller_handles_list_;
-  std::shared_ptr<PollPoller> poller_;
   Scheduler* scheduler_;
+  std::shared_ptr<PollPoller> poller_;
   bool is_orphaned_;
   bool is_shutdown_;
   bool closed_;

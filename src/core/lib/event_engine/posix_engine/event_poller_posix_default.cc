@@ -16,17 +16,17 @@
 
 #include <memory>
 #include <string>
-#include <utility>  // IWYU pragma: keep
+#include <utility>
 
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/event_engine/forkable.h"  // IWYU pragma: keep
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h"
 #include "src/core/lib/event_engine/posix_engine/ev_poll_posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
-#include "src/core/lib/gprpp/no_destruct.h"  // IWYU pragma: keep
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
@@ -36,7 +36,7 @@ namespace experimental {
 namespace {
 grpc_core::NoDestruct<ObjectGroupForkHandler> g_poller_fork_manager;
 
-class Capture {
+class PollerForkCallbackMethods {
  public:
   static void Prefork() { g_poller_fork_manager->Prefork(); }
   static void PostforkParent() { g_poller_fork_manager->PostforkParent(); }
@@ -66,7 +66,10 @@ std::shared_ptr<PosixEventPoller> MakeDefaultPoller(Scheduler* scheduler) {
       poller = MakePollPoller(scheduler, /*use_phony_poll=*/true);
     }
   }
-  g_poller_fork_manager->RegisterForkable<Capture>(poller);
+  g_poller_fork_manager->RegisterForkable(
+      poller, PollerForkCallbackMethods::Prefork,
+      PollerForkCallbackMethods::PostforkParent,
+      PollerForkCallbackMethods::PostforkChild);
   return poller;
 }
 

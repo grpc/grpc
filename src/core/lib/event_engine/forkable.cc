@@ -40,8 +40,7 @@ bool IsForkEnabled() {
 
 void ObjectGroupForkHandler::Prefork() {
   if (IsForkEnabled()) {
-    GPR_ASSERT(!is_forking_);
-    is_forking_ = true;
+    GPR_ASSERT(!std::exchange(is_forking_, true));
     GRPC_FORK_TRACE_LOG_STRING("PrepareFork");
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();

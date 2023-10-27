@@ -39,7 +39,7 @@ using ::grpc_event_engine::experimental::ObjectGroupForkHandler;
 
 grpc_core::NoDestruct<ObjectGroupForkHandler> g_forkable_manager;
 
-class Capture {
+class ForkCallbackMethods {
  public:
   static void Prefork() { g_forkable_manager->Prefork(); }
   static void PostforkParent() { g_forkable_manager->PostforkParent(); }
@@ -88,7 +88,9 @@ TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
   };
 
   auto forkable = std::make_shared<SomeForkable>();
-  g_forkable_manager->RegisterForkable<Capture>(forkable);
+  g_forkable_manager->RegisterForkable(forkable, ForkCallbackMethods::Prefork,
+                                       ForkCallbackMethods::PostforkParent,
+                                       ForkCallbackMethods::PostforkChild);
   int child_pid = fork();
   ASSERT_NE(child_pid, -1);
   if (child_pid == 0) {
@@ -141,14 +143,16 @@ TEST_F(ForkableTest, NonPthreadManualForkOperations) {
   };
 
   ObjectGroupForkHandler forkable_manager;
-  class NoopCapture {
+  class NoopForkCallbackMethods {
    public:
     static void Prefork() {}
     static void PostforkParent() {}
     static void PostforkChild() {}
   };
   auto forkable = std::make_shared<SomeForkable>();
-  forkable_manager.RegisterForkable<NoopCapture>(forkable);
+  forkable_manager.RegisterForkable(forkable, NoopForkCallbackMethods::Prefork,
+                                    NoopForkCallbackMethods::PostforkParent,
+                                    NoopForkCallbackMethods::PostforkChild);
   forkable->AssertStates(/*prepare=*/false, /*parent=*/false, /*child=*/false);
   forkable_manager.Prefork();
   forkable->AssertStates(/*prepare=*/true, /*parent=*/false, /*child=*/false);

@@ -39,8 +39,7 @@ extern grpc_core::TraceFlag grpc_trace_fork;
 #define GRPC_FORK_TRACE_LOG_STRING(format) GRPC_FORK_TRACE_LOG("%s", format)
 
 // An interface to be implemented by EventEngines that wish to have managed fork
-// support.
-// The child class must guarantee that those methods are thread-safe.
+// support. The child class must guarantee that those methods are thread-safe.
 class Forkable {
  public:
   virtual ~Forkable() = default;
@@ -56,21 +55,23 @@ class Forkable {
 // be invoked inside the fork handlers (see pthread_atfork(3)). The idea is to
 // have different Forkables (e.g. PosixEventPoller) to store their instances
 // (e.g. a PosixEventPoller object) in a single place separated from other
-// Forkables. Forkables need to register their pthread fork handlers and manage
-// the ordering themselves. This object is thread-unsafe.
+// Forkables (a sharded approach). Forkables need to register their pthread fork
+// handlers and manage the relative ordering themselves. This object is
+// thread-unsafe.
 class ObjectGroupForkHandler {
  public:
   // Registers a Forkable with this ObjectGroupForkHandler, the Forkable must be
   // created as a shared pointer.
-  template <typename T>
-  void RegisterForkable(std::shared_ptr<Forkable> forkable) {
+  void RegisterForkable(std::shared_ptr<Forkable> forkable,
+                        void (*prepare)(void), void (*parent)(void),
+                        void (*child)(void)) {
     GPR_ASSERT(!is_forking_);
     forkables_.emplace_back(forkable);
-    if (!std::exchange(registered_, true)) {
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-      pthread_atfork(T::Prefork, T::PostforkParent, T::PostforkChild);
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+    if (!std::exchange(registered_, true)) {
+      pthread_atfork(prepare, parent, child);
     }
+#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   }
 
   void Prefork();

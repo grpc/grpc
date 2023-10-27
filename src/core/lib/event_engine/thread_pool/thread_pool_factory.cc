@@ -16,15 +16,14 @@
 #include <stddef.h>
 
 #include <memory>
-#include <utility>  // IWYU pragma: keep
 
 #include <grpc/support/cpu.h>
 
-#include "src/core/lib/event_engine/forkable.h"  // IWYU pragma: keep
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/no_destruct.h"  // IWYU pragma: keep
+#include "src/core/lib/gprpp/no_destruct.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -32,7 +31,7 @@ namespace experimental {
 namespace {
 grpc_core::NoDestruct<ObjectGroupForkHandler> g_thread_pool_fork_manager;
 
-class Capture {
+class ThreadPoolForkCallbackMethods {
  public:
   static void Prefork() { g_thread_pool_fork_manager->Prefork(); }
   static void PostforkParent() { g_thread_pool_fork_manager->PostforkParent(); }
@@ -43,7 +42,10 @@ class Capture {
 std::shared_ptr<ThreadPool> MakeThreadPool(size_t /* reserve_threads */) {
   auto shared = std::make_shared<WorkStealingThreadPool>(
       grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
-  g_thread_pool_fork_manager->RegisterForkable<Capture>(shared);
+  g_thread_pool_fork_manager->RegisterForkable(
+      shared, ThreadPoolForkCallbackMethods::Prefork,
+      ThreadPoolForkCallbackMethods::PostforkParent,
+      ThreadPoolForkCallbackMethods::PostforkChild);
   return shared;
 }
 
