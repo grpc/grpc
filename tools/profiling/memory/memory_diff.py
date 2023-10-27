@@ -63,22 +63,6 @@ _INTERESTING = {
         rb"server channel memory usage: ([0-9\.]+) bytes per channel",
         float,
     ),
-    "call/xds_client": (
-        rb"xds client call memory usage: ([0-9\.]+) bytes per call",
-        float,
-    ),
-    "call/xds_server": (
-        rb"xds server call memory usage: ([0-9\.]+) bytes per call",
-        float,
-    ),
-    "channel/xds_client": (
-        rb"xds client channel memory usage: ([0-9\.]+) bytes per channel",
-        float,
-    ),
-    "channel/xds_server": (
-        rb"xds server channel memory usage: ([0-9\.]+) bytes per channel",
-        float,
-    ),
 }
 
 _SCENARIOS = {
@@ -105,28 +89,26 @@ def _run():
     )
     ret = {}
     for name, benchmark_args in _BENCHMARKS.items():
-        for use_xds in (False, True):
-            for scenario, extra_args in _SCENARIOS.items():
-                # TODO(chenancy) Remove when minstack is implemented for channel
-                if name == "channel" and scenario == "minstack":
-                    continue
-                argv = (
-                    ["bazel-bin/test/core/memory_usage/memory_usage_test"]
+        for scenario, extra_args in _SCENARIOS.items():
+            # TODO(chenancy) Remove when minstack is implemented for channel
+            if name == "channel" and scenario == "minstack":
+                continue
+            try:
+                output = subprocess.check_output(
+                    [
+                        "bazel-bin/test/core/memory_usage/memory_usage_test",
+                    ]
                     + benchmark_args
                     + extra_args
                 )
-                if use_xds:
-                    argv.append("--use_xds")
-                try:
-                    output = subprocess.check_output(argv)
-                except subprocess.CalledProcessError as e:
-                    print("Error running benchmark:", e)
-                    continue
-                for line in output.splitlines():
-                    for key, (pattern, conversion) in _INTERESTING.items():
-                        m = re.match(pattern, line)
-                        if m:
-                            ret[scenario + ": " + key] = conversion(m.group(1))
+            except subprocess.CalledProcessError as e:
+                print("Error running benchmark:", e)
+                continue
+            for line in output.splitlines():
+                for key, (pattern, conversion) in _INTERESTING.items():
+                    m = re.match(pattern, line)
+                    if m:
+                        ret[scenario + ": " + key] = conversion(m.group(1))
     return ret
 
 
