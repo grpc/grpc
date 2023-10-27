@@ -145,7 +145,6 @@ struct gsec_aes_gcm_aead_crypter {
   size_t nonce_length;
   size_t tag_length;
   EVP_CIPHER_CTX* ctx;
-  // std::unique_ptr<grpc_core::GsecKeyInterface> gsec_key;
   grpc_core::GsecKeyInterface* gsec_key;
 };
 
