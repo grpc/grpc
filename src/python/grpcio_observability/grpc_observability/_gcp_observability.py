@@ -23,11 +23,6 @@ import grpc
 from grpc_observability import _cyobservability
 from grpc_observability import _observability_config
 
-# pytype: enable=pyi-error
-from opencensus.trace import execution_context
-from opencensus.trace import span_context as span_context_module
-from opencensus.trace import trace_options as trace_options_module
-
 _LOGGER = logging.getLogger(__name__)
 
 ClientCallTracerCapsule = Any  # it appears only once in the function signature
@@ -55,8 +50,6 @@ GRPC_STATUS_CODE_TO_STRING = {
     grpc.StatusCode.UNAVAILABLE: "UNAVAILABLE",
     grpc.StatusCode.DATA_LOSS: "DATA_LOSS",
 }
-
-GRPC_SPAN_CONTEXT = "grpc_span_context"
 
 
 # pylint: disable=no-self-use
@@ -125,20 +118,10 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
     def create_client_call_tracer(
         self, method_name: bytes
     ) -> ClientCallTracerCapsule:
-        grpc_span_context = execution_context.get_opencensus_attr(
-            GRPC_SPAN_CONTEXT
+        trace_id = b'TRACE_ID'
+        capsule = _cyobservability.create_client_call_tracer(
+            method_name, trace_id
         )
-        if grpc_span_context:
-            trace_id = grpc_span_context.trace_id.encode("utf8")
-            parent_span_id = grpc_span_context.span_id.encode("utf8")
-            capsule = _cyobservability.create_client_call_tracer(
-                method_name, trace_id, parent_span_id
-            )
-        else:
-            trace_id = span_context_module.generate_trace_id().encode("utf8")
-            capsule = _cyobservability.create_client_call_tracer(
-                method_name, trace_id
-            )
         return capsule
 
     def create_server_call_tracer_factory(
@@ -155,14 +138,7 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
     def save_trace_context(
         self, trace_id: str, span_id: str, is_sampled: bool
     ) -> None:
-        trace_options = trace_options_module.TraceOptions(0)
-        trace_options.set_enabled(is_sampled)
-        span_context = span_context_module.SpanContext(
-            trace_id=trace_id,
-            span_id=span_id,
-            trace_options=trace_options,
-        )
-        execution_context.set_opencensus_attr(GRPC_SPAN_CONTEXT, span_context)
+        pass
 
     def record_rpc_latency(
         self, method: str, rpc_latency: float, status_code: grpc.StatusCode
