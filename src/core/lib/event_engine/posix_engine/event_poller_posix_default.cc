@@ -33,9 +33,9 @@ namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 namespace {
-// Note: this object is thread-unsafe, if we are creating pollers in multiple
-// threads concurrently or if we are creating pollers while we are forking then
-// we will run into issues.
+// TODO(yijiem): this object is thread-unsafe, if we are creating pollers in
+// multiple threads (e.g. multiple event engines) or if we are creating pollers
+// while we are forking then we will run into issues.
 grpc_core::NoDestruct<ObjectGroupForkHandler> g_poller_fork_manager;
 
 class PollerForkCallbackMethods {
