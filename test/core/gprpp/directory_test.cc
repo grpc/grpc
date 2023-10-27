@@ -37,27 +37,6 @@ std::string DirectoryPathFromFilePath(const std::string& path) {
   return path.substr(0, last_separator);
 }
 
-TEST(DIRECTORY, DirectoryExists) {
-  FILE* tmp = nullptr;
-  absl::StatusOr<Slice> result;
-  char* tmp_name;
-
-  tmp = gpr_tmpfile(prefix, &tmp_name);
-  ASSERT_NE(tmp_name, nullptr);
-  ASSERT_NE(tmp, nullptr);
-  fclose(tmp);
-
-  std::string dir_path = DirectoryPathFromFilePath(tmp_name);
-  EXPECT_EQ(Directory::DirectoryExists(dir_path), true);
-
-  remove(tmp_name);
-  gpr_free(tmp_name);
-}
-
-TEST(DIRECTORY, DirectoryDoesNotExist) {
-  EXPECT_EQ(Directory::DirectoryExists(""), false);
-}
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core

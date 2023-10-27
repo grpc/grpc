@@ -205,7 +205,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
     // RHS, because C++ does not guarantee which of those will be executed
     // first.
     std::string issuer((*crl)->Issuer());
-    new_crls[issuer] = std::move(*crl);
+    new_crls[std::move(issuer)] = std::move(*crl);
   }
   MutexLock lock(&mu_);
   if (!files_with_errors.empty()) {
@@ -217,7 +217,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
       // RHS, because C++ does not guarantee which of those will be executed
       // first.
       std::string issuer(crl->Issuer());
-      crls_[issuer] = std::move(crl);
+      crls_[std::move(issuer)] = std::move(crl);
     }
     return absl::UnknownError(absl::StrCat(
         "Errors reading the following files in the CRL directory: [",

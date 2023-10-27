@@ -99,11 +99,10 @@ class DirectoryReloaderCrlProvider
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       std::shared_ptr<DirectoryReader> directory_impl)
-      : reload_error_callback_(callback),
-        event_engine_(event_engine),
-        crl_directory_(directory_impl) {
-    refresh_duration_ = Duration::FromSecondsAsDouble(duration.count());
-  }
+      : refresh_duration_(Duration::FromSecondsAsDouble(duration.count())),
+        reload_error_callback_(std::move(callback)),
+        event_engine_(std::move(event_engine)),
+        crl_directory_(std::move(directory_impl)) {}
 
   ~DirectoryReloaderCrlProvider() override;
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
