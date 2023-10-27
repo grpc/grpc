@@ -39,5 +39,4 @@ recent LTS versions of Bazel. However individual releases may have a broader
 compatibility range. The currently supported versions are captured by the
 following list:
 
-- [`6.3.2`](https://github.com/bazelbuild/bazel/releases/tag/6.3.2)
-- [`5.4.1`](https://github.com/bazelbuild/bazel/releases/tag/5.4.1)
+- [`6.4.0`](https://github.com/bazelbuild/bazel/releases/tag/6.4.0)
