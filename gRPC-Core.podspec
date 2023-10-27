@@ -73,7 +73,7 @@ Pod::Spec.new do |s|
   # search path (angled includes) to point to `include/`.
   s.pod_target_xcconfig = {
     'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
-    'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'\
+    'USER_HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-generated"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'\
         ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'\
@@ -213,7 +213,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/types/span', abseil_version
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
-    ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
+    ss.compiler_flags = ' -Wno-unreachable-code -Wno-shorten-64-to-32'
 
     ss.source_files = 'src/core/ext/filters/backend_metrics/backend_metric_filter.cc',
                       'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
@@ -3140,7 +3140,7 @@ Pod::Spec.new do |s|
   # patch include of openssl to openssl_grpc
   s.prepare_command = <<-END_OF_COMMAND
     set -e
-    find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
-    find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    # find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/openssl/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
+    # find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

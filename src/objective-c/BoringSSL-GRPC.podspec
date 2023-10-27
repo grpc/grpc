@@ -84,7 +84,7 @@ Pod::Spec.new do |s|
   s.tvos.deployment_target = '12.0'
   s.watchos.deployment_target = '6.0'
 
-  name = 'openssl_grpc'
+  name = 'openssl'
 
   # When creating a dynamic framework, name it openssl.framework instead of BoringSSL.framework.
   # This lets users write their includes like `#include <openssl/ssl.h>` as opposed to `#include
@@ -95,17 +95,28 @@ Pod::Spec.new do |s|
   # the `Headers/` directory of the framework (i.e., not under `Headers/include/openssl`).
   #
   # TODO(jcanizales): Debug why this doesn't work on macOS.
-  s.header_mappings_dir = 'src/include/openssl'
+  s.header_mappings_dir = 'src/include'
 
   # The above has an undesired effect when creating a static library: It forces users to write
   # includes like `#include <BoringSSL/ssl.h>`. `s.header_dir` adds a path prefix to that, and
   # because Cocoapods lets omit the pod name when including headers of static libraries, the
   # following lets users write `#include <openssl/ssl.h>`.
-  s.header_dir = name
+  s.header_dir = "openssl"
+
+
+  s.public_header_files = 'src/include/**/*'
+
+  s.pod_target_xcconfig = {
+    # Do not let src/include/openssl/time.h override system API
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/src/include"',
+    # 'USER_HEADER_SEARCH_PATHS': "$(inherited) \"$(PODS_TARGET_SRCROOT)\"",
+    'USE_HEADERMAP' => 'NO',
+    # 'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+  }
 
   # We don't need to inhibit all warnings; only -Wno-shorten-64-to-32. But Cocoapods' linter doesn't
   # want that for some reason.
-  s.compiler_flags = '-DOPENSSL_NO_ASM', '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w', '-DBORINGSSL_PREFIX=GRPC'
+  s.compiler_flags = '-DOPENSSL_NO_ASM', '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   s.requires_arc = false
 
   # Like many other C libraries, BoringSSL has its public headers under `include/<libname>/` and its
@@ -115,13 +126,10 @@ Pod::Spec.new do |s|
   # mentioned above, we work around the linter limitation by dividing the pod into two subspecs, one
   # for public headers and the other for implementation. Each gets its own `header_mappings_dir`,
   # making the linter happy.
-  s.subspec 'Interface' do |ss|
-    ss.header_mappings_dir = 'src/include/openssl'
-    ss.source_files = 'src/include/openssl/*.h'
-  end
-  s.subspec 'Implementation' do |ss|
-    ss.header_mappings_dir = 'src'
-    ss.source_files = 'src/ssl/*.{h,c,cc}',
+
+ 
+    s.source_files =  'src/include/openssl/*.h',
+                      'src/ssl/*.{h,c,cc}',
                       'src/ssl/**/*.{h,c,cc}',
                       'src/crypto/*.{h,c,cc}',
                       'src/crypto/**/*.{h,c,cc}',
@@ -130,26 +138,15 @@ Pod::Spec.new do |s|
                       # Include the err_data.c pre-generated in boringssl's master-with-bazel branch
                       'err_data.c'
 
-    ss.private_header_files = 'src/ssl/*.h',
-                              'src/ssl/**/*.h',
-                              'src/crypto/*.h',
-                              'src/crypto/**/*.h',
-                              'src/third_party/fiat/*.h'
     # bcm.c includes other source files, creating duplicated symbols. Since it is not used, we
     # explicitly exclude it from the pod.
     # TODO (mxyan): Work with BoringSSL team to remove this hack.
-    ss.exclude_files = 'src/crypto/fipsmodule/bcm.c',
+    s.exclude_files = 'src/crypto/fipsmodule/bcm.c',
                        'src/**/*_test.*',
                        'src/**/test_*.*',
                        'src/**/test/*.*'
 
-    ss.dependency "#{s.name}/Interface", version
-  end
 
-  s.pod_target_xcconfig = {
-    # Do not let src/include/openssl/time.h override system API
-    'USE_HEADERMAP' => 'NO',
-  }
 
   s.prepare_command = <<-END_OF_COMMAND
     set -e
@@ -686,10 +683,10 @@ Pod::Spec.new do |s|
     EOF
 
     # We are renaming openssl to openssl_grpc so that there is no conflict with openssl if it exists
-    find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
+    # find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/openssl/;g'
 
     # Include of boringssl_prefix_symbols.h does not follow Xcode import style. We add the package
     # name here so that Xcode knows where to find it.
-    find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <boringssl_prefix_symbols.h>;#include <openssl_grpc/boringssl_prefix_symbols.h>;g'
+    # find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <boringssl_prefix_symbols.h>;#include <openssl_grpc/boringssl_prefix_symbols.h>;g'
   END_OF_COMMAND
 end
