@@ -23,7 +23,10 @@
 #include <limits.h>
 
 #include <memory>
+#include <ratio>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 // IWYU pragma: no_include <openssl/mem.h>
 #include <openssl/bio.h>
