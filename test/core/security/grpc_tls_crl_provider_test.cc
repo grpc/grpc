@@ -229,6 +229,14 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithCorruption) {
   EXPECT_EQ(reload_errors.size(), 1);
 }
 
+TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithBadStatus) {
+  int refresh_duration = 60;
+  directory_reader_->SetReturnBadStatus(true);
+  auto provider = CreateCrlProvider(std::chrono::seconds(refresh_duration),
+                                    nullptr, nullptr);
+  ASSERT_FALSE(provider.ok());
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
