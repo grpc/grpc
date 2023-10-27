@@ -100,7 +100,7 @@ def grpc_proto_fuzzer(name, corpus, proto, owner = "grpc", proto_deps = [], exte
         }),
         data = data + native.glob([corpus + "/**"]),
         external_deps = external_deps,
-        size = "small",
+        size = size,
         args = select({
             "//:grpc_build_fuzzers": [CORPUS_DIR, "-runs=20000", "-max_total_time=300"],
             "//conditions:default": ["--directory=" + CORPUS_DIR],
