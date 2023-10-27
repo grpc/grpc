@@ -29,13 +29,18 @@
 
 namespace grpc_core {
 
-class Directory {
+class DirectoryReader {
  public:
-  explicit Directory(absl::string_view directory_path)
+  virtual ~DirectoryReader() = default;
+  virtual absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() = 0;
+};
+
+class DirectoryReaderImpl : public DirectoryReader {
+ public:
+  ~DirectoryReaderImpl() override = default;
+  explicit DirectoryReaderImpl(absl::string_view directory_path)
       : directory_path_(directory_path) {}
-  virtual ~Directory() = default;
-  virtual absl::StatusOr<std::vector<std::string>> GetFilesInDirectory();
-  static bool DirectoryExists(const std::string& directory_path);
+  absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() override;
 
  private:
   std::string directory_path_;

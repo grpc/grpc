@@ -66,9 +66,9 @@ CreateDirectoryReloaderCrlProviderForTest(
     absl::string_view directory, std::chrono::seconds refresh_duration,
     std::function<void(absl::Status)> reload_error_callback,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    std::shared_ptr<Directory> directory_impl) {
+    std::shared_ptr<DirectoryReader> directory_impl) {
   if (directory_impl == nullptr) {
-    directory_impl = std::make_shared<Directory>(directory);
+    directory_impl = std::make_shared<DirectoryReaderImpl>(directory);
   }
   if (event_engine == nullptr) {
     event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
@@ -84,10 +84,9 @@ CreateDirectoryReloaderCrlProviderForTest(
   return provider;
 }
 
-class DirectoryForTest : public Directory {
+class DirectoryReaderForTest : public DirectoryReader {
  public:
-  DirectoryForTest() : Directory("") {}
-  ~DirectoryForTest() override = default;
+  ~DirectoryReaderForTest() override = default;
   absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() override {
     return files_in_directory_;
   }
@@ -161,7 +160,7 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
       std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
           grpc_event_engine::experimental::FuzzingEventEngine::Options(),
           fuzzing_event_engine::Actions());
-  auto directory = std::make_shared<DirectoryForTest>();
+  auto directory = std::make_shared<DirectoryReaderForTest>();
   int refresh_duration = 60;
   auto provider = CreateDirectoryReloaderCrlProviderForTest(
       "", std::chrono::seconds(refresh_duration), nullptr, fuzzing_ee,
@@ -186,7 +185,7 @@ TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
 }
 
 TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
-  auto directory = std::make_shared<DirectoryForTest>();
+  auto directory = std::make_shared<DirectoryReaderForTest>();
   directory->files_in_directory_ = {std::string(kCrlPath)};
   int refresh_duration = 60;
   auto fuzzing_ee =

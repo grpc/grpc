@@ -44,7 +44,8 @@ std::string BuildAbsoluteFilePath(absl::string_view valid_file_dir,
 // Reference for reading directory in Windows:
 // https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 // https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
-absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory() {
+absl::StatusOr<std::vector<std::string>>
+DirectoryReaderImpl::GetFilesInDirectory() {
   std::string search_path = absl::StrCat(directory_path_, "/*.*");
   std::vector<std::string> files;
   WIN32_FIND_DATA find_data;
@@ -64,18 +65,18 @@ absl::StatusOr<std::vector<std::string>> Directory::GetFilesInDirectory() {
   }
 }
 
-bool Directory::DirectoryExists(const std::string& directory_path) {
-  std::string search_path = absl::StrCat(directory_path, "/*.*");
-  std::vector<std::string> files;
-  WIN32_FIND_DATA find_data;
-  HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
-  return hFind != INVALID_HANDLE_VALUE;
-  // struct _stat dir_stat;
-  // if (_stat(directory_path.c_str(), &dir_stat) != 0) {
-  //   return false;
-  // }
-  // return _S_ISDIR(dir_stat.st_mode);
-}
+// bool Directory::DirectoryExists(const std::string& directory_path) {
+//   std::string search_path = absl::StrCat(directory_path, "/*.*");
+//   std::vector<std::string> files;
+//   WIN32_FIND_DATA find_data;
+//   HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
+//   return hFind != INVALID_HANDLE_VALUE;
+//   // struct _stat dir_stat;
+//   // if (_stat(directory_path.c_str(), &dir_stat) != 0) {
+//   //   return false;
+//   // }
+//   // return _S_ISDIR(dir_stat.st_mode);
+// }
 }  // namespace grpc_core
 
 #endif  // GPR_WINDOWS

@@ -98,7 +98,7 @@ class DirectoryReloaderCrlProvider
       std::chrono::seconds duration, std::function<void(absl::Status)> callback,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
-      std::shared_ptr<Directory> directory_impl)
+      std::shared_ptr<DirectoryReader> directory_impl)
       : reload_error_callback_(callback),
         event_engine_(event_engine),
         crl_directory_(directory_impl) {
@@ -119,7 +119,7 @@ class DirectoryReloaderCrlProvider
   Duration refresh_duration_;
   std::function<void(::absl::Status)> reload_error_callback_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
-  std::shared_ptr<Directory> crl_directory_;
+  std::shared_ptr<DirectoryReader> crl_directory_;
   // guards the crls_ map
   Mutex mu_;
   absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_

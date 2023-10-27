@@ -153,14 +153,10 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
   if (refresh_duration < std::chrono::seconds(60)) {
     return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
   }
-  if (!Directory::DirectoryExists(std::string(directory))) {
-    return absl::InvalidArgumentError(
-        absl::StrFormat("Directory %s does not exist", directory));
-  }
   auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
       refresh_duration, reload_error_callback,
       grpc_event_engine::experimental::GetDefaultEventEngine(),
-      std::make_shared<Directory>(directory));
+      std::make_shared<DirectoryReaderImpl>(directory));
   // This could be slow to do at startup, but we want to
   // make sure it's done before the provider is used.
   absl::Status initial_status = provider->Update();

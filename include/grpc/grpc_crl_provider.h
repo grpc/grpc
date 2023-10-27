@@ -27,9 +27,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/sync.h>
 
 namespace grpc_core {
 namespace experimental {
