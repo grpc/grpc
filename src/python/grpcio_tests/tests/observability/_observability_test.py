@@ -16,6 +16,7 @@ from concurrent import futures
 import json
 import logging
 import os
+import sys
 import random
 from typing import Any, Dict, List
 import unittest
@@ -60,10 +61,6 @@ _VALID_CONFIG_STATS_ONLY_STR = """
     'cloud_monitoring': {}
 }
 """
-# Depends on grpc_core::IsTransportSuppliesClientLatencyEnabled,
-# the following metrcis might not exist.
-_SKIP_VEFIRY = [_cyobservability.MetricsName.CLIENT_TRANSPORT_LATENCY]
-_SPAN_PREFIXS = ["Recv", "Sent", "Attempt"]
 
 
 class TestExporter(_observability.Exporter):
@@ -151,7 +148,10 @@ class _GenericHandler(grpc.GenericRpcHandler):
         else:
             return None
 
-
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is supported in Windows and MacOS",
+)
 class ObservabilityTest(unittest.TestCase):
     def setUp(self):
         self.all_metric = []
@@ -334,8 +334,6 @@ class ObservabilityTest(unittest.TestCase):
     ) -> None:
         metric_names = set(metric.name for metric in metrics)
         for name in _cyobservability.MetricsName:
-            if name in _SKIP_VEFIRY:
-                continue
             if name not in metric_names:
                 logger.error(
                     "metric %s not found in exported metrics: %s!",
