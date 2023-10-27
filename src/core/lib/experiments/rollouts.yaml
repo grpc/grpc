@@ -73,7 +73,7 @@
     # not tested on iOS at all
     ios: broken
     posix: false
-    windows: true
+    windows: false
 - name: free_large_allocator
   default: false
 - name: http2_stats_fix

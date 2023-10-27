@@ -25,6 +25,7 @@ EXPERIMENTS = {
                 "rfc_max_concurrent_streams",
             ],
             "core_end2end_test": [
+                "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
@@ -36,6 +37,9 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "event_engine_listener_test": [
+                "event_engine_listener",
             ],
             "flow_control_test": [
                 "multiping",
@@ -69,9 +73,6 @@ EXPERIMENTS = {
                 "block_excessive_requests_before_settings_ack",
                 "tarpit",
             ],
-            "core_end2end_test": [
-                "event_engine_listener",
-            ],
             "cpp_end2end_test": [
                 "chttp2_batch_requests",
                 "chttp2_offload_on_rst_stream",
@@ -80,9 +81,6 @@ EXPERIMENTS = {
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
-            ],
-            "event_engine_listener_test": [
-                "event_engine_listener",
             ],
             "flow_control_test": [
                 "chttp2_batch_requests",
