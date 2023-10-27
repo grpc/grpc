@@ -51,6 +51,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "counted_service",
+    testonly = True,
     hdrs = ["counted_service.h"],
     deps = [
         "//:grpc",
