@@ -43,6 +43,7 @@
 
 static constexpr absl::string_view kCrlPath =
     "test/core/tsi/test_creds/crl_data/crls/current.crl";
+static constexpr absl::string_view kCrlName = "current.crl";
 static constexpr absl::string_view kCrlIssuer =
     "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca";
 static constexpr absl::string_view kCrlIntermediateIssuer =
@@ -70,15 +71,20 @@ class FakeDirectoryReader : public DirectoryReader {
     }
     return files_in_directory_;
   }
+  absl::string_view Name() override { return ""; }
 
   void SetReturnBadStatus(bool value) { return_bad_status_ = value; }
   void SetFilesToReturn(std::vector<std::string> files) {
     files_in_directory_ = std::move(files);
   }
+  void SetName(absl::string_view value) {
+    directory_path_ = std::string(value);
+  }
 
  private:
   std::vector<std::string> files_in_directory_;
   bool return_bad_status_;
+  std::string directory_path_;
 };
 
 class DirectoryReloaderCrlProviderTest : public ::testing::Test {
@@ -90,6 +96,7 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
       std::function<void(absl::Status)> reload_error_callback,
       std::shared_ptr<DirectoryReader> directory_reader = nullptr) {
     if (directory_reader == nullptr) directory_reader = directory_reader_;
+    directory_reader_->SetName(kCrlDirectory);
     auto provider =
         std::make_shared<experimental::DirectoryReloaderCrlProvider>(
             refresh_duration, std::move(reload_error_callback), event_engine_,
@@ -196,7 +203,7 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   auto should_be_no_crl = (*provider)->GetCrl(cert);
   ASSERT_EQ(should_be_no_crl, nullptr);
   // Give the provider files to find in the directory
-  directory_reader_->SetFilesToReturn({std::string(kCrlPath)});
+  directory_reader_->SetFilesToReturn({std::string(kCrlName)});
   event_engine_->TickForDuration(
       Duration::FromSecondsAsDouble(refresh_duration));
   auto crl = (*provider)->GetCrl(cert);
@@ -211,7 +218,7 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
 }
 
 TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithCorruption) {
-  directory_reader_->SetFilesToReturn({std::string(kCrlPath)});
+  directory_reader_->SetFilesToReturn({std::string(kCrlName)});
   int refresh_duration = 60;
   std::vector<absl::Status> reload_errors;
   std::function<void(absl::Status)> reload_error_callback =

@@ -36,6 +36,7 @@ class DirectoryReader {
  public:
   virtual ~DirectoryReader() = default;
   virtual absl::StatusOr<std::vector<std::string>> GetDirectoryContents() = 0;
+  virtual absl::string_view Name() = 0;
 };
 
 std::unique_ptr<DirectoryReader> MakeDirectoryReader(

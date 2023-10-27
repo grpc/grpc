@@ -195,7 +195,8 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
   }
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> new_crls;
   std::vector<std::string> files_with_errors;
-  for (const std::string& file_path : *crl_files) {
+  for (const std::string& file : *crl_files) {
+    std::string file_path = absl::StrCat(crl_directory_->Name(), "/", file);
     // Build a map of new_crls to update to. If all files successful, do a
     // full swap of the map. Otherwise update in place.
     absl::StatusOr<std::shared_ptr<Crl>> crl = ReadCrlFromFile(file_path);

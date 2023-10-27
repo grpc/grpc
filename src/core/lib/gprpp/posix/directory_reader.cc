@@ -50,6 +50,7 @@ class DirectoryReaderImpl : public DirectoryReader {
   explicit DirectoryReaderImpl(absl::string_view directory_path)
       : directory_path_(directory_path) {}
   absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override;
+  absl::string_view Name() override { return directory_path_; }
 
  private:
   std::string directory_path_;
@@ -78,14 +79,13 @@ DirectoryReaderImpl::GetDirectoryContents() {
       continue;
     }
 
-    std::string file_path =
-        GetAbsoluteFilePath(directory_path_.c_str(), file_name);
-    contents.push_back(file_path);
+    // std::string file_path =
+    //     GetAbsoluteFilePath(directory_path_.c_str(), file_name);
+    contents.push_back(file_name);
   }
   closedir(directory);
   return contents;
 }
-
 }  // namespace grpc_core
 
 #endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE
