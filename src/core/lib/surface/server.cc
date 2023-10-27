@@ -525,7 +525,7 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
           new ResultType(MatchResult(server, cq_idx, requested_call));
       if (!result.compare_exchange_strong(expected, new_value,
                                           std::memory_order_acq_rel,
-                                          std::memory_order_acq_rel)) {
+                                          std::memory_order_acquire)) {
         GPR_ASSERT(new_value->value().TakeCall() == requested_call);
         delete new_value;
         return false;
