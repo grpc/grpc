@@ -138,10 +138,8 @@ pip_install() {
   /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
 }
 
-# Pin setuptools to < 60.0.0 to restore the distutil installation, see:
-# https://github.com/pypa/setuptools/pull/2896
-pip_install --upgrade pip==21.3.1
-pip_install --upgrade setuptools==59.6.0
+pip_install --upgrade setuptools==61.0.0
+pip_install --upgrade pip
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -177,9 +175,9 @@ $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
 pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"
 
 # Build/install Observability
-# Observability does not support Windows.
-if [ "$(is_msys)" ]; then
-  echo "Skip building grpcio_observability for Windows"
+# Observability does not support Windows and MacOS.
+if [ "$(is_msys)" ] || [ "$(is_darwin)" ]; then
+  echo "Skip building grpcio_observability for Windows or MacOS"
 else
   $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
   pip_install_dir_and_deps "$ROOT/src/python/grpcio_observability"
