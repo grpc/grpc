@@ -69,9 +69,15 @@
     # implemented
     windows: broken
 - name: event_engine_listener
-  default: false
+  default:
+    # not tested on iOS at all
+    ios: broken
+    posix: false
+    windows: true
 - name: free_large_allocator
   default: false
+- name: http2_stats_fix
+  default: true
 - name: jitter_max_idle
   default: true
 - name: keepalive_fix

@@ -291,6 +291,44 @@ class TransportFlowControl final {
     }
   }
 
+  // A snapshot of the flow control stats to export.
+  struct Stats {
+    int64_t target_window;
+    int64_t target_frame_size;
+    int64_t target_preferred_rx_crypto_frame_size;
+    uint32_t acked_init_window;
+    uint32_t queued_init_window;
+    uint32_t sent_init_window;
+    int64_t remote_window;
+    int64_t announced_window;
+    int64_t announced_stream_total_over_incoming_window;
+    // BDP estimator stats.
+    int64_t bdp_accumulator;
+    int64_t bdp_estimate;
+    double bdp_bw_est;
+
+    std::string ToString() const;
+  };
+
+  Stats stats() const {
+    Stats stats;
+    stats.target_window = target_window();
+    stats.target_frame_size = target_frame_size();
+    stats.target_preferred_rx_crypto_frame_size =
+        target_preferred_rx_crypto_frame_size();
+    stats.acked_init_window = acked_init_window();
+    stats.queued_init_window = queued_init_window();
+    stats.sent_init_window = sent_init_window();
+    stats.remote_window = remote_window();
+    stats.announced_window = announced_window();
+    stats.announced_stream_total_over_incoming_window =
+        announced_stream_total_over_incoming_window();
+    stats.bdp_accumulator = bdp_estimator_.accumulator();
+    stats.bdp_estimate = bdp_estimator_.EstimateBdp();
+    stats.bdp_bw_est = bdp_estimator_.EstimateBandwidth();
+    return stats;
+  }
+
  private:
   double TargetLogBdp();
   double SmoothLogBdp(double value);
@@ -408,6 +446,25 @@ class StreamFlowControl final {
   int64_t remote_window_delta() const { return remote_window_delta_; }
   int64_t announced_window_delta() const { return announced_window_delta_; }
   int64_t min_progress_size() const { return min_progress_size_; }
+
+  // A snapshot of the flow control stats to export.
+  struct Stats {
+    int64_t min_progress_size;
+    int64_t remote_window_delta;
+    int64_t announced_window_delta;
+    absl::optional<int64_t> pending_size;
+
+    std::string ToString() const;
+  };
+
+  Stats stats() const {
+    Stats stats;
+    stats.min_progress_size = min_progress_size();
+    stats.remote_window_delta = remote_window_delta();
+    stats.announced_window_delta = announced_window_delta();
+    stats.pending_size = pending_size_;
+    return stats;
+  }
 
  private:
   TransportFlowControl* const tfc_;

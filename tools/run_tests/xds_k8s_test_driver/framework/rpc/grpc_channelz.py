@@ -107,6 +107,10 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
         result = f"<Channel channel_id={channel.ref.channel_id}"
         if channel.data.target:
             result += f" target={channel.data.target}"
+        result += (
+            f" call_started={channel.data.calls_started}"
+            + f" calls_failed={channel.data.calls_failed}"
+        )
         result += f" state={ChannelState.Name(channel.data.state.state)}>"
         return result
 

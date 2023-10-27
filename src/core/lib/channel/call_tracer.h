@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
 #include <string>
 
 #include "absl/status/status.h"
@@ -31,6 +32,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -53,6 +55,7 @@ class CallTracerAnnotationInterface {
   // Enum associated with types of Annotations.
   enum class AnnotationType {
     kMetadataSizes,
+    kHttpTransport,
     kDoNotUse_MustBeLast,
   };
 
@@ -108,6 +111,10 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
   virtual void RecordReceivedDecompressedMessage(
       const SliceBuffer& recv_decompressed_message) = 0;
   virtual void RecordCancel(grpc_error_handle cancel_error) = 0;
+  // Traces a new TCP transport attempt for this call attempt. Note the TCP
+  // transport may finish tracing and unref the TCP tracer before or after the
+  // call completion in gRPC core. No TCP tracing when null is returned.
+  virtual std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() = 0;
 };
 
 // Interface for a tracer that records activities on a call. Actual attempts for
