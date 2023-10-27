@@ -59,7 +59,6 @@ class HPackEncoderTable {
            table_elems_ - index;
   }
   // Check if an element index is convertable to a dynamic index
-  // Note that 0 is always not convertable
   bool ConvertableToDynamicIndex(uint32_t index) const {
     return index > tail_remote_index_;
   }
