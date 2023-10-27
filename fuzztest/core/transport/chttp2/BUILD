@@ -24,3 +24,17 @@ grpc_fuzz_test(
     ],
     deps = ["//src/core:write_size_policy"],
 )
+
+grpc_fuzz_test(
+    name = "hpack_encoder_timeout_test",
+    srcs = ["hpack_encoder_timeout_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//:hpack_encoder",
+        "//:hpack_parser",
+    ],
+)
