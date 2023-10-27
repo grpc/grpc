@@ -585,7 +585,11 @@ class ComputeV1(
 
     @staticmethod
     def _log_debug_header(resp: httplib2.Response):
-        if DEBUG_HEADER_IN_RESPONSE in resp and resp.status >= 300:
+        if (
+            DEBUG_HEADER_IN_RESPONSE in resp
+            and resp.status >= 300
+            and resp.status != 404
+        ):
             logger.info(
                 "Received GCP debug headers: %s",
                 resp[DEBUG_HEADER_IN_RESPONSE],
@@ -595,7 +599,9 @@ class ComputeV1(
         self, request, *, timeout_sec=_WAIT_FOR_OPERATION_SEC
     ):
         if self.gfe_debug_header:
-            logger.info("Adding debug headers for method: %s", request.methodId)
+            logger.debug(
+                "Adding debug headers for method: %s", request.methodId
+            )
             request.headers[DEBUG_HEADER_KEY] = self.gfe_debug_header
             request.add_response_callback(self._log_debug_header)
         operation = request.execute(num_retries=self._GCP_API_RETRIES)

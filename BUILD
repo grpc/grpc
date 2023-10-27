@@ -1144,6 +1144,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_xds_server",
     srcs = [
+        "src/cpp/server/xds_server_builder.cc",
         "src/cpp/server/xds_server_credentials.cc",
     ],
     hdrs = [
@@ -1155,6 +1156,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:xds"],
     deps = [
+        "channel_arg_names",
         "gpr",
         "grpc",
         "grpc++_base",

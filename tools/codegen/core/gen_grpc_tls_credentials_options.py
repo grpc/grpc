@@ -319,6 +319,7 @@ print(
 struct grpc_tls_credentials_options
     : public grpc_core::RefCounted<grpc_tls_credentials_options> {
  public:
+  grpc_tls_credentials_options() = default;
   ~grpc_tls_credentials_options() override = default;
 """,
     file=H,
@@ -393,6 +394,25 @@ for i in range(len(_DATA_MEMBERS)):
     if i != len(_DATA_MEMBERS) - 1:
         operator_equal_content += " &&\n"
 print(operator_equal_content + ";\n  }", file=H)
+
+# Write out copy constructor
+print(
+    "\n  grpc_tls_credentials_options(grpc_tls_credentials_options& other) :",
+    file=H,
+)
+operator_equal_content = "      "
+for i in range(len(_DATA_MEMBERS)):
+    if i != 0:
+        operator_equal_content += "      "
+    if i == len(_DATA_MEMBERS) - 1:
+        operator_equal_content += (
+            _DATA_MEMBERS[i].name + "_(other." + _DATA_MEMBERS[i].name + "_)"
+        )
+    else:
+        operator_equal_content += (
+            _DATA_MEMBERS[i].name + "_(other." + _DATA_MEMBERS[i].name + "_),\n"
+        )
+print(operator_equal_content + "  {}", file=H)
 
 # Print out data member declarations
 print("\n private:", file=H)
