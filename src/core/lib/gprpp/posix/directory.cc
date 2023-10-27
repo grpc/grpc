@@ -46,9 +46,9 @@ std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
 
 absl::StatusOr<std::vector<std::string>>
 DirectoryReaderImpl::GetFilesInDirectory() {
-  DIR* directory;
+  DIR* directory = opendir(directory_path_.c_str());
   // Open the dir for reading
-  if ((directory = opendir(directory_path_.c_str())) == nullptr) {
+  if (directory == nullptr) {
     return absl::InternalError("Could not read crl directory.");
   }
   std::vector<std::string> files;

@@ -20,12 +20,12 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
-// IWYU pragma: no_include <openssl/mem.h>
 #include <limits.h>
 
 #include <memory>
 #include <utility>
 
+// IWYU pragma: no_include <openssl/mem.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>  // IWYU pragma: keep
 #include <openssl/pem.h>
@@ -67,15 +67,12 @@ absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
     const std::string& crl_path) {
   absl::StatusOr<Slice> crl_slice = LoadFile(crl_path, false);
   if (!crl_slice.ok()) {
-    gpr_log(GPR_ERROR, "Error reading file %s",
-            crl_slice.status().ToString().c_str());
-    return absl::InvalidArgumentError("Could not load file");
+    return crl_slice.status();
   }
   absl::StatusOr<std::unique_ptr<Crl>> crl =
       Crl::Parse(crl_slice->as_string_view());
   if (!crl.ok()) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "Parsing crl string failed with result ", crl.status().ToString()));
+    return crl.status();
   }
   return crl;
 }
@@ -181,11 +178,9 @@ void DirectoryReloaderCrlProvider::ScheduleReload() {
       event_engine_->RunAfter(refresh_duration_, [self = std::move(self)]() {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
-        {
-          if (std::shared_ptr<DirectoryReloaderCrlProvider> valid_ptr =
-                  self.lock()) {
-            valid_ptr->OnNextUpdateTimer();
-          }
+        if (std::shared_ptr<DirectoryReloaderCrlProvider> valid_ptr =
+                self.lock()) {
+          valid_ptr->OnNextUpdateTimer();
         }
       });
 }
