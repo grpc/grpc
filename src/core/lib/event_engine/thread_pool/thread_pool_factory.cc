@@ -40,13 +40,13 @@ class ThreadPoolForkCallbackMethods {
 }  // namespace
 
 std::shared_ptr<ThreadPool> MakeThreadPool(size_t /* reserve_threads */) {
-  auto shared = std::make_shared<WorkStealingThreadPool>(
+  auto thread_pool = std::make_shared<WorkStealingThreadPool>(
       grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
   g_thread_pool_fork_manager->RegisterForkable(
-      shared, ThreadPoolForkCallbackMethods::Prefork,
+      thread_pool, ThreadPoolForkCallbackMethods::Prefork,
       ThreadPoolForkCallbackMethods::PostforkParent,
       ThreadPoolForkCallbackMethods::PostforkChild);
-  return shared;
+  return thread_pool;
 }
 
 }  // namespace experimental

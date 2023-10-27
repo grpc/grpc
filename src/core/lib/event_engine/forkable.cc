@@ -38,6 +38,18 @@ bool IsForkEnabled() {
 }
 }  // namespace
 
+void ObjectGroupForkHandler::RegisterForkable(
+    std::shared_ptr<Forkable> forkable, void (*prepare)(void),
+    void (*parent)(void), void (*child)(void)) {
+  GPR_ASSERT(!is_forking_);
+  forkables_.emplace_back(forkable);
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  if (!std::exchange(registered_, true)) {
+    pthread_atfork(prepare, parent, child);
+  }
+#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+}
+
 void ObjectGroupForkHandler::Prefork() {
   if (IsForkEnabled()) {
     GPR_ASSERT(!std::exchange(is_forking_, true));

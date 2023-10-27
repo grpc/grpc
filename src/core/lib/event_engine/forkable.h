@@ -64,23 +64,16 @@ class ObjectGroupForkHandler {
   // Registers a Forkable with this ObjectGroupForkHandler, the Forkable must be
   // created as a shared pointer.
   void RegisterForkable(std::shared_ptr<Forkable> forkable,
-                        void (*prepare)(void), void (*parent)(void),
-                        void (*child)(void)) {
-    GPR_ASSERT(!is_forking_);
-    forkables_.emplace_back(forkable);
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-    if (!std::exchange(registered_, true)) {
-      pthread_atfork(prepare, parent, child);
-    }
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-  }
+                        GRPC_UNUSED void (*prepare)(void),
+                        GRPC_UNUSED void (*parent)(void),
+                        GRPC_UNUSED void (*child)(void));
 
   void Prefork();
   void PostforkParent();
   void PostforkChild();
 
  private:
-  bool registered_ = false;
+  GRPC_UNUSED bool registered_ = false;
   bool is_forking_ = false;
   std::vector<std::weak_ptr<Forkable> > forkables_;
 };
