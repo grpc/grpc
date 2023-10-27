@@ -7524,13 +7524,13 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-- name: directory_test
+- name: directory_reader_test
   gtest: true
   build: test
   language: c++
   headers: []
   src:
-  - test/core/gprpp/directory_test.cc
+  - test/core/gprpp/directory_reader_test.cc
   deps:
   - gtest
   - grpc_test_util

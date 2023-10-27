@@ -980,7 +980,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx default_host_test)
   add_dependencies(buildtests_cxx delegating_channel_test)
   add_dependencies(buildtests_cxx destroy_grpclb_channel_with_active_connect_stress_test)
-  add_dependencies(buildtests_cxx directory_test)
+  add_dependencies(buildtests_cxx directory_reader_test)
   add_dependencies(buildtests_cxx disappearing_server_test)
   add_dependencies(buildtests_cxx dns_resolver_cooldown_test)
   add_dependencies(buildtests_cxx dns_resolver_test)
@@ -10303,11 +10303,11 @@ target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(directory_test
-  test/core/gprpp/directory_test.cc
+add_executable(directory_reader_test
+  test/core/gprpp/directory_reader_test.cc
 )
-target_compile_features(directory_test PUBLIC cxx_std_14)
-target_include_directories(directory_test
+target_compile_features(directory_reader_test PUBLIC cxx_std_14)
+target_include_directories(directory_reader_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10326,7 +10326,7 @@ target_include_directories(directory_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(directory_test
+target_link_libraries(directory_reader_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util

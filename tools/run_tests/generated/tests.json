@@ -2772,7 +2772,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "directory_test",
+    "name": "directory_reader_test",
     "platforms": [
       "linux",
       "mac",
