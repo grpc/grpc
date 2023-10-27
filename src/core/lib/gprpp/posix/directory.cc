@@ -81,21 +81,6 @@ DirectoryReaderImpl::GetFilesInDirectory() {
   return files;
 }
 
-// bool DirectoryReaderImpl::DirectoryExists(const std::string& directory_path)
-// {
-//   struct stat dir_stat;
-//   if (stat(directory_path.c_str(), &dir_stat) != 0) {
-//     return false;
-//   }
-//   return S_ISDIR(dir_stat.st_mode);
-//   // DIR* directory;
-//   // // Open the dir for reading
-//   // if ((directory = opendir(directory_path_.c_str())) == nullptr) {
-//   //   return false;
-//   // }
-//   // closedir(directory);
-//   // return true;
-// }
 }  // namespace grpc_core
 
 #endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE
