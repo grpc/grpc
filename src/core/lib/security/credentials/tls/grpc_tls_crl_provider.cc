@@ -156,7 +156,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
   auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
       refresh_duration, reload_error_callback,
       grpc_event_engine::experimental::GetDefaultEventEngine(),
-      std::make_shared<DirectoryReaderImpl>(directory));
+      MakeDirectoryReader(directory));
   // This could be slow to do at startup, but we want to
   // make sure it's done before the provider is used.
   absl::Status initial_status = provider->Update();

@@ -35,16 +35,8 @@ class DirectoryReader {
   virtual absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() = 0;
 };
 
-class DirectoryReaderImpl : public DirectoryReader {
- public:
-  ~DirectoryReaderImpl() override = default;
-  explicit DirectoryReaderImpl(absl::string_view directory_path)
-      : directory_path_(directory_path) {}
-  absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() override;
-
- private:
-  std::string directory_path_;
-};
+std::unique_ptr<DirectoryReader> MakeDirectoryReader(
+    absl::string_view filename);
 
 }  // namespace grpc_core
 

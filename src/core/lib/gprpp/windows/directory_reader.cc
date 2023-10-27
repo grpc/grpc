@@ -41,6 +41,22 @@ std::string BuildAbsoluteFilePath(absl::string_view valid_file_dir,
 }
 }  // namespace
 
+class DirectoryReaderImpl : public DirectoryReader {
+ public:
+  ~DirectoryReaderImpl() override = default;
+  explicit DirectoryReaderImpl(absl::string_view directory_path)
+      : directory_path_(directory_path) {}
+  absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() override;
+
+ private:
+  std::string directory_path_;
+};
+
+std::unique_ptr<DirectoryReader> MakeDirectoryReader(
+    absl::string_view filename) {
+  return std::make_unique<DirectoryReaderImpl>(filename);
+}
+
 // Reference for reading directory in Windows:
 // https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 // https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory

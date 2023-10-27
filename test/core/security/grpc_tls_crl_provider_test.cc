@@ -105,7 +105,7 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
       absl::string_view directory, std::chrono::seconds refresh_duration,
       std::function<void(absl::Status)> reload_error_callback) {
     return CreateCrlProvider(refresh_duration, std::move(reload_error_callback),
-                             std::make_shared<DirectoryReaderImpl>(directory));
+                             MakeDirectoryReader(directory));
   }
 
   std::shared_ptr<FakeDirectoryReader> directory_reader_ =

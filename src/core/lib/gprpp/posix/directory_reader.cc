@@ -45,6 +45,21 @@ std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
 }
 }  // namespace
 
+class DirectoryReaderImpl : public DirectoryReader {
+ public:
+  explicit DirectoryReaderImpl(absl::string_view directory_path)
+      : directory_path_(directory_path) {}
+  absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() override;
+
+ private:
+  std::string directory_path_;
+};
+
+std::unique_ptr<DirectoryReader> MakeDirectoryReader(
+    absl::string_view filename) {
+  return std::make_unique<DirectoryReaderImpl>(filename);
+}
+
 absl::StatusOr<std::vector<std::string>>
 DirectoryReaderImpl::GetFilesInDirectory() {
   DIR* directory = opendir(directory_path_.c_str());
