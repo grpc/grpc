@@ -38,7 +38,7 @@ gRPC supports building with the latest stable release of Bazel,
 as well as the previous major version release for at least 6 months
 after it transitions into maintenance mode.
 This is consistent with the supported build systems of
-[the Foundational C++ Support Policy](https://opensource.google/documentation/policies/cplusplus-support).
+[the Google Foundational C++ Support Policy](https://opensource.google/documentation/policies/cplusplus-support).
 However individual releases may have a broader
 compatibility range. The currently supported versions are captured by the
 following list:
