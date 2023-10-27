@@ -34,7 +34,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/directory.h"
+#include "src/core/lib/gprpp/directory_reader.h"
 
 namespace grpc_core {
 

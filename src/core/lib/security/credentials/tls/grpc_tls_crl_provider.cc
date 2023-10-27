@@ -44,7 +44,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/directory.h"
+#include "src/core/lib/gprpp/directory_reader.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"

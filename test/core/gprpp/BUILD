@@ -21,8 +21,8 @@ licenses(["notice"])
 grpc_package(name = "test/core/gprpp")
 
 grpc_cc_test(
-    name = "directory_test",
-    srcs = ["directory_test.cc"],
+    name = "directory_reader_test",
+    srcs = ["directory_reader_test.cc"],
     external_deps = [
         "gtest",
     ],
@@ -30,7 +30,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:directory",
+        "//src/core:directory_reader",
         "//test/core/util:grpc_test_util",
     ],
 )

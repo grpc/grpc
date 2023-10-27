@@ -240,13 +240,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "directory",
+    name = "directory_reader",
     srcs = [
-        "lib/gprpp/posix/directory.cc",
-        "lib/gprpp/windows/directory.cc",
+        "lib/gprpp/posix/directory_reader.cc",
+        "lib/gprpp/windows/directory_reader.cc",
     ],
     hdrs = [
-        "lib/gprpp/directory.h",
+        "lib/gprpp/directory_reader.h",
     ],
     external_deps = [
         "absl/status",
@@ -3115,7 +3115,7 @@ grpc_cc_library(
     ],
     deps = [
         "default_event_engine",
-        "directory",
+        "directory_reader",
         "load_file",
         "slice",
         "time",

@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/gprpp/directory.h"
-
 #include <stdio.h>
 
 #include "gtest/gtest.h"
@@ -23,6 +21,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/directory_reader.h"
 #include "src/core/lib/slice/slice.h"
 #include "test/core/util/test_config.h"
 

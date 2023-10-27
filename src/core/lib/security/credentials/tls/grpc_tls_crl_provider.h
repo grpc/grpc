@@ -40,7 +40,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc_crl_provider.h>
 
-#include "src/core/lib/gprpp/directory.h"
+#include "src/core/lib/gprpp/directory_reader.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 
