@@ -29,12 +29,20 @@ grpc_fuzz_test(
     name = "hpack_encoder_timeout_test",
     srcs = ["hpack_encoder_timeout_test.cc"],
     external_deps = [
+        "absl/random",
         "fuzztest",
         "fuzztest_main",
         "gtest",
     ],
     deps = [
+        "//:grpc_base",
         "//:hpack_encoder",
         "//:hpack_parser",
+        "//:ref_counted_ptr",
+        "//src/core:arena",
+        "//src/core:memory_quota",
+        "//src/core:resource_quota",
+        "//src/core:slice_buffer",
+        "//src/core:time",
     ],
 )
