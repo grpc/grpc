@@ -89,7 +89,7 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
       "          \"server_uri\": \"<SERVER_URI>\",\n"
       "          \"channel_creds\": [\n"
       "            {\n"
-      "              \"type\": \"fake\"\n"
+      "              \"type\": \"<SERVER_CREDS_TYPE>\"\n"
       "            }\n"
       "          ],\n"
       "          \"server_features\": [<SERVER_FEATURES>]\n"
@@ -102,6 +102,7 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
   return absl::StrReplaceAll(
       kXdsServerTemplate,
       {{"<SERVER_URI>", server_uri},
+       {"<SERVER_CREDS_TYPE>", xds_channel_creds_type_},
        {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}});
 }
 
