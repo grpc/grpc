@@ -35,7 +35,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "absl/types/span.h"
 
 #include <grpc/support/log.h>
@@ -190,18 +190,14 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
   if (!crl_files.ok()) {
     return crl_files.status();
   }
-  bool all_files_successful = true;
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> new_crls;
+  std::vector<std::string> files_with_errors;
   for (const std::string& file_path : *crl_files) {
     // Build a map of new_crls to update to. If all files successful, do a
     // full swap of the map. Otherwise update in place.
     absl::StatusOr<std::shared_ptr<Crl>> crl = ReadCrlFromFile(file_path);
     if (!crl.ok()) {
-      all_files_successful = false;
-      if (reload_error_callback_ != nullptr) {
-        reload_error_callback_(absl::InvalidArgumentError(absl::StrFormat(
-            "CRL Reloader failed to read file: %s", file_path)));
-      }
+      files_with_errors.push_back(file_path);
       continue;
     }
     // Now we have a good CRL to update in our map.
@@ -212,7 +208,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
     new_crls[issuer] = std::move(*crl);
   }
   MutexLock lock(&mu_);
-  if (!all_files_successful) {
+  if (!files_with_errors.empty()) {
     // Need to make sure CRLs we read successfully into new_crls are still
     // in-place updated in crls_.
     for (auto& kv : new_crls) {
@@ -223,9 +219,9 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
       std::string issuer(crl->Issuer());
       crls_[issuer] = std::move(crl);
     }
-    return absl::UnknownError(
-        "Not all files in CRL directory read successfully during async "
-        "update.");
+    return absl::UnknownError(absl::StrCat(
+        "Errors reading the following files in the CRL directory: [",
+        absl::StrJoin(files_with_errors, "; "), "]"));
   } else {
     crls_ = std::move(new_crls);
   }

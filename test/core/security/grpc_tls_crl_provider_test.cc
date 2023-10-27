@@ -211,7 +211,7 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   auto crl_post_update = (*provider)->GetCrl(cert);
   ASSERT_NE(crl_post_update, nullptr);
   EXPECT_EQ(crl_post_update->Issuer(), kCrlIssuer);
-  EXPECT_EQ(reload_errors.size(), 2);
+  EXPECT_EQ(reload_errors.size(), 1);
 }
 
 }  // namespace testing
