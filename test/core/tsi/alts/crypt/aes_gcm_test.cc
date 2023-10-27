@@ -16,12 +16,15 @@
 //
 //
 
+#include <memory>
+
 #include <gtest/gtest.h>
+
+#include "absl/types/span.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 #include "test/core/util/test_config.h"
@@ -755,8 +758,10 @@ static void gsec_test_get_crypter_from_test_vector(
   size_t ciphertext_and_tag_length = test_vector->ciphertext_and_tag_length;
   ASSERT_EQ(ciphertext_and_tag_length, plaintext_length + kAesGcmTagLength);
   size_t tag_length = ciphertext_and_tag_length - plaintext_length;
-  gsec_aes_gcm_aead_crypter_create(test_vector->key, key_length, nonce_length,
-                                   tag_length, rekey, crypter, nullptr);
+  gsec_aes_gcm_aead_crypter_create(
+      std::make_unique<grpc_core::GsecKey>(
+          absl::MakeConstSpan(test_vector->key, key_length), rekey),
+      nonce_length, tag_length, crypter, nullptr);
 }
 
 static void gsec_test_verify_crypter_on_test_vector(
@@ -803,8 +808,10 @@ static void gsec_test_create_random_aes_gcm_crypter(gsec_aead_crypter** crypter,
                                                     bool rekey) {
   uint8_t* key;
   gsec_test_random_array(&key, key_length);
-  gsec_aes_gcm_aead_crypter_create(key, key_length, nonce_length, tag_length,
-                                   rekey, crypter, nullptr);
+  gsec_aes_gcm_aead_crypter_create(
+      std::make_unique<grpc_core::GsecKey>(absl::MakeConstSpan(key, key_length),
+                                           rekey),
+      nonce_length, tag_length, crypter, nullptr);
   gpr_free(key);
 }
 

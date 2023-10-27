@@ -3434,6 +3434,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
+        "absl/types:span",
         "upb_lib",
     ],
     language = "c++",
@@ -3487,6 +3488,7 @@ grpc_cc_library(
         "//src/core:tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h",
     ],
     external_deps = [
+        "absl/types:span",
         "libcrypto",
         "libssl",
     ],

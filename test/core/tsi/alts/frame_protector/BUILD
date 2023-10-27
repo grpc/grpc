@@ -34,7 +34,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "alts_crypter_test",
     srcs = ["alts_crypter_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/types:span",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
