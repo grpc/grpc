@@ -189,7 +189,7 @@ void DirectoryReloaderCrlProvider::ScheduleReload() {
 }
 
 absl::Status DirectoryReloaderCrlProvider::Update() {
-  auto crl_files = crl_directory_->GetFilesInDirectory();
+  auto crl_files = crl_directory_->GetDirectoryContents();
   if (!crl_files.ok()) {
     return crl_files.status();
   }

@@ -49,7 +49,7 @@ class DirectoryReaderImpl : public DirectoryReader {
  public:
   explicit DirectoryReaderImpl(absl::string_view directory_path)
       : directory_path_(directory_path) {}
-  absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() override;
+  absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override;
 
  private:
   std::string directory_path_;
@@ -61,40 +61,29 @@ std::unique_ptr<DirectoryReader> MakeDirectoryReader(
 }
 
 absl::StatusOr<std::vector<std::string>>
-DirectoryReaderImpl::GetFilesInDirectory() {
-  DIR* directory = opendir(directory_path_.c_str());
+DirectoryReaderImpl::GetDirectoryContents() {
   // Open the dir for reading
+  DIR* directory = opendir(directory_path_.c_str());
   if (directory == nullptr) {
     return absl::InternalError("Could not read crl directory.");
   }
-  std::vector<std::string> files;
+  std::vector<std::string> contents;
   struct dirent* directory_entry;
   // Iterate over everything in the directory
   while ((directory_entry = readdir(directory)) != nullptr) {
     const char* file_name = directory_entry->d_name;
+    // Skip "." and ".."
+    if ((strcmp(file_name, kSkipEntriesSelf) == 0 ||
+         strcmp(file_name, kSkipEntriesParent) == 0)) {
+      continue;
+    }
 
     std::string file_path =
         GetAbsoluteFilePath(directory_path_.c_str(), file_name);
-    struct stat dir_entry_stat;
-    int stat_return = stat(file_path.c_str(), &dir_entry_stat);
-    // S_ISREG(dir_entry_stat.st_mode) returns true if this entry is a regular
-    // file
-    // https://stackoverflow.com/questions/40163270/what-is-s-isreg-and-what-does-it-do
-    // This lets us skip over either bad files or things that aren't files to
-    // read. For example, this will properly skip over `..` and `.` which show
-    // up during this iteration, as well as symlinks and sub directories.
-    if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
-      if (stat_return == -1) {
-        gpr_log(GPR_ERROR, "failed to get status for file: %s",
-                file_path.c_str());
-      }
-      // If stat_return != -1, this just isn't a file so we continue
-      continue;
-    }
-    files.push_back(file_path);
+    contents.push_back(file_path);
   }
   closedir(directory);
-  return files;
+  return contents;
 }
 
 }  // namespace grpc_core

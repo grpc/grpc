@@ -27,12 +27,15 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+static const char kSkipEntriesSelf[] = ".";
+static const char kSkipEntriesParent[] = "..";
+
 namespace grpc_core {
 
 class DirectoryReader {
  public:
   virtual ~DirectoryReader() = default;
-  virtual absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() = 0;
+  virtual absl::StatusOr<std::vector<std::string>> GetDirectoryContents() = 0;
 };
 
 std::unique_ptr<DirectoryReader> MakeDirectoryReader(

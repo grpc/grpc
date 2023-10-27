@@ -64,7 +64,7 @@ namespace testing {
 class FakeDirectoryReader : public DirectoryReader {
  public:
   ~FakeDirectoryReader() override = default;
-  absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() override {
+  absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override {
     if (return_bad_status_) {
       return absl::UnknownError("");
     }
@@ -152,6 +152,12 @@ TEST(CrlProviderTest, StaticCrlProviderLookupIssuerNotFound) {
   CertificateInfoImpl bad_cert("BAD CERT");
   auto crl = (*provider)->GetCrl(bad_cert);
   EXPECT_EQ(crl, nullptr);
+}
+
+TEST(CrlProviderTest, Temp) {
+  static constexpr char one[] = "abc";
+  const char* two = "abc";
+  ASSERT_TRUE(strcmp(one, two) == 0);
 }
 
 TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderCrlLookupGood) {

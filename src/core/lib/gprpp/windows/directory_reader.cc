@@ -46,7 +46,7 @@ class DirectoryReaderImpl : public DirectoryReader {
   ~DirectoryReaderImpl() override = default;
   explicit DirectoryReaderImpl(absl::string_view directory_path)
       : directory_path_(directory_path) {}
-  absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() override;
+  absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override;
 
  private:
   std::string directory_path_;
@@ -61,7 +61,7 @@ std::unique_ptr<DirectoryReader> MakeDirectoryReader(
 // https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 // https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
 absl::StatusOr<std::vector<std::string>>
-DirectoryReaderImpl::GetFilesInDirectory() {
+DirectoryReaderImpl::GetDirectoryContents() {
   std::string search_path = absl::StrCat(directory_path_, "/*.*");
   std::vector<std::string> files;
   WIN32_FIND_DATA find_data;
