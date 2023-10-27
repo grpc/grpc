@@ -61,37 +61,74 @@ using ::grpc_core::experimental::StaticCrlProvider;
 namespace grpc_core {
 namespace testing {
 
-absl::StatusOr<std::shared_ptr<CrlProvider>>
-CreateDirectoryReloaderCrlProviderForTest(
-    absl::string_view directory, std::chrono::seconds refresh_duration,
-    std::function<void(absl::Status)> reload_error_callback,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    std::shared_ptr<DirectoryReader> directory_impl) {
-  if (directory_impl == nullptr) {
-    directory_impl = std::make_shared<DirectoryReaderImpl>(directory);
-  }
-  if (event_engine == nullptr) {
-    event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
-  }
-
-  auto provider = std::make_shared<experimental::DirectoryReloaderCrlProvider>(
-      refresh_duration, reload_error_callback, event_engine, directory_impl);
-  absl::Status initial_status = provider->Update();
-  if (!initial_status.ok()) {
-    return initial_status;
-  }
-  provider->ScheduleReload();
-  return provider;
-}
-
-class DirectoryReaderForTest : public DirectoryReader {
+class FakeDirectoryReader : public DirectoryReader {
  public:
-  ~DirectoryReaderForTest() override = default;
+  ~FakeDirectoryReader() override = default;
   absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() override {
     return files_in_directory_;
   }
   std::vector<std::string> files_in_directory_;
 };
+
+class DirectoryReloaderCrlProviderTest : public ::testing::Test {
+ protected:
+  // Tests that want a fake directory reader can call this without setting the
+  // last parameter.
+  absl::StatusOr<std::shared_ptr<CrlProvider>> CreateCrlProvider(
+      std::chrono::seconds refresh_duration,
+      std::function<void(absl::Status)> reload_error_callback,
+      std::shared_ptr<DirectoryReader> directory_reader = nullptr) {
+    if (directory_reader == nullptr) directory_reader = directory_reader_;
+    auto provider =
+        std::make_shared<experimental::DirectoryReloaderCrlProvider>(
+            refresh_duration, std::move(reload_error_callback), event_engine_,
+            std::move(directory_reader));
+    absl::Status initial_status = provider->Update();
+    if (!initial_status.ok()) return initial_status;
+    provider->ScheduleReload();
+    return provider;
+  }
+
+  // Tests that want a real directory can call this instead of the above.
+  absl::StatusOr<std::shared_ptr<CrlProvider>> CreateCrlProvider(
+      absl::string_view directory, std::chrono::seconds refresh_duration,
+      std::function<void(absl::Status)> reload_error_callback) {
+    return CreateCrlProvider(refresh_duration, std::move(reload_error_callback),
+                             std::make_shared<DirectoryReaderImpl>(directory));
+  }
+
+  std::shared_ptr<FakeDirectoryReader> directory_reader_ =
+      std::make_shared<FakeDirectoryReader>();
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+      event_engine_ =
+          std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+              grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+              fuzzing_event_engine::Actions());
+};
+
+// absl::StatusOr<std::shared_ptr<CrlProvider>>
+// CreateDirectoryReloaderCrlProviderForTest(
+//     absl::string_view directory, std::chrono::seconds refresh_duration,
+//     std::function<void(absl::Status)> reload_error_callback,
+//     std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+//     event_engine, std::shared_ptr<DirectoryReader> directory_impl) {
+//   if (directory_impl == nullptr) {
+//     directory_impl = std::make_shared<DirectoryReaderImpl>(directory);
+//   }
+//   if (event_engine == nullptr) {
+//     event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+//   }
+
+//   auto provider =
+//   std::make_shared<experimental::DirectoryReloaderCrlProvider>(
+//       refresh_duration, reload_error_callback, event_engine, directory_impl);
+//   absl::Status initial_status = provider->Update();
+//   if (!initial_status.ok()) {
+//     return initial_status;
+//   }
+//   provider->ScheduleReload();
+//   return provider;
+// }
 
 TEST(CrlProviderTest, CanParseCrl) {
   std::string crl_string = GetFileContents(kCrlPath.data());
@@ -130,7 +167,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookupIssuerNotFound) {
   EXPECT_EQ(crl, nullptr);
 }
 
-TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
+TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderCrlLookupGood) {
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       kCrlDirectory, std::chrono::seconds(60), nullptr);
   ASSERT_TRUE(provider.ok());
@@ -145,7 +182,8 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupGood) {
   EXPECT_EQ(intermediate_crl->Issuer(), kCrlIntermediateIssuer);
 }
 
-TEST(CrlProviderTest, DirectoryReloaderCrlLookupMissingIssuer) {
+TEST_F(DirectoryReloaderCrlProviderTest,
+       DirectoryReloaderCrlLookupMissingIssuer) {
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       kCrlDirectory, std::chrono::seconds(60), nullptr);
   ASSERT_TRUE(provider.ok());
@@ -155,49 +193,56 @@ TEST(CrlProviderTest, DirectoryReloaderCrlLookupMissingIssuer) {
   ASSERT_EQ(crl, nullptr);
 }
 
-TEST(CrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
-  auto fuzzing_ee =
-      std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-          grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-          fuzzing_event_engine::Actions());
-  auto directory = std::make_shared<DirectoryReaderForTest>();
+TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
+  // auto fuzzing_ee =
+  //     std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+  //         grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+  //         fuzzing_event_engine::Actions());
+  // auto directory = std::make_shared<FakeDirectoryReader>();
   int refresh_duration = 60;
-  auto provider = CreateDirectoryReloaderCrlProviderForTest(
-      "", std::chrono::seconds(refresh_duration), nullptr, fuzzing_ee,
-      directory);
+  auto provider =
+      CreateCrlProvider(std::chrono::seconds(refresh_duration), nullptr);
+  // auto provider = CreateDirectoryReloaderCrlProviderForTest(
+  //     "", std::chrono::seconds(refresh_duration), nullptr, fuzzing_ee,
+  //     directory);
   ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert(kCrlIssuer);
   auto should_be_no_crl = (*provider)->GetCrl(cert);
   ASSERT_EQ(should_be_no_crl, nullptr);
 
   // Give the provider files to find in the directory
-  directory->files_in_directory_ = {std::string(kCrlPath)};
-  fuzzing_ee->TickForDuration(Duration::FromSecondsAsDouble(refresh_duration));
+  directory_reader_->files_in_directory_ = {std::string(kCrlPath)};
+  event_engine_->TickForDuration(
+      Duration::FromSecondsAsDouble(refresh_duration));
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
   EXPECT_EQ(crl->Issuer(), kCrlIssuer);
 
   // Now we won't see any files in our directory
-  directory->files_in_directory_ = {};
-  fuzzing_ee->TickForDuration(Duration::FromSecondsAsDouble(refresh_duration));
+  directory_reader_->files_in_directory_ = {};
+  event_engine_->TickForDuration(
+      Duration::FromSecondsAsDouble(refresh_duration));
   auto crl_should_be_deleted = (*provider)->GetCrl(cert);
   ASSERT_EQ(crl_should_be_deleted, nullptr);
 }
 
-TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
-  auto directory = std::make_shared<DirectoryReaderForTest>();
-  directory->files_in_directory_ = {std::string(kCrlPath)};
+TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithCorruption) {
+  // auto directory = std::make_shared<FakeDirectoryReader>();
+  directory_reader_->files_in_directory_ = {std::string(kCrlPath)};
   int refresh_duration = 60;
-  auto fuzzing_ee =
-      std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-          grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-          fuzzing_event_engine::Actions());
+  // auto fuzzing_ee =
+  //     std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+  //         grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+  //         fuzzing_event_engine::Actions());
   std::vector<absl::Status> reload_errors;
   std::function<void(absl::Status)> reload_error_callback =
       [&](const absl::Status& status) { reload_errors.push_back(status); };
-  auto provider = CreateDirectoryReloaderCrlProviderForTest(
-      "", std::chrono::seconds(refresh_duration), reload_error_callback,
-      fuzzing_ee, directory);
+  // auto provider = CreateDirectoryReloaderCrlProviderForTest(
+  //     "", std::chrono::seconds(refresh_duration), reload_error_callback,
+  //     fuzzing_ee, directory);
+  auto provider = CreateCrlProvider(std::chrono::seconds(refresh_duration),
+                                    reload_error_callback, nullptr);
+
   ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);
@@ -206,8 +251,9 @@ TEST(CrlProviderTest, DirectoryReloaderWithCorruption) {
   EXPECT_EQ(reload_errors.size(), 0);
   // Point the provider at a non-crl file so loading fails
   // Should result in the CRL Reloader keeping the old CRL data
-  directory->files_in_directory_ = {std::string(kRootCert)};
-  fuzzing_ee->TickForDuration(Duration::FromSecondsAsDouble(refresh_duration));
+  directory_reader_->files_in_directory_ = {std::string(kRootCert)};
+  event_engine_->TickForDuration(
+      Duration::FromSecondsAsDouble(refresh_duration));
   auto crl_post_update = (*provider)->GetCrl(cert);
   ASSERT_NE(crl_post_update, nullptr);
   EXPECT_EQ(crl_post_update->Issuer(), kCrlIssuer);
