@@ -176,7 +176,7 @@ pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"
 
 # Build/install Observability
 # Observability does not support Windows and MacOS.
-if [ "$(is_msys)" ] || [ "$(is_darwin)" ]; then
+if [ "$(is_mingw)" ] || [ "$(is_darwin)" ]; then
   echo "Skip building grpcio_observability for Windows or MacOS"
 else
   $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
