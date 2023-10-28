@@ -357,46 +357,48 @@ static void create_random_alts_seal_crypter(
   size_t key_length = rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
   uint8_t* key;
   gsec_test_random_array(&key, key_length);
-  ASSERT_EQ(
-      gsec_aes_gcm_aead_crypter_create(
-          std::make_unique<grpc_core::GsecKey>(
-              absl::MakeConstSpan(key, key_length), rekey),
-          kAesGcmNonceLength, kAesGcmTagLength, server_crypter_seal, nullptr),
-      GRPC_STATUS_OK);
-  ASSERT_EQ(
-      gsec_aes_gcm_aead_crypter_create(
-          std::make_unique<grpc_core::GsecKey>(
-              absl::MakeConstSpan(key, key_length), rekey),
-          kAesGcmNonceLength, kAesGcmTagLength, server_crypter_unseal, nullptr),
-      GRPC_STATUS_OK);
-  ASSERT_EQ(
-      gsec_aes_gcm_aead_crypter_create(
-          std::make_unique<grpc_core::GsecKey>(
-              absl::MakeConstSpan(key, key_length), rekey),
-          kAesGcmNonceLength, kAesGcmTagLength, client_crypter_seal, nullptr),
-      GRPC_STATUS_OK);
-  ASSERT_EQ(
-      gsec_aes_gcm_aead_crypter_create(
-          std::make_unique<grpc_core::GsecKey>(
-              absl::MakeConstSpan(key, key_length), rekey),
-          kAesGcmNonceLength, kAesGcmTagLength, client_crypter_unseal, nullptr),
-      GRPC_STATUS_OK);
+  ASSERT_EQ(gsec_aes_gcm_aead_crypter_create(
+                std::make_unique<grpc_core::GsecKey>(
+                    absl::MakeConstSpan(key, key_length), rekey),
+                kAesGcmNonceLength, kAesGcmTagLength, server_crypter_seal,
+                /*error_details=*/nullptr),
+            GRPC_STATUS_OK);
+  ASSERT_EQ(gsec_aes_gcm_aead_crypter_create(
+                std::make_unique<grpc_core::GsecKey>(
+                    absl::MakeConstSpan(key, key_length), rekey),
+                kAesGcmNonceLength, kAesGcmTagLength, server_crypter_unseal,
+                /*error_details=*/nullptr),
+            GRPC_STATUS_OK);
+  ASSERT_EQ(gsec_aes_gcm_aead_crypter_create(
+                std::make_unique<grpc_core::GsecKey>(
+                    absl::MakeConstSpan(key, key_length), rekey),
+                kAesGcmNonceLength, kAesGcmTagLength, client_crypter_seal,
+                /*error_details=*/nullptr),
+            GRPC_STATUS_OK);
+  ASSERT_EQ(gsec_aes_gcm_aead_crypter_create(
+                std::make_unique<grpc_core::GsecKey>(
+                    absl::MakeConstSpan(key, key_length), rekey),
+                kAesGcmNonceLength, kAesGcmTagLength, client_crypter_unseal,
+                /*error_details=*/nullptr),
+            GRPC_STATUS_OK);
 
   size_t overflow_size = rekey ? 8 : 5;
   ASSERT_EQ(alts_seal_crypter_create(*client_crypter_seal, /*is_client=*/true,
-                                     overflow_size, client_seal, nullptr),
+                                     overflow_size, client_seal,
+                                     /*error_details=*/nullptr),
             GRPC_STATUS_OK);
-  ASSERT_EQ(
-      alts_unseal_crypter_create(*client_crypter_unseal, /*is_client=*/true,
-                                 overflow_size, client_unseal, nullptr),
-      GRPC_STATUS_OK);
+  ASSERT_EQ(alts_unseal_crypter_create(
+                *client_crypter_unseal, /*is_client=*/true, overflow_size,
+                client_unseal, /*error_details=*/nullptr),
+            GRPC_STATUS_OK);
   ASSERT_EQ(alts_seal_crypter_create(*server_crypter_seal, /*is_client=*/false,
-                                     overflow_size, server_seal, nullptr),
+                                     overflow_size, server_seal,
+                                     /*error_details=*/nullptr),
             GRPC_STATUS_OK);
-  ASSERT_EQ(
-      alts_unseal_crypter_create(*server_crypter_unseal, /*is_client=*/false,
-                                 overflow_size, server_unseal, nullptr),
-      GRPC_STATUS_OK);
+  ASSERT_EQ(alts_unseal_crypter_create(
+                *server_crypter_unseal, /*is_client=*/false, overflow_size,
+                server_unseal, /*error_details=*/nullptr),
+            GRPC_STATUS_OK);
   gpr_free(key);
 }
 

@@ -193,7 +193,7 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
       grpc_core::GsecKeyFactory(
           absl::MakeConstSpan(reinterpret_cast<uint8_t*>(result->key_data),
                               kAltsAes128GcmRekeyKeyLength),
-          true),
+          /*is_rekey=*/true),
       result->is_client,
       /*is_integrity_only=*/false, /*enable_extra_copy=*/false,
       max_output_protected_frame_size, protector);

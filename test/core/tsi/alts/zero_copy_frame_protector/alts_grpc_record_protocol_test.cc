@@ -128,7 +128,8 @@ test_fixture_integrity_only_create(bool rekey, bool extra_copy) {
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_grpc_integrity_only_record_protocol_create(
                 crypter, 8, /*is_client=*/true, /*is_protect=*/true, extra_copy,
@@ -138,7 +139,8 @@ test_fixture_integrity_only_create(bool rekey, bool extra_copy) {
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_grpc_integrity_only_record_protocol_create(
                 crypter, 8, /*is_client=*/true, /*is_protect=*/false,
@@ -148,7 +150,8 @@ test_fixture_integrity_only_create(bool rekey, bool extra_copy) {
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_grpc_integrity_only_record_protocol_create(
                 crypter, 8, /*is_client=*/false, /*is_protect=*/true,
@@ -158,7 +161,8 @@ test_fixture_integrity_only_create(bool rekey, bool extra_copy) {
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_grpc_integrity_only_record_protocol_create(
                 crypter, 8, /*is_client=*/false, /*is_protect=*/false,
@@ -198,7 +202,8 @@ test_fixture_privacy_integrity_create(bool rekey) {
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_grpc_privacy_integrity_record_protocol_create(
                 crypter, 8, /*is_client=*/true, /*is_protect=*/true,
@@ -208,7 +213,8 @@ test_fixture_privacy_integrity_create(bool rekey) {
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_grpc_privacy_integrity_record_protocol_create(
                 crypter, 8, /*is_client=*/true, /*is_protect=*/false,
@@ -218,7 +224,8 @@ test_fixture_privacy_integrity_create(bool rekey) {
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_grpc_privacy_integrity_record_protocol_create(
                 crypter, 8, /*is_client=*/false, /*is_protect=*/true,
@@ -228,7 +235,8 @@ test_fixture_privacy_integrity_create(bool rekey) {
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_grpc_privacy_integrity_record_protocol_create(
                 crypter, 8, /*is_client=*/false, /*is_protect=*/false,

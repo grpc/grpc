@@ -51,13 +51,13 @@ std::unique_ptr<GsecKeyInterface> GsecKeyFactory::Create() const {
 GsecKey::GsecKey(absl::Span<const uint8_t> key, bool is_rekey)
     : is_rekey_(is_rekey) {
   if (is_rekey_) {
-    aead_key_ = std::vector<uint8_t>(kRekeyAeadKeyLen);
-    kdf_buffer_ = std::vector<uint8_t>(EVP_MAX_MD_SIZE);
-    nonce_mask_ = std::vector<uint8_t>(kAesGcmNonceLength);
+    aead_key_.resize(kRekeyAeadKeyLen);
+    kdf_buffer_.resize(EVP_MAX_MD_SIZE);
+    nonce_mask_.resize(kAesGcmNonceLength);
     memcpy(nonce_mask_.data(), key.data() + kKdfKeyLen, kAesGcmNonceLength);
-    kdf_counter_ = std::vector<uint8_t>(kKdfCounterLen, 0);
+    kdf_counter_.resize(kKdfCounterLen, 0);
   }
-  key_ = std::vector<uint8_t>(is_rekey_ ? kKdfKeyLen : key.size());
+  key_.resize(is_rekey_ ? kKdfKeyLen : key.size());
   memcpy(key_.data(), key.data(), key_.size());
 }
 

@@ -111,41 +111,49 @@ alts_iovec_record_protocol_test_fixture_create(bool rekey,
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_iovec_record_protocol_create(
                 crypter, overflow_size, /*is_client=*/true, integrity_only,
-                /*is_protect=*/true, &fixture->client_protect, nullptr),
+                /*is_protect=*/true, &fixture->client_protect,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   // Create client record protocol for unprotect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_iovec_record_protocol_create(
                 crypter, overflow_size, /*is_client=*/true, integrity_only,
-                /*is_protect=*/false, &fixture->client_unprotect, nullptr),
+                /*is_protect=*/false, &fixture->client_unprotect,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   // Create server record protocol for protect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_iovec_record_protocol_create(
                 crypter, overflow_size, /*is_client=*/false, integrity_only,
-                /*is_protect=*/true, &fixture->server_protect, nullptr),
+                /*is_protect=*/true, &fixture->server_protect,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   // Create server record protocol for unprotect.
   EXPECT_EQ(gsec_aes_gcm_aead_crypter_create(
                 std::make_unique<grpc_core::GsecKey>(
                     absl::MakeConstSpan(key, key_length), rekey),
-                kAesGcmNonceLength, kAesGcmTagLength, &crypter, nullptr),
+                kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   EXPECT_EQ(alts_iovec_record_protocol_create(
                 crypter, overflow_size, /*is_client=*/false, integrity_only,
-                /*is_protect=*/false, &fixture->server_unprotect, nullptr),
+                /*is_protect=*/false, &fixture->server_unprotect,
+                /*error_details=*/nullptr),
             GRPC_STATUS_OK);
   gpr_free(key);
   return fixture;
