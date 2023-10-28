@@ -22,6 +22,7 @@
 #include <pthread.h>
 #endif
 
+#include <algorithm>
 #include <vector>
 
 #include "src/core/lib/config/config_vars.h"
@@ -39,8 +40,8 @@ bool IsForkEnabled() {
 }  // namespace
 
 void ObjectGroupForkHandler::RegisterForkable(
-    std::shared_ptr<Forkable> forkable, void (*prepare)(void),
-    void (*parent)(void), void (*child)(void)) {
+    std::shared_ptr<Forkable> forkable, GRPC_UNUSED void (*prepare)(void),
+    GRPC_UNUSED void (*parent)(void), GRPC_UNUSED void (*child)(void)) {
   GPR_ASSERT(!is_forking_);
   forkables_.emplace_back(forkable);
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
