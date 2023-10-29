@@ -2766,6 +2766,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   }
 
   void CancelWithError(absl::Status error) override {
+    if (cancel_with_error_called_.exchange(true, std::memory_order_relaxed)) {
+      return;
+    }
     if (!started_.exchange(true, std::memory_order_relaxed)) {
       // Initial metadata not sent yet, so we can just fail the call.
       Spawn(
@@ -2844,6 +2847,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   // In the latter case real world code sometimes does not sent the initial
   // metadata, and so gating based upon that does not work out.
   std::atomic<bool> started_{false};
+  // True after the first CancelWithError call - prevents spamming cancels from
+  // overflowing the party.
+  std::atomic<bool> cancel_with_error_called_{false};
   // TODO(ctiller): delete when we remove the filter based API (may require some
   // cleanup in wrapped languages: they depend on this to hold slice refs)
   ServerMetadataHandle recv_initial_metadata_;
