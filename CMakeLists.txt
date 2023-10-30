@@ -13470,6 +13470,7 @@ add_executable(grpc_tls_crl_provider_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/security/grpc_tls_crl_provider_test.cc
 )
