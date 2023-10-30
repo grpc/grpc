@@ -728,8 +728,6 @@ class PythonLanguage(object):
         "native": "test_lite",
         "asyncio": "test_aio",
     }
-
-
     def configure(self, config, args):
         self.config = config
         self.args = args

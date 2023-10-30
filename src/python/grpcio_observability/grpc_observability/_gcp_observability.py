@@ -118,7 +118,7 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
     def create_client_call_tracer(
         self, method_name: bytes
     ) -> ClientCallTracerCapsule:
-        trace_id = b'TRACE_ID'
+        trace_id = b"TRACE_ID"
         capsule = _cyobservability.create_client_call_tracer(
             method_name, trace_id
         )

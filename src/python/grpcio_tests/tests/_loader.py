@@ -119,7 +119,6 @@ class Loader(object):
                 except ModuleNotFoundError:
                     logger.debug("Skip loading %s", module_name)
 
-
     def visit_module(self, module):
         """Visits the module, adding discovered tests to the test suite.
 

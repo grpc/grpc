@@ -16,8 +16,8 @@ from concurrent import futures
 import json
 import logging
 import os
-import sys
 import random
+import sys
 from typing import Any, Dict, List
 import unittest
 
@@ -126,13 +126,13 @@ class _MethodHandler(grpc.RpcMethodHandler):
         self.stream_unary = None
         self.stream_stream = None
         if self.request_streaming and self.response_streaming:
-            self.stream_stream = lambda x, y: handle_stream_stream(x, y)
+            self.stream_stream = handle_stream_stream
         elif self.request_streaming:
-            self.stream_unary = lambda x, y: handle_stream_unary(x, y)
+            self.stream_unary = handle_stream_unary
         elif self.response_streaming:
-            self.unary_stream = lambda x, y: handle_unary_stream(x, y)
+            self.unary_stream = handle_unary_stream
         else:
-            self.unary_unary = lambda x, y: handle_unary_unary(x, y)
+            self.unary_unary = handle_unary_unary
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
@@ -147,6 +147,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return _MethodHandler(True, True)
         else:
             return None
+
 
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
@@ -176,7 +177,6 @@ class ObservabilityTest(unittest.TestCase):
 
         self.assertGreater(len(self.all_metric), 0)
         self._validate_metrics(self.all_metric)
-
 
     def testThrowErrorWithoutConfig(self):
         with self.assertRaises(ValueError):
