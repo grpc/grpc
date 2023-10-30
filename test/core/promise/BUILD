@@ -546,7 +546,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "promise_mutex_test",
     srcs = ["promise_mutex_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
     deps = [
         "test_wakeup_schedulers",
         "//:promise",

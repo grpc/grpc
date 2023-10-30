@@ -889,6 +889,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "activity",
+        "poll",
         "//:gpr",
     ],
 )
