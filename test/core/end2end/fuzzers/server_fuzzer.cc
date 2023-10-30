@@ -72,13 +72,20 @@ class ServerFuzzer final : public BasicFuzzer {
                     .get());
     Transport* transport =
         grpc_create_chttp2_transport(channel_args, mock_endpoint_, false);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "SetupTransport", Server::FromC(server_)->SetupTransport(
-                              transport, nullptr, channel_args, nullptr)));
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+    transport_setup_ok_ =
+        Server::FromC(server_)
+            ->SetupTransport(transport, nullptr, channel_args, nullptr)
+            .ok();
+    if (transport_setup_ok_) {
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+    } else {
+      DestroyServer();
+    }
   }
 
   ~ServerFuzzer() { GPR_ASSERT(server_ == nullptr); }
+
+  bool transport_setup_ok() const { return transport_setup_ok_; }
 
  private:
   Result CreateChannel(
@@ -100,6 +107,7 @@ class ServerFuzzer final : public BasicFuzzer {
 
   grpc_endpoint* mock_endpoint_ = grpc_mock_endpoint_create(discard_write);
   grpc_server* server_ = grpc_server_create(nullptr, nullptr);
+  bool transport_setup_ok_ = false;
 };
 
 }  // namespace testing
@@ -111,5 +119,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
   }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-  grpc_core::testing::ServerFuzzer(msg).Run(msg.api_actions());
+  grpc_core::testing::ServerFuzzer server_fuzzer(msg);
+  if (!server_fuzzer.transport_setup_ok()) return;
+  server_fuzzer.Run(msg.api_actions());
 }
