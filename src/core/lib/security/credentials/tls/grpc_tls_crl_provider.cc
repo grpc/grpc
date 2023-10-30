@@ -200,6 +200,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
     // Build a map of new_crls to update to. If all files successful, do a
     // full swap of the map. Otherwise update in place.
     absl::StatusOr<std::shared_ptr<Crl>> crl = ReadCrlFromFile(file_path);
+
     if (!crl.ok()) {
       files_with_errors.push_back(file_path);
       continue;

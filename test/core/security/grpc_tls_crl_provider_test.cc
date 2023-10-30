@@ -71,7 +71,7 @@ class FakeDirectoryReader : public DirectoryReader {
     }
     return files_in_directory_;
   }
-  absl::string_view Name() override { return ""; }
+  absl::string_view Name() override { return kCrlDirectory; }
 
   void SetReturnBadStatus(bool value) { return_bad_status_ = value; }
   void SetFilesToReturn(std::vector<std::string> files) {
@@ -224,7 +224,7 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithCorruption) {
   std::function<void(absl::Status)> reload_error_callback =
       [&](const absl::Status& status) { reload_errors.push_back(status); };
   auto provider = CreateCrlProvider(std::chrono::seconds(refresh_duration),
-                                    std::move(reload_error_callback), nullptr);
+                                    std::move(reload_error_callback));
   ASSERT_TRUE(provider.ok());
   CertificateInfoImpl cert(kCrlIssuer);
   auto crl = (*provider)->GetCrl(cert);
