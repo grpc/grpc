@@ -28,7 +28,6 @@
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
