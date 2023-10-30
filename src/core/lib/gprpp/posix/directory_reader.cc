@@ -47,11 +47,11 @@ class DirectoryReaderImpl : public DirectoryReader {
  public:
   explicit DirectoryReaderImpl(absl::string_view directory_path)
       : directory_path_(directory_path) {}
+  absl::string_view Name() const override { return directory_path_; }
   absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override;
-  absl::string_view Name() override { return directory_path_; }
 
  private:
-  std::string directory_path_;
+  const std::string directory_path_;
 };
 
 std::unique_ptr<DirectoryReader> MakeDirectoryReader(
@@ -76,9 +76,6 @@ DirectoryReaderImpl::GetDirectoryContents() {
          strcmp(file_name, kSkipEntriesParent) == 0)) {
       continue;
     }
-
-    // std::string file_path =
-    //     GetAbsoluteFilePath(directory_path_.c_str(), file_name);
     contents.push_back(file_name);
   }
   closedir(directory);

@@ -35,14 +35,6 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-// TODO(gtcooke94) - test for Directory fns
-// const char prefix[] = "file_test";
-
-// std::string DirectoryPathFromFilePath(const std::string& path) {
-//   int last_separator = path.find_last_of("/\\");
-//   return path.substr(0, last_separator);
-// }
-
 TEST(DirectoryReader, CanListFiles) {
   auto reader = MakeDirectoryReader(kCrlDirectory);
   auto contents = reader->GetDirectoryContents();

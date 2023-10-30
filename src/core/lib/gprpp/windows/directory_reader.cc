@@ -42,13 +42,13 @@ const char kSkipEntriesParent[] = "..";
 
 class DirectoryReaderImpl : public DirectoryReader {
  public:
-  ~DirectoryReaderImpl() override = default;
   explicit DirectoryReaderImpl(absl::string_view directory_path)
       : directory_path_(directory_path) {}
+  absl::string_view Name() const override { return directory_path_; }
   absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override;
 
  private:
-  std::string directory_path_;
+  const std::string directory_path_;
 };
 
 std::unique_ptr<DirectoryReader> MakeDirectoryReader(

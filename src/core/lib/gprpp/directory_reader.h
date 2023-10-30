@@ -32,8 +32,9 @@ namespace grpc_core {
 class DirectoryReader {
  public:
   virtual ~DirectoryReader() = default;
+  // Returns the name of the directory being read
+  virtual absl::string_view Name() const = 0;
   virtual absl::StatusOr<std::vector<std::string>> GetDirectoryContents() = 0;
-  virtual absl::string_view Name() = 0;
 };
 
 std::unique_ptr<DirectoryReader> MakeDirectoryReader(

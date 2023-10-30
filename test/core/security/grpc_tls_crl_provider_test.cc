@@ -70,18 +70,15 @@ class FakeDirectoryReader : public DirectoryReader {
   absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override {
     return files_in_directory_;
   }
-  absl::string_view Name() override { return kCrlDirectory; }
+  absl::string_view Name() const override { return kCrlDirectory; }
 
   void SetFilesInDirectory(absl::StatusOr<std::vector<std::string>> files) {
     files_in_directory_ = std::move(files);
   }
-  void SetName(absl::string_view value) {
-    directory_path_ = std::string(value);
-  }
 
  private:
-  absl::StatusOr<std::vector<std::string>> files_in_directory_;
-  std::string directory_path_;
+  absl::StatusOr<std::vector<std::string>> files_in_directory_ =
+      std::vector<std::string>();
 };
 
 class DirectoryReloaderCrlProviderTest : public ::testing::Test {
@@ -113,7 +110,6 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
       std::function<void(absl::Status)> reload_error_callback,
       std::shared_ptr<DirectoryReader> directory_reader = nullptr) {
     if (directory_reader == nullptr) directory_reader = directory_reader_;
-    directory_reader_->SetName(kCrlDirectory);
     auto provider =
         std::make_shared<experimental::DirectoryReloaderCrlProvider>(
             refresh_duration, std::move(reload_error_callback), event_engine_,
@@ -136,10 +132,6 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
       std::make_shared<FakeDirectoryReader>();
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       event_engine_;
-  // event_engine_ =
-  //     std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-  //         grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-  //         fuzzing_event_engine::Actions());
 };
 
 TEST(CrlProviderTest, CanParseCrl) {
@@ -179,13 +171,7 @@ TEST(CrlProviderTest, StaticCrlProviderLookupIssuerNotFound) {
   EXPECT_EQ(crl, nullptr);
 }
 
-TEST(CrlProviderTest, Temp) {
-  static constexpr char one[] = "abc";
-  const char* two = "abc";
-  ASSERT_TRUE(strcmp(one, two) == 0);
-}
-
-TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderCrlLookupGood) {
+TEST_F(DirectoryReloaderCrlProviderTest, CrlLookupGood) {
   auto provider =
       CreateCrlProvider(kCrlDirectory, std::chrono::seconds(60), nullptr);
   ASSERT_TRUE(provider.ok()) << provider.status();
@@ -199,8 +185,7 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderCrlLookupGood) {
   EXPECT_EQ(intermediate_crl->Issuer(), kCrlIntermediateIssuer);
 }
 
-TEST_F(DirectoryReloaderCrlProviderTest,
-       DirectoryReloaderCrlLookupMissingIssuer) {
+TEST_F(DirectoryReloaderCrlProviderTest, CrlLookupMissingIssuer) {
   auto provider =
       CreateCrlProvider(kCrlDirectory, std::chrono::seconds(60), nullptr);
   ASSERT_TRUE(provider.ok()) << provider.status();
@@ -209,33 +194,30 @@ TEST_F(DirectoryReloaderCrlProviderTest,
   ASSERT_EQ(crl, nullptr);
 }
 
-TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
+TEST_F(DirectoryReloaderCrlProviderTest, ReloadsAndDeletes) {
   const std::chrono::seconds kRefreshDuration(60);
-  absl::StatusOr<std::vector<std::string>> files = std::vector<std::string>();
-  directory_reader_->SetFilesInDirectory(files);
   auto provider = CreateCrlProvider(kRefreshDuration, nullptr);
   ASSERT_TRUE(provider.ok()) << provider.status();
   CertificateInfoImpl cert(kCrlIssuer);
   auto should_be_no_crl = (*provider)->GetCrl(cert);
   ASSERT_EQ(should_be_no_crl, nullptr);
   // Give the provider files to find in the directory
-  files = {std::string(kCrlName)};
+  std::vector<std::string> files = {std::string(kCrlName)};
   directory_reader_->SetFilesInDirectory(files);
   event_engine_->TickForDuration(kRefreshDuration);
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
   EXPECT_EQ(crl->Issuer(), kCrlIssuer);
   // Now we won't see any files in our directory
-  files = std::vector<std::string>();
+  files.clear();
   directory_reader_->SetFilesInDirectory(files);
   event_engine_->TickForDuration(kRefreshDuration);
   auto crl_should_be_deleted = (*provider)->GetCrl(cert);
   ASSERT_EQ(crl_should_be_deleted, nullptr);
 }
 
-TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithCorruption) {
-  absl::StatusOr<std::vector<std::string>> files =
-      std::vector<std::string>({std::string(kCrlName)});
+TEST_F(DirectoryReloaderCrlProviderTest, WithCorruption) {
+  std::vector<std::string> files = {std::string(kCrlName)};
   directory_reader_->SetFilesInDirectory(files);
   const std::chrono::seconds kRefreshDuration(60);
   std::vector<absl::Status> reload_errors;
@@ -260,12 +242,15 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithCorruption) {
   EXPECT_EQ(reload_errors.size(), 1);
 }
 
-TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithFailedCreate) {
-  absl::StatusOr<std::vector<std::string>> files = absl::UnknownError("");
+TEST_F(DirectoryReloaderCrlProviderTest, WithFailedCreate) {
+  absl::Status files = absl::UnknownError("");
   directory_reader_->SetFilesInDirectory(files);
   const std::chrono::seconds kRefreshDuration(60);
   auto provider = CreateCrlProvider(kRefreshDuration, nullptr, nullptr);
   ASSERT_FALSE(provider.ok()) << provider.status();
+  // The files status error should end up passing up through the provider
+  // create.
+  EXPECT_EQ(files, provider.status());
 }
 
 }  // namespace testing
@@ -274,8 +259,6 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithFailedCreate) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  // grpc_init();
   int ret = RUN_ALL_TESTS();
-  // grpc_shutdown();
   return ret;
 }
