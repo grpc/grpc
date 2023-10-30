@@ -729,6 +729,8 @@ class PythonLanguage(object):
         "asyncio": "test_aio",
     }
 
+    _OBSERVABILITY_TEST = "tests.observability._observability_test.ObservabilityTest"
+
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -737,6 +739,7 @@ class PythonLanguage(object):
     def test_specs(self):
         # load list of known test suites
         jobs = []
+        test_cases = []
 
         # Run tests across all supported interpreters.
         for python_config in self.pythons:
@@ -754,9 +757,12 @@ class PythonLanguage(object):
                     )
                 )
 
+            # Observability is not supported in Windows and MacOS"
+            if os.name == "nt" or "darwin" in sys.platform:
+                test_cases.extend(self._OBSERVABILITY_TEST)
+
             # Run main test suite across all support IO managers.
             for io_platform in self._TEST_SPECS_FILE:
-                test_cases = []
                 for tests_json_file_name in self._TEST_SPECS_FILE[io_platform]:
                     with open(tests_json_file_name) as tests_json_file:
                         test_cases.extend(json.load(tests_json_file))
