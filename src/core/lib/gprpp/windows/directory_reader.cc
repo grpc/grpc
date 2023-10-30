@@ -46,7 +46,7 @@ class DirectoryReaderImpl : public DirectoryReader {
   ~DirectoryReaderImpl() override = default;
   explicit DirectoryReaderImpl(absl::string_view directory_path)
       : directory_path_(directory_path) {}
-  absl::StatusOr<std::vector<std::string>> GetFilesInDirectory() override;
+  absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override;
 
  private:
   std::string directory_path_;
