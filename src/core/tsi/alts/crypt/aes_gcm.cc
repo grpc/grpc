@@ -42,10 +42,10 @@ constexpr size_t kRekeyAeadKeyLen = kAes128GcmKeyLength;
 namespace grpc_core {
 
 GsecKeyFactory::GsecKeyFactory(absl::Span<const uint8_t> key, bool is_rekey)
-    : key_(std::vector<uint8_t>(key.begin(), key.end())), is_rekey_(is_rekey) {}
+    : key_(key.begin(), key.end()), is_rekey_(is_rekey) {}
 
 std::unique_ptr<GsecKeyInterface> GsecKeyFactory::Create() const {
-  return std::make_unique<GsecKey>(absl::MakeConstSpan(key_), is_rekey_);
+  return std::make_unique<GsecKey>(key_, is_rekey_);
 }
 
 GsecKey::GsecKey(absl::Span<const uint8_t> key, bool is_rekey)
@@ -63,11 +63,9 @@ GsecKey::GsecKey(absl::Span<const uint8_t> key, bool is_rekey)
 
 bool GsecKey::IsRekey() { return is_rekey_; }
 
-absl::Span<const uint8_t> GsecKey::key() { return absl::MakeConstSpan(key_); }
+absl::Span<const uint8_t> GsecKey::key() { return key_; }
 
-absl::Span<const uint8_t> GsecKey::nonce_mask() {
-  return absl::MakeConstSpan(nonce_mask_);
-}
+absl::Span<const uint8_t> GsecKey::nonce_mask() { return nonce_mask_; }
 
 absl::Span<uint8_t> GsecKey::kdf_counter() {
   return absl::MakeSpan(kdf_counter_);
@@ -672,6 +670,9 @@ static grpc_status_code aes_gcm_new_evp_cipher_ctx(
     case kAes256GcmKeyLength:
       cipher = EVP_aes_256_gcm();
       break;
+    default:
+      aes_gcm_format_errors("Invalid key length.", error_details);
+      return GRPC_STATUS_INTERNAL;
   }
   const uint8_t* aead_key = aes_gcm_crypter->gsec_key->key().data();
   if (is_rekey) {

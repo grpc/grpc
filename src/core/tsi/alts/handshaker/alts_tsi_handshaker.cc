@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/types/span.h"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc_security.h>
@@ -190,10 +189,9 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
           "protector equals %zu",
           *max_output_protected_frame_size);
   tsi_result ok = alts_zero_copy_grpc_protector_create(
-      grpc_core::GsecKeyFactory(
-          absl::MakeConstSpan(reinterpret_cast<uint8_t*>(result->key_data),
-                              kAltsAes128GcmRekeyKeyLength),
-          /*is_rekey=*/true),
+      grpc_core::GsecKeyFactory({reinterpret_cast<uint8_t*>(result->key_data),
+                                 kAltsAes128GcmRekeyKeyLength},
+                                /*is_rekey=*/true),
       result->is_client,
       /*is_integrity_only=*/false, /*enable_extra_copy=*/false,
       max_output_protected_frame_size, protector);
