@@ -41,9 +41,9 @@ class SanityTest(unittest.TestCase):
         )
 
         tests_json_string = ""
-        if (os.name == "nt" or "darwin" in sys.platform):
+        if (os.name == "nt" or "darwin" in sys.platform) or self.TEST_PKG_PATH != "tests":
             tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, "tests.json")
-        elif self.TEST_PKG_PATH == "tests":
+        else:
             tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, "tests_native_linux.json")
         tests_json = json.loads(tests_json_string.decode())
 
