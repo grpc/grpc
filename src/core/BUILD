@@ -882,6 +882,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise_mutex",
+    hdrs = [
+        "lib/promise/promise_mutex.h",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "inter_activity_pipe",
     hdrs = [
         "lib/promise/inter_activity_pipe.h",
