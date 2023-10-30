@@ -48,7 +48,7 @@ class DirectoryReaderImpl : public DirectoryReader {
   explicit DirectoryReaderImpl(absl::string_view directory_path)
       : directory_path_(directory_path) {}
   absl::string_view Name() const override { return directory_path_; }
-  absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override;
+  absl::Status ForEach(absl::FunctionRef<void(absl::string_view)>) override;
 
  private:
   const std::string directory_path_;
@@ -59,14 +59,13 @@ std::unique_ptr<DirectoryReader> MakeDirectoryReader(
   return std::make_unique<DirectoryReaderImpl>(filename);
 }
 
-absl::StatusOr<std::vector<std::string>>
-DirectoryReaderImpl::GetDirectoryContents() {
+absl::Status DirectoryReaderImpl::ForEach(
+    absl::FunctionRef<void(absl::string_view)> callback) {
   // Open the dir for reading
   DIR* directory = opendir(directory_path_.c_str());
   if (directory == nullptr) {
     return absl::InternalError("Could not read crl directory.");
   }
-  std::vector<std::string> contents;
   struct dirent* directory_entry;
   // Iterate over everything in the directory
   while ((directory_entry = readdir(directory)) != nullptr) {
@@ -76,10 +75,11 @@ DirectoryReaderImpl::GetDirectoryContents() {
          strcmp(file_name, kSkipEntriesParent) == 0)) {
       continue;
     }
-    contents.push_back(file_name);
+    // Call the callback with this filename
+    callback(file_name);
   }
   closedir(directory);
-  return contents;
+  return absl::OkStatus();
 }
 }  // namespace grpc_core
 

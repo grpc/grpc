@@ -37,17 +37,20 @@ namespace {
 
 TEST(DirectoryReader, CanListFiles) {
   auto reader = MakeDirectoryReader(kCrlDirectory);
-  auto contents = reader->GetDirectoryContents();
-  ASSERT_TRUE(contents.ok()) << contents.status();
-  EXPECT_THAT(*contents, ::testing::UnorderedElementsAre(
-                             "ab06acdd.r0", "b9322cac.r0", "current.crl",
-                             "intermediate.crl"));
+  std::vector<std::string> contents;
+  absl::Status status = reader->ForEach([&](absl::string_view filename) {
+    contents.push_back(std::string(filename));
+  });
+  ASSERT_TRUE(status.ok()) << status;
+  EXPECT_THAT(contents, ::testing::UnorderedElementsAre(
+                            "ab06acdd.r0", "b9322cac.r0", "current.crl",
+                            "intermediate.crl"));
 }
 
 TEST(DirectoryReader, NonexistentDirectory) {
   auto reader = MakeDirectoryReader("");
-  auto contents = reader->GetDirectoryContents();
-  ASSERT_FALSE(contents.ok()) << contents.status();
+  absl::Status status = reader->ForEach([](absl::string_view filename) {});
+  ASSERT_FALSE(status.ok()) << status;
 }
 
 }  // namespace

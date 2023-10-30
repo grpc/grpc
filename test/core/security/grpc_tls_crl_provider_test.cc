@@ -67,8 +67,15 @@ namespace testing {
 class FakeDirectoryReader : public DirectoryReader {
  public:
   ~FakeDirectoryReader() override = default;
-  absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override {
-    return files_in_directory_;
+  absl::Status ForEach(
+      absl::FunctionRef<void(absl::string_view)> callback) override {
+    if (!files_in_directory_.ok()) {
+      return files_in_directory_.status();
+    }
+    for (const auto& file : *files_in_directory_) {
+      callback(file);
+    }
+    return absl::OkStatus();
   }
   absl::string_view Name() const override { return kCrlDirectory; }
 

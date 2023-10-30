@@ -189,13 +189,9 @@ void DirectoryReloaderCrlProvider::ScheduleReload() {
 }
 
 absl::Status DirectoryReloaderCrlProvider::Update() {
-  auto crl_files = crl_directory_->GetDirectoryContents();
-  if (!crl_files.ok()) {
-    return crl_files.status();
-  }
   absl::flat_hash_map<std::string, std::shared_ptr<Crl>> new_crls;
   std::vector<std::string> files_with_errors;
-  for (const std::string& file : *crl_files) {
+  absl::Status status = crl_directory_->ForEach([&](absl::string_view file) {
     std::string file_path = absl::StrCat(crl_directory_->Name(), "/", file);
     // Build a map of new_crls to update to. If all files successful, do a
     // full swap of the map. Otherwise update in place.
@@ -203,7 +199,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
     if (!crl.ok()) {
       files_with_errors.push_back(
           absl::StrCat(file_path, ": ", crl.status().ToString()));
-      continue;
+      return;
     }
     // Now we have a good CRL to update in our map.
     // It's not safe to say crl->Issuer() on the LHS and std::move(crl) on the
@@ -211,6 +207,9 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
     // first.
     std::string issuer((*crl)->Issuer());
     new_crls[std::move(issuer)] = std::move(*crl);
+  });
+  if (!status.ok()) {
+    return status;
   }
   MutexLock lock(&mu_);
   if (!files_with_errors.empty()) {

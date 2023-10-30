@@ -34,7 +34,10 @@ class DirectoryReader {
   virtual ~DirectoryReader() = default;
   // Returns the name of the directory being read
   virtual absl::string_view Name() const = 0;
-  virtual absl::StatusOr<std::vector<std::string>> GetDirectoryContents() = 0;
+  // Calls callback for each name in the directory.
+  // Returns no OK if there was an error reading the directory.
+  virtual absl::Status ForEach(
+      absl::FunctionRef<void(absl::string_view)> callback) = 0;
 };
 
 std::unique_ptr<DirectoryReader> MakeDirectoryReader(
