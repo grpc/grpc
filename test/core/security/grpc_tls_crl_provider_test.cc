@@ -36,6 +36,7 @@
 #include <grpc/grpc_crl_provider.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/test_config.h"
@@ -83,6 +84,25 @@ class FakeDirectoryReader : public DirectoryReader {
 };
 
 class DirectoryReloaderCrlProviderTest : public ::testing::Test {
+ public:
+  void SetUp() override {
+    event_engine_ =
+        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            fuzzing_event_engine::Actions());
+    grpc_init();
+  }
+  void TearDown() override {
+    ExecCtx exec_ctx;
+    event_engine_->FuzzingDone();
+    exec_ctx.Flush();
+    event_engine_->TickUntilIdle();
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(event_engine_));
+    grpc_shutdown_blocking();
+    event_engine_.reset();
+  }
+
  protected:
   // Tests that want a fake directory reader can call this without setting the
   // last parameter.
@@ -113,10 +133,11 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
   std::shared_ptr<FakeDirectoryReader> directory_reader_ =
       std::make_shared<FakeDirectoryReader>();
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
-      event_engine_ =
-          std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-              grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-              fuzzing_event_engine::Actions());
+      event_engine_;
+  // event_engine_ =
+  //     std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+  //         grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+  //         fuzzing_event_engine::Actions());
 };
 
 TEST(CrlProviderTest, CanParseCrl) {
@@ -237,7 +258,7 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithCorruption) {
   EXPECT_EQ(reload_errors.size(), 1);
 }
 
-TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithBadStatus) {
+TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithFailedCreate) {
   absl::StatusOr<std::vector<std::string>> files = absl::UnknownError("");
   directory_reader_->SetFilesInDirectory(files);
   const std::chrono::seconds kRefreshDuration(60);
@@ -251,8 +272,8 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithBadStatus) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
+  // grpc_init();
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
+  // grpc_shutdown();
   return ret;
 }
