@@ -12,12 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_MUTEX_H
-#define GRPC_SRC_CORE_LIB_PROMISE_MUTEX_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_PROMISE_MUTEX_H
+#define GRPC_SRC_CORE_LIB_PROMISE_PROMISE_MUTEX_H
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
+
+#include <grpc/support/log.h>
+
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
@@ -84,4 +89,4 @@ class PromiseMutex {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_PROMISE_MUTEX_H
