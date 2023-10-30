@@ -27,9 +27,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-static const char kSkipEntriesSelf[] = ".";
-static const char kSkipEntriesParent[] = "..";
-
 namespace grpc_core {
 
 class DirectoryReader {

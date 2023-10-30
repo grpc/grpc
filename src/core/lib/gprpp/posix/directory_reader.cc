@@ -39,10 +39,8 @@
 namespace grpc_core {
 
 namespace {
-std::string GetAbsoluteFilePath(absl::string_view valid_file_dir,
-                                absl::string_view file_entry_name) {
-  return absl::StrFormat("%s/%s", valid_file_dir, file_entry_name);
-}
+const char kSkipEntriesSelf[] = ".";
+const char kSkipEntriesParent[] = "..";
 }  // namespace
 
 class DirectoryReaderImpl : public DirectoryReader {
