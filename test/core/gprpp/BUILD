@@ -23,6 +23,12 @@ grpc_package(name = "test/core/gprpp")
 grpc_cc_test(
     name = "directory_reader_test",
     srcs = ["directory_reader_test.cc"],
+    data = [
+        "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:current.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
+    ],
     external_deps = [
         "gtest",
     ],

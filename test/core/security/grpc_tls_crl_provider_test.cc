@@ -122,7 +122,7 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
 TEST(CrlProviderTest, CanParseCrl) {
   std::string crl_string = GetFileContents(kCrlPath.data());
   absl::StatusOr<std::shared_ptr<Crl>> crl = Crl::Parse(crl_string);
-  ASSERT_TRUE(crl.ok());
+  ASSERT_TRUE(crl.ok()) << crl.status();
   ASSERT_NE(*crl, nullptr);
   EXPECT_EQ((*crl)->Issuer(), kCrlIssuer);
 }

@@ -14,16 +14,22 @@
 // limitations under the License.
 //
 
+#include "src/core/lib/gprpp/directory_reader.h"
+
 #include <stdio.h>
 
+#include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/gprpp/directory_reader.h"
 #include "src/core/lib/slice/slice.h"
 #include "test/core/util/test_config.h"
+
+static constexpr absl::string_view kCrlDirectory =
+    "test/core/tsi/test_creds/crl_data/crls/";
 
 namespace grpc_core {
 namespace testing {
@@ -36,6 +42,21 @@ namespace {
 //   int last_separator = path.find_last_of("/\\");
 //   return path.substr(0, last_separator);
 // }
+
+TEST(DirectoryReader, CanListFiles) {
+  auto reader = MakeDirectoryReader(kCrlDirectory);
+  auto contents = reader->GetDirectoryContents();
+  ASSERT_TRUE(contents.ok()) << contents.status();
+  EXPECT_THAT(*contents, ::testing::UnorderedElementsAre(
+                             "ab06acdd.r0", "b9322cac.r0", "current.crl",
+                             "intermediate.crl"));
+}
+
+TEST(DirectoryReader, NonexistentDirectory) {
+  auto reader = MakeDirectoryReader("");
+  auto contents = reader->GetDirectoryContents();
+  ASSERT_FALSE(contents.ok()) << contents.status();
+}
 
 }  // namespace
 }  // namespace testing
