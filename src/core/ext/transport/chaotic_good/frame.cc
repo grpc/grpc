@@ -50,6 +50,10 @@ class FrameSerializer {
  public:
   explicit FrameSerializer(FrameHeader header) : header_(header) {
     output_.AppendIndexed(kZeroSlice->Copy());
+    // Initialize header flags, header_length, trailer_length to 0.
+    header_.flags.SetAll(false);
+    header_.header_length = 0;
+    header_.trailer_length = 0;
   }
   // If called, must be called before AddTrailers, Finish.
   SliceBuffer& AddHeaders() {
