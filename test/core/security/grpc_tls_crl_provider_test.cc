@@ -66,15 +66,11 @@ class FakeDirectoryReader : public DirectoryReader {
  public:
   ~FakeDirectoryReader() override = default;
   absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override {
-    if (return_bad_status_) {
-      return absl::UnknownError("");
-    }
     return files_in_directory_;
   }
   absl::string_view Name() override { return kCrlDirectory; }
 
-  void SetReturnBadStatus(bool value) { return_bad_status_ = value; }
-  void SetFilesToReturn(std::vector<std::string> files) {
+  void SetFilesInDirectory(absl::StatusOr<std::vector<std::string>> files) {
     files_in_directory_ = std::move(files);
   }
   void SetName(absl::string_view value) {
@@ -82,8 +78,7 @@ class FakeDirectoryReader : public DirectoryReader {
   }
 
  private:
-  std::vector<std::string> files_in_directory_;
-  bool return_bad_status_;
+  absl::StatusOr<std::vector<std::string>> files_in_directory_;
   std::string directory_path_;
 };
 
@@ -196,6 +191,8 @@ TEST_F(DirectoryReloaderCrlProviderTest,
 
 TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   int refresh_duration = 60;
+  absl::StatusOr<std::vector<std::string>> files = std::vector<std::string>();
+  directory_reader_->SetFilesInDirectory(files);
   auto provider =
       CreateCrlProvider(std::chrono::seconds(refresh_duration), nullptr);
   ASSERT_TRUE(provider.ok());
@@ -203,14 +200,16 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
   auto should_be_no_crl = (*provider)->GetCrl(cert);
   ASSERT_EQ(should_be_no_crl, nullptr);
   // Give the provider files to find in the directory
-  directory_reader_->SetFilesToReturn({std::string(kCrlName)});
+  files = {std::string(kCrlName)};
+  directory_reader_->SetFilesInDirectory(files);
   event_engine_->TickForDuration(
       Duration::FromSecondsAsDouble(refresh_duration));
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
   EXPECT_EQ(crl->Issuer(), kCrlIssuer);
   // Now we won't see any files in our directory
-  directory_reader_->SetFilesToReturn({});
+  files = std::vector<std::string>();
+  directory_reader_->SetFilesInDirectory(files);
   event_engine_->TickForDuration(
       Duration::FromSecondsAsDouble(refresh_duration));
   auto crl_should_be_deleted = (*provider)->GetCrl(cert);
@@ -218,7 +217,9 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderReloadsAndDeletes) {
 }
 
 TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithCorruption) {
-  directory_reader_->SetFilesToReturn({std::string(kCrlName)});
+  absl::StatusOr<std::vector<std::string>> files =
+      std::vector<std::string>({std::string(kCrlName)});
+  directory_reader_->SetFilesInDirectory(files);
   int refresh_duration = 60;
   std::vector<absl::Status> reload_errors;
   std::function<void(absl::Status)> reload_error_callback =
@@ -233,7 +234,8 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithCorruption) {
   EXPECT_EQ(reload_errors.size(), 0);
   // Point the provider at a non-crl file so loading fails
   // Should result in the CRL Reloader keeping the old CRL data
-  directory_reader_->SetFilesToReturn({std::string(kRootCert)});
+  files = {std::string(kRootCert)};
+  directory_reader_->SetFilesInDirectory(files);
   event_engine_->TickForDuration(
       Duration::FromSecondsAsDouble(refresh_duration));
   auto crl_post_update = (*provider)->GetCrl(cert);
@@ -243,8 +245,9 @@ TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithCorruption) {
 }
 
 TEST_F(DirectoryReloaderCrlProviderTest, DirectoryReloaderWithBadStatus) {
+  absl::StatusOr<std::vector<std::string>> files = absl::UnknownError("");
+  directory_reader_->SetFilesInDirectory(files);
   int refresh_duration = 60;
-  directory_reader_->SetReturnBadStatus(true);
   auto provider = CreateCrlProvider(std::chrono::seconds(refresh_duration),
                                     nullptr, nullptr);
   ASSERT_FALSE(provider.ok());

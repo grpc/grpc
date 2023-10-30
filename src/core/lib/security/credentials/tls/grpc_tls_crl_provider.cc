@@ -202,7 +202,8 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
     absl::StatusOr<std::shared_ptr<Crl>> crl = ReadCrlFromFile(file_path);
 
     if (!crl.ok()) {
-      files_with_errors.push_back(file_path);
+      files_with_errors.push_back(
+          absl::StrCat(file_path, ": ", crl.status().ToString()));
       continue;
     }
     // Now we have a good CRL to update in our map.
