@@ -36,6 +36,7 @@
 #include <grpc/grpc_crl_provider.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -90,6 +91,7 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
         std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
             grpc_event_engine::experimental::FuzzingEventEngine::Options(),
             fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
     grpc_init();
   }
   void TearDown() override {

@@ -37,6 +37,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:directory_reader",
+        "//src/core:iomgr_timer",
         "//test/core/util:grpc_test_util",
     ],
 )
