@@ -150,7 +150,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
-    "Observability is supported in Windows and MacOS",
+    "Observability is not supported in Windows and MacOS",
 )
 class ObservabilityTest(unittest.TestCase):
     def setUp(self):

@@ -89,7 +89,6 @@ ancillary_package_dir=(
   "src/python/grpcio_reflection/"
   "src/python/grpcio_status/"
   "src/python/grpcio_testing/"
-  "src/python/grpcio_observability/"
 )
 
 # Copy license to ancillary package directories so it will be distributed.
@@ -140,21 +139,12 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 # Build gRPC tools package distribution
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
-# Build gRPC observability package distribution
-"${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
-
 # Build gRPC tools package source distribution
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
-
-# Build gRPC observability package source distribution
-${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py sdist
 
 # Build gRPC tools package binary distribution
 # shellcheck disable=SC2086
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
-
-# Build gRPC observability package binary distribution
-${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py bdist_wheel
 
 # run twine check before auditwheel, because auditwheel puts the repaired wheels into
 # the artifacts output dir.
@@ -166,7 +156,7 @@ then
   "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
   # Ensure the generated artifacts are valid using "twine check"
   venv/bin/python -m pip install "twine<=2.0" "readme_renderer<40.0"
-  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/* src/python/grpcio_observability/dist/*
+  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
   rm -rf venv/
 fi
 
@@ -195,7 +185,7 @@ fix_faulty_universal2_wheel() {
 # wheel incorrectly generates a universal2 artifact that only contains
 # x86_64 libraries.
 if [ "$GRPC_UNIVERSAL2_REPAIR" != "" ]; then
-  for WHEEL in dist/*.whl tools/distrib/python/grpcio_tools/dist/*.whl src/python/grpcio_observability/dist/*.whl; do
+  for WHEEL in dist/*.whl tools/distrib/python/grpcio_tools/dist/*.whl; do
     fix_faulty_universal2_wheel "$WHEEL"
   done
 fi
@@ -213,22 +203,15 @@ then
     "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
   done
-  for wheel in src/python/grpcio_observability/dist/*.whl; do
-    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
-    "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
-    rm "$wheel"
-  done
 else
   cp -r dist/*.whl "$ARTIFACT_DIR"
   cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR"
-  cp -r src/python/grpcio_observability/dist/*.whl "$ARTIFACT_DIR"
 fi
 
-# grpcio, grpcio-tools and grpcio-observability wheels have already been copied to artifact_dir
+# grpcio and grpcio-tools wheels have already been copied to artifact_dir
 # by "auditwheel repair", now copy the .tar.gz source archives as well.
 cp -r dist/*.tar.gz "$ARTIFACT_DIR"
 cp -r tools/distrib/python/grpcio_tools/dist/*.tar.gz "$ARTIFACT_DIR"
-cp -r src/python/grpcio_observability/dist/*.tar.gz "$ARTIFACT_DIR"
 
 # We need to use the built grpcio-tools/grpcio to compile the health proto
 # Wheels are not supported by setup_requires/dependency_links, so we
