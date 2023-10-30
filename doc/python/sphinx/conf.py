@@ -24,7 +24,6 @@ sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_health_checking'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_reflection'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_status'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_testing'))
-sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_observability'))
 
 # -- Project information -----------------------------------------------------
 
