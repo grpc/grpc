@@ -36,6 +36,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -206,6 +207,9 @@ class FakeServerCallTracerFactory : public ServerCallTracerFactory {
 
 // This test verifies the HTTP2 stats on a stream
 CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
+  if (!IsHttp2StatsFixEnabled()) {
+    GTEST_SKIP() << "Test needs http2_stats_fix experiment to be enabled";
+  }
   g_mu = new Mutex();
   g_client_call_ended_notify = new Notification();
   g_server_call_ended_notify = new Notification();
