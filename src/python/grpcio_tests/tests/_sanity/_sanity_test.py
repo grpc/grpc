@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import json
+import os
+import sys
 import pkgutil
 import unittest
 
@@ -38,7 +40,11 @@ class SanityTest(unittest.TestCase):
             }
         )
 
-        tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, "tests.json")
+        tests_json_string = ""
+        if (os.name == "nt" or "darwin" in sys.platform):
+            tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, "tests.json")
+        else:
+            tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, "tests_linux.json")
         tests_json = json.loads(tests_json_string.decode())
 
         self.assertSequenceEqual(tests_json, test_suite_names)
