@@ -38,14 +38,13 @@ namespace {
 const char kSkipEntriesSelf[] = ".";
 const char kSkipEntriesParent[] = "..";
 }  // namespace
-}  // namespace
 
 class DirectoryReaderImpl : public DirectoryReader {
  public:
   explicit DirectoryReaderImpl(absl::string_view directory_path)
       : directory_path_(directory_path) {}
   absl::string_view Name() const override { return directory_path_; }
-  absl::StatusOr<std::vector<std::string>> GetDirectoryContents() override;
+  absl::Status ForEach(absl::FunctionRef<void(absl::string_view)>) override;
 
  private:
   const std::string directory_path_;
@@ -59,20 +58,19 @@ std::unique_ptr<DirectoryReader> MakeDirectoryReader(
 // Reference for reading directory in Windows:
 // https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 // https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
-absl::StatusOr<std::vector<std::string>>
-DirectoryReaderImpl::GetDirectoryContents() {
+absl::Status DirectoryReaderImpl::ForEach(
+    absl::FunctionRef<void(absl::string_view)> callback) {
   std::string search_path = absl::StrCat(directory_path_, "/*.*");
-  std::vector<std::string> files;
   WIN32_FIND_DATA find_data;
   HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
   if (hFind != INVALID_HANDLE_VALUE) {
     do {
       if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        files.push_back(std::string(find_data.cFileName));
+        callback(std::string(find_data.cFileName));
       }
     } while (::FindNextFile(hFind, &find_data));
     ::FindClose(hFind);
-    return files;
+    return absl::OkStatus();
   } else {
     return absl::InternalError("Could not read crl directory.");
   }
