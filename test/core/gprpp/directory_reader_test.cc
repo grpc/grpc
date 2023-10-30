@@ -49,7 +49,7 @@ TEST(DirectoryReader, CanListFiles) {
 
 TEST(DirectoryReader, NonexistentDirectory) {
   auto reader = MakeDirectoryReader("");
-  absl::Status status = reader->ForEach([](absl::string_view filename) {});
+  absl::Status status = reader->ForEach([](absl::string_view) {});
   ASSERT_FALSE(status.ok()) << status;
 }
 
