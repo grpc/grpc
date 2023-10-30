@@ -215,13 +215,13 @@ class HPackParser::Input {
 
   // Check if we saw an EOF
   bool eof_error() const {
-    return min_progress_size_ != 0 || error_.connection_error();
+    return min_progress_size_ != 0 || (error_ && error_->connection_error());
   }
 
   // Minimum number of bytes to unstuck the current parse
   size_t min_progress_size() const { return min_progress_size_; }
 
-  bool has_error() const { return !error_.ok(); }
+  bool has_error() const { return error_ != nullptr; }
 
   // Set the current error - tweaks the error to include a stream id so that
   // chttp2 does not close the connection.
@@ -246,7 +246,7 @@ class HPackParser::Input {
   // read prior to being able to get further in this parse.
   void UnexpectedEOF(size_t min_progress_size) {
     GPR_ASSERT(min_progress_size > 0);
-    if (min_progress_size_ != 0 || error_.connection_error()) {
+    if (min_progress_size_ != 0 || (error_ && error_->connection_error())) {
       GPR_DEBUG_ASSERT(eof_error());
       return;
     }
@@ -302,9 +302,9 @@ class HPackParser::Input {
   // Do not use this directly, instead use SetErrorAndContinueParsing or
   // SetErrorAndStopParsing.
   void SetError(HpackParseResult error) {
-    if (!error_.ok() || min_progress_size_ > 0) {
-      if (error.connection_error() && !error_.connection_error()) {
-        error_ = std::move(error);  // connection errors dominate
+    if (error_ || min_progress_size_ > 0) {
+      if (error.connection_error() && !(error_ && error_->connection_error())) {
+        *error_ = std::move(error);  // connection errors dominate
       }
       return;
     }
