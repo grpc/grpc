@@ -95,6 +95,7 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
         std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
             grpc_event_engine::experimental::FuzzingEventEngine::Options(),
             fuzzing_event_engine::Actions());
+    // Without this the test had a failure dealing with grpc timers on TSAN
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
   }
