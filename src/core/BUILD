@@ -249,10 +249,10 @@ grpc_cc_library(
         "lib/gprpp/directory_reader.h",
     ],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/strings:str_format",
     ],
     deps = [
         "//:gpr",
