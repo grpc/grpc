@@ -26,7 +26,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
