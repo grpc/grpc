@@ -52,6 +52,8 @@ namespace grpc {
 namespace testing {
 
 using ::envoy::config::core::v3::HealthStatus;
+using ::envoy::service::discovery::v3::DiscoveryRequest;
+using ::envoy::service::load_stats::v3::LoadStatsRequest;
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
@@ -275,10 +277,30 @@ void XdsEnd2endTest::BackendServerThread::ShutdownAllServices() {
 XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
     XdsEnd2endTest* test_obj)
     : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
-      ads_service_(new AdsServiceImpl()),
-      lrs_service_(
-          new LrsServiceImpl((GetParam().enable_load_reporting() ? 20 : 0),
-                             {kDefaultClusterName})) {}
+      ads_service_(new AdsServiceImpl(
+          // First request must have node set with the right client features.
+          [&](const DiscoveryRequest& request) {
+            EXPECT_TRUE(request.has_node());
+            EXPECT_THAT(request.node().client_features(),
+                        ::testing::UnorderedElementsAre(
+                            "envoy.lb.does_not_support_overprovisioning",
+                            "xds.config.resource-in-sotw"));
+          },
+          // NACKs must use the right status code.
+          [&](absl::StatusCode code) {
+            EXPECT_EQ(code, absl::StatusCode::kInvalidArgument);
+          })),
+      lrs_service_(new LrsServiceImpl(
+          (GetParam().enable_load_reporting() ? 20 : 0), {kDefaultClusterName},
+          // Fail if load reporting is used when not enabled.
+          [&]() { EXPECT_TRUE(GetParam().enable_load_reporting()); },
+          // Make sure we send the client feature saying that we support
+          // send_all_clusters.
+          [&](const LoadStatsRequest& request) {
+            EXPECT_THAT(
+                request.node().client_features(),
+                ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
+          })) {}
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
