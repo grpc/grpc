@@ -405,7 +405,7 @@ void EnableCsmObservability() {
   meter_provider->AddMetricReader(std::move(prometheus_exporter));
   auto observability = grpc::experimental::CsmObservabilityBuilder();
   observability.SetMeterProvider(std::move(meter_provider));
-  observability.BuildAndRegister();
+  auto status = observability.BuildAndRegister();
 }
 
 void RunServer(const int port, StatsWatchers* stats_watchers,
