@@ -50,8 +50,7 @@ void EnableCsmObservability() {
   // pods
   opts.url = "0.0.0.0:9464";
   auto prometheus_exporter =
-      opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(
-          opts);
+      opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
   meter_provider->AddMetricReader(std::move(prometheus_exporter));
