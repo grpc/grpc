@@ -57,9 +57,7 @@ static constexpr absl::string_view kRootCert =
 
 using ::grpc_core::experimental::CertificateInfoImpl;
 using ::grpc_core::experimental::Crl;
-using ::grpc_core::experimental::CrlImpl;
 using ::grpc_core::experimental::CrlProvider;
-using ::grpc_core::experimental::StaticCrlProvider;
 
 namespace grpc_core {
 namespace testing {
