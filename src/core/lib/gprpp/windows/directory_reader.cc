@@ -63,7 +63,7 @@ absl::Status DirectoryReaderImpl::ForEach(
   // std::string search_path = absl::StrCat(directory_path_, "/*.*");
   std::string search_path = absl::StrCat(directory_path_, "/*");
   WIN32_FIND_DATA find_data;
-  HANDLE hFind = ::FindFirstFile(directory_path.c_str(), &find_data);
+  HANDLE hFind = ::FindFirstFile(directory_path_.c_str(), &find_data);
   if (hFind != INVALID_HANDLE_VALUE) {
     do {
       if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
