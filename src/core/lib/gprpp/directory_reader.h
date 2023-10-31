@@ -16,15 +16,15 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_GPRPP_DIRECTORY_H
-#define GRPC_SRC_CORE_LIB_GPRPP_DIRECTORY_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_DIRECTORY_READER_H
+#define GRPC_SRC_CORE_LIB_GPRPP_DIRECTORY_READER_H
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
-#include <vector>
+#include <memory>
 
-#include "absl/status/statusor.h"
+#include "absl/functional/function_ref.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -45,4 +45,4 @@ std::unique_ptr<DirectoryReader> MakeDirectoryReader(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_GPRPP_DIRECTORY_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_DIRECTORY_READER_H
