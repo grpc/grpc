@@ -25,7 +25,6 @@
 #include "absl/strings/str_join.h"
 
 #include "src/core/lib/gprpp/atomic_utils.h"
-#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
 
