@@ -63,23 +63,20 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/b64.h"
 #include "test/core/util/port.h"
-#include "test/core/util/stack_tracer.h"
 
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
-      : server(nullptr), channel_args(nullptr), mu(nullptr), combiner(nullptr) {
-    combiner = grpc_combiner_create(
-        grpc_event_engine::experimental::GetDefaultEventEngine());
-  }
+      : combiner(grpc_combiner_create(
+            grpc_event_engine::experimental::GetDefaultEventEngine())) {}
   std::string proxy_name;
   std::atomic<bool> is_shutdown{false};
   std::atomic<size_t> users{1};
   grpc_core::Thread thd;
-  grpc_tcp_server* server;
-  const grpc_channel_args* channel_args;
-  gpr_mu* mu;
+  grpc_tcp_server* server = nullptr;
+  const grpc_channel_args* channel_args = nullptr;
+  gpr_mu* mu = nullptr;
   std::vector<grpc_pollset*> pollset;
-  grpc_core::Combiner* combiner;
+  grpc_core::Combiner* combiner = nullptr;
 };
 
 namespace {
