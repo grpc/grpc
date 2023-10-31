@@ -53,7 +53,7 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   // down before calling LLVMFuzzerTestOneInput(), because most
   // implementations of that function will initialize and shutdown gRPC
   // internally.
-  gpr_log(GPR_INFO, "Example file: %s", GetParam().c_str());
+  fprintf(stderr, "Example file: %s\n", GetParam().c_str());
   grpc_slice buffer;
   squelch = false;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
