@@ -54,7 +54,7 @@ class HierarchicalAddressIterator : public EndpointAddressesIterator {
       RefCountedStringValue child_name)
       : parent_it_(std::move(parent_it)), child_name_(std::move(child_name)) {}
 
-  void ForEach(absl::AnyInvocable<void(const EndpointAddresses&)> callback)
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     RefCountedPtr<HierarchicalPathArg> remaining_path_attr;
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {

@@ -655,7 +655,7 @@ class GrpcLb::Serverlist::AddressIterator : public EndpointAddressesIterator {
       : serverlist_(std::move(serverlist)),
         client_stats_(std::move(client_stats)) {}
 
-  void ForEach(absl::AnyInvocable<void(const EndpointAddresses&)> callback)
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     for (size_t i = 0; i < serverlist_->serverlist_.size(); ++i) {
       const GrpcLbServer& server = serverlist_->serverlist_[i];
@@ -1539,7 +1539,7 @@ class GrpcLb::NullLbTokenEndpointIterator : public EndpointAddressesIterator {
       std::shared_ptr<EndpointAddressesIterator> parent_it)
       : parent_it_(std::move(parent_it)) {}
 
-  void ForEach(absl::AnyInvocable<void(const EndpointAddresses&)> callback)
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       callback(EndpointAddresses(endpoint.addresses(),

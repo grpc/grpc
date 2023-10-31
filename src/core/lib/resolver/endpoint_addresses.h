@@ -124,7 +124,7 @@ class EndpointAddressesIterator {
 
   // Invokes callback once for each endpoint.
   virtual void ForEach(
-      absl::AnyInvocable<void(const EndpointAddresses&)> callback) const = 0;
+      absl::FunctionRef<void(const EndpointAddresses&)> callback) const = 0;
 };
 
 // Iterator over a fixed list of endpoints.
@@ -133,7 +133,7 @@ class EndpointAddressesListIterator : public EndpointAddressesIterator {
   explicit EndpointAddressesListIterator(EndpointAddressesList endpoints)
       : endpoints_(std::move(endpoints)) {}
 
-  void ForEach(absl::AnyInvocable<void(const EndpointAddresses&)> callback)
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     for (const auto& endpoint : endpoints_) {
       callback(endpoint);
@@ -150,7 +150,7 @@ class SingleEndpointIterator : public EndpointAddressesIterator {
   explicit SingleEndpointIterator(EndpointAddresses endpoint)
       : endpoint_(std::move(endpoint)) {}
 
-  void ForEach(absl::AnyInvocable<void(const EndpointAddresses&)> callback)
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     callback(endpoint_);
   }

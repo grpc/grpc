@@ -185,7 +185,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
       : policy_(std::move(policy)), tracer_(tracer) {}
 
   void Init(EndpointAddressesIterator* endpoints, const ChannelArgs& args,
-            absl::AnyInvocable<OrphanablePtr<Endpoint>(
+            absl::FunctionRef<OrphanablePtr<Endpoint>(
                 RefCountedPtr<EndpointList>, const EndpointAddresses&,
                 const ChannelArgs&)>
                 create_endpoint);

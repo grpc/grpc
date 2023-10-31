@@ -800,7 +800,7 @@ class PriorityEndpointIterator : public EndpointAddressesIterator {
       std::vector<DiscoveryMechanismResult> results)
       : results_(std::move(results)) {}
 
-  void ForEach(absl::AnyInvocable<void(const EndpointAddresses&)> callback)
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     for (const auto& entry : results_) {
       const auto& priority_list = GetUpdatePriorityList(*entry.update);
