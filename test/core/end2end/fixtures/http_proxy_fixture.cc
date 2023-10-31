@@ -505,7 +505,7 @@ static bool proxy_auth_header_matches(char* proxy_auth_header_val,
 // which will cause the client connection to be dropped.
 static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  gpr_log(GPR_DEBUG, "on_read_request_done_locked: %p %s", conn,
+  gpr_log(GPR_DEBUG, "on_read_request_done: %p %s", conn,
           grpc_core::StatusToString(error).c_str());
   if (!error.ok()) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
@@ -607,7 +607,6 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
   }
   // Instantiate proxy_connection.
   proxy_connection* conn = grpc_core::Zalloc<proxy_connection>();
-  // proxy_connection_ref(conn, "create");
   conn->client_endpoint = endpoint;
   conn->proxy = proxy;
   gpr_ref_init(&conn->refcount, 1);
@@ -710,7 +709,6 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   grpc_pollset_shutdown(proxy->pollset[0],
                         GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset[0],
                                             grpc_schedule_on_exec_ctx));
-  // proxy_connection_ref(proxy->conn, "create");
   proxy_unref(proxy);
 }
 
