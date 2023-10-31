@@ -17,6 +17,7 @@
 //
 
 #include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "absl/functional/function_ref.h"
@@ -27,6 +28,7 @@
     defined(GPR_APPLE)
 
 #include <dirent.h>
+
 #include <string>
 
 #include "src/core/lib/gprpp/directory_reader.h"
