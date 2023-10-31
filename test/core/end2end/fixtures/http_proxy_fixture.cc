@@ -21,8 +21,7 @@
 #include <limits.h>
 #include <string.h>
 
-#include <algorithm>
-#include <memory>
+#include <atomic>
 #include <string>
 #include <vector>
 
@@ -68,20 +67,36 @@
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
       : server(nullptr), channel_args(nullptr), mu(nullptr), combiner(nullptr) {
-    gpr_ref_init(&users, 1);
     combiner = grpc_combiner_create(
         grpc_event_engine::experimental::GetDefaultEventEngine());
   }
   std::string proxy_name;
+  std::atomic<bool> is_shutdown{false};
+  std::atomic<size_t> users{1};
   grpc_core::Thread thd;
   grpc_tcp_server* server;
   const grpc_channel_args* channel_args;
   gpr_mu* mu;
   std::vector<grpc_pollset*> pollset;
-  gpr_refcount users;
 
   grpc_core::Combiner* combiner;
 };
+
+namespace {
+
+void proxy_ref(grpc_end2end_http_proxy* proxy) { proxy->users.fetch_add(1); }
+
+// Returns the remaining number of outstanding refs
+size_t proxy_unref(grpc_end2end_http_proxy* proxy) {
+  size_t ref_count = proxy->users.fetch_sub(1) - 1;
+  if (ref_count == 0) {
+    GRPC_COMBINER_UNREF(proxy->combiner, "test");
+    delete proxy;
+  }
+  return ref_count;
+}
+
+}  // namespace
 
 //
 // Connection handling
@@ -154,7 +169,7 @@ static void proxy_connection_unref(proxy_connection* conn,
     grpc_slice_buffer_destroy(&conn->server_write_buffer);
     grpc_http_parser_destroy(&conn->http_parser);
     grpc_http_request_destroy(&conn->http_request);
-    gpr_unref(&conn->proxy->users);
+    proxy_unref(conn->proxy);
     gpr_free(conn);
   }
 }
@@ -589,9 +604,13 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
                       grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   grpc_end2end_http_proxy* proxy = static_cast<grpc_end2end_http_proxy*>(arg);
+  proxy_ref(proxy);
+  if (proxy->is_shutdown.load()) {
+    proxy_unref(proxy);
+    return;
+  }
   // Instantiate proxy_connection.
   proxy_connection* conn = grpc_core::Zalloc<proxy_connection>();
-  gpr_ref(&proxy->users);
   conn->client_endpoint = endpoint;
   conn->proxy = proxy;
   gpr_ref_init(&conn->refcount, 1);
@@ -623,16 +642,17 @@ static void thread_main(void* arg) {
   grpc_end2end_http_proxy* proxy = static_cast<grpc_end2end_http_proxy*>(arg);
   grpc_core::ExecCtx exec_ctx;
   do {
-    gpr_ref(&proxy->users);
+    proxy_ref(proxy);
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(proxy->mu);
-    GRPC_LOG_IF_ERROR("grpc_pollset_work",
-                      grpc_pollset_work(proxy->pollset[0], &worker,
-                                        grpc_core::Timestamp::Now() +
-                                            grpc_core::Duration::Seconds(1)));
+    GRPC_LOG_IF_ERROR(
+        "grpc_pollset_work",
+        grpc_pollset_work(proxy->pollset[0], &worker,
+                          grpc_core::Timestamp::Now() +
+                              grpc_core::Duration::Milliseconds(100)));
     gpr_mu_unlock(proxy->mu);
     grpc_core::ExecCtx::Get()->Flush();
-  } while (!gpr_unref(&proxy->users));
+  } while (!proxy->is_shutdown.load() && proxy_unref(proxy) != 0);
 }
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
@@ -684,7 +704,7 @@ static void destroy_pollset(void* arg, grpc_error_handle /*error*/) {
 }
 
 void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
-  gpr_unref(&proxy->users);  // Signal proxy thread to shutdown.
+  proxy->is_shutdown.store(true);
   grpc_core::ExecCtx exec_ctx;
   proxy->thd.Join();
   grpc_tcp_server_shutdown_listeners(proxy->server);
@@ -693,8 +713,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   grpc_pollset_shutdown(proxy->pollset[0],
                         GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset[0],
                                             grpc_schedule_on_exec_ctx));
-  GRPC_COMBINER_UNREF(proxy->combiner, "test");
-  delete proxy;
+  proxy_unref(proxy);
 }
 
 const char* grpc_end2end_http_proxy_get_proxy_name(
