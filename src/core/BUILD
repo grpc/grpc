@@ -4046,7 +4046,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
-        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4569,7 +4569,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
     ],
     external_deps = [
-        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4741,7 +4741,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/address_filtering.h",
     ],
     external_deps = [
-        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -4837,7 +4837,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/endpoint_list.h",
     ],
     external_deps = [
-        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
@@ -5231,7 +5231,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

@@ -508,8 +508,8 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
             absl::string_view scheme = GetAddressFamily(address);
             bool inserted = address_families.insert(scheme).second;
             if (inserted) {
-              address_family_order.emplace_back(
-                  scheme, flattened_endpoints.size() - 1);
+              address_family_order.emplace_back(scheme,
+                                                flattened_endpoints.size() - 1);
             }
           }
         }

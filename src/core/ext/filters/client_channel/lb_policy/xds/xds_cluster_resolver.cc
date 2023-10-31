@@ -28,7 +28,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
