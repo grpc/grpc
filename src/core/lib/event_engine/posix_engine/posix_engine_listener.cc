@@ -64,7 +64,10 @@ PosixEngineListenerImpl::PosixEngineListenerImpl(
       acceptors_(this),
       on_accept_(std::move(on_accept)),
       on_shutdown_(std::move(on_shutdown)),
-      memory_allocator_factory_(std::move(memory_allocator_factory)) {}
+      memory_allocator_factory_(std::move(memory_allocator_factory)) {
+  gpr_log(GPR_ERROR, "DO NOT SUBMIT: PosixEngineListenerImpl::%p created",
+          this);
+}
 
 absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr,
@@ -323,6 +326,7 @@ PosixEngineListenerImpl::~PosixEngineListenerImpl() {
   if (on_shutdown_ != nullptr) {
     on_shutdown_(absl::OkStatus());
   }
+  gpr_log(GPR_ERROR, "DO NOT SUBMIT: ~PosixEngineListenerImpl::%p", this);
 }
 
 }  // namespace experimental

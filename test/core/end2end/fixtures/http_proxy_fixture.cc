@@ -153,19 +153,21 @@ typedef struct proxy_connection {
   grpc_http_request http_request;
 } proxy_connection;
 
-static void proxy_connection_ref(proxy_connection* conn,
-                                 const char* /*reason*/) {
+static void proxy_connection_ref(proxy_connection* conn, const char* reason) {
+  gpr_log(GPR_ERROR, "DO NOT SUBMIT: proxy_connection_ref: %s", reason);
   gpr_ref(&conn->refcount);
 }
 
 // Helper function to destroy the proxy connection.
-static void proxy_connection_unref(proxy_connection* conn,
-                                   const char* /*reason*/) {
+static void proxy_connection_unref(proxy_connection* conn, const char* reason) {
+  gpr_log(GPR_ERROR, "DO NOT SUBMIT: proxy_connection_unref: %s", reason);
   if (gpr_unref(&conn->refcount)) {
     gpr_log(GPR_DEBUG, "endpoints: %p %p", conn->client_endpoint,
             conn->server_endpoint);
+    gpr_log(GPR_ERROR, "DO NOT SUBMIT: destroying client endpoint");
     grpc_endpoint_destroy(conn->client_endpoint);
     if (conn->server_endpoint != nullptr) {
+      gpr_log(GPR_ERROR, "DO NOT SUBMIT: destroying server endpoint");
       grpc_endpoint_destroy(conn->server_endpoint);
     }
     grpc_pollset_set_destroy(conn->pollset_set);
@@ -518,7 +520,7 @@ static bool proxy_auth_header_matches(char* proxy_auth_header_val,
 // which will cause the client connection to be dropped.
 static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  gpr_log(GPR_DEBUG, "on_read_request_done: %p %s", conn,
+  gpr_log(GPR_DEBUG, "on_read_request_done_locked: %p %s", conn,
           grpc_core::StatusToString(error).c_str());
   if (!error.ok()) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
@@ -614,11 +616,15 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
   grpc_end2end_http_proxy* proxy = static_cast<grpc_end2end_http_proxy*>(arg);
   proxy_ref(proxy);
   if (proxy->is_shutdown.load()) {
+    gpr_log(GPR_ERROR,
+            "DO NOT SUBMIT: on_accept exiting because proxy is shutdown");
     proxy_unref(proxy);
+    grpc_endpoint_destroy(endpoint);
     return;
   }
   // Instantiate proxy_connection.
   proxy_connection* conn = grpc_core::Zalloc<proxy_connection>();
+  // proxy_connection_ref(conn, "create");
   conn->client_endpoint = endpoint;
   conn->proxy = proxy;
   gpr_ref_init(&conn->refcount, 1);
@@ -723,6 +729,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   grpc_pollset_shutdown(proxy->pollset[0],
                         GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset[0],
                                             grpc_schedule_on_exec_ctx));
+  // proxy_connection_ref(proxy->conn, "create");
   proxy_unref(proxy);
 }
 
