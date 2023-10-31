@@ -22,6 +22,7 @@
 
 #include <limits.h>
 
+// IWYU pragma: no_include <ratio>
 #include <memory>
 #include <type_traits>
 #include <utility>
