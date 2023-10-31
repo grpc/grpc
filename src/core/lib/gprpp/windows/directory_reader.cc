@@ -60,9 +60,10 @@ std::unique_ptr<DirectoryReader> MakeDirectoryReader(
 // https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
 absl::Status DirectoryReaderImpl::ForEach(
     absl::FunctionRef<void(absl::string_view)> callback) {
-  std::string search_path = absl::StrCat(directory_path_, "/*.*");
+  // std::string search_path = absl::StrCat(directory_path_, "/*.*");
+  std::string search_path = absl::StrCat(directory_path_, "/*");
   WIN32_FIND_DATA find_data;
-  HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
+  HANDLE hFind = ::FindFirstFile(directory_path.c_str(), &find_data);
   if (hFind != INVALID_HANDLE_VALUE) {
     do {
       if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {

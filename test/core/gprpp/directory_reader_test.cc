@@ -48,7 +48,7 @@ TEST(DirectoryReader, CanListFiles) {
 }
 
 TEST(DirectoryReader, NonexistentDirectory) {
-  auto reader = MakeDirectoryReader("");
+  auto reader = MakeDirectoryReader("DOES_NOT_EXIST");
   absl::Status status = reader->ForEach([](absl::string_view) {});
   ASSERT_FALSE(status.ok()) << status;
 }
