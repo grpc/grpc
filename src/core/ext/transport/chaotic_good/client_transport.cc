@@ -157,14 +157,11 @@ ClientTransport::ClientTransport(
           // Move message into frame.
           frame.message = arena_->MakePooled<Message>(
               std::move(data_endpoint_read_buffer_), 0);
-          std::shared_ptr<
-              InterActivityPipe<ServerFrame, server_frame_queue_size_>::Sender>
-              sender;
           {
             MutexLock lock(&mu_);
-            sender = stream_map_[frame.frame_header.stream_id];
+            return stream_map_[frame.frame_header.stream_id]->Push(
+                ServerFrame(std::move(frame)));
           }
-          return sender->Push(ServerFrame(std::move(frame)));
         },
         // Check if send frame to corresponding stream successfully.
         [](bool ret) -> LoopCtl<absl::Status> {

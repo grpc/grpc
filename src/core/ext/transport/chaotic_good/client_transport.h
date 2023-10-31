@@ -17,12 +17,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <initializer_list>  // IWYU pragma: keep
+#include <iostream>
 #include <map>
 #include <memory>
+#include <string>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -140,10 +142,18 @@ class ClientTransport {
                     GPR_ASSERT(server_frame.has_value());
                     auto frame = std::move(
                         absl::get<ServerFragmentFrame>(*server_frame));
+                    std::cout << "Receive server frame from stream "
+                              << frame.frame_header.stream_id << "\n";
+                    fflush(stdout);
                     return TrySeq(
                         If((frame.headers != nullptr),
                            [server_initial_metadata,
                             headers = std::move(frame.headers)]() mutable {
+                             std::cout
+                                 << "Receive headers " << headers->DebugString()
+                                 << " push to pipe " << server_initial_metadata
+                                 << "\n";
+                             fflush(stdout);
                              return server_initial_metadata->Push(
                                  std::move(headers));
                            },
@@ -151,6 +161,11 @@ class ClientTransport {
                         If((frame.message != nullptr),
                            [server_to_client_messages,
                             message = std::move(frame.message)]() mutable {
+                             std::cout << "Receive message "
+                                       << message->DebugString()
+                                       << " push to pipe "
+                                       << server_to_client_messages << "\n";
+                             fflush(stdout);
                              return server_to_client_messages->Push(
                                  std::move(message));
                            },
@@ -158,6 +173,10 @@ class ClientTransport {
                         If((frame.trailers != nullptr),
                            [trailers = std::move(frame.trailers)]() mutable
                            -> LoopCtl<ServerMetadataHandle> {
+                             std::cout << "Receive trailers "
+                                       << trailers->DebugString()
+                                       << " return \n";
+                             fflush(stdout);
                              return std::move(trailers);
                            },
                            []() -> LoopCtl<ServerMetadataHandle> {

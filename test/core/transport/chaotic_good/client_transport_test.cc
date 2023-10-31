@@ -16,6 +16,8 @@
 
 // IWYU pragma: no_include <sys/socket.h>
 
+#include <stddef.h>
+
 #include <algorithm>  // IWYU pragma: keep
 #include <memory>
 #include <string>  // IWYU pragma: keep
@@ -53,7 +55,6 @@
 #include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::MockFunction;
 using testing::Return;
@@ -218,8 +219,7 @@ class ClientTransportTest : public ::testing::Test {
             SliceBuffer()),
         std::make_unique<PromiseEndpoint>(
             std::unique_ptr<MockEndpoint>(data_endpoint_ptr_), SliceBuffer()),
-        std::static_pointer_cast<grpc_event_engine::experimental::EventEngine>(
-            event_engine_));
+        event_engine_);
   }
   // Create client to server test messages.
   std::vector<MessageHandle> CreateMessages(int num_of_messages) {
@@ -326,6 +326,8 @@ TEST_F(ClientTransportTest, AddOneStream) {
                                   ->get(GrpcStatusMetadata())
                                   .value(),
                               grpc_status_code::GRPC_STATUS_OK);
+                    std::cout << "Stream 1 receive trailers \n";
+                    fflush(stdout);
                     return absl::OkStatus();
                   }),
               // Receive messages from control/data endpoints.
@@ -339,6 +341,8 @@ TEST_F(ClientTransportTest, AddOneStream) {
                                       ->get_pointer(HttpPathMetadata())
                                       ->as_string_view(),
                                   "/demo.Service/Step");
+                        std::cout << "Stream 1 receive headers \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   // Receive server to client messages.
@@ -347,6 +351,8 @@ TEST_F(ClientTransportTest, AddOneStream) {
                         EXPECT_TRUE(r.has_value());
                         EXPECT_EQ(r.value()->payload()->JoinIntoString(),
                                   message);
+                        std::cout << "Stream 1 receive message \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   [this]() {
@@ -362,7 +368,7 @@ TEST_F(ClientTransportTest, AddOneStream) {
             EXPECT_TRUE(std::get<2>(ret).ok());
             return absl::OkStatus();
           }),
-      InlineWakeupScheduler(),
+      EventEngineWakeupScheduler(event_engine_),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   // Wait until ClientTransport's internal activities to finish.
   event_engine_->TickUntilIdle();
@@ -422,6 +428,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
                                   ->get(GrpcStatusMetadata())
                                   .value(),
                               grpc_status_code::GRPC_STATUS_OK);
+                    std::cout << "Stream 1 receive trailers \n";
+                    fflush(stdout);
                     return absl::OkStatus();
                   }),
               // Receive messages from control/data endpoints.
@@ -435,6 +443,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
                                       ->get_pointer(HttpPathMetadata())
                                       ->as_string_view(),
                                   "/demo.Service/Step");
+                        std::cout << "Stream 1 receive headers \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   // Receive server to client messages.
@@ -443,6 +453,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
                         EXPECT_TRUE(r.has_value());
                         EXPECT_EQ(r.value()->payload()->JoinIntoString(),
                                   message);
+                        std::cout << "Stream 1 receive message \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   [this] {
@@ -460,7 +472,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
             EXPECT_TRUE(std::get<2>(ret).ok());
             return absl::OkStatus();
           }),
-      InlineWakeupScheduler(),
+      EventEngineWakeupScheduler(event_engine_),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   // Wait until ClientTransport's internal activities to finish.
   event_engine_->TickUntilIdle();
@@ -513,6 +525,8 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
                                   ->get(GrpcStatusMetadata())
                                   .value(),
                               grpc_status_code::GRPC_STATUS_OK);
+                    std::cout << "Stream 1 receive trailers \n";
+                    fflush(stdout);
                     return absl::OkStatus();
                   }),
               // Receive messages from control/data endpoints.
@@ -526,6 +540,8 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
                                       ->get_pointer(HttpPathMetadata())
                                       ->as_string_view(),
                                   "/demo.Service/Step");
+                        std::cout << "Stream 1 receive headers \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   // Receive server to client messages.
@@ -534,6 +550,8 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
                         EXPECT_TRUE(r.has_value());
                         EXPECT_EQ(r.value()->payload()->JoinIntoString(),
                                   message);
+                        std::cout << "Stream 1 receive message \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   [this] {
@@ -549,7 +567,7 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
             EXPECT_TRUE(std::get<2>(ret).ok());
             return absl::OkStatus();
           }),
-      InlineWakeupScheduler(),
+      EventEngineWakeupScheduler(event_engine_),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   // Wait until ClientTransport's internal activities to finish.
   event_engine_->TickUntilIdle();
@@ -617,6 +635,8 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
                                   ->get(GrpcStatusMetadata())
                                   .value(),
                               grpc_status_code::GRPC_STATUS_OK);
+                    std::cout << "Stream 1 receive trailers \n";
+                    fflush(stdout);
                     return absl::OkStatus();
                   }),
               // Add second stream with call_args into client transport.
@@ -638,6 +658,8 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
                                   ->get(GrpcStatusMetadata())
                                   .value(),
                               grpc_status_code::GRPC_STATUS_OK);
+                    std::cout << "Stream 2 receive trailers \n";
+                    fflush(stdout);
                     return absl::OkStatus();
                   }),
               // Receive first stream's messages from control/data endpoints.
@@ -651,6 +673,8 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
                                       ->get_pointer(HttpPathMetadata())
                                       ->as_string_view(),
                                   "/demo.Service/Step");
+                        std::cout << "Stream 1 receive headers \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   // Receive server to client messages.
@@ -659,6 +683,8 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
                         EXPECT_TRUE(r.has_value());
                         EXPECT_EQ(r.value()->payload()->JoinIntoString(),
                                   message);
+                        std::cout << "Stream 1 receive message \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   [this] {
@@ -681,6 +707,8 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
                                       ->get_pointer(HttpPathMetadata())
                                       ->as_string_view(),
                                   "/demo.Service/Step");
+                        std::cout << "Stream 2 receive headers \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   // Receive server to client messages.
@@ -689,6 +717,8 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
                         EXPECT_TRUE(r.has_value());
                         EXPECT_EQ(r.value()->payload()->JoinIntoString(),
                                   message);
+                        std::cout << "Stream 2 receive message \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   [this] {
@@ -784,6 +814,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
                                   ->get(GrpcStatusMetadata())
                                   .value(),
                               grpc_status_code::GRPC_STATUS_OK);
+                    std::cout << "Stream 1 receive trailers \n";
+                    fflush(stdout);
                     return absl::OkStatus();
                   }),
               // Add second stream with call_args into client transport.
@@ -805,6 +837,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
                                   ->get(GrpcStatusMetadata())
                                   .value(),
                               grpc_status_code::GRPC_STATUS_OK);
+                    std::cout << "Stream 2 receive trailers \n";
+                    fflush(stdout);
                     return absl::OkStatus();
                   }),
               // Receive first stream's messages from control/data endpoints.
@@ -818,6 +852,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
                                       ->get_pointer(HttpPathMetadata())
                                       ->as_string_view(),
                                   "/demo.Service/Step");
+                        std::cout << "Stream 1 receive headers \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   // Receive server to client messages.
@@ -826,6 +862,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
                         EXPECT_TRUE(r.has_value());
                         EXPECT_EQ(r.value()->payload()->JoinIntoString(),
                                   message);
+                        std::cout << "Stream 1 receive message \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   [this] {
@@ -848,6 +886,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
                                       ->get_pointer(HttpPathMetadata())
                                       ->as_string_view(),
                                   "/demo.Service/Step");
+                        std::cout << "Stream 2 receive headers \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   // Receive server to client messages.
@@ -856,6 +896,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
                         EXPECT_TRUE(r.has_value());
                         EXPECT_EQ(r.value()->payload()->JoinIntoString(),
                                   message);
+                        std::cout << "Stream 2 receive message \n";
+                        fflush(stdout);
                         return absl::OkStatus();
                       }),
                   [this] {
