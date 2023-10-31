@@ -63,6 +63,7 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/b64.h"
 #include "test/core/util/port.h"
+#include "test/core/util/stack_tracer.h"
 
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
@@ -78,20 +79,27 @@ struct grpc_end2end_http_proxy {
   const grpc_channel_args* channel_args;
   gpr_mu* mu;
   std::vector<grpc_pollset*> pollset;
-
   grpc_core::Combiner* combiner;
 };
 
 namespace {
 
-void proxy_ref(grpc_end2end_http_proxy* proxy) { proxy->users.fetch_add(1); }
+void proxy_ref(grpc_end2end_http_proxy* proxy) {
+  gpr_log(GPR_ERROR, "DO NOT SUBMIT: proxy_ref = %zu. %s",
+          proxy->users.fetch_add(1) + 1,
+          grpc_core::testing::GetCurrentStackTrace().c_str());
+}
 
 // Returns the remaining number of outstanding refs
 size_t proxy_unref(grpc_end2end_http_proxy* proxy) {
   size_t ref_count = proxy->users.fetch_sub(1) - 1;
+  gpr_log(GPR_ERROR, "DO NOT SUBMIT: proxy_unref = %zu. %s", ref_count,
+          grpc_core::testing::GetCurrentStackTrace().c_str());
   if (ref_count == 0) {
+    gpr_log(GPR_ERROR, "DO NOT SUBMIT: deleting proxy & unreffing combiner");
     GRPC_COMBINER_UNREF(proxy->combiner, "test");
     delete proxy;
+    gpr_log(GPR_ERROR, "DO NOT SUBMIT: proxy deleted");
   }
   return ref_count;
 }
@@ -652,11 +660,12 @@ static void thread_main(void* arg) {
                               grpc_core::Duration::Milliseconds(100)));
     gpr_mu_unlock(proxy->mu);
     grpc_core::ExecCtx::Get()->Flush();
-  } while (!proxy->is_shutdown.load() && proxy_unref(proxy) != 0);
+  } while (proxy_unref(proxy) > 1 || !proxy->is_shutdown.load());
 }
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
     const grpc_channel_args* args) {
+  gpr_log(GPR_ERROR, "DO NOT SUBMIT: grpc_end2end_http_proxy_create");
   grpc_core::ExecCtx exec_ctx;
   grpc_end2end_http_proxy* proxy = new grpc_end2end_http_proxy();
   // Construct proxy address.
@@ -704,6 +713,7 @@ static void destroy_pollset(void* arg, grpc_error_handle /*error*/) {
 }
 
 void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
+  gpr_log(GPR_ERROR, "DO NOT SUBMIT: grpc_end2end_http_proxy_destroy");
   proxy->is_shutdown.store(true);
   grpc_core::ExecCtx exec_ctx;
   proxy->thd.Join();

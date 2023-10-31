@@ -75,6 +75,7 @@ static void really_destroy(grpc_core::Combiner* lock) {
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p really_destroy", lock));
   GPR_ASSERT(gpr_atm_no_barrier_load(&lock->state) == 0);
   delete lock;
+  gpr_log(GPR_ERROR, "DO NOT SUBMIT: combiner deleted");
 }
 
 static void start_destroy(grpc_core::Combiner* lock) {
@@ -101,6 +102,7 @@ static void start_destroy(grpc_core::Combiner* lock) {
 void grpc_combiner_unref(grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS) {
   GRPC_COMBINER_DEBUG_SPAM("UNREF", -1);
   if (gpr_unref(&lock->refs)) {
+    gpr_log(GPR_ERROR, "DO NOT SUBMIT: starting combiner destruction");
     start_destroy(lock);
   }
 }
@@ -294,7 +296,7 @@ bool grpc_combiner_continue_exec_ctx() {
 // Define a macro to ease readability of the following switch statement.
 #define OLD_STATE_WAS(orphaned, elem_count) \
   (((orphaned) ? 0 : STATE_UNORPHANED) |    \
-   ((elem_count)*STATE_ELEM_COUNT_LOW_BIT))
+   ((elem_count) * STATE_ELEM_COUNT_LOW_BIT))
   // Depending on what the previous state was, we need to perform different
   // actions.
   switch (old_state) {
