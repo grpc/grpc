@@ -68,10 +68,9 @@ absl::Status DirectoryReaderImpl::ForEach(
   struct dirent* directory_entry;
   // Iterate over everything in the directory
   while ((directory_entry = readdir(directory)) != nullptr) {
-    const char* file_name = directory_entry->d_name;
+    const absl::string_view file_name = directory_entry->d_name;
     // Skip "." and ".."
-    if ((strcmp(file_name, kSkipEntriesSelf) == 0 ||
-         strcmp(file_name, kSkipEntriesParent) == 0)) {
+    if (file_name == kSkipEntriesParent || file_name == kSkipEntriesSelf) {
       continue;
     }
     // Call the callback with this filename

@@ -576,6 +576,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:iomgr_timer",
         "//src/core:default_event_engine",
         "//src/core:grpc_crl_provider",
         "//test/core/event_engine:event_engine_test_utils",

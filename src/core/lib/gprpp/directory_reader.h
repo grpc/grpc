@@ -32,10 +32,10 @@ namespace grpc_core {
 class DirectoryReader {
  public:
   virtual ~DirectoryReader() = default;
-  // Returns the name of the directory being read
+  // Returns the name of the directory being read.
   virtual absl::string_view Name() const = 0;
-  // Calls callback for each name in the directory.
-  // Returns no OK if there was an error reading the directory.
+  // Calls callback for each name in the directory except for "." and "..".
+  // Returns non-OK if there was an error reading the directory.
   virtual absl::Status ForEach(
       absl::FunctionRef<void(absl::string_view)> callback) = 0;
 };
