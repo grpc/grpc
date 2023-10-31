@@ -822,45 +822,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/tsi/alts/fake_handshaker/transport_security_common.proto test/core/tsi/alts/fake_handshaker/transport_security_common.proto
 )
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/api/annotations.proto google/api/annotations.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/api/client.proto google/api/client.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/api/field_behavior.proto google/api/field_behavior.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/api/http.proto google/api/http.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/api/resource.proto google/api/resource.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/devtools/cloudtrace/v1/trace.proto google/devtools/cloudtrace/v1/trace.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/devtools/cloudtrace/v2/trace.proto google/devtools/cloudtrace/v2/trace.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/devtools/cloudtrace/v2/tracing.proto google/devtools/cloudtrace/v2/tracing.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/iam/credentials/v1/common.proto google/iam/credentials/v1/common.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/iam/credentials/v1/iamcredentials.proto google/iam/credentials/v1/iamcredentials.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/longrunning/operations.proto google/longrunning/operations.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/rpc/error_details.proto google/rpc/error_details.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/googleapis/google/rpc/status.proto google/rpc/status.proto
-)
 
 if(gRPC_BUILD_TESTS)
   add_custom_target(buildtests_c)
@@ -28238,63 +28199,6 @@ add_executable(xds_interop_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/client.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/client.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/client.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/client.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/resource.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/resource.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/resource.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/resource.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v1/trace.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v1/trace.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v1/trace.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v1/trace.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/trace.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/trace.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/trace.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/trace.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/tracing.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/tracing.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/tracing.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/tracing.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/common.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/common.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/common.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/common.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/iamcredentials.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/iamcredentials.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/iamcredentials.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/iamcredentials.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/longrunning/operations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/longrunning/operations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/longrunning/operations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/longrunning/operations.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/error_details.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/error_details.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/error_details.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/error_details.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-  src/cpp/ext/csm/csm_observability.cc
-  src/cpp/ext/csm/metadata_exchange.cc
-  src/cpp/ext/otel/otel_client_filter.cc
-  src/cpp/ext/otel/otel_plugin.cc
-  src/cpp/ext/otel/otel_server_call_tracer.cc
   src/cpp/server/admin/admin_services.cc
   src/cpp/server/csds/csds.cc
   test/cpp/interop/rpc_behavior_lb_policy.cc
@@ -28362,63 +28266,6 @@ add_executable(xds_interop_server
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/client.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/client.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/client.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/client.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/resource.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/resource.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/resource.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/resource.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v1/trace.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v1/trace.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v1/trace.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v1/trace.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/trace.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/trace.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/trace.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/trace.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/tracing.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/tracing.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/tracing.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/devtools/cloudtrace/v2/tracing.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/common.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/common.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/common.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/common.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/iamcredentials.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/iamcredentials.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/iamcredentials.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/iam/credentials/v1/iamcredentials.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/longrunning/operations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/longrunning/operations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/longrunning/operations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/longrunning/operations.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/error_details.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/error_details.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/error_details.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/error_details.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
-  src/cpp/ext/csm/csm_observability.cc
-  src/cpp/ext/csm/metadata_exchange.cc
-  src/cpp/ext/otel/otel_client_filter.cc
-  src/cpp/ext/otel/otel_plugin.cc
-  src/cpp/ext/otel/otel_server_call_tracer.cc
   src/cpp/server/admin/admin_services.cc
   src/cpp/server/csds/csds.cc
   test/cpp/end2end/test_health_check_service_impl.cc
