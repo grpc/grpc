@@ -1747,6 +1747,11 @@ class UpdatesWithClientLoadReportingTest : public GrpclbEnd2endTest {
 };
 
 TEST_F(UpdatesWithClientLoadReportingTest, ReresolveDeadBalancer) {
+  if (grpc_core::IsWorkSerializerDispatchEnabled()) {
+    GTEST_SKIP() << "This test has bugs that are exhasperated by work "
+                    "serializer dispatch";
+  }
+
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
   ScheduleResponseForBalancer(0, BuildResponseForBackends(first_backend, {}),
