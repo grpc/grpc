@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
-
 #include <memory>
 
 #include "absl/functional/function_ref.h"

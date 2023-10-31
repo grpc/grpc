@@ -16,7 +16,6 @@
 
 #include "src/core/lib/gprpp/directory_reader.h"
 
-#include <algorithm>
 #include <string>
 #include <vector>
 
