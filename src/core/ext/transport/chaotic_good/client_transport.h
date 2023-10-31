@@ -145,8 +145,11 @@ class ClientTransport {
                     std::cout << "Receive server frame from stream "
                               << frame.frame_header.stream_id << "\n";
                     fflush(stdout);
+                    bool has_headers = (frame.headers != nullptr);
+                    bool has_message = (frame.message != nullptr);
+                    bool has_trailers = (frame.trailers != nullptr);
                     return TrySeq(
-                        If((frame.headers != nullptr),
+                        If(has_headers,
                            [server_initial_metadata,
                             headers = std::move(frame.headers)]() mutable {
                              std::cout
@@ -158,7 +161,7 @@ class ClientTransport {
                                  std::move(headers));
                            },
                            [] { return false; }),
-                        If((frame.message != nullptr),
+                        If(has_message,
                            [server_to_client_messages,
                             message = std::move(frame.message)]() mutable {
                              std::cout << "Receive message "
@@ -170,7 +173,7 @@ class ClientTransport {
                                  std::move(message));
                            },
                            [] { return false; }),
-                        If((frame.trailers != nullptr),
+                        If(has_trailers,
                            [trailers = std::move(frame.trailers)]() mutable
                            -> LoopCtl<ServerMetadataHandle> {
                              std::cout << "Receive trailers "
