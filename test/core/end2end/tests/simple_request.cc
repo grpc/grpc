@@ -98,10 +98,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
             expected_calls);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest) {
-  // TODO(vigneshbabu): re-enable these before release
-  SimpleRequestBody(*this);
-}
+CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest) { SimpleRequestBody(*this); }
 
 CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest10) {
   for (int i = 0; i < 10; i++) {

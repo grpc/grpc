@@ -318,6 +318,8 @@ grpc_core_end2end_test(
     shard_count = 50,
 )
 
+grpc_core_end2end_test(name = "http2_stats")
+
 grpc_core_end2end_test(name = "invoke_large_request")
 
 grpc_core_end2end_test(name = "keepalive_timeout")
@@ -467,8 +469,10 @@ grpc_cc_test(
         "//:grpc_public_hdrs",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:event_engine_shim",
         "//src/core:gpr_atm",
         "//src/core:iomgr_fwd",
+        "//src/core:notification",
         "//src/core:slice",
         "//src/core:status_helper",
         "//test/core/util:grpc_test_util",

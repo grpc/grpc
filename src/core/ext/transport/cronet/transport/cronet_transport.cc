@@ -127,9 +127,10 @@ struct grpc_cronet_transport final : public grpc_core::Transport,
   grpc_core::ServerTransport* server_transport() override { return nullptr; }
 
   absl::string_view GetTransportName() const override { return "cronet_http"; }
-  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
-  void SetPollsetSet(grpc_stream* stream,
-                     grpc_pollset_set* pollset_set) override {}
+  void SetPollset(grpc_stream* /*stream*/, grpc_pollset* /*pollset*/) override {
+  }
+  void SetPollsetSet(grpc_stream* /*stream*/,
+                     grpc_pollset_set* /*pollset_set*/) override {}
   void PerformOp(grpc_transport_op* op) override;
   grpc_endpoint* GetEndpoint() override { return nullptr; }
   size_t SizeOfStream() const override;

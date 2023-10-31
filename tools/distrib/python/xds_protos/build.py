@@ -101,7 +101,7 @@ COMPILE_BOTH = COMPILE_PROTO_ONLY + ["--grpc_python_out={}".format(OUTPUT_PATH)]
 
 
 def has_grpc_service(proto_package_path: str) -> bool:
-    return proto_package_path.startswith("envoy/service")
+    return proto_package_path.startswith(os.path.join("envoy", "service"))
 
 
 def compile_protos(proto_root: str, sub_dir: str = ".") -> None:

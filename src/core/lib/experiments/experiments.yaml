@@ -49,7 +49,7 @@
 - name: canary_client_privacy
   description:
     If set, canary client privacy
-  expiry: 2023/11/01
+  expiry: 2024/04/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -73,7 +73,7 @@
 - name: client_privacy
   description:
     If set, client privacy
-  expiry: 2023/11/01
+  expiry: 2024/04/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -102,9 +102,15 @@
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2023/11/01
+  expiry: 2024/04/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: http2_stats_fix
+  description:
+    Fix on HTTP2 outgoing data stats reporting
+  expiry: 2024/03/31
+  owner: yashkt@google.com
+  test_tags: []
 - name: keepalive_fix
   description:
     Allows overriding keepalive_permit_without_calls.
@@ -144,6 +150,13 @@
   expiry: 2024/01/15
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+- name: overload_protection
+  description:
+    If chttp2 has more streams than it can handle open, send RST_STREAM immediately
+    on new streams appearing.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: [flow_control_test]
 - name: peer_state_based_framing
   description:
     If set, the max sizes of frames sent to lower layers is controlled based
@@ -152,6 +165,17 @@
   expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: ["flow_control_test"]
+- name: pending_queue_cap
+  description:
+    In the sync & async apis (but not the callback api), cap the number of
+    received but unrequested requests in the server for each call type.
+    A received message is one that was read from the wire on the server.
+    A requested message is one explicitly requested by the application using
+    grpc_server_request_call or grpc_server_request_registered_call (or their
+    wrappers in the C++ API).
+  expiry: 2024/05/05
+  owner: ctiller@google.com
+  test_tags: []
 - name: pick_first_happy_eyeballs
   description:
     Use Happy Eyeballs in pick_first.
@@ -169,7 +193,7 @@
   description:
     If set, use the new gRPC promise based call code when it's appropriate
     (ie when all filters in a stack are promise based)
-  expiry: 2023/11/01
+  expiry: 2024/06/14
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
 - name: promise_based_inproc_transport
@@ -183,7 +207,7 @@
   description:
     If set, use the new gRPC promise based call code when it's appropriate
     (ie when all filters in a stack are promise based)
-  expiry: 2023/11/01
+  expiry: 2024/06/14
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
 - name: red_max_concurrent_streams
@@ -205,6 +229,14 @@
   expiry: 2024/01/31
   owner: alishananda@google.com
   test_tags: []
+- name: rfc_max_concurrent_streams
+  description:
+    If set, enable rfc-compliant behavior (cancellation) in the advent that 
+    max concurrent streams are exceeded in chttp2.
+    See https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: [bad_client_test]
 - name: round_robin_delegate_to_pick_first
   description:
     Change round_robin code to delegate to pick_first as per dualstack
@@ -235,7 +267,7 @@
 - name: server_privacy
   description:
     If set, server privacy
-  expiry: 2023/11/01
+  expiry: 2024/04/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false

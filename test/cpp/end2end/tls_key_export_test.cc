@@ -195,16 +195,9 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     server_thread_ =
         std::thread(&TlsKeyLoggingEnd2EndTest::RunServerLoop, this);
 
-    bool localhost_resolves_to_ipv4 = false;
-    bool localhost_resolves_to_ipv6 = false;
-    grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
-                                 &localhost_resolves_to_ipv6);
-    bool ipv6_only = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
-    absl::string_view local_ip = ipv6_only ? "[::1]" : "127.0.0.1";
-
     for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       ASSERT_NE(0, ports_[i]);
-      server_addresses_.push_back(absl::StrCat(local_ip, ":", ports_[i]));
+      server_addresses_.push_back(grpc_core::LocalIpAndPort(ports_[i]));
 
       // Configure tls credential options for each stub. Each stub connects to
       // a separate port on the server.

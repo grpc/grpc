@@ -45,7 +45,7 @@ EXTERNAL_DEPS = {
     "absl/base/attributes.h": "absl/base:core_headers",
     "absl/base/call_once.h": "absl/base",
     # TODO(ctiller) remove this
-    "absl/base/internal/endian.h": "absl/base",
+    "absl/base/internal/endian.h": "absl/base:endian",
     "absl/base/thread_annotations.h": "absl/base:core_headers",
     "absl/container/flat_hash_map.h": "absl/container:flat_hash_map",
     "absl/container/flat_hash_set.h": "absl/container:flat_hash_set",
@@ -150,6 +150,7 @@ EXTERNAL_DEPS = {
     "openssl/err.h": "libcrypto",
     "openssl/evp.h": "libcrypto",
     "openssl/hmac.h": "libcrypto",
+    "openssl/mem.h": "libcrypto",
     "openssl/param_build.h": "libcrypto",
     "openssl/pem.h": "libcrypto",
     "openssl/rsa.h": "libcrypto",
