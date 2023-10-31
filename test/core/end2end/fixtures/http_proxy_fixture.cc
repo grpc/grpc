@@ -84,22 +84,14 @@ struct grpc_end2end_http_proxy {
 
 namespace {
 
-void proxy_ref(grpc_end2end_http_proxy* proxy) {
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: proxy_ref = %zu. %s",
-          proxy->users.fetch_add(1) + 1,
-          grpc_core::testing::GetCurrentStackTrace().c_str());
-}
+void proxy_ref(grpc_end2end_http_proxy* proxy) { proxy->users.fetch_add(1); }
 
 // Returns the remaining number of outstanding refs
 size_t proxy_unref(grpc_end2end_http_proxy* proxy) {
   size_t ref_count = proxy->users.fetch_sub(1) - 1;
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: proxy_unref = %zu. %s", ref_count,
-          grpc_core::testing::GetCurrentStackTrace().c_str());
   if (ref_count == 0) {
-    gpr_log(GPR_ERROR, "DO NOT SUBMIT: deleting proxy & unreffing combiner");
     GRPC_COMBINER_UNREF(proxy->combiner, "test");
     delete proxy;
-    gpr_log(GPR_ERROR, "DO NOT SUBMIT: proxy deleted");
   }
   return ref_count;
 }
@@ -153,21 +145,17 @@ typedef struct proxy_connection {
   grpc_http_request http_request;
 } proxy_connection;
 
-static void proxy_connection_ref(proxy_connection* conn, const char* reason) {
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: proxy_connection_ref: %s", reason);
+static void proxy_connection_ref(proxy_connection* conn,
+                                 const char* /* reason */) {
   gpr_ref(&conn->refcount);
 }
 
 // Helper function to destroy the proxy connection.
-static void proxy_connection_unref(proxy_connection* conn, const char* reason) {
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: proxy_connection_unref: %s", reason);
+static void proxy_connection_unref(proxy_connection* conn,
+                                   const char* /* reason */) {
   if (gpr_unref(&conn->refcount)) {
-    gpr_log(GPR_DEBUG, "endpoints: %p %p", conn->client_endpoint,
-            conn->server_endpoint);
-    gpr_log(GPR_ERROR, "DO NOT SUBMIT: destroying client endpoint");
     grpc_endpoint_destroy(conn->client_endpoint);
     if (conn->server_endpoint != nullptr) {
-      gpr_log(GPR_ERROR, "DO NOT SUBMIT: destroying server endpoint");
       grpc_endpoint_destroy(conn->server_endpoint);
     }
     grpc_pollset_set_destroy(conn->pollset_set);
@@ -616,8 +604,6 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
   grpc_end2end_http_proxy* proxy = static_cast<grpc_end2end_http_proxy*>(arg);
   proxy_ref(proxy);
   if (proxy->is_shutdown.load()) {
-    gpr_log(GPR_ERROR,
-            "DO NOT SUBMIT: on_accept exiting because proxy is shutdown");
     proxy_unref(proxy);
     grpc_endpoint_destroy(endpoint);
     return;
@@ -671,7 +657,6 @@ static void thread_main(void* arg) {
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
     const grpc_channel_args* args) {
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: grpc_end2end_http_proxy_create");
   grpc_core::ExecCtx exec_ctx;
   grpc_end2end_http_proxy* proxy = new grpc_end2end_http_proxy();
   // Construct proxy address.
@@ -719,7 +704,6 @@ static void destroy_pollset(void* arg, grpc_error_handle /*error*/) {
 }
 
 void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: grpc_end2end_http_proxy_destroy");
   proxy->is_shutdown.store(true);
   grpc_core::ExecCtx exec_ctx;
   proxy->thd.Join();

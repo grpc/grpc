@@ -1228,7 +1228,6 @@ PosixEndpointImpl ::~PosixEndpointImpl() {
   delete on_read_;
   delete on_write_;
   delete on_error_;
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: ~PosixEndpointImpl::%p deleted", this);
 }
 
 PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
@@ -1242,7 +1241,6 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       handle_(handle),
       poller_(handle->Poller()),
       engine_(engine) {
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT:  PosixEndpointImpl::%p created", this);
   PosixSocketWrapper sock(handle->WrappedFd());
   fd_ = handle_->WrappedFd();
   GPR_ASSERT(options.resource_quota != nullptr);

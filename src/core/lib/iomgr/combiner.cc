@@ -75,7 +75,6 @@ static void really_destroy(grpc_core::Combiner* lock) {
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p really_destroy", lock));
   GPR_ASSERT(gpr_atm_no_barrier_load(&lock->state) == 0);
   delete lock;
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: combiner deleted");
 }
 
 static void start_destroy(grpc_core::Combiner* lock) {
@@ -102,7 +101,6 @@ static void start_destroy(grpc_core::Combiner* lock) {
 void grpc_combiner_unref(grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS) {
   GRPC_COMBINER_DEBUG_SPAM("UNREF", -1);
   if (gpr_unref(&lock->refs)) {
-    gpr_log(GPR_ERROR, "DO NOT SUBMIT: starting combiner destruction");
     start_destroy(lock);
   }
 }
