@@ -106,15 +106,17 @@ class DirectoryReloaderCrlProvider
 
   ~DirectoryReloaderCrlProvider() override;
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
+  // Reads the configured directory and updates the internal crls_ map, called
+  // asynchronously by event engine then schedules the timer for the next
+  // update.
+  void OnNextUpdateTimer();
+
+ private:
   // Schedules the next reload using event engine.
   void ScheduleReload();
   // Reads the configured directory and updates the internal crls_ map, called
   // asynchronously by event engine.
   absl::Status Update();
-
- private:
-  void OnNextUpdateTimer();
-
   Duration refresh_duration_;
   std::function<void(::absl::Status)> reload_error_callback_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;

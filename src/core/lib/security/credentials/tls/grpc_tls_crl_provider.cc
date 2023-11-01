@@ -159,11 +159,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
       MakeDirectoryReader(directory));
   // This could be slow to do at startup, but we want to
   // make sure it's done before the provider is used.
-  absl::Status initial_status = provider->Update();
-  if (!initial_status.ok()) {
-    return initial_status;
-  }
-  provider->ScheduleReload();
+  provider->OnNextUpdateTimer();
   return provider;
 }
 

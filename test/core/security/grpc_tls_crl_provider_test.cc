@@ -122,9 +122,7 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
         std::make_shared<experimental::DirectoryReloaderCrlProvider>(
             refresh_duration, std::move(reload_error_callback), event_engine_,
             std::move(directory_reader));
-    absl::Status initial_status = provider->Update();
-    if (!initial_status.ok()) return initial_status;
-    provider->ScheduleReload();
+    provider->OnNextUpdateTimer();
     return provider;
   }
 
@@ -246,14 +244,19 @@ TEST_F(DirectoryReloaderCrlProviderTest, WithCorruption) {
   EXPECT_EQ(reload_errors.size(), 1);
 }
 
-TEST_F(DirectoryReloaderCrlProviderTest, WithFailedCreate) {
+TEST_F(DirectoryReloaderCrlProviderTest, WithBadInitialDirectoryStatus) {
   absl::Status status = absl::UnknownError("");
   directory_reader_->SetStatus(status);
+  std::vector<absl::Status> reload_errors;
+  std::function<void(absl::Status)> reload_error_callback =
+      [&](const absl::Status& status) { reload_errors.push_back(status); };
   const std::chrono::seconds kRefreshDuration(60);
-  auto provider = CreateCrlProvider(kRefreshDuration, nullptr, nullptr);
-  // The files status error should end up passing up through the provider
-  // create.
-  EXPECT_EQ(status, provider.status());
+  auto provider =
+      CreateCrlProvider(kRefreshDuration, reload_error_callback, nullptr);
+  // We expect the provider to be created successfully, but the reload error
+  // callback will have been called
+  ASSERT_TRUE(provider.ok()) << provider.status();
+  EXPECT_EQ(reload_errors.size(), 1);
 }
 
 }  // namespace testing
