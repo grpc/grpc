@@ -824,6 +824,7 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         for test in tests
         if not test.startswith("test/cpp/ext/otel:")
         and not test.startswith("test/cpp/ext/csm:")
+        and not test.startswith("test/cpp/interop:xds_interop")
     ]
 
     # missing opencensus/stats/stats.h
@@ -1228,20 +1229,21 @@ _BUILD_EXTRA_METADATA = {
         "_TYPE": "target",
         "_RENAME": "interop_server",
     },
-    "test/cpp/interop:xds_interop_client": {
-        "language": "c++",
-        "build": "test",
-        "run": False,
-        "_TYPE": "target",
-        "_RENAME": "xds_interop_client",
-    },
-    "test/cpp/interop:xds_interop_server": {
-        "language": "c++",
-        "build": "test",
-        "run": False,
-        "_TYPE": "target",
-        "_RENAME": "xds_interop_server",
-    },
+    # TODO(stanleycheung): re-enable this after cmake support for otel is added
+    # "test/cpp/interop:xds_interop_client": {
+    #     "language": "c++",
+    #     "build": "test",
+    #     "run": False,
+    #     "_TYPE": "target",
+    #     "_RENAME": "xds_interop_client",
+    # },
+    # "test/cpp/interop:xds_interop_server": {
+    #     "language": "c++",
+    #     "build": "test",
+    #     "run": False,
+    #     "_TYPE": "target",
+    #     "_RENAME": "xds_interop_server",
+    # },
     "test/cpp/interop:http2_client": {
         "language": "c++",
         "build": "test",
