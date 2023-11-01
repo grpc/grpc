@@ -19,10 +19,15 @@ Generates a suite of strict build tests, to minimize runtime.
 load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_simple_command_test")
 
 def _safe_target_name(name):
-    """Character ':' isn't allowed in bazel target name"""
+    """Returns a sanitized name for a target"""
     return name.replace(":", "").replace("/", "_").replace(".", "").replace(" ", "_")
 
-def generate_strict_tests():
+def generate_strict_tests(name):
+    """Generates a suite of strict build tests, to minimize runtime.
+
+    Args:
+        name: unused (required by buildifier)
+    """
     strict_warning_jobs = []
 
     for source in [
