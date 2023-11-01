@@ -276,10 +276,8 @@ class Compressor<MetadataTrait, SmallSetOfValuesCompressor> {
 };
 
 struct PreviousTimeout {
-  Timeout timeout = Timeout::FromDuration(Duration::Zero());
-  // Dynamic table index of a previously sent timeout
-  // 0 is guaranteed not in the dynamic table so is a safe initializer
-  uint32_t index = 0;
+  Timeout timeout;
+  uint32_t index;
 };
 
 class TimeoutCompressorImpl {
@@ -287,9 +285,7 @@ class TimeoutCompressorImpl {
   void EncodeWith(absl::string_view key, Timestamp deadline, Encoder* encoder);
 
  private:
-  static constexpr const size_t kNumPreviousValues = 5;
-  PreviousTimeout previous_timeouts_[kNumPreviousValues];
-  uint32_t next_previous_value_ = 0;
+  std::vector<PreviousTimeout> previous_timeouts_;
 };
 
 template <typename MetadataTrait>

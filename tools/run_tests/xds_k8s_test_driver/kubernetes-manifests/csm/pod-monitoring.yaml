@@ -1,0 +1,13 @@
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  namespace: ${namespace_name}
+  name: ${deployment_id}-gmp
+spec:
+  selector:
+    matchLabels:
+      deployment_id: ${deployment_id}
+  endpoints:
+  - port: 9464
+    interval: 10s

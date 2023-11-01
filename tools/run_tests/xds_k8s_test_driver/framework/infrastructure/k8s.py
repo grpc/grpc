@@ -207,6 +207,18 @@ class KubernetesApiManager:
 
         return self._load_dynamic_api(api_name, version, kind)
 
+    @functools.cache  # pylint: disable=no-member
+    def pod_monitoring(self, version: str) -> dynamic_res.Resource:
+        api_name = "monitoring.googleapis.com"
+        kind = "PodMonitoring"
+        supported_versions = ("v1",)
+        if version not in supported_versions:
+            raise NotImplementedError(
+                f"{kind} {api_name}/{version} not implemented."
+            )
+
+        return self._load_dynamic_api(api_name, version, kind)
+
     def close(self):
         # TODO(sergiitk): [GAMMA] what to do with dynamic clients?
         self.client.close()
@@ -359,6 +371,9 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 return self._api.grpc_route(version)
             elif kind == "HTTPRoute":
                 return self._api.http_route(version)
+        elif group == "monitoring.googleapis.com":
+            if kind == "PodMonitoring":
+                return self._api.pod_monitoring(version)
 
         raise NotImplementedError(
             f"{kind} ({group}) {api_version} not implemented."

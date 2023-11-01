@@ -330,7 +330,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
         raise self.ChannelNotActive(
             f"[{self.hostname}] Client has no"
-            f" active channel with xds server {xds_server_uri}",
+            f" active channel with xDS control plane {xds_server_uri}",
             src=self.hostname,
             dst=xds_server_uri,
         )
