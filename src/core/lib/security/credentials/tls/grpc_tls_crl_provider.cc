@@ -153,7 +153,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
       MakeDirectoryReader(directory));
   // This could be slow to do at startup, but we want to
   // make sure it's done before the provider is used.
-  provider->OnNextUpdateTimer();
+  provider->UpdateAndStartTimer();
   return provider;
 }
 
@@ -163,15 +163,11 @@ DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
   }
 }
 
-void DirectoryReloaderCrlProvider::OnNextUpdateTimer() {
+void DirectoryReloaderCrlProvider::UpdateAndStartTimer() {
   absl::Status status = Update();
   if (!status.ok() && reload_error_callback_ != nullptr) {
     reload_error_callback_(status);
   }
-  ScheduleReload();
-}
-
-void DirectoryReloaderCrlProvider::ScheduleReload() {
   std::weak_ptr<DirectoryReloaderCrlProvider> self = shared_from_this();
   refresh_handle_ =
       event_engine_->RunAfter(refresh_duration_, [self = std::move(self)]() {
@@ -179,7 +175,7 @@ void DirectoryReloaderCrlProvider::ScheduleReload() {
         ExecCtx exec_ctx;
         if (std::shared_ptr<DirectoryReloaderCrlProvider> valid_ptr =
                 self.lock()) {
-          valid_ptr->OnNextUpdateTimer();
+          valid_ptr->UpdateAndStartTimer();
         }
       });
 }

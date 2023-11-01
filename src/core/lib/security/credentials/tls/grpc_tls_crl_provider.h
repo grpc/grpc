@@ -109,11 +109,9 @@ class DirectoryReloaderCrlProvider
   // Reads the configured directory and updates the internal crls_ map, called
   // asynchronously by event engine then schedules the timer for the next
   // update.
-  void OnNextUpdateTimer();
+  void UpdateAndStartTimer();
 
  private:
-  // Schedules the next reload using event engine.
-  void ScheduleReload();
   // Reads the configured directory and updates the internal crls_ map, called
   // asynchronously by event engine.
   absl::Status Update();

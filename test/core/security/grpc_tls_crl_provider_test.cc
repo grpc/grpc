@@ -122,7 +122,7 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
         std::make_shared<experimental::DirectoryReloaderCrlProvider>(
             refresh_duration, std::move(reload_error_callback), event_engine_,
             std::move(directory_reader));
-    provider->OnNextUpdateTimer();
+    provider->UpdateAndStartTimer();
     return provider;
   }
 
