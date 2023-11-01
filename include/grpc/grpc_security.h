@@ -818,6 +818,22 @@ GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create(void);
 /**
  * EXPERIMENTAL API - Subject to change
  *
+ * Copies a grpc_tls_credentials_options.
+ */
+GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_copy(
+    grpc_tls_credentials_options* options);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Destroys a grpc_tls_credentials_options.
+ */
+GRPCAPI void grpc_tls_credentials_options_destroy(
+    grpc_tls_credentials_options* options);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
  * Sets the credential provider in the options.
  * The |options| will implicitly take a new ref to the |provider|.
  */

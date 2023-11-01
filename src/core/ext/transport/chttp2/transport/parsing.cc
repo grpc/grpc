@@ -663,7 +663,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
         return GRPC_ERROR_CREATE("Max stream count exceeded");
       }
     } else if (GPR_UNLIKELY(
-                   grpc_core::IsOverloadProtectionEnabled() &&
+                   t->max_concurrent_streams_overload_protection &&
                    t->streams_allocated.load(std::memory_order_relaxed) >
                        t->max_concurrent_streams_policy.AdvertiseValue())) {
       // We have more streams allocated than we'd like, so apply some pushback

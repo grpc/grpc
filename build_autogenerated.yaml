@@ -682,6 +682,7 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -2110,6 +2111,7 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -3654,6 +3656,7 @@ libs:
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
   - src/cpp/server/server_posix.cc
+  - src/cpp/server/xds_server_builder.cc
   - src/cpp/server/xds_server_credentials.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -4121,6 +4124,7 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
+  - src/core/lib/backoff/random_early_detection.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
@@ -4137,6 +4141,7 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -4440,6 +4445,7 @@ libs:
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
+  - src/core/lib/backoff/random_early_detection.cc
   - src/core/lib/channel/call_tracer.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
@@ -4707,6 +4713,8 @@ libs:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
+  - absl/random:bit_gen_ref
+  - absl/random:distributions
   - absl/status:statusor
   - absl/types:span
   - absl/utility:utility
@@ -9895,6 +9903,42 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: http2_stats_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/http2_stats.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - gtest
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: http_proxy_mapper_test
   gtest: true
   build: test
@@ -15046,44 +15090,6 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
-- name: stranded_event_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/end2end/cq_verifier.h
-  - test/core/util/cmdline.h
-  - test/core/util/evaluate_args_test_util.h
-  - test/core/util/fuzzer_util.h
-  - test/core/util/grpc_profiler.h
-  - test/core/util/histogram.h
-  - test/core/util/mock_authorization_endpoint.h
-  - test/core/util/mock_endpoint.h
-  - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
-  - test/core/util/resolve_localhost_ip46.h
-  - test/core/util/slice_splitter.h
-  - test/core/util/tracer_util.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/iomgr/stranded_event_test.cc
-  - test/core/util/cmdline.cc
-  - test/core/util/fuzzer_util.cc
-  - test/core/util/grpc_profiler.cc
-  - test/core/util/histogram.cc
-  - test/core/util/mock_endpoint.cc
-  - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
-  - test/core/util/resolve_localhost_ip46.cc
-  - test/core/util/slice_splitter.cc
-  - test/core/util/tracer_util.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: stream_leak_with_queued_flow_control_update_test
   gtest: true
   build: test
@@ -15761,6 +15767,7 @@ targets:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -17558,6 +17565,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -17596,6 +17604,7 @@ targets:
   - test/cpp/end2end/xds/xds_cluster_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -17644,6 +17653,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -17683,6 +17693,7 @@ targets:
   - test/cpp/end2end/xds/xds_cluster_type_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -17735,6 +17746,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -17772,6 +17784,7 @@ targets:
   - test/cpp/end2end/xds/xds_core_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -17838,6 +17851,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -17878,6 +17892,7 @@ targets:
   - test/cpp/end2end/xds/xds_csds_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -17898,6 +17913,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -17941,6 +17957,7 @@ targets:
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -17979,6 +17996,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -18018,6 +18036,7 @@ targets:
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_fault_injection_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -18072,92 +18091,6 @@ targets:
   - protoc
   - grpc_test_util
   uses_polling: false
-- name: xds_interop_client
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/cpp/server/csds/csds.h
-  - test/cpp/interop/rpc_behavior_lb_policy.h
-  - test/cpp/interop/xds_stats_watcher.h
-  src:
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/config_dump.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/cpp/server/admin/admin_services.cc
-  - src/cpp/server/csds/csds.cc
-  - test/cpp/interop/rpc_behavior_lb_policy.cc
-  - test/cpp/interop/xds_interop_client.cc
-  - test/cpp/interop/xds_stats_watcher.cc
-  deps:
-  - grpc++_reflection
-  - grpcpp_channelz
-  - grpc_test_util
-  - grpc++_test_config
-- name: xds_interop_server
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/cpp/server/csds/csds.h
-  - test/cpp/end2end/test_health_check_service_impl.h
-  - test/cpp/interop/pre_stop_hook_server.h
-  - test/cpp/interop/xds_interop_server_lib.h
-  src:
-  - src/proto/grpc/health/v1/health.proto
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/config_dump.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/cpp/server/admin/admin_services.cc
-  - src/cpp/server/csds/csds.cc
-  - test/cpp/end2end/test_health_check_service_impl.cc
-  - test/cpp/interop/pre_stop_hook_server.cc
-  - test/cpp/interop/xds_interop_server.cc
-  - test/cpp/interop/xds_interop_server_lib.cc
-  deps:
-  - grpc++_reflection
-  - grpcpp_channelz
-  - grpc_test_util
-  - grpc++_test_config
-- name: xds_interop_server_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/cpp/server/csds/csds.h
-  - test/cpp/end2end/test_health_check_service_impl.h
-  - test/cpp/interop/pre_stop_hook_server.h
-  - test/cpp/interop/xds_interop_server_lib.h
-  src:
-  - src/proto/grpc/health/v1/health.proto
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/istio_echo.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/config_dump.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/cpp/server/admin/admin_services.cc
-  - src/cpp/server/csds/csds.cc
-  - test/cpp/end2end/test_health_check_service_impl.cc
-  - test/cpp/interop/pre_stop_hook_server.cc
-  - test/cpp/interop/xds_interop_server_lib.cc
-  - test/cpp/interop/xds_interop_server_test.cc
-  deps:
-  - gtest
-  - grpc++_reflection
-  - grpcpp_channelz
-  - grpc_test_util
-  - grpc++_test_config
 - name: xds_lb_policy_registry_test
   gtest: true
   build: test
@@ -18257,6 +18190,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -18296,6 +18230,7 @@ targets:
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_outlier_detection_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -18314,6 +18249,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -18354,6 +18290,7 @@ targets:
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_override_host_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -18402,6 +18339,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -18442,6 +18380,7 @@ targets:
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_pick_first_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -18461,6 +18400,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -18500,6 +18440,7 @@ targets:
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_ring_hash_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -18519,6 +18460,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/lookup/v1/rls.proto
@@ -18559,6 +18501,7 @@ targets:
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_rls_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -18620,6 +18563,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -18659,6 +18603,7 @@ targets:
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_routing_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
@@ -18704,6 +18649,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
   - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -18742,6 +18688,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/end2end/xds/xds_wrr_end2end_test.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
