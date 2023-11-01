@@ -141,12 +141,6 @@ std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
   return it->second;
 }
 
-DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
-  if (refresh_handle_.has_value()) {
-    event_engine_->Cancel(refresh_handle_.value());
-  }
-}
-
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
     std::function<void(absl::Status)> reload_error_callback) {
@@ -161,6 +155,12 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
   // make sure it's done before the provider is used.
   provider->OnNextUpdateTimer();
   return provider;
+}
+
+DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
+  if (refresh_handle_.has_value()) {
+    event_engine_->Cancel(refresh_handle_.value());
+  }
 }
 
 void DirectoryReloaderCrlProvider::OnNextUpdateTimer() {
