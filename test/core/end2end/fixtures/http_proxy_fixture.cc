@@ -152,13 +152,13 @@ typedef struct proxy_connection {
 } proxy_connection;
 
 static void proxy_connection_ref(proxy_connection* conn,
-                                 const char* /* reason */) {
+                                 const char* /*reason*/) {
   gpr_ref(&conn->refcount);
 }
 
 // Helper function to destroy the proxy connection.
 static void proxy_connection_unref(proxy_connection* conn,
-                                   const char* /* reason */) {
+                                   const char* /*reason*/) {
   if (gpr_unref(&conn->refcount)) {
     grpc_endpoint_destroy(conn->client_endpoint);
     if (conn->server_endpoint != nullptr) {
