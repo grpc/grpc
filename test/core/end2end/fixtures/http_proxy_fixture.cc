@@ -91,10 +91,8 @@ void proxy_ref(grpc_end2end_http_proxy* proxy) { proxy->users.fetch_add(1); }
 
 // Returns the remaining number of outstanding refs
 size_t proxy_unref(grpc_end2end_http_proxy* proxy) {
+  if (proxy_destroyed.load()) return -1;
   size_t ref_count = proxy->users.fetch_sub(1) - 1;
-  if (proxy_destroyed.load()) {
-    return -1;
-  }
   if (ref_count == 0) {
     proxy_destroyed.store(true);
     GRPC_COMBINER_UNREF(proxy->combiner, "test");
