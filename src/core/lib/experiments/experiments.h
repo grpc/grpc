@@ -240,7 +240,8 @@ inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
-inline bool IsEventEngineListenerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
+inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_HTTP2_STATS_FIX
 inline bool IsHttp2StatsFixEnabled() { return true; }
