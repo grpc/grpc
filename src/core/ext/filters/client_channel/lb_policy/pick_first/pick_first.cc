@@ -804,6 +804,12 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     // is not in the new list.  In that case, we drop the current
     // connection and report IDLE.
     if (p->selected_ != nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+        gpr_log(GPR_INFO,
+                "[PF %p] subchannel list %p: new update has no subchannels in "
+                "state READY; dropping existing connection and going IDLE",
+                p, subchannel_list_);
+      }
       p->GoIdle();
     } else {
       // Start trying to connect, starting with the first subchannel.
