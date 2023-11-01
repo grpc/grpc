@@ -50,7 +50,6 @@ do
     -and -not -name grpc_tls_credentials_options.h \
     -and -not -name grpc_tls_credentials_options_comparator_test.cc \
     -and -not -path '*/cmake/build/*' \
-    -and -not -path '*/huffman_geometries/*' \
     `"
   done
 done
