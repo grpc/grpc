@@ -77,7 +77,7 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
             self.config = _observability_config.read_config()
             _cyobservability.activate_config(self.config)
         except Exception as e:  # pylint: disable=broad-except
-            raise ValueError(f"Read configuration failed with: {e}")
+            raise ValueError(f"Reading configuration failed with: {e}")
 
         if exporter:
             self.exporter = exporter

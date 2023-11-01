@@ -30,6 +30,7 @@ except KeyError:
 
 
 # monkey-patch for parallel compilation
+# TODO(xuanwn): Use a template for this file.
 def _parallel_compile(
     self,
     sources,
