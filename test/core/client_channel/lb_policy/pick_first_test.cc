@@ -1009,8 +1009,8 @@ TEST_F(PickFirstTest, AddressUpdateRemovedSelectedAddress) {
     EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
   }
   // Now send an address update that removes the selected address.
-  status = ApplyUpdate(
-      BuildUpdate({kAddresses[1]}, MakePickFirstConfig(false)), lb_policy());
+  status = ApplyUpdate(BuildUpdate({kAddresses[1]}, MakePickFirstConfig(false)),
+                       lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // We should see a re-resolution request.
   ExpectReresolutionRequest();
