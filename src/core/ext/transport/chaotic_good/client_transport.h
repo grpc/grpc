@@ -81,17 +81,18 @@ class ClientTransport {
     // At this point, the connection is set up.
     // Start sending data frames.
     uint32_t stream_id;
-    InterActivityPipe<ServerFrame, server_frame_queue_size_> server_frames;
+    auto pipe_server_frames = std::make_shared<InterActivityPipe<ServerFrame, server_frame_queue_size_>>();
     {
       MutexLock lock(&mu_);
       stream_id = next_stream_id_++;
+      std::cout << "Stream " << stream_id <<" server frame pipe sender " << &pipe_server_frames->sender << "\n";
+      std::cout << "Stream " << stream_id <<" server frame pipe receiver " << &pipe_server_frames->receiver << "\n";
+      fflush(stdout);
       stream_map_.insert(
           std::pair<uint32_t,
                     std::shared_ptr<InterActivityPipe<
-                        ServerFrame, server_frame_queue_size_>::Sender>>(
-              stream_id, std::make_shared<InterActivityPipe<
-                             ServerFrame, server_frame_queue_size_>::Sender>(
-                             std::move(server_frames.sender))));
+                        ServerFrame, server_frame_queue_size_>>>(
+              stream_id, pipe_server_frames));
     }
     return TrySeq(
         TryJoin(
@@ -132,10 +133,12 @@ class ClientTransport {
             Loop([server_initial_metadata = call_args.server_initial_metadata,
                   server_to_client_messages =
                       call_args.server_to_client_messages,
-                  receiver = std::move(server_frames.receiver)]() mutable {
+                   pipe_server_frames, stream_id]() mutable {
+              std::cout << "Stream " << stream_id <<" Loop server frame pipe receiver " << &pipe_server_frames->receiver << "\n";
+              fflush(stdout);
               return TrySeq(
                   // Receive incoming server frame.
-                  receiver.Next(),
+                  pipe_server_frames->receiver.Next(),
                   // Save incomming frame results to call_args.
                   [server_initial_metadata, server_to_client_messages](
                       absl::optional<ServerFrame> server_frame) mutable {
@@ -149,42 +152,45 @@ class ClientTransport {
                     bool has_message = (frame.message != nullptr);
                     bool has_trailers = (frame.trailers != nullptr);
                     return TrySeq(
-                        If(has_headers,
-                           [server_initial_metadata,
-                            headers = std::move(frame.headers)]() mutable {
-                             std::cout
-                                 << "Receive headers " << headers->DebugString()
-                                 << " push to pipe " << server_initial_metadata
-                                 << "\n";
-                             fflush(stdout);
-                             return server_initial_metadata->Push(
-                                 std::move(headers));
-                           },
-                           [] { return false; }),
-                        If(has_message,
-                           [server_to_client_messages,
-                            message = std::move(frame.message)]() mutable {
-                             std::cout << "Receive message "
-                                       << message->DebugString()
-                                       << " push to pipe "
-                                       << server_to_client_messages << "\n";
-                             fflush(stdout);
-                             return server_to_client_messages->Push(
-                                 std::move(message));
-                           },
-                           [] { return false; }),
-                        If(has_trailers,
-                           [trailers = std::move(frame.trailers)]() mutable
-                           -> LoopCtl<ServerMetadataHandle> {
-                             std::cout << "Receive trailers "
-                                       << trailers->DebugString()
-                                       << " return \n";
-                             fflush(stdout);
-                             return std::move(trailers);
-                           },
-                           []() -> LoopCtl<ServerMetadataHandle> {
-                             return Continue();
-                           }));
+                        If(
+                            has_headers,
+                            [server_initial_metadata,
+                             headers = std::move(frame.headers)]() mutable {
+                              std::cout << "Receive headers "
+                                        << headers->DebugString()
+                                        << " push to pipe "
+                                        << server_initial_metadata << "\n";
+                              fflush(stdout);
+                              return server_initial_metadata->Push(
+                                  std::move(headers));
+                            },
+                            [] { return false; }),
+                        If(
+                            has_message,
+                            [server_to_client_messages,
+                             message = std::move(frame.message)]() mutable {
+                              std::cout << "Receive message "
+                                        << message->DebugString()
+                                        << " push to pipe "
+                                        << server_to_client_messages << "\n";
+                              fflush(stdout);
+                              return server_to_client_messages->Push(
+                                  std::move(message));
+                            },
+                            [] { return false; }),
+                        If(
+                            has_trailers,
+                            [trailers = std::move(frame.trailers)]() mutable
+                            -> LoopCtl<ServerMetadataHandle> {
+                              std::cout << "Receive trailers "
+                                        << trailers->DebugString()
+                                        << " return \n";
+                              fflush(stdout);
+                              return std::move(trailers);
+                            },
+                            []() -> LoopCtl<ServerMetadataHandle> {
+                              return Continue();
+                            }));
                   });
             })),
         [](std::tuple<Empty, ServerMetadataHandle> ret) {
@@ -205,7 +211,7 @@ class ClientTransport {
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
   std::map<uint32_t, std::shared_ptr<InterActivityPipe<
-                         ServerFrame, server_frame_queue_size_>::Sender>>
+                         ServerFrame, server_frame_queue_size_>>>
       stream_map_ ABSL_GUARDED_BY(mu_);
   ActivityPtr writer_;
   ActivityPtr reader_;

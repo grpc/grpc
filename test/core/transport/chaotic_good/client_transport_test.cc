@@ -16,8 +16,6 @@
 
 // IWYU pragma: no_include <sys/socket.h>
 
-#include <stddef.h>
-
 #include <algorithm>  // IWYU pragma: keep
 #include <memory>
 #include <string>  // IWYU pragma: keep
@@ -220,10 +218,14 @@ class ClientTransportTest : public ::testing::Test {
         std::make_unique<PromiseEndpoint>(
             std::unique_ptr<MockEndpoint>(data_endpoint_ptr_), SliceBuffer()),
         event_engine_);
-    std::cout << "Stream 1 header send pipe = " << &pipe_server_intial_metadata_.sender << "\n";
-    std::cout << "Stream 1 message send pipe = " << &pipe_server_to_client_messages_.sender << "\n";
-    std::cout << "Stream 2 header send pipe = " << &pipe_server_intial_metadata_second_.sender << "\n";
-    std::cout << "Stream 2 message send pipe = " << &pipe_server_to_client_messages_second_.sender << "\n";
+    std::cout << "Stream 1 header send pipe = "
+              << &pipe_server_intial_metadata_.sender << "\n";
+    std::cout << "Stream 1 message send pipe = "
+              << &pipe_server_to_client_messages_.sender << "\n";
+    std::cout << "Stream 2 header send pipe = "
+              << &pipe_server_intial_metadata_second_.sender << "\n";
+    std::cout << "Stream 2 message send pipe = "
+              << &pipe_server_to_client_messages_second_.sender << "\n";
     fflush(stdout);
   }
   // Create client to server test messages.
