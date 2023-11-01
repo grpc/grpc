@@ -64,8 +64,7 @@ PosixEngineListenerImpl::PosixEngineListenerImpl(
       acceptors_(this),
       on_accept_(std::move(on_accept)),
       on_shutdown_(std::move(on_shutdown)),
-      memory_allocator_factory_(std::move(memory_allocator_factory)) {
-}
+      memory_allocator_factory_(std::move(memory_allocator_factory)) {}
 
 absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr,
