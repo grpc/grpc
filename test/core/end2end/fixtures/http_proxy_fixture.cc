@@ -81,12 +81,21 @@ struct grpc_end2end_http_proxy {
 
 namespace {
 
+// Sometimes, on_accept may be called after thread_main has returned, and the
+// proxy will have already been destroyed. This value is reset every time a
+// proxy fixture is created, and it prevents a crash due to a repeated unref.
+std::atomic<bool> proxy_destroyed{false};
+
 void proxy_ref(grpc_end2end_http_proxy* proxy) { proxy->users.fetch_add(1); }
 
 // Returns the remaining number of outstanding refs
 size_t proxy_unref(grpc_end2end_http_proxy* proxy) {
   size_t ref_count = proxy->users.fetch_sub(1) - 1;
+  if (proxy_destroyed.load()) {
+    return -1;
+  }
   if (ref_count == 0) {
+    proxy_destroyed.store(true);
     GRPC_COMBINER_UNREF(proxy->combiner, "test");
     delete proxy;
   }
@@ -601,8 +610,9 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
   grpc_end2end_http_proxy* proxy = static_cast<grpc_end2end_http_proxy*>(arg);
   proxy_ref(proxy);
   if (proxy->is_shutdown.load()) {
-    proxy_unref(proxy);
+    grpc_endpoint_shutdown(endpoint, absl::UnknownError("proxy shutdown"));
     grpc_endpoint_destroy(endpoint);
+    proxy_unref(proxy);
     return;
   }
   // Instantiate proxy_connection.
@@ -649,12 +659,14 @@ static void thread_main(void* arg) {
     gpr_mu_unlock(proxy->mu);
     grpc_core::ExecCtx::Get()->Flush();
   } while (proxy_unref(proxy) > 1 || !proxy->is_shutdown.load());
+  gpr_log(GPR_ERROR, "DO NOT SUBMIT: thread_main exiting");
 }
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
     const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
   grpc_end2end_http_proxy* proxy = new grpc_end2end_http_proxy();
+  proxy_destroyed.store(false);
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
   proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
