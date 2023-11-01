@@ -1053,6 +1053,7 @@ let package = Package(
         "src/core/lib/channel/server_call_tracer_filter.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/channel/status_util.h",
+        "src/core/lib/channel/tcp_tracer.h",
         "src/core/lib/compression/compression.cc",
         "src/core/lib/compression/compression_internal.cc",
         "src/core/lib/compression/compression_internal.h",

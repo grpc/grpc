@@ -24,6 +24,7 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
+#include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -75,11 +76,11 @@ TEST_P(XdsClientTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
   WaitForAllBackends(DEBUG_LOCATION, 0, 1);
   // Stop balancer.
   balancer_->Shutdown();
-  // Tell balancer to require minimum version 1 for all resource types.
-  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
+  // Expect minimum version 1 for all resource types.
+  balancer_->ads_service()->SetCheckVersionCallback(
+      [&](absl::string_view resource_type, int version) {
+        EXPECT_GE(version, 1) << "resource_type: " << resource_type;
+      });
   // Update backend, just so we can be sure that the client has
   // reconnected to the balancer.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
@@ -307,7 +308,7 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 class TimeoutTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"",
+    InitClient(XdsBootstrapBuilder(), /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/2000);
   }
 };
@@ -529,15 +530,15 @@ TEST_P(TimeoutTest, ServerDoesNotResendAfterAdsStreamRestart) {
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // Stop balancer.
   balancer_->Shutdown();
-  // Tell balancer to require minimum version 1 for all resource types
-  // and to not reply to the requests.
-  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
+  // Expect minimum version 1 for all resource types.
+  balancer_->ads_service()->SetCheckVersionCallback(
+      [&](absl::string_view resource_type, int version) {
+        EXPECT_GE(version, 1) << "resource_type: " << resource_type;
+      });
+  // Tell balancer not to reply to the requests.
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
   balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
   // Restart balancer.
   balancer_->Start();
@@ -627,7 +628,7 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "new_cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.SetClientDefaultListenerResourceNameTemplate(kNewListenerTemplate);
   builder.AddAuthority(
       kAuthority, absl::StrCat("localhost:", authority_balancer_->port()),
@@ -681,7 +682,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()));
   InitClient(builder);
@@ -750,7 +751,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -806,7 +807,7 @@ TEST_P(XdsFederationTest, TargetUriAuthorityUnknown) {
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
       "client/%s?psm_project_id=1234";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(
       kAuthority, absl::StrCat("localhost:", grpc_pick_unused_port_or_die()),
       kNewListenerTemplate);
@@ -837,7 +838,7 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
   const char* kNewRouteConfigName =
       "xdstp://xds.unknown.com/envoy.config.route.v3.RouteConfiguration/"
       "new_route_config_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -883,7 +884,7 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
   const char* kNewClusterName =
       "xdstp://xds.unknown.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -936,7 +937,7 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -1003,7 +1004,7 @@ TEST_P(XdsFederationTest, FederationServer) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "new_cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.SetClientDefaultListenerResourceNameTemplate(kNewListenerTemplate);
   builder.SetServerListenerResourceNameTemplate(kNewServerListenerTemplate);
   builder.AddAuthority(
@@ -1045,8 +1046,7 @@ TEST_P(XdsFederationTest, FederationServer) {
     Listener server_listener = default_server_listener_;
     server_listener.set_name(absl::StrCat(
         "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
-        ipv6_only_ ? "%5B::1%5D:" : "127.0.0.1:", port,
-        "?psm_project_id=1234"));
+        grpc_core::LocalIp(), ":", port, "?psm_project_id=1234"));
     server_listener.mutable_address()->mutable_socket_address()->set_port_value(
         port);
     SetListenerAndRouteConfiguration(authority_balancer_.get(), server_listener,
@@ -1150,7 +1150,7 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
       "cluster_name";
   const size_t kNumRpcsToDefaultBalancer = 5;
   const size_t kNumRpcsToAuthorityBalancer = 10;
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -1261,7 +1261,7 @@ TEST_P(XdsFederationLoadReportingTest, SameServerInAuthorityAndTopLevel) {
   const char* kNewEdsServiceName =
       "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
       "edsservice_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   std::string xds_server =
       absl::StrCat("localhost:", authority_balancer_->port());
   builder.AddAuthority(kAuthority, xds_server);
@@ -1334,7 +1334,7 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
 
 // Tests that secure naming check passes if target name is expected.
 TEST_P(SecureNamingTest, TargetNameIsExpected) {
-  InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"localhost:%d");
+  InitClient(XdsBootstrapBuilder(), /*lb_expected_authority=*/"localhost:%d");
   CreateAndStartBackends(4);
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -1346,7 +1346,7 @@ TEST_P(SecureNamingTest, TargetNameIsExpected) {
 // Tests that secure naming check fails if target name is unexpected.
 TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
-  InitClient(BootstrapBuilder(),
+  InitClient(XdsBootstrapBuilder(),
              /*lb_expected_authority=*/"incorrect_server_name");
   CreateAndStartBackends(4);
   EdsResourceArgs args({

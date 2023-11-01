@@ -23,9 +23,6 @@
 #include <thread>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -62,6 +59,9 @@ class AdsServiceImpl
           ::envoy::service::discovery::v3::AggregatedDiscoveryService::Service>,
       public std::enable_shared_from_this<AdsServiceImpl> {
  public:
+  using DiscoveryRequest = ::envoy::service::discovery::v3::DiscoveryRequest;
+  using DiscoveryResponse = ::envoy::service::discovery::v3::DiscoveryResponse;
+
   // State for a given xDS resource type.
   struct ResponseState {
     enum State {
@@ -72,7 +72,12 @@ class AdsServiceImpl
     std::string error_message;
   };
 
-  AdsServiceImpl() {}
+  explicit AdsServiceImpl(
+      std::function<void(const DiscoveryRequest& request)> check_first_request =
+          nullptr,
+      std::function<void(absl::StatusCode)> check_nack_status_code = nullptr)
+      : check_first_request_(std::move(check_first_request)),
+        check_nack_status_code_(std::move(check_nack_status_code)) {}
 
   void set_wrap_resources(bool wrap_resources) {
     grpc_core::MutexLock lock(&ads_mu_);
@@ -119,12 +124,12 @@ class AdsServiceImpl
     resource_types_to_ignore_.emplace(type_url);
   }
 
-  // Sets the minimum version that the server will accept for a given
-  // resource type.  Will cause a gmock expectation failure if we see a
-  // lower version.
-  void SetResourceMinVersion(const std::string& type_url, int version) {
+  // Sets a callback to be invoked on request messages with respoonse_nonce
+  // set.  The callback is passed the resource type and version.
+  void SetCheckVersionCallback(
+      std::function<void(absl::string_view, int)> check_version_callack) {
     grpc_core::MutexLock lock(&ads_mu_);
-    resource_type_min_versions_[type_url] = version;
+    check_version_callack_ = std::move(check_version_callack);
   }
 
   // Get the list of response state for each resource type.
@@ -214,8 +219,6 @@ class AdsServiceImpl
 
   using ResourceMap = std::map<std::string /* type_url */, ResourceTypeState>;
 
-  using DiscoveryRequest = ::envoy::service::discovery::v3::DiscoveryRequest;
-  using DiscoveryResponse = ::envoy::service::discovery::v3::DiscoveryResponse;
   using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
 
   Status StreamAggregatedResources(ServerContext* context,
@@ -355,9 +358,10 @@ class AdsServiceImpl
         GPR_ASSERT(absl::SimpleAtoi(request.version_info(),
                                     &client_resource_type_version));
       }
-      EXPECT_GE(client_resource_type_version,
-                resource_type_min_versions_[request.type_url()])
-          << "resource_type: " << request.type_url();
+      if (check_version_callack_ != nullptr) {
+        check_version_callack_(request.type_url(),
+                               client_resource_type_version);
+      }
     } else {
       int client_nonce;
       GPR_ASSERT(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
@@ -370,7 +374,10 @@ class AdsServiceImpl
                 request.version_info().c_str());
       } else {
         response_state.state = ResponseState::NACKED;
-        EXPECT_EQ(request.error_detail().code(), GRPC_STATUS_INVALID_ARGUMENT);
+        if (check_nack_status_code_ != nullptr) {
+          check_nack_status_code_(
+              static_cast<absl::StatusCode>(request.error_detail().code()));
+        }
         response_state.error_message = request.error_detail().message();
         gpr_log(GPR_INFO,
                 "ADS[%p]: client NACKed resource_type=%s version=%s: %s", this,
@@ -476,11 +483,9 @@ class AdsServiceImpl
     bool seen_first_request = false;
     while (stream->Read(&request)) {
       if (!seen_first_request) {
-        EXPECT_TRUE(request.has_node());
-        EXPECT_THAT(request.node().client_features(),
-                    ::testing::UnorderedElementsAre(
-                        "envoy.lb.does_not_support_overprovisioning",
-                        "xds.config.resource-in-sotw"));
+        if (check_first_request_ != nullptr) {
+          check_first_request_(request);
+        }
         seen_first_request = true;
       }
       {
@@ -557,6 +562,9 @@ class AdsServiceImpl
     clients_.erase(client);
   }
 
+  std::function<void(const DiscoveryRequest& request)> check_first_request_;
+  std::function<void(absl::StatusCode)> check_nack_status_code_;
+
   grpc_core::CondVar ads_cond_;
   grpc_core::Mutex ads_mu_;
   bool ads_done_ ABSL_GUARDED_BY(ads_mu_) = false;
@@ -564,7 +572,7 @@ class AdsServiceImpl
       resource_type_response_state_ ABSL_GUARDED_BY(ads_mu_);
   std::set<std::string /*resource_type*/> resource_types_to_ignore_
       ABSL_GUARDED_BY(ads_mu_);
-  std::map<std::string /*resource_type*/, int> resource_type_min_versions_
+  std::function<void(absl::string_view, int)> check_version_callack_
       ABSL_GUARDED_BY(ads_mu_);
   // An instance data member containing the current state of all resources.
   // Note that an entry will exist whenever either of the following is true:
@@ -585,6 +593,9 @@ class LrsServiceImpl
           ::envoy::service::load_stats::v3::LoadReportingService::Service>,
       public std::enable_shared_from_this<LrsServiceImpl> {
  public:
+  using LoadStatsRequest = ::envoy::service::load_stats::v3::LoadStatsRequest;
+  using LoadStatsResponse = ::envoy::service::load_stats::v3::LoadStatsResponse;
+
   // Stats reported by client.
   class ClientStats {
    public:
@@ -686,10 +697,15 @@ class LrsServiceImpl
   };
 
   LrsServiceImpl(int client_load_reporting_interval_seconds,
-                 std::set<std::string> cluster_names)
+                 std::set<std::string> cluster_names,
+                 std::function<void()> stream_started_callback = nullptr,
+                 std::function<void(const LoadStatsRequest& request)>
+                     check_first_request = nullptr)
       : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
-        cluster_names_(std::move(cluster_names)) {}
+        cluster_names_(std::move(cluster_names)),
+        stream_started_callback_(std::move(stream_started_callback)),
+        check_first_request_(std::move(check_first_request)) {}
 
   // Must be called before the LRS call is started.
   void set_send_all_clusters(bool send_all_clusters) {
@@ -710,13 +726,11 @@ class LrsServiceImpl
       absl::Duration timeout = absl::InfiniteDuration());
 
  private:
-  using LoadStatsRequest = ::envoy::service::load_stats::v3::LoadStatsRequest;
-  using LoadStatsResponse = ::envoy::service::load_stats::v3::LoadStatsResponse;
   using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
 
   Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override {
     gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
-    EXPECT_GT(client_load_reporting_interval_seconds_, 0);
+    if (stream_started_callback_ != nullptr) stream_started_callback_();
     // Take a reference of the LrsServiceImpl object, reference will go
     // out of scope after this method exits.
     std::shared_ptr<LrsServiceImpl> lrs_service_impl = shared_from_this();
@@ -724,9 +738,7 @@ class LrsServiceImpl
     LoadStatsRequest request;
     if (stream->Read(&request)) {
       IncreaseRequestCount();
-      // Verify client features.
-      EXPECT_THAT(request.node().client_features(),
-                  ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
+      if (check_first_request_ != nullptr) check_first_request_(request);
       // Send initial response.
       LoadStatsResponse response;
       if (send_all_clusters_) {
@@ -769,6 +781,8 @@ class LrsServiceImpl
   const int client_load_reporting_interval_seconds_;
   bool send_all_clusters_ = false;
   std::set<std::string> cluster_names_;
+  std::function<void()> stream_started_callback_;
+  std::function<void(const LoadStatsRequest& request)> check_first_request_;
 
   grpc_core::CondVar lrs_cv_;
   grpc_core::Mutex lrs_mu_;

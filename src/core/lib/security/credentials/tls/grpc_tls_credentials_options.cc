@@ -38,6 +38,17 @@ grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
   return new grpc_tls_credentials_options();
 }
 
+grpc_tls_credentials_options* grpc_tls_credentials_options_copy(
+    grpc_tls_credentials_options* options) {
+  GPR_ASSERT(options != nullptr);
+  return new grpc_tls_credentials_options(*options);
+}
+
+void grpc_tls_credentials_options_destroy(
+    grpc_tls_credentials_options* options) {
+  delete options;
+}
+
 void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type) {
@@ -136,5 +147,5 @@ void grpc_tls_credentials_options_set_crl_provider(
     grpc_tls_credentials_options* options,
     std::shared_ptr<grpc_core::experimental::CrlProvider> provider) {
   GPR_ASSERT(options != nullptr);
-  options->set_crl_provider(std::move(provider));
+  options->set_crl_provider(provider);
 }

@@ -2058,6 +2058,7 @@ src/core/lib/channel/promise_based_filter.h \
 src/core/lib/channel/server_call_tracer_filter.cc \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
+src/core/lib/channel/tcp_tracer.h \
 src/core/lib/compression/compression.cc \
 src/core/lib/compression/compression_internal.cc \
 src/core/lib/compression/compression_internal.h \
@@ -2843,6 +2844,7 @@ src/cpp/server/server_cc.cc \
 src/cpp/server/server_context.cc \
 src/cpp/server/server_posix.cc \
 src/cpp/server/thread_pool_interface.h \
+src/cpp/server/xds_server_builder.cc \
 src/cpp/server/xds_server_credentials.cc \
 src/cpp/thread_manager/thread_manager.cc \
 src/cpp/thread_manager/thread_manager.h \

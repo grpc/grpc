@@ -389,11 +389,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
   static void TearDownTestSuite() { grpc_shutdown(); }
 
   void SetUp() override {
-    bool localhost_resolves_to_ipv4 = false;
-    bool localhost_resolves_to_ipv6 = false;
-    grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
-                                 &localhost_resolves_to_ipv6);
-    ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     // Start the backends.
@@ -560,8 +555,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_core::EndpointAddressesList addresses;
     for (const auto& addr : address_data) {
       absl::StatusOr<grpc_core::URI> lb_uri =
-          grpc_core::URI::Parse(absl::StrCat(
-              ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", addr.port));
+          grpc_core::URI::Parse(grpc_core::LocalIpUri(addr.port));
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
@@ -649,8 +643,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
     }
     for (const int& backend_port : backend_ports) {
       auto* server = response.mutable_server_list()->add_servers();
-      server->set_ip_address(ipv6_only_ ? Ip6ToPackedString("::1")
-                                        : Ip4ToPackedString("127.0.0.1"));
+      server->set_ip_address(grpc_core::RunningWithIPv6Only()
+                                 ? Ip6ToPackedString("::1")
+                                 : Ip4ToPackedString("127.0.0.1"));
       server->set_port(backend_port);
       static int token_count = 0;
       server->set_load_balance_token(
@@ -757,7 +752,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
   const size_t num_backends_;
   const size_t num_balancers_;
   const int client_load_reporting_interval_seconds_;
-  bool ipv6_only_ = false;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerThread<BackendServiceImpl>>> backends_;

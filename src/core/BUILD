@@ -2222,6 +2222,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_map",
+        "absl/strings",
         "absl/strings:str_format",
     ],
     deps = [

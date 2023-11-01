@@ -793,6 +793,8 @@ class CoreDeadlineTest : public CoreEnd2endTest {};
 class CoreDeadlineSingleHopTest : public CoreEnd2endTest {};
 // Test suite for http2 tests that only work over a single hop (unproxyable)
 class Http2SingleHopTest : public CoreEnd2endTest {};
+// Test suite for fullstack single hop http2 tests (require client channel)
+class Http2FullstackSingleHopTest : public CoreEnd2endTest {};
 // Test suite for tests that require retry features
 class RetryTest : public CoreEnd2endTest {};
 // Test suite for write buffering
@@ -867,10 +869,6 @@ class CoreEnd2endTestRegistry {
 #define SKIP_IF_MINSTACK()                                 \
   if (GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
   GTEST_SKIP() << "Skipping test for minstack"
-
-#define SKIP_IF_USES_EVENT_ENGINE_CLIENT()                                     \
-  if (!g_is_fuzzing_core_e2e_tests && grpc_core::IsEventEngineClientEnabled()) \
-  GTEST_SKIP() << "Skipping test to prevent it from using EventEngine client"
 
 #define SKIP_IF_FUZZING() \
   if (g_is_fuzzing_core_e2e_tests) GTEST_SKIP() << "Skipping test for fuzzing"
