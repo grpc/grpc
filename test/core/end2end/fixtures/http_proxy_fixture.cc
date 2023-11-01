@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <atomic>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -659,7 +660,6 @@ static void thread_main(void* arg) {
     gpr_mu_unlock(proxy->mu);
     grpc_core::ExecCtx::Get()->Flush();
   } while (proxy_unref(proxy) > 1 || !proxy->is_shutdown.load());
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: thread_main exiting");
 }
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
