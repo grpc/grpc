@@ -229,8 +229,9 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
 #define GRPC_ARG_SETTINGS_TIMEOUT "grpc.http2.settings_timeout"
 
 namespace {
-grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
-  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
+grpc_core::CallTracerInterface* CallTracerIfTraced(grpc_chttp2_stream* s) {
+  if (s->context == nullptr || !s->traced ||
+      !grpc_core::IsTraceRecordCallopsEnabled()) {
     return nullptr;
   }
   return static_cast<grpc_core::CallTracerInterface*>(
@@ -239,7 +240,7 @@ grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
           .value);
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfEnabled(
+std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfTraced(
     grpc_chttp2_stream* s) {
   if (s->context == nullptr || !s->traced ||
       !grpc_core::IsTraceRecordCallopsEnabled()) {
@@ -1471,8 +1472,8 @@ static void perform_stream_op_locked(void* stream_op,
 
   s->context = op->payload->context;
   s->traced = op->is_traced;
-  s->call_tracer = CallTracerIfEnabled(s);
-  s->tcp_tracer = TcpTracerIfEnabled(s);
+  s->call_tracer = CallTracerIfTraced(s);
+  s->tcp_tracer = TcpTracerIfTraced(s);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO,
             "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
