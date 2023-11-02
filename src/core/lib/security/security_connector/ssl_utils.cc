@@ -417,7 +417,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs;
   const tsi_ssl_root_certs_store* root_store;
-  if (pem_root_certs == nullptr) {
+  if (pem_root_certs == nullptr && !skip_server_certificate_verification) {
     gpr_log(GPR_INFO,
             "No root certificates specified; use ones stored in system default "
             "locations instead");
@@ -436,7 +436,6 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
                            pem_key_cert_pair->private_key != nullptr &&
                            pem_key_cert_pair->cert_chain != nullptr;
   tsi_ssl_client_handshaker_options options;
-  GPR_DEBUG_ASSERT(root_certs != nullptr);
   options.pem_root_certs = root_certs;
   options.root_store = root_store;
   options.alpn_protocols =

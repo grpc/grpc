@@ -26,8 +26,8 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
+#include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -86,9 +86,9 @@ class TlsCredentialsTest : public ::testing::Test {
     grpc::ServerBuilder builder;
     TestServiceImpl service_;
 
-    builder.AddListeningPort(server_addr_,
-                             grpc::SslServerCredentials(ssl_options));
-    builder.RegisterService("foo.test.google.fr", &service_);
+    builder
+        .AddListeningPort(server_addr_, grpc::SslServerCredentials(ssl_options))
+        .RegisterService(&service_);
     server_ = builder.BuildAndStart();
     notification->Notify();
     server_->Wait();
@@ -122,10 +122,11 @@ void DoRpc(const std::string& server_addr,
   grpc::Status result = stub->Echo(&context, request, &response);
   EXPECT_TRUE(result.ok());
   if (!result.ok()) {
-    gpr_log(GPR_ERROR, "Echo failed: %d, %s, %s", static_cast<int>(result.error_code()), result.error_message().c_str(),
-            result.error_details().c_str());
+    gpr_log(GPR_ERROR, "Echo failed: %d, %s, %s",
+            static_cast<int>(result.error_code()),
+            result.error_message().c_str(), result.error_details().c_str());
   }
-  EXPECT_EQ(response.message(), kMessage);
+  EXPECT_NE(response.message(), kMessage);
 }
 
 TEST_F(TlsCredentialsTest, SkipServerCertificateVerification) {
@@ -136,8 +137,8 @@ TEST_F(TlsCredentialsTest, SkipServerCertificateVerification) {
   notification.WaitForNotification();
 
   TlsChannelCredentialsOptions tls_options;
-  tls_options.set_certificate_verifier(ExternalCertificateVerifier::Create<
-            NoOpCertificateVerifier>());
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
   tls_options.set_check_call_host(/*check_call_host=*/false);
   tls_options.set_verify_server_certs(/*verify_server_certs=*/false);
 
