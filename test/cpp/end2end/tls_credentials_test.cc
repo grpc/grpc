@@ -126,7 +126,7 @@ void DoRpc(const std::string& server_addr,
             static_cast<int>(result.error_code()),
             result.error_message().c_str(), result.error_details().c_str());
   }
-  EXPECT_NE(response.message(), kMessage);
+  EXPECT_EQ(response.message(), kMessage);
 }
 
 TEST_F(TlsCredentialsTest, SkipServerCertificateVerification) {
