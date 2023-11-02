@@ -307,6 +307,10 @@
   expiry: 2024/02/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
+- name: uniquely_unowned
+  description: Ensure HPACK table takes a unique copy of data when parsing unknown metadata
+  expiry: 2024/03/03
+  owner: ctiller@google.com
 - name: work_serializer_clears_time_cache
   description:
     Have the work serializer clear the time cache when it dispatches work.
