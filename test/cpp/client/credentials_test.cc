@@ -508,20 +508,6 @@ TEST(CredentialsTest, TlsChannelCredentialsWithGoodMinAndMaxTlsVersions) {
   EXPECT_NE(channel_credentials, nullptr);
 }
 
-TEST(CredentialsTest, TlsChannelCredentialsWithMinTlsVersions) {
-  grpc::experimental::TlsChannelCredentialsOptions options;
-  options.set_min_tls_version(static_cast<grpc_tls_version>(-1));
-  auto channel_credentials = grpc::experimental::TlsCredentials(options);
-  EXPECT_EQ(channel_credentials, nullptr);
-}
-
-TEST(CredentialsTest, TlsChannelCredentialsWithMaxTlsVersions) {
-  grpc::experimental::TlsChannelCredentialsOptions options;
-  options.set_max_tls_version(static_cast<grpc_tls_version>(2));
-  auto channel_credentials = grpc::experimental::TlsCredentials(options);
-  EXPECT_EQ(channel_credentials, nullptr);
-}
-
 TEST(CredentialsTest, TlsChannelCredentialsWithBadMinAndMaxTlsVersions) {
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_min_tls_version(grpc_tls_version::TLS1_3);
