@@ -3888,8 +3888,7 @@ TEST(CredentialsTest, RecursiveCompositeCredsDuplicateWithoutCallCreds) {
       inner_composite_creds, outer_fake_creds.get(), nullptr);
   auto duplicate_without_call_creds =
       outer_composite_creds->duplicate_without_call_credentials();
-  auto type = duplicate_without_call_creds->type();
-  ASSERT_NE(type, inner_composite_creds->type());
+  EXPECT_EQ(duplicate_without_call_creds.get(), insecure_creds);
   grpc_channel_credentials_release(insecure_creds);
   grpc_channel_credentials_release(inner_composite_creds);
   grpc_channel_credentials_release(outer_composite_creds);
