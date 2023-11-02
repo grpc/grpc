@@ -39,6 +39,9 @@ TEST(DirectoryReader, CanListFiles) {
     contents.push_back(std::string(filename));
   });
   ASSERT_TRUE(status.ok()) << status;
+  // IsSupersetOf() is needed instead of UnorderedElementsAre() because some
+  // builds/OS combinations will include the BUILD file in this directory when
+  // the tests are run
   EXPECT_THAT(contents,
               ::testing::IsSupersetOf({"ab06acdd.r0", "b9322cac.r0",
                                        "current.crl", "intermediate.crl"}));
