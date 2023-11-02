@@ -144,8 +144,7 @@ FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)
       mu_(new Mutex) {}
 
 // Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle> FaultInjectionFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void FaultInjectionFilter::InitCall(const CallArgs& call_args) {
   auto decision = MakeInjectionDecision(call_args.client_initial_metadata);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
     gpr_log(GPR_INFO, "chand=%p: Fault injection triggered %s", this,

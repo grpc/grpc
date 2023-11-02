@@ -43,8 +43,7 @@
 
 namespace grpc_core {
 
-ArenaPromise<ServerMetadataHandle> RbacFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void RbacFilter::InitCall(const CallArgs& call_args) {
   // Fetch and apply the rbac policy from the service config.
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
       GetContext<
@@ -54,19 +53,24 @@ ArenaPromise<ServerMetadataHandle> RbacFilter::MakeCallPromise(
       service_config_call_data->GetMethodParsedConfig(
           service_config_parser_index_));
   if (method_params == nullptr) {
-    return Immediate(ServerMetadataFromStatus(
+    call_args.cancel_latch->SetIfUnset(ServerMetadataFromStatus(
         absl::PermissionDeniedError("No RBAC policy found.")));
-  } else {
-    auto* authorization_engine = method_params->authorization_engine(index_);
-    if (authorization_engine
-            ->Evaluate(EvaluateArgs(call_args.client_initial_metadata.get(),
-                                    &per_channel_evaluate_args_))
-            .type == AuthorizationEngine::Decision::Type::kDeny) {
-      return Immediate(ServerMetadataFromStatus(
-          absl::PermissionDeniedError("Unauthorized RPC rejected")));
-    }
+    return;
   }
-  return next_promise_factory(std::move(call_args));
+  call_args.client_initial_metadata->InterceptAndMap(
+      [method_params, cancel_latch = call_args.cancel_latch,
+       this](ClientMetadataHandle md) -> absl::optional<ClientMetadataHandle> {
+        auto* authorization_engine =
+            method_params->authorization_engine(index_);
+        if (authorization_engine
+                ->Evaluate(EvaluateArgs(md.get(), &per_channel_evaluate_args_))
+                .type == AuthorizationEngine::Decision::Type::kDeny) {
+          cancel_latch->SetIfUnset(ServerMetadataFromStatus(
+              absl::PermissionDeniedError("Unauthorized RPC rejected")));
+          return absl::nullopt;
+        }
+        return md;
+      });
 }
 
 const grpc_channel_filter RbacFilter::kFilterVtable =

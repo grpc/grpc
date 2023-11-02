@@ -48,8 +48,7 @@ absl::StatusOr<ClientLoadReportingFilter> ClientLoadReportingFilter::Create(
   return ClientLoadReportingFilter();
 }
 
-ArenaPromise<ServerMetadataHandle> ClientLoadReportingFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ClientLoadReportingFilter::InitCall(const CallArgs& call_args) {
   // Stats object to update.
   RefCountedPtr<GrpcLbClientStats> client_stats;
 

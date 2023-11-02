@@ -108,6 +108,11 @@ class Latch {
     waiter_.Wake();
   }
 
+  void SetIfUnset(T value) {
+    if (is_set()) return;
+    Set(std::move(value));
+  }
+
   bool is_set() const { return has_value_; }
 
  private:

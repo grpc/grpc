@@ -107,8 +107,7 @@ class ServerMessageSizeFilter final : public MessageSizeFilter {
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  void InitCall(const CallArgs& call_args) override;
 
  private:
   using MessageSizeFilter::MessageSizeFilter;
@@ -122,8 +121,7 @@ class ClientMessageSizeFilter final : public MessageSizeFilter {
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  void InitCall(const CallArgs& call_args) override;
 
  private:
   const size_t service_config_parser_index_{MessageSizeParser::ParserIndex()};

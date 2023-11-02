@@ -219,8 +219,7 @@ bool IsConfiguredPath(absl::string_view configured_path,
 }  // namespace
 
 // Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void StatefulSessionFilter::InitCall(const CallArgs& call_args) {
   // Get config.
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
       GetContext<

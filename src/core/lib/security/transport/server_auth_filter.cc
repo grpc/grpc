@@ -118,8 +118,8 @@ class ServerAuthFilter::RunApplicationCode {
  public:
   // TODO(ctiller): Allocate state_ into a pool on the arena to reuse this
   // memory later
-  RunApplicationCode(ServerAuthFilter* filter, CallArgs call_args)
-      : state_(GetContext<Arena>()->ManagedNew<State>(std::move(call_args))) {
+  explicit RunApplicationCode(ServerAuthFilter* filter, ClientMetadataHandle md)
+      : state_(GetContext<Arena>()->ManagedNew<State>(std::move(md))) {
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_ERROR,
               "%s[server-auth]: Delegate to application: filter=%p this=%p "
@@ -142,20 +142,23 @@ class ServerAuthFilter::RunApplicationCode {
     return *this;
   }
 
-  Poll<absl::StatusOr<CallArgs>> operator()() {
+  Poll<absl::StatusOr<ClientMetadataHandle>> operator()() {
     if (state_->done.load(std::memory_order_acquire)) {
-      return Poll<absl::StatusOr<CallArgs>>(std::move(state_->call_args));
+      return Poll<absl::StatusOr<ClientMetadataHandle>>(
+          std::move(state_->client_md));
     }
     return Pending{};
   }
 
  private:
   struct State {
-    explicit State(CallArgs call_args) : call_args(std::move(call_args)) {}
+    explicit State(ClientMetadataHandle md)
+        : client_md(std::move(md)),
+          md(MetadataBatchToMetadataArray(md.get())) {}
+    ServerAuthFilter* filter;
     Waker waker{Activity::current()->MakeOwningWaker()};
-    absl::StatusOr<CallArgs> call_args;
-    grpc_metadata_array md =
-        MetadataBatchToMetadataArray(call_args->client_initial_metadata.get());
+    absl::StatusOr<ClientMetadataHandle> client_md;
+    grpc_metadata_array md;
     std::atomic<bool> done{false};
   };
 
@@ -177,7 +180,7 @@ class ServerAuthFilter::RunApplicationCode {
     }
 
     if (status == GRPC_STATUS_OK) {
-      ClientMetadataHandle& md = state->call_args->client_initial_metadata;
+      ClientMetadataHandle& md = state->client_md.value();
       for (size_t i = 0; i < num_consumed_md; i++) {
         md->Remove(StringViewFromSlice(consumed_md[i].key));
       }
@@ -185,7 +188,7 @@ class ServerAuthFilter::RunApplicationCode {
       if (error_details == nullptr) {
         error_details = "Authentication metadata processing failed.";
       }
-      state->call_args = grpc_error_set_int(
+      state->client_md = grpc_error_set_int(
           absl::Status(static_cast<absl::StatusCode>(status), error_details),
           StatusIntProperty::kRpcStatus, status);
     }
@@ -205,8 +208,7 @@ class ServerAuthFilter::RunApplicationCode {
   State* state_;
 };
 
-ArenaPromise<ServerMetadataHandle> ServerAuthFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ServerAuthFilter::InitCall(const CallArgs& call_args) {
   // Create server security context.  Set its auth context from channel
   // data and save it in the call context.
   grpc_server_security_context* server_ctx =
@@ -221,11 +223,20 @@ ArenaPromise<ServerMetadataHandle> ServerAuthFilter::MakeCallPromise(
 
   if (server_credentials_ == nullptr ||
       server_credentials_->auth_metadata_processor().process == nullptr) {
-    return next_promise_factory(std::move(call_args));
+    return;
   }
 
-  return TrySeq(RunApplicationCode(this, std::move(call_args)),
-                std::move(next_promise_factory));
+  call_args.client_initial_metadata->InterceptAndMap(
+      [this, cancel_latch = call_args.cancel_latch](ClientMetadataHandle md) {
+        return Map(RunApplicationCode(this, std::move(md)),
+                   [cancel_latch](absl::StatusOr<ClientMetadataHandle> result)
+                       -> absl::optional<ClientMetadataHandle> {
+                     if (result.ok()) return std::move(*result);
+                     cancel_latch->SetIfUnset(
+                         ServerMetadataFromStatus(result.status()));
+                     return absl::nullopt;
+                   });
+      });
 }
 
 ServerAuthFilter::ServerAuthFilter(

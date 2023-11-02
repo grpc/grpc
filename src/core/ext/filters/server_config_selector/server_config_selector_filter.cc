@@ -60,9 +60,7 @@ class ServerConfigSelectorFilter final : public ChannelFilter {
   static absl::StatusOr<ServerConfigSelectorFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args);
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
-
+  void InitCall(const CallArgs& call_args) override;
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
     MutexLock lock(&state_->mu);
     return state_->config_selector.value();
@@ -130,23 +128,29 @@ ServerConfigSelectorFilter::~ServerConfigSelectorFilter() {
   }
 }
 
-ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ServerConfigSelectorFilter::InitCall(const CallArgs& call_args) {
   auto sel = config_selector();
-  if (!sel.ok()) return Immediate(ServerMetadataFromStatus(sel.status()));
-  auto call_config =
-      sel.value()->GetCallConfig(call_args.client_initial_metadata.get());
-  if (!call_config.ok()) {
-    auto r = Immediate(ServerMetadataFromStatus(
-        absl::UnavailableError(StatusToString(call_config.status()))));
-    return std::move(r);
+  if (!sel.ok()) {
+    call_args.cancel_latch->SetIfUnset(ServerMetadataFromStatus(sel.status()));
+    return;
   }
-  auto* service_config_call_data =
-      GetContext<Arena>()->New<ServiceConfigCallData>(
-          GetContext<Arena>(), GetContext<grpc_call_context_element>());
-  service_config_call_data->SetServiceConfig(
-      std::move(call_config->service_config), call_config->method_configs);
-  return next_promise_factory(std::move(call_args));
+  call_args.client_initial_metadata->InterceptAndMap(
+      [sel = std::move(*sel), cancel_latch = call_args.cancel_latch](
+          ClientMetadataHandle md) -> absl::optional<ClientMetadataHandle> {
+        auto call_config = sel->GetCallConfig(md.get());
+        if (!call_config.ok()) {
+          cancel_latch->SetIfUnset(ServerMetadataFromStatus(
+              absl::UnavailableError(StatusToString(call_config.status()))));
+          return absl::nullopt;
+        }
+        auto* service_config_call_data =
+            GetContext<Arena>()->New<ServiceConfigCallData>(
+                GetContext<Arena>(), GetContext<grpc_call_context_element>());
+        service_config_call_data->SetServiceConfig(
+            std::move(call_config->service_config),
+            call_config->method_configs);
+        return md;
+      });
 }
 
 }  // namespace

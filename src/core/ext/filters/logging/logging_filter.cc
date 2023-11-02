@@ -360,8 +360,7 @@ absl::StatusOr<ClientLoggingFilter> ClientLoggingFilter::Create(
 }
 
 // Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle> ClientLoggingFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ClientLoggingFilter::InitCall(const CallArgs& call_args) {
   CallData* calld = GetContext<Arena>()->ManagedNew<CallData>(
       true, call_args, default_authority_);
   if (!calld->ShouldLog()) {
@@ -451,8 +450,7 @@ absl::StatusOr<ServerLoggingFilter> ServerLoggingFilter::Create(
 }
 
 // Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle> ServerLoggingFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ServerLoggingFilter::InitCall(const CallArgs& call_args) {
   CallData* calld = GetContext<Arena>()->ManagedNew<CallData>(
       false, call_args, /*default_authority=*/"");
   if (!calld->ShouldLog()) {

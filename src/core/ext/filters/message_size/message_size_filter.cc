@@ -167,8 +167,9 @@ class MessageSizeFilter::CallBuilder {
   }
 
  public:
-  explicit CallBuilder(const MessageSizeParsedConfig& limits)
-      : limits_(limits) {}
+  CallBuilder(const MessageSizeParsedConfig& limits,
+              Latch<ServerMetadataHandle>* err)
+      : err_(err), limits_(limits) {}
 
   template <typename T>
   void AddSend(T* pipe_end) {
@@ -181,14 +182,8 @@ class MessageSizeFilter::CallBuilder {
     pipe_end->InterceptAndMap(Interceptor(*limits_.max_recv_size(), false));
   }
 
-  ArenaPromise<ServerMetadataHandle> Run(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) {
-    return Race(err_->Wait(), next_promise_factory(std::move(call_args)));
-  }
-
  private:
-  Latch<ServerMetadataHandle>* const err_ =
-      GetContext<Arena>()->ManagedNew<Latch<ServerMetadataHandle>>();
+  Latch<ServerMetadataHandle>* const err_;
   MessageSizeParsedConfig limits_;
 };
 
@@ -202,8 +197,7 @@ absl::StatusOr<ServerMessageSizeFilter> ServerMessageSizeFilter::Create(
   return ServerMessageSizeFilter(args);
 }
 
-ArenaPromise<ServerMetadataHandle> ClientMessageSizeFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ClientMessageSizeFilter::InitCall(const CallArgs& call_args) {
   // Get max sizes from channel data, then merge in per-method config values.
   // Note: Per-method config is only available on the client, so we
   // apply the max request size to the send limit and the max response
@@ -229,18 +223,15 @@ ArenaPromise<ServerMetadataHandle> ClientMessageSizeFilter::MakeCallPromise(
     limits = MessageSizeParsedConfig(max_send_size, max_recv_size);
   }
 
-  CallBuilder b(limits);
+  CallBuilder b(call_args.cancel_latch, limits);
   b.AddSend(call_args.client_to_server_messages);
   b.AddRecv(call_args.server_to_client_messages);
-  return b.Run(std::move(call_args), std::move(next_promise_factory));
 }
 
-ArenaPromise<ServerMetadataHandle> ServerMessageSizeFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  CallBuilder b(limits());
+void ServerMessageSizeFilter::InitCall(const CallArgs& call_args) {
+  CallBuilder b(call_args.cancel_latch, limits());
   b.AddSend(call_args.server_to_client_messages);
   b.AddRecv(call_args.client_to_server_messages);
-  return b.Run(std::move(call_args), std::move(next_promise_factory));
 }
 
 namespace {

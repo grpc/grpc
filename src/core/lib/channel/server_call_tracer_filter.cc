@@ -51,8 +51,7 @@ class ServerCallTracerFilter : public ChannelFilter {
   static absl::StatusOr<ServerCallTracerFilter> Create(
       const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/);
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  void InitCall(const CallArgs& call_args) override;
 };
 
 const grpc_channel_filter ServerCallTracerFilter::kFilter =
@@ -65,32 +64,30 @@ absl::StatusOr<ServerCallTracerFilter> ServerCallTracerFilter::Create(
   return ServerCallTracerFilter();
 }
 
-ArenaPromise<ServerMetadataHandle> ServerCallTracerFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ServerCallTracerFilter::InitCall(const CallArgs& call_args) {
   auto* call_context = GetContext<grpc_call_context_element>();
   auto* call_tracer = static_cast<ServerCallTracer*>(
       call_context[GRPC_CONTEXT_CALL_TRACER].value);
-  if (call_tracer == nullptr) {
-    return next_promise_factory(std::move(call_args));
-  }
-  call_tracer->RecordReceivedInitialMetadata(
-      call_args.client_initial_metadata.get());
-  call_args.server_initial_metadata->InterceptAndMap(
-      [call_tracer](ServerMetadataHandle metadata) {
-        call_tracer->RecordSendInitialMetadata(metadata.get());
+  if (call_tracer == nullptr) return;
+  call_args.client_initial_metadata->InterceptAndMap(
+      [call_tracer](ClientMetadataHandle metadata) {
+        call_tracer->RecordReceivedInitialMetadata(metadata.get());
         return metadata;
       });
   GetContext<CallFinalization>()->Add(
       [call_tracer](const grpc_call_final_info* final_info) {
         call_tracer->RecordEnd(final_info);
       });
-  return OnCancel(
-      Map(next_promise_factory(std::move(call_args)),
-          [call_tracer](ServerMetadataHandle md) {
-            call_tracer->RecordSendTrailingMetadata(md.get());
-            return md;
-          }),
-      [call_tracer]() { call_tracer->RecordCancel(absl::CancelledError()); });
+  call_args.server_initial_metadata->InterceptAndMap(
+      [call_tracer](ServerMetadataHandle metadata) {
+        call_tracer->RecordSendInitialMetadata(metadata.get());
+        return metadata;
+      });
+  call_args.server_trailing_metadata->InterceptAndMap(
+      [call_tracer](ServerMetadataHandle md) {
+        call_tracer->RecordSendTrailingMetadata(md.get());
+        return md;
+      });
 }
 
 }  // namespace

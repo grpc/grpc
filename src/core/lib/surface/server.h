@@ -260,8 +260,6 @@ class Server : public InternallyRefCounted<Server>,
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
     static void DestroyChannelElement(grpc_channel_element* elem);
-    static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-        grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory);
 
    private:
     class ConnectivityWatcher;

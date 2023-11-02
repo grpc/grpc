@@ -135,33 +135,25 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
          channel_stack_->call_stack_size;
 }
 
-ArenaPromise<ServerMetadataHandle> ConnectedSubchannel::MakeCallPromise(
-    CallArgs call_args) {
+void ConnectedSubchannel::InitCall(const CallArgs& call_args) {
   // If not using channelz, we just need to call the channel stack.
   if (channelz_subchannel() == nullptr) {
-    return channel_stack_->MakeClientCallPromise(std::move(call_args));
+    return channel_stack_->InitClientCallPromise(call_args);
   }
   // Otherwise, we need to wrap the channel stack promise with code that
   // handles the channelz updates.
-  return OnCancel(
-      Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
-          [self = Ref()](ServerMetadataHandle metadata) {
-            channelz::SubchannelNode* channelz_subchannel =
-                self->channelz_subchannel();
-            GPR_ASSERT(channelz_subchannel != nullptr);
-            if (metadata->get(GrpcStatusMetadata())
-                    .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
-              channelz_subchannel->RecordCallFailed();
-            } else {
-              channelz_subchannel->RecordCallSucceeded();
-            }
-            return metadata;
-          }),
-      [self = Ref()]() {
+  call_args.server_trailing_metadata->InterceptAndMap(
+      [self = Ref()](ServerMetadataHandle metadata) {
         channelz::SubchannelNode* channelz_subchannel =
             self->channelz_subchannel();
         GPR_ASSERT(channelz_subchannel != nullptr);
-        channelz_subchannel->RecordCallFailed();
+        if (metadata->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) !=
+            GRPC_STATUS_OK) {
+          channelz_subchannel->RecordCallFailed();
+        } else {
+          channelz_subchannel->RecordCallSucceeded();
+        }
+        return metadata;
       });
 }
 

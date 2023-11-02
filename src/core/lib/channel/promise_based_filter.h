@@ -93,8 +93,7 @@ class ChannelFilter {
   virtual void PostInit() {}
 
   // Construct a promise for one call.
-  virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) = 0;
+  virtual void InitCall(const CallArgs& call_args) = 0;
 
   // Start a legacy transport op
   // Return true if the op was handled, false if it should be passed to the
@@ -125,7 +124,7 @@ class ChannelFilter {
 // Designator for whether a filter is client side or server side.
 // Please don't use this outside calls to MakePromiseBasedFilter - it's
 // intended to be deleted once the promise conversion is complete.
-enum class FilterEndpoint {
+enum class FilterEndpoint : uint8_t {
   kClient,
   kServer,
 };
@@ -143,10 +142,7 @@ namespace promise_filter_detail {
 // valid filter in place.
 class InvalidChannelFilter : public ChannelFilter {
  public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs, NextPromiseFactory) override {
-    abort();
-  }
+  void InitCall(const CallArgs&) override { Crash("unreachable"); }
 };
 
 // Call data shared between all implementations of promise-based filters.
@@ -582,7 +578,7 @@ class ClientCallData : public BaseCallData {
 
  private:
   // At what stage is our handling of send initial metadata?
-  enum class SendInitialState {
+  enum class SendInitialState : uint8_t {
     // Start state: no op seen
     kInitial,
     // We've seen the op, and started the promise in response to it, but have
@@ -594,7 +590,7 @@ class ClientCallData : public BaseCallData {
     kCancelled
   };
   // At what stage is our handling of recv trailing metadata?
-  enum class RecvTrailingState {
+  enum class RecvTrailingState : uint8_t {
     // Start state: no op seen
     kInitial,
     // We saw the op, and since it was bundled with send initial metadata, we
@@ -698,7 +694,7 @@ class ServerCallData : public BaseCallData {
 
  private:
   // At what stage is our handling of recv initial metadata?
-  enum class RecvInitialState {
+  enum class RecvInitialState : uint8_t {
     // Start state: no op seen
     kInitial,
     // Op seen, and forwarded to the next filter.
@@ -711,7 +707,7 @@ class ServerCallData : public BaseCallData {
     kResponded,
   };
   // At what stage is our handling of send trailing metadata?
-  enum class SendTrailingState {
+  enum class SendTrailingState : uint8_t {
     // Start state: no op seen
     kInitial,
     // We saw the op, but it was with a send message op (or one was in progress)
@@ -850,12 +846,8 @@ struct CallDataFilterWithFlagsMethods {
 };
 
 struct ChannelFilterMethods {
-  static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      grpc_channel_element* elem, CallArgs call_args,
-      NextPromiseFactory next_promise_factory) {
-    return static_cast<ChannelFilter*>(elem->channel_data)
-        ->MakeCallPromise(std::move(call_args),
-                          std::move(next_promise_factory));
+  static void InitCall(grpc_channel_element* elem, const CallArgs& call_args) {
+    return static_cast<ChannelFilter*>(elem->channel_data)->InitCall(call_args);
   }
 
   static void StartTransportOp(grpc_channel_element* elem,
@@ -920,7 +912,7 @@ MakePromiseBasedFilter(const char* name) {
       // start_transport_stream_op_batch
       promise_filter_detail::BaseCallDataMethods::StartTransportStreamOpBatch,
       // make_call_promise
-      promise_filter_detail::ChannelFilterMethods::MakeCallPromise,
+      promise_filter_detail::ChannelFilterMethods::InitCall,
       // start_transport_op
       promise_filter_detail::ChannelFilterMethods::StartTransportOp,
       // sizeof_call_data

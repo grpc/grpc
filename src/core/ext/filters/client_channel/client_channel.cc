@@ -315,40 +315,45 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
  public:
   explicit PromiseBasedCallData(ClientChannel* chand) : chand_(chand) {}
 
-  ArenaPromise<absl::StatusOr<CallArgs>> MakeNameResolutionPromise(
-      CallArgs call_args) {
+  void AddNameResolution(const CallArgs& call_args) {
     pollent_ = NowOrNever(call_args.polling_entity->WaitAndCopy()).value();
-    client_initial_metadata_ = std::move(call_args.client_initial_metadata);
-    // If we're still in IDLE, we need to start resolving.
-    if (GPR_UNLIKELY(chand_->CheckConnectivityState(false) ==
-                     GRPC_CHANNEL_IDLE)) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-        gpr_log(GPR_INFO, "chand=%p calld=%p: %striggering exit idle", chand_,
-                this, Activity::current()->DebugTag().c_str());
-      }
-      // Bounce into the control plane work serializer to start resolving.
-      GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExitIdle");
-      chand_->work_serializer_->Run(
-          [chand = chand_]()
-              ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
-                chand->CheckConnectivityState(/*try_to_connect=*/true);
-                GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "ExitIdle");
-              },
-          DEBUG_LOCATION);
-    }
-    return [this, call_args = std::move(
-                      call_args)]() mutable -> Poll<absl::StatusOr<CallArgs>> {
-      auto result = CheckResolution(was_queued_);
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-        gpr_log(GPR_INFO, "chand=%p calld=%p: %sCheckResolution returns %s",
-                chand_, this, Activity::current()->DebugTag().c_str(),
-                result.has_value() ? result->ToString().c_str() : "Pending");
-      }
-      if (!result.has_value()) return Pending{};
-      if (!result->ok()) return *result;
-      call_args.client_initial_metadata = std::move(client_initial_metadata_);
-      return std::move(call_args);
-    };
+    call_args.client_initial_metadata->InterceptAndMap(
+        [this, cancel_latch = call_args.cancel_latch](ClientMetadataHandle md) {
+          client_initial_metadata_ = std::move(md);
+          // If we're still in IDLE, we need to start resolving.
+          if (GPR_UNLIKELY(chand_->CheckConnectivityState(false) ==
+                           GRPC_CHANNEL_IDLE)) {
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+              gpr_log(GPR_INFO, "chand=%p calld=%p: %striggering exit idle",
+                      chand_, this, Activity::current()->DebugTag().c_str());
+            }
+            // Bounce into the control plane work serializer to start resolving.
+            GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExitIdle");
+            chand_->work_serializer_->Run(
+                [chand = chand_]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                    *chand_->work_serializer_) {
+                  chand->CheckConnectivityState(/*try_to_connect=*/true);
+                  GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "ExitIdle");
+                },
+                DEBUG_LOCATION);
+          }
+          return [this, cancel_latch]() mutable
+                 -> Poll<absl::optional<ClientMetadataHandle>> {
+            auto result = CheckResolution(was_queued_);
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+              gpr_log(
+                  GPR_INFO, "chand=%p calld=%p: %sCheckResolution returns %s",
+                  chand_, this, Activity::current()->DebugTag().c_str(),
+                  result.has_value() ? result->ToString().c_str() : "Pending");
+            }
+            if (!result.has_value()) return Pending{};
+            if (!result->ok()) {
+              cancel_latch->SetIfUnset(ServerMetadataFromStatus(*result));
+              return absl::nullopt;
+            }
+            return std::move(client_initial_metadata_);
+          };
+        });
   }
 
  private:
@@ -398,7 +403,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
 
 const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
-    ClientChannel::MakeCallPromise,
+    ClientChannel::InitCall,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -465,11 +470,10 @@ class DynamicTerminationFilter {
   static void GetChannelInfo(grpc_channel_element* /*elem*/,
                              const grpc_channel_info* /*info*/) {}
 
-  static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
+  static void InitCall(grpc_channel_element* elem, const CallArgs& call_args) {
     auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
-    return chand->chand_->CreateLoadBalancedCallPromise(
-        std::move(call_args),
+    chand->chand_->InitLoadBalancedCall(
+        call_args,
         []() {
           auto* service_config_call_data =
               GetServiceConfigCallData(GetContext<grpc_call_context_element>());
@@ -1331,14 +1335,14 @@ ClientChannel::CreateLoadBalancedCall(
           std::move(on_commit), is_transparent_retry));
 }
 
-ArenaPromise<ServerMetadataHandle> ClientChannel::CreateLoadBalancedCallPromise(
-    CallArgs call_args, absl::AnyInvocable<void()> on_commit,
+ArenaPromise<ServerMetadataHandle> ClientChannel::InitLoadBalancedCall(
+    const CallArgs& call_args, absl::AnyInvocable<void()> on_commit,
     bool is_transparent_retry) {
   OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call(
       GetContext<Arena>()->New<PromiseBasedLoadBalancedCall>(
           this, std::move(on_commit), is_transparent_retry));
   auto* call_ptr = lb_call.get();
-  return call_ptr->MakeCallPromise(std::move(call_args), std::move(lb_call));
+  return call_ptr->InitCall(call_args, std::move(lb_call));
 }
 
 ChannelArgs ClientChannel::MakeSubchannelArgs(
@@ -3474,14 +3478,18 @@ ClientChannel::PromiseBasedLoadBalancedCall::PromiseBasedLoadBalancedCall(
     : LoadBalancedCall(chand, GetContext<grpc_call_context_element>(),
                        std::move(on_commit), is_transparent_retry) {}
 
-ArenaPromise<ServerMetadataHandle>
-ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
-    CallArgs call_args, OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call) {
+void ClientChannel::PromiseBasedLoadBalancedCall::InitCall(
+    const CallArgs& call_args,
+    OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call) {
   pollent_ = NowOrNever(call_args.polling_entity->WaitAndCopy()).value();
   // Record ops in tracer.
   if (call_attempt_tracer() != nullptr) {
-    call_attempt_tracer()->RecordSendInitialMetadata(
-        call_args.client_initial_metadata.get());
+    call_args.client_initial_metadata->InterceptAndMap(
+        [this](ClientMetadataHandle client_initial_metadata) {
+          call_attempt_tracer()->RecordSendInitialMetadata(
+              client_initial_metadata.get());
+          return client_initial_metadata;
+        });
     // TODO(ctiller): Find a way to do this without registering a no-op mapper.
     call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
         [](MessageHandle message) { return message; },  // No-op.
@@ -3504,88 +3512,51 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
         if (peer_string != nullptr) self->peer_string_ = peer_string->Ref();
         return metadata;
       });
-  client_initial_metadata_ = std::move(call_args.client_initial_metadata);
-  return OnCancel(
-      Map(TrySeq(
-              // LB pick.
-              [this]() -> Poll<absl::Status> {
-                auto result = PickSubchannel(was_queued_);
-                if (GRPC_TRACE_FLAG_ENABLED(
-                        grpc_client_channel_lb_call_trace)) {
-                  gpr_log(GPR_INFO,
-                          "chand=%p lb_call=%p: %sPickSubchannel() returns %s",
-                          chand(), this,
-                          Activity::current()->DebugTag().c_str(),
-                          result.has_value() ? result->ToString().c_str()
-                                             : "Pending");
-                }
-                if (result == absl::nullopt) return Pending{};
-                return std::move(*result);
-              },
-              [this, call_args = std::move(call_args)]() mutable
-              -> ArenaPromise<ServerMetadataHandle> {
-                call_args.client_initial_metadata =
-                    std::move(client_initial_metadata_);
-                return connected_subchannel()->MakeCallPromise(
-                    std::move(call_args));
-              }),
-          // Record call completion.
-          [this](ServerMetadataHandle metadata) {
-            if (call_attempt_tracer() != nullptr ||
-                lb_subchannel_call_tracker() != nullptr) {
-              absl::Status status;
-              grpc_status_code code = metadata->get(GrpcStatusMetadata())
-                                          .value_or(GRPC_STATUS_UNKNOWN);
-              if (code != GRPC_STATUS_OK) {
-                absl::string_view message;
-                if (const auto* grpc_message =
-                        metadata->get_pointer(GrpcMessageMetadata())) {
-                  message = grpc_message->as_string_view();
-                }
-                status =
-                    absl::Status(static_cast<absl::StatusCode>(code), message);
-              }
-              RecordCallCompletion(status, metadata.get(),
-                                   &GetContext<CallContext>()
-                                        ->call_stats()
-                                        ->transport_stream_stats,
-                                   peer_string_.as_string_view());
+  // Record call completion.
+  call_args.server_trailing_metadata->InterceptAndMap(
+      [this](ServerMetadataHandle metadata) {
+        if (call_attempt_tracer() != nullptr ||
+            lb_subchannel_call_tracker() != nullptr) {
+          absl::Status status;
+          grpc_status_code code =
+              metadata->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+          if (code != GRPC_STATUS_OK) {
+            absl::string_view message;
+            if (const auto* grpc_message =
+                    metadata->get_pointer(GrpcMessageMetadata())) {
+              message = grpc_message->as_string_view();
             }
-            RecordLatency();
-            return metadata;
-          }),
-      [lb_call = std::move(lb_call)]() {
-        // If the waker is pending, then we need to remove ourself from
-        // the list of queued LB calls.
-        if (!lb_call->waker_.is_unwakeable()) {
-          MutexLock lock(&lb_call->chand()->lb_mu_);
-          lb_call->Commit();
-          // Remove pick from list of queued picks.
-          lb_call->RemoveCallFromLbQueuedCallsLocked();
-          // Remove from queued picks list.
-          lb_call->chand()->lb_queued_calls_.erase(lb_call.get());
+            status = absl::Status(static_cast<absl::StatusCode>(code), message);
+          }
+          RecordCallCompletion(
+              status, metadata.get(),
+              &GetContext<CallContext>()->call_stats()->transport_stream_stats,
+              peer_string_.as_string_view());
         }
-        // TODO(ctiller): We don't have access to the call's actual status
-        // here, so we just assume CANCELLED.  We could change this to use
-        // CallFinalization instead of OnCancel() so that we can get the
-        // actual status.  But we should also have access to the trailing
-        // metadata, which we don't have in either case.  Ultimately, we
-        // need a better story for code that needs to run at the end of a
-        // call in both cancellation and non-cancellation cases that needs
-        // access to server trailing metadata and the call's real status.
-        if (lb_call->call_attempt_tracer() != nullptr) {
-          lb_call->call_attempt_tracer()->RecordCancel(
-              absl::CancelledError("call cancelled"));
-        }
-        if (lb_call->call_attempt_tracer() != nullptr ||
-            lb_call->lb_subchannel_call_tracker() != nullptr) {
-          // If we were cancelled without recording call completion, then
-          // record call completion here, as best we can.  We assume status
-          // CANCELLED in this case.
-          lb_call->RecordCallCompletion(absl::CancelledError("call cancelled"),
-                                        nullptr, nullptr, "");
-        }
+        RecordLatency();
+        return metadata;
       });
+  auto* call_branch = static_cast<CallBranch*>(Activity::current());
+  call_branch->SpawnGuarded("connected_channel", [this]() {
+    return TrySeq(
+        // LB pick.
+        [this]() -> Poll<absl::Status> {
+          auto result = PickSubchannel(was_queued_);
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+            gpr_log(
+                GPR_INFO, "chand=%p lb_call=%p: %sPickSubchannel() returns %s",
+                chand(), this, Activity::current()->DebugTag().c_str(),
+                result.has_value() ? result->ToString().c_str() : "Pending");
+          }
+          if (result == absl::nullopt) return Pending{};
+          return std::move(*result);
+        },
+        [this]() {
+          auto* call_branch = static_cast<CallBranch*>(Activity::current());
+          connected_subchannel()->MakeCallBranch()->Forward(
+              call_branch->call_args());
+        });
+  });
 }
 
 Arena* ClientChannel::PromiseBasedLoadBalancedCall::arena() const {

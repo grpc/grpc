@@ -108,8 +108,9 @@ ClientAuthFilter::ClientAuthFilter(
     RefCountedPtr<grpc_auth_context> auth_context)
     : args_{std::move(security_connector), std::move(auth_context)} {}
 
-ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
-    CallArgs call_args) {
+ArenaPromise<absl::StatusOr<ClientMetadataHandle>>
+ClientAuthFilter::GetCallCredsMetadata(
+    ClientMetadataHandle client_initial_metadata) {
   auto* ctx = static_cast<grpc_client_security_context*>(
       GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SECURITY].value);
   grpc_call_credentials* channel_call_creds =
@@ -118,7 +119,8 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
 
   if (channel_call_creds == nullptr && !call_creds_has_md) {
     // Skip sending metadata altogether.
-    return Immediate(absl::StatusOr<CallArgs>(std::move(call_args)));
+    return Immediate(absl::StatusOr<ClientMetadataHandle>(
+        std::move(client_initial_metadata)));
   }
 
   RefCountedPtr<grpc_call_credentials> creds;
@@ -157,7 +159,6 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
         "transfer call credential."));
   }
 
-  auto client_initial_metadata = std::move(call_args.client_initial_metadata);
   return TrySeq(
       Seq(creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
           [](absl::StatusOr<ClientMetadataHandle> new_metadata) mutable {
@@ -168,16 +169,12 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
             }
             return new_metadata;
           }),
-      [call_args =
-           std::move(call_args)](ClientMetadataHandle new_metadata) mutable {
-        call_args.client_initial_metadata = std::move(new_metadata);
-        return Immediate<absl::StatusOr<CallArgs>>(
-            absl::StatusOr<CallArgs>(std::move(call_args)));
+      [](ClientMetadataHandle new_metadata) mutable {
+        return absl::StatusOr<ClientMetadataHandle>(std::move(new_metadata));
       });
 }
 
-ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ClientAuthFilter::InitCall(const CallArgs& call_args) {
   auto* legacy_ctx = GetContext<grpc_call_context_element>();
   if (legacy_ctx[GRPC_CONTEXT_SECURITY].value == nullptr) {
     legacy_ctx[GRPC_CONTEXT_SECURITY].value =
@@ -190,18 +187,26 @@ ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
       legacy_ctx[GRPC_CONTEXT_SECURITY].value)
       ->auth_context = args_.auth_context;
 
-  auto* host =
-      call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata());
-  if (host == nullptr) {
-    return next_promise_factory(std::move(call_args));
-  }
-  return TrySeq(
-      args_.security_connector->CheckCallHost(host->as_string_view(),
-                                              args_.auth_context.get()),
-      [this, call_args = std::move(call_args)]() mutable {
-        return GetCallCredsMetadata(std::move(call_args));
-      },
-      next_promise_factory);
+  call_args.client_initial_metadata->InterceptAndMap(
+      [this, cancel_latch = call_args.cancel_latch](ClientMetadataHandle md)
+          -> ArenaPromise<absl::optional<ClientMetadataHandle>> {
+        auto* host = md->get_pointer(HttpAuthorityMetadata());
+        if (host == nullptr) {
+          return Immediate(std::move(md));
+        }
+        return Map(
+            TrySeq(args_.security_connector->CheckCallHost(
+                       host->as_string_view(), args_.auth_context.get()),
+                   [this, md = std::move(md)]() mutable {
+                     return GetCallCredsMetadata(std::move(md));
+                   }),
+            [cancel_latch](absl::StatusOr<ClientMetadataHandle> md)
+                -> absl::optional<ClientMetadataHandle> {
+              if (md.ok()) return std::move(*md);
+              cancel_latch->SetIfUnset(ServerMetadataFromStatus(md.status()));
+              return absl::nullopt;
+            });
+      });
 }
 
 absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(

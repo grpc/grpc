@@ -375,8 +375,7 @@ class XdsResolver : public Resolver {
     }
 
     // Construct a promise for one call.
-    ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-        CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+    void InitCall(const CallArgs& call_args) override;
 
    private:
     explicit ClusterSelectionFilter(ChannelFilter::Args filter_args)
@@ -887,9 +886,7 @@ const grpc_channel_filter XdsResolver::ClusterSelectionFilter::kFilter =
                            kFilterExaminesServerInitialMetadata>(
         "cluster_selection_filter");
 
-ArenaPromise<ServerMetadataHandle>
-XdsResolver::ClusterSelectionFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void XdsResolver::ClusterSelectionFilter::InitCall(const CallArgs& call_args) {
   auto* service_config_call_data =
       static_cast<ClientChannelServiceConfigCallData*>(
           GetContext<grpc_call_context_element>()
@@ -908,7 +905,6 @@ XdsResolver::ClusterSelectionFilter::MakeCallPromise(
           [cluster = std::move(cluster)]() mutable { cluster.reset(); });
     }
   }
-  return next_promise_factory(std::move(call_args));
 }
 
 //

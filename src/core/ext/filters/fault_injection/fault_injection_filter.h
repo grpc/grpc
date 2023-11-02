@@ -48,8 +48,7 @@ class FaultInjectionFilter : public ChannelFilter {
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  void InitCall(const CallArgs& call_args) override;
 
  private:
   explicit FaultInjectionFilter(ChannelFilter::Args filter_args);

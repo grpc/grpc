@@ -71,67 +71,78 @@ ServerMetadataHandle MalformedRequest(absl::string_view explanation) {
 }
 }  // namespace
 
-ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  const auto& md = call_args.client_initial_metadata;
-
-  auto method = md->get(HttpMethodMetadata());
-  if (method.has_value()) {
-    switch (*method) {
-      case HttpMethodMetadata::kPost:
-        break;
-      case HttpMethodMetadata::kPut:
-        if (allow_put_requests_) {
-          break;
+void HttpServerFilter::InitCall(const CallArgs& call_args) {
+  call_args.client_initial_metadata->InterceptAndMap(
+      [this, cancel_latch = call_args.cancel_latch](
+          ClientMetadataHandle md) -> absl::optional<ClientMetadataHandle> {
+        auto method = md->get(HttpMethodMetadata());
+        if (method.has_value()) {
+          switch (*method) {
+            case HttpMethodMetadata::kPost:
+              break;
+            case HttpMethodMetadata::kPut:
+              if (allow_put_requests_) {
+                break;
+              }
+              ABSL_FALLTHROUGH_INTENDED;
+            case HttpMethodMetadata::kInvalid:
+            case HttpMethodMetadata::kGet:
+              cancel_latch->SetIfUnset(MalformedRequest("Bad method header"));
+              return absl::nullopt;
+          }
+        } else {
+          cancel_latch->SetIfUnset(MalformedRequest("Missing :method header"));
+          return absl::nullopt;
         }
-        ABSL_FALLTHROUGH_INTENDED;
-      case HttpMethodMetadata::kInvalid:
-      case HttpMethodMetadata::kGet:
-        return Immediate(MalformedRequest("Bad method header"));
-    }
-  } else {
-    return Immediate(MalformedRequest("Missing :method header"));
-  }
 
-  auto te = md->Take(TeMetadata());
-  if (te == TeMetadata::kTrailers) {
-    // Do nothing, ok.
-  } else if (!te.has_value()) {
-    return Immediate(MalformedRequest("Missing :te header"));
-  } else {
-    return Immediate(MalformedRequest("Bad :te header"));
-  }
+        auto te = md->Take(TeMetadata());
+        if (te == TeMetadata::kTrailers) {
+          // Do nothing, ok.
+        } else if (!te.has_value()) {
+          cancel_latch->SetIfUnset(MalformedRequest("Missing :te header"));
+          return absl::nullopt;
+        } else {
+          cancel_latch->SetIfUnset(MalformedRequest("Bad :te header"));
+          return absl::nullopt;
+        }
 
-  auto scheme = md->Take(HttpSchemeMetadata());
-  if (scheme.has_value()) {
-    if (*scheme == HttpSchemeMetadata::kInvalid) {
-      return Immediate(MalformedRequest("Bad :scheme header"));
-    }
-  } else {
-    return Immediate(MalformedRequest("Missing :scheme header"));
-  }
+        auto scheme = md->Take(HttpSchemeMetadata());
+        if (scheme.has_value()) {
+          if (*scheme == HttpSchemeMetadata::kInvalid) {
+            cancel_latch->SetIfUnset(MalformedRequest("Bad :scheme header"));
+            return absl::nullopt;
+          }
+        } else {
+          cancel_latch->SetIfUnset(MalformedRequest("Missing :scheme header"));
+          return absl::nullopt;
+        }
 
-  md->Remove(ContentTypeMetadata());
+        md->Remove(ContentTypeMetadata());
 
-  Slice* path_slice = md->get_pointer(HttpPathMetadata());
-  if (path_slice == nullptr) {
-    return Immediate(MalformedRequest("Missing :path header"));
-  }
+        Slice* path_slice = md->get_pointer(HttpPathMetadata());
+        if (path_slice == nullptr) {
+          cancel_latch->SetIfUnset(MalformedRequest("Missing :path header"));
+        }
 
-  if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    absl::optional<Slice> host = md->Take(HostMetadata());
-    if (host.has_value()) {
-      md->Set(HttpAuthorityMetadata(), std::move(*host));
-    }
-  }
+        if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
+          absl::optional<Slice> host = md->Take(HostMetadata());
+          if (host.has_value()) {
+            md->Set(HttpAuthorityMetadata(), std::move(*host));
+          }
+        }
 
-  if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    return Immediate(MalformedRequest("Missing :authority header"));
-  }
+        if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
+          cancel_latch->SetIfUnset(
+              MalformedRequest("Missing :authority header"));
+          return absl::nullopt;
+        }
 
-  if (!surface_user_agent_) {
-    md->Remove(UserAgentMetadata());
-  }
+        if (!surface_user_agent_) {
+          md->Remove(UserAgentMetadata());
+        }
+
+        return md;
+      });
 
   call_args.server_initial_metadata->InterceptAndMap(
       [](ServerMetadataHandle md) {
@@ -145,11 +156,11 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
         return md;
       });
 
-  return Map(next_promise_factory(std::move(call_args)),
-             [](ServerMetadataHandle md) -> ServerMetadataHandle {
-               FilterOutgoingMetadata(md.get());
-               return md;
-             });
+  call_args.server_trailing_metadata->InterceptAndMap(
+      [](ServerMetadataHandle md) {
+        FilterOutgoingMetadata(md.get());
+        return md;
+      });
 }
 
 absl::StatusOr<HttpServerFilter> HttpServerFilter::Create(

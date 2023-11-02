@@ -41,7 +41,7 @@ namespace grpc_core {
 
 bool ChannelStackBuilderImpl::IsPromising() const {
   for (const auto* filter : stack()) {
-    if (filter->make_call_promise == nullptr) return false;
+    if (filter->init_call_promise == nullptr) return false;
   }
   return true;
 }

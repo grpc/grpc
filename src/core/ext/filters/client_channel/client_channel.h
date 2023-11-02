@@ -119,9 +119,7 @@ class ClientChannel {
   // is not a client channel.
   static ClientChannel* GetFromChannel(Channel* channel);
 
-  static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      grpc_channel_element* elem, CallArgs call_args,
-      NextPromiseFactory next_promise_factory);
+  static void InitCall(grpc_channel_element* elem, const CallArgs& call_args);
 
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
 
@@ -611,8 +609,8 @@ class ClientChannel::PromiseBasedLoadBalancedCall
                                absl::AnyInvocable<void()> on_commit,
                                bool is_transparent_retry);
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call);
+  void InitCall(const CallArgs& call_args,
+                OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call);
 
  private:
   Arena* arena() const override;

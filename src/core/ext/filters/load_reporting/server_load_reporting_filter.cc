@@ -176,8 +176,7 @@ const char* GetStatusTagForStatus(grpc_status_code status) {
 }
 }  // namespace
 
-ArenaPromise<ServerMetadataHandle> ServerLoadReportingFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ServerLoadReportingFilter::InitCall(const CallArgs& call_args) {
   // Gather up basic facts about the request
   Slice service_method;
   if (const Slice* path =

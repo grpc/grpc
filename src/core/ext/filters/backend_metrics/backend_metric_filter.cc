@@ -117,10 +117,8 @@ absl::StatusOr<BackendMetricFilter> BackendMetricFilter::Create(
   return BackendMetricFilter();
 }
 
-ArenaPromise<ServerMetadataHandle> BackendMetricFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  return ArenaPromise<ServerMetadataHandle>(Map(
-      next_promise_factory(std::move(call_args)),
+void BackendMetricFilter::InitCall(const CallArgs& call_args) {
+  call_args.server_trailing_metadata->InterceptAndMap(
       [this](ServerMetadataHandle trailing_metadata) {
         auto* ctx = &GetContext<
             grpc_call_context_element>()[GRPC_CONTEXT_BACKEND_METRIC_PROVIDER];
@@ -145,7 +143,7 @@ ArenaPromise<ServerMetadataHandle> BackendMetricFilter::MakeCallPromise(
           gpr_log(GPR_INFO, "[%p] No backend metrics.", this);
         }
         return trailing_metadata;
-      }));
+      });
 }
 
 void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder) {

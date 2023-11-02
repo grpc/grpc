@@ -41,8 +41,7 @@ class GrpcServerAuthzFilter final : public ChannelFilter {
   static absl::StatusOr<GrpcServerAuthzFilter> Create(const ChannelArgs& args,
                                                       ChannelFilter::Args);
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  void InitCall(const CallArgs& call_args) override;
 
  private:
   GrpcServerAuthzFilter(

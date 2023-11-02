@@ -222,14 +222,10 @@ void MaxAgeFilter::PostInit() {
 }
 
 // Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
+void ChannelIdleFilter::InitCall(const CallArgs& call_args) {
   IncreaseCallCount();
-  return ArenaPromise<ServerMetadataHandle>(
-      [decrementer = Decrementer(this),
-       next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
+  GetContext<CallFinalization>()->Add(
+      [this](const grpc_call_final_info*) { DecreaseCallCount(); });
 }
 
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {

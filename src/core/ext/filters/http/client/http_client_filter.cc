@@ -105,40 +105,36 @@ Slice UserAgentFromArgs(const ChannelArgs& args,
 }
 }  // namespace
 
-ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  auto& md = call_args.client_initial_metadata;
-  if (test_only_use_put_requests_) {
-    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPut);
-  } else {
-    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
-  }
-  md->Set(HttpSchemeMetadata(), scheme_);
-  md->Set(TeMetadata(), TeMetadata::kTrailers);
-  md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
-  md->Set(UserAgentMetadata(), user_agent_.Ref());
-
-  auto* initial_metadata_err =
-      GetContext<Arena>()->New<Latch<ServerMetadataHandle>>();
-
+void HttpClientFilter::InitCall(const CallArgs& call_args) {
+  call_args.client_initial_metadata->InterceptAndMap(
+      [this](ClientMetadataHandle md) {
+        if (test_only_use_put_requests_) {
+          md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPut);
+        } else {
+          md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
+        }
+        md->Set(HttpSchemeMetadata(), scheme_);
+        md->Set(TeMetadata(), TeMetadata::kTrailers);
+        md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
+        md->Set(UserAgentMetadata(), user_agent_.Ref());
+        return md;
+      });
   call_args.server_initial_metadata->InterceptAndMap(
-      [initial_metadata_err](
+      [cancel_latch = call_args.cancel_latch](
           ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
         auto r = CheckServerMetadata(md.get());
         if (!r.ok()) {
-          initial_metadata_err->Set(ServerMetadataFromStatus(r));
+          cancel_latch->SetIfUnset(ServerMetadataFromStatus(r));
           return absl::nullopt;
         }
         return std::move(md);
       });
-
-  return Race(initial_metadata_err->Wait(),
-              Map(next_promise_factory(std::move(call_args)),
-                  [](ServerMetadataHandle md) -> ServerMetadataHandle {
-                    auto r = CheckServerMetadata(md.get());
-                    if (!r.ok()) return ServerMetadataFromStatus(r);
-                    return md;
-                  }));
+  call_args.server_trailing_metadata->InterceptAndMap(
+      [](ServerMetadataHandle md) -> ServerMetadataHandle {
+        auto r = CheckServerMetadata(md.get());
+        if (!r.ok()) return ServerMetadataFromStatus(r);
+        return md;
+      });
 }
 
 HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,

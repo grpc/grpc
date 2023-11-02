@@ -55,6 +55,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -206,14 +207,8 @@ struct CallArgs {
   // Initial metadata from the client to the server.
   // During promise setup this can be manipulated by filters (and then
   // passed on to the next filter).
-  ClientMetadataHandle client_initial_metadata;
-  // Token indicating that client_initial_metadata is still being processed.
-  // This should be moved around and only destroyed when the transport is
-  // satisfied that the metadata has passed any flow control measures it has.
-  ClientInitialMetadataOutstandingToken client_initial_metadata_outstanding;
-  // Latch that will ultimately contain the polling entity for the call.
-  // TODO(ctiller): remove once event engine lands
-  Latch<grpc_polling_entity>* polling_entity;
+  PipeSender<ClientMetadataHandle>* client_initial_metadata;
+  PipeReceiver<ServerMetadataHandle>* server_trailing_metadata;
   // Initial metadata from the server to the client.
   // Set once when it's available.
   // During promise setup filters can substitute their own latch for this
@@ -223,10 +218,11 @@ struct CallArgs {
   PipeReceiver<MessageHandle>* client_to_server_messages;
   // Messages travelling from the transport to the application.
   PipeSender<MessageHandle>* server_to_client_messages;
+  // Latch that will ultimately contain the polling entity for the call.
+  // TODO(ctiller): remove once event engine lands
+  Latch<grpc_polling_entity>* polling_entity;
+  Latch<ServerMetadataHandle>* cancel_latch;
 };
-
-using NextPromiseFactory =
-    std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
 
 }  // namespace grpc_core
 
@@ -631,11 +627,41 @@ class FilterStackTransport {
   ~FilterStackTransport() = default;
 };
 
+class CallBranch : public Party {
+ public:
+  void Forward(const CallArgs& from);
+  void Cancel(ServerMetadataHandle error) {
+    AssertIsCurrentParty();
+    cancel_latch_.SetIfUnset(std::move(error));
+  }
+
+  CallArgs call_args();
+
+  template <typename P>
+  void SpawnGuarded(absl::string_view name, P promise_factory) {
+    using PromiseFactory = promise_detail::OncePromiseFactory<void, P>;
+    using Promise = typename PromiseFactory::Promise;
+    using Result = typename Promise::Result;
+    Spawn(name, std::move(promise_factory), [this](Result r) {
+      if (!IsStatusOk(r)) Cancel(StatusCast<ServerMetadataHandle>(r));
+    });
+  }
+
+ private:
+  void AssertIsCurrentParty();
+
+  Pipe<ClientMetadataHandle> client_initial_metadata_;
+  Pipe<MessageHandle> client_to_server_messages_;
+  Pipe<ServerMetadataHandle> server_initial_metadata_;
+  Pipe<MessageHandle> server_to_client_messages_;
+  Pipe<ServerMetadataHandle> server_trailing_metadata_;
+  Latch<ServerMetadataHandle> cancel_latch_;
+};
+
 class ClientTransport {
  public:
   // Create a promise to execute one client call.
-  virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args) = 0;
+  virtual void StartCall(RefCountedPtr<CallBranch>) = 0;
 
  protected:
   ~ClientTransport() = default;
@@ -643,10 +669,12 @@ class ClientTransport {
 
 class ServerTransport {
  public:
+  using AcceptFn = absl::AnyInvocable<absl::StatusOr<RefCountedPtr<CallBranch>>(
+      ClientMetadataHandle) const>;
+
   // Register the factory function for the filter stack part of a call
   // promise.
-  void SetCallPromiseFactory(
-      absl::AnyInvocable<ArenaPromise<ServerMetadataHandle>(CallArgs) const>);
+  void SetAcceptFn(AcceptFn);
 
  protected:
   ~ServerTransport() = default;

@@ -73,21 +73,8 @@ LameClientFilter::LameClientFilter(absl::Status error)
 LameClientFilter::State::State()
     : state_tracker("lame_client", GRPC_CHANNEL_SHUTDOWN) {}
 
-ArenaPromise<ServerMetadataHandle> LameClientFilter::MakeCallPromise(
-    CallArgs args, NextPromiseFactory) {
-  // TODO(ctiller): remove if check once promise_based_filter is removed (Close
-  // is still needed)
-  if (args.server_to_client_messages != nullptr) {
-    args.server_to_client_messages->CloseWithError();
-  }
-  if (args.client_to_server_messages != nullptr) {
-    args.client_to_server_messages->CloseWithError();
-  }
-  if (args.server_initial_metadata != nullptr) {
-    args.server_initial_metadata->CloseWithError();
-  }
-  args.client_initial_metadata_outstanding.Complete(true);
-  return Immediate(ServerMetadataFromStatus(error_));
+void LameClientFilter::InitCall(const CallArgs& args) {
+  args.cancel_latch->SetIfUnset(ServerMetadataFromStatus(error_));
 }
 
 bool LameClientFilter::GetChannelInfo(const grpc_channel_info*) { return true; }

@@ -49,17 +49,15 @@ absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
   return ClientAuthorityFilter(Slice::FromCopiedString(*default_authority));
 }
 
-ArenaPromise<ServerMetadataHandle> ClientAuthorityFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ClientAuthorityFilter::InitCall(const CallArgs& call_args) {
   // If no authority is set, set the default authority.
-  if (call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata()) ==
-      nullptr) {
-    call_args.client_initial_metadata->Set(HttpAuthorityMetadata(),
-                                           default_authority_.Ref());
-  }
-  // We have no asynchronous work, so we can just ask the next promise to run,
-  // passing down initial_metadata.
-  return next_promise_factory(std::move(call_args));
+  call_args.client_initial_metadata->InterceptAndMap(
+      [this](ClientMetadataHandle md) {
+        if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
+          md->Set(HttpAuthorityMetadata(), default_authority_.Ref());
+        }
+        return md;
+      });
 }
 
 const grpc_channel_filter ClientAuthorityFilter::kFilter =

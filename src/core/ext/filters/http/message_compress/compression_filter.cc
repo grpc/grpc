@@ -239,8 +239,7 @@ CompressionFilter::DecompressArgs CompressionFilter::HandleIncomingMetadata(
                         max_recv_message_length};
 }
 
-ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ClientCompressionFilter::InitCall(const CallArgs& call_args) {
   auto compression_algorithm =
       HandleOutgoingMetadata(*call_args.client_initial_metadata);
   call_args.client_to_server_messages->InterceptAndMap(
@@ -274,8 +273,7 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
                          next_promise_factory(std::move(call_args)));
 }
 
-ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ServerCompressionFilter::InitCall(const CallArgs& call_args) {
   auto decompress_args =
       HandleIncomingMetadata(*call_args.client_initial_metadata);
   auto* decompress_err =

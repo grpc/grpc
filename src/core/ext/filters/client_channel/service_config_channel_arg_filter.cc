@@ -75,27 +75,27 @@ class ServiceConfigChannelArgFilter : public ChannelFilter {
   }
 
   // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  void InitCall(const CallArgs& call_args) override;
 
  private:
   RefCountedPtr<ServiceConfig> service_config_;
 };
 
-ArenaPromise<ServerMetadataHandle>
-ServiceConfigChannelArgFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
-  if (service_config_ != nullptr) {
-    method_configs = service_config_->GetMethodParsedConfigVector(
-        call_args.client_initial_metadata->get_pointer(HttpPathMetadata())
-            ->c_slice());
-  }
-  auto* arena = GetContext<Arena>();
-  auto* service_config_call_data = arena->New<ServiceConfigCallData>(
-      arena, GetContext<grpc_call_context_element>());
-  service_config_call_data->SetServiceConfig(service_config_, method_configs);
-  return next_promise_factory(std::move(call_args));
+void ServiceConfigChannelArgFilter::InitCall(const CallArgs& call_args) {
+  call_args.client_initial_metadata->InterceptAndMap(
+      [this](ClientMetadataHandle md) {
+        const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
+        if (service_config_ != nullptr) {
+          method_configs = service_config_->GetMethodParsedConfigVector(
+              md->get_pointer(HttpPathMetadata())->c_slice());
+        }
+        auto* arena = GetContext<Arena>();
+        auto* service_config_call_data = arena->New<ServiceConfigCallData>(
+            arena, GetContext<grpc_call_context_element>());
+        service_config_call_data->SetServiceConfig(service_config_,
+                                                   method_configs);
+        return md;
+      });
 }
 
 const grpc_channel_filter kServiceConfigChannelArgFilter =
