@@ -3878,6 +3878,23 @@ TEST(CredentialsTest, TestCompositeChannelCredsCompareSuccess) {
   grpc_channel_credentials_release(composite_creds_2);
 }
 
+TEST(CredentialsTest, RecursiveCompositeCredsCompareSuccess) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto inner_fake_creds = MakeRefCounted<fake_call_creds>();
+  auto outer_fake_creds = MakeRefCounted<fake_call_creds>();
+  auto* inner_composite_creds = grpc_composite_channel_credentials_create(
+      insecure_creds, inner_fake_creds.get(), nullptr);
+  auto* outer_composite_creds = grpc_composite_channel_credentials_create(
+      inner_composite_creds, outer_fake_creds.get(), nullptr);
+  auto duplicate_without_call_creds =
+      outer_composite_creds->duplicate_without_call_credentials();
+  auto type = duplicate_without_call_creds->type();
+  ASSERT_NE(type, inner_composite_creds->type());
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(inner_composite_creds);
+  grpc_channel_credentials_release(outer_composite_creds);
+}
+
 TEST(CredentialsTest,
      TestCompositeChannelCredsCompareFailureDifferentChannelCreds) {
   auto* insecure_creds = grpc_insecure_credentials_create();
