@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/compression/compression_internal.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/if_list.h"
 #include "src/core/lib/gprpp/packed_table.h"
