@@ -23,7 +23,6 @@
 #include <stdint.h>
 
 #include <memory>
-#include <utility>
 
 #include <grpc/support/log.h>
 

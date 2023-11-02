@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -80,7 +79,6 @@
 #include "src/core/lib/gprpp/xxhash_inline.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"

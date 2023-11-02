@@ -1316,11 +1316,11 @@ ArenaPromise<ServerMetadataHandle> ClientChannel::MakeCallPromise(
   auto* calld = GetContext<Arena>()->ManagedNew<PromiseBasedCallData>(chand);
   return TrySeq(
       // Name resolution.
-      calld->MakeNameResolutionPromise(std::move(call_args)),
+      calld->MakeNameResolutionPromise(call_args),
       // Dynamic filter stack.
       [calld](CallArgs call_args) mutable {
-        return calld->dynamic_filters()->channel_stack()->MakeClientCallPromise(
-            std::move(call_args));
+        return calld->dynamic_filters()->channel_stack()->InitClientCallPromise(
+            call_args);
       });
 }
 

@@ -20,7 +20,6 @@
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 
 #include <algorithm>
-#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -39,12 +38,8 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/race.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"

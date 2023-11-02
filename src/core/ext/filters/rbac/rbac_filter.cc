@@ -18,11 +18,10 @@
 
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 
-#include <functional>
-#include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
 
@@ -33,7 +32,8 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/context/security_context.h"

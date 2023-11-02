@@ -20,13 +20,13 @@
 
 #include <string.h>
 
-#include <functional>
 #include <memory>
 #include <type_traits>  // IWYU pragma: keep
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -43,6 +43,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"

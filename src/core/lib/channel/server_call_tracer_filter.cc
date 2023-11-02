@@ -16,10 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
-#include <utility>
-
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
 #include "src/core/lib/channel/call_finalization.h"
@@ -30,10 +26,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"

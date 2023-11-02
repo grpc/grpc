@@ -16,20 +16,20 @@
 
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 
-#include <functional>
-#include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/transport/metadata_batch.h"

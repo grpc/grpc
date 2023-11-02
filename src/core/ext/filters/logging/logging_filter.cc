@@ -364,7 +364,7 @@ void ClientLoggingFilter::InitCall(const CallArgs& call_args) {
   CallData* calld = GetContext<Arena>()->ManagedNew<CallData>(
       true, call_args, default_authority_);
   if (!calld->ShouldLog()) {
-    return next_promise_factory(std::move(call_args));
+    return next_promise_factory(call_args);
   }
   calld->LogClientHeader(
       /*is_client=*/true,
@@ -415,7 +415,7 @@ void ClientLoggingFilter::InitCall(const CallArgs& call_args) {
         return message;
       });
   return OnCancel(
-      Map(next_promise_factory(std::move(call_args)),
+      Map(next_promise_factory(call_args),
           [calld](ServerMetadataHandle md) {
             calld->LogServerTrailer(
                 /*is_client=*/true,
@@ -454,7 +454,7 @@ void ServerLoggingFilter::InitCall(const CallArgs& call_args) {
   CallData* calld = GetContext<Arena>()->ManagedNew<CallData>(
       false, call_args, /*default_authority=*/"");
   if (!calld->ShouldLog()) {
-    return next_promise_factory(std::move(call_args));
+    return next_promise_factory(call_args);
   }
   auto* call_tracer = static_cast<CallTracerAnnotationInterface*>(
       GetContext<grpc_call_context_element>()
@@ -504,7 +504,7 @@ void ServerLoggingFilter::InitCall(const CallArgs& call_args) {
         return message;
       });
   return OnCancel(
-      Map(next_promise_factory(std::move(call_args)),
+      Map(next_promise_factory(call_args),
           [calld](ServerMetadataHandle md) {
             calld->LogServerTrailer(
                 /*is_client=*/false,

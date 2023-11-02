@@ -206,7 +206,7 @@ void ServerLoadReportingFilter::InitCall(const CallArgs& call_args) {
   // records measurements
   return ArenaPromise<ServerMetadataHandle>(Seq(
       // Call down the stack
-      next_promise_factory(std::move(call_args)),
+      next_promise_factory(call_args),
       // And then record the call result
       [this, client_ip_and_lr_token,
        target_host](ServerMetadataHandle trailing_metadata) {

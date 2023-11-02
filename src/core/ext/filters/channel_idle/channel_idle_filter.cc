@@ -19,7 +19,6 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
-#include <functional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -30,6 +29,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -44,6 +44,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/poll.h"
@@ -52,7 +53,6 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
