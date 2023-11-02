@@ -806,7 +806,6 @@ static tsi_result populate_ssl_context(
       return TSI_INTERNAL_ERROR;
     }
     SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
-    EC_KEY_free(ecdh);
 #else
     if (!SSL_CTX_set1_groups(context, kSslEcCurveNames,
                              ((sizeof(kSslEcCurveNames) / sizeof(int))))) {
