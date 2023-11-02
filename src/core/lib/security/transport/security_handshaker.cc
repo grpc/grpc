@@ -658,8 +658,11 @@ RefCountedPtr<Handshaker> SecurityHandshakerCreate(
     grpc_security_connector* connector, const ChannelArgs& args) {
   // If no TSI handshaker was created, return a handshaker that always fails.
   // Otherwise, return a real security handshaker.
-  if (!handshaker.ok() || *handshaker == nullptr) {
+  if (!handshaker.ok()) {
     return MakeRefCounted<FailHandshaker>(handshaker.status());
+  } else if (*handshaker == nullptr) {
+    return MakeRefCounted<FailHandshaker>(absl::UnknownError(
+        "Handshaker creation was passed a nullptr tsi_handshaker."));
   } else {
     return MakeRefCounted<SecurityHandshaker>(*handshaker, connector, args);
   }
