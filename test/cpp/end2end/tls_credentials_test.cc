@@ -27,6 +27,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -39,14 +40,13 @@ namespace grpc {
 namespace testing {
 namespace {
 
+using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
 using ::grpc::experimental::TlsCredentialsOptions;
 
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
-constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
-constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kMessage[] = "Hello";
 
 std::string ReadFile(const std::string& file_path) {
@@ -58,6 +58,21 @@ std::string ReadFile(const std::string& file_path) {
   return file_contents;
 }
 
+class NoOpCertificateVerifier : public ExternalCertificateVerifier {
+ public:
+  ~NoOpCertificateVerifier() override = default;
+
+  bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest* request,
+              std::function<void(grpc::Status)> callback,
+              grpc::Status* sync_status) override {
+    *sync_status = grpc::Status(grpc::StatusCode::OK, "");
+    return true;
+  }
+
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
+  }
+};
+
 class TlsCredentialsTest : public ::testing::Test {
  protected:
   void RunServer(absl::Notification* notification) {
@@ -67,7 +82,6 @@ class TlsCredentialsTest : public ::testing::Test {
     grpc::SslServerCredentialsOptions ssl_options;
     ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
     ssl_options.pem_root_certs = root_cert;
-    ssl_options.force_client_auth = true;
 
     grpc::ServerBuilder builder;
     TestServiceImpl service_;
@@ -108,7 +122,7 @@ void DoRpc(const std::string& server_addr,
   grpc::Status result = stub->Echo(&context, request, &response);
   EXPECT_TRUE(result.ok());
   if (!result.ok()) {
-    gpr_log(GPR_ERROR, "%s, %s", result.error_message().c_str(),
+    gpr_log(GPR_ERROR, "Echo failed: %d, %s, %s", static_cast<int>(result.error_code()), result.error_message().c_str(),
             result.error_details().c_str());
   }
   EXPECT_EQ(response.message(), kMessage);
@@ -121,10 +135,10 @@ TEST_F(TlsCredentialsTest, SkipServerCertificateVerification) {
   server_thread_ = new std::thread([&]() { RunServer(&notification); });
   notification.WaitForNotification();
 
-  std::string root_cert = ReadFile(kCaCertPath);
-  std::string client_key = ReadFile(kClientKeyPath);
-  std::string client_cert = ReadFile(kClientCertPath);
   TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(ExternalCertificateVerifier::Create<
+            NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(/*check_call_host=*/false);
   tls_options.set_verify_server_certs(/*verify_server_certs=*/false);
 
   DoRpc(server_addr_, tls_options);
