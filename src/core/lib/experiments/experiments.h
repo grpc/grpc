@@ -125,6 +125,8 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUELY_UNOWNED
+inline bool IsUniquelyUnownedEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -205,6 +207,8 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUELY_UNOWNED
+inline bool IsUniquelyUnownedEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -285,6 +289,8 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUELY_UNOWNED
+inline bool IsUniquelyUnownedEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -340,6 +346,7 @@ enum ExperimentIds {
   kExperimentIdTcpRcvLowat,
   kExperimentIdTraceRecordCallops,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
+  kExperimentIdUniquelyUnowned,
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
   kExperimentIdWriteSizeCap,
@@ -515,6 +522,10 @@ inline bool IsTraceRecordCallopsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled(kExperimentIdUnconstrainedMaxQuotaBufferSize);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUELY_UNOWNED
+inline bool IsUniquelyUnownedEnabled() {
+  return IsExperimentEnabled(kExperimentIdUniquelyUnowned);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() {

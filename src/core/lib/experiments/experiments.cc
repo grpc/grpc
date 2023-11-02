@@ -180,6 +180,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_uniquely_unowned =
+    "Ensure HPACK table takes a unique copy of data when parsing unknown "
+    "metadata";
+const char* const additional_constraints_uniquely_unowned = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -301,6 +305,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, false, true},
+    {"uniquely_unowned", description_uniquely_unowned,
+     additional_constraints_uniquely_unowned, true, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
@@ -476,6 +482,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_uniquely_unowned =
+    "Ensure HPACK table takes a unique copy of data when parsing unknown "
+    "metadata";
+const char* const additional_constraints_uniquely_unowned = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -597,6 +607,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, false, true},
+    {"uniquely_unowned", description_uniquely_unowned,
+     additional_constraints_uniquely_unowned, true, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
@@ -772,6 +784,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_uniquely_unowned =
+    "Ensure HPACK table takes a unique copy of data when parsing unknown "
+    "metadata";
+const char* const additional_constraints_uniquely_unowned = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -893,6 +909,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, false, true},
+    {"uniquely_unowned", description_uniquely_unowned,
+     additional_constraints_uniquely_unowned, true, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
