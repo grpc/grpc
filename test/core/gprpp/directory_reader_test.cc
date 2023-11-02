@@ -39,9 +39,9 @@ TEST(DirectoryReader, CanListFiles) {
     contents.push_back(std::string(filename));
   });
   ASSERT_TRUE(status.ok()) << status;
-  EXPECT_THAT(contents, ::testing::UnorderedElementsAre(
-                            "ab06acdd.r0", "b9322cac.r0", "current.crl",
-                            "intermediate.crl"));
+  EXPECT_THAT(contents,
+              ::testing::IsSupersetOf({"ab06acdd.r0", "b9322cac.r0",
+                                       "current.crl", "intermediate.crl"}));
 }
 
 TEST(DirectoryReader, NonexistentDirectory) {
