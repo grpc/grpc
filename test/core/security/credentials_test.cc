@@ -3878,7 +3878,7 @@ TEST(CredentialsTest, TestCompositeChannelCredsCompareSuccess) {
   grpc_channel_credentials_release(composite_creds_2);
 }
 
-TEST(CredentialsTest, RecursiveCompositeCredsCompareSuccess) {
+TEST(CredentialsTest, RecursiveCompositeCredsDuplicateWithoutCallCreds) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto inner_fake_creds = MakeRefCounted<fake_call_creds>();
   auto outer_fake_creds = MakeRefCounted<fake_call_creds>();
