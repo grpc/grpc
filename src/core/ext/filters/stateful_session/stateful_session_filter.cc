@@ -235,7 +235,7 @@ void StatefulSessionFilter::InitCall(const CallArgs& call_args) {
   if (!cookie_config->name.has_value() ||
       !IsConfiguredPath(cookie_config->path,
                         call_args.client_initial_metadata)) {
-    return next_promise_factory(std::move(call_args));
+    return next_promise_factory(call_args);
   }
   // Base64-decode cookie value.
   std::string cookie_value =
@@ -271,7 +271,7 @@ void StatefulSessionFilter::InitCall(const CallArgs& call_args) {
                                          override_host_attribute, md.get());
         return md;
       });
-  return Map(next_promise_factory(std::move(call_args)),
+  return Map(next_promise_factory(call_args),
              [cookie_config, cluster_changed, cluster_name, cookie_address_list,
               override_host_attribute](ServerMetadataHandle md) {
                // If we got a Trailers-Only response, then add the

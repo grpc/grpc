@@ -20,7 +20,6 @@
 
 #include "src/core/ext/filters/http/client_authority_filter.h"
 
-#include <functional>
 #include <memory>
 
 #include "absl/status/status.h"
@@ -31,6 +30,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"

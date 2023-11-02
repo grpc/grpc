@@ -1524,10 +1524,9 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
             });
       },
       [host_ptr, path = std::move(path), deadline,
-       call_args =
-           std::move(call_args)](std::pair<RequestMatcherInterface::MatchResult,
-                                           NextResult<MessageHandle>>
-                                     r) mutable {
+       call_args = call_args](std::pair<RequestMatcherInterface::MatchResult,
+                                        NextResult<MessageHandle>>
+                                  r) mutable {
         auto& mr = r.first;
         auto& payload = r.second;
         auto* rc = mr.TakeCall();
@@ -1559,8 +1558,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
         return GetContext<CallContext>()
             ->server_call_context()
             ->MakeTopOfServerCallPromise(
-                std::move(call_args), rc->cq_bound_to_call,
-                rc->initial_metadata,
+                call_args, rc->cq_bound_to_call, rc->initial_metadata,
                 [rc, cq_for_new_request](grpc_call* call) {
                   *rc->call = call;
                   grpc_cq_end_op(cq_for_new_request, rc->tag, absl::OkStatus(),

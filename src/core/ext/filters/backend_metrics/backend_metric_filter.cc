@@ -19,7 +19,6 @@
 #include <inttypes.h>
 #include <stddef.h>
 
-#include <functional>
 #include <map>
 #include <memory>
 #include <utility>
@@ -38,7 +37,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"

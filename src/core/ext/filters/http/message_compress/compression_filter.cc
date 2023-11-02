@@ -270,7 +270,7 @@ void ClientCompressionFilter::InitCall(const CallArgs& call_args) {
       });
   // Run the next filter, and race it with getting an error from decompression.
   return PrioritizedRace(decompress_err->Wait(),
-                         next_promise_factory(std::move(call_args)));
+                         next_promise_factory(call_args));
 }
 
 void ServerCompressionFilter::InitCall(const CallArgs& call_args) {
@@ -312,7 +312,7 @@ void ServerCompressionFilter::InitCall(const CallArgs& call_args) {
       });
   // Run the next filter, and race it with getting an error from decompression.
   return PrioritizedRace(decompress_err->Wait(),
-                         next_promise_factory(std::move(call_args)));
+                         next_promise_factory(call_args));
 }
 
 }  // namespace grpc_core

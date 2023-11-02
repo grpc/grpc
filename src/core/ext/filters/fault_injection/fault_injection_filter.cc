@@ -154,7 +154,7 @@ void FaultInjectionFilter::InitCall(const CallArgs& call_args) {
   return TrySeq(
       Sleep(delay),
       [decision = std::move(decision)]() { return decision.MaybeAbort(); },
-      next_promise_factory(std::move(call_args)));
+      next_promise_factory(call_args));
 }
 
 FaultInjectionFilter::InjectionDecision

@@ -16,8 +16,8 @@
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector_filter.h"
 
-#include <functional>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -34,9 +34,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
