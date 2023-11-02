@@ -800,10 +800,9 @@ static tsi_result populate_ssl_context(
   }
   {
 #if OPENSSL_VERSION_NUMBER < 0x10101000L
-    EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-    if (!SSL_CTX_set_tmp_ecdh(context, ecdh)) {
+    if (!SSL_CTX_set1_curves(context, kSslEcCurveNames,
+                             ((sizeof(kSslEcCurveNames) / sizeof(int))))) {
       gpr_log(GPR_ERROR, "Could not set ephemeral ECDH key.");
-      EC_KEY_free(ecdh);
       return TSI_INTERNAL_ERROR;
     }
     SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
