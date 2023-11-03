@@ -159,10 +159,7 @@ ClientTransport::ClientTransport(
               std::move(data_endpoint_read_buffer_), 0);
           {
             MutexLock lock(&mu_);
-            std::cout << "Stream " << frame.frame_header.stream_id << " push message to server frame pipe sender = "
-              << &stream_map_[frame.frame_header.stream_id]->sender << "\n";
-            fflush(stdout);
-            return stream_map_[frame.frame_header.stream_id]->sender.Push(
+            return stream_map_[frame.frame_header.stream_id]->Push(
                 ServerFrame(std::move(frame)));
           }
         },
