@@ -62,8 +62,8 @@ class NoOpCertificateVerifier : public ExternalCertificateVerifier {
  public:
   ~NoOpCertificateVerifier() override = default;
 
-  bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest* request,
-              std::function<void(grpc::Status)> callback,
+  bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest*,
+              std::function<void(grpc::Status)>,
               grpc::Status* sync_status) override {
     *sync_status = grpc::Status(grpc::StatusCode::OK, "");
     return true;
