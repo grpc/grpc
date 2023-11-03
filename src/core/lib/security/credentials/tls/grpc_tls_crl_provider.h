@@ -21,17 +21,28 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <chrono>
+#include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
 #include <openssl/crypto.h>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc_crl_provider.h>
+
+#include "src/core/lib/gprpp/directory_reader.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_core {
 namespace experimental {
@@ -75,6 +86,45 @@ class CertificateInfoImpl : public CertificateInfo {
 
  private:
   const std::string issuer_;
+};
+
+// Defining this here lets us hide implementation details (and includes) from
+// the header in include
+class DirectoryReloaderCrlProvider
+    : public CrlProvider,
+      public std::enable_shared_from_this<DirectoryReloaderCrlProvider> {
+ public:
+  DirectoryReloaderCrlProvider(
+      std::chrono::seconds duration, std::function<void(absl::Status)> callback,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine,
+      std::shared_ptr<DirectoryReader> directory_impl)
+      : refresh_duration_(Duration::FromSecondsAsDouble(duration.count())),
+        reload_error_callback_(std::move(callback)),
+        event_engine_(std::move(event_engine)),
+        crl_directory_(std::move(directory_impl)) {}
+
+  ~DirectoryReloaderCrlProvider() override;
+  std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;
+  // Reads the configured directory and updates the internal crls_ map, called
+  // asynchronously by event engine then schedules the timer for the next
+  // update.
+  void UpdateAndStartTimer();
+
+ private:
+  // Reads the configured directory and updates the internal crls_ map, called
+  // asynchronously by event engine.
+  absl::Status Update();
+  Duration refresh_duration_;
+  std::function<void(::absl::Status)> reload_error_callback_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  std::shared_ptr<DirectoryReader> crl_directory_;
+  // guards the crls_ map
+  Mutex mu_;
+  absl::flat_hash_map<::std::string, ::std::shared_ptr<Crl>> crls_
+      ABSL_GUARDED_BY(mu_);
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      refresh_handle_;
 };
 
 }  // namespace experimental

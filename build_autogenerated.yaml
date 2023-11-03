@@ -749,6 +749,7 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/directory_reader.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
@@ -1563,11 +1564,13 @@ libs:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
+  - src/core/lib/gprpp/posix/directory_reader.cc
   - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
   - src/core/lib/gprpp/validation_errors.cc
+  - src/core/lib/gprpp/windows/directory_reader.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/http/format_request.cc
@@ -7512,6 +7515,17 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+- name: directory_reader_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/directory_reader_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: disappearing_server_test
   gtest: true
   build: test
@@ -9462,11 +9476,18 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/util/fuzz_config_vars.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/security/grpc_tls_crl_provider_test.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
 - name: grpc_tool_test
   gtest: true
