@@ -86,7 +86,9 @@ typedef struct ssl_key_cert_lib {
   bool use_bad_server_cert;
   bool use_bad_client_cert;
   bool use_root_store;
+  bool use_pem_root_certs;
   bool use_cert_signed_by_intermediate_ca;
+  bool skip_server_certificate_verification;
   char* root_cert;
   tsi_ssl_root_certs_store* root_store;
   tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs;
@@ -111,6 +113,7 @@ typedef struct ssl_tsi_test_fixture {
   size_t session_ticket_key_size;
   size_t network_bio_buf_size;
   size_t ssl_bio_buf_size;
+  bool verify_root_cert_subject;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
 } ssl_tsi_test_fixture;
@@ -125,7 +128,9 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib;
   // Create client handshaker factory.
   tsi_ssl_client_handshaker_options client_options;
-  client_options.pem_root_certs = key_cert_lib->root_cert;
+  if (key_cert_lib->use_pem_root_certs) {
+    client_options.pem_root_certs = key_cert_lib->root_cert;
+  }
   if (ssl_fixture->force_client_auth) {
     client_options.pem_key_cert_pair =
         key_cert_lib->use_bad_client_cert
@@ -145,6 +150,8 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   }
   client_options.min_tls_version = test_tls_version;
   client_options.max_tls_version = test_tls_version;
+  client_options.skip_server_certificate_verification =
+      key_cert_lib->skip_server_certificate_verification;
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &client_options, &ssl_fixture->client_handshaker_factory),
             TSI_OK);
@@ -396,10 +403,12 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
     check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
     check_security_level(&peer);
-    if (!ssl_fixture->session_reused) {
-      check_verified_root_cert_subject(ssl_fixture, &peer);
-    } else {
-      check_verified_root_cert_subject_unset(ssl_fixture, &peer);
+    if (ssl_fixture->verify_root_cert_subject) {
+      if (!ssl_fixture->session_reused) {
+        check_verified_root_cert_subject(ssl_fixture, &peer);
+      } else {
+        check_verified_root_cert_subject_unset(ssl_fixture, &peer);
+      }
     }
     if (ssl_fixture->server_name_indication == nullptr ||
         strcmp(ssl_fixture->server_name_indication, SSL_TSI_TEST_WRONG_SNI) ==
@@ -534,6 +543,7 @@ static std::string GenerateTrustBundle() {
 static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   ssl_tsi_test_fixture* ssl_fixture = grpc_core::Zalloc<ssl_tsi_test_fixture>();
   tsi_test_fixture_init(&ssl_fixture->base);
+  ssl_fixture->verify_root_cert_subject = true;
   ssl_fixture->base.test_unused_bytes = true;
   ssl_fixture->base.vtable = &vtable;
   // Create ssl_key_cert_lib.
@@ -541,6 +551,8 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   key_cert_lib->use_bad_server_cert = false;
   key_cert_lib->use_bad_client_cert = false;
   key_cert_lib->use_root_store = false;
+  key_cert_lib->use_pem_root_certs = true;
+  key_cert_lib->skip_server_certificate_verification = false;
   key_cert_lib->server_num_key_cert_pairs =
       SSL_TSI_TEST_SERVER_KEY_CERT_PAIRS_NUM;
   key_cert_lib->bad_server_num_key_cert_pairs =
@@ -647,6 +659,20 @@ void ssl_tsi_test_do_handshake_with_root_store() {
   ssl_tsi_test_fixture* ssl_fixture =
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->key_cert_lib->use_root_store = true;
+  tsi_test_do_handshake(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
+void ssl_tsi_test_do_handshake_skipping_server_certificate_verification() {
+  gpr_log(GPR_INFO,
+          "ssl_tsi_test_do_handshake_skipping_server_certificate_verification");
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+  ssl_fixture->verify_root_cert_subject = false;
+  ssl_fixture->key_cert_lib->use_root_store = false;
+  ssl_fixture->key_cert_lib->use_pem_root_certs = false;
+  ssl_fixture->key_cert_lib->skip_server_certificate_verification = true;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
 }
@@ -1236,6 +1262,7 @@ TEST(SslTransportSecurityTest, MainTest) {
       ssl_tsi_test_do_handshake_small_handshake_buffer();
       ssl_tsi_test_do_handshake();
       ssl_tsi_test_do_handshake_with_root_store();
+      ssl_tsi_test_do_handshake_skipping_server_certificate_verification();
       ssl_tsi_test_do_handshake_with_large_server_handshake_messages(
           trust_bundle);
       ssl_tsi_test_do_handshake_with_client_authentication();
