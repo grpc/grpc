@@ -42,7 +42,6 @@ namespace {
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
-using ::grpc::experimental::TlsCredentialsOptions;
 
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";

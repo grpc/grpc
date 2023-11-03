@@ -2061,6 +2061,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
+  if (options->pem_root_certs == nullptr && options->root_store == nullptr &&
+      !options->skip_server_certificate_verification) {
+    return TSI_INVALID_ARGUMENT;
+  }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
