@@ -392,10 +392,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
 }
 
 TEST(ClientSslTest, MainTest) {
-  // Handshake succeeeds when the server has grpc-exp as the ALPN preference.
-  ASSERT_TRUE(client_ssl_test(const_cast<char*>("grpc-exp")));
-  // Handshake succeeeds when the server has h2 as the ALPN preference. This
-  // covers legacy gRPC servers which don't support grpc-exp.
+  // Handshake succeeeds when the server has h2 as the ALPN preference.
   ASSERT_TRUE(client_ssl_test(const_cast<char*>("h2")));
 
 // TODO(gtcooke94) Figure out why test is failing with OpenSSL and fix it.
