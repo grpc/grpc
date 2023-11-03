@@ -9575,6 +9575,18 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: h2_ssl_certs_curves_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/h2_ssl_certs_curves_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: h2_ssl_session_reuse_test
   gtest: true
   build: test
