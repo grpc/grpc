@@ -91,6 +91,14 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
   grpc_server_credentials* server_creds =
       grpc_ssl_server_credentials_create_with_options(options);
   // This is a hack but we don't have a public API to force TLS version yet.
+  //
+  // The tests in this file are only meaningful with TLSv1.2 only there is the
+  // public key from the certificate used for key exchange and the key type's
+  // compatibility will be checked:
+  // https://datatracker.ietf.org/doc/html/rfc8422#section-5.3.
+  // In TLSv1.3 key exchange negotiation follows a different flow
+  // (https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.7) and no longer
+  // involves the key in the certificate.
   reinterpret_cast<grpc_ssl_server_credentials*>(server_creds)
       ->set_max_tls_version(grpc_tls_version::TLS1_2);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
