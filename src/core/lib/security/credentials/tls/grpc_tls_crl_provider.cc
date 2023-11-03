@@ -22,8 +22,11 @@
 
 #include <limits.h>
 
+// IWYU pragma: no_include <ratio>
 #include <memory>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 // IWYU pragma: no_include <openssl/mem.h>
 #include <openssl/bio.h>
@@ -35,15 +38,25 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/types/span.h"
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/directory_reader.h"
+#include "src/core/lib/gprpp/load_file.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 namespace experimental {
 
 namespace {
 std::string IssuerFromCrl(X509_CRL* crl) {
+  if (crl == nullptr) {
+    return "";
+  }
   char* buf = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
   std::string ret;
   if (buf != nullptr) {
@@ -51,6 +64,20 @@ std::string IssuerFromCrl(X509_CRL* crl) {
   }
   OPENSSL_free(buf);
   return ret;
+}
+
+absl::StatusOr<std::shared_ptr<Crl>> ReadCrlFromFile(
+    const std::string& crl_path) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(crl_path, false);
+  if (!crl_slice.ok()) {
+    return crl_slice.status();
+  }
+  absl::StatusOr<std::unique_ptr<Crl>> crl =
+      Crl::Parse(crl_slice->as_string_view());
+  if (!crl.ok()) {
+    return crl.status();
+  }
+  return crl;
 }
 
 }  // namespace
@@ -107,6 +134,99 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
 
 std::shared_ptr<Crl> StaticCrlProvider::GetCrl(
     const CertificateInfo& certificate_info) {
+  auto it = crls_.find(certificate_info.Issuer());
+  if (it == crls_.end()) {
+    return nullptr;
+  }
+  return it->second;
+}
+
+absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
+    absl::string_view directory, std::chrono::seconds refresh_duration,
+    std::function<void(absl::Status)> reload_error_callback) {
+  if (refresh_duration < std::chrono::seconds(60)) {
+    return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
+  }
+  auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
+      refresh_duration, reload_error_callback,
+      grpc_event_engine::experimental::GetDefaultEventEngine(),
+      MakeDirectoryReader(directory));
+  // This could be slow to do at startup, but we want to
+  // make sure it's done before the provider is used.
+  provider->UpdateAndStartTimer();
+  return provider;
+}
+
+DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
+  if (refresh_handle_.has_value()) {
+    event_engine_->Cancel(refresh_handle_.value());
+  }
+}
+
+void DirectoryReloaderCrlProvider::UpdateAndStartTimer() {
+  absl::Status status = Update();
+  if (!status.ok() && reload_error_callback_ != nullptr) {
+    reload_error_callback_(status);
+  }
+  std::weak_ptr<DirectoryReloaderCrlProvider> self = shared_from_this();
+  refresh_handle_ =
+      event_engine_->RunAfter(refresh_duration_, [self = std::move(self)]() {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        if (std::shared_ptr<DirectoryReloaderCrlProvider> valid_ptr =
+                self.lock()) {
+          valid_ptr->UpdateAndStartTimer();
+        }
+      });
+}
+
+absl::Status DirectoryReloaderCrlProvider::Update() {
+  absl::flat_hash_map<std::string, std::shared_ptr<Crl>> new_crls;
+  std::vector<std::string> files_with_errors;
+  absl::Status status = crl_directory_->ForEach([&](absl::string_view file) {
+    std::string file_path = absl::StrCat(crl_directory_->Name(), "/", file);
+    // Build a map of new_crls to update to. If all files successful, do a
+    // full swap of the map. Otherwise update in place.
+    absl::StatusOr<std::shared_ptr<Crl>> crl = ReadCrlFromFile(file_path);
+    if (!crl.ok()) {
+      files_with_errors.push_back(
+          absl::StrCat(file_path, ": ", crl.status().ToString()));
+      return;
+    }
+    // Now we have a good CRL to update in our map.
+    // It's not safe to say crl->Issuer() on the LHS and std::move(crl) on the
+    // RHS, because C++ does not guarantee which of those will be executed
+    // first.
+    std::string issuer((*crl)->Issuer());
+    new_crls[std::move(issuer)] = std::move(*crl);
+  });
+  if (!status.ok()) {
+    return status;
+  }
+  MutexLock lock(&mu_);
+  if (!files_with_errors.empty()) {
+    // Need to make sure CRLs we read successfully into new_crls are still
+    // in-place updated in crls_.
+    for (auto& kv : new_crls) {
+      std::shared_ptr<Crl>& crl = kv.second;
+      // It's not safe to say crl->Issuer() on the LHS and std::move(crl) on the
+      // RHS, because C++ does not guarantee which of those will be executed
+      // first.
+      std::string issuer(crl->Issuer());
+      crls_[std::move(issuer)] = std::move(crl);
+    }
+    return absl::UnknownError(absl::StrCat(
+        "Errors reading the following files in the CRL directory: [",
+        absl::StrJoin(files_with_errors, "; "), "]"));
+  } else {
+    crls_ = std::move(new_crls);
+  }
+  return absl::OkStatus();
+}
+
+std::shared_ptr<Crl> DirectoryReloaderCrlProvider::GetCrl(
+    const CertificateInfo& certificate_info) {
+  MutexLock lock(&mu_);
   auto it = crls_.find(certificate_info.Issuer());
   if (it == crls_.end()) {
     return nullptr;
