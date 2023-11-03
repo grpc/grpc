@@ -23,8 +23,9 @@
 #pragma comment(lib, "crypt32")
 
 #include <esent.h>
-#include <vector>
 #include <wincrypt.h>
+
+#include <vector>
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
