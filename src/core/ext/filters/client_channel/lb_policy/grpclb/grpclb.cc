@@ -1508,6 +1508,9 @@ void GrpcLb::ResetBackoffLocked() {
 }
 
 absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+    gpr_log(GPR_INFO, "[grpclb %p] received update", this);
+  }
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config;
   GPR_ASSERT(config_ != nullptr);
@@ -1516,11 +1519,15 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   fallback_backend_addresses_ = std::move(args.addresses);
   if (fallback_backend_addresses_.ok()) {
     // Add null LB token attributes.
-    for (EndpointAddresses& addresses : *fallback_backend_addresses_) {
-      addresses = EndpointAddresses(
-          addresses.addresses(),
-          addresses.args().SetObject(
+    for (EndpointAddresses& endpoint : *fallback_backend_addresses_) {
+      endpoint = EndpointAddresses(
+          endpoint.addresses(),
+          endpoint.args().SetObject(
               MakeRefCounted<TokenAndClientStatsArg>("", nullptr)));
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+        gpr_log(GPR_INFO, "[grpclb %p] fallback address: %s", this,
+                endpoint.ToString().c_str());
+      }
     }
   }
   resolution_note_ = std::move(args.resolution_note);
