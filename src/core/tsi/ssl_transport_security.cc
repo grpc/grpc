@@ -1831,8 +1831,10 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     const char* server_name_indication, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker) {
   return create_tsi_ssl_handshaker(
-      factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
-      ssl_bio_buf_size, &factory->base, handshaker);
+      factory->ssl_context, 1,
+      looks_like_ip_address(server_name_indication) ? nullptr
+                                                    : server_name_indication,
+      network_bio_buf_size, ssl_bio_buf_size, &factory->base, handshaker);
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
