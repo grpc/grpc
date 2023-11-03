@@ -518,15 +518,26 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
   std::tuple<int, int, int> WaitForAllBackends(int num_requests_multiple_of = 1,
                                                size_t start_index = 0,
-                                               size_t stop_index = 0) {
+                                               size_t stop_index = 0,
+                                               int timeout_seconds = 10) {
+    gpr_log(GPR_INFO, "Waiting for backends [%" PRIuPTR ", %" PRIuPTR ")",
+            start_index, stop_index);
+    const absl::Time deadline =
+        absl::Now() + absl::Seconds(10 * grpc_test_slowdown_factor());
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
     int num_total = 0;
     while (!SeenAllBackends(start_index, stop_index)) {
+      absl::Time now = absl::Now();
+      EXPECT_LT(now, deadline);
+      if (now > deadline) break;
       SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops);
     }
     while (num_total % num_requests_multiple_of != 0) {
+      absl::Time now = absl::Now();
+      EXPECT_LT(now, deadline);
+      if (now > deadline) break;
       SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops);
     }
     ResetBackendCounters();
@@ -538,11 +549,16 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return std::make_tuple(num_ok, num_failure, num_drops);
   }
 
-  void WaitForBackend(size_t backend_idx) {
+  void WaitForBackend(size_t backend_idx, int timeout_seconds = 10) {
+    gpr_log(GPR_INFO, "Waiting for backend %" PRIuPTR, backend_idx);
+    const absl::Time deadline =
+        absl::Now() + absl::Seconds(10 * grpc_test_slowdown_factor());
     do {
+      ASSERT_LT(absl::Now(), deadline);
       (void)SendRpc();
     } while (backends_[backend_idx]->service_.request_count() == 0);
     ResetBackendCounters();
+    gpr_log(GPR_INFO, "Done waiting for backend %" PRIuPTR, backend_idx);
   }
 
   struct AddressData {
