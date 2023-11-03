@@ -62,7 +62,7 @@ absl::Status DirectoryReaderImpl::ForEach(
     absl::FunctionRef<void(absl::string_view)> callback) {
   std::string search_path = absl::StrCat(directory_path_, "/*");
   WIN32_FIND_DATA find_data;
-  HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
+  HANDLE hFind = ::FindFirstFileA(search_path.c_str(), &find_data);
   if (hFind == INVALID_HANDLE_VALUE) {
     return absl::InternalError("Could not read crl directory.");
   }
@@ -70,7 +70,7 @@ absl::Status DirectoryReaderImpl::ForEach(
     if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
       callback(find_data.cFileName);
     }
-  } while (::FindNextFile(hFind, &find_data));
+  } while (::FindNextFileA(hFind, &find_data));
   ::FindClose(hFind);
   return absl::OkStatus();
 }
