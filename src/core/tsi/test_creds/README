@@ -16,7 +16,7 @@ common name which is set to badserver.test.google.com.
 Valid test credentials:
 =======================
 
-The ca is self-signed:
+The ca is self-signed with RSA:
 ----------------------
 
 $ openssl req -x509 -new -newkey rsa:2048 -nodes -keyout ca.key -out ca.pem \
@@ -128,7 +128,29 @@ $ openssl req -key leaf_signed_by_intermediate.key -new -out temp.csr -config le
 $ openssl x509 -req -days 3650 -in temp.csr -CA intermediate_ca.pem -CAkey intermediate_ca.key -CAcreateserial -out leaf_signed_by_intermediate.pem -extfile leaf_signed_by_intermediate.cnf -extensions 'v3_req'
 $ cat leaf_signed_by_intermediate.pem intermediate_ca.pem > leaf_and_intermediate_chain.pem
 
+ECDSA CAs and certs/keys
+------------------------
 
+For P256, P384 or P521 curves, assign $NAME to prime256v1, secp384r1 or secp521r1 and $SUFFIX to p256, p384 or p521 respectively.
+
+$ openssl ecparam -name $NAME -genkey -noout -out temp.pem
+$ openssl pkcs8 -topk8 -in temp.pem -out ca_${SUFFIX}.key -nocrypt
+$ rm temp.pem
+$ openssl req -x509 -days 3650 -new -key ca_${SUFFIX}.key -nodes -out ca_${SUFFIX}.pem -config ca-openssl.cnf -extensions 'v3_req'
+
+Sign client certs (with common name testclient) with the above CAs:
+$ openssl ecparam -name $NAME -genkey -noout -out temp.pem
+$ openssl pkcs8 -topk8 -in temp.pem -out client_${SUFFIX}.key -nocrypt
+$ rm temp.pem
+$ openssl req -key client_${SUFFIX}.key -new -out temp.csr
+$ openssl x509 -req -days 3650 -in temp.csr -CA ca_${SUFFIX}.pem -CAkey ca_${SUFFIX}.key -CAcreateserial -out client_${SUFFIX}.pem
+
+Sign server certs (with common name *.test.google.com) with the above CAs:
+$ openssl ecparam -name $NAME -genkey -noout -out temp.pem
+$ openssl pkcs8 -topk8 -in temp.pem -out server1_${SUFFIX}.key -nocrypt
+$ rm temp.pem
+$ openssl req -key server1_${SUFFIX}.key -new -out temp.csr -config server1-openssl.cnf
+$ openssl x509 -req -days 3650 -in temp.csr -CA ca_${SUFFIX}.pem -CAkey ca_${SUFFIX}.key -CAcreateserial -out server1_${SUFFIX}.pem -extensions 'v3_req' -extfile server1-openssl.cnf
 
 Clean up:
 ---------
