@@ -113,6 +113,7 @@ class Qux : public InternallyRefCounted<Qux> {
 
   void StartWork() { self_ref_ = RefIfNonZero(DEBUG_LOCATION, "work"); }
   void FinishWork() {
+    // This is a little ugly, but it makes the logged ref and unref match up.
     self_ref_.release();
     Unref(DEBUG_LOCATION, "work");
   }
