@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-// #if defined(GPR_WINDOWS)
+#if defined(GPR_WINDOWS)
 
 #include <strsafe.h>
 #include <sys/stat.h>
@@ -87,4 +87,4 @@ absl::Status DirectoryReaderImpl::ForEach(
 
 }  // namespace grpc_core
 
-// #endif  // GPR_WINDOWS
+#endif  // GPR_WINDOWS
