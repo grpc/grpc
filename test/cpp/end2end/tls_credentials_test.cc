@@ -128,6 +128,11 @@ void DoRpc(const std::string& server_addr,
   EXPECT_EQ(response.message(), kMessage);
 }
 
+// How do we test that skipping server certificate verification works as
+// expected? Give the server credentials that chain up to a custom CA (that does
+// not belong to the default or OS trust store), do not configure the client to
+// have this CA in its trust store, and attempt to establish a connection
+// between the client and server.
 TEST_F(TlsCredentialsTest, SkipServerCertificateVerification) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
