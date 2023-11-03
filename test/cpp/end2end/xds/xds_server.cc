@@ -22,9 +22,6 @@
 #include <thread>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>

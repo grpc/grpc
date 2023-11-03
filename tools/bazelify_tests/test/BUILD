@@ -16,6 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_package")
 load("//tools/bazelify_tests:build_defs.bzl", "grpc_build_artifact_task", "grpc_run_cpp_distribtest_test", "grpc_run_distribtest_test", "grpc_run_simple_command_test", "grpc_run_tests_harness_test")
 load(":portability_tests.bzl", "generate_run_tests_portability_tests")
 load(":bazel_distribtests.bzl", "generate_bazel_distribtests")
+load(":strict_tests.bzl", "generate_strict_tests")
 
 licenses(["notice"])
 
@@ -213,12 +214,7 @@ test_suite(
 )
 
 # "Bazel build" tests
-grpc_run_simple_command_test(
-    name = "bazel_build_with_strict_warnings_linux",
-    size = "enormous",
-    args = ["tools/bazelify_tests/test/bazel_build_with_strict_warnings_linux.sh"],
-    docker_image_version = "tools/dockerfile/test/bazel.current_version",
-)
+generate_strict_tests()
 
 grpc_run_simple_command_test(
     name = "bazel_build_with_grpc_no_xds_linux",

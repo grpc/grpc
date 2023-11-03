@@ -76,11 +76,11 @@ TEST_P(XdsClientTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
   WaitForAllBackends(DEBUG_LOCATION, 0, 1);
   // Stop balancer.
   balancer_->Shutdown();
-  // Tell balancer to require minimum version 1 for all resource types.
-  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
+  // Expect minimum version 1 for all resource types.
+  balancer_->ads_service()->SetCheckVersionCallback(
+      [&](absl::string_view resource_type, int version) {
+        EXPECT_GE(version, 1) << "resource_type: " << resource_type;
+      });
   // Update backend, just so we can be sure that the client has
   // reconnected to the balancer.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
@@ -530,15 +530,15 @@ TEST_P(TimeoutTest, ServerDoesNotResendAfterAdsStreamRestart) {
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // Stop balancer.
   balancer_->Shutdown();
-  // Tell balancer to require minimum version 1 for all resource types
-  // and to not reply to the requests.
-  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
+  // Expect minimum version 1 for all resource types.
+  balancer_->ads_service()->SetCheckVersionCallback(
+      [&](absl::string_view resource_type, int version) {
+        EXPECT_GE(version, 1) << "resource_type: " << resource_type;
+      });
+  // Tell balancer not to reply to the requests.
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
   balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
   // Restart balancer.
   balancer_->Start();
