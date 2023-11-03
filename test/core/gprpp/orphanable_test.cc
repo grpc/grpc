@@ -107,7 +107,7 @@ class Qux : public InternallyRefCounted<Qux> {
  public:
   Qux() : Qux(0) {}
   explicit Qux(int value) : InternallyRefCounted<Qux>("Qux"), value_(value) {}
-  ~Qux() { self_ref_ = RefIfNonZero(DEBUG_LOCATION, "extra_work"); }
+  ~Qux() override { self_ref_ = RefIfNonZero(DEBUG_LOCATION, "extra_work"); }
   void Orphan() override { Unref(); }
   int value() const { return value_; }
 
