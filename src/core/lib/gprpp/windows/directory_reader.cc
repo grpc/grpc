@@ -20,9 +20,7 @@
 
 #if defined(GPR_WINDOWS)
 
-#include <strsafe.h>
 #include <sys/stat.h>
-#include <tchar.h>
 #include <windows.h>
 
 #include <string>
@@ -62,17 +60,9 @@ std::unique_ptr<DirectoryReader> MakeDirectoryReader(
 // https://learn.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
 absl::Status DirectoryReaderImpl::ForEach(
     absl::FunctionRef<void(absl::string_view)> callback) {
-  TCHAR search_path_windows[MAX_PATH];
   std::string search_path = absl::StrCat(directory_path_, "/*");
-  size_t length_of_arg;
-  StringCchLength(search_path, MAX_PATH, &length_of_arg);
-  if (length_of_arg > MAX_PATH) {
-    return absl::InvalidArgumentError(
-        "CrlProvider Directory path is too long.");
-  }
-  StringCchCopy(search_path_windows, MAX_PATH, search_path);
   WIN32_FIND_DATA find_data;
-  HANDLE hFind = ::FindFirstFile(search_path_windows, &find_data);
+  HANDLE hFind = ::FindFirstFile(search_path.c_str(), &find_data);
   if (hFind == INVALID_HANDLE_VALUE) {
     return absl::InternalError("Could not read crl directory.");
   }
