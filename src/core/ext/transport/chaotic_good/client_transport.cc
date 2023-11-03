@@ -157,10 +157,10 @@ ClientTransport::ClientTransport(
           // Move message into frame.
           frame.message = arena_->MakePooled<Message>(
               std::move(data_endpoint_read_buffer_), 0);
+          auto stream_id = frame.frame_header.stream_id;
           {
             MutexLock lock(&mu_);
-            return stream_map_[frame.frame_header.stream_id]->Push(
-                ServerFrame(std::move(frame)));
+            return stream_map_[stream_id]->Push(ServerFrame(std::move(frame)));
           }
         },
         // Check if send frame to corresponding stream successfully.
