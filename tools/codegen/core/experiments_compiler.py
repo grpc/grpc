@@ -198,6 +198,7 @@ class ExperimentDefinition(object):
         self._default = {}
         self._additional_constraints = {}
         self._test_tags = []
+        self._requires = set()
 
         if "allow_in_fuzzing_config" in attributes:
             self._allow_in_fuzzing_config = attributes[
@@ -244,6 +245,8 @@ class ExperimentDefinition(object):
                 " experiment: %s" % self._name
             )
             return False
+        for requirement in rollout_attributes.get("requires", []):
+            self._requires.add(requirement)
         if "default" not in rollout_attributes:
             print(
                 "ERROR: no default for experiment %s"
@@ -310,7 +313,7 @@ class ExperimentsCompiler(object):
         self._final_define = final_define
         self._platforms_define = platforms_define
         self._bzl_list_for_defaults = bzl_list_for_defaults
-        self._experiment_definitions = {}
+        self._experiment_definitions = collections.OrderedDict()
         self._experiment_rollouts = {}
 
     def AddExperimentDefinition(self, experiment_definition):
@@ -343,6 +346,27 @@ class ExperimentsCompiler(object):
         ].AddRolloutSpecification(
             self._defaults, self._platforms_define, rollout_attributes
         )
+    
+    def _FinalizeExperiments(self):
+        queue = collections.OrderedDict()
+        for name, exp in self._experiment_definitions.items():
+            queue[name] = exp._requires
+        done = set()
+        final = collections.OrderedDict()
+        while queue:
+            take = None
+            for name, requires in queue.items():
+                if requires.issubset(done):
+                    take = name
+                    break
+            if take is None:
+                print("ERROR: circular dependency in experiments")
+                return False
+            done.add(take)
+            final[take] = self._experiment_definitions[take]
+            del queue[take]
+        self._experiment_definitions = final
+        return True
 
     def _GenerateExperimentsHdrForPlatform(self, platform, file_desc):
         for _, exp in self._experiment_definitions.items():
@@ -363,6 +387,7 @@ class ExperimentsCompiler(object):
             )
 
     def GenerateExperimentsHdr(self, output_file, mode):
+        assert(self._FinalizeExperiments())
         with open(output_file, "w") as H:
             PutCopyright(H, "//")
             PutBanner(
@@ -445,6 +470,13 @@ class ExperimentsCompiler(object):
             print(file=H)
             print(f"#endif  // {include_guard}", file=H)
 
+    def _IndicesForExperiments(self, names):
+        indices = []
+        for i, name in enumerate(self._experiment_definitions.keys()):
+            if name in names:
+                indices.append(i)
+        return sorted(indices)
+
     def _GenerateExperimentsSrcForPlatform(self, platform, mode, file_desc):
         print("namespace {", file=file_desc)
         have_defaults = set()
@@ -463,6 +495,10 @@ class ExperimentsCompiler(object):
                 file=file_desc,
             )
             have_defaults.add(self._defaults[exp.default(platform)])
+            print(
+                "const uint8_t* const required_experiments_%s = {%s};"
+                % (exp.name, self._IndicesForExperiments(exp._requires)),
+            )
         if "kDefaultForDebugOnly" in have_defaults:
             print("#ifdef NDEBUG", file=file_desc)
             if "kDefaultForDebugOnly" in have_defaults:
@@ -502,6 +538,7 @@ class ExperimentsCompiler(object):
         print("}  // namespace grpc_core", file=file_desc)
 
     def GenerateExperimentsSrc(self, output_file, header_file_path, mode):
+        assert(self._FinalizeExperiments())
         with open(output_file, "w") as C:
             PutCopyright(C, "//")
             PutBanner(
@@ -540,6 +577,7 @@ class ExperimentsCompiler(object):
         return defs
 
     def GenTest(self, output_file):
+        assert(self._FinalizeExperiments())
         with open(output_file, "w") as C:
             PutCopyright(C, "//")
             PutBanner(
@@ -567,6 +605,7 @@ class ExperimentsCompiler(object):
             print(_EXPERIMENTS_TEST_SKELETON(defs, test_body), file=C)
 
     def GenExperimentsBzl(self, mode, output_file):
+        assert(self._FinalizeExperiments())
         if self._bzl_list_for_defaults is None:
             return
 

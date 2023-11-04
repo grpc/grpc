@@ -104,6 +104,7 @@
   default: false
 - name: promise_based_server_call
   default: false
+  requires: [lazier_stream_updates]
 - name: red_max_concurrent_streams
   default: false
 - name: registered_method_lookup_in_transport
