@@ -208,6 +208,9 @@ class ExperimentDefinition(object):
         if "test_tags" in attributes:
             self._test_tags = attributes["test_tags"]
 
+        for requirement in attributes.get("requires", []):
+            self._requires.add(requirement)
+
     def IsValid(self, check_expiry=False):
         if self._error:
             return False
@@ -490,7 +493,7 @@ class ExperimentsCompiler(object):
             have_defaults.add(self._defaults[exp.default(platform)])
             print(
                 "const uint8_t required_experiments_%s[] = {%s};"
-                % (exp.name, ','.join(f"static_cast<uint8_t>(grpc_core::kExperimentId{SnakeToPascal(name)})" for name in exp._requires)),
+                % (exp.name, ','.join(f"static_cast<uint8_t>(grpc_core::kExperimentId{SnakeToPascal(name)})" for name in sorted(exp._requires))),
                 file = file_desc,
             )
         if "kDefaultForDebugOnly" in have_defaults:
