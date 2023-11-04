@@ -106,7 +106,19 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
       } else {
         experiments.enabled[i] = g_experiment_metadata[i].default_value;
       }
+      // If required experiments are not enabled, disable this one too.
+      for (size_t j = 0; j < g_experiment_metadata[i].num_required_experiments;
+           j++) {
+        // Require that we can check dependent requirements with a linear sweep
+        // (implies the experiments generator must DAG sort the experiments)
+        GPR_ASSERT(g_experiment_metadata[i].required_experiments[j] < i);
+        if (!experiments
+                 .enabled[g_experiment_metadata[i].required_experiments[j]]) {
+          experiments.enabled[i] = false;
+        }
+      }
     } else {
+      // Forced experiments do not respect rollout requirements
       experiments.enabled[i] = g_forced_experiments[i].value;
     }
   }

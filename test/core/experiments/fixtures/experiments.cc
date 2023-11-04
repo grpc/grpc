@@ -24,16 +24,16 @@
 namespace {
 const char* const description_test_experiment_1 = "Test Experiment 1";
 const char* const additional_constraints_test_experiment_1 = "{}";
-const uint8_t* const required_experiments_test_experiment_1 = {};
+const uint8_t required_experiments_test_experiment_1[] = {};
 const char* const description_test_experiment_2 = "Test Experiment 2";
 const char* const additional_constraints_test_experiment_2 = "{}";
-const uint8_t* const required_experiments_test_experiment_2 = {};
+const uint8_t required_experiments_test_experiment_2[] = {};
 const char* const description_test_experiment_3 = "Test Experiment 3";
 const char* const additional_constraints_test_experiment_3 = "{}";
-const uint8_t* const required_experiments_test_experiment_3 = {};
+const uint8_t required_experiments_test_experiment_3[] = {};
 const char* const description_test_experiment_4 = "Test Experiment 4";
 const char* const additional_constraints_test_experiment_4 = "{}";
-const uint8_t* const required_experiments_test_experiment_4 = {};
+const uint8_t required_experiments_test_experiment_4[] = {};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -64,16 +64,16 @@ const ExperimentMetadata g_test_experiment_metadata[] = {
 namespace {
 const char* const description_test_experiment_1 = "Test Experiment 1";
 const char* const additional_constraints_test_experiment_1 = "{}";
-const uint8_t* const required_experiments_test_experiment_1 = {};
+const uint8_t required_experiments_test_experiment_1[] = {};
 const char* const description_test_experiment_2 = "Test Experiment 2";
 const char* const additional_constraints_test_experiment_2 = "{}";
-const uint8_t* const required_experiments_test_experiment_2 = {};
+const uint8_t required_experiments_test_experiment_2[] = {};
 const char* const description_test_experiment_3 = "Test Experiment 3";
 const char* const additional_constraints_test_experiment_3 = "{}";
-const uint8_t* const required_experiments_test_experiment_3 = {};
+const uint8_t required_experiments_test_experiment_3[] = {};
 const char* const description_test_experiment_4 = "Test Experiment 4";
 const char* const additional_constraints_test_experiment_4 = "{}";
-const uint8_t* const required_experiments_test_experiment_4 = {};
+const uint8_t required_experiments_test_experiment_4[] = {};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -104,16 +104,16 @@ const ExperimentMetadata g_test_experiment_metadata[] = {
 namespace {
 const char* const description_test_experiment_1 = "Test Experiment 1";
 const char* const additional_constraints_test_experiment_1 = "{}";
-const uint8_t* const required_experiments_test_experiment_1 = {};
+const uint8_t required_experiments_test_experiment_1[] = {};
 const char* const description_test_experiment_2 = "Test Experiment 2";
 const char* const additional_constraints_test_experiment_2 = "{}";
-const uint8_t* const required_experiments_test_experiment_2 = {};
+const uint8_t required_experiments_test_experiment_2[] = {};
 const char* const description_test_experiment_3 = "Test Experiment 3";
 const char* const additional_constraints_test_experiment_3 = "{}";
-const uint8_t* const required_experiments_test_experiment_3 = {};
+const uint8_t required_experiments_test_experiment_3[] = {};
 const char* const description_test_experiment_4 = "Test Experiment 4";
 const char* const additional_constraints_test_experiment_4 = "{}";
-const uint8_t* const required_experiments_test_experiment_4 = {};
+const uint8_t required_experiments_test_experiment_4[] = {};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else

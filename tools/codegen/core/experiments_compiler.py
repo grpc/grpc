@@ -470,13 +470,6 @@ class ExperimentsCompiler(object):
             print(file=H)
             print(f"#endif  // {include_guard}", file=H)
 
-    def _IndicesForExperiments(self, names):
-        indices = []
-        for i, name in enumerate(self._experiment_definitions.keys()):
-            if name in names:
-                indices.append(i)
-        return sorted(indices)
-
     def _GenerateExperimentsSrcForPlatform(self, platform, mode, file_desc):
         print("namespace {", file=file_desc)
         have_defaults = set()
@@ -496,8 +489,8 @@ class ExperimentsCompiler(object):
             )
             have_defaults.add(self._defaults[exp.default(platform)])
             print(
-                "const uint8_t* const required_experiments_%s = {%s};"
-                % (exp.name, ','.join(f"{i}" for i in self._IndicesForExperiments(exp._requires))),
+                "const uint8_t required_experiments_%s[] = {%s};"
+                % (exp.name, ','.join(f"static_cast<uint8_t>(grpc_core::kExperimentId{SnakeToPascal(name)})" for name in exp._requires)),
                 file = file_desc,
             )
         if "kDefaultForDebugOnly" in have_defaults:
