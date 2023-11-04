@@ -153,9 +153,8 @@ static int g_ssl_ex_verified_root_cert_index = -1;
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x30000000
-static const int kSslEcCurveNames[] = {NID_X9_62_prime256v1};
-#endif
+static const int kSslEcCurveNames[] = {NID_X9_62_prime256v1, NID_secp384r1,
+                                       NID_secp521r1};
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000
 static gpr_mu* g_openssl_mutexes = nullptr;
@@ -800,17 +799,16 @@ static tsi_result populate_ssl_context(
     return TSI_INVALID_ARGUMENT;
   }
   {
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
-    EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-    if (!SSL_CTX_set_tmp_ecdh(context, ecdh)) {
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+    if (!SSL_CTX_set1_curves(context, kSslEcCurveNames,
+                             ((sizeof(kSslEcCurveNames) / sizeof(int))))) {
       gpr_log(GPR_ERROR, "Could not set ephemeral ECDH key.");
-      EC_KEY_free(ecdh);
       return TSI_INTERNAL_ERROR;
     }
     SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
-    EC_KEY_free(ecdh);
 #else
-    if (!SSL_CTX_set1_groups(context, kSslEcCurveNames, 1)) {
+    if (!SSL_CTX_set1_groups(context, kSslEcCurveNames,
+                             ((sizeof(kSslEcCurveNames) / sizeof(int))))) {
       gpr_log(GPR_ERROR, "Could not set ephemeral ECDH key.");
       return TSI_INTERNAL_ERROR;
     }
@@ -2061,7 +2059,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
-  if (options->pem_root_certs == nullptr && options->root_store == nullptr) {
+  if (options->pem_root_certs == nullptr && options->root_store == nullptr &&
+      !options->skip_server_certificate_verification) {
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -2123,7 +2122,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       SSL_CTX_set_cert_store(ssl_context, options->root_store->store);
     }
 #endif
-    if (OPENSSL_VERSION_NUMBER < 0x10100000 || options->root_store == nullptr) {
+    if (OPENSSL_VERSION_NUMBER < 0x10100000 ||
+        (options->root_store == nullptr &&
+         options->pem_root_certs != nullptr)) {
       result = ssl_ctx_load_verification_certs(
           ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
           nullptr);

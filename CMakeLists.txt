@@ -301,7 +301,10 @@ if(UNIX AND NOT HAIKU)
   find_package(Threads)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m Threads::Threads)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} rt)
+    find_library(LIBRT rt)
+    if(LIBRT)
+      set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} rt)
+    endif()
   endif()
 endif()
 
@@ -819,6 +822,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/tsi/alts/fake_handshaker/transport_security_common.proto test/core/tsi/alts/fake_handshaker/transport_security_common.proto
 )
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  test/core/util/fuzz_config_vars.proto test/core/util/fuzz_config_vars.proto
+)
 
 if(gRPC_BUILD_TESTS)
   add_custom_target(buildtests_c)
@@ -977,6 +983,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx default_host_test)
   add_dependencies(buildtests_cxx delegating_channel_test)
   add_dependencies(buildtests_cxx destroy_grpclb_channel_with_active_connect_stress_test)
+  add_dependencies(buildtests_cxx directory_reader_test)
   add_dependencies(buildtests_cxx disappearing_server_test)
   add_dependencies(buildtests_cxx dns_resolver_cooldown_test)
   add_dependencies(buildtests_cxx dns_resolver_test)
@@ -1066,6 +1073,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx grpclb_end2end_test)
   endif()
   add_dependencies(buildtests_cxx h2_ssl_cert_test)
+  add_dependencies(buildtests_cxx h2_ssl_certs_curves_test)
   add_dependencies(buildtests_cxx h2_ssl_session_reuse_test)
   add_dependencies(buildtests_cxx h2_tls_peer_property_external_verifier_test)
   add_dependencies(buildtests_cxx handle_tests)
@@ -1409,6 +1417,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx timer_manager_test)
   add_dependencies(buildtests_cxx timer_test)
   add_dependencies(buildtests_cxx tls_certificate_verifier_test)
+  add_dependencies(buildtests_cxx tls_credentials_test)
   add_dependencies(buildtests_cxx tls_key_export_test)
   add_dependencies(buildtests_cxx tls_security_connector_test)
   add_dependencies(buildtests_cxx too_many_pings_test)
@@ -1481,9 +1490,6 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx xds_fault_injection_end2end_test)
   endif()
   add_dependencies(buildtests_cxx xds_http_filters_test)
-  add_dependencies(buildtests_cxx xds_interop_client)
-  add_dependencies(buildtests_cxx xds_interop_server)
-  add_dependencies(buildtests_cxx xds_interop_server_test)
   add_dependencies(buildtests_cxx xds_lb_policy_registry_test)
   add_dependencies(buildtests_cxx xds_listener_resource_type_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -2266,11 +2272,13 @@ add_library(grpc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
+  src/core/lib/gprpp/posix/directory_reader.cc
   src/core/lib/gprpp/ref_counted_string.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
   src/core/lib/gprpp/validation_errors.cc
+  src/core/lib/gprpp/windows/directory_reader.cc
   src/core/lib/gprpp/work_serializer.cc
   src/core/lib/handshaker/proxy_mapper_registry.cc
   src/core/lib/http/format_request.cc
@@ -10299,6 +10307,39 @@ target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(directory_reader_test
+  test/core/gprpp/directory_reader_test.cc
+)
+target_compile_features(directory_reader_test PUBLIC cxx_std_14)
+target_include_directories(directory_reader_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(directory_reader_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(disappearing_server_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
@@ -13425,6 +13466,16 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_crl_provider_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/security/grpc_tls_crl_provider_test.cc
 )
 target_compile_features(grpc_tls_crl_provider_test PUBLIC cxx_std_14)
@@ -13450,6 +13501,7 @@ target_include_directories(grpc_tls_crl_provider_test
 target_link_libraries(grpc_tls_crl_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -13647,6 +13699,40 @@ target_include_directories(h2_ssl_cert_test
 )
 
 target_link_libraries(h2_ssl_cert_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(h2_ssl_certs_curves_test
+  test/core/end2end/cq_verifier.cc
+  test/core/end2end/h2_ssl_certs_curves_test.cc
+)
+target_compile_features(h2_ssl_certs_curves_test PUBLIC cxx_std_14)
+target_include_directories(h2_ssl_certs_curves_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(h2_ssl_certs_curves_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
@@ -25100,6 +25186,56 @@ target_link_libraries(tls_certificate_verifier_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(tls_credentials_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+  test/cpp/end2end/test_service_impl.cc
+  test/cpp/end2end/tls_credentials_test.cc
+)
+target_compile_features(tls_credentials_test PUBLIC cxx_std_14)
+target_include_directories(tls_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(tls_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(tls_key_export_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -28161,214 +28297,6 @@ target_link_libraries(xds_http_filters_test
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(xds_interop_client
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
-  src/cpp/server/admin/admin_services.cc
-  src/cpp/server/csds/csds.cc
-  test/cpp/interop/rpc_behavior_lb_policy.cc
-  test/cpp/interop/xds_interop_client.cc
-  test/cpp/interop/xds_stats_watcher.cc
-)
-target_compile_features(xds_interop_client PUBLIC cxx_std_14)
-target_include_directories(xds_interop_client
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(xds_interop_client
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_reflection
-  grpcpp_channelz
-  grpc_test_util
-  grpc++_test_config
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(xds_interop_server
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
-  src/cpp/server/admin/admin_services.cc
-  src/cpp/server/csds/csds.cc
-  test/cpp/end2end/test_health_check_service_impl.cc
-  test/cpp/interop/pre_stop_hook_server.cc
-  test/cpp/interop/xds_interop_server.cc
-  test/cpp/interop/xds_interop_server_lib.cc
-)
-target_compile_features(xds_interop_server PUBLIC cxx_std_14)
-target_include_directories(xds_interop_server
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(xds_interop_server
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_reflection
-  grpcpp_channelz
-  grpc_test_util
-  grpc++_test_config
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(xds_interop_server_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/istio_echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/istio_echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/istio_echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/istio_echo.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
-  src/cpp/server/admin/admin_services.cc
-  src/cpp/server/csds/csds.cc
-  test/cpp/end2end/test_health_check_service_impl.cc
-  test/cpp/interop/pre_stop_hook_server.cc
-  test/cpp/interop/xds_interop_server_lib.cc
-  test/cpp/interop/xds_interop_server_test.cc
-)
-target_compile_features(xds_interop_server_test PUBLIC cxx_std_14)
-target_include_directories(xds_interop_server_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(xds_interop_server_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc++_reflection
-  grpcpp_channelz
-  grpc_test_util
-  grpc++_test_config
 )
 
 

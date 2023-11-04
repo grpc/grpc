@@ -497,7 +497,8 @@ class ExperimentsCompiler(object):
             have_defaults.add(self._defaults[exp.default(platform)])
             print(
                 "const uint8_t* const required_experiments_%s = {%s};"
-                % (exp.name, self._IndicesForExperiments(exp._requires)),
+                % (exp.name, ','.join(f"{i}" for i in self._IndicesForExperiments(exp._requires))),
+                file = file_desc,
             )
         if "kDefaultForDebugOnly" in have_defaults:
             print("#ifdef NDEBUG", file=file_desc)
@@ -523,11 +524,13 @@ class ExperimentsCompiler(object):
         )
         for _, exp in self._experiment_definitions.items():
             print(
-                "  {%s, description_%s, additional_constraints_%s, %s, %s},"
+                "  {%s, description_%s, additional_constraints_%s, required_experiments_%s, %d, %s, %s},"
                 % (
                     ToCStr(exp.name),
                     exp.name,
                     exp.name,
+                    exp.name,
+                    len(exp._requires),
                     self._defaults[exp.default(platform)],
                     "true" if exp.allow_in_fuzzing_config else "false",
                 ),

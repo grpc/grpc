@@ -49,7 +49,7 @@
 - name: canary_client_privacy
   description:
     If set, canary client privacy
-  expiry: 2023/11/01
+  expiry: 2024/04/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -73,7 +73,7 @@
 - name: client_privacy
   description:
     If set, client privacy
-  expiry: 2023/11/01
+  expiry: 2024/04/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -102,7 +102,7 @@
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2023/11/01
+  expiry: 2024/04/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
 - name: http2_stats_fix
@@ -241,7 +241,7 @@
   description:
     Change round_robin code to delegate to pick_first as per dualstack
     backend design.
-  expiry: 2023/11/15
+  expiry: 2023/12/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: rstpit
@@ -267,7 +267,7 @@
 - name: server_privacy
   description:
     If set, server privacy
-  expiry: 2023/11/01
+  expiry: 2024/04/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -307,6 +307,10 @@
   expiry: 2024/02/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
+- name: uniquely_unowned
+  description: Ensure HPACK table takes a unique copy of data when parsing unknown metadata
+  expiry: 2024/03/03
+  owner: ctiller@google.com
 - name: work_serializer_clears_time_cache
   description:
     Have the work serializer clear the time cache when it dispatches work.
@@ -337,6 +341,6 @@
   description:
     Change WRR code to delegate to pick_first as per dualstack
     backend design.
-  expiry: 2023/11/15
+  expiry: 2023/12/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]

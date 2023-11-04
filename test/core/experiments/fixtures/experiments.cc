@@ -24,12 +24,16 @@
 namespace {
 const char* const description_test_experiment_1 = "Test Experiment 1";
 const char* const additional_constraints_test_experiment_1 = "{}";
+const uint8_t* const required_experiments_test_experiment_1 = {};
 const char* const description_test_experiment_2 = "Test Experiment 2";
 const char* const additional_constraints_test_experiment_2 = "{}";
+const uint8_t* const required_experiments_test_experiment_2 = {};
 const char* const description_test_experiment_3 = "Test Experiment 3";
 const char* const additional_constraints_test_experiment_3 = "{}";
+const uint8_t* const required_experiments_test_experiment_3 = {};
 const char* const description_test_experiment_4 = "Test Experiment 4";
 const char* const additional_constraints_test_experiment_4 = "{}";
+const uint8_t* const required_experiments_test_experiment_4 = {};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -41,13 +45,17 @@ namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
     {"test_experiment_1", description_test_experiment_1,
-     additional_constraints_test_experiment_1, false, true},
+     additional_constraints_test_experiment_1,
+     required_experiments_test_experiment_1, 0, false, true},
     {"test_experiment_2", description_test_experiment_2,
-     additional_constraints_test_experiment_2, true, true},
+     additional_constraints_test_experiment_2,
+     required_experiments_test_experiment_2, 0, true, true},
     {"test_experiment_3", description_test_experiment_3,
-     additional_constraints_test_experiment_3, kDefaultForDebugOnly, true},
+     additional_constraints_test_experiment_3,
+     required_experiments_test_experiment_3, 0, kDefaultForDebugOnly, true},
     {"test_experiment_4", description_test_experiment_4,
-     additional_constraints_test_experiment_4, true, true},
+     additional_constraints_test_experiment_4,
+     required_experiments_test_experiment_4, 0, true, true},
 };
 
 }  // namespace grpc_core
@@ -56,12 +64,16 @@ const ExperimentMetadata g_test_experiment_metadata[] = {
 namespace {
 const char* const description_test_experiment_1 = "Test Experiment 1";
 const char* const additional_constraints_test_experiment_1 = "{}";
+const uint8_t* const required_experiments_test_experiment_1 = {};
 const char* const description_test_experiment_2 = "Test Experiment 2";
 const char* const additional_constraints_test_experiment_2 = "{}";
+const uint8_t* const required_experiments_test_experiment_2 = {};
 const char* const description_test_experiment_3 = "Test Experiment 3";
 const char* const additional_constraints_test_experiment_3 = "{}";
+const uint8_t* const required_experiments_test_experiment_3 = {};
 const char* const description_test_experiment_4 = "Test Experiment 4";
 const char* const additional_constraints_test_experiment_4 = "{}";
+const uint8_t* const required_experiments_test_experiment_4 = {};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -73,13 +85,17 @@ namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
     {"test_experiment_1", description_test_experiment_1,
-     additional_constraints_test_experiment_1, false, true},
+     additional_constraints_test_experiment_1,
+     required_experiments_test_experiment_1, 0, false, true},
     {"test_experiment_2", description_test_experiment_2,
-     additional_constraints_test_experiment_2, false, true},
+     additional_constraints_test_experiment_2,
+     required_experiments_test_experiment_2, 0, false, true},
     {"test_experiment_3", description_test_experiment_3,
-     additional_constraints_test_experiment_3, kDefaultForDebugOnly, true},
+     additional_constraints_test_experiment_3,
+     required_experiments_test_experiment_3, 0, kDefaultForDebugOnly, true},
     {"test_experiment_4", description_test_experiment_4,
-     additional_constraints_test_experiment_4, true, true},
+     additional_constraints_test_experiment_4,
+     required_experiments_test_experiment_4, 0, true, true},
 };
 
 }  // namespace grpc_core
@@ -88,12 +104,16 @@ const ExperimentMetadata g_test_experiment_metadata[] = {
 namespace {
 const char* const description_test_experiment_1 = "Test Experiment 1";
 const char* const additional_constraints_test_experiment_1 = "{}";
+const uint8_t* const required_experiments_test_experiment_1 = {};
 const char* const description_test_experiment_2 = "Test Experiment 2";
 const char* const additional_constraints_test_experiment_2 = "{}";
+const uint8_t* const required_experiments_test_experiment_2 = {};
 const char* const description_test_experiment_3 = "Test Experiment 3";
 const char* const additional_constraints_test_experiment_3 = "{}";
+const uint8_t* const required_experiments_test_experiment_3 = {};
 const char* const description_test_experiment_4 = "Test Experiment 4";
 const char* const additional_constraints_test_experiment_4 = "{}";
+const uint8_t* const required_experiments_test_experiment_4 = {};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -105,13 +125,17 @@ namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
     {"test_experiment_1", description_test_experiment_1,
-     additional_constraints_test_experiment_1, kDefaultForDebugOnly, true},
+     additional_constraints_test_experiment_1,
+     required_experiments_test_experiment_1, 0, kDefaultForDebugOnly, true},
     {"test_experiment_2", description_test_experiment_2,
-     additional_constraints_test_experiment_2, kDefaultForDebugOnly, true},
+     additional_constraints_test_experiment_2,
+     required_experiments_test_experiment_2, 0, kDefaultForDebugOnly, true},
     {"test_experiment_3", description_test_experiment_3,
-     additional_constraints_test_experiment_3, kDefaultForDebugOnly, true},
+     additional_constraints_test_experiment_3,
+     required_experiments_test_experiment_3, 0, kDefaultForDebugOnly, true},
     {"test_experiment_4", description_test_experiment_4,
-     additional_constraints_test_experiment_4, false, true},
+     additional_constraints_test_experiment_4,
+     required_experiments_test_experiment_4, 0, false, true},
 };
 
 }  // namespace grpc_core
