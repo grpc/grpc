@@ -29,7 +29,7 @@ Contains macros used throughout the repo.
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
-load("//bazel:experiments.bzl", "EXPERIMENTS")
+load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES")
 load("//bazel:test_experiments.bzl", "TEST_EXPERIMENTS")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
@@ -426,7 +426,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=" + experiment
                     env = dict(config["env"])
-                    env["GRPC_EXPERIMENTS"] = experiment
+                    env["GRPC_EXPERIMENTS"] = EXPERIMENT_ENABLES[experiment]
                     env["GRPC_CI_EXPERIMENTS"] = "1"
                     config["env"] = env
                     tags = config["tags"] + ["experiment_variation"]

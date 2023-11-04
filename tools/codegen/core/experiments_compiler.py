@@ -656,6 +656,17 @@ class ExperimentsCompiler(object):
 
             print(file=B)
             if mode == "test":
+                print("TEST_EXPERIMENT_ENABLES = {", file=B)
+            else:
+                print("EXPERIMENT_ENABLES = {", file=B)
+            for name, exp in self._experiment_definitions.items():
+                enables = exp._requires.copy()
+                enables.add(name)
+                print(f"    \"{name}\": \"{','.join(sorted(enables))}\",", file=B)
+            print("}", file=B)
+
+            print(file=B)
+            if mode == "test":
                 print("TEST_EXPERIMENTS = {", file=B)
             else:
                 print("EXPERIMENTS = {", file=B)
