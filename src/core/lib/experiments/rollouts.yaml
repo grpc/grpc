@@ -48,8 +48,10 @@
   default: false
 - name: chttp2_batch_requests
   default: true
+  requires: [combiner_offload_to_event_engine]
 - name: chttp2_offload_on_rst_stream
   default: true
+  requires: [combiner_offload_to_event_engine]
 - name: client_idleness
   default: true
 - name: client_privacy
@@ -147,6 +149,7 @@
   default: false
 - name: write_size_cap
   default: true
+  requires: [write_size_policy]
 - name: write_size_policy
   default: true
 - name: wrr_delegate_to_pick_first

@@ -38,15 +38,6 @@ const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
 const uint8_t required_experiments_canary_client_privacy[] = {};
-const char* const description_chttp2_batch_requests =
-    "Cap the number of requests received by one transport read prior to "
-    "offload.";
-const char* const additional_constraints_chttp2_batch_requests = "{}";
-const uint8_t required_experiments_chttp2_batch_requests[] = {};
-const char* const description_chttp2_offload_on_rst_stream =
-    "Offload work on RST_STREAM.";
-const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
-const uint8_t required_experiments_chttp2_offload_on_rst_stream[] = {};
 const char* const description_client_idleness =
     "If enabled, client channel idleness is enabled by default.";
 const char* const additional_constraints_client_idleness = "{}";
@@ -59,6 +50,17 @@ const char* const description_combiner_offload_to_event_engine =
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
 const uint8_t required_experiments_combiner_offload_to_event_engine[] = {};
+const char* const description_chttp2_batch_requests =
+    "Cap the number of requests received by one transport read prior to "
+    "offload.";
+const char* const additional_constraints_chttp2_batch_requests = "{}";
+const uint8_t required_experiments_chttp2_batch_requests[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdCombinerOffloadToEventEngine)};
+const char* const description_chttp2_offload_on_rst_stream =
+    "Offload work on RST_STREAM.";
+const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const uint8_t required_experiments_chttp2_offload_on_rst_stream[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdCombinerOffloadToEventEngine)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -240,14 +242,15 @@ const char* const description_work_serializer_dispatch =
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {};
-const char* const description_write_size_cap =
-    "Limit outgoing writes proportional to the target write size";
-const char* const additional_constraints_write_size_cap = "{}";
-const uint8_t required_experiments_write_size_cap[] = {};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
 const uint8_t required_experiments_write_size_policy[] = {};
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const uint8_t required_experiments_write_size_cap[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -276,12 +279,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy,
      required_experiments_canary_client_privacy, 0, false, false},
-    {"chttp2_batch_requests", description_chttp2_batch_requests,
-     additional_constraints_chttp2_batch_requests,
-     required_experiments_chttp2_batch_requests, 0, true, true},
-    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
-     additional_constraints_chttp2_offload_on_rst_stream,
-     required_experiments_chttp2_offload_on_rst_stream, 0, true, true},
     {"client_idleness", description_client_idleness,
      additional_constraints_client_idleness,
      required_experiments_client_idleness, 0, true, true},
@@ -292,6 +289,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine,
      required_experiments_combiner_offload_to_event_engine, 0, true, true},
+    {"chttp2_batch_requests", description_chttp2_batch_requests,
+     additional_constraints_chttp2_batch_requests,
+     required_experiments_chttp2_batch_requests, 1, true, true},
+    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
+     additional_constraints_chttp2_offload_on_rst_stream,
+     required_experiments_chttp2_offload_on_rst_stream, 1, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client,
      required_experiments_event_engine_client, 0, false, true},
@@ -406,12 +409,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 0, false, true},
-    {"write_size_cap", description_write_size_cap,
-     additional_constraints_write_size_cap, required_experiments_write_size_cap,
-     0, true, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy,
      required_experiments_write_size_policy, 0, true, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, required_experiments_write_size_cap,
+     1, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first,
      required_experiments_wrr_delegate_to_pick_first, 0, true, true},
@@ -437,15 +440,6 @@ const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
 const uint8_t required_experiments_canary_client_privacy[] = {};
-const char* const description_chttp2_batch_requests =
-    "Cap the number of requests received by one transport read prior to "
-    "offload.";
-const char* const additional_constraints_chttp2_batch_requests = "{}";
-const uint8_t required_experiments_chttp2_batch_requests[] = {};
-const char* const description_chttp2_offload_on_rst_stream =
-    "Offload work on RST_STREAM.";
-const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
-const uint8_t required_experiments_chttp2_offload_on_rst_stream[] = {};
 const char* const description_client_idleness =
     "If enabled, client channel idleness is enabled by default.";
 const char* const additional_constraints_client_idleness = "{}";
@@ -458,6 +452,17 @@ const char* const description_combiner_offload_to_event_engine =
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
 const uint8_t required_experiments_combiner_offload_to_event_engine[] = {};
+const char* const description_chttp2_batch_requests =
+    "Cap the number of requests received by one transport read prior to "
+    "offload.";
+const char* const additional_constraints_chttp2_batch_requests = "{}";
+const uint8_t required_experiments_chttp2_batch_requests[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdCombinerOffloadToEventEngine)};
+const char* const description_chttp2_offload_on_rst_stream =
+    "Offload work on RST_STREAM.";
+const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const uint8_t required_experiments_chttp2_offload_on_rst_stream[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdCombinerOffloadToEventEngine)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -639,14 +644,15 @@ const char* const description_work_serializer_dispatch =
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {};
-const char* const description_write_size_cap =
-    "Limit outgoing writes proportional to the target write size";
-const char* const additional_constraints_write_size_cap = "{}";
-const uint8_t required_experiments_write_size_cap[] = {};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
 const uint8_t required_experiments_write_size_policy[] = {};
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const uint8_t required_experiments_write_size_cap[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -675,12 +681,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy,
      required_experiments_canary_client_privacy, 0, false, false},
-    {"chttp2_batch_requests", description_chttp2_batch_requests,
-     additional_constraints_chttp2_batch_requests,
-     required_experiments_chttp2_batch_requests, 0, true, true},
-    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
-     additional_constraints_chttp2_offload_on_rst_stream,
-     required_experiments_chttp2_offload_on_rst_stream, 0, true, true},
     {"client_idleness", description_client_idleness,
      additional_constraints_client_idleness,
      required_experiments_client_idleness, 0, true, true},
@@ -691,6 +691,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine,
      required_experiments_combiner_offload_to_event_engine, 0, true, true},
+    {"chttp2_batch_requests", description_chttp2_batch_requests,
+     additional_constraints_chttp2_batch_requests,
+     required_experiments_chttp2_batch_requests, 1, true, true},
+    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
+     additional_constraints_chttp2_offload_on_rst_stream,
+     required_experiments_chttp2_offload_on_rst_stream, 1, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client,
      required_experiments_event_engine_client, 0, false, true},
@@ -805,12 +811,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 0, false, true},
-    {"write_size_cap", description_write_size_cap,
-     additional_constraints_write_size_cap, required_experiments_write_size_cap,
-     0, true, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy,
      required_experiments_write_size_policy, 0, true, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, required_experiments_write_size_cap,
+     1, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first,
      required_experiments_wrr_delegate_to_pick_first, 0, true, true},
@@ -836,15 +842,6 @@ const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
 const uint8_t required_experiments_canary_client_privacy[] = {};
-const char* const description_chttp2_batch_requests =
-    "Cap the number of requests received by one transport read prior to "
-    "offload.";
-const char* const additional_constraints_chttp2_batch_requests = "{}";
-const uint8_t required_experiments_chttp2_batch_requests[] = {};
-const char* const description_chttp2_offload_on_rst_stream =
-    "Offload work on RST_STREAM.";
-const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
-const uint8_t required_experiments_chttp2_offload_on_rst_stream[] = {};
 const char* const description_client_idleness =
     "If enabled, client channel idleness is enabled by default.";
 const char* const additional_constraints_client_idleness = "{}";
@@ -857,6 +854,17 @@ const char* const description_combiner_offload_to_event_engine =
 const char* const additional_constraints_combiner_offload_to_event_engine =
     "{}";
 const uint8_t required_experiments_combiner_offload_to_event_engine[] = {};
+const char* const description_chttp2_batch_requests =
+    "Cap the number of requests received by one transport read prior to "
+    "offload.";
+const char* const additional_constraints_chttp2_batch_requests = "{}";
+const uint8_t required_experiments_chttp2_batch_requests[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdCombinerOffloadToEventEngine)};
+const char* const description_chttp2_offload_on_rst_stream =
+    "Offload work on RST_STREAM.";
+const char* const additional_constraints_chttp2_offload_on_rst_stream = "{}";
+const uint8_t required_experiments_chttp2_offload_on_rst_stream[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdCombinerOffloadToEventEngine)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -1038,14 +1046,15 @@ const char* const description_work_serializer_dispatch =
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {};
-const char* const description_write_size_cap =
-    "Limit outgoing writes proportional to the target write size";
-const char* const additional_constraints_write_size_cap = "{}";
-const uint8_t required_experiments_write_size_cap[] = {};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
 const uint8_t required_experiments_write_size_policy[] = {};
+const char* const description_write_size_cap =
+    "Limit outgoing writes proportional to the target write size";
+const char* const additional_constraints_write_size_cap = "{}";
+const uint8_t required_experiments_write_size_cap[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -1074,12 +1083,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy,
      required_experiments_canary_client_privacy, 0, false, false},
-    {"chttp2_batch_requests", description_chttp2_batch_requests,
-     additional_constraints_chttp2_batch_requests,
-     required_experiments_chttp2_batch_requests, 0, true, true},
-    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
-     additional_constraints_chttp2_offload_on_rst_stream,
-     required_experiments_chttp2_offload_on_rst_stream, 0, true, true},
     {"client_idleness", description_client_idleness,
      additional_constraints_client_idleness,
      required_experiments_client_idleness, 0, true, true},
@@ -1090,6 +1093,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine,
      required_experiments_combiner_offload_to_event_engine, 0, true, true},
+    {"chttp2_batch_requests", description_chttp2_batch_requests,
+     additional_constraints_chttp2_batch_requests,
+     required_experiments_chttp2_batch_requests, 1, true, true},
+    {"chttp2_offload_on_rst_stream", description_chttp2_offload_on_rst_stream,
+     additional_constraints_chttp2_offload_on_rst_stream,
+     required_experiments_chttp2_offload_on_rst_stream, 1, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client,
      required_experiments_event_engine_client, 0, false, true},
@@ -1204,12 +1213,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 0, false, true},
-    {"write_size_cap", description_write_size_cap,
-     additional_constraints_write_size_cap, required_experiments_write_size_cap,
-     0, true, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy,
      required_experiments_write_size_policy, 0, true, true},
+    {"write_size_cap", description_write_size_cap,
+     additional_constraints_write_size_cap, required_experiments_write_size_cap,
+     1, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first,
      required_experiments_wrr_delegate_to_pick_first, 0, true, true},
