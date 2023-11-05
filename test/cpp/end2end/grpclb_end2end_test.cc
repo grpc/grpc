@@ -542,15 +542,30 @@ class GrpclbEnd2endTest : public ::testing::Test {
     ++*num_total;
   }
 
+  struct WaitForBackendOptions {
+    int timeout_seconds = 10;
+    int num_requests_multiple_of = 1;
+
+    WaitForBackendOptions() {}
+    WaitForBackendOptions& SetTimeoutSeconds(int seconds) {
+      timeout_seconds = seconds;
+      return *this;
+    }
+    WaitForBackendOptions& SetNumRequestsMultipleOf(int multiple) {
+      num_requests_multiple_of = multiple;
+      return *this;
+    }
+  };
+
   std::tuple<int, int, int> WaitForAllBackends(
-      int num_requests_multiple_of = 1, size_t start_index = 0,
-      size_t stop_index = 0, int timeout_seconds = 10,
+      size_t start_index = 0, size_t stop_index = 0,
+      WaitForBackendOptions options = WaitForBackendOptions(),
       SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Waiting for backends [%" PRIuPTR ", %" PRIuPTR ")",
             start_index, stop_index);
     const absl::Time deadline =
         absl::Now() +
-        absl::Seconds(timeout_seconds * grpc_test_slowdown_factor());
+        absl::Seconds(options.timeout_seconds * grpc_test_slowdown_factor());
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
@@ -561,7 +576,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       if (now > deadline) break;
       SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops);
     }
-    while (num_total % num_requests_multiple_of != 0) {
+    while (num_total % options.num_requests_multiple_of != 0) {
       absl::Time now = absl::Now();
       EXPECT_LT(now, deadline) << location.file() << ":" << location.line();
       if (now > deadline) break;
@@ -571,24 +586,15 @@ class GrpclbEnd2endTest : public ::testing::Test {
     gpr_log(GPR_INFO,
             "Performed %d warm up requests (a multiple of %d) against the "
             "backends. %d succeeded, %d failed, %d dropped.",
-            num_total, num_requests_multiple_of, num_ok, num_failure,
+            num_total, options.num_requests_multiple_of, num_ok, num_failure,
             num_drops);
     return std::make_tuple(num_ok, num_failure, num_drops);
   }
 
-  void WaitForBackend(size_t backend_idx, int timeout_seconds = 10,
+  void WaitForBackend(size_t backend_idx,
+                      WaitForBackendOptions options = WaitForBackendOptions(),
                       SourceLocation location = SourceLocation()) {
-    gpr_log(GPR_INFO, "Waiting for backend %" PRIuPTR, backend_idx);
-    const absl::Time deadline =
-        absl::Now() +
-        absl::Seconds(timeout_seconds * grpc_test_slowdown_factor());
-    do {
-      ASSERT_LT(absl::Now(), deadline)
-          << location.file() << ":" << location.line();
-      (void)SendRpc();
-    } while (backends_[backend_idx]->service_.request_count() == 0);
-    ResetBackendCounters();
-    gpr_log(GPR_INFO, "Done waiting for backend %" PRIuPTR, backend_idx);
+    WaitForAllBackends(backend_idx, backend_idx + 1, options, location);
   }
 
   struct AddressData {
@@ -830,7 +836,7 @@ TEST_F(SingleBalancerTest, SubchannelCaching) {
   SetNextResolutionAllBalancers();
   // Initially send backends 0 and 1.
   SendBalancerResponse(0, BuildResponseForBackends(GetBackendPorts(0, 2), {}));
-  WaitForAllBackends(/*num_requests_multiple_of=*/1, 0, 2);
+  WaitForAllBackends(0, 2);
   // Now remove backends 0 and 1 and add backend 2.
   SendBalancerResponse(0, BuildResponseForBackends(GetBackendPorts(2), {}));
   WaitForBackend(2);
@@ -1060,15 +1066,15 @@ TEST_F(SingleBalancerTest, Fallback) {
   SetNextResolution(balancer_addresses, backend_addresses);
   // Balancer has not sent a serverlist, so we should use fallback.
   // Wait until all the fallback backends are reachable.
-  WaitForAllBackends(/*num_requests_multiple_of=*/1, 0,
-                     kNumBackendsInResolution, /*timeout_seconds=*/20);
+  WaitForAllBackends(0, kNumBackendsInResolution,
+                     WaitForBackendOptions().SetTimeoutSeconds(20));
   // Send serverlist.
   SendBalancerResponse(
       0,
       BuildResponseForBackends(
           GetBackendPorts(/*start_index=*/kNumBackendsInResolution), {}));
   // Now we should be using the backends from the balancer.
-  WaitForAllBackends(/*num_requests_multiple_of=*/1, kNumBackendsInResolution);
+  WaitForAllBackends(kNumBackendsInResolution);
   balancers_[0]->service_.ShutdownStream();
   // The balancer got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
@@ -1089,8 +1095,7 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   SetNextResolution(balancer_addresses, backend_addresses);
   // Balancer has not sent a serverlist, so we should use fallback.
   // Wait until all the fallback backends are reachable.
-  WaitForAllBackends(/*num_requests_multiple_of=*/1, 0,
-                     kNumBackendsInResolution);
+  WaitForAllBackends(0, kNumBackendsInResolution);
   // Now send a resolver result with a different set of backend addresses.
   balancer_addresses.clear();
   balancer_addresses.emplace_back(AddressData{balancers_[0]->port_, ""});
@@ -1101,7 +1106,7 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   }
   SetNextResolution(balancer_addresses, backend_addresses);
   // Wait until the new fallback backends are reachable.
-  WaitForAllBackends(/*num_requests_multiple_of=*/1, kNumBackendsInResolution,
+  WaitForAllBackends(kNumBackendsInResolution,
                      kNumBackendsInResolution + kNumBackendsInResolutionUpdate);
   // Send non-empty serverlist.
   SendBalancerResponse(
@@ -1111,8 +1116,7 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
                           kNumBackendsInResolutionUpdate),
           {}));
   // Wait for backends from balancer to be seen.
-  WaitForAllBackends(/*num_requests_multiple_of=*/1,
-                     kNumBackendsInResolution + kNumBackendsInResolutionUpdate);
+  WaitForAllBackends(kNumBackendsInResolution + kNumBackendsInResolutionUpdate);
   balancers_[0]->service_.ShutdownStream();
   // The balancer got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
@@ -1138,8 +1142,7 @@ TEST_F(SingleBalancerTest,
       0, BuildResponseForBackends(GetBackendPorts(kNumFallbackBackends), {}));
   // Try to connect.
   channel_->GetState(true /* try_to_connect */);
-  WaitForAllBackends(1 /* num_requests_multiple_of */,
-                     kNumFallbackBackends /* start_index */);
+  WaitForAllBackends(kNumFallbackBackends /* start_index */);
   // Stop balancer.  RPCs should continue going to backends from balancer.
   balancers_[0]->Shutdown();
   CheckRpcSendOk(100 * kNumBalancerBackends);
@@ -1150,8 +1153,7 @@ TEST_F(SingleBalancerTest,
   for (size_t i = kNumFallbackBackends; i < backends_.size(); ++i) {
     ShutdownBackend(i);
   }
-  WaitForAllBackends(1 /* num_requests_multiple_of */, 0 /* start_index */,
-                     kNumFallbackBackends /* stop_index */);
+  WaitForAllBackends(0, kNumFallbackBackends);
   // Restart the backends from the balancer.  We should *not* start
   // sending traffic back to them at this point.
   for (size_t i = kNumFallbackBackends; i < backends_.size(); ++i) {
@@ -1166,8 +1168,7 @@ TEST_F(SingleBalancerTest,
   balancers_[0]->Start(server_host_);
   SendBalancerResponse(
       0, BuildResponseForBackends(GetBackendPorts(kNumFallbackBackends), {}));
-  WaitForAllBackends(1 /* num_requests_multiple_of */,
-                     kNumFallbackBackends /* start_index */);
+  WaitForAllBackends(kNumFallbackBackends);
 }
 
 TEST_F(SingleBalancerTest,
@@ -1188,8 +1189,7 @@ TEST_F(SingleBalancerTest,
       0, BuildResponseForBackends(GetBackendPorts(kNumFallbackBackends), {}));
   // Try to connect.
   channel_->GetState(true /* try_to_connect */);
-  WaitForAllBackends(1 /* num_requests_multiple_of */,
-                     kNumFallbackBackends /* start_index */);
+  WaitForAllBackends(kNumFallbackBackends);
   // Stop backends from balancer.  Since we are still in contact with
   // the balancer at this point, RPCs should be failing.
   for (size_t i = kNumFallbackBackends; i < backends_.size(); ++i) {
@@ -1198,8 +1198,7 @@ TEST_F(SingleBalancerTest,
   CheckRpcSendFailure();
   // Stop balancer.  This should put us in fallback mode.
   balancers_[0]->Shutdown();
-  WaitForAllBackends(1 /* num_requests_multiple_of */, 0 /* start_index */,
-                     kNumFallbackBackends /* stop_index */);
+  WaitForAllBackends(0, kNumFallbackBackends);
   // Restart the backends from the balancer.  We should *not* start
   // sending traffic back to them at this point (although the behavior
   // in xds may be different).
@@ -1215,8 +1214,7 @@ TEST_F(SingleBalancerTest,
   balancers_[0]->Start(server_host_);
   SendBalancerResponse(
       0, BuildResponseForBackends(GetBackendPorts(kNumFallbackBackends), {}));
-  WaitForAllBackends(1 /* num_requests_multiple_of */,
-                     kNumFallbackBackends /* start_index */);
+  WaitForAllBackends(kNumFallbackBackends);
 }
 
 TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
@@ -1793,8 +1791,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   int num_failure = 0;
   int num_drops = 0;
   std::tie(num_ok, num_failure, num_drops) =
-      WaitForAllBackends(/* num_requests_multiple_of */ 1, /* start_index */ 0,
-                         /* stop_index */ kNumBackendsFirstPass);
+      WaitForAllBackends(0, kNumBackendsFirstPass);
   balancers_[0]->service_.ShutdownStream();
   ClientStats client_stats = WaitForLoadReports();
   EXPECT_EQ(static_cast<size_t>(num_ok), client_stats.num_calls_started);
@@ -1855,7 +1852,10 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
   int num_warmup_failure = 0;
   int num_warmup_drops = 0;
   std::tie(num_warmup_ok, num_warmup_failure, num_warmup_drops) =
-      WaitForAllBackends(num_total_addresses /* num_requests_multiple_of */);
+      WaitForAllBackends(
+          0, num_backends_,
+          WaitForBackendOptions()
+              .SetNumRequestsMultipleOf(num_total_addresses));
   const int num_total_warmup_requests =
       num_warmup_ok + num_warmup_failure + num_warmup_drops;
   size_t num_drops = 0;
