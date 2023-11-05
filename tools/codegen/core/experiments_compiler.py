@@ -554,6 +554,7 @@ class ExperimentsCompiler(object):
             )
 
             print("#include <grpc/support/port_platform.h>", file=C)
+            print("#include <stdint.h>", file=C)
             print(f'#include "{header_file_path}"', file=C)
             print(file=C)
             print("#ifndef GRPC_EXPERIMENTS_ARE_FINAL", file=C)
