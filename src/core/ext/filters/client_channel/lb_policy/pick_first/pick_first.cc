@@ -546,7 +546,9 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   latest_update_args_ = std::move(args);
   // If we are not in idle, start connection attempt immediately.
   // Otherwise, we defer the attempt into ExitIdleLocked().
-  if (state_ != GRPC_CHANNEL_IDLE) {
+  // Need to also check if subchannel_list_ is null, since we may not
+  // yet have transitioned from IDLE to CONNECTING after ExitIdleLocked().
+  if (state_ != GRPC_CHANNEL_IDLE || subchannel_list_ != nullptr) {
     AttemptToConnectUsingLatestUpdateArgsLocked();
   }
   return status;

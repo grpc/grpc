@@ -1608,12 +1608,6 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->service_.request_count());
 
-  // Kill backend 0.
-  gpr_log(GPR_INFO, "********** ABOUT TO KILL BACKEND 0 *************");
-  backends_[0]->Shutdown();
-  gpr_log(GPR_INFO, "********** KILLED BACKEND 0 *************");
-  CheckRpcSendFailure();
-
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   // and sent a single response.
@@ -1631,6 +1625,7 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   // This should trigger a re-resolution.
   EXPECT_TRUE(response_generator_->WaitForReresolutionRequest(
       absl::Seconds(5 * grpc_test_slowdown_factor())));
+  gpr_log(GPR_INFO, "********** SAW RE-RESOLUTION REQUEST *************");
   // Re-resolution result switches to a new balancer.
   addresses.clear();
   addresses.emplace_back(AddressData{balancers_[1]->port_, ""});
@@ -1646,18 +1641,12 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   // All 10 requests should have gone to the second backend.
   EXPECT_EQ(10U, backends_[1]->service_.request_count());
 
+  // First and second balancer should each have handled one request and
+  // sent one response.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
-  // After balancer 0 is killed, we restart an LB call immediately (because we
-  // disconnect to a previously connected balancer). Although we will cancel
-  // this call when the re-resolution update is done and another LB call restart
-  // is needed, this old call may still succeed reaching the LB server if
-  // re-resolution is slow. So balancer 1 may have received 2 requests and sent
-  // 2 responses.
-  EXPECT_GE(balancers_[1]->service_.request_count(), 1U);
-  EXPECT_GE(balancers_[1]->service_.response_count(), 1U);
-  EXPECT_LE(balancers_[1]->service_.request_count(), 2U);
-  EXPECT_LE(balancers_[1]->service_.response_count(), 2U);
+  EXPECT_EQ(1U, balancers_[1]->service_.request_count());
+  EXPECT_EQ(1U, balancers_[1]->service_.response_count());
   EXPECT_EQ(0U, balancers_[2]->service_.request_count());
   EXPECT_EQ(0U, balancers_[2]->service_.response_count());
 }

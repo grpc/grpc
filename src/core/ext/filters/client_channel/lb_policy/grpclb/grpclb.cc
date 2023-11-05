@@ -1572,6 +1572,12 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
 absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   // Get balancer addresses.
   EndpointAddressesList balancer_addresses = ExtractBalancerAddresses(args_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+    for (const auto& endpoint : balancer_addresses) {
+      gpr_log(GPR_INFO, "[grpclb %p] balancer address: %s", this,
+              endpoint.ToString().c_str());
+    }
+  }
   absl::Status status;
   if (balancer_addresses.empty()) {
     status = absl::UnavailableError("balancer address list must be non-empty");
