@@ -308,6 +308,7 @@ grpc_cc_test(
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
