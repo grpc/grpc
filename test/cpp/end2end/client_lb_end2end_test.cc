@@ -213,29 +213,17 @@ class FakeResolverResponseGeneratorWrapper {
     response_generator_ = std::move(other.response_generator_);
   }
 
+  void SetResponse(grpc_core::Resolver::Result result) {
+    grpc_core::ExecCtx exec_ctx;
+    response_generator_->SetResponseSynchronously(std::move(result));
+  }
+
   void SetNextResolution(const std::vector<int>& ports,
                          const char* service_config_json = nullptr,
                          const grpc_core::ChannelArgs& per_address_args =
                              grpc_core::ChannelArgs()) {
-    grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponseSynchronously(
+    SetResponse(
         BuildFakeResults(ports, service_config_json, per_address_args));
-  }
-
-  void SetNextResolutionUponError(const std::vector<int>& ports) {
-    grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetReresolutionResponseSynchronously(
-        BuildFakeResults(ports));
-  }
-
-  void SetFailureOnReresolution() {
-    grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetFailureOnReresolution();
-  }
-
-  void SetResponse(grpc_core::Resolver::Result result) {
-    grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponseSynchronously(std::move(result));
   }
 
   grpc_core::FakeResolverResponseGenerator* Get() const {
@@ -1155,10 +1143,15 @@ TEST_F(PickFirstTest, ReresolutionNoSelected) {
         DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
         MakeConnectionFailureRegex("failed to connect to all addresses"));
   }
-  // Set a re-resolution result that contains reachable ports, so that the
+  // PF should request re-resolution.
+  gpr_log(GPR_INFO, "****** WAITING FOR RE-RESOLUTION *******");
+  EXPECT_TRUE(response_generator.Get()->WaitForReresolutionRequest(
+      absl::Seconds(5 * grpc_test_slowdown_factor())));
+  gpr_log(GPR_INFO, "****** RE-RESOLUTION SEEN *******");
+  // Send a resolver result that contains reachable ports, so that the
   // pick_first LB policy can recover soon.
-  response_generator.SetNextResolutionUponError(alive_ports);
-  gpr_log(GPR_INFO, "****** RE-RESOLUTION SET *******");
+  response_generator.SetNextResolution(alive_ports);
+  gpr_log(GPR_INFO, "****** RE-RESOLUTION SENT *******");
   WaitForServer(DEBUG_LOCATION, stub, 0, [](const Status& status) {
     EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
     EXPECT_THAT(status.error_message(),
@@ -1294,7 +1287,6 @@ TEST_F(PickFirstTest, IdleOnDisconnect) {
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
   // Stop server.  Channel should go into state IDLE.
-  response_generator.SetFailureOnReresolution();
   servers_[0]->Shutdown();
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
@@ -1603,16 +1595,20 @@ TEST_F(RoundRobinTest, ReresolveOnSubchannelConnectionFailure) {
   response_generator.SetNextResolution(ports);
   // Wait for both servers to be seen.
   WaitForServers(DEBUG_LOCATION, stub, 0, 2);
-  // Tell the fake resolver to send an update that adds the last server, but
-  // only when the LB policy requests re-resolution.
-  ports.push_back(servers_[2]->port_);
-  response_generator.SetNextResolutionUponError(ports);
   // Have server 0 send a GOAWAY.  This should trigger a re-resolution.
   gpr_log(GPR_INFO, "****** SENDING GOAWAY FROM SERVER 0 *******");
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Server::FromC(servers_[0]->server_->c_server())->SendGoaways();
   }
+  gpr_log(GPR_INFO, "****** WAITING FOR RE-RESOLUTION REQUEST *******");
+  EXPECT_TRUE(response_generator.Get()->WaitForReresolutionRequest(
+      absl::Seconds(5 * grpc_test_slowdown_factor())));
+  gpr_log(GPR_INFO, "****** RE-RESOLUTION REQUEST SEEN *******");
+  // Tell the fake resolver to send an update that adds the last server, but
+  // only when the LB policy requests re-resolution.
+  ports.push_back(servers_[2]->port_);
+  response_generator.SetNextResolution(ports);
   // Wait for the client to see server 2.
   WaitForServer(DEBUG_LOCATION, stub, 2);
 }

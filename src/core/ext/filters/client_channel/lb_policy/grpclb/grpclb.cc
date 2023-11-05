@@ -841,14 +841,10 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
 
 void GrpcLb::Helper::RequestReresolution() {
   if (parent()->shutting_down_) return;
-  // If we are talking to a balancer, we expect to get updated addresses
-  // from the balancer, so we can ignore the re-resolution request from
-  // the child policy. Otherwise, pass the re-resolution request up to the
-  // channel.
-  if (parent()->lb_calld_ == nullptr ||
-      !parent()->lb_calld_->seen_initial_response()) {
-    parent()->channel_control_helper()->RequestReresolution();
-  }
+  // Ignore if we're not in fallback mode, because if we got the backend
+  // addresses from the balancer, re-resolving is not going to fix it.
+  if (!parent()->fallback_mode_) return;
+  parent()->channel_control_helper()->RequestReresolution();
 }
 
 //

@@ -549,7 +549,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     gpr_log(GPR_INFO, "Waiting for backends [%" PRIuPTR ", %" PRIuPTR ")",
             start_index, stop_index);
     const absl::Time deadline =
-        absl::Now() + absl::Seconds(10 * grpc_test_slowdown_factor());
+        absl::Now() +
+        absl::Seconds(timeout_seconds * grpc_test_slowdown_factor());
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
@@ -579,7 +580,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
                       SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Waiting for backend %" PRIuPTR, backend_idx);
     const absl::Time deadline =
-        absl::Now() + absl::Seconds(10 * grpc_test_slowdown_factor());
+        absl::Now() +
+        absl::Seconds(timeout_seconds * grpc_test_slowdown_factor());
     do {
       ASSERT_LT(absl::Now(), deadline)
           << location.file() << ":" << location.line();
@@ -644,18 +646,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result = MakeResolverResult(
         balancer_address_data, backend_address_data, service_config_json);
     response_generator_->SetResponseSynchronously(std::move(result));
-  }
-
-  void SetNextReresolutionResponse(
-      const std::vector<AddressData>& balancer_address_data,
-      const std::vector<AddressData>& backend_address_data = {},
-      const char* service_config_json = kDefaultServiceConfig) {
-    grpc_core::ExecCtx exec_ctx;
-    response_generator_->WaitForResolverSet();
-    grpc_core::Resolver::Result result = MakeResolverResult(
-        balancer_address_data, backend_address_data, service_config_json);
-    response_generator_->SetReresolutionResponseSynchronously(
-        std::move(result));
   }
 
   std::vector<int> GetBackendPorts(size_t start_index = 0,
@@ -1071,7 +1061,7 @@ TEST_F(SingleBalancerTest, Fallback) {
   // Balancer has not sent a serverlist, so we should use fallback.
   // Wait until all the fallback backends are reachable.
   WaitForAllBackends(/*num_requests_multiple_of=*/1, 0,
-                     kNumBackendsInResolution);
+                     kNumBackendsInResolution, /*timeout_seconds=*/20);
   // Send serverlist.
   SendBalancerResponse(
       0,
@@ -1570,18 +1560,21 @@ TEST_F(UpdatesTest, ReresolveDeadBackend) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // All 10 requests should have gone to the fallback backend.
   EXPECT_EQ(10U, backends_[0]->service_.request_count());
+  // Kill backend 0.
+  gpr_log(GPR_INFO, "********** ABOUT TO KILL BACKEND 0 *************");
+  backends_[0]->Shutdown();
+  gpr_log(GPR_INFO, "********** KILLED BACKEND 0 *************");
+  // This should trigger re-resolution.
+  EXPECT_TRUE(response_generator_->WaitForReresolutionRequest(
+      absl::Seconds(5 * grpc_test_slowdown_factor())));
   // The re-resolution result will contain the addresses of the same balancer
   // and a new fallback backend.
   balancer_addresses.clear();
   balancer_addresses.emplace_back(AddressData{balancers_[0]->port_, ""});
   backend_addresses.clear();
   backend_addresses.emplace_back(AddressData{backends_[1]->port_, ""});
-  SetNextReresolutionResponse(balancer_addresses, backend_addresses);
-  // Kill backend 0.
-  gpr_log(GPR_INFO, "********** ABOUT TO KILL BACKEND 0 *************");
-  backends_[0]->Shutdown();
-  gpr_log(GPR_INFO, "********** KILLED BACKEND 0 *************");
-  // Wait until re-resolution has finished, as signaled by the second backend
+  SetNextResolution(balancer_addresses, backend_addresses);
+  // Wait until re-resolution has been seen, as signaled by the second backend
   // receiving a request.
   WaitForBackend(1);
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
@@ -1606,14 +1599,9 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   SendBalancerResponse(0, BuildResponseForBackends(first_backend, {}));
   SendBalancerResponse(1, BuildResponseForBackends(second_backend, {}));
 
-  // Ask channel to connect to trigger resolver creation.
-  channel_->GetState(true);
   std::vector<AddressData> addresses;
   addresses.emplace_back(AddressData{balancers_[0]->port_, ""});
   SetNextResolution(addresses);
-  addresses.clear();
-  addresses.emplace_back(AddressData{balancers_[1]->port_, ""});
-  SetNextReresolutionResponse(addresses);
 
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -1626,7 +1614,6 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   gpr_log(GPR_INFO, "********** ABOUT TO KILL BACKEND 0 *************");
   backends_[0]->Shutdown();
   gpr_log(GPR_INFO, "********** KILLED BACKEND 0 *************");
-
   CheckRpcSendFailure();
 
   // Balancer 0 got a single request.
@@ -1643,7 +1630,14 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   balancers_[0]->Shutdown();
   gpr_log(GPR_INFO, "********** KILLED BALANCER 0 *************");
 
-  // Wait until re-resolution has finished, as signaled by the second backend
+  // This should trigger a re-resolution.
+  EXPECT_TRUE(response_generator_->WaitForReresolutionRequest(
+      absl::Seconds(5 * grpc_test_slowdown_factor())));
+  // Re-resolution result switches to a new balancer.
+  addresses.clear();
+  addresses.emplace_back(AddressData{balancers_[1]->port_, ""});
+  SetNextResolution(addresses);
+  // Wait until re-resolution has been seen, as signaled by the second backend
   // receiving a request.
   WaitForBackend(1);
 
