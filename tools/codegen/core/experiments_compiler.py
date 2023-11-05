@@ -491,17 +491,18 @@ class ExperimentsCompiler(object):
                 file=file_desc,
             )
             have_defaults.add(self._defaults[exp.default(platform)])
-            print(
-                "const uint8_t required_experiments_%s[] = {%s};"
-                % (
-                    exp.name,
-                    ",".join(
-                        f"static_cast<uint8_t>(grpc_core::kExperimentId{SnakeToPascal(name)})"
-                        for name in sorted(exp._requires)
+            if exp._requires:
+                print(
+                    "const uint8_t required_experiments_%s[] = {%s};"
+                    % (
+                        exp.name,
+                        ",".join(
+                            f"static_cast<uint8_t>(grpc_core::kExperimentId{SnakeToPascal(name)})"
+                            for name in sorted(exp._requires)
+                        ),
                     ),
-                ),
-                file=file_desc,
-            )
+                    file=file_desc,
+                )
         if "kDefaultForDebugOnly" in have_defaults:
             print("#ifdef NDEBUG", file=file_desc)
             if "kDefaultForDebugOnly" in have_defaults:
@@ -526,12 +527,12 @@ class ExperimentsCompiler(object):
         )
         for _, exp in self._experiment_definitions.items():
             print(
-                "  {%s, description_%s, additional_constraints_%s, required_experiments_%s, %d, %s, %s},"
+                "  {%s, description_%s, additional_constraints_%s, %s, %d, %s, %s},"
                 % (
                     ToCStr(exp.name),
                     exp.name,
                     exp.name,
-                    exp.name,
+                    f"required_experiments_{exp.name}" if exp._requires else "nullptr",
                     len(exp._requires),
                     self._defaults[exp.default(platform)],
                     "true" if exp.allow_in_fuzzing_config else "false",
