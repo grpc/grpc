@@ -18,6 +18,8 @@
 
 #include "src/core/lib/experiments/experiments.h"
 
+#include <stdint.h>
+
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
