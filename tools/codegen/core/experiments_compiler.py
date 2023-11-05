@@ -663,7 +663,9 @@ class ExperimentsCompiler(object):
             for name, exp in self._experiment_definitions.items():
                 enables = exp._requires.copy()
                 enables.add(name)
-                print(f"    \"{name}\": \"{','.join(sorted(enables))}\",", file=B)
+                print(
+                    f"    \"{name}\": \"{','.join(sorted(enables))}\",", file=B
+                )
             print("}", file=B)
 
             print(file=B)
