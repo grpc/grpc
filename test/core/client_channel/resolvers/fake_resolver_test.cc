@@ -166,7 +166,7 @@ TEST_F(FakeResolverTest, WaitForResolverSet) {
 TEST_F(FakeResolverTest, ReturnResultBeforeResolverCreated) {
   // Return result via response generator.
   Resolver::Result result = CreateResolverResult();
-  response_generator_->SetResponseSynchronously(result);
+  response_generator_->SetResponseAsync(result);
   // Create and start resolver.
   auto resolver = CreateResolver();
   ASSERT_NE(resolver, nullptr);
@@ -186,7 +186,7 @@ TEST_F(FakeResolverTest, ReturnResultBeforeResolverStarted) {
   absl::Notification notification;
   result_handler_->SetExpectedAndNotification(result, &notification);
   // Return result via response generator.
-  response_generator_->SetResponseSynchronously(std::move(result));
+  response_generator_->SetResponseAsync(std::move(result));
   // Start resolver.
   RunSynchronously([resolver = resolver.get()] { resolver->StartLocked(); });
   // Expect result.
@@ -203,7 +203,7 @@ TEST_F(FakeResolverTest, ReturnResult) {
   absl::Notification notification;
   result_handler_->SetExpectedAndNotification(result, &notification);
   // Return result via response generator.
-  response_generator_->SetResponseSynchronously(std::move(result));
+  response_generator_->SetResponseAsync(std::move(result));
   // Expect result.
   ASSERT_TRUE(notification.WaitForNotificationWithTimeout(
       absl::Seconds(5 * grpc_test_slowdown_factor())));
