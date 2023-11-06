@@ -2828,7 +2828,6 @@ static void read_action_parse_loop_locked(
     }
 
     close_transport_locked(t.get(), error);
-    t->endpoint_reading = 0;
   } else if (t->closed_with_error.ok()) {
     keep_reading = true;
     // Since we have read a byte, reset the keepalive timer
