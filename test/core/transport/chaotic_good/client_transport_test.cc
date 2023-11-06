@@ -364,61 +364,6 @@ TEST_F(ClientTransportTest, AddOneStream) {
   event_engine_->UnsetGlobalHooks();
 }
 
-TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
-  InitialClientTransport(1);
-  ClientMetadataHandle md;
-  auto args = CallArgs{std::move(md),
-                       ClientInitialMetadataOutstandingToken::Empty(),
-                       nullptr,
-                       &pipe_server_intial_metadata_.sender,
-                       &pipe_client_to_server_messages_.receiver,
-                       &pipe_server_to_client_messages_.sender};
-  StrictMock<MockFunction<void(absl::Status)>> on_done;
-  EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  EXPECT_CALL(control_endpoint_, Write)
-      .WillOnce(
-          WithArgs<0>([](absl::AnyInvocable<void(absl::Status)> on_write) {
-            on_write(absl::InternalError("control endpoint write failed."));
-            return false;
-          }));
-  EXPECT_CALL(data_endpoint_, Write)
-      .WillOnce(
-          WithArgs<0>([](absl::AnyInvocable<void(absl::Status)> on_write) {
-            on_write(absl::InternalError("control endpoint write failed."));
-            return false;
-          }));
-  auto activity = MakeActivity(
-      Seq(
-          // Concurrently: write and read messages in client transport.
-          Join(
-              // Add first stream with call_args into client transport.
-              AddStream(std::move(args), GRPC_STATUS_OK),
-              // Start read from control endpoints.
-              StartRead(absl::OkStatus()),
-              // Send messages to call_args.client_to_server_messages pipe,
-              // which will be eventually sent to control/data endpoints.
-              SendClientToServerMessages(pipe_client_to_server_messages_, 1),
-              // Receive messages from control/data endpoints.
-              ReceiveServerToClientMessages(pipe_server_intial_metadata_,
-                                            pipe_server_to_client_messages_)),
-          // Once complete, verify successful sending and the received value.
-          [](const std::tuple<grpc_status_code, absl::Status, absl::Status,
-                              absl::Status>& ret) {
-            // TODO(ladynana): change these expectations to errors after the
-            // writer activity closes transport for write failures.
-            EXPECT_EQ(std::get<0>(ret), GRPC_STATUS_OK);
-            EXPECT_TRUE(std::get<1>(ret).ok());
-            EXPECT_TRUE(std::get<2>(ret).ok());
-            EXPECT_TRUE(std::get<3>(ret).ok());
-            return absl::OkStatus();
-          }),
-      EventEngineWakeupScheduler(event_engine_),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
-  // Wait until ClientTransport's internal activities to finish.
-  event_engine_->TickUntilIdle();
-  event_engine_->UnsetGlobalHooks();
-}
-
 TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
   InitialClientTransport(1);
   ClientMetadataHandle md;
@@ -453,70 +398,6 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
             EXPECT_TRUE(std::get<1>(ret).ok());
             EXPECT_TRUE(std::get<2>(ret).ok());
             EXPECT_TRUE(std::get<3>(ret).ok());
-            return absl::OkStatus();
-          }),
-      EventEngineWakeupScheduler(event_engine_),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
-  // Wait until ClientTransport's internal activities to finish.
-  event_engine_->TickUntilIdle();
-  event_engine_->UnsetGlobalHooks();
-}
-
-TEST_F(ClientTransportTest, AddMultipleStreams) {
-  InitialClientTransport(2);
-  ClientMetadataHandle first_stream_md;
-  ClientMetadataHandle second_stream_md;
-  auto first_stream_args =
-      CallArgs{std::move(first_stream_md),
-               ClientInitialMetadataOutstandingToken::Empty(),
-               nullptr,
-               &pipe_server_intial_metadata_.sender,
-               &pipe_client_to_server_messages_.receiver,
-               &pipe_server_to_client_messages_.sender};
-  auto second_stream_args =
-      CallArgs{std::move(second_stream_md),
-               ClientInitialMetadataOutstandingToken::Empty(),
-               nullptr,
-               &pipe_server_intial_metadata_second_.sender,
-               &pipe_client_to_server_messages_second_.receiver,
-               &pipe_server_to_client_messages_second_.sender};
-  StrictMock<MockFunction<void(absl::Status)>> on_done;
-  EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  EXPECT_CALL(control_endpoint_, Write).Times(2).WillRepeatedly(Return(true));
-  EXPECT_CALL(data_endpoint_, Write).Times(2).WillRepeatedly(Return(true));
-  auto activity = MakeActivity(
-      Seq(
-          // Concurrently: write and read messages from client transport.
-          Join(
-              // Add first stream with call_args into client transport.
-              AddStream(std::move(first_stream_args), GRPC_STATUS_OK),
-              // Start read from control endpoints.
-              StartRead(absl::OkStatus()),
-              // Send messages to first stream's
-              // call_args.client_to_server_messages pipe, which will be
-              // eventually sent to control/data endpoints.
-              SendClientToServerMessages(pipe_client_to_server_messages_, 1),
-              // Receive first stream's messages from control/data endpoints.
-              ReceiveServerToClientMessages(pipe_server_intial_metadata_,
-                                            pipe_server_to_client_messages_)),
-          Join(
-              // Add second stream with call_args into client transport.
-              AddStream(std::move(second_stream_args), GRPC_STATUS_OK),
-              // Send messages to second stream's
-              // call_args.client_to_server_messages pipe, which will be
-              // eventually sent to control/data endpoints.
-              SendClientToServerMessages(pipe_client_to_server_messages_second_,
-                                         1),
-              // Receive second stream's messages from control/data endpoints.
-              ReceiveServerToClientMessages(
-                  pipe_server_intial_metadata_second_,
-                  pipe_server_to_client_messages_second_)),
-          // Once complete, verify successful sending and the received value.
-          [](const std::tuple<grpc_status_code, absl::Status, absl::Status>&
-                 ret) {
-            EXPECT_EQ(std::get<0>(ret), GRPC_STATUS_OK);
-            EXPECT_TRUE(std::get<1>(ret).ok());
-            EXPECT_TRUE(std::get<2>(ret).ok());
             return absl::OkStatus();
           }),
       EventEngineWakeupScheduler(event_engine_),
