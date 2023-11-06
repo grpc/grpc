@@ -91,7 +91,7 @@ constexpr Base64InverseTable kBase64InverseTable;
 class HPackParser::Input {
  public:
   Input(grpc_slice_refcount* current_slice_refcount, const uint8_t* begin,
-        const uint8_t* end, absl::BitGenRef bitsrc, HpackParseResult& error)
+        const uint8_t* end, absl::BitGenRef bitsrc, HpackParseResult* error)
       : current_slice_refcount_(current_slice_refcount),
         begin_(begin),
         end_(end),
@@ -215,13 +215,13 @@ class HPackParser::Input {
 
   // Check if we saw an EOF
   bool eof_error() const {
-    return min_progress_size_ != 0 || error_.connection_error();
+    return min_progress_size_ != 0 || (error_ && error_->connection_error());
   }
 
   // Minimum number of bytes to unstuck the current parse
   size_t min_progress_size() const { return min_progress_size_; }
 
-  bool has_error() const { return !error_.ok(); }
+  bool has_error() const { return error_ != nullptr; }
 
   // Set the current error - tweaks the error to include a stream id so that
   // chttp2 does not close the connection.
@@ -246,7 +246,7 @@ class HPackParser::Input {
   // read prior to being able to get further in this parse.
   void UnexpectedEOF(size_t min_progress_size) {
     GPR_ASSERT(min_progress_size > 0);
-    if (min_progress_size_ != 0 || error_.connection_error()) {
+    if (min_progress_size_ != 0 || (error_ && error_->connection_error())) {
       GPR_DEBUG_ASSERT(eof_error());
       return;
     }
@@ -302,13 +302,17 @@ class HPackParser::Input {
   // Do not use this directly, instead use SetErrorAndContinueParsing or
   // SetErrorAndStopParsing.
   void SetError(HpackParseResult error) {
-    if (!error_.ok() || min_progress_size_ > 0) {
-      if (error.connection_error() && !error_.connection_error()) {
-        error_ = std::move(error);  // connection errors dominate
+    if (error_ != nullptr || min_progress_size_ > 0) {
+      if (error.connection_error() && !error_->connection_error()) {
+        error_ = new HpackParseResult();
+        *error_ = std::move(error);  // connection errors dominate
       }
       return;
     }
-    error_ = std::move(error);
+    if (!error.ok()) {
+      error_ = new HpackParseResult();
+      *error_ = std::move(error);
+    }
   }
 
   // Refcount if we are backed by a slice
@@ -320,7 +324,7 @@ class HPackParser::Input {
   // Frontier denotes the first byte past successfully processed input
   const uint8_t* frontier_;
   // Current error
-  HpackParseResult& error_;
+  HpackParseResult* error_ = nullptr;
   // If the error was EOF, we flag it here by noting how many more bytes would
   // be needed to make progress
   size_t min_progress_size_ = 0;
@@ -951,11 +955,11 @@ class HPackParser::Parser {
                                   state_.string_length)
             : String::Parse(input_, state_.is_string_huff_compressed,
                             state_.string_length);
-    HpackParseResult& status = state_.frame_error;
+    HpackParseResult* status = state_.frame_error;
     absl::string_view key_string;
     if (auto* s = absl::get_if<Slice>(&state_.key)) {
       key_string = s->as_string_view();
-      if (status.ok()) {
+      if (status == nullptr) {
         auto r = ValidateKey(key_string);
         if (r != ValidateMetadataResult::kOk) {
           input_->SetErrorAndContinueParsing(
@@ -965,7 +969,7 @@ class HPackParser::Parser {
     } else {
       const auto* memento = absl::get<const HPackTable::Memento*>(state_.key);
       key_string = memento->md.key();
-      if (status.ok() && memento->parse_status != nullptr) {
+      if (status == nullptr && memento->parse_status != nullptr) {
         input_->SetErrorAndContinueParsing(*memento->parse_status);
       }
     }
@@ -993,7 +997,7 @@ class HPackParser::Parser {
     auto md = grpc_metadata_batch::Parse(
         key_string, std::move(value_slice), state_.add_to_table, transport_size,
         [key_string, &status, this](absl::string_view message, const Slice&) {
-          if (!status.ok()) return;
+          if (status != nullptr) return;
           input_->SetErrorAndContinueParsing(
               HpackParseResult::MetadataParseError(key_string));
           gpr_log(GPR_ERROR, "Error parsing '%s' metadata: %s",
@@ -1001,7 +1005,9 @@ class HPackParser::Parser {
                   std::string(message).c_str());
         });
     HPackTable::Memento memento{std::move(md),
-                                status.PersistentStreamErrorOrNullptr()};
+                                (status != nullptr)
+                                    ? status->PersistentStreamErrorOrNullptr()
+                                    : nullptr};
     input_->UpdateFrontier();
     state_.parse_state = ParseState::kTop;
     if (state_.add_to_table) {
@@ -1187,18 +1193,25 @@ grpc_error_handle HPackParser::ParseInput(
           state_.metadata_early_detection.hard_limit());
       call_tracer->RecordAnnotation(metadata_sizes_annotation);
     }
-    if (!state_.frame_error.connection_error() &&
+    if (!(state_.frame_error && state_.frame_error->connection_error()) &&
         (input.eof_error() || state_.parse_state != ParseState::kTop)) {
-      state_.frame_error = HpackParseResult::IncompleteHeaderAtBoundaryError();
+      if (state_.frame_error == nullptr) {
+        state_.frame_error = new HpackParseResult();
+      }
+      *state_.frame_error = HpackParseResult::IncompleteHeaderAtBoundaryError();
     }
     state_.frame_length = 0;
-    return std::exchange(state_.frame_error, HpackParseResult()).Materialize();
+    return (state_.frame_error != nullptr)
+               ? std::exchange(state_.frame_error, nullptr)->Materialize()
+               : absl::OkStatus();
   } else {
-    if (input.eof_error() && !state_.frame_error.connection_error()) {
+    if (input.eof_error() &&
+        !(state_.frame_error && state_.frame_error->connection_error())) {
       unparsed_bytes_ = std::vector<uint8_t>(input.frontier(), input.end_ptr());
       min_progress_size_ = input.min_progress_size();
     }
-    return state_.frame_error.Materialize();
+    return (state_.frame_error != nullptr) ? state_.frame_error->Materialize()
+                                           : absl::OkStatus();
   }
 }
 
