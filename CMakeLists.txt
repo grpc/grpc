@@ -8675,6 +8675,7 @@ add_executable(channelz_service_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
   test/cpp/end2end/channelz_service_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
