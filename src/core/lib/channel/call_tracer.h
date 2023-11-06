@@ -140,6 +140,8 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
     // Should be the last API call to the object. Once invoked, the tracer
     // library is free to destroy the object.
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
+
+    virtual void AddOptionalLabels(std::shared_ptr<std::map<std::string, std::string>> service_labels) = 0;
   };
 
   ~ClientCallTracer() override {}

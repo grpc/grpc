@@ -181,6 +181,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server_;
   uint32_t max_concurrent_requests_;
   RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
+  std::shared_ptr<std::map<std::string, std::string>> service_labels_;
 };
 
 // xDS Cluster Impl LB policy.
@@ -678,6 +679,8 @@ const JsonLoaderInterface* XdsClusterImplLbConfig::JsonLoader(const JsonArgs&) {
                          &XdsClusterImplLbConfig::lrs_load_reporting_server_)
           .OptionalField("maxConcurrentRequests",
                          &XdsClusterImplLbConfig::max_concurrent_requests_)
+          .OptionalField("serviceLabels",
+                         &XdsClusterImplLbConfig::service_labels_)
           .Finish();
   return loader;
 }

@@ -109,6 +109,8 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
     // outlier_detection policy itself, so here we just act as a pass-through.
     absl::optional<Json::Object> outlier_detection_lb_config;
 
+    Json::Object service_labels;
+
     bool operator==(const DiscoveryMechanism& other) const {
       return (cluster_name == other.cluster_name &&
               lrs_load_reporting_server == other.lrs_load_reporting_server &&
@@ -861,6 +863,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
           {"dropCategories", Json::FromArray(std::move(drop_categories))},
           {"maxConcurrentRequests",
            Json::FromNumber(discovery_config.max_concurrent_requests)},
+          {"serviceLabels", Json::FromObject(discovery_config.service_labels)},
       };
       if (!discovery_config.eds_service_name.empty()) {
         xds_cluster_impl_config["edsServiceName"] =
@@ -1004,6 +1007,8 @@ XdsClusterResolverLbConfig::DiscoveryMechanism::JsonLoader(const JsonArgs&) {
                          &DiscoveryMechanism::outlier_detection_lb_config)
           .OptionalField("overrideHostStatus",
                          &DiscoveryMechanism::override_host_statuses)
+          .OptionalField("serviceLabels",
+                         &DiscoveryMechanism::service_labels)
           .Finish();
   return loader;
 }
