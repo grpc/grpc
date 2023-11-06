@@ -208,10 +208,6 @@ class BalancerServiceImpl : public BalancerService {
   using Stream = ServerReaderWriter<LoadBalanceResponse, LoadBalanceRequest>;
   using ResponseDelayPair = std::pair<LoadBalanceResponse, int>;
 
-  explicit BalancerServiceImpl(int client_load_reporting_interval_seconds)
-      : client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {}
-
   void Start() {
     {
       grpc::internal::MutexLock lock(&mu_);
@@ -227,6 +223,10 @@ class BalancerServiceImpl : public BalancerService {
   void Shutdown() {
     ShutdownStream();
     gpr_log(GPR_INFO, "LB[%p]: shut down", this);
+  }
+
+  void set_client_load_reporting_interval_seconds(int seconds) {
+    client_load_reporting_interval_seconds_ = seconds;
   }
 
   void SendResponse(LoadBalanceResponse response) {
@@ -377,7 +377,7 @@ class BalancerServiceImpl : public BalancerService {
     return response;
   }
 
-  const int client_load_reporting_interval_seconds_;
+  int client_load_reporting_interval_seconds_ = 0;
 
   grpc::internal::Mutex mu_;
   std::vector<std::string> service_names_ ABSL_GUARDED_BY(mu_);
@@ -449,10 +449,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
     bool running_ = false;
   };
 
-  explicit GrpclbEnd2endTest(int client_load_reporting_interval_seconds)
-      : client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {}
-
   static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
@@ -501,8 +497,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   std::unique_ptr<ServerThread<BalancerServiceImpl>> CreateAndStartBalancer() {
-    auto balancer = std::make_unique<ServerThread<BalancerServiceImpl>>(
-        "balancer", client_load_reporting_interval_seconds_);
+    auto balancer =
+        std::make_unique<ServerThread<BalancerServiceImpl>>("balancer");
     balancer->Start();
     return balancer;
   }
@@ -775,7 +771,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
     EXPECT_FALSE(status.ok());
   }
 
-  const int client_load_reporting_interval_seconds_;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerThread<BackendServiceImpl>>> backends_;
@@ -784,12 +779,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       response_generator_;
 };
 
-class SingleBalancerTest : public GrpclbEnd2endTest {
- public:
-  SingleBalancerTest() : GrpclbEnd2endTest(0) {}
-};
-
-TEST_F(SingleBalancerTest, Vanilla) {
+TEST_F(GrpclbEnd2endTest, Vanilla) {
   const size_t kNumBackends = 3;
   const size_t kNumRpcsPerAddress = 100;
   CreateBackends(kNumBackends);
@@ -814,7 +804,7 @@ TEST_F(SingleBalancerTest, Vanilla) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_F(SingleBalancerTest, SubchannelCaching) {
+TEST_F(GrpclbEnd2endTest, SubchannelCaching) {
   CreateBackends(3);
   ResetStub(/*fallback_timeout_ms=*/0, /*expected_targets=*/"",
             /*subchannel_cache_delay_ms=*/1500);
@@ -837,7 +827,7 @@ TEST_F(SingleBalancerTest, SubchannelCaching) {
   EXPECT_EQ(3U, balancer_->service_.response_count());
 }
 
-TEST_F(SingleBalancerTest, ReturnServerStatus) {
+TEST_F(GrpclbEnd2endTest, ReturnServerStatus) {
   CreateBackends(1);
   SetNextResolutionDefaultBalancer();
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
@@ -852,7 +842,7 @@ TEST_F(SingleBalancerTest, ReturnServerStatus) {
   EXPECT_EQ(actual.error_message(), expected.error_message());
 }
 
-TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
+TEST_F(GrpclbEnd2endTest, SelectGrpclbWithMigrationServiceConfig) {
   CreateBackends(1);
   SetNextResolutionDefaultBalancer(
       "{\n"
@@ -872,7 +862,7 @@ TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_F(SingleBalancerTest,
+TEST_F(GrpclbEnd2endTest,
        SelectGrpclbWithMigrationServiceConfigAndNoAddresses) {
   const int kFallbackTimeoutMs = 200;
   ResetStub(kFallbackTimeoutMs);
@@ -897,7 +887,7 @@ TEST_F(SingleBalancerTest,
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_F(SingleBalancerTest, UsePickFirstChildPolicy) {
+TEST_F(GrpclbEnd2endTest, UsePickFirstChildPolicy) {
   const size_t kNumBackends = 2;
   const size_t kNumRpcs = kNumBackends * 2;
   CreateBackends(kNumBackends);
@@ -928,7 +918,7 @@ TEST_F(SingleBalancerTest, UsePickFirstChildPolicy) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_F(SingleBalancerTest, SwapChildPolicy) {
+TEST_F(GrpclbEnd2endTest, SwapChildPolicy) {
   const size_t kNumBackends = 2;
   const size_t kNumRpcs = kNumBackends * 2;
   CreateBackends(kNumBackends);
@@ -969,7 +959,7 @@ TEST_F(SingleBalancerTest, SwapChildPolicy) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
+TEST_F(GrpclbEnd2endTest, SameBackendListedMultipleTimes) {
   CreateBackends(1);
   SetNextResolutionDefaultBalancer();
   // Same backend listed twice.
@@ -990,7 +980,7 @@ TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
   balancer_->service_.ShutdownStream();
 }
 
-TEST_F(SingleBalancerTest, SecureNaming) {
+TEST_F(GrpclbEnd2endTest, SecureNaming) {
   CreateBackends(1);
   ResetStub(/*fallback_timeout_ms=*/0,
             absl::StrCat(kApplicationTargetName, ";lb"));
@@ -1007,7 +997,7 @@ TEST_F(SingleBalancerTest, SecureNaming) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
+TEST_F(GrpclbEnd2endTest, InitiallyEmptyServerlist) {
   CreateBackends(1);
   SetNextResolutionDefaultBalancer();
   // First response is an empty serverlist.  RPCs should fail.
@@ -1023,7 +1013,7 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   EXPECT_EQ(2U, balancer_->service_.response_count());
 }
 
-TEST_F(SingleBalancerTest, AllServersUnreachableFailFast) {
+TEST_F(GrpclbEnd2endTest, AllServersUnreachableFailFast) {
   SetNextResolutionDefaultBalancer();
   const size_t kNumUnreachableServers = 5;
   std::vector<int> ports;
@@ -1041,7 +1031,7 @@ TEST_F(SingleBalancerTest, AllServersUnreachableFailFast) {
   EXPECT_EQ(1U, balancer_->service_.response_count());
 }
 
-TEST_F(SingleBalancerTest, Fallback) {
+TEST_F(GrpclbEnd2endTest, Fallback) {
   const size_t kNumBackends = 4;
   const size_t kNumBackendsInResolution = kNumBackends / 2;
   CreateBackends(kNumBackends);
@@ -1065,7 +1055,7 @@ TEST_F(SingleBalancerTest, Fallback) {
   EXPECT_EQ(1U, balancer_->service_.response_count());
 }
 
-TEST_F(SingleBalancerTest, FallbackUpdate) {
+TEST_F(GrpclbEnd2endTest, FallbackUpdate) {
   const size_t kNumBackends = 6;
   const size_t kNumBackendsInResolution = kNumBackends / 3;
   const size_t kNumBackendsInResolutionUpdate = kNumBackends / 3;
@@ -1101,7 +1091,7 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   EXPECT_EQ(1U, balancer_->service_.response_count());
 }
 
-TEST_F(SingleBalancerTest,
+TEST_F(GrpclbEnd2endTest,
        FallbackAfterStartupLoseContactWithBalancerThenBackends) {
   // First two backends are fallback, last two are pointed to by balancer.
   const size_t kNumBackends = 4;
@@ -1142,7 +1132,7 @@ TEST_F(SingleBalancerTest,
   WaitForAllBackends(kNumFallbackBackends);
 }
 
-TEST_F(SingleBalancerTest,
+TEST_F(GrpclbEnd2endTest,
        FallbackAfterStartupLoseContactWithBackendsThenBalancer) {
   // First two backends are fallback, last two are pointed to by balancer.
   const size_t kNumBackends = 4;
@@ -1182,7 +1172,7 @@ TEST_F(SingleBalancerTest,
   WaitForAllBackends(kNumFallbackBackends);
 }
 
-TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
+TEST_F(GrpclbEnd2endTest, FallbackEarlyWhenBalancerChannelFails) {
   const int kFallbackTimeoutMs = 10000;
   ResetStub(kFallbackTimeoutMs);
   CreateBackends(1);
@@ -1194,7 +1184,7 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
                  /* wait_for_ready */ false);
 }
 
-TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
+TEST_F(GrpclbEnd2endTest, FallbackEarlyWhenBalancerCallFails) {
   const int kFallbackTimeoutMs = 10000;
   ResetStub(kFallbackTimeoutMs);
   CreateBackends(1);
@@ -1208,7 +1198,7 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
                  /* wait_for_ready */ false);
 }
 
-TEST_F(SingleBalancerTest, FallbackControlledByBalancerBeforeFirstServerlist) {
+TEST_F(GrpclbEnd2endTest, FallbackControlledByBalancerBeforeFirstServerlist) {
   const int kFallbackTimeoutMs = 10000;
   ResetStub(kFallbackTimeoutMs);
   CreateBackends(1);
@@ -1224,7 +1214,7 @@ TEST_F(SingleBalancerTest, FallbackControlledByBalancerBeforeFirstServerlist) {
                  /* wait_for_ready */ false);
 }
 
-TEST_F(SingleBalancerTest, FallbackControlledByBalancerAfterFirstServerlist) {
+TEST_F(GrpclbEnd2endTest, FallbackControlledByBalancerAfterFirstServerlist) {
   CreateBackends(2);
   // Return one balancer and one fallback backend (backend 0).
   SetNextResolution({balancer_->port_}, {backends_[0]->port_});
@@ -1241,7 +1231,7 @@ TEST_F(SingleBalancerTest, FallbackControlledByBalancerAfterFirstServerlist) {
   WaitForBackend(1);
 }
 
-TEST_F(SingleBalancerTest, BackendsRestart) {
+TEST_F(GrpclbEnd2endTest, BackendsRestart) {
   CreateBackends(2);
   SetNextResolutionDefaultBalancer();
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
@@ -1259,7 +1249,7 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   EXPECT_EQ(1U, balancer_->service_.response_count());
 }
 
-TEST_F(SingleBalancerTest, ServiceNameFromLbPolicyConfig) {
+TEST_F(GrpclbEnd2endTest, ServiceNameFromLbPolicyConfig) {
   constexpr char kServiceConfigWithTarget[] =
       "{\n"
       "  \"loadBalancingConfig\":[\n"
@@ -1277,7 +1267,7 @@ TEST_F(SingleBalancerTest, ServiceNameFromLbPolicyConfig) {
 
 // This death test is kept separate from the rest to ensure that it's run before
 // any others. See https://github.com/grpc/grpc/pull/32269 for details.
-using SingleBalancerDeathTest = SingleBalancerTest;
+using SingleBalancerDeathTest = GrpclbEnd2endTest;
 
 TEST_F(SingleBalancerDeathTest, SecureNaming) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
@@ -1294,12 +1284,7 @@ TEST_F(SingleBalancerDeathTest, SecureNaming) {
       "");
 }
 
-class UpdatesTest : public GrpclbEnd2endTest {
- public:
-  UpdatesTest() : GrpclbEnd2endTest(0) {}
-};
-
-TEST_F(UpdatesTest, UpdateBalancersButKeepUsingOriginalBalancer) {
+TEST_F(GrpclbEnd2endTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   SetNextResolutionDefaultBalancer();
   CreateBackends(2);
   const std::vector<int> first_backend{GetBackendPorts()[0]};
@@ -1350,7 +1335,7 @@ TEST_F(UpdatesTest, UpdateBalancersButKeepUsingOriginalBalancer) {
 // Send an update with the same set of LBs as the previous one in order to
 // verify that the LB channel inside grpclb keeps the initial connection (which
 // by definition is also present in the update).
-TEST_F(UpdatesTest, UpdateBalancersRepeated) {
+TEST_F(GrpclbEnd2endTest, UpdateBalancersRepeated) {
   CreateBackends(2);
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
@@ -1396,7 +1381,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   balancer_->service_.ShutdownStream();
 }
 
-TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
+TEST_F(GrpclbEnd2endTest, UpdateBalancersDeadUpdate) {
   SetNextResolutionDefaultBalancer();
   CreateBackends(2);
   const std::vector<int> first_backend{GetBackendPorts()[0]};
@@ -1464,7 +1449,7 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   EXPECT_LE(balancer2->service_.response_count(), 2U);
 }
 
-TEST_F(UpdatesTest, ReresolveDeadBackend) {
+TEST_F(GrpclbEnd2endTest, ReresolveDeadBackend) {
   ResetStub(/*fallback_timeout_ms=*/500);
   CreateBackends(2);
   // The first resolution contains the addresses of a balancer that never
@@ -1499,7 +1484,7 @@ TEST_F(UpdatesTest, ReresolveDeadBackend) {
   EXPECT_EQ(0U, balancer_->service_.response_count());
 }
 
-TEST_F(UpdatesTest, ReresolveDeadBalancer) {
+TEST_F(GrpclbEnd2endTest, ReresolveDeadBalancer) {
   CreateBackends(2);
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
@@ -1553,7 +1538,7 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   EXPECT_EQ(1U, balancer2->service_.response_count());
 }
 
-TEST_F(SingleBalancerTest, Drop) {
+TEST_F(GrpclbEnd2endTest, Drop) {
   const size_t kNumRpcsPerAddress = 100;
   const size_t kNumBackends = 2;
   const int kNumDropRateLimiting = 1;
@@ -1594,7 +1579,7 @@ TEST_F(SingleBalancerTest, Drop) {
   EXPECT_EQ(1U, balancer_->service_.response_count());
 }
 
-TEST_F(SingleBalancerTest, DropAllFirst) {
+TEST_F(GrpclbEnd2endTest, DropAllFirst) {
   SetNextResolutionDefaultBalancer();
   // All registered addresses are marked as "drop".
   const int kNumDropRateLimiting = 1;
@@ -1608,7 +1593,7 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
   EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
 
-TEST_F(SingleBalancerTest, DropAll) {
+TEST_F(GrpclbEnd2endTest, DropAll) {
   CreateBackends(1);
   SetNextResolutionDefaultBalancer();
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
@@ -1626,14 +1611,10 @@ TEST_F(SingleBalancerTest, DropAll) {
   EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
 
-class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
- public:
-  SingleBalancerWithClientLoadReportingTest() : GrpclbEnd2endTest(3) {}
-};
-
-TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
+TEST_F(GrpclbEnd2endTest, ClientLoadReporting) {
   const size_t kNumBackends = 3;
   CreateBackends(kNumBackends);
+  balancer_->service_.set_client_load_reporting_interval_seconds(3);
   SetNextResolutionDefaultBalancer();
   const size_t kNumRpcsPerAddress = 100;
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
@@ -1668,11 +1649,12 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   EXPECT_THAT(client_stats.drop_token_counts, ::testing::ElementsAre());
 }
 
-TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
+TEST_F(GrpclbEnd2endTest, LoadReportingWithBalancerRestart) {
   const size_t kNumBackends = 4;
   const size_t kNumBackendsFirstPass = 2;
   const size_t kNumBackendsSecondPass = kNumBackends - kNumBackendsFirstPass;
   CreateBackends(kNumBackends);
+  balancer_->service_.set_client_load_reporting_interval_seconds(3);
   SetNextResolutionDefaultBalancer();
   // Balancer returns backends starting at index 1.
   SendBalancerResponse(
@@ -1724,7 +1706,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   EXPECT_THAT(client_stats.drop_token_counts, ::testing::ElementsAre());
 }
 
-TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
+TEST_F(GrpclbEnd2endTest, LoadReportingWithDrops) {
   const size_t kNumBackends = 3;
   const size_t kNumRpcsPerAddress = 3;
   const int kNumDropRateLimiting = 2;
@@ -1732,6 +1714,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
   const int kNumDropTotal = kNumDropRateLimiting + kNumDropLoadBalancing;
   const int kNumAddressesTotal = kNumBackends + kNumDropTotal;
   CreateBackends(kNumBackends);
+  balancer_->service_.set_client_load_reporting_interval_seconds(3);
   SetNextResolutionDefaultBalancer();
   SendBalancerResponse(
       BuildResponseForBackends(
