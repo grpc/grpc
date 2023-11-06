@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 
-#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE) || defined(GPR_WINDOWS)
 #include <string.h>
 #include <sys/param.h>
 
@@ -100,4 +100,4 @@ int main() {
       "systems ***\n");
   return 0;
 }
-#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE || GPR_WINDOWS
