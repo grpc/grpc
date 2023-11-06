@@ -1750,7 +1750,10 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
   if (is_client) {
     int ssl_result;
     SSL_set_connect_state(ssl);
-    if (server_name_indication != nullptr) {
+    // Skip if the SNI looks like an IP address because IP addressed are not
+    // allowed as host names.
+    if (server_name_indication != nullptr &&
+        !looks_like_ip_address(server_name_indication)) {
       if (!SSL_set_tlsext_host_name(ssl, server_name_indication)) {
         gpr_log(GPR_ERROR, "Invalid server name indication %s.",
                 server_name_indication);
