@@ -665,7 +665,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return addresses;
   }
 
-  void SetNextResolution(
+  void SetNextResolutionFromEndpoints(
       grpc_core::EndpointAddressesList balancers,
       grpc_core::EndpointAddressesList backends = {},
       const char* service_config_json = kDefaultServiceConfig) {
@@ -684,9 +684,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
       const absl::Span<const int> balancer_ports,
       const absl::Span<const int> backend_ports = {},
       const char* service_config_json = kDefaultServiceConfig) {
-    SetNextResolution(CreateAddressListFromPorts(balancer_ports),
-                      CreateAddressListFromPorts(backend_ports),
-                      service_config_json);
+    SetNextResolutionFromEndpoints(CreateAddressListFromPorts(balancer_ports),
+                                   CreateAddressListFromPorts(backend_ports),
+                                   service_config_json);
   }
 
   void SetNextResolutionDefaultBalancer(
@@ -863,8 +863,7 @@ TEST_F(GrpclbEnd2endTest,
        SelectGrpclbWithMigrationServiceConfigAndNoAddresses) {
   const int kFallbackTimeoutMs = 200;
   ResetStub(kFallbackTimeoutMs);
-  SetNextResolution(CreateAddressListFromPorts({}),
-                    CreateAddressListFromPorts({}),
+  SetNextResolution({}, {},
                     "{\n"
                     "  \"loadBalancingConfig\":[\n"
                     "    { \"does_not_exist\":{} },\n"
@@ -981,7 +980,8 @@ TEST_F(GrpclbEnd2endTest, SecureNaming) {
   CreateBackends(1);
   ResetStub(/*fallback_timeout_ms=*/0,
             absl::StrCat(kApplicationTargetName, ";lb"));
-  SetNextResolution(CreateAddressListFromPorts({balancer_->port_}, "lb"));
+  SetNextResolutionFromEndpoints(
+      CreateAddressListFromPorts({balancer_->port_}, "lb"));
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
   // We need to wait for all backends to come online.
   WaitForAllBackends();
@@ -1271,7 +1271,7 @@ TEST_F(SingleBalancerDeathTest, SecureNaming) {
       {
         ResetStub(/*fallback_timeout_ms=*/0,
                   absl::StrCat(kApplicationTargetName, ";lb"));
-        SetNextResolution(
+        SetNextResolutionFromEndpoints(
             CreateAddressListFromPorts({balancer_->port_}, "woops"));
         channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
       },
