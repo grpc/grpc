@@ -532,7 +532,9 @@ class ExperimentsCompiler(object):
                     ToCStr(exp.name),
                     exp.name,
                     exp.name,
-                    f"required_experiments_{exp.name}" if exp._requires else "nullptr",
+                    f"required_experiments_{exp.name}"
+                    if exp._requires
+                    else "nullptr",
                     len(exp._requires),
                     self._defaults[exp.default(platform)],
                     "true" if exp.allow_in_fuzzing_config else "false",
@@ -553,8 +555,15 @@ class ExperimentsCompiler(object):
                 "//",
             )
 
+            any_requires = False
+            for _, exp in self._experiment_definitions.items():
+                if exp._requires:
+                    any_requires = True
+                    break
+
             print("#include <grpc/support/port_platform.h>", file=C)
-            print("#include <stdint.h>", file=C)
+            if any_requires:
+                print("#include <stdint.h>", file=C)
             print(f'#include "{header_file_path}"', file=C)
             print(file=C)
             print("#ifndef GRPC_EXPERIMENTS_ARE_FINAL", file=C)
