@@ -62,6 +62,9 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_http2_stats_fix =
+    "Fix on HTTP2 outgoing data stats reporting";
+const char* const additional_constraints_http2_stats_fix = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -83,11 +86,23 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
     "size.";
 const char* const additional_constraints_peer_state_based_framing = "{}";
+const char* const description_pending_queue_cap =
+    "In the sync & async apis (but not the callback api), cap the number of "
+    "received but unrequested requests in the server for each call type. A "
+    "received message is one that was read from the wire on the server. A "
+    "requested message is one explicitly requested by the application using "
+    "grpc_server_request_call or grpc_server_request_registered_call (or their "
+    "wrappers in the C++ API).";
+const char* const additional_constraints_pending_queue_cap = "{}";
 const char* const description_pick_first_happy_eyeballs =
     "Use Happy Eyeballs in pick_first.";
 const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
@@ -117,6 +132,11 @@ const char* const additional_constraints_registered_method_lookup_in_transport =
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
+const char* const description_rfc_max_concurrent_streams =
+    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
+const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -160,6 +180,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_uniquely_unowned =
+    "Ensure HPACK table takes a unique copy of data when parsing unknown "
+    "metadata";
+const char* const additional_constraints_uniquely_unowned = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -218,6 +242,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, false, true},
+    {"http2_stats_fix", description_http2_stats_fix,
+     additional_constraints_http2_stats_fix, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -230,8 +256,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
+    {"pending_queue_cap", description_pending_queue_cap,
+     additional_constraints_pending_queue_cap, true, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
      additional_constraints_pick_first_happy_eyeballs, true, true},
     {"ping_on_rst_stream", description_ping_on_rst_stream,
@@ -250,6 +280,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_registered_method_lookup_in_transport, true, true},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, false, true},
+    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
+     additional_constraints_rfc_max_concurrent_streams, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -273,6 +305,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, false, true},
+    {"uniquely_unowned", description_uniquely_unowned,
+     additional_constraints_uniquely_unowned, true, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
@@ -330,6 +364,9 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_http2_stats_fix =
+    "Fix on HTTP2 outgoing data stats reporting";
+const char* const additional_constraints_http2_stats_fix = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -351,11 +388,23 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
     "size.";
 const char* const additional_constraints_peer_state_based_framing = "{}";
+const char* const description_pending_queue_cap =
+    "In the sync & async apis (but not the callback api), cap the number of "
+    "received but unrequested requests in the server for each call type. A "
+    "received message is one that was read from the wire on the server. A "
+    "requested message is one explicitly requested by the application using "
+    "grpc_server_request_call or grpc_server_request_registered_call (or their "
+    "wrappers in the C++ API).";
+const char* const additional_constraints_pending_queue_cap = "{}";
 const char* const description_pick_first_happy_eyeballs =
     "Use Happy Eyeballs in pick_first.";
 const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
@@ -385,6 +434,11 @@ const char* const additional_constraints_registered_method_lookup_in_transport =
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
+const char* const description_rfc_max_concurrent_streams =
+    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
+const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -428,6 +482,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_uniquely_unowned =
+    "Ensure HPACK table takes a unique copy of data when parsing unknown "
+    "metadata";
+const char* const additional_constraints_uniquely_unowned = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -483,9 +541,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
     {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, false, true},
+     additional_constraints_event_engine_listener, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, false, true},
+    {"http2_stats_fix", description_http2_stats_fix,
+     additional_constraints_http2_stats_fix, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -498,8 +558,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
+    {"pending_queue_cap", description_pending_queue_cap,
+     additional_constraints_pending_queue_cap, true, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
      additional_constraints_pick_first_happy_eyeballs, true, true},
     {"ping_on_rst_stream", description_ping_on_rst_stream,
@@ -518,6 +582,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_registered_method_lookup_in_transport, true, true},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, false, true},
+    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
+     additional_constraints_rfc_max_concurrent_streams, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -541,6 +607,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, false, true},
+    {"uniquely_unowned", description_uniquely_unowned,
+     additional_constraints_uniquely_unowned, true, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},
@@ -598,6 +666,9 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_http2_stats_fix =
+    "Fix on HTTP2 outgoing data stats reporting";
+const char* const additional_constraints_http2_stats_fix = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -619,11 +690,23 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_overload_protection =
+    "If chttp2 has more streams than it can handle open, send RST_STREAM "
+    "immediately on new streams appearing.";
+const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
     "size.";
 const char* const additional_constraints_peer_state_based_framing = "{}";
+const char* const description_pending_queue_cap =
+    "In the sync & async apis (but not the callback api), cap the number of "
+    "received but unrequested requests in the server for each call type. A "
+    "received message is one that was read from the wire on the server. A "
+    "requested message is one explicitly requested by the application using "
+    "grpc_server_request_call or grpc_server_request_registered_call (or their "
+    "wrappers in the C++ API).";
+const char* const additional_constraints_pending_queue_cap = "{}";
 const char* const description_pick_first_happy_eyeballs =
     "Use Happy Eyeballs in pick_first.";
 const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
@@ -653,6 +736,11 @@ const char* const additional_constraints_registered_method_lookup_in_transport =
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
+const char* const description_rfc_max_concurrent_streams =
+    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
+    "max concurrent streams are exceeded in chttp2. See "
+    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
+const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -696,6 +784,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_uniquely_unowned =
+    "Ensure HPACK table takes a unique copy of data when parsing unknown "
+    "metadata";
+const char* const additional_constraints_uniquely_unowned = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -751,9 +843,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
     {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, false, true},
+     additional_constraints_event_engine_listener, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, false, true},
+    {"http2_stats_fix", description_http2_stats_fix,
+     additional_constraints_http2_stats_fix, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -766,8 +860,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      false, true},
+    {"overload_protection", description_overload_protection,
+     additional_constraints_overload_protection, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, false, true},
+    {"pending_queue_cap", description_pending_queue_cap,
+     additional_constraints_pending_queue_cap, true, true},
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
      additional_constraints_pick_first_happy_eyeballs, true, true},
     {"ping_on_rst_stream", description_ping_on_rst_stream,
@@ -786,6 +884,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_registered_method_lookup_in_transport, true, true},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, false, true},
+    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
+     additional_constraints_rfc_max_concurrent_streams, false, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -809,6 +909,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, false, true},
+    {"uniquely_unowned", description_uniquely_unowned,
+     additional_constraints_uniquely_unowned, true, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, true, true},

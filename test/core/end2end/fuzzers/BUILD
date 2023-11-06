@@ -45,7 +45,6 @@ grpc_cc_library(
 
 grpc_proto_fuzzer(
     name = "api_fuzzer",
-    size = "enormous",
     srcs = ["api_fuzzer.cc"],
     corpus = "api_fuzzer_corpus",
     language = "C++",

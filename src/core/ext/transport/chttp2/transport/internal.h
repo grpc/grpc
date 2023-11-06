@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <atomic>
 #include <memory>
 #include <utility>
 
@@ -56,8 +57,10 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -475,6 +478,8 @@ struct grpc_chttp2_transport final
   /// grace period to wait for data after sending a ping before keepalives
   /// timeout
   grpc_core::Duration keepalive_timeout;
+  /// number of stream objects currently allocated by this transport
+  std::atomic<size_t> streams_allocated{0};
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.
@@ -547,6 +552,9 @@ struct grpc_chttp2_transport final
   bool ack_pings = true;
   /// True if the keepalive system wants to see some data incoming
   bool keepalive_incoming_data_wanted = false;
+  /// True if we count stream allocation (instead of HTTP2 concurrency) for
+  /// MAX_CONCURRENT_STREAMS
+  bool max_concurrent_streams_overload_protection = false;
 
   // What percentage of rst_stream frames on the server should cause a ping
   // frame to be generated.
@@ -659,6 +667,12 @@ struct grpc_chttp2_stream {
   /// Byte counter for number of bytes written
   size_t byte_counter = 0;
 
+  /// Only set when enabled.
+  grpc_core::CallTracerInterface* call_tracer = nullptr;
+
+  /// Only set when enabled.
+  std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;
+
   // time this stream was created
   gpr_timespec creation_time = gpr_now(GPR_CLOCK_MONOTONIC);
 
@@ -678,6 +692,12 @@ struct grpc_chttp2_stream {
 };
 
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
+
+// EXPERIMENTAL: provide protection against overloading a server with too many
+// requests: wait for streams to be deallocated before they stop counting
+// against MAX_CONCURRENT_STREAMS
+#define GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION \
+  "grpc.http.overload_protection"
 
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to

@@ -240,6 +240,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "directory_reader",
+    srcs = [
+        "lib/gprpp/posix/directory_reader.cc",
+        "lib/gprpp/windows/directory_reader.cc",
+    ],
+    hdrs = [
+        "lib/gprpp/directory_reader.h",
+    ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:gpr",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "chunked_vector",
     hdrs = ["lib/gprpp/chunked_vector.h"],
     deps = [
@@ -2203,6 +2224,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_map",
+        "absl/strings",
         "absl/strings:str_format",
     ],
     deps = [
@@ -3071,6 +3093,37 @@ grpc_cc_library(
         "//:promise",
         "//:ref_counted_ptr",
         "//:uri_parser",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_crl_provider",
+    srcs = [
+        "lib/security/credentials/tls/grpc_tls_crl_provider.cc",
+    ],
+    hdrs = [
+        "lib/security/credentials/tls/grpc_tls_crl_provider.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:span",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "default_event_engine",
+        "directory_reader",
+        "load_file",
+        "slice",
+        "time",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_base",
     ],
 )
 
@@ -6162,7 +6215,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
-        "absl/status:statusor",
         "absl/types:variant",
     ],
     language = "c++",
