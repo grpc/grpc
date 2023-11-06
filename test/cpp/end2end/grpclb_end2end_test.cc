@@ -517,7 +517,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
         GRPC_ARG_PRIMARY_USER_AGENT_STRING, kGrpclbSpecificUserAgentString);
     ChannelArguments args;
     if (fallback_timeout_ms > 0) {
-      args.SetGrpclbFallbackTimeout(fallback_timeout_ms);
+      args.SetGrpclbFallbackTimeout(
+          fallback_timeout_ms * grpc_test_slowdown_factor());
     }
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
@@ -879,7 +880,7 @@ TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
 
 TEST_F(SingleBalancerTest,
        SelectGrpclbWithMigrationServiceConfigAndNoAddresses) {
-  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
+  const int kFallbackTimeoutMs = 200;
   ResetStub(kFallbackTimeoutMs);
   SetNextResolution({}, {},
                     "{\n"
@@ -1210,7 +1211,7 @@ TEST_F(SingleBalancerTest,
 }
 
 TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
-  const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
+  const int kFallbackTimeoutMs = 10000;
   ResetStub(kFallbackTimeoutMs);
   CreateBackends(1);
   // Return an unreachable balancer and one fallback backend.
@@ -1227,7 +1228,7 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
 }
 
 TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
-  const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
+  const int kFallbackTimeoutMs = 10000;
   ResetStub(kFallbackTimeoutMs);
   CreateBackends(1);
   // Return one balancer and one fallback backend.
@@ -1245,7 +1246,7 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
 }
 
 TEST_F(SingleBalancerTest, FallbackControlledByBalancerBeforeFirstServerlist) {
-  const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
+  const int kFallbackTimeoutMs = 10000;
   ResetStub(kFallbackTimeoutMs);
   CreateBackends(1);
   // Return one balancer and one fallback backend.
