@@ -14,9 +14,6 @@
 
 #include "src/core/lib/promise/map_pipe.h"
 
-#include <stdint.h>
-
-#include <initializer_list>
 #include <memory>
 #include <utility>
 

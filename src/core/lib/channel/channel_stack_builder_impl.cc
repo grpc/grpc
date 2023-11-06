@@ -27,19 +27,15 @@
 
 #include "absl/status/status.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -82,20 +78,6 @@ ChannelStackBuilderImpl::Build() {
   auto* channel_stack =
       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_stack_size));
 
-  ChannelArgs final_args = channel_args();
-  if (transport() != nullptr) {
-    static const grpc_arg_pointer_vtable vtable = {
-        // copy
-        [](void* p) { return p; },
-        // destroy
-        [](void*) {},
-        // cmp
-        [](void* a, void* b) { return QsortCompare(a, b); },
-    };
-    final_args = final_args.Set(GRPC_ARG_TRANSPORT,
-                                ChannelArgs::Pointer(transport(), &vtable));
-  }
-
   // and initialize it
   grpc_error_handle error = grpc_channel_stack_init(
       1,
@@ -104,7 +86,7 @@ ChannelStackBuilderImpl::Build() {
         grpc_channel_stack_destroy(stk);
         gpr_free(stk);
       },
-      channel_stack, stack.data(), stack.size(), final_args, name(),
+      channel_stack, stack.data(), stack.size(), channel_args(), name(),
       channel_stack);
 
   if (!error.ok()) {

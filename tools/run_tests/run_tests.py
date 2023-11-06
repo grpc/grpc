@@ -584,8 +584,8 @@ class CLanguage(object):
             return ("alpine", [])
         elif compiler == "clang6":
             return ("clang_6", self._clang_cmake_configure_extra_args())
-        elif compiler == "clang15":
-            return ("clang_15", self._clang_cmake_configure_extra_args())
+        elif compiler == "clang16":
+            return ("clang_16", self._clang_cmake_configure_extra_args())
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
@@ -721,16 +721,11 @@ class PythonConfig(
 class PythonLanguage(object):
     _TEST_SPECS_FILE = {
         "native": ["src/python/grpcio_tests/tests/tests.json"],
-        "gevent": [
-            "src/python/grpcio_tests/tests/tests.json",
-            "src/python/grpcio_tests/tests_gevent/tests.json",
-        ],
         "asyncio": ["src/python/grpcio_tests/tests_aio/tests.json"],
     }
 
     _TEST_COMMAND = {
         "native": "test_lite",
-        "gevent": "test_gevent",
         "asyncio": "test_aio",
     }
 
@@ -755,7 +750,7 @@ class PythonLanguage(object):
                         ],
                         timeout_seconds=60,
                         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                        shortname="f{python_config.name}.xds_protos",
+                        shortname=f"{python_config.name}.xds_protos",
                     )
                 )
 
@@ -1718,7 +1713,7 @@ argp.add_argument(
         "gcc12_openssl309",
         "gcc_musl",
         "clang6",
-        "clang15",
+        "clang16",
         # TODO: Automatically populate from supported version
         "python2.7",
         "python3.5",

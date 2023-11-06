@@ -15,6 +15,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <memory>
+
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 

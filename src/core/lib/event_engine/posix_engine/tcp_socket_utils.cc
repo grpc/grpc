@@ -17,13 +17,11 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
 #include <errno.h>
-#include <inttypes.h>
 #include <limits.h>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>

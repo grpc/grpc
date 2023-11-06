@@ -22,7 +22,6 @@
 #include <stdint.h>
 
 #include <algorithm>
-#include <initializer_list>
 #include <map>
 #include <utility>
 

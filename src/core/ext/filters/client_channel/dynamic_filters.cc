@@ -21,7 +21,6 @@
 #include <stddef.h>
 
 #include <new>
-#include <string>
 #include <utility>
 
 #include "absl/status/statusor.h"

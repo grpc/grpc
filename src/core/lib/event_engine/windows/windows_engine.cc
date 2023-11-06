@@ -218,18 +218,21 @@ void WindowsEventEngine::OnConnectCompleted(
     const auto& overlapped_result = state->socket->write_info()->result();
     // return early if we cannot cancel the connection timeout timer.
     if (!Cancel(state->timer_handle)) return;
-    if (overlapped_result.wsa_error != 0) {
+    if (!overlapped_result.error_status.ok()) {
+      state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx failure");
+      endpoint = overlapped_result.error_status;
+    } else if (overlapped_result.wsa_error != 0) {
       state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx failure");
       endpoint = GRPC_WSA_ERROR(overlapped_result.wsa_error, "ConnectEx");
     } else {
-      // This code should be running in a thread pool thread already, so the
-      // callback can be run directly.
       ChannelArgsEndpointConfig cfg;
       endpoint = std::make_unique<WindowsEndpoint>(
           state->address, std::move(state->socket), std::move(state->allocator),
           cfg, thread_pool_.get(), shared_from_this());
     }
   }
+  // This code should be running in a thread pool thread already, so the
+  // callback can be run directly.
   cb(std::move(endpoint));
 }
 
@@ -298,43 +301,19 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     });
     return EventEngine::ConnectionHandle::kInvalid;
   }
-  // Connect
-  auto watched_socket = iocp_.Watch(sock);
-  auto* info = watched_socket->write_info();
-  bool success =
-      ConnectEx(watched_socket->raw_socket(), address.address(), address.size(),
-                nullptr, 0, nullptr, info->overlapped());
-  // It wouldn't be unusual to get a success immediately. But we'll still get an
-  // IOCP notification, so let's ignore it.
-  if (!success) {
-    int last_error = WSAGetLastError();
-    if (last_error != ERROR_IO_PENDING) {
-      Run([on_connect = std::move(on_connect),
-           status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
-        on_connect(status);
-      });
-      watched_socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
-      return EventEngine::ConnectionHandle::kInvalid;
-    }
-  }
-  GPR_ASSERT(watched_socket != nullptr);
+  // Prepare the socket to receive a connection
   auto connection_state = std::make_shared<ConnectionState>();
   grpc_core::MutexLock lock(&connection_state->mu);
+  connection_state->socket = iocp_.Watch(sock);
+  GPR_ASSERT(connection_state->socket != nullptr);
+  auto* info = connection_state->socket->write_info();
   connection_state->address = address;
-  connection_state->socket = std::move(watched_socket);
-  connection_state->on_connected_user_callback = std::move(on_connect);
   connection_state->allocator = std::move(memory_allocator);
+  connection_state->on_connected_user_callback = std::move(on_connect);
   connection_state->on_connected =
       SelfDeletingClosure::Create([this, connection_state]() mutable {
         OnConnectCompleted(std::move(connection_state));
       });
-  {
-    grpc_core::MutexLock conn_lock(&connection_mu_);
-    connection_state->connection_handle =
-        ConnectionHandle{reinterpret_cast<intptr_t>(connection_state.get()),
-                         aba_token_.fetch_add(1)};
-    known_connection_handles_.insert(connection_state->connection_handle);
-  }
   connection_state->timer_handle =
       RunAfter(timeout, [this, connection_state]() {
         grpc_core::MutexLock lock(&connection_state->mu);
@@ -342,10 +321,36 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
           connection_state->on_connected_user_callback(
               absl::DeadlineExceededError("Connection timed out"));
         }
-        // else: The connection attempt could not be canceled. We can assume the
-        // connection callback will be called.
+        // else: The connection attempt could not be canceled. We can assume
+        // the connection callback will be called.
       });
+  // Connect
   connection_state->socket->NotifyOnWrite(connection_state->on_connected);
+  bool success =
+      ConnectEx(connection_state->socket->raw_socket(), address.address(),
+                address.size(), nullptr, 0, nullptr, info->overlapped());
+  // It wouldn't be unusual to get a success immediately. But we'll still get an
+  // IOCP notification, so let's ignore it.
+  if (!success) {
+    int last_error = WSAGetLastError();
+    if (last_error != ERROR_IO_PENDING) {
+      if (!Cancel(connection_state->timer_handle)) {
+        return EventEngine::ConnectionHandle::kInvalid;
+      }
+      connection_state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
+      Run([connection_state = std::move(connection_state),
+           status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
+        grpc_core::MutexLock lock(&connection_state->mu);
+        connection_state->on_connected_user_callback(status);
+      });
+      return EventEngine::ConnectionHandle::kInvalid;
+    }
+  }
+  connection_state->connection_handle =
+      ConnectionHandle{reinterpret_cast<intptr_t>(connection_state.get()),
+                       aba_token_.fetch_add(1)};
+  grpc_core::MutexLock connection_handle_lock(&connection_mu_);
+  known_connection_handles_.insert(connection_state->connection_handle);
   return connection_state->connection_handle;
 }
 
@@ -386,7 +391,7 @@ bool WindowsEventEngine::CancelConnectFromDeadlineTimer(
 bool WindowsEventEngine::CancelConnectInternalStateLocked(
     ConnectionState* connection_state) {
   connection_state->socket->Shutdown(DEBUG_LOCATION, "CancelConnect");
-  // Release the connection_state shared_ptr. connection_state is now invalid.
+  // Release the connection_state shared_ptr owned by the connected callback.
   delete connection_state->on_connected;
   GRPC_EVENT_ENGINE_TRACE("Successfully cancelled connection %s",
                           HandleToString<EventEngine::ConnectionHandle>(

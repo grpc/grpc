@@ -19,7 +19,6 @@
 #include <stdint.h>
 
 #include <atomic>
-#include <initializer_list>
 #include <list>
 #include <memory>
 #include <utility>

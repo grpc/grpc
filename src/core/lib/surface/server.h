@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <atomic>
 #include <functional>
 #include <list>
@@ -31,13 +32,19 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/hash/hash.h"
+#include "absl/random/random.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/backoff/random_early_detection.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -61,7 +68,10 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
+
+#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
+#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
+  "grpc.server.max_pending_requests_hard_limit"
 
 namespace grpc_core {
 
@@ -157,7 +167,7 @@ class Server : public InternallyRefCounted<Server>,
   // the server.  Called from the listener when a new connection is accepted.
   // Takes ownership of a ref on resource_user from the caller.
   grpc_error_handle SetupTransport(
-      grpc_transport* transport, grpc_pollset* accepting_pollset,
+      Transport* transport, grpc_pollset* accepting_pollset,
       const ChannelArgs& args,
       const RefCountedPtr<channelz::SocketNode>& socket_node);
 
@@ -202,6 +212,18 @@ class Server : public InternallyRefCounted<Server>,
   struct RequestedCall;
 
   struct ChannelRegisteredMethod {
+    ChannelRegisteredMethod() = default;
+    ChannelRegisteredMethod(RegisteredMethod* server_registered_method_arg,
+                            uint32_t flags_arg, bool has_host_arg,
+                            Slice method_arg, Slice host_arg)
+        : server_registered_method(server_registered_method_arg),
+          flags(flags_arg),
+          has_host(has_host_arg),
+          method(std::move(method_arg)),
+          host(std::move(host_arg)) {}
+
+    ~ChannelRegisteredMethod() = default;
+
     RegisteredMethod* server_registered_method = nullptr;
     uint32_t flags;
     bool has_host;
@@ -210,7 +232,8 @@ class Server : public InternallyRefCounted<Server>,
   };
 
   class RequestMatcherInterface;
-  class RealRequestMatcher;
+  class RealRequestMatcherFilterStack;
+  class RealRequestMatcherPromises;
   class AllocatingRequestMatcherBase;
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
@@ -222,8 +245,7 @@ class Server : public InternallyRefCounted<Server>,
 
     void InitTransport(RefCountedPtr<Server> server,
                        RefCountedPtr<Channel> channel, size_t cq_idx,
-                       grpc_transport* transport,
-                       intptr_t channelz_socket_uuid);
+                       Transport* transport, intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
     Channel* channel() const { return channel_.get(); }
@@ -231,6 +253,9 @@ class Server : public InternallyRefCounted<Server>,
 
     ChannelRegisteredMethod* GetRegisteredMethod(const grpc_slice& host,
                                                  const grpc_slice& path);
+
+    ChannelRegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
+                                                 const absl::string_view& path);
     // Filter vtable functions.
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
@@ -241,7 +266,7 @@ class Server : public InternallyRefCounted<Server>,
    private:
     class ConnectivityWatcher;
 
-    static void AcceptStream(void* arg, grpc_transport* /*transport*/,
+    static void AcceptStream(void* arg, Transport* /*transport*/,
                              const void* transport_server_data);
     static void SetRegisteredMethodOnMetadata(void* arg,
                                               ServerMetadata* metadata);
@@ -249,6 +274,17 @@ class Server : public InternallyRefCounted<Server>,
     void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
     static void FinishDestroy(void* arg, grpc_error_handle error);
+
+    struct StringViewStringViewPairHash
+        : absl::flat_hash_set<
+              std::pair<absl::string_view, absl::string_view>>::hasher {
+      using is_transparent = void;
+    };
+
+    struct StringViewStringViewPairEq
+        : std::equal_to<std::pair<absl::string_view, absl::string_view>> {
+      using is_transparent = void;
+    };
 
     RefCountedPtr<Server> server_;
     RefCountedPtr<Channel> channel_;
@@ -260,7 +296,14 @@ class Server : public InternallyRefCounted<Server>,
     // TODO(vjpai): Convert this to an STL map type as opposed to a direct
     // bucket implementation. (Consider performance impact, hash function to
     // use, etc.)
-    std::unique_ptr<std::vector<ChannelRegisteredMethod>> registered_methods_;
+    std::unique_ptr<std::vector<ChannelRegisteredMethod>>
+        old_registered_methods_;
+    // Map of registered methods.
+    absl::flat_hash_map<std::pair<std::string, std::string> /*host, method*/,
+                        std::unique_ptr<ChannelRegisteredMethod>,
+                        StringViewStringViewPairHash,
+                        StringViewStringViewPairEq>
+        registered_methods_;
     uint32_t registered_method_max_probes_;
     grpc_closure finish_destroy_channel_closure_;
     intptr_t channelz_socket_uuid_;
@@ -469,6 +512,17 @@ class Server : public InternallyRefCounted<Server>,
   std::atomic<int> shutdown_refs_{1};
   bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
   std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
+
+  RandomEarlyDetection pending_backlog_protector_ ABSL_GUARDED_BY(mu_call_){
+      static_cast<uint64_t>(
+          std::max(0, channel_args_.GetInt(GRPC_ARG_SERVER_MAX_PENDING_REQUESTS)
+                          .value_or(1000))),
+      static_cast<uint64_t>(std::max(
+          0,
+          channel_args_.GetInt(GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT)
+              .value_or(3000)))};
+  Duration max_time_in_pending_queue_{Duration::Seconds(30)};
+  absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> channels_;
 

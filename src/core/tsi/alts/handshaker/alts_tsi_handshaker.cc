@@ -33,17 +33,13 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
-#include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 
 // Main struct for ALTS TSI handshaker.
@@ -193,8 +189,10 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
           "protector equals %zu",
           *max_output_protected_frame_size);
   tsi_result ok = alts_zero_copy_grpc_protector_create(
-      reinterpret_cast<const uint8_t*>(result->key_data),
-      kAltsAes128GcmRekeyKeyLength, /*is_rekey=*/true, result->is_client,
+      grpc_core::GsecKeyFactory({reinterpret_cast<uint8_t*>(result->key_data),
+                                 kAltsAes128GcmRekeyKeyLength},
+                                /*is_rekey=*/true),
+      result->is_client,
       /*is_integrity_only=*/false, /*enable_extra_copy=*/false,
       max_output_protected_frame_size, protector);
   if (ok != TSI_OK) {

@@ -28,7 +28,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
 #include <grpc/support/log.h>
@@ -39,6 +38,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/uri/uri_parser.h"
 

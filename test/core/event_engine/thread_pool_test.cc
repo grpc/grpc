@@ -11,10 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 
-#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -27,6 +25,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/thd_id.h>
 
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
@@ -255,6 +254,36 @@ TYPED_TEST(ThreadPoolTest, QuiesceRaceStressTest) {
     }
     p.Quiesce();
   }
+}
+
+TYPED_TEST(ThreadPoolTest, WorkerThreadLocalRunWorksWithOtherPools) {
+  // WorkStealingThreadPools may queue work onto a thread-local queue, and that
+  // work may be stolen by other threads. This test tries to ensure that work
+  // queued from a pool-A worker-thread, to pool-B, does not end up on a pool-A
+  // queue.
+  constexpr size_t p1_run_iterations = 32;
+  constexpr size_t p2_run_iterations = 1000;
+  TypeParam p1(8);
+  TypeParam p2(8);
+  std::vector<gpr_thd_id> tid(p1_run_iterations);
+  std::atomic<size_t> iter_count{0};
+  grpc_core::Notification finished_all_iterations;
+  for (size_t p1_i = 0; p1_i < p1_run_iterations; p1_i++) {
+    p1.Run([&, p1_i, total_iterations = p1_run_iterations * p2_run_iterations] {
+      tid[p1_i] = gpr_thd_currentid();
+      for (size_t p2_i = 0; p2_i < p2_run_iterations; p2_i++) {
+        p2.Run([&, p1_i, total_iterations] {
+          EXPECT_NE(tid[p1_i], gpr_thd_currentid());
+          if (total_iterations == iter_count.fetch_add(1) + 1) {
+            finished_all_iterations.Notify();
+          }
+        });
+      }
+    });
+  }
+  finished_all_iterations.WaitForNotification();
+  p2.Quiesce();
+  p1.Quiesce();
 }
 
 class BusyThreadCountTest : public testing::Test {};

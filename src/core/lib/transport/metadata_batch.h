@@ -40,11 +40,13 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/compression/compression_internal.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/if_list.h"
 #include "src/core/lib/gprpp/packed_table.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/type_list.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/custom_metadata.h"
@@ -519,6 +521,15 @@ struct GrpcRegisteredMethod {
   static std::string DisplayValue(void* x);
 };
 
+// Annotation added by filters to inform the transport to tarpit this
+// response: add some random delay to thwart certain kinds of attacks.
+struct GrpcTarPit {
+  static absl::string_view DebugKey() { return "GrpcTarPit"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = Empty;
+  static absl::string_view DisplayValue(Empty) { return "tarpit"; }
+};
+
 namespace metadata_detail {
 
 // Build a key/value formatted debug string.
@@ -637,7 +648,11 @@ class ParseHelper {
       absl::string_view key) {
     return ParsedMetadata<Container>(
         typename ParsedMetadata<Container>::FromSlicePair{},
-        Slice::FromCopiedString(key), std::move(value_), transport_size_);
+        Slice::FromCopiedString(key),
+        IsUniquelyUnownedEnabled() && will_keep_past_request_lifetime_
+            ? value_.TakeUniquelyOwned()
+            : std::move(value_),
+        transport_size_);
   }
 
  private:
@@ -1496,7 +1511,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
     grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady,
-    grpc_core::GrpcTrailersOnly,
+    grpc_core::GrpcTrailersOnly, grpc_core::GrpcTarPit,
     grpc_core::GrpcRegisteredMethod GRPC_CUSTOM_CLIENT_METADATA
         GRPC_CUSTOM_SERVER_METADATA>;
 

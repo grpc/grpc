@@ -55,7 +55,7 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
 
   grpc_core::RefCountedPtr<grpc_channel_credentials>
   duplicate_without_call_credentials() override {
-    return inner_creds_;
+    return inner_creds_->duplicate_without_call_credentials();
   }
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector>

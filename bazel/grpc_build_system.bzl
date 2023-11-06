@@ -114,6 +114,7 @@ def _update_visibility(visibility):
         "json_reader_legacy": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
+        "tcp_tracer": PRIVATE,
         "trace": PRIVATE,
         "tsi_interface": PRIVATE,
         "tsi": PRIVATE,
@@ -428,7 +429,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     env["GRPC_EXPERIMENTS"] = experiment
                     env["GRPC_CI_EXPERIMENTS"] = "1"
                     config["env"] = env
-                    tags = config["tags"]
+                    tags = config["tags"] + ["experiment_variation"]
                     for tag in must_have_tags + enabled_tags:
                         if tag not in tags:
                             tags = tags + [tag]
@@ -444,7 +445,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     env["GRPC_EXPERIMENTS"] = "-" + experiment
                     env["GRPC_CI_EXPERIMENTS"] = "1"
                     config["env"] = env
-                    tags = config["tags"]
+                    tags = config["tags"] + ["experiment_variation"]
                     for tag in must_have_tags + disabled_tags:
                         if tag not in tags:
                             tags = tags + [tag]

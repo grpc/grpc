@@ -21,8 +21,6 @@
 #include <string.h>
 #include <sys/socket.h>
 
-#include <algorithm>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <thread>
@@ -264,7 +262,7 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   g_fake_non_responsive_dns_server_port = fake_dns_server.port();
-  void (*prev_test_only_inject_config)(ares_channel * channel) =
+  void (*prev_test_only_inject_config)(ares_channel* channel) =
       grpc_ares_test_only_inject_config;
   grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the same test on several threads in parallel to try to trigger races
