@@ -656,6 +656,44 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "h2_ssl_certs_curves_test",
+    srcs = ["h2_ssl_certs_curves_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca_p256.pem",
+        "//src/core/tsi/test_creds:ca_p384.pem",
+        "//src/core/tsi/test_creds:ca_p521.pem",
+        "//src/core/tsi/test_creds:client_p256.key",
+        "//src/core/tsi/test_creds:client_p256.pem",
+        "//src/core/tsi/test_creds:client_p384.key",
+        "//src/core/tsi/test_creds:client_p384.pem",
+        "//src/core/tsi/test_creds:client_p521.key",
+        "//src/core/tsi/test_creds:client_p521.pem",
+        "//src/core/tsi/test_creds:server1_p256.key",
+        "//src/core/tsi/test_creds:server1_p256.pem",
+        "//src/core/tsi/test_creds:server1_p384.key",
+        "//src/core/tsi/test_creds:server1_p384.pem",
+        "//src/core/tsi/test_creds:server1_p521.key",
+        "//src/core/tsi/test_creds:server1_p521.pem",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "cq_verifier",
+        "//:channel_arg_names",
+        "//:config_vars",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_public_hdrs",
+        "//src/core:channel_args",
+        "//src/core:error",
+        "//src/core:grpc_ssl_credentials",
+        "//src/core:useful",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "h2_tls_peer_property_external_verifier_test",
     srcs = ["h2_tls_peer_property_external_verifier_test.cc"],
     data = [
