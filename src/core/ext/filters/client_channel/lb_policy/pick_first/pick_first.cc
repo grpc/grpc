@@ -321,6 +321,14 @@ class PickFirst : public LoadBalancingPolicy {
 
   void UnsetSelectedSubchannel();
 
+  // When ExitIdleLocked() is called, we create a subchannel_list_ and start
+  // trying to connect, but we don't actually change state_ until the first
+  // subchannel reports CONNECTING.  So in order to know if we're really
+  // idle, we need to check both state_ and subchannel_list_.
+  bool IsIdle() const {
+    return state_ == GRPC_CHANNEL_IDLE && subchannel_list_ == nullptr;
+  }
+
   // Whether we should enable health watching.
   const bool enable_health_watch_;
   // Whether we should omit our status message prefix.
@@ -388,10 +396,7 @@ void PickFirst::ShutdownLocked() {
 
 void PickFirst::ExitIdleLocked() {
   if (shutdown_) return;
-  // Need to check subchannel_list_ being null here, in case the
-  // application calls channel->GetState(true) again before we
-  // transition to state CONNECTING.
-  if (state_ == GRPC_CHANNEL_IDLE && subchannel_list_ == nullptr) {
+  if (IsIdle()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
       gpr_log(GPR_INFO, "Pick First %p exiting idle", this);
     }
@@ -546,9 +551,7 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   latest_update_args_ = std::move(args);
   // If we are not in idle, start connection attempt immediately.
   // Otherwise, we defer the attempt into ExitIdleLocked().
-  // Need to also check if subchannel_list_ is null, since we may not
-  // yet have transitioned from IDLE to CONNECTING after ExitIdleLocked().
-  if (state_ != GRPC_CHANNEL_IDLE || subchannel_list_ != nullptr) {
+  if (!IsIdle()) {
     AttemptToConnectUsingLatestUpdateArgsLocked();
   }
   return status;
