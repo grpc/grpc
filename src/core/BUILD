@@ -5704,7 +5704,6 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chttp2/transport/hpack_encoder_table.h",
     ],
-    external_deps = ["absl/container:inlined_vector"],
     language = "c++",
     deps = [
         "hpack_constants",
