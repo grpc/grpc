@@ -22,10 +22,9 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 
 #include <memory>
+#include <type_traits>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
@@ -36,9 +35,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -166,7 +163,7 @@ void FakeResolverResponseGenerator::SendResultToResolver(
   auto* resolver_ptr = resolver.get();
   resolver_ptr->work_serializer_->Run(
       [resolver = std::move(resolver), result = std::move(result),
-       notify_when_set]() {
+       notify_when_set]() mutable {
         if (!resolver->shutdown_) {
           resolver->next_result_ = std::move(result);
           resolver->MaybeSendResultLocked();

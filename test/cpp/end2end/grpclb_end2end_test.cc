@@ -86,8 +86,6 @@
 //   2) the retry timer is active. Again, the weak reference it holds should
 //   prevent a premature call to \a glb_destroy.
 
-using std::chrono::system_clock;
-
 using grpc::lb::v1::LoadBalancer;
 using grpc::lb::v1::LoadBalanceRequest;
 using grpc::lb::v1::LoadBalanceResponse;
@@ -300,14 +298,14 @@ class BalancerServiceImpl : public BalancerService {
     LoadBalanceResponse response;
     auto* initial_response = response.mutable_initial_response();
     if (client_load_reporting_interval_seconds_ > 0) {
-      initial_response->mutable_client_stats_report_interval()
-                      ->set_seconds(client_load_reporting_interval_seconds_);
+      initial_response->mutable_client_stats_report_interval()->set_seconds(
+          client_load_reporting_interval_seconds_);
     }
     stream->Write(response);
     // Spawn a separate thread to read requests from the client.
     absl::Notification reader_shutdown;
-    std::thread reader(std::bind(&BalancerServiceImpl::ReadThread, this,
-                                 stream, &reader_shutdown));
+    std::thread reader(std::bind(&BalancerServiceImpl::ReadThread, this, stream,
+                                 &reader_shutdown));
     auto thread_cleanup = absl::MakeCleanup([&]() {
       gpr_log(GPR_INFO, "shutting down reader thread");
       reader_shutdown.Notify();
@@ -348,8 +346,7 @@ class BalancerServiceImpl : public BalancerService {
           request.client_stats().num_calls_finished_known_received();
       for (const auto& drop_token_count :
            request.client_stats().calls_finished_with_drop()) {
-        load_report
-            .drop_token_counts[drop_token_count.load_balance_token()] =
+        load_report.drop_token_counts[drop_token_count.load_balance_token()] =
             drop_token_count.num_calls();
       }
       // We need to acquire the lock here in order to prevent the notify_one
@@ -514,8 +511,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
         GRPC_ARG_PRIMARY_USER_AGENT_STRING, kGrpclbSpecificUserAgentString);
     ChannelArguments args;
     if (fallback_timeout_ms > 0) {
-      args.SetGrpclbFallbackTimeout(
-          fallback_timeout_ms * grpc_test_slowdown_factor());
+      args.SetGrpclbFallbackTimeout(fallback_timeout_ms *
+                                    grpc_test_slowdown_factor());
     }
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
@@ -1043,9 +1040,8 @@ TEST_F(GrpclbEnd2endTest, Fallback) {
   WaitForAllBackends(0, kNumBackendsInResolution,
                      WaitForBackendOptions().SetTimeoutSeconds(20));
   // Send serverlist.
-  SendBalancerResponse(
-      BuildResponseForBackends(
-          GetBackendPorts(/*start_index=*/kNumBackendsInResolution), {}));
+  SendBalancerResponse(BuildResponseForBackends(
+      GetBackendPorts(/*start_index=*/kNumBackendsInResolution), {}));
   // Now we should be using the backends from the balancer.
   WaitForAllBackends(kNumBackendsInResolution);
   balancer_->service_.ShutdownStream();
@@ -1068,20 +1064,18 @@ TEST_F(GrpclbEnd2endTest, FallbackUpdate) {
   // Wait until all the fallback backends are reachable.
   WaitForAllBackends(0, kNumBackendsInResolution);
   // Now send a resolver result with a different set of backend addresses.
-  SetNextResolution(
-      {balancer_->port_},
-      GetBackendPorts(
-          kNumBackendsInResolution,
-          kNumBackendsInResolution + kNumBackendsInResolutionUpdate));
+  SetNextResolution({balancer_->port_},
+                    GetBackendPorts(kNumBackendsInResolution,
+                                    kNumBackendsInResolution +
+                                        kNumBackendsInResolutionUpdate));
   // Wait until the new fallback backends are reachable.
   WaitForAllBackends(kNumBackendsInResolution,
                      kNumBackendsInResolution + kNumBackendsInResolutionUpdate);
   // Send non-empty serverlist.
   SendBalancerResponse(
-      BuildResponseForBackends(
-          GetBackendPorts(kNumBackendsInResolution +
-                          kNumBackendsInResolutionUpdate),
-          {}));
+      BuildResponseForBackends(GetBackendPorts(kNumBackendsInResolution +
+                                               kNumBackendsInResolutionUpdate),
+                               {}));
   // Wait for backends from balancer to be seen.
   WaitForAllBackends(kNumBackendsInResolution + kNumBackendsInResolutionUpdate);
   balancer_->service_.ShutdownStream();
@@ -1547,11 +1541,9 @@ TEST_F(GrpclbEnd2endTest, Drop) {
   const int kNumAddressesTotal = kNumBackends + kNumDropTotal;
   SetNextResolutionDefaultBalancer();
   CreateBackends(kNumBackends);
-  SendBalancerResponse(
-      BuildResponseForBackends(
-          GetBackendPorts(),
-          {{"rate_limiting", kNumDropRateLimiting},
-           {"load_balancing", kNumDropLoadBalancing}}));
+  SendBalancerResponse(BuildResponseForBackends(
+      GetBackendPorts(), {{"rate_limiting", kNumDropRateLimiting},
+                          {"load_balancing", kNumDropLoadBalancing}}));
   // Wait until all backends are ready.
   WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs for each server and drop address.
@@ -1584,10 +1576,9 @@ TEST_F(GrpclbEnd2endTest, DropAllFirst) {
   // All registered addresses are marked as "drop".
   const int kNumDropRateLimiting = 1;
   const int kNumDropLoadBalancing = 1;
-  SendBalancerResponse(
-      BuildResponseForBackends(
-          {}, {{"rate_limiting", kNumDropRateLimiting},
-               {"load_balancing", kNumDropLoadBalancing}}));
+  SendBalancerResponse(BuildResponseForBackends(
+      {}, {{"rate_limiting", kNumDropRateLimiting},
+           {"load_balancing", kNumDropLoadBalancing}}));
   const Status status = SendRpc(nullptr, 3000, true);
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
@@ -1598,9 +1589,8 @@ TEST_F(GrpclbEnd2endTest, DropAll) {
   SetNextResolutionDefaultBalancer();
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
   CheckRpcSendOk();
-  SendBalancerResponse(
-      BuildResponseForBackends(
-          {}, {{"rate_limiting", 1}, {"load_balancing", 1}}));
+  SendBalancerResponse(BuildResponseForBackends(
+      {}, {{"rate_limiting", 1}, {"load_balancing", 1}}));
   // Eventually, the update with only dropped servers is processed, and calls
   // fail.
   Status status;
@@ -1716,11 +1706,9 @@ TEST_F(GrpclbEnd2endTest, LoadReportingWithDrops) {
   CreateBackends(kNumBackends);
   balancer_->service_.set_client_load_reporting_interval_seconds(3);
   SetNextResolutionDefaultBalancer();
-  SendBalancerResponse(
-      BuildResponseForBackends(
-          GetBackendPorts(),
-          {{"rate_limiting", kNumDropRateLimiting},
-           {"load_balancing", kNumDropLoadBalancing}}));
+  SendBalancerResponse(BuildResponseForBackends(
+      GetBackendPorts(), {{"rate_limiting", kNumDropRateLimiting},
+                          {"load_balancing", kNumDropLoadBalancing}}));
   // Wait until all backends are ready.
   int num_warmup_ok = 0;
   int num_warmup_failure = 0;
@@ -1728,8 +1716,7 @@ TEST_F(GrpclbEnd2endTest, LoadReportingWithDrops) {
   std::tie(num_warmup_ok, num_warmup_failure, num_warmup_drops) =
       WaitForAllBackends(
           0, kNumBackends,
-          WaitForBackendOptions()
-              .SetNumRequestsMultipleOf(kNumAddressesTotal));
+          WaitForBackendOptions().SetNumRequestsMultipleOf(kNumAddressesTotal));
   const int num_total_warmup_requests =
       num_warmup_ok + num_warmup_failure + num_warmup_drops;
   size_t num_drops = 0;
@@ -1757,12 +1744,10 @@ TEST_F(GrpclbEnd2endTest, LoadReportingWithDrops) {
   EXPECT_EQ(1U, balancer_->service_.response_count());
 
   const ClientStats client_stats = WaitForLoadReports();
-  EXPECT_EQ(
-      kNumRpcsPerAddress * kNumAddressesTotal + num_total_warmup_requests,
-      client_stats.num_calls_started);
-  EXPECT_EQ(
-      kNumRpcsPerAddress * kNumAddressesTotal + num_total_warmup_requests,
-      client_stats.num_calls_finished);
+  EXPECT_EQ(kNumRpcsPerAddress * kNumAddressesTotal + num_total_warmup_requests,
+            client_stats.num_calls_started);
+  EXPECT_EQ(kNumRpcsPerAddress * kNumAddressesTotal + num_total_warmup_requests,
+            client_stats.num_calls_finished);
   EXPECT_EQ(0U, client_stats.num_calls_finished_with_client_failed_to_send);
   EXPECT_EQ(kNumRpcsPerAddress * kNumBackends + num_warmup_ok,
             client_stats.num_calls_finished_known_received);

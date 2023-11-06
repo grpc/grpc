@@ -222,8 +222,7 @@ class FakeResolverResponseGeneratorWrapper {
                          const char* service_config_json = nullptr,
                          const grpc_core::ChannelArgs& per_address_args =
                              grpc_core::ChannelArgs()) {
-    SetResponse(
-        BuildFakeResults(ports, service_config_json, per_address_args));
+    SetResponse(BuildFakeResults(ports, service_config_json, per_address_args));
   }
 
   grpc_core::FakeResolverResponseGenerator* Get() const {

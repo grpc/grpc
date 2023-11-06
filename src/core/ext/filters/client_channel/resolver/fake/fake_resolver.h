@@ -23,6 +23,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -32,7 +33,6 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
 
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
@@ -107,9 +107,9 @@ class FakeResolverResponseGenerator
   void ReresolutionRequested();
 
   // Helper function to send a result to the resolver.
-  static void SendResultToResolver(
-      RefCountedPtr<FakeResolver> resolver, Resolver::Result result,
-      Notification* notify_when_set);
+  static void SendResultToResolver(RefCountedPtr<FakeResolver> resolver,
+                                   Resolver::Result result,
+                                   Notification* notify_when_set);
 
   // Mutex protecting the members below.
   Mutex mu_;

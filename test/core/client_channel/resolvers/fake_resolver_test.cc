@@ -36,8 +36,6 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -73,16 +71,13 @@ class FakeResolverTest : public ::testing::Test {
     void ReportResult(Resolver::Result actual) override {
       MutexLock lock(&mu_);
       ASSERT_NE(notification_, nullptr);
+      // TODO(roth): Check fields other than just the addresses.
+      // Note: No good way to compare result_health_callback.
       ASSERT_TRUE(actual.addresses.ok());
       ASSERT_EQ(actual.addresses->size(), expected_.addresses->size());
       for (size_t i = 0; i < expected_.addresses->size(); ++i) {
         ASSERT_EQ((*actual.addresses)[i], (*expected_.addresses)[i]);
       }
-//      EXPECT_EQ(actual.addresses, expected_.addresses);
-//      EXPECT_EQ(actual.service_config, expected_.service_config);
-//      EXPECT_EQ(actual.resolution_note, expected_.resolution_note);
-//      EXPECT_EQ(actual.args, expected_.args);
-      // Note: No good way to compare result_health_callback.
       notification_->Notify();
       notification_ = nullptr;
     }
@@ -97,9 +92,9 @@ class FakeResolverTest : public ::testing::Test {
       std::shared_ptr<WorkSerializer> work_serializer,
       RefCountedPtr<FakeResolverResponseGenerator> response_generator,
       std::unique_ptr<Resolver::ResultHandler> result_handler) {
-    ResolverFactory* factory = CoreConfiguration::Get()
-                                              .resolver_registry()
-                                              .LookupResolverFactory("fake");
+    ResolverFactory* factory =
+        CoreConfiguration::Get().resolver_registry().LookupResolverFactory(
+            "fake");
     ResolverArgs args;
     args.args = ChannelArgs().SetObject(std::move(response_generator));
     args.work_serializer = std::move(work_serializer);
@@ -114,8 +109,8 @@ class FakeResolverTest : public ::testing::Test {
     // Create address list.
     EndpointAddressesList addresses;
     for (size_t i = 0; i < num_addresses; ++i) {
-      std::string uri_string = absl::StrFormat("ipv4:127.0.0.1:100%" PRIuPTR,
-                                               test_counter * num_addresses + i);
+      std::string uri_string = absl::StrFormat(
+          "ipv4:127.0.0.1:100%" PRIuPTR, test_counter * num_addresses + i);
       absl::StatusOr<URI> uri = URI::Parse(uri_string);
       EXPECT_TRUE(uri.ok());
       grpc_resolved_address address;
@@ -215,14 +210,13 @@ TEST_F(FakeResolverTest, WaitForReresolutionRequest) {
   ASSERT_NE(resolver, nullptr);
   RunSynchronously([resolver = resolver.get()] { resolver->StartLocked(); });
   // No re-resolution requested yet.
-  EXPECT_FALSE(response_generator_->WaitForReresolutionRequest(
-      absl::Milliseconds(1)));
+  EXPECT_FALSE(
+      response_generator_->WaitForReresolutionRequest(absl::Milliseconds(1)));
   // Request re-resolution, then try again.
-  RunSynchronously([resolver = resolver.get()] {
-    resolver->RequestReresolutionLocked();
-  });
-  EXPECT_TRUE(response_generator_->WaitForReresolutionRequest(
-      absl::Milliseconds(1)));
+  RunSynchronously(
+      [resolver = resolver.get()] { resolver->RequestReresolutionLocked(); });
+  EXPECT_TRUE(
+      response_generator_->WaitForReresolutionRequest(absl::Milliseconds(1)));
 }
 
 }  // namespace testing
