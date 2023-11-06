@@ -532,7 +532,9 @@ class ExperimentsCompiler(object):
                     ToCStr(exp.name),
                     exp.name,
                     exp.name,
-                    f"required_experiments_{exp.name}" if exp._requires else "nullptr",
+                    f"required_experiments_{exp.name}"
+                    if exp._requires
+                    else "nullptr",
                     len(exp._requires),
                     self._defaults[exp.default(platform)],
                     "true" if exp.allow_in_fuzzing_config else "false",
