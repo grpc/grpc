@@ -2424,8 +2424,9 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/hrss/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/keccak/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/keccak/keccak.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/kyber/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/lhash/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c" role="src" />
@@ -2469,6 +2470,21 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/address.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/address.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/fors.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/fors.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/merkle.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/merkle.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/params.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/spx.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/spx_util.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/spx_util.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/thash.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/thash.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/wots.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/wots.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/stack/stack.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/thread.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/thread_none.c" role="src" />

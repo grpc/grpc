@@ -1117,7 +1117,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
-    third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c \
+    third_party/boringssl-with-bazel/src/crypto/keccak/keccak.c \
     third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c \
     third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
     third_party/boringssl-with-bazel/src/crypto/mem.c \
@@ -1154,6 +1154,13 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
     third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/address.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/fors.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/merkle.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx_util.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/thash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/wots.c \
     third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
     third_party/boringssl-with-bazel/src/crypto/thread.c \
     third_party/boringssl-with-bazel/src/crypto/thread_none.c \
@@ -1616,6 +1623,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/fipsmodule)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/hpke)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/hrss)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/keccak)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/kyber)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/lhash)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/obj)
@@ -1628,6 +1636,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/rc4)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/rsa_extra)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/siphash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/spx)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/stack)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/trust_token)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509)

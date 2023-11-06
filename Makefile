@@ -2898,7 +2898,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
-    third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c \
+    third_party/boringssl-with-bazel/src/crypto/keccak/keccak.c \
     third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c \
     third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
     third_party/boringssl-with-bazel/src/crypto/mem.c \
@@ -2935,6 +2935,13 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
     third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/address.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/fors.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/merkle.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx_util.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/thash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/wots.c \
     third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
     third_party/boringssl-with-bazel/src/crypto/thread.c \
     third_party/boringssl-with-bazel/src/crypto/thread_none.c \
