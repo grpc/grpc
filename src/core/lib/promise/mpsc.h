@@ -107,7 +107,7 @@ class Center : public RefCounted<Center<T>> {
     receiver_closed_ = true;
   }
 
-  // Return is the receiver is closed.
+  // Return whether the receiver is closed.
   bool IsClosed() {
     MutexLock lock(&mu_);
     return receiver_closed_;

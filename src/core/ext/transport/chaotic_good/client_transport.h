@@ -132,6 +132,8 @@ class ClientTransport {
                       outgoing_frames.Send(ClientFrame(std::move(frame))),
                       [](bool success) -> absl::Status {
                         if (!success) {
+                          // TODO(ladynana): propagate the actual error message
+                          // from EventEngine.
                           return absl::UnavailableError(
                               "Transport closed due to endpoint write/read "
                               "failed.");
@@ -187,6 +189,8 @@ class ClientTransport {
                            [transport_closed]()
                                -> LoopCtl<ServerMetadataHandle> {
                              if (transport_closed) {
+                               // TODO(ladynana): propagate the actual error
+                               // message from EventEngine.
                                return ServerMetadataFromStatus(
                                    absl::UnavailableError(
                                        "Transport closed due to endpoint "
