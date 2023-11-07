@@ -791,6 +791,8 @@ class GrpcPolledFdWrapper : public GrpcPolledFd {
 GrpcPolledFdFactoryWindows::GrpcPolledFdFactoryWindows(IOCP* iocp)
     : iocp_(iocp) {}
 
+GrpcPolledFdFactoryWindows::~GrpcPolledFdFactoryWindows() {}
+
 void GrpcPolledFdFactoryWindows::Initialize(grpc_core::Mutex* mutex,
                                             EventEngine* event_engine) {
   mu_ = mutex;
