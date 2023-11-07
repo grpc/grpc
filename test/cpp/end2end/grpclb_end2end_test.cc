@@ -208,6 +208,7 @@ class BalancerServiceImpl : public BalancerService {
   void Start() {
     {
       grpc_core::MutexLock lock(&mu_);
+      shutdown_ = false;
       response_queue_.clear();
     }
     {
@@ -217,6 +218,10 @@ class BalancerServiceImpl : public BalancerService {
   }
 
   void Shutdown() {
+    {
+      grpc_core::MutexLock lock(&mu_);
+      shutdown_ = true;
+    }
     ShutdownStream();
     gpr_log(GPR_INFO, "LB[%p]: shut down", this);
   }
@@ -279,6 +284,13 @@ class BalancerServiceImpl : public BalancerService {
   // Request handler.
   Status BalanceLoad(ServerContext* context, Stream* stream) override {
     gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
+    {
+      grpc_core::MutexLock lock(&mu_);
+      if (shutdown_) {
+        gpr_log(GPR_INFO, "LB[%p]: shutdown at stream start", this);
+        return Status::OK;
+      }
+    }
     IncrementStreamCount();
     AddClient(context->peer());
     // The loadbalancer should see a test user agent because it was
@@ -403,6 +415,7 @@ class BalancerServiceImpl : public BalancerService {
   int client_load_reporting_interval_seconds_ = 0;
 
   grpc_core::Mutex mu_;
+  bool shutdown_ ABSL_GUARDED_BY(&mu_) = false;
   std::vector<std::string> service_names_ ABSL_GUARDED_BY(mu_);
   std::deque<absl::optional<LoadBalanceResponse>> response_queue_
       ABSL_GUARDED_BY(mu_);
