@@ -385,8 +385,9 @@ struct grpc_chttp2_transport final
   grpc_core::Chttp2PingAbusePolicy ping_abuse_policy;
   grpc_core::Chttp2PingRatePolicy ping_rate_policy;
   grpc_core::Chttp2PingCallbacks ping_callbacks;
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      delayed_ping_timer_handle;
+  grpc_event_engine::experimental::EventEngine::TaskHandle
+      delayed_ping_timer_handle =
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
   grpc_closure retry_initiate_ping_locked;
 
   grpc_core::Chttp2MaxConcurrentStreamsPolicy max_concurrent_streams_policy;
@@ -458,8 +459,9 @@ struct grpc_chttp2_transport final
   grpc_closure destructive_reclaimer_locked;
 
   // next bdp ping timer handle
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      next_bdp_ping_timer_handle;
+  grpc_event_engine::experimental::EventEngine::TaskHandle
+      next_bdp_ping_timer_handle =
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
 
   // keep-alive ping support
   /// Closure to initialize a keepalive ping
@@ -471,8 +473,10 @@ struct grpc_chttp2_transport final
   /// Closure to run when the keepalive ping timeouts
   grpc_closure keepalive_watchdog_fired_locked;
   /// timer to initiate ping events
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      keepalive_ping_timer_handle;
+  grpc_event_engine::experimental::EventEngine::TaskHandle
+      keepalive_ping_timer_handle =
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
+  ;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
   /// grace period to wait for data after sending a ping before keepalives
