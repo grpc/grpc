@@ -6979,7 +6979,6 @@ targets:
 - name: client_fork_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
