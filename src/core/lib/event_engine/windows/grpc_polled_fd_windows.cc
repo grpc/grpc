@@ -170,10 +170,6 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     if (!connect_done_) {
       GPR_ASSERT(!pending_continue_register_for_on_writeable_locked_);
       pending_continue_register_for_on_writeable_locked_ = true;
-      // Register an async OnTcpConnect callback here rather than when the
-      // connect was initiated, since we are now guaranteed to hold a ref of the
-      // c-ares wrapper before write_closure_ is called.
-      winsocket_->NotifyOnWrite(&on_tcp_connect_locked_);
     } else {
       ContinueRegisterForOnWriteableLocked();
     }
@@ -554,6 +550,9 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
       return -1;
     }
     int out = 0;
+    // Register an async OnTcpConnect callback here since it is required by the
+    // WinSocket API.
+    winsocket_->NotifyOnWrite(&on_tcp_connect_locked_);
     if (ConnectEx(s, target, target_len, nullptr, 0, nullptr,
                   winsocket_->write_info()->overlapped()) == 0) {
       out = -1;
@@ -569,6 +568,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
         // WSA_IO_PENDING, so we need to convert.
         wsa_error_ctx->SetWSAError(WSAEWOULDBLOCK);
       } else {
+        winsocket_->UnregisterWriteCallback();
         // By returning a non-retryable error to c-ares at this point,
         // we're aborting the possibility of any future operations on this fd.
         connect_done_ = true;
@@ -576,7 +576,6 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
         return -1;
       }
     }
-    // RegisterForOnWriteable will register for an async notification
     return out;
   }
 

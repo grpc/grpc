@@ -218,8 +218,8 @@ void AresResolver::Orphan() {
       if (!fd_node->already_shutdown) {
         GRPC_ARES_RESOLVER_TRACE_LOG("resolver: %p shutdown fd: %s", this,
                                      fd_node->polled_fd->GetName());
-        fd_node->polled_fd->ShutdownLocked(
-            absl::CancelledError("AresResolver::Orphan"));
+        GPR_ASSERT(fd_node->polled_fd->ShutdownLocked(
+            absl::CancelledError("AresResolver::Orphan")));
         fd_node->already_shutdown = true;
       }
     }
