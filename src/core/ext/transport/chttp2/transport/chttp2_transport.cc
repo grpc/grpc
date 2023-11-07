@@ -812,39 +812,36 @@ static void close_transport_locked(grpc_chttp2_transport* t,
           t->settings_ack_watchdog,
           grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
     }
-    if (t->delayed_ping_timer_handle !=
-        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
-      if (t->event_engine->Cancel(t->delayed_ping_timer_handle)) {
-        t->delayed_ping_timer_handle =
-            grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
-      }
+    if (t->delayed_ping_timer_handle != grpc_event_engine::experimental::
+                                            EventEngine::TaskHandle::kInvalid &&
+        t->event_engine->Cancel(t->delayed_ping_timer_handle)) {
+      t->delayed_ping_timer_handle =
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
     }
     if (t->next_bdp_ping_timer_handle !=
-        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
-      if (t->event_engine->Cancel(t->next_bdp_ping_timer_handle)) {
-        t->next_bdp_ping_timer_handle =
-            grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
-      }
+            grpc_event_engine::experimental::EventEngine::TaskHandle::
+                kInvalid &&
+        t->event_engine->Cancel(t->next_bdp_ping_timer_handle)) {
+      t->next_bdp_ping_timer_handle =
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
     }
     switch (t->keepalive_state) {
       case GRPC_CHTTP2_KEEPALIVE_STATE_WAITING:
         if (t->keepalive_ping_timer_handle !=
-            grpc_event_engine::experimental::EventEngine::TaskHandle::
-                kInvalid) {
-          if (t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
-            t->keepalive_ping_timer_handle = grpc_event_engine::experimental::
-                EventEngine::TaskHandle::kInvalid;
-          }
+                grpc_event_engine::experimental::EventEngine::TaskHandle::
+                    kInvalid &&
+            t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
+          t->keepalive_ping_timer_handle = grpc_event_engine::experimental::
+              EventEngine::TaskHandle::kInvalid;
         }
         break;
       case GRPC_CHTTP2_KEEPALIVE_STATE_PINGING:
         if (t->keepalive_ping_timer_handle !=
-            grpc_event_engine::experimental::EventEngine::TaskHandle::
-                kInvalid) {
-          if (t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
-            t->keepalive_ping_timer_handle = grpc_event_engine::experimental::
-                EventEngine::TaskHandle::kInvalid;
-          }
+                grpc_event_engine::experimental::EventEngine::TaskHandle::
+                    kInvalid &&
+            t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
+          t->keepalive_ping_timer_handle = grpc_event_engine::experimental::
+              EventEngine::TaskHandle::kInvalid;
         }
         break;
       case GRPC_CHTTP2_KEEPALIVE_STATE_DYING:
@@ -3128,22 +3125,21 @@ static void finish_keepalive_ping_locked(
 
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
   if (t->keepalive_ping_timer_handle !=
-      grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
-    if (t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
-      // Cancel succeeds, resets the keepalive ping timer. Note that we don't
-      // need to Ref or Unref here since we still hold the Ref.
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-          GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-        gpr_log(GPR_INFO, "%s: Keepalive ping cancelled. Resetting timer.",
-                std::string(t->peer_string.as_string_view()).c_str());
-      }
-      t->keepalive_ping_timer_handle = t->event_engine->RunAfter(
-          t->keepalive_time, [t = t->Ref()]() mutable {
-            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-            grpc_core::ExecCtx exec_ctx;
-            init_keepalive_ping(std::move(t));
-          });
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid &&
+      t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
+    // Cancel succeeds, resets the keepalive ping timer. Note that we don't
+    // need to Ref or Unref here since we still hold the Ref.
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+      gpr_log(GPR_INFO, "%s: Keepalive ping cancelled. Resetting timer.",
+              std::string(t->peer_string.as_string_view()).c_str());
     }
+    t->keepalive_ping_timer_handle =
+        t->event_engine->RunAfter(t->keepalive_time, [t = t->Ref()]() mutable {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          init_keepalive_ping(std::move(t));
+        });
   }
 }
 
