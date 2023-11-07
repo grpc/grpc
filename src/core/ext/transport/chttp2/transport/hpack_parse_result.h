@@ -31,6 +31,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
