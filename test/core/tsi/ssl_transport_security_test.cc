@@ -53,6 +53,7 @@
 #define SSL_TSI_TEST_LEAF_SIGNED_BY_INTERMEDIATE_KEY_CERT_PAIRS_NUM 1
 #define SSL_TSI_TEST_CREDENTIALS_DIR "src/core/tsi/test_creds/"
 #define SSL_TSI_TEST_WRONG_SNI "test.google.cn"
+#define SSL_TSI_TEST_INVALID_SNI "1.2.3.4"
 
 // OpenSSL 1.1 uses AES256 for encryption session ticket by default so specify
 // different STEK size.
@@ -412,6 +413,8 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
     }
     if (ssl_fixture->server_name_indication == nullptr ||
         strcmp(ssl_fixture->server_name_indication, SSL_TSI_TEST_WRONG_SNI) ==
+            0 ||
+        strcmp(ssl_fixture->server_name_indication, SSL_TSI_TEST_INVALID_SNI) ==
             0) {
       // Expect server to use default server0.pem.
       check_server0_peer(&peer);
@@ -767,6 +770,19 @@ void ssl_tsi_test_do_handshake_with_wrong_server_name_indication() {
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->server_name_indication =
       const_cast<char*>(SSL_TSI_TEST_WRONG_SNI);
+  tsi_test_do_handshake(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
+void ssl_tsi_test_do_handshake_with_invalid_and_ignored_server_name_indication() {
+  gpr_log(GPR_INFO,
+          "ssl_tsi_test_do_handshake_with_wrong_server_name_indication");
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+  // SNI that's an IP address will be ignored.
+  ssl_fixture->server_name_indication =
+      const_cast<char*>(SSL_TSI_TEST_INVALID_SNI);
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
 }
@@ -1269,6 +1285,7 @@ TEST(SslTransportSecurityTest, MainTest) {
       ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
       ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
       ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
+      ssl_tsi_test_do_handshake_with_invalid_and_ignored_server_name_indication();
       ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
       ssl_tsi_test_do_handshake_with_bad_server_cert();
       ssl_tsi_test_do_handshake_with_bad_client_cert();
