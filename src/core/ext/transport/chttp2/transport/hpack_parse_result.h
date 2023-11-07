@@ -269,7 +269,7 @@ class HpackParseResult {
   explicit HpackParseResult(HpackParseStatus status) {
     // Dynamically allocate state if status is not ok.
     if (status != HpackParseStatus::kOk) {
-      state_ = std::make_shared<HpackParseResultState>(status);
+      state_ = MakeRefCounted<HpackParseResultState>(status);
     }
   }
 
@@ -317,7 +317,7 @@ class HpackParseResult {
     HpackParseStatus status_;
   };
 
-  struct HpackParseResultState {
+  struct HpackParseResultState : public RefCounted<HpackParseResultState> {
     explicit HpackParseResultState(HpackParseStatus incoming_status)
         : status(incoming_status) {}
     StatusWrapper status;
@@ -341,7 +341,7 @@ class HpackParseResult {
     mutable absl::optional<absl::Status> materialized_status;
   };
 
-  std::shared_ptr<HpackParseResultState> state_ = nullptr;
+  RefCountedPtr<HpackParseResultState> state_ = nullptr;
 };
 
 }  // namespace grpc_core
