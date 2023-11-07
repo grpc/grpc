@@ -197,14 +197,11 @@ grpc_cc_binary(
 
 grpc_cc_test(
     name = "client_fork_test",
-    size = "enormous",
     srcs = ["client_fork_test.cc"],
     external_deps = [
         "absl/strings",
         "gtest",
     ],
-    # TODO(hork): locate and fix the 1.5% flake in the poll implementation
-    flaky = True,
     tags = [
         "fork_test",
         "no_test_ios",

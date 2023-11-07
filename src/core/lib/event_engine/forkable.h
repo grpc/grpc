@@ -17,7 +17,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
-#include <utility>  // IWYU pragma: keep
 #include <vector>
 
 #include <grpc/support/log.h>
