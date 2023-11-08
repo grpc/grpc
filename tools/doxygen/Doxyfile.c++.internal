@@ -2058,6 +2058,7 @@ src/core/lib/channel/promise_based_filter.h \
 src/core/lib/channel/server_call_tracer_filter.cc \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
+src/core/lib/channel/tcp_tracer.h \
 src/core/lib/compression/compression.cc \
 src/core/lib/compression/compression_internal.cc \
 src/core/lib/compression/compression_internal.h \
@@ -2227,6 +2228,7 @@ src/core/lib/gprpp/cpp_impl_of.h \
 src/core/lib/gprpp/crash.cc \
 src/core/lib/gprpp/crash.h \
 src/core/lib/gprpp/debug_location.h \
+src/core/lib/gprpp/directory_reader.h \
 src/core/lib/gprpp/dual_ref_counted.h \
 src/core/lib/gprpp/env.h \
 src/core/lib/gprpp/examine_stack.cc \
@@ -2251,6 +2253,7 @@ src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/packed_table.h \
 src/core/lib/gprpp/per_cpu.cc \
 src/core/lib/gprpp/per_cpu.h \
+src/core/lib/gprpp/posix/directory_reader.cc \
 src/core/lib/gprpp/posix/env.cc \
 src/core/lib/gprpp/posix/stat.cc \
 src/core/lib/gprpp/posix/thd.cc \
@@ -2280,6 +2283,7 @@ src/core/lib/gprpp/type_list.h \
 src/core/lib/gprpp/unique_type_name.h \
 src/core/lib/gprpp/validation_errors.cc \
 src/core/lib/gprpp/validation_errors.h \
+src/core/lib/gprpp/windows/directory_reader.cc \
 src/core/lib/gprpp/windows/env.cc \
 src/core/lib/gprpp/windows/stat.cc \
 src/core/lib/gprpp/windows/thd.cc \
@@ -2840,6 +2844,7 @@ src/cpp/server/server_cc.cc \
 src/cpp/server/server_context.cc \
 src/cpp/server/server_posix.cc \
 src/cpp/server/thread_pool_interface.h \
+src/cpp/server/xds_server_builder.cc \
 src/cpp/server/xds_server_credentials.cc \
 src/cpp/thread_manager/thread_manager.cc \
 src/cpp/thread_manager/thread_manager.h \

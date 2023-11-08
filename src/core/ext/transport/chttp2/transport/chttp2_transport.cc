@@ -20,11 +20,11 @@
 
 #include <inttypes.h>
 #include <limits.h>
-#include <stdio.h>
 #include <string.h>
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
 #include <limits>
 #include <memory>
 #include <new>
@@ -75,6 +75,7 @@
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -228,14 +229,33 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
 #define GRPC_ARG_SETTINGS_TIMEOUT "grpc.http2.settings_timeout"
 
 namespace {
-grpc_core::CallTracerInterface* CallTracerIfEnabled(grpc_chttp2_stream* s) {
+grpc_core::CallTracerInterface* CallTracerIfSampled(grpc_chttp2_stream* s) {
   if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
     return nullptr;
   }
-  return static_cast<grpc_core::CallTracerInterface*>(
+  auto* call_tracer = static_cast<grpc_core::CallTracerInterface*>(
       static_cast<grpc_call_context_element*>(
           s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
           .value);
+  if (call_tracer == nullptr || !call_tracer->IsSampled()) {
+    return nullptr;
+  }
+  return call_tracer;
+}
+
+std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
+    grpc_chttp2_stream* s) {
+  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
+    return nullptr;
+  }
+  auto* call_attempt_tracer = static_cast<grpc_core::CallTracerInterface*>(
+      static_cast<grpc_call_context_element*>(
+          s->context)[GRPC_CONTEXT_CALL_TRACER]
+          .value);
+  if (call_attempt_tracer == nullptr || !call_attempt_tracer->IsSampled()) {
+    return nullptr;
+  }
+  return call_attempt_tracer->StartNewTcpTrace();
 }
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
@@ -316,6 +336,42 @@ void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
     g_write_timestamps_callback(entry.TraceContext(), ts, error);
   }
   delete context_list;
+}
+
+HttpAnnotation::HttpAnnotation(
+    Type type, Timestamp time,
+    absl::optional<chttp2::TransportFlowControl::Stats> transport_stats,
+    absl::optional<chttp2::StreamFlowControl::Stats> stream_stats)
+    : CallTracerAnnotationInterface::Annotation(
+          CallTracerAnnotationInterface::AnnotationType::kHttpTransport),
+      type_(type),
+      time_(time),
+      transport_stats_(transport_stats),
+      stream_stats_(stream_stats) {}
+
+std::string HttpAnnotation::ToString() const {
+  std::string s = "HttpAnnotation type: ";
+  switch (type_) {
+    case Type::kStart:
+      absl::StrAppend(&s, "Start");
+      break;
+    case Type::kHeadWritten:
+      absl::StrAppend(&s, "HeadWritten");
+      break;
+    case Type::kEnd:
+      absl::StrAppend(&s, "End");
+      break;
+    default:
+      absl::StrAppend(&s, "Unknown");
+  }
+  absl::StrAppend(&s, " time: ", time_.ToString());
+  if (transport_stats_.has_value()) {
+    absl::StrAppend(&s, " transport:[", transport_stats_->ToString(), "]");
+  }
+  if (stream_stats_.has_value()) {
+    absl::StrAppend(&s, " stream:[", stream_stats_->ToString(), "]");
+  }
+  return s;
 }
 
 }  // namespace grpc_core
@@ -585,6 +641,10 @@ static void read_channel_args(grpc_chttp2_transport* t,
       channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
           .value_or(1),
       0, 100);
+
+  t->max_concurrent_streams_overload_protection =
+      channel_args.GetBool(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION)
+          .value_or(grpc_core::IsOverloadProtectionEnabled());
 }
 
 static void init_keepalive_pings_if_enabled_locked(
@@ -1351,9 +1411,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         write_state_name(t->write_state), whence.file(), whence.line());
   }
 
-  auto* tracer = CallTracerIfEnabled(s);
-  if (tracer != nullptr) {
-    tracer->RecordAnnotation(
+  if (s->call_tracer) {
+    s->call_tracer->RecordAnnotation(
         absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure, desc,
                         grpc_core::StatusToString(error).c_str()));
   }
@@ -1415,6 +1474,8 @@ static void perform_stream_op_locked(void* stream_op,
 
   s->context = op->payload->context;
   s->traced = op->is_traced;
+  s->call_tracer = CallTracerIfSampled(s);
+  s->tcp_tracer = TcpTracerIfSampled(s);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO,
             "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
@@ -1430,9 +1491,8 @@ static void perform_stream_op_locked(void* stream_op,
     }
   }
 
-  auto* tracer = CallTracerIfEnabled(s);
-  if (tracer != nullptr) {
-    tracer->RecordAnnotation(absl::StrFormat(
+  if (s->call_tracer) {
+    s->call_tracer->RecordAnnotation(absl::StrFormat(
         "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s, op,
         grpc_transport_stream_op_batch_string(op, true).c_str(),
         op->on_complete));
@@ -1453,6 +1513,11 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_initial_metadata) {
+    if (s->call_tracer) {
+      s->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
+          grpc_core::HttpAnnotation::Type::kStart, grpc_core::Timestamp::Now(),
+          s->t->flow_control.stats(), s->flow_control.stats()));
+    }
     if (t->is_client && t->channelz_socket != nullptr) {
       t->channelz_socket->RecordStreamStartedFromLocal();
     }
@@ -1535,6 +1600,11 @@ static void perform_stream_op_locked(void* stream_op,
       frame_hdr[3] = static_cast<uint8_t>(len >> 8);
       frame_hdr[4] = static_cast<uint8_t>(len);
 
+      if (grpc_core::IsHttp2StatsFixEnabled()) {
+        s->stats.outgoing.framing_bytes += GRPC_HEADER_SIZE_IN_BYTES;
+        s->stats.outgoing.data_bytes +=
+            op_payload->send_message.send_message->Length();
+      }
       s->next_message_end_offset =
           s->flow_controlled_bytes_written +
           static_cast<int64_t>(s->flow_controlled_buffer.length) +

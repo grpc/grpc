@@ -278,6 +278,6 @@ def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
     with get_plugin() as plugin:
         if not (plugin and plugin.stats_enabled):
             return
-        rpc_latency = state.rpc_end_time - state.rpc_start_time
-        rpc_latency_ms = rpc_latency.total_seconds() * 1000
+        rpc_latency_s = state.rpc_end_time - state.rpc_start_time
+        rpc_latency_ms = rpc_latency_s * 1000
         plugin.record_rpc_latency(state.method, rpc_latency_ms, state.code)

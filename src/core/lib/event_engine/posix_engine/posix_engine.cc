@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
@@ -48,6 +49,7 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -76,6 +78,19 @@ using namespace std::chrono_literals;
 
 namespace grpc_event_engine {
 namespace experimental {
+
+namespace {
+
+grpc_core::NoDestruct<ObjectGroupForkHandler> g_timer_fork_manager;
+
+class TimerForkCallbackMethods {
+ public:
+  static void Prefork() { g_timer_fork_manager->Prefork(); }
+  static void PostforkParent() { g_timer_fork_manager->PostforkParent(); }
+  static void PostforkChild() { g_timer_fork_manager->PostforkChild(); }
+};
+
+}  // namespace
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -303,8 +318,9 @@ PosixEnginePollerManager::PosixEnginePollerManager(
       executor_(std::move(executor)),
       trigger_shutdown_called_(false) {}
 
-PosixEnginePollerManager::PosixEnginePollerManager(PosixEventPoller* poller)
-    : poller_(poller),
+PosixEnginePollerManager::PosixEnginePollerManager(
+    std::shared_ptr<PosixEventPoller> poller)
+    : poller_(std::move(poller)),
       poller_state_(PollerState::kExternal),
       executor_(nullptr),
       trigger_shutdown_called_(false) {
@@ -343,10 +359,14 @@ PosixEnginePollerManager::~PosixEnginePollerManager() {
   }
 }
 
-PosixEventEngine::PosixEventEngine(PosixEventPoller* poller)
+PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
-      timer_manager_(executor_) {
+      timer_manager_(std::make_shared<TimerManager>(executor_)) {
+  g_timer_fork_manager->RegisterForkable(
+      timer_manager_, TimerForkCallbackMethods::Prefork,
+      TimerForkCallbackMethods::PostforkParent,
+      TimerForkCallbackMethods::PostforkChild);
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(poller);
 #endif
@@ -355,7 +375,11 @@ PosixEventEngine::PosixEventEngine(PosixEventPoller* poller)
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
-      timer_manager_(executor_) {
+      timer_manager_(std::make_shared<TimerManager>(executor_)) {
+  g_timer_fork_manager->RegisterForkable(
+      timer_manager_, TimerForkCallbackMethods::Prefork,
+      TimerForkCallbackMethods::PostforkParent,
+      TimerForkCallbackMethods::PostforkChild);
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   poller_manager_ = std::make_shared<PosixEnginePollerManager>(executor_);
   // The threadpool must be instantiated after the poller otherwise, the
@@ -435,7 +459,7 @@ PosixEventEngine::~PosixEventEngine() {
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
   }
-  timer_manager_.Shutdown();
+  timer_manager_->Shutdown();
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   if (poller_manager_ != nullptr) {
     poller_manager_->TriggerShutdown();
@@ -448,7 +472,7 @@ bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {
   grpc_core::MutexLock lock(&mu_);
   if (!known_handles_.contains(handle)) return false;
   auto* cd = reinterpret_cast<ClosureData*>(handle.keys[0]);
-  bool r = timer_manager_.TimerCancel(&cd->timer);
+  bool r = timer_manager_->TimerCancel(&cd->timer);
   known_handles_.erase(handle);
   if (r) delete cd;
   return r;
@@ -478,7 +502,7 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
     Run(std::move(cb));
     return TaskHandle::kInvalid;
   }
-  auto when_ts = ToTimestamp(timer_manager_.Now(), when);
+  auto when_ts = ToTimestamp(timer_manager_->Now(), when);
   auto* cd = new ClosureData;
   cd->cb = std::move(cb);
   cd->engine = this;
@@ -489,7 +513,7 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   cd->handle = handle;
   GRPC_EVENT_ENGINE_TRACE("PosixEventEngine:%p scheduling callback:%s", this,
                           HandleToString(handle).c_str());
-  timer_manager_.TimerInit(&cd->timer, when_ts, cd);
+  timer_manager_->TimerInit(&cd->timer, when_ts, cd);
   return handle;
 }
 

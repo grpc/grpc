@@ -78,8 +78,6 @@ CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterAccept) {
 }
 
 CORE_END2END_TEST(CoreClientChannelTest, DeadlineAfterAcceptWithServiceConfig) {
-  // TODO(vigneshbabu): re-enable these before release
-  SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

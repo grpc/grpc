@@ -32,6 +32,8 @@
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -50,6 +52,10 @@ class FrameSerializer {
  public:
   explicit FrameSerializer(FrameHeader header) : header_(header) {
     output_.AppendIndexed(kZeroSlice->Copy());
+    // Initialize header flags, header_length, trailer_length to 0.
+    header_.flags.SetAll(false);
+    header_.header_length = 0;
+    header_.trailer_length = 0;
   }
   // If called, must be called before AddTrailers, Finish.
   SliceBuffer& AddHeaders() {
@@ -130,7 +136,9 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
     absl::BitGenRef bitsrc) {
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
-  Arena::PoolPtr<Metadata> metadata;
+  auto arena = GetContext<Arena>();
+  GPR_ASSERT(arena != nullptr);
+  Arena::PoolPtr<Metadata> metadata = arena->MakePooled<Metadata>(arena);
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),
