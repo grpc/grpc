@@ -71,11 +71,12 @@ void TimerManager::MainLoop() {
       check_result = timer_list_->TimerCheck(&next);
   GPR_ASSERT(check_result.has_value() &&
              "ERROR: More than one MainLoop is running.");
-  if (!check_result->empty()) {
+  bool timers_found = !check_result->empty();
+  if (timers_found) {
     RunSomeTimers(std::move(*check_result));
   }
-  thread_pool_->Run([this, next]() {
-    if (!WaitUntil(next)) {
+  thread_pool_->Run([this, next, timers_found]() {
+    if (!timers_found && !WaitUntil(next)) {
       main_loop_exit_signal_->Notify();
       return;
     }
