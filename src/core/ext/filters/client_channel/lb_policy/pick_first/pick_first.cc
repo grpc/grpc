@@ -671,6 +671,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Orphan() {
   watcher_ = nullptr;
   subchannel_.reset();
   pick_first_.reset();
+  Unref();
 }
 
 void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
