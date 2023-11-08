@@ -97,7 +97,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   std::set<XdsHealthStatus> override_host_statuses;
 
-  std::map<std::string, std::string> service_labels;
+  std::map<std::string, std::string> telemetry_labels;
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
