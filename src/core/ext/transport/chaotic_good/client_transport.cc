@@ -63,6 +63,7 @@ ClientTransport::ClientTransport(
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "client_transport")),
       arena_(MakeScopedArena(1024, &memory_allocator_)),
+      context_(arena_.get()),
       event_engine_(event_engine) {
   auto write_loop = Loop([this] {
     return TrySeq(
@@ -111,11 +112,10 @@ ClientTransport::ClientTransport(
   writer_ = MakeActivity(
       // Continuously write next outgoing frames to promise endpoints.
       std::move(write_loop), EventEngineWakeupScheduler(event_engine_),
-      [](absl::Status status) {
-        GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
-                   status.code() == absl::StatusCode::kInternal);
-        // TODO(ladynana): handle the promise endpoint write failures with
-        // outgoing_frames.close() once available.
+      [this](absl::Status status) {
+        if (!(status.ok() || status.code() == absl::StatusCode::kCancelled)) {
+          this->AbortWithError();
+        }
       },
       // Hold Arena in activity for GetContext<Arena> usage.
       arena_.get());
@@ -176,11 +176,10 @@ ClientTransport::ClientTransport(
   reader_ = MakeActivity(
       // Continuously read next incoming frames from promise endpoints.
       std::move(read_loop), EventEngineWakeupScheduler(event_engine_),
-      [](absl::Status status) {
-        GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
-                   status.code() == absl::StatusCode::kInternal);
-        // TODO(ladynana): handle the promise endpoint read failures with
-        // iterating stream_map_ and close all the pipes once available.
+      [this](absl::Status status) {
+        if (!(status.ok() || status.code() == absl::StatusCode::kCancelled)) {
+          this->AbortWithError();
+        }
       },
       // Hold Arena in activity for GetContext<Arena> usage.
       arena_.get());
