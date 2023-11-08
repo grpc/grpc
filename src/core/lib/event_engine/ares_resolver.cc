@@ -62,10 +62,12 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
