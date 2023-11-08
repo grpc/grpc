@@ -670,6 +670,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Orphan() {
   subchannel_->CancelConnectivityStateWatch(watcher_);
   watcher_ = nullptr;
   subchannel_.reset();
+  pick_first_.reset();
 }
 
 void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
