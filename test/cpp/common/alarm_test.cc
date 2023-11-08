@@ -16,7 +16,6 @@
 //
 //
 
-#include <chrono>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -422,7 +421,6 @@ TEST(AlarmTest, CallbackSetDestruction) {
     Alarm alarm;
     alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10),
               [c](bool ok) {
-                gpr_log(GPR_DEBUG, "DO NOT SUBMIT: calling alarm cb");
                 EXPECT_FALSE(ok);
                 std::lock_guard<std::mutex> l(c->mu);
                 c->completed = true;
@@ -430,12 +428,10 @@ TEST(AlarmTest, CallbackSetDestruction) {
               });
   }
 
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: alarm destroyed. waiting 1s");
   std::unique_lock<std::mutex> l(c->mu);
   EXPECT_TRUE(c->cv.wait_until(
-      l, std::chrono::system_clock::now() + std::chrono::milliseconds(500),
+      l, std::chrono::system_clock::now() + std::chrono::seconds(1),
       [c] { return c->completed; }));
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: expectation complete");
 }
 
 TEST(AlarmTest, UnsetDestruction) {
