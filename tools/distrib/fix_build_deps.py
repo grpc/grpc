@@ -406,6 +406,7 @@ for dirname in [
     "test/core/transport/chaotic_good",
     "fuzztest",
     "fuzztest/core/channel",
+    "fuzztest/core/transport/chttp2",
 ]:
     parsing_path = dirname
     exec(
