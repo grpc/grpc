@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <atomic>
 #include <functional>
 #include <list>
@@ -34,6 +35,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
+#include "absl/random/random.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -42,6 +44,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/backoff/random_early_detection.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -65,7 +68,10 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
+
+#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
+#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
+  "grpc.server.max_pending_requests_hard_limit"
 
 namespace grpc_core {
 
@@ -161,7 +167,7 @@ class Server : public InternallyRefCounted<Server>,
   // the server.  Called from the listener when a new connection is accepted.
   // Takes ownership of a ref on resource_user from the caller.
   grpc_error_handle SetupTransport(
-      grpc_transport* transport, grpc_pollset* accepting_pollset,
+      Transport* transport, grpc_pollset* accepting_pollset,
       const ChannelArgs& args,
       const RefCountedPtr<channelz::SocketNode>& socket_node);
 
@@ -226,7 +232,8 @@ class Server : public InternallyRefCounted<Server>,
   };
 
   class RequestMatcherInterface;
-  class RealRequestMatcher;
+  class RealRequestMatcherFilterStack;
+  class RealRequestMatcherPromises;
   class AllocatingRequestMatcherBase;
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
@@ -238,8 +245,7 @@ class Server : public InternallyRefCounted<Server>,
 
     void InitTransport(RefCountedPtr<Server> server,
                        RefCountedPtr<Channel> channel, size_t cq_idx,
-                       grpc_transport* transport,
-                       intptr_t channelz_socket_uuid);
+                       Transport* transport, intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
     Channel* channel() const { return channel_.get(); }
@@ -260,7 +266,7 @@ class Server : public InternallyRefCounted<Server>,
    private:
     class ConnectivityWatcher;
 
-    static void AcceptStream(void* arg, grpc_transport* /*transport*/,
+    static void AcceptStream(void* arg, Transport* /*transport*/,
                              const void* transport_server_data);
     static void SetRegisteredMethodOnMetadata(void* arg,
                                               ServerMetadata* metadata);
@@ -506,6 +512,17 @@ class Server : public InternallyRefCounted<Server>,
   std::atomic<int> shutdown_refs_{1};
   bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
   std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
+
+  RandomEarlyDetection pending_backlog_protector_ ABSL_GUARDED_BY(mu_call_){
+      static_cast<uint64_t>(
+          std::max(0, channel_args_.GetInt(GRPC_ARG_SERVER_MAX_PENDING_REQUESTS)
+                          .value_or(1000))),
+      static_cast<uint64_t>(std::max(
+          0,
+          channel_args_.GetInt(GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT)
+              .value_or(3000)))};
+  Duration max_time_in_pending_queue_{Duration::Seconds(30)};
+  absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> channels_;
 

@@ -98,7 +98,7 @@ class ChildPolicyHandler::Helper
             : parent()->child_policy_.get();
     if (child_ != latest_child_policy) return;
     if (GRPC_TRACE_FLAG_ENABLED(*(parent()->tracer_))) {
-      gpr_log(GPR_INFO, "[child_policy_handler %p] started name re-resolving",
+      gpr_log(GPR_INFO, "[child_policy_handler %p] requesting re-resolution",
               parent());
     }
     parent()->channel_control_helper()->RequestReresolution();

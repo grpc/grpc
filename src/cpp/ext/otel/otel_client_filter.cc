@@ -48,6 +48,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -138,7 +139,8 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
   if (OTelPluginState().labels_injector != nullptr) {
-    OTelPluginState().labels_injector->AddLabels(send_initial_metadata);
+    OTelPluginState().labels_injector->AddLabels(send_initial_metadata,
+                                                 nullptr);
   }
 }
 
@@ -222,6 +224,12 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
     const Annotation& /*annotation*/) {
   // Not implemented
+}
+
+std::shared_ptr<grpc_core::TcpTracerInterface>
+OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::StartNewTcpTrace() {
+  // No TCP trace.
+  return nullptr;
 }
 
 //

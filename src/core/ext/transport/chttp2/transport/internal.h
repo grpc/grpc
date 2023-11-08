@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <atomic>
 #include <memory>
 #include <utility>
 
@@ -56,8 +57,10 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -68,6 +71,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
@@ -76,8 +80,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 // Flag that this closure barrier may be covering a write in a pollset, and so
 //   we should not complete this closure until we can prove that the write got
@@ -234,26 +236,40 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
+struct grpc_chttp2_transport final
+    : public grpc_core::Transport,
+      public grpc_core::FilterStackTransport,
+      public grpc_core::RefCounted<grpc_chttp2_transport,
+                                   grpc_core::NonPolymorphicRefCount>,
+      public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
-  ~grpc_chttp2_transport();
+  ~grpc_chttp2_transport() override;
 
-  // Make this be able to be contained in RefCountedPtr<>
-  // Can't yet make this derive from RefCounted because we need to keep
-  // `grpc_transport base` first.
-  // TODO(ctiller): Make a transport interface.
-  void IncrementRefCount() { refs.Ref(); }
-  void Unref() {
-    if (refs.Unref()) delete this;
-  }
-  grpc_core::RefCountedPtr<grpc_chttp2_transport> Ref() {
-    IncrementRefCount();
-    return grpc_core::RefCountedPtr<grpc_chttp2_transport>(this);
-  }
+  void Orphan() override;
 
-  grpc_transport base;  // must be first
-  grpc_core::RefCount refs;
+  size_t SizeOfStream() const override;
+  bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override;
+  void PerformStreamOp(grpc_stream* gs,
+                       grpc_transport_stream_op_batch* op) override;
+  void DestroyStream(grpc_stream* gs,
+                     grpc_closure* then_schedule_closure) override;
+
+  grpc_core::FilterStackTransport* filter_stack_transport() override {
+    return this;
+  }
+  grpc_core::ClientTransport* client_transport() override { return nullptr; }
+  grpc_core::ServerTransport* server_transport() override { return nullptr; }
+
+  absl::string_view GetTransportName() const override;
+  void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
+                  const void* server_data, grpc_core::Arena* arena) override;
+  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override;
+  void SetPollsetSet(grpc_stream* stream,
+                     grpc_pollset_set* pollset_set) override;
+  void PerformOp(grpc_transport_op* op) override;
+  grpc_endpoint* GetEndpoint() override;
+
   grpc_endpoint* ep;
   grpc_core::Slice peer_string;
 
@@ -317,7 +333,7 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_stream** accepting_stream = nullptr;
 
   // accept stream callback
-  void (*accept_stream_cb)(void* user_data, grpc_transport* transport,
+  void (*accept_stream_cb)(void* user_data, grpc_core::Transport* transport,
                            const void* server_data);
   // registered_method_matcher_cb is called before invoking the recv initial
   // metadata callback.
@@ -462,6 +478,8 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// grace period to wait for data after sending a ping before keepalives
   /// timeout
   grpc_core::Duration keepalive_timeout;
+  /// number of stream objects currently allocated by this transport
+  std::atomic<size_t> streams_allocated{0};
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.
@@ -534,6 +552,9 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   bool ack_pings = true;
   /// True if the keepalive system wants to see some data incoming
   bool keepalive_incoming_data_wanted = false;
+  /// True if we count stream allocation (instead of HTTP2 concurrency) for
+  /// MAX_CONCURRENT_STREAMS
+  bool max_concurrent_streams_overload_protection = false;
 
   // What percentage of rst_stream frames on the server should cause a ping
   // frame to be generated.
@@ -646,6 +667,12 @@ struct grpc_chttp2_stream {
   /// Byte counter for number of bytes written
   size_t byte_counter = 0;
 
+  /// Only set when enabled.
+  grpc_core::CallTracerInterface* call_tracer = nullptr;
+
+  /// Only set when enabled.
+  std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;
+
   // time this stream was created
   gpr_timespec creation_time = gpr_now(GPR_CLOCK_MONOTONIC);
 
@@ -665,6 +692,12 @@ struct grpc_chttp2_stream {
 };
 
 #define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
+
+// EXPERIMENTAL: provide protection against overloading a server with too many
+// requests: wait for streams to be deallocated before they stop counting
+// against MAX_CONCURRENT_STREAMS
+#define GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION \
+  "grpc.http.overload_protection"
 
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to

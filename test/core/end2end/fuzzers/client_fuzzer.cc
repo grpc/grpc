@@ -33,7 +33,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
@@ -64,7 +64,7 @@ class ClientFuzzer final : public BasicFuzzer {
             .channel_args_preconditioning()
             .PreconditionChannelArgs(nullptr)
             .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
-    grpc_transport* transport =
+    Transport* transport =
         grpc_create_chttp2_transport(args, mock_endpoint_, true);
     channel_ = Channel::Create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
                                transport)
