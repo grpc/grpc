@@ -52,7 +52,15 @@ class GrpcPolledFd {
   // Called once and only once. Must cause cancellation of any pending
   // read/write callbacks. Return true when the Shutdown is confirmed, false
   // otherwise.
-  virtual bool ShutdownLocked(absl::Status error) = 0;
+  //
+  // TODO(yijiem): On Posix, ShutdownLocked will always succeed. On Windows,
+  // ShutdownLocked only succeeds when error is Cancelled. We could remove these
+  // requirements if we changed the FdNode lifetime model so that:
+  //   1. FdNodes and their underlying socket handles remain alive for
+  //      the lifetime of the resolver.
+  //   2. Orphaning the resolver triggers shutdown and subsequent cleanup for
+  //      all FdNodes and socket handles.
+  GRPC_MUST_USE_RESULT virtual bool ShutdownLocked(absl::Status error) = 0;
   // Get the underlying ares_socket_t that this was created from
   virtual ares_socket_t GetWrappedAresSocketLocked() = 0;
   // A unique name, for logging

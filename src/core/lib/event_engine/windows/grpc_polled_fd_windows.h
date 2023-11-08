@@ -46,7 +46,7 @@ class GrpcPolledFdWindows;
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
   explicit GrpcPolledFdFactoryWindows(IOCP* iocp);
-  ~GrpcPolledFdFactoryWindows() override = default;
+  ~GrpcPolledFdFactoryWindows() override;
 
   void Initialize(grpc_core::Mutex* mutex, EventEngine* event_engine) override;
   std::unique_ptr<GrpcPolledFd> NewGrpcPolledFdLocked(

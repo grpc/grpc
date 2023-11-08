@@ -218,8 +218,8 @@ void AresResolver::Orphan() {
       if (!fd_node->already_shutdown) {
         GRPC_ARES_RESOLVER_TRACE_LOG("resolver: %p shutdown fd: %s", this,
                                      fd_node->polled_fd->GetName());
-        fd_node->polled_fd->ShutdownLocked(
-            absl::CancelledError("AresResolver::Orphan"));
+        GPR_ASSERT(fd_node->polled_fd->ShutdownLocked(
+            absl::CancelledError("AresResolver::Orphan")));
         fd_node->already_shutdown = true;
       }
     }
@@ -417,6 +417,10 @@ void AresResolver::CheckSocketsLocked() {
   // Any remaining fds in fd_node_list_ were not returned by ares_getsock()
   // and are therefore no longer in use, so they can be shut down and removed
   // from the list.
+  // TODO(yijiem): Since we are keeping the underlying socket opened for both
+  // Posix and Windows, it might be reasonable to also keep the FdNodes alive
+  // till the end. But we need to change the state management of FdNodes in this
+  // file. This may simplify the code a bit.
   while (!fd_node_list_.empty()) {
     FdNode* fd_node = fd_node_list_.front().get();
     if (!fd_node->already_shutdown) {
