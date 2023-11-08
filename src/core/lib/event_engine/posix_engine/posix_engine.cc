@@ -361,8 +361,9 @@ PosixEnginePollerManager::~PosixEnginePollerManager() {
 
 PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
-      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
+  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: num_cores=%d", gpr_cpu_num_cores());
   g_timer_fork_manager->RegisterForkable(
       timer_manager_, TimerForkCallbackMethods::Prefork,
       TimerForkCallbackMethods::PostforkParent,
@@ -374,8 +375,9 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
 
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
-      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
+  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: num_cores=%d", gpr_cpu_num_cores());
   g_timer_fork_manager->RegisterForkable(
       timer_manager_, TimerForkCallbackMethods::Prefork,
       TimerForkCallbackMethods::PostforkParent,

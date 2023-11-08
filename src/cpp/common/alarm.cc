@@ -91,9 +91,12 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     grpc_core::ExecCtx exec_ctx;
     if (callback_armed_.load() &&
         event_engine_->Cancel(callback_timer_handle_)) {
+      gpr_log(GPR_DEBUG,
+              "DO NOT SUBMIT: canceled callback timer. calling cb async");
       event_engine_->Run([this] { OnCallbackAlarm(/*is_ok=*/false); });
     }
     if (cq_armed_.load() && event_engine_->Cancel(cq_timer_handle_)) {
+      gpr_log(GPR_DEBUG, "DO NOT SUBMIT: cancelled cq timer. calling cb async");
       event_engine_->Run(
           [this] { OnCQAlarm(absl::CancelledError("cancelled")); });
     }
@@ -123,6 +126,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     callback_armed_.store(false);
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
+    gpr_log(GPR_DEBUG, "DO NOT SUBMIT: OnCallbackAlarm");
     callback_(is_ok);
     Unref();
   }
