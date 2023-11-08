@@ -113,9 +113,7 @@ ClientTransport::ClientTransport(
       // Continuously write next outgoing frames to promise endpoints.
       std::move(write_loop), EventEngineWakeupScheduler(event_engine_),
       [this](absl::Status status) {
-        GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
-                   status.code() == absl::StatusCode::kInternal);
-        if (status.code() == absl::StatusCode::kInternal) {
+        if (!(status.ok() || status.code() == absl::StatusCode::kCancelled)) {
           this->AbortWithError();
         }
       },
@@ -179,9 +177,7 @@ ClientTransport::ClientTransport(
       // Continuously read next incoming frames from promise endpoints.
       std::move(read_loop), EventEngineWakeupScheduler(event_engine_),
       [this](absl::Status status) {
-        GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
-                   status.code() == absl::StatusCode::kInternal);
-        if (status.code() == absl::StatusCode::kInternal) {
+        if (!(status.ok() || status.code() == absl::StatusCode::kCancelled)) {
           this->AbortWithError();
         }
       },

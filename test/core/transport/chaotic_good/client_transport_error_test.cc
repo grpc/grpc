@@ -330,6 +330,13 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
               // Send messages to first stream's
               // call_args.client_to_server_messages pipe.
               SendClientToServerMessages(pipe_client_to_server_messages_, 1)),
+          // Once complete, verify successful sending and the received value.
+          [](const std::tuple<ServerMetadataHandle, absl::Status>& ret) {
+            EXPECT_EQ(std::get<0>(ret)->get(GrpcStatusMetadata()).value(),
+                      GRPC_STATUS_UNAVAILABLE);
+            EXPECT_TRUE(std::get<1>(ret).ok());
+            return absl::OkStatus();
+          },
           Join(
               // Add second stream with call_args into client transport.
               // Expect return trailers "grpc-status:unavailable".
@@ -391,6 +398,13 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
               // call_args.client_to_server_messages pipe, which will be
               // eventually sent to control/data endpoints.
               SendClientToServerMessages(pipe_client_to_server_messages_, 1)),
+          // Once complete, verify successful sending and the received value.
+          [](const std::tuple<ServerMetadataHandle, absl::Status>& ret) {
+            EXPECT_EQ(std::get<0>(ret)->get(GrpcStatusMetadata()).value(),
+                      GRPC_STATUS_UNAVAILABLE);
+            EXPECT_TRUE(std::get<1>(ret).ok());
+            return absl::OkStatus();
+          },
           Join(
               // Add second stream with call_args into client transport.
               AddStream(std::move(second_stream_args)),
