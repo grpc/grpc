@@ -26,9 +26,7 @@
 #include "src/core/ext/filters/client_channel/client_channel_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 namespace grpc_core {
@@ -42,15 +40,16 @@ bool IsEverythingBelowClientChannelPromiseSafe(const ChannelArgs& args) {
 void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
   internal::ClientChannelServiceConfigParser::Register(builder);
   internal::RetryServiceConfigParser::Register(builder);
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        builder->AppendFilter(
-            IsEverythingBelowClientChannelPromiseSafe(builder->channel_args())
-                ? &ClientChannel::kFilterVtableWithPromises
-                : &ClientChannel::kFilterVtableWithoutPromises);
-        return true;
-      });
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_CHANNEL,
+                       &ClientChannel::kFilterVtableWithPromises)
+      .If(IsEverythingBelowClientChannelPromiseSafe)
+      .Terminal();
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_CHANNEL,
+                       &ClientChannel::kFilterVtableWithoutPromises)
+      .IfNot(IsEverythingBelowClientChannelPromiseSafe)
+      .Terminal();
 }
 
 }  // namespace grpc_core

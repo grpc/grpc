@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -84,7 +83,6 @@
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
@@ -428,7 +426,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout() {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->disconnect_with_error = GRPC_ERROR_CREATE(
         "Did not receive HTTP/2 settings before handshake timeout");
-    grpc_transport_perform_op(&transport->base, op);
+    transport->PerformOp(op);
   }
 }
 
@@ -474,7 +472,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
       // handshaker may have handed off the connection to some external
       // code, so we can just clean up here without creating a transport.
       if (args->endpoint != nullptr) {
-        grpc_transport* transport =
+        Transport* transport =
             grpc_create_chttp2_transport(args->args, args->endpoint, false);
         grpc_error_handle channel_init_err =
             self->connection_->listener_->server_->SetupTransport(
@@ -485,7 +483,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           // handshake deadline.
           // Note: The reinterpret_cast<>s here are safe, because
           // grpc_chttp2_transport is a C-style extension of
-          // grpc_transport, so this is morally equivalent of a
+          // Transport, so this is morally equivalent of a
           // static_cast<> to a derived class.
           // TODO(roth): Change to static_cast<> when we C++-ify the
           // transport API.
@@ -524,7 +522,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           // Failed to create channel from transport. Clean up.
           gpr_log(GPR_ERROR, "Failed to create channel: %s",
                   StatusToString(channel_init_err).c_str());
-          grpc_transport_destroy(transport);
+          transport->Orphan();
           grpc_slice_buffer_destroy(args->read_buffer);
           gpr_free(args->read_buffer);
           cleanup_connection = true;
@@ -609,7 +607,7 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->goaway_error =
         GRPC_ERROR_CREATE("Server is stopping to serve requests.");
-    grpc_transport_perform_op(&transport->base, op);
+    transport->PerformOp(op);
   }
 }
 
@@ -669,7 +667,7 @@ void Chttp2ServerListener::ActiveConnection::OnDrainGraceTimeExpiry() {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->disconnect_with_error = GRPC_ERROR_CREATE(
         "Drain grace time expired. Closing connection immediately.");
-    grpc_transport_perform_op(&transport->base, op);
+    transport->PerformOp(op);
   }
 }
 
@@ -834,8 +832,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       return;
     }
   }
-  auto memory_owner = self->memory_quota_->CreateMemoryOwner(
-      absl::StrCat(grpc_endpoint_get_peer(tcp), ":server_channel"));
+  auto memory_owner = self->memory_quota_->CreateMemoryOwner();
   EventEngine* const event_engine = self->args_.GetObject<EventEngine>();
   auto connection = memory_owner.MakeOrphanable<ActiveConnection>(
       accepting_pollset, acceptor, event_engine, args, std::move(memory_owner));
@@ -1076,7 +1073,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
       grpc_fd_create(fd, name.c_str(), true),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(server_args),
       name);
-  grpc_transport* transport = grpc_create_chttp2_transport(
+  grpc_core::Transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false  // is_client
   );
   grpc_error_handle error =
@@ -1089,7 +1086,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   } else {
     gpr_log(GPR_ERROR, "Failed to create channel: %s",
             grpc_core::StatusToString(error).c_str());
-    grpc_transport_destroy(transport);
+    transport->Orphan();
   }
 }
 

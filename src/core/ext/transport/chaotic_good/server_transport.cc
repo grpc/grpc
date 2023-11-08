@@ -168,7 +168,7 @@ ServerTransport::ServerTransport(
           auto message = arena_->MakePooled<Message>(
               std::move(data_endpoint_read_buffer_), 0);
           // Construct call args for stream.
-          auto call_data = ConstructCallData(frame.stream_id);
+          auto call_data = ConstructCallData(frame.frame_header.stream_id);
           auto call_args =
               CallArgs{std::move(frame.headers),
                        ClientInitialMetadataOutstandingToken::Empty(),

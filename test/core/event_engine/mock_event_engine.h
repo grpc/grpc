@@ -15,7 +15,6 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_MOCK_EVENT_ENGINE_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_MOCK_EVENT_ENGINE_H
 
-#include <chrono>
 #include <memory>
 
 #include "absl/functional/any_invocable.h"

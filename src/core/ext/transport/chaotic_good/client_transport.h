@@ -18,8 +18,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
+#include <stdio.h>
 
-#include <cstddef>
 #include <initializer_list>  // IWYU pragma: keep
 #include <map>
 #include <memory>
@@ -34,6 +34,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -41,7 +42,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
@@ -54,6 +54,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -74,30 +75,11 @@ class ClientTransport {
       reader_.reset();
     }
   }
-  void AbortWithError() {
-    // Mark transport as unavailable when the endpoint write/read failed.
-    // Close all the available pipes.
-    if (!outgoing_frames_.IsClosed()) {
-      outgoing_frames_.MarkClosed();
-    }
-    std::map<uint32_t, std::shared_ptr<InterActivityPipe<
-                           ServerFrame, server_frame_queue_size_>::Sender>>
-        stream_map;
-    {
-      MutexLock lock(&mu_);
-      stream_map = stream_map_;
-    }
-    for (const auto& pair : stream_map) {
-      if (!pair.second->IsClose()) {
-        pair.second->MarkClose();
-      }
-    }
-  }
   auto AddStream(CallArgs call_args) {
     // At this point, the connection is set up.
     // Start sending data frames.
-    uint64_t stream_id;
-    InterActivityPipe<ServerFrame, server_frame_queue_size_> server_frames;
+    uint32_t stream_id;
+    InterActivityPipe<ServerFrame, server_frame_queue_size_> pipe_server_frames;
     {
       MutexLock lock(&mu_);
       stream_id = next_stream_id_++;
@@ -107,88 +89,86 @@ class ClientTransport {
                         ServerFrame, server_frame_queue_size_>::Sender>>(
               stream_id, std::make_shared<InterActivityPipe<
                              ServerFrame, server_frame_queue_size_>::Sender>(
-                             std::move(server_frames.sender))));
+                             std::move(pipe_server_frames.sender))));
     }
     return TrySeq(
         TryJoin(
             // Continuously send client frame with client to server messages.
-            ForEach(std::move(*call_args.client_to_server_messages),
-                    [stream_id, initial_frame = true,
-                     client_initial_metadata =
-                         std::move(call_args.client_initial_metadata),
-                     outgoing_frames = outgoing_frames_.MakeSender()](
-                        MessageHandle result) mutable {
-                      ClientFragmentFrame frame;
-                      frame.stream_id = stream_id;
-                      frame.message = std::move(result);
-                      if (initial_frame) {
-                        // Send initial frame with client intial metadata.
-                        frame.headers = std::move(client_initial_metadata);
-                        initial_frame = false;
-                      }
-                      return TrySeq(
-                          outgoing_frames.Send(ClientFrame(std::move(frame))),
-                          [](bool success) -> absl::Status {
-                            if (!success) {
-                              return absl::UnavailableError(
-                                  "Transport closed due to endpoint write/read "
-                                  "failed.");
-                            }
-                            return absl::OkStatus();
-                          });
-                    }),
+            ForEach(
+                std::move(*call_args.client_to_server_messages),
+                [stream_id, initial_frame = true,
+                 client_initial_metadata =
+                     std::move(call_args.client_initial_metadata),
+                 outgoing_frames = outgoing_frames_.MakeSender(),
+                 this](MessageHandle result) mutable {
+                  ClientFragmentFrame frame;
+                  // Construct frame header (flags, header_length and
+                  // trailer_length will be added in serialization).
+                  uint32_t message_length = result->payload()->Length();
+                  uint32_t message_padding = message_length % aligned_bytes;
+                  frame.frame_header = FrameHeader{
+                      FrameType::kFragment, {}, stream_id, 0, message_length,
+                      message_padding,      0};
+                  frame.message = std::move(result);
+                  if (initial_frame) {
+                    // Send initial frame with client intial metadata.
+                    frame.headers = std::move(client_initial_metadata);
+                    initial_frame = false;
+                  }
+                  return TrySeq(
+                      outgoing_frames.Send(ClientFrame(std::move(frame))),
+                      [](bool success) -> absl::Status {
+                        if (!success) {
+                          return absl::InternalError(
+                              "Send frame to outgoing_frames failed.");
+                        }
+                        return absl::OkStatus();
+                      });
+                }),
             // Continuously receive server frames from endpoints and save
             // results to call_args.
             Loop([server_initial_metadata = call_args.server_initial_metadata,
                   server_to_client_messages =
                       call_args.server_to_client_messages,
-                  receiver = std::move(server_frames.receiver)]() mutable {
+                  receiver = std::move(pipe_server_frames.receiver)]() mutable {
               return TrySeq(
                   // Receive incoming server frame.
                   receiver.Next(),
                   // Save incomming frame results to call_args.
                   [server_initial_metadata, server_to_client_messages](
                       absl::optional<ServerFrame> server_frame) mutable {
-                    bool transport_closed = false;
-                    ServerFragmentFrame frame;
-                    if (!server_frame.has_value()) {
-                      // Incoming server frame pipe is closed, which only
-                      // happens when transport is aborted.
-                      transport_closed = true;
-                    } else {
-                      frame = std::move(
-                          absl::get<ServerFragmentFrame>(*server_frame));
-                    };
+                    GPR_ASSERT(server_frame.has_value());
+                    auto frame = std::move(
+                        absl::get<ServerFragmentFrame>(*server_frame));
+                    bool has_headers = (frame.headers != nullptr);
+                    bool has_message = (frame.message != nullptr);
+                    bool has_trailers = (frame.trailers != nullptr);
                     return TrySeq(
-                        If((!transport_closed) && (frame.headers != nullptr),
-                           [server_initial_metadata,
-                            headers = std::move(frame.headers)]() mutable {
-                             return server_initial_metadata->Push(
-                                 std::move(headers));
-                           },
-                           [] { return false; }),
-                        If((!transport_closed) && (frame.message != nullptr),
-                           [server_to_client_messages,
-                            message = std::move(frame.message)]() mutable {
-                             return server_to_client_messages->Push(
-                                 std::move(message));
-                           },
-                           [] { return false; }),
-                        If((!transport_closed) && (frame.trailers != nullptr),
-                           [trailers = std::move(frame.trailers)]() mutable
-                           -> LoopCtl<ServerMetadataHandle> {
-                             return std::move(trailers);
-                           },
-                           [transport_closed]()
-                               -> LoopCtl<ServerMetadataHandle> {
-                             if (transport_closed) {
-                               return ServerMetadataFromStatus(
-                                   absl::UnavailableError(
-                                       "Transport closed due to endpoint "
-                                       "write/read failed."));
-                             }
-                             return Continue();
-                           }));
+                        If(
+                            has_headers,
+                            [server_initial_metadata,
+                             headers = std::move(frame.headers)]() mutable {
+                              return server_initial_metadata->Push(
+                                  std::move(headers));
+                            },
+                            [] { return false; }),
+                        If(
+                            has_message,
+                            [server_to_client_messages,
+                             message = std::move(frame.message)]() mutable {
+                              return server_to_client_messages->Push(
+                                  std::move(message));
+                            },
+                            [] { return false; }),
+                        If(
+                            has_trailers,
+                            [trailers = std::move(frame.trailers)]() mutable
+                            -> LoopCtl<ServerMetadataHandle> {
+                              return std::move(trailers);
+                            },
+                            []() -> LoopCtl<ServerMetadataHandle> {
+                              return Continue();
+                            }));
                   });
             })),
         [](std::tuple<Empty, ServerMetadataHandle> ret) {
@@ -203,6 +183,8 @@ class ClientTransport {
   // Queue size of each stream pipe is set to 2, so that for each stream read it
   // will queue at most 2 frames.
   static const size_t server_frame_queue_size_ = 2;
+  // Assigned aligned bytes from setting frame.
+  size_t aligned_bytes = 64;
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
@@ -222,7 +204,6 @@ class ClientTransport {
   std::shared_ptr<FrameHeader> frame_header_;
   MemoryAllocator memory_allocator_;
   ScopedArenaPtr arena_;
-  promise_detail::Context<Arena> context_;
   // Use to synchronize writer_ and reader_ activity with outside activities;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };

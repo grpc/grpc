@@ -63,7 +63,6 @@ ClientTransport::ClientTransport(
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "client_transport")),
       arena_(MakeScopedArena(1024, &memory_allocator_)),
-      context_(arena_.get()),
       event_engine_(event_engine) {
   auto write_loop = Loop([this] {
     return TrySeq(
@@ -77,18 +76,10 @@ ClientTransport::ClientTransport(
                 control_endpoint_write_buffer_.Append(
                     frame->Serialize(hpack_compressor_.get()));
                 if (frame->message != nullptr) {
-                  auto frame_header =
-                      FrameHeader::Parse(
-                          reinterpret_cast<const uint8_t*>(GRPC_SLICE_START_PTR(
-                              control_endpoint_write_buffer_.c_slice_buffer()
-                                  ->slices[0])))
-                          .value();
-                  // TODO(ladynana): add message_padding calculation by
-                  // accumulating bytes sent.
-                  std::string message_padding(frame_header.message_padding,
-                                              '0');
+                  std::string message_padding(
+                      frame->frame_header.message_padding, '0');
                   Slice slice(grpc_slice_from_cpp_string(message_padding));
-                  // Append message payload to data_endpoint_buffer.
+                  // Append message padding to data_endpoint_buffer.
                   data_endpoint_write_buffer_.Append(std::move(slice));
                   // Append message payload to data_endpoint_buffer.
                   frame->message->payload()->MoveFirstNBytesIntoSliceBuffer(
@@ -120,12 +111,11 @@ ClientTransport::ClientTransport(
   writer_ = MakeActivity(
       // Continuously write next outgoing frames to promise endpoints.
       std::move(write_loop), EventEngineWakeupScheduler(event_engine_),
-      [this](absl::Status status) {
+      [](absl::Status status) {
         GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
                    status.code() == absl::StatusCode::kInternal);
-        if (status.code() == absl::StatusCode::kInternal) {
-          this->AbortWithError();
-        }
+        // TODO(ladynana): handle the promise endpoint write failures with
+        // outgoing_frames.close() once available.
       },
       // Hold Arena in activity for GetContext<Arena> usage.
       arena_.get());
@@ -167,14 +157,11 @@ ClientTransport::ClientTransport(
           // Move message into frame.
           frame.message = arena_->MakePooled<Message>(
               std::move(data_endpoint_read_buffer_), 0);
-          std::shared_ptr<
-              InterActivityPipe<ServerFrame, server_frame_queue_size_>::Sender>
-              sender;
+          auto stream_id = frame.frame_header.stream_id;
           {
             MutexLock lock(&mu_);
-            sender = stream_map_[frame.stream_id];
+            return stream_map_[stream_id]->Push(ServerFrame(std::move(frame)));
           }
-          return sender->Push(ServerFrame(std::move(frame)));
         },
         // Check if send frame to corresponding stream successfully.
         [](bool ret) -> LoopCtl<absl::Status> {
@@ -189,12 +176,11 @@ ClientTransport::ClientTransport(
   reader_ = MakeActivity(
       // Continuously read next incoming frames from promise endpoints.
       std::move(read_loop), EventEngineWakeupScheduler(event_engine_),
-      [this](absl::Status status) {
+      [](absl::Status status) {
         GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
                    status.code() == absl::StatusCode::kInternal);
-        if (status.code() == absl::StatusCode::kInternal) {
-          this->AbortWithError();
-        }
+        // TODO(ladynana): handle the promise endpoint read failures with
+        // iterating stream_map_ and close all the pipes once available.
       },
       // Hold Arena in activity for GetContext<Arena> usage.
       arena_.get());

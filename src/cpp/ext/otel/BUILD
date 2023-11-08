@@ -58,7 +58,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//:channel_stack_builder",
         "//:config",
         "//:gpr",
         "//:gpr_platform",
@@ -67,6 +66,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_public_hdrs",
         "//:legacy_context",
+        "//:tcp_tracer",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",

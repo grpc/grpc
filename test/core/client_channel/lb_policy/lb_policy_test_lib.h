@@ -26,7 +26,6 @@
 #include <chrono>
 #include <deque>
 #include <functional>
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <set>
@@ -95,8 +94,8 @@ namespace testing {
 
 class LoadBalancingPolicyTest : public ::testing::Test {
  protected:
-  using CallAttributes = std::vector<
-      std::unique_ptr<ServiceConfigCallData::CallAttributeInterface>>;
+  using CallAttributes =
+      std::vector<ServiceConfigCallData::CallAttributeInterface*>;
 
   // Channel-level subchannel state for a specific address and channel args.
   // This is analogous to the real subchannel in the ClientChannel code.
@@ -630,8 +629,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   class FakeCallState : public ClientChannelLbCallState {
    public:
     explicit FakeCallState(const CallAttributes& attributes) {
-      for (const auto& p : attributes) {
-        attributes_.emplace(p->type(), p.get());
+      for (const auto& attribute : attributes) {
+        attributes_.emplace(attribute->type(), attribute);
       }
     }
 
@@ -1009,18 +1008,18 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Expects a state update for the specified state and status, and then
   // expects the resulting picker to queue picks.
-  void ExpectStateAndQueuingPicker(
+  bool ExpectStateAndQueuingPicker(
       grpc_connectivity_state expected_state,
       absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    ExpectPickQueued(picker.get(), {}, location);
+    return ExpectPickQueued(picker.get(), {}, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
-  void ExpectConnectingUpdate(SourceLocation location = SourceLocation()) {
-    ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                                location);
+  bool ExpectConnectingUpdate(SourceLocation location = SourceLocation()) {
+    return ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING,
+                                       absl::OkStatus(), location);
   }
 
   static std::unique_ptr<LoadBalancingPolicy::MetadataInterface> MakeMetadata(
@@ -1039,15 +1038,18 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   // Requests a pick on picker and expects a Queue result.
-  void ExpectPickQueued(LoadBalancingPolicy::SubchannelPicker* picker,
+  bool ExpectPickQueued(LoadBalancingPolicy::SubchannelPicker* picker,
                         const CallAttributes call_attributes = {},
                         SourceLocation location = SourceLocation()) {
-    ASSERT_NE(picker, nullptr);
+    EXPECT_NE(picker, nullptr) << location.file() << ":" << location.line();
+    if (picker == nullptr) return false;
     auto pick_result = DoPick(picker, call_attributes);
-    ASSERT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+    EXPECT_TRUE(absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
         pick_result.result))
         << PickResultString(pick_result) << "\nat " << location.file() << ":"
         << location.line();
+    return absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+        pick_result.result);
   }
 
   // Requests a pick on picker and expects a Complete result.
@@ -1232,24 +1234,33 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Expects zero or more picker updates, each of which returns
   // round-robin picks for the specified set of addresses.
-  void DrainRoundRobinPickerUpdates(
-      absl::Span<const absl::string_view> addresses,
-      SourceLocation location = SourceLocation()) {
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
+  DrainRoundRobinPickerUpdates(absl::Span<const absl::string_view> addresses,
+                               SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Draining RR picker updates...");
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     while (!helper_->QueueEmpty()) {
       auto update = helper_->GetNextStateUpdate(location);
-      ASSERT_TRUE(update.has_value());
-      ASSERT_EQ(update->state, GRPC_CHANNEL_READY);
-      ExpectRoundRobinPicks(update->picker.get(), addresses);
+      EXPECT_TRUE(update.has_value())
+          << location.file() << ":" << location.line();
+      if (!update.has_value()) return nullptr;
+      EXPECT_EQ(update->state, GRPC_CHANNEL_READY)
+          << location.file() << ":" << location.line();
+      if (update->state != GRPC_CHANNEL_READY) return nullptr;
+      ExpectRoundRobinPicks(update->picker.get(), addresses,
+                            /*call_attributes=*/{}, /*num_iterations=*/3,
+                            location);
+      picker = std::move(update->picker);
     }
     gpr_log(GPR_INFO, "Done draining RR picker updates");
+    return picker;
   }
 
   // Expects zero or more CONNECTING updates.
   void DrainConnectingUpdates(SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Draining CONNECTING updates...");
     while (!helper_->QueueEmpty()) {
-      ExpectConnectingUpdate(location);
+      ASSERT_TRUE(ExpectConnectingUpdate(location));
     }
     gpr_log(GPR_INFO, "Done draining CONNECTING updates");
   }
@@ -1379,7 +1390,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   void IncrementTimeBy(Duration duration) {
     ExecCtx exec_ctx;
+    gpr_log(GPR_INFO, "Incrementing time by %s...",
+            duration.ToString().c_str());
     fuzzing_ee_->TickForDuration(duration);
+    gpr_log(GPR_INFO, "Done incrementing time");
     // Flush WorkSerializer, in case the timer callback enqueued anything.
     WaitForWorkSerializerToFlush();
   }

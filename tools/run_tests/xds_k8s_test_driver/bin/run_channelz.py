@@ -153,7 +153,7 @@ def debug_security_setup_negative(test_client):
 
 def debug_security_setup_positive(test_client, test_server):
     """Debug positive cases: mTLS, TLS, Plaintext."""
-    test_client.wait_for_active_server_channel()
+    test_client.wait_for_server_channel_ready()
     client_sock: _Socket = test_client.get_active_server_channel_socket()
     server_sock: _Socket = test_server.get_server_socket_matching_client(
         client_sock
@@ -181,7 +181,7 @@ def debug_security_setup_positive(test_client, test_server):
 
 def debug_basic_setup(test_client, test_server):
     """Show channel and server socket pair"""
-    test_client.wait_for_active_server_channel()
+    test_client.wait_for_server_channel_ready()
     client_sock: _Socket = test_client.get_active_server_channel_socket()
     server_sock: _Socket = test_server.get_server_socket_matching_client(
         client_sock
@@ -200,6 +200,9 @@ def main(argv):
 
     # Flags.
     should_port_forward: bool = xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
+    enable_workload_identity: bool = (
+        xds_k8s_flags.ENABLE_WORKLOAD_IDENTITY.value
+    )
     is_secure: bool = bool(_SECURITY.value)
 
     # Setup.
@@ -212,6 +215,7 @@ def main(argv):
         server_namespace,
         gcp_api_manager,
         port_forwarding=should_port_forward,
+        enable_workload_identity=enable_workload_identity,
         mode="secure",
     )
     # Find server pod.
@@ -225,6 +229,7 @@ def main(argv):
         client_namespace,
         gcp_api_manager,
         port_forwarding=should_port_forward,
+        enable_workload_identity=enable_workload_identity,
         mode="secure",
     )
     # Find client pod.

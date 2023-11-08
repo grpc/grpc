@@ -60,7 +60,6 @@
 
 #include <address_sorting/address_sorting.h>
 
-#include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"

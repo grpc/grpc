@@ -17,7 +17,6 @@
 #include <utility>
 
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"

@@ -587,7 +587,7 @@ TEST(PingCallbacksTest, CancelAllCancelsInflightPings) {
       .WillOnce(Return(true));
   callbacks.CancelAll(&event_engine);
   // Ensure Cancel call comes from CancelAll
-  testing::Mock::VerifyAndClearExpectations(&event_engine);
+  ::testing::Mock::VerifyAndClearExpectations(&event_engine);
   EXPECT_FALSE(acked);
   EXPECT_FALSE(callbacks.ping_requested());
   // Ping should still be valid, but no callback should be invoked

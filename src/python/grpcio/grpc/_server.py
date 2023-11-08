@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import collections
 from concurrent import futures
+import contextvars
 import enum
 import logging
 import threading
@@ -121,6 +122,7 @@ class _HandlerCallDetails(
 
 
 class _RPCState(object):
+    context: contextvars.Context
     condition: threading.Condition
     due = Set[str]
     request: Any
@@ -137,6 +139,7 @@ class _RPCState(object):
     aborted: bool
 
     def __init__(self):
+        self.context = contextvars.Context()
         self.condition = threading.Condition()
         self.due = set()
         self.request = None
@@ -843,6 +846,7 @@ def _handle_unary_unary(
         method_handler.unary_unary, default_thread_pool
     )
     return thread_pool.submit(
+        state.context.run,
         _unary_response_in_pool,
         rpc_event,
         state,
@@ -866,6 +870,7 @@ def _handle_unary_stream(
         method_handler.unary_stream, default_thread_pool
     )
     return thread_pool.submit(
+        state.context.run,
         _stream_response_in_pool,
         rpc_event,
         state,
@@ -889,6 +894,7 @@ def _handle_stream_unary(
         method_handler.stream_unary, default_thread_pool
     )
     return thread_pool.submit(
+        state.context.run,
         _unary_response_in_pool,
         rpc_event,
         state,
@@ -912,6 +918,7 @@ def _handle_stream_stream(
         method_handler.stream_stream, default_thread_pool
     )
     return thread_pool.submit(
+        state.context.run,
         _stream_response_in_pool,
         rpc_event,
         state,
@@ -924,6 +931,7 @@ def _handle_stream_stream(
 
 def _find_method_handler(
     rpc_event: cygrpc.BaseEvent,
+    state: _RPCState,
     generic_handlers: List[grpc.GenericRpcHandler],
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
 ) -> Optional[grpc.RpcMethodHandler]:
@@ -942,17 +950,19 @@ def _find_method_handler(
     )
 
     if interceptor_pipeline is not None:
-        return interceptor_pipeline.execute(
-            query_handlers, handler_call_details
+        return state.context.run(
+            interceptor_pipeline.execute, query_handlers, handler_call_details
         )
     else:
-        return query_handlers(handler_call_details)
+        return state.context.run(query_handlers, handler_call_details)
 
 
 def _reject_rpc(
-    rpc_event: cygrpc.BaseEvent, status: cygrpc.StatusCode, details: bytes
-) -> _RPCState:
-    rpc_state = _RPCState()
+    rpc_event: cygrpc.BaseEvent,
+    rpc_state: _RPCState,
+    status: cygrpc.StatusCode,
+    details: bytes,
+):
     operations = (
         _get_initial_metadata_operation(rpc_state, None),
         cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
@@ -967,15 +977,14 @@ def _reject_rpc(
             (),
         ),
     )
-    return rpc_state
 
 
 def _handle_with_method_handler(
     rpc_event: cygrpc.BaseEvent,
+    state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     thread_pool: futures.ThreadPoolExecutor,
-) -> Tuple[_RPCState, futures.Future]:
-    state = _RPCState()
+) -> futures.Future:
     with state.condition:
         rpc_event.call.start_server_batch(
             (cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),),
@@ -984,20 +993,20 @@ def _handle_with_method_handler(
         state.due.add(_RECEIVE_CLOSE_ON_SERVER_TOKEN)
         if method_handler.request_streaming:
             if method_handler.response_streaming:
-                return state, _handle_stream_stream(
+                return _handle_stream_stream(
                     rpc_event, state, method_handler, thread_pool
                 )
             else:
-                return state, _handle_stream_unary(
+                return _handle_stream_unary(
                     rpc_event, state, method_handler, thread_pool
                 )
         else:
             if method_handler.response_streaming:
-                return state, _handle_unary_stream(
+                return _handle_unary_stream(
                     rpc_event, state, method_handler, thread_pool
                 )
             else:
-                return state, _handle_unary_unary(
+                return _handle_unary_unary(
                     rpc_event, state, method_handler, thread_pool
                 )
 
@@ -1012,42 +1021,43 @@ def _handle_call(
     if not rpc_event.success:
         return None, None
     if rpc_event.call_details.method is not None:
+        rpc_state = _RPCState()
         try:
             method_handler = _find_method_handler(
-                rpc_event, generic_handlers, interceptor_pipeline
+                rpc_event, rpc_state, generic_handlers, interceptor_pipeline
             )
         except Exception as exception:  # pylint: disable=broad-except
             details = "Exception servicing handler: {}".format(exception)
             _LOGGER.exception(details)
-            return (
-                _reject_rpc(
-                    rpc_event,
-                    cygrpc.StatusCode.unknown,
-                    b"Error in service handler!",
-                ),
-                None,
+            _reject_rpc(
+                rpc_event,
+                rpc_state,
+                cygrpc.StatusCode.unknown,
+                b"Error in service handler!",
             )
+            return rpc_state, None
         if method_handler is None:
-            return (
-                _reject_rpc(
-                    rpc_event,
-                    cygrpc.StatusCode.unimplemented,
-                    b"Method not found!",
-                ),
-                None,
+            _reject_rpc(
+                rpc_event,
+                rpc_state,
+                cygrpc.StatusCode.unimplemented,
+                b"Method not found!",
             )
+            return rpc_state, None
         elif concurrency_exceeded:
-            return (
-                _reject_rpc(
-                    rpc_event,
-                    cygrpc.StatusCode.resource_exhausted,
-                    b"Concurrent RPC limit exceeded!",
-                ),
-                None,
+            _reject_rpc(
+                rpc_event,
+                rpc_state,
+                cygrpc.StatusCode.resource_exhausted,
+                b"Concurrent RPC limit exceeded!",
             )
+            return rpc_state, None
         else:
-            return _handle_with_method_handler(
-                rpc_event, method_handler, thread_pool
+            return (
+                rpc_state,
+                _handle_with_method_handler(
+                    rpc_event, rpc_state, method_handler, thread_pool
+                ),
             )
     else:
         return None, None

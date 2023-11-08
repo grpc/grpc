@@ -33,13 +33,9 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#define XXH_INLINE_ALL
-#include "xxhash.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
@@ -59,10 +55,12 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/gprpp/xxhash_inline.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
@@ -306,15 +304,10 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto* hash_attribute = static_cast<RequestHashAttribute*>(
       call_state->GetCallAttribute(RequestHashAttribute::TypeName()));
-  absl::string_view hash;
-  if (hash_attribute != nullptr) {
-    hash = hash_attribute->request_hash();
+  if (hash_attribute == nullptr) {
+    return PickResult::Fail(absl::InternalError("hash attribute not present"));
   }
-  uint64_t h;
-  if (!absl::SimpleAtoi(hash, &h)) {
-    return PickResult::Fail(
-        absl::InternalError("ring hash value is not a number"));
-  }
+  uint64_t request_hash = hash_attribute->request_hash();
   const auto& ring = ring_->ring();
   // Find the index in the ring to use for this RPC.
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
@@ -331,10 +324,10 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     }
     uint64_t midval = ring[index].hash;
     uint64_t midval1 = index == 0 ? 0 : ring[index - 1].hash;
-    if (h <= midval && h > midval1) {
+    if (request_hash <= midval && request_hash > midval1) {
       break;
     }
-    if (midval < h) {
+    if (midval < request_hash) {
       lowp = index + 1;
     } else {
       highp = index - 1;
@@ -632,7 +625,37 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[RH %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-    endpoints_ = *std::move(args.addresses);
+    // De-dup endpoints, taking weight into account.
+    endpoints_.clear();
+    endpoints_.reserve(args.addresses->size());
+    std::map<EndpointAddressSet, size_t> endpoint_indices;
+    size_t num_skipped = 0;
+    for (size_t i = 0; i < args.addresses->size(); ++i) {
+      EndpointAddresses& endpoint = (*args.addresses)[i];
+      const EndpointAddressSet key(endpoint.addresses());
+      auto p = endpoint_indices.emplace(key, i - num_skipped);
+      if (!p.second) {
+        // Duplicate endpoint.  Combine weights and skip the dup.
+        EndpointAddresses& prev_endpoint = endpoints_[p.first->second];
+        int weight_arg =
+            endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        int prev_weight_arg =
+            prev_endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+          gpr_log(GPR_INFO,
+                  "[RH %p] merging duplicate endpoint for %s, combined "
+                  "weight %d",
+                  this, key.ToString().c_str(), weight_arg + prev_weight_arg);
+        }
+        prev_endpoint = EndpointAddresses(
+            prev_endpoint.addresses(),
+            prev_endpoint.args().Set(GRPC_ARG_ADDRESS_WEIGHT,
+                                     weight_arg + prev_weight_arg));
+        ++num_skipped;
+      } else {
+        endpoints_.push_back(std::move(endpoint));
+      }
+    }
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",

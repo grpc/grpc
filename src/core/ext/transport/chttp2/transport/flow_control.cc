@@ -24,7 +24,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <initializer_list>
 #include <ostream>
 #include <string>
 #include <tuple>
@@ -364,6 +363,23 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
   return UpdateAction(action);
 }
 
+std::string TransportFlowControl::Stats::ToString() const {
+  return absl::StrCat("target_window: ", target_window,
+                      " target_frame_size: ", target_frame_size,
+                      " target_preferred_rx_crypto_frame_size: ",
+                      target_preferred_rx_crypto_frame_size,
+                      " acked_init_window: ", acked_init_window,
+                      " queued_init_window: ", queued_init_window,
+                      " sent_init_window: ", sent_init_window,
+                      " remote_window: ", remote_window,
+                      " announced_window: ", announced_window,
+                      " announced_stream_total_over_incoming_window: ",
+                      announced_stream_total_over_incoming_window,
+                      " bdp_accumulator: ", bdp_accumulator,
+                      " bdp_estimate: ", bdp_estimate,
+                      " bdp_bw_est: ", bdp_bw_est);
+}
+
 void StreamFlowControl::SentUpdate(uint32_t announce) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
   pending_size_ = absl::nullopt;
@@ -434,6 +450,13 @@ void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
     int64_t pending_size) {
   GPR_ASSERT(pending_size >= 0);
   sfc_->pending_size_ = pending_size;
+}
+
+std::string StreamFlowControl::Stats::ToString() const {
+  return absl::StrCat("min_progress_size: ", min_progress_size,
+                      " remote_window_delta: ", remote_window_delta,
+                      " announced_window_delta: ", announced_window_delta,
+                      pending_size.has_value() ? *pending_size : -1);
 }
 
 }  // namespace chttp2

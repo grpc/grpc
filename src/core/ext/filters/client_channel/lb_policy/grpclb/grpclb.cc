@@ -64,7 +64,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -103,7 +102,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -141,7 +139,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -753,9 +750,11 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // The metadata value is a hack: we pretend the pointer points to
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.
+      // NOLINTBEGIN(bugprone-string-constructor)
       args.initial_metadata->Add(
           GrpcLbClientStatsMetadata::key(),
           absl::string_view(reinterpret_cast<const char*>(client_stats), 0));
+      // NOLINTEND(bugprone-string-constructor)
       // Update calls-started.
       client_stats->AddCallStarted();
     }
@@ -842,14 +841,10 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
 
 void GrpcLb::Helper::RequestReresolution() {
   if (parent()->shutting_down_) return;
-  // If we are talking to a balancer, we expect to get updated addresses
-  // from the balancer, so we can ignore the re-resolution request from
-  // the child policy. Otherwise, pass the re-resolution request up to the
-  // channel.
-  if (parent()->lb_calld_ == nullptr ||
-      !parent()->lb_calld_->seen_initial_response()) {
-    parent()->channel_control_helper()->RequestReresolution();
-  }
+  // Ignore if we're not in fallback mode, because if we got the backend
+  // addresses from the balancer, re-resolving is not going to fix it.
+  if (!parent()->fallback_mode_) return;
+  parent()->channel_control_helper()->RequestReresolution();
 }
 
 //
@@ -1509,6 +1504,9 @@ void GrpcLb::ResetBackoffLocked() {
 }
 
 absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+    gpr_log(GPR_INFO, "[grpclb %p] received update", this);
+  }
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config;
   GPR_ASSERT(config_ != nullptr);
@@ -1517,11 +1515,15 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   fallback_backend_addresses_ = std::move(args.addresses);
   if (fallback_backend_addresses_.ok()) {
     // Add null LB token attributes.
-    for (EndpointAddresses& addresses : *fallback_backend_addresses_) {
-      addresses = EndpointAddresses(
-          addresses.addresses(),
-          addresses.args().SetObject(
+    for (EndpointAddresses& endpoint : *fallback_backend_addresses_) {
+      endpoint = EndpointAddresses(
+          endpoint.addresses(),
+          endpoint.args().SetObject(
               MakeRefCounted<TokenAndClientStatsArg>("", nullptr)));
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+        gpr_log(GPR_INFO, "[grpclb %p] fallback address: %s", this,
+                endpoint.ToString().c_str());
+      }
     }
   }
   resolution_note_ = std::move(args.resolution_note);
@@ -1570,6 +1572,12 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
 absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   // Get balancer addresses.
   EndpointAddressesList balancer_addresses = ExtractBalancerAddresses(args_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+    for (const auto& endpoint : balancer_addresses) {
+      gpr_log(GPR_INFO, "[grpclb %p] balancer address: %s", this,
+              endpoint.ToString().c_str());
+    }
+  }
   absl::Status status;
   if (balancer_addresses.empty()) {
     status = absl::UnavailableError("balancer address list must be non-empty");
@@ -1871,16 +1879,10 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<GrpcLbFactory>());
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto enable = builder->channel_args().GetBool(
-            GRPC_ARG_GRPCLB_ENABLE_LOAD_REPORTING_FILTER);
-        if (enable.has_value() && *enable) {
-          builder->PrependFilter(&ClientLoadReportingFilter::kFilter);
-        }
-        return true;
-      });
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                       &ClientLoadReportingFilter::kFilter)
+      .IfChannelArg(GRPC_ARG_GRPCLB_ENABLE_LOAD_REPORTING_FILTER, false);
 }
 
 }  // namespace grpc_core

@@ -53,7 +53,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -127,7 +126,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       if (name_ == "server") {
         std::vector<grpc_resolved_address> addrs;
         grpc_resolved_address addr;
-        addr.len = 0;
+        memset(&addr, 0, sizeof(addr));
         addrs.push_back(addr);
         on_done_(std::move(addrs));
       } else {
@@ -227,12 +226,10 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 namespace grpc_core {
 namespace testing {
 
-class ApiFuzzer : public BasicFuzzer {
+class ApiFuzzer final : public BasicFuzzer {
  public:
   explicit ApiFuzzer(const fuzzing_event_engine::Actions& actions);
   ~ApiFuzzer();
-  bool Continue() override;
-  void TryShutdown();
   void Tick() override;
   grpc_server* Server() { return server_; }
 
@@ -240,9 +237,9 @@ class ApiFuzzer : public BasicFuzzer {
   Result CreateChannel(
       const api_fuzzer::CreateChannel& create_channel) override;
 
-  Result CloseChannel() override;
   Result CreateServer(const api_fuzzer::CreateServer& create_server) override;
   void DestroyServer() override;
+  void DestroyChannel() override;
 
   grpc_server* server() override { return server_; }
   grpc_channel* channel() override { return channel_; }
@@ -372,23 +369,8 @@ static grpc_channel_credentials* ReadChannelCreds(
   }
 }
 
-namespace grpc_event_engine {
-namespace experimental {
-extern bool g_event_engine_supports_fd;
-}
-}  // namespace grpc_event_engine
-
 namespace grpc_core {
 namespace testing {
-
-namespace {
-int force_experiments = []() {
-  grpc_event_engine::experimental::g_event_engine_supports_fd = false;
-  ForceEnableExperiment("event_engine_client", true);
-  ForceEnableExperiment("event_engine_listener", true);
-  return 1;
-}();
-}  // namespace
 
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
@@ -398,31 +380,6 @@ ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
 
   GPR_ASSERT(channel_ == nullptr);
   GPR_ASSERT(server_ == nullptr);
-}
-
-bool ApiFuzzer::Continue() {
-  return channel_ != nullptr || server_ != nullptr || BasicFuzzer::Continue();
-}
-
-void ApiFuzzer::TryShutdown() {
-  engine()->FuzzingDone();
-  if (channel_ != nullptr) {
-    grpc_channel_destroy(channel_);
-    channel_ = nullptr;
-  }
-  if (server_ != nullptr) {
-    if (!server_shutdown_called()) {
-      ShutdownServer();
-    }
-    if (server_finished_shutting_down()) {
-      grpc_server_destroy(server_);
-      server_ = nullptr;
-    }
-  }
-  ShutdownCalls();
-
-  grpc_timer_manager_tick();
-  GPR_ASSERT(PollCq() == Result::kPending);
 }
 
 ApiFuzzer::~ApiFuzzer() {
@@ -459,16 +416,6 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
   return Result::kComplete;
 }
 
-ApiFuzzer::Result ApiFuzzer::CloseChannel() {
-  if (channel_ != nullptr) {
-    grpc_channel_destroy(channel_);
-    channel_ = nullptr;
-  } else {
-    return Result::kFailed;
-  }
-  return Result::kComplete;
-}
-
 ApiFuzzer::Result ApiFuzzer::CreateServer(
     const api_fuzzer::CreateServer& create_server) {
   if (server_ == nullptr) {
@@ -494,6 +441,11 @@ void ApiFuzzer::DestroyServer() {
   server_ = nullptr;
 }
 
+void ApiFuzzer::DestroyChannel() {
+  grpc_channel_destroy(channel_);
+  channel_ = nullptr;
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
@@ -505,22 +457,5 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-
-  ApiFuzzer api_fuzzer(msg.event_engine_actions());
-  int action_index = 0;
-  auto no_more_actions = [&]() { action_index = msg.actions_size(); };
-
-  while (action_index < msg.actions_size() || api_fuzzer.Continue()) {
-    api_fuzzer.Tick();
-
-    if (action_index == msg.actions_size()) {
-      api_fuzzer.TryShutdown();
-      continue;
-    }
-
-    auto result = api_fuzzer.ExecuteAction(msg.actions(action_index++));
-    if (result == ApiFuzzer::Result::kFailed) {
-      no_more_actions();
-    }
-  }
+  ApiFuzzer(msg.event_engine_actions()).Run(msg.actions());
 }
