@@ -47,6 +47,7 @@ grpc_cc_test(
         "//:gpr",
         "//:gpr_platform",
         "//src/core:forkable",
+        "//src/core:no_destruct",
     ],
 )
 
