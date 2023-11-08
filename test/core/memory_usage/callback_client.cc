@@ -44,7 +44,7 @@
 
 ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
-ABSL_FLAG(int, server_pid, 99999, "Server's pid");
+ABSL_FLAG(int, server_pid, 0, "Server's pid");
 ABSL_FLAG(int, size, 50, "Number of channels");
 
 std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
@@ -150,7 +150,9 @@ int main(int argc, char** argv) {
   }
 
   // Getting peak memory usage
-  long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));
+  long peak_server_memory = absl::GetFlag(FLAGS_server_pid) > 0
+                                ? GetMemUsage(absl::GetFlag(FLAGS_server_pid))
+                                : 0;
   long peak_client_memory = GetMemUsage();
 
   // Checking that all channels are still open
@@ -161,16 +163,23 @@ int main(int argc, char** argv) {
                                              std::chrono::milliseconds(1)));
   }
 
-  const char* prefix = "";
+  std::string prefix;
   if (absl::StartsWith(absl::GetFlag(FLAGS_target), "xds:")) prefix = "xds ";
+  if (absl::GetFlag(FLAGS_server_pid) == 0) {
+    prefix = absl::StrCat(prefix, "multi_address ");
+  }
   printf("---------Client channel stats--------\n");
-  printf("%sclient channel memory usage: %f bytes per channel\n", prefix,
+  printf("%sclient channel memory usage: %f bytes per channel\n",
+         prefix.c_str(),
          static_cast<double>(peak_client_memory - before_client_memory) / size *
              1024);
-  printf("---------Server channel stats--------\n");
-  printf("%sserver channel memory usage: %f bytes per channel\n", prefix,
-         static_cast<double>(peak_server_memory - before_server_memory) / size *
-             1024);
+  if (absl::GetFlag(FLAGS_server_pid) > 0) {
+    printf("---------Server channel stats--------\n");
+    printf("%sserver channel memory usage: %f bytes per channel\n",
+           prefix.c_str(),
+           static_cast<double>(peak_server_memory - before_server_memory) /
+               size * 1024);
+  }
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }
