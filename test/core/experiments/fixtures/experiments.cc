@@ -41,14 +41,13 @@ namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
     {"test_experiment_1", description_test_experiment_1,
-     additional_constraints_test_experiment_1, nullptr, 0, false, true},
+     additional_constraints_test_experiment_1, false, true},
     {"test_experiment_2", description_test_experiment_2,
-     additional_constraints_test_experiment_2, nullptr, 0, true, true},
+     additional_constraints_test_experiment_2, true, true},
     {"test_experiment_3", description_test_experiment_3,
-     additional_constraints_test_experiment_3, nullptr, 0, kDefaultForDebugOnly,
-     true},
+     additional_constraints_test_experiment_3, kDefaultForDebugOnly, true},
     {"test_experiment_4", description_test_experiment_4,
-     additional_constraints_test_experiment_4, nullptr, 0, true, true},
+     additional_constraints_test_experiment_4, true, true},
 };
 
 }  // namespace grpc_core
@@ -74,14 +73,13 @@ namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
     {"test_experiment_1", description_test_experiment_1,
-     additional_constraints_test_experiment_1, nullptr, 0, false, true},
+     additional_constraints_test_experiment_1, false, true},
     {"test_experiment_2", description_test_experiment_2,
-     additional_constraints_test_experiment_2, nullptr, 0, false, true},
+     additional_constraints_test_experiment_2, false, true},
     {"test_experiment_3", description_test_experiment_3,
-     additional_constraints_test_experiment_3, nullptr, 0, kDefaultForDebugOnly,
-     true},
+     additional_constraints_test_experiment_3, kDefaultForDebugOnly, true},
     {"test_experiment_4", description_test_experiment_4,
-     additional_constraints_test_experiment_4, nullptr, 0, true, true},
+     additional_constraints_test_experiment_4, true, true},
 };
 
 }  // namespace grpc_core
@@ -107,16 +105,13 @@ namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
     {"test_experiment_1", description_test_experiment_1,
-     additional_constraints_test_experiment_1, nullptr, 0, kDefaultForDebugOnly,
-     true},
+     additional_constraints_test_experiment_1, kDefaultForDebugOnly, true},
     {"test_experiment_2", description_test_experiment_2,
-     additional_constraints_test_experiment_2, nullptr, 0, kDefaultForDebugOnly,
-     true},
+     additional_constraints_test_experiment_2, kDefaultForDebugOnly, true},
     {"test_experiment_3", description_test_experiment_3,
-     additional_constraints_test_experiment_3, nullptr, 0, kDefaultForDebugOnly,
-     true},
+     additional_constraints_test_experiment_3, kDefaultForDebugOnly, true},
     {"test_experiment_4", description_test_experiment_4,
-     additional_constraints_test_experiment_4, nullptr, 0, false, true},
+     additional_constraints_test_experiment_4, false, true},
 };
 
 }  // namespace grpc_core
