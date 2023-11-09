@@ -89,7 +89,7 @@ struct grpc_ares_request {
 // synchronized by the caller. TODO(apolcyn): we should remove this requirement
 // by changing this API to use two phase initialization - one API to create
 // the grpc_ares_request* and another to start the async work.
-extern grpc_ares_request* (*grpc_dns_lookup_hostname_ares)(
+extern GRPC_DLL grpc_ares_request* (*grpc_dns_lookup_hostname_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
@@ -97,7 +97,7 @@ extern grpc_ares_request* (*grpc_dns_lookup_hostname_ares)(
 
 // Asynchronously resolve a SRV record.
 // See \a grpc_dns_lookup_hostname_ares for usage details and caveats.
-extern grpc_ares_request* (*grpc_dns_lookup_srv_ares)(
+extern GRPC_DLL grpc_ares_request* (*grpc_dns_lookup_srv_ares)(
     const char* dns_server, const char* name,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::EndpointAddressesList>* balancer_addresses,
@@ -105,13 +105,13 @@ extern grpc_ares_request* (*grpc_dns_lookup_srv_ares)(
 
 // Asynchronously resolve a TXT record.
 // See \a grpc_dns_lookup_hostname_ares for usage details and caveats.
-extern grpc_ares_request* (*grpc_dns_lookup_txt_ares)(
+extern GRPC_DLL grpc_ares_request* (*grpc_dns_lookup_txt_ares)(
     const char* dns_server, const char* name,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     char** service_config_json, int query_timeout_ms);
 
 // Cancel the pending grpc_ares_request \a request
-extern void (*grpc_cancel_ares_request)(grpc_ares_request* request);
+extern GRPC_DLL void (*grpc_cancel_ares_request)(grpc_ares_request* request);
 
 // Initialize gRPC ares wrapper. Must be called at least once before
 // grpc_resolve_address_ares().
@@ -132,9 +132,10 @@ void grpc_cares_wrapper_address_sorting_sort(
     grpc_core::EndpointAddressesList* addresses);
 
 // Exposed in this header for C-core tests only
-extern void (*grpc_ares_test_only_inject_config)(ares_channel* channel);
+extern GRPC_DLL void (*grpc_ares_test_only_inject_config)(
+    ares_channel* channel);
 
 // Exposed in this header for C-core tests only
-extern bool g_grpc_ares_test_only_force_tcp;
+extern GRPC_DLL bool g_grpc_ares_test_only_force_tcp;
 
 #endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H

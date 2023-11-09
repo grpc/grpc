@@ -359,28 +359,28 @@ with open("src/core/lib/debug/stats_data.h", "w") as H:
     print("  GlobalStats();", file=H)
     print(
         (
-            "  static const absl::string_view"
+            "  static GRPC_DLL const absl::string_view"
             " counter_name[static_cast<int>(Counter::COUNT)];"
         ),
         file=H,
     )
     print(
         (
-            "  static const absl::string_view"
+            "  static GRPC_DLL const absl::string_view"
             " histogram_name[static_cast<int>(Histogram::COUNT)];"
         ),
         file=H,
     )
     print(
         (
-            "  static const absl::string_view"
+            "  static GRPC_DLL const absl::string_view"
             " counter_doc[static_cast<int>(Counter::COUNT)];"
         ),
         file=H,
     )
     print(
         (
-            "  static const absl::string_view"
+            "  static GRPC_DLL const absl::string_view"
             " histogram_doc[static_cast<int>(Histogram::COUNT)];"
         ),
         file=H,

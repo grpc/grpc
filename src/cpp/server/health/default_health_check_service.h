@@ -88,9 +88,10 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
         const ByteBuffer* request, ByteBuffer* response);
 
     // Returns true on success.
-    static bool DecodeRequest(const ByteBuffer& request,
-                              std::string* service_name);
-    static bool EncodeResponse(ServingStatus status, ByteBuffer* response);
+    static GRPCXX_DLL bool DecodeRequest(const ByteBuffer& request,
+                                         std::string* service_name);
+    static GRPCXX_DLL bool EncodeResponse(ServingStatus status,
+                                          ByteBuffer* response);
 
     DefaultHealthCheckService* database_;
 

@@ -19,6 +19,6 @@
 
 #include "src/core/lib/debug/trace.h"
 
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_promise_primitives;
+extern GRPC_DLL grpc_core::DebugOnlyTraceFlag grpc_trace_promise_primitives;
 
 #endif  // GRPC_SRC_CORE_LIB_PROMISE_TRACE_H

@@ -40,7 +40,7 @@
 
 // IWYU pragma: no_include <sys/socket.h>
 
-extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+extern GPR_DLL gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 static grpc_core::TraceFlag trace_writes(false, "fuzzing_ee_writes");
 static grpc_core::TraceFlag trace_timers(false, "fuzzing_ee_timers");

@@ -25,6 +25,7 @@
   import re
 
   proto_re = re.compile('(.*)\\.proto')
+  upb_gen_re = re.compile('^src/core/ext/upb(defs)?-generated/.*$')
   lib_map = {lib.name: lib for lib in libs}
 
   third_party_proto_prefixes = {lib.proto_prefix for lib in external_proto_libraries}
@@ -157,8 +158,8 @@
     if lib_name in ['grpc_csharp_ext']:
       return ' SHARED'
 
-    # upb always compiles as a static library on Windows
-    elif lib_name in ['upb','upb_collections_lib','upb_json_lib','upb_textformat_lib']:
+    # upb gtest always compile as a static library on Windows
+    elif lib_name in ['upb','upb_collections_lib','upb_json_lib','upb_textformat_lib','gtest'] + protoc_libs:
       return ' ${_gRPC_STATIC_WIN32}'
 
     else:
@@ -191,6 +192,19 @@
       else:
         deps.append(d)
     return deps
+
+  def get_all_deps(target_dict, all_libs):
+    ret = set()
+    get_all_deps_recurse(target_dict, all_libs, ret)
+    return ret
+
+  def get_all_deps_recurse(target_dict, all_libs, all_deps):
+    for d in target_dict.get('deps', []):
+      if not d in all_deps:
+        all_deps.add(d)
+        for other_lib in all_libs:
+          if other_lib.name == d:
+            get_all_deps_recurse(other_lib,all_libs,all_deps)
 
   def is_generate_cmake_target(lib_or_target):
     """Returns True if a cmake target should be generated for given library/target."""
@@ -250,12 +264,6 @@
       return '\n'.join(lines)
     return _func
 
-  def add_dll_annotation_macros(lib, prefix):
-    return """set_target_properties(%s PROPERTIES DEFINE_SYMBOL "%s_DLL_EXPORTS")
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(%s INTERFACE %s_DLL_IMPORTS)
-    endif()""" % (lib, prefix, lib, prefix)
-
   %>
   <%
   # These files are added to a set so that they are not duplicated if multiple
@@ -285,6 +293,10 @@
   set(PACKAGE_TARNAME       "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
   project(<%text>${PACKAGE_NAME}</%text> LANGUAGES C CXX)
+
+  if(BUILD_SHARED_LIBS AND MSVC)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  endif()
 
   set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
   set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
@@ -410,6 +422,8 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4503")
     # Tell MSVC to build grpc using utf-8
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /utf-8")
+    # Inconsistent object sizes can cause stack corruption and should be treated as an error
+    set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /we4789")
   endif()
   if (MINGW)
     add_definitions(-D_WIN32_WINNT=0x600)
@@ -525,14 +539,66 @@
   # include redundant duplicate code. Hence, the duplication is only activated
   # for DLL builds - and should be completely removed when source files are
   # generated with the necessary __declspec annotations.
+  # TODO (@dawidcha) remove this when DLL export macros available for upb-generated code.
   set(gRPC_UPB_GEN_DUPL_SRC
     src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   )
+  <%
+  # Build a list of all upb-generated code as a bunch of tests depend on various parts of
+  # this code. Yes, adding all upb code to all affected tests is overkill, but these are
+  # only tests, and doing so will likely prove more resilient to future changes.
+  # TODO (@dawidcha) remove this when DLL export macros available for upb-generated code.
+  upb_gen_srcs = []
+  for lib in libs:
+    if lib.name == 'grpc':
+      for src in lib.src:
+        if upb_gen_re.match(src):
+          upb_gen_srcs.append(src)
+
+  # This is the list of tests with some dependency on upb-generated code. This list has
+  # been compiled through trial and error - it may need extending as new tests are added.
+  # TODO (@dawidcha) remove this when DLL export macros available for upb-generated code.
+  tests_needing_upb = [
+    'alts_handshaker_client_test',
+    'alts_tsi_handshaker_test',
+    'alts_tsi_utils_test',
+    'alts_util_test',
+    'binder_transport_test',
+    'cel_authoriztion_engine_test',
+    'endpoint_binder_pool_test',
+    'fake_binder_test',
+    'interop_server',
+    'orca_service_end2end_test',
+    'status_helper_test',
+    'transport_stream_receiver_test',
+    'wire_reader_test',
+    'wire_writer_test',
+    'xds_audit_logger_registry_test',
+    'xds_cluster_resource_type_test',
+    'xds_common_types_test',
+    'xds_endpoint_resource_type_test',
+    'xds_lb_policy_registry_test',
+    'xds_listener_resource_type_test',
+    'xds_route_config_resource_type_test',
+  ]
+
+  gpr_libs = ['gpr']
+  grpc_libs = ['grpc', 'grpc_unsecure']
+  grpcxx_libs = ['grpc++', 'grpc++_unsecure']
+  protoc_libs = ['benchmark_helpers','grpc++_reflection','grpcpp_channelz']
+  %>
+  # All upb sources for inclusion in tests that depend on them
+  set(gRPC_UPB_GEN_DUPL_TEST_SRC
+  % for upb_gen_src in upb_gen_srcs:
+    ${upb_gen_src}
+  % endfor
+  )
   set(gRPC_ADDITIONAL_DLL_SRC
     src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
     src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
+    src/cpp/common/tls_certificate_provider.cc
   )
 
   endif() # BUILD_SHARED_LIBS AND WIN32
@@ -792,10 +858,10 @@
   % endif
   % endfor
   % if lib.name in ['grpc++_alts', 'grpc++_unsecure', 'grpc++']:
-    ${'${gRPC_UPB_GEN_DUPL_SRC}'}
+    <%text>${gRPC_UPB_GEN_DUPL_SRC}</%text>
   % endif
   % if lib.name in ['grpc_unsecure']:
-    ${'${gRPC_ADDITIONAL_DLL_SRC}'}
+    <%text>${gRPC_ADDITIONAL_DLL_SRC}</%text>
   % endif
   )
 
@@ -814,17 +880,30 @@
   if(WIN32 AND MSVC)
     set_target_properties(${lib.name} PROPERTIES COMPILE_PDB_NAME "${lib.name}"
       COMPILE_PDB_OUTPUT_DIRECTORY <%text>"${CMAKE_BINARY_DIR}</%text>"
-    )
-    % if lib.name == 'gpr':
-    ${add_dll_annotation_macros(lib.name, 'GPR')}
-    % elif lib.name == 'grpc':
-    ${add_dll_annotation_macros(lib.name, 'GRPC')}
-    % elif lib.name == 'grpc_unsecure':
-    ${add_dll_annotation_macros(lib.name, 'GRPC')}
-    % elif lib.name == 'grpc++':
-    ${add_dll_annotation_macros(lib.name, 'GRPCXX')}
-    % elif lib.name == 'grpc++_unsecure':
-    ${add_dll_annotation_macros(lib.name, 'GRPCXX')}
+    )<%
+    dll_annotations = []
+    if lib.name in gpr_libs:
+      dll_annotations.append("GPR_DLL_EXPORTS")
+    if lib.name in grpc_libs:
+      dll_annotations.append("GRPC_DLL_EXPORTS")
+    if lib.name in grpcxx_libs:
+      dll_annotations.append("GRPCXX_DLL_EXPORTS")
+    if set(gpr_libs) & set(get_all_deps(lib,libs)):
+      dll_annotations.append("GPR_DLL_IMPORTS")
+    if set(grpc_libs) & set(get_all_deps(lib,libs)):
+      dll_annotations.append("GRPC_DLL_IMPORTS")
+    if set(grpcxx_libs) & set(get_all_deps(lib,libs)):
+      dll_annotations.append("GRPCXX_DLL_IMPORTS")
+    %>
+    % if dll_annotations:
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(${lib.name}
+      PRIVATE
+    % for definition in dll_annotations:
+        "${definition}"
+    % endfor
+      )
+    endif()
     % endif
     if(gRPC_INSTALL)
       install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
@@ -908,7 +987,30 @@
     ${proto_replace_ext(src, '.grpc.pb.h')}
   % endif
   % endfor
-  )
+  % if tgt.name in tests_needing_upb:
+    <%text>${gRPC_UPB_GEN_DUPL_TEST_SRC}</%text>
+  % endif
+  )<%
+  dll_annotations = []
+  if set(gpr_libs) & set(get_all_deps(tgt,libs)):
+    dll_annotations.append("GPR_DLL_IMPORTS")
+  if set(grpc_libs) & set(get_all_deps(tgt,libs)):
+    dll_annotations.append("GRPC_DLL_IMPORTS")
+  if set(grpcxx_libs) & set(get_all_deps(tgt,libs)):
+    dll_annotations.append("GRPCXX_DLL_IMPORTS")
+  %>
+  % if dll_annotations:
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(${tgt.name}
+      PRIVATE
+    % for definition in dll_annotations:
+        "${definition}"
+    % endfor
+      )
+    endif()
+  endif()
+  % endif
   target_compile_features(${tgt.name} PUBLIC cxx_std_14)
   target_include_directories(${tgt.name}
     PRIVATE

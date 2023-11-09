@@ -48,8 +48,8 @@
 #define MIN_QUEUE_WINDOW_DURATION 0.01
 #define MAX_QUEUE_WINDOW_DURATION 1.0
 
-grpc_core::TraceFlag grpc_timer_trace(false, "timer");
-grpc_core::TraceFlag grpc_timer_check_trace(false, "timer_check");
+grpc_core::TraceFlag GRPC_DLL grpc_timer_trace(false, "timer");
+grpc_core::TraceFlag GRPC_DLL grpc_timer_check_trace(false, "timer_check");
 
 // A "timer shard". Contains a 'heap' and a 'list' of timers. All timers with
 // deadlines earlier than 'queue_deadline_cap' are maintained in the heap and

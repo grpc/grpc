@@ -59,11 +59,11 @@ class DNSResolver {
       TaskHandle,
       grpc_event_engine::experimental::TaskHandleComparator<TaskHandle>::Hash>;
 
-  static const TaskHandle kNullHandle;
+  static const GRPC_DLL TaskHandle kNullHandle;
 
   virtual ~DNSResolver() {}
 
-  static std::string HandleToString(TaskHandle handle);
+  static GRPC_DLL std::string HandleToString(TaskHandle handle);
 
   // Asynchronously resolve name. Use \a default_port if a port isn't designated
   // in \a name, otherwise use the port in \a name. On completion, \a on_done is

@@ -45,7 +45,7 @@
 static std::string g_root;
 
 static gpr_mu g_mu;
-extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+extern GPR_DLL gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 gpr_timespec (*gpr_now_impl_orig)(gpr_clock_type clock_type) = gpr_now_impl;
 static int g_time_shift_sec = 0;
 static int g_time_shift_nsec = 0;

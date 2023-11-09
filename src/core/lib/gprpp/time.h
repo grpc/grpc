@@ -100,7 +100,7 @@ class Timestamp {
 
   class ScopedSource : public Source {
    public:
-    ScopedSource() : previous_(thread_local_time_source_) {
+    GRPC_DLL ScopedSource() : previous_(thread_local_time_source_) {
       thread_local_time_source_ = this;
     }
     ScopedSource(const ScopedSource&) = delete;
@@ -108,7 +108,7 @@ class Timestamp {
     void InvalidateCache() override { previous_->InvalidateCache(); }
 
    protected:
-    ~ScopedSource() { thread_local_time_source_ = previous_; }
+    GRPC_DLL ~ScopedSource() { thread_local_time_source_ = previous_; }
     Source* previous() const { return previous_; }
 
    private:
@@ -124,7 +124,7 @@ class Timestamp {
   static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);
   static Timestamp FromCycleCounterRoundDown(gpr_cycle_counter c);
 
-  static Timestamp Now() { return thread_local_time_source_->Now(); }
+  static GRPC_DLL Timestamp Now() { return thread_local_time_source_->Now(); }
 
   static constexpr Timestamp FromMillisecondsAfterProcessEpoch(int64_t millis) {
     return Timestamp(millis);

@@ -19,6 +19,8 @@
 #ifndef GRPCPP_SUPPORT_STRING_REF_H
 #define GRPCPP_SUPPORT_STRING_REF_H
 
+#include <grpc/support/port_platform.h>
+
 #include <string.h>
 
 #include <algorithm>
@@ -45,7 +47,7 @@ class string_ref {
   typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
   /// constants
-  const static size_t npos;
+  const static GRPCXX_DLL size_t npos;
 
   /// construct/copy.
   string_ref() : data_(nullptr), length_(0) {}

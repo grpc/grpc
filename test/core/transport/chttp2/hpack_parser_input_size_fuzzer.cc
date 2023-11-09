@@ -141,7 +141,7 @@ std::string Stringify(absl::StatusOr<std::string> result) {
 }  // namespace
 }  // namespace grpc_core
 
-extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+extern GPR_DLL gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   gpr_now_impl = [](gpr_clock_type clock_type) {

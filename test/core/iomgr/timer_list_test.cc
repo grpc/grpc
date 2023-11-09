@@ -35,8 +35,8 @@
 
 #define MAX_CB 30
 
-extern grpc_core::TraceFlag grpc_timer_trace;
-extern grpc_core::TraceFlag grpc_timer_check_trace;
+extern GRPC_DLL grpc_core::TraceFlag grpc_timer_trace;
+extern GRPC_DLL grpc_core::TraceFlag grpc_timer_check_trace;
 
 static int cb_called[MAX_CB][2];
 static const int64_t kHoursIn25Days = 25 * 24;

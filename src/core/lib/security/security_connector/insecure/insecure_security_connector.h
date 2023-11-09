@@ -43,7 +43,7 @@
 
 namespace grpc_core {
 
-extern const char kInsecureTransportSecurityType[];
+extern GRPC_DLL const char kInsecureTransportSecurityType[];
 
 // Exposed for testing purposes only.
 // Create an auth context which is necessary to pass the santiy check in

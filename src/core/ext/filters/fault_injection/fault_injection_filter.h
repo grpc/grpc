@@ -40,7 +40,7 @@ namespace grpc_core {
 // of the ordinary channel stack. The fault injection filter fetches fault
 // injection policy from the method config of service config returned by the
 // resolver, and enforces the fault injection policy.
-class FaultInjectionFilter : public ChannelFilter {
+class GRPC_DLL FaultInjectionFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 

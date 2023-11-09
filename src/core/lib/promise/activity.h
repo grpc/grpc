@@ -200,7 +200,7 @@ class Activity : public Orphanable {
   //   locked
   // - back up that assertation with a runtime check in debug builds (it's
   //   prohibitively expensive in non-debug builds)
-  static Activity* current() { return g_current_activity_; }
+  static GRPC_DLL Activity* current() { return g_current_activity_; }
 
   // Produce an activity-owning Waker. The produced waker will keep the activity
   // alive until it's awoken or dropped.
@@ -217,17 +217,17 @@ class Activity : public Orphanable {
  protected:
   // Check if this activity is the current activity executing on the current
   // thread.
-  bool is_current() const { return this == g_current_activity_; }
+  GRPC_DLL bool is_current() const { return this == g_current_activity_; }
   // Check if there is an activity executing on the current thread.
-  static bool have_current() { return g_current_activity_ != nullptr; }
+  static GRPC_DLL bool have_current() { return g_current_activity_ != nullptr; }
   // Set the current activity at construction, clean it up at destruction.
   class ScopedActivity {
    public:
-    explicit ScopedActivity(Activity* activity)
+    explicit GRPC_DLL ScopedActivity(Activity* activity)
         : prior_activity_(g_current_activity_) {
       g_current_activity_ = activity;
     }
-    ~ScopedActivity() { g_current_activity_ = prior_activity_; }
+    GRPC_DLL ~ScopedActivity() { g_current_activity_ = prior_activity_; }
     ScopedActivity(const ScopedActivity&) = delete;
     ScopedActivity& operator=(const ScopedActivity&) = delete;
 

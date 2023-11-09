@@ -317,8 +317,8 @@ class ChannelArgs {
     }
 
    private:
-    static const grpc_arg_pointer_vtable int_vtable_;
-    static const grpc_arg_pointer_vtable string_vtable_;
+    static const GRPC_DLL grpc_arg_pointer_vtable int_vtable_;
+    static const GRPC_DLL grpc_arg_pointer_vtable string_vtable_;
 
     Pointer rep_;
   };

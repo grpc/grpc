@@ -75,7 +75,7 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
   return now_tv;
 }
 
-gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
+gpr_timespec GPR_DLL (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
 
 gpr_timespec gpr_now(gpr_clock_type clock_type) {
   return gpr_now_impl(clock_type);

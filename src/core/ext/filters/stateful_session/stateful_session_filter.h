@@ -68,7 +68,7 @@ class XdsOverrideHostAttribute
 };
 
 // A filter to provide cookie-based stateful session affinity.
-class StatefulSessionFilter : public ChannelFilter {
+class GRPC_DLL StatefulSessionFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 

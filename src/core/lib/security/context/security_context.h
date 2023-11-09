@@ -40,7 +40,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
 
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
+extern GRPC_DLL grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 
 // --- grpc_auth_context ---
 

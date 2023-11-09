@@ -29,7 +29,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 
-extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+extern GPR_DLL gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 namespace grpc_core {
 namespace chttp2 {

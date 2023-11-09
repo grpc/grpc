@@ -34,7 +34,7 @@ namespace grpc_core {
 
 // Filter used when xDS server config fetcher provides a configuration with an
 // HTTP RBAC filter. Also serves as the type for channel data for the filter.
-class RbacFilter : public ChannelFilter {
+class GRPC_DLL RbacFilter : public ChannelFilter {
  public:
   // This channel filter is intended to be used by connections on xDS enabled
   // servers configured with RBAC. The RBAC filter fetches the RBAC policy from
