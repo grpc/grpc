@@ -22,9 +22,9 @@
 namespace Grpc\Testing;
 
 /**
- * A service to remotely control health status of an xDS test server.
+ * Hook service. Used to keep Kubernetes from shutting the pod down.
  */
-class XdsUpdateHealthServiceClient extends \Grpc\BaseStub {
+class HookServiceClient extends \Grpc\BaseStub {
 
     /**
      * @param string $hostname hostname
@@ -36,44 +36,48 @@ class XdsUpdateHealthServiceClient extends \Grpc\BaseStub {
     }
 
     /**
+     * Sends a request that will "hang" until the return status is set by a call
+     * to a SetReturnStatus
      * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      * @return \Grpc\UnaryCall
      */
-    public function SetServing(\Grpc\Testing\EmptyMessage $argument,
+    public function Hook(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.XdsUpdateHealthService/SetServing',
+        return $this->_simpleRequest('/grpc.testing.HookService/Hook',
         $argument,
         ['\Grpc\Testing\EmptyMessage', 'decode'],
         $metadata, $options);
     }
 
     /**
-     * @param \Grpc\Testing\EmptyMessage $argument input argument
+     * Sets a return status for pending and upcoming calls to Hook
+     * @param \Grpc\Testing\SetReturnStatusRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      * @return \Grpc\UnaryCall
      */
-    public function SetNotServing(\Grpc\Testing\EmptyMessage $argument,
+    public function SetReturnStatus(\Grpc\Testing\SetReturnStatusRequest $argument,
       $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.XdsUpdateHealthService/SetNotServing',
+        return $this->_simpleRequest('/grpc.testing.HookService/SetReturnStatus',
         $argument,
         ['\Grpc\Testing\EmptyMessage', 'decode'],
         $metadata, $options);
     }
 
     /**
-     * @param \Grpc\Testing\HookRequest $argument input argument
+     * Clears the return status. Incoming calls to Hook will "hang"
+     * @param \Grpc\Testing\EmptyMessage $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      * @return \Grpc\UnaryCall
      */
-    public function SendHookRequest(\Grpc\Testing\HookRequest $argument,
+    public function ClearReturnStatus(\Grpc\Testing\EmptyMessage $argument,
       $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.XdsUpdateHealthService/SendHookRequest',
+        return $this->_simpleRequest('/grpc.testing.HookService/ClearReturnStatus',
         $argument,
-        ['\Grpc\Testing\HookResponse', 'decode'],
+        ['\Grpc\Testing\EmptyMessage', 'decode'],
         $metadata, $options);
     }
 

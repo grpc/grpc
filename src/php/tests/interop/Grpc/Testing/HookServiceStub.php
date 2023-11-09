@@ -22,17 +22,19 @@
 namespace Grpc\Testing;
 
 /**
- * A service to remotely control health status of an xDS test server.
+ * Hook service. Used to keep Kubernetes from shutting the pod down.
  */
-class XdsUpdateHealthServiceStub {
+class HookServiceStub {
 
     /**
+     * Sends a request that will "hang" until the return status is set by a call
+     * to a SetReturnStatus
      * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
      * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
-    public function SetServing(
+    public function Hook(
         \Grpc\Testing\EmptyMessage $request,
         \Grpc\ServerContext $context
     ): ?\Grpc\Testing\EmptyMessage {
@@ -41,13 +43,14 @@ class XdsUpdateHealthServiceStub {
     }
 
     /**
-     * @param \Grpc\Testing\EmptyMessage $request client request
+     * Sets a return status for pending and upcoming calls to Hook
+     * @param \Grpc\Testing\SetReturnStatusRequest $request client request
      * @param \Grpc\ServerContext $context server request context
      * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
-    public function SetNotServing(
-        \Grpc\Testing\EmptyMessage $request,
+    public function SetReturnStatus(
+        \Grpc\Testing\SetReturnStatusRequest $request,
         \Grpc\ServerContext $context
     ): ?\Grpc\Testing\EmptyMessage {
         $context->setStatus(\Grpc\Status::unimplemented());
@@ -55,15 +58,16 @@ class XdsUpdateHealthServiceStub {
     }
 
     /**
-     * @param \Grpc\Testing\HookRequest $request client request
+     * Clears the return status. Incoming calls to Hook will "hang"
+     * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\HookResponse for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
-    public function SendHookRequest(
-        \Grpc\Testing\HookRequest $request,
+    public function ClearReturnStatus(
+        \Grpc\Testing\EmptyMessage $request,
         \Grpc\ServerContext $context
-    ): ?\Grpc\Testing\HookResponse {
+    ): ?\Grpc\Testing\EmptyMessage {
         $context->setStatus(\Grpc\Status::unimplemented());
         return null;
     }
@@ -76,22 +80,22 @@ class XdsUpdateHealthServiceStub {
     public final function getMethodDescriptors(): array
     {
         return [
-            '/grpc.testing.XdsUpdateHealthService/SetServing' => new \Grpc\MethodDescriptor(
+            '/grpc.testing.HookService/Hook' => new \Grpc\MethodDescriptor(
                 $this,
-                'SetServing',
+                'Hook',
                 '\Grpc\Testing\EmptyMessage',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
-            '/grpc.testing.XdsUpdateHealthService/SetNotServing' => new \Grpc\MethodDescriptor(
+            '/grpc.testing.HookService/SetReturnStatus' => new \Grpc\MethodDescriptor(
                 $this,
-                'SetNotServing',
-                '\Grpc\Testing\EmptyMessage',
+                'SetReturnStatus',
+                '\Grpc\Testing\SetReturnStatusRequest',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
-            '/grpc.testing.XdsUpdateHealthService/SendHookRequest' => new \Grpc\MethodDescriptor(
+            '/grpc.testing.HookService/ClearReturnStatus' => new \Grpc\MethodDescriptor(
                 $this,
-                'SendHookRequest',
-                '\Grpc\Testing\HookRequest',
+                'ClearReturnStatus',
+                '\Grpc\Testing\EmptyMessage',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
         ];
