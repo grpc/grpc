@@ -70,15 +70,15 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
-inline bool IsChttp2BatchRequestsEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
-inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
+inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
@@ -125,13 +125,15 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUELY_UNOWNED
+inline bool IsUniquelyUnownedEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
-inline bool IsWriteSizeCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
+inline bool IsWriteSizeCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 
@@ -149,15 +151,15 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
-inline bool IsChttp2BatchRequestsEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
-inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
+inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
@@ -205,13 +207,15 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUELY_UNOWNED
+inline bool IsUniquelyUnownedEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
-inline bool IsWriteSizeCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
+inline bool IsWriteSizeCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 
@@ -229,18 +233,19 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
-inline bool IsChttp2BatchRequestsEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
-inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
+inline bool IsChttp2OffloadOnRstStreamEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
-inline bool IsEventEngineListenerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
+inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_HTTP2_STATS_FIX
 inline bool IsHttp2StatsFixEnabled() { return true; }
@@ -284,13 +289,15 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUELY_UNOWNED
+inline bool IsUniquelyUnownedEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
-inline bool IsWriteSizeCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
+inline bool IsWriteSizeCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #endif
@@ -300,11 +307,11 @@ enum ExperimentIds {
   kExperimentIdBlockExcessiveRequestsBeforeSettingsAck,
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdCanaryClientPrivacy,
-  kExperimentIdChttp2BatchRequests,
-  kExperimentIdChttp2OffloadOnRstStream,
   kExperimentIdClientIdleness,
   kExperimentIdClientPrivacy,
   kExperimentIdCombinerOffloadToEventEngine,
+  kExperimentIdChttp2BatchRequests,
+  kExperimentIdChttp2OffloadOnRstStream,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineListener,
@@ -339,10 +346,11 @@ enum ExperimentIds {
   kExperimentIdTcpRcvLowat,
   kExperimentIdTraceRecordCallops,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
+  kExperimentIdUniquelyUnowned,
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
-  kExperimentIdWriteSizeCap,
   kExperimentIdWriteSizePolicy,
+  kExperimentIdWriteSizeCap,
   kExperimentIdWrrDelegateToPickFirst,
   kNumExperiments
 };
@@ -359,14 +367,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 inline bool IsCanaryClientPrivacyEnabled() {
   return IsExperimentEnabled(kExperimentIdCanaryClientPrivacy);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
-inline bool IsChttp2BatchRequestsEnabled() {
-  return IsExperimentEnabled(kExperimentIdChttp2BatchRequests);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
-inline bool IsChttp2OffloadOnRstStreamEnabled() {
-  return IsExperimentEnabled(kExperimentIdChttp2OffloadOnRstStream);
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() {
   return IsExperimentEnabled(kExperimentIdClientIdleness);
@@ -378,6 +378,14 @@ inline bool IsClientPrivacyEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() {
   return IsExperimentEnabled(kExperimentIdCombinerOffloadToEventEngine);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() {
+  return IsExperimentEnabled(kExperimentIdChttp2BatchRequests);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_OFFLOAD_ON_RST_STREAM
+inline bool IsChttp2OffloadOnRstStreamEnabled() {
+  return IsExperimentEnabled(kExperimentIdChttp2OffloadOnRstStream);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {
@@ -515,6 +523,10 @@ inline bool IsTraceRecordCallopsEnabled() {
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled(kExperimentIdUnconstrainedMaxQuotaBufferSize);
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUELY_UNOWNED
+inline bool IsUniquelyUnownedEnabled() {
+  return IsExperimentEnabled(kExperimentIdUniquelyUnowned);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() {
   return IsExperimentEnabled(kExperimentIdWorkSerializerClearsTimeCache);
@@ -523,13 +535,13 @@ inline bool IsWorkSerializerClearsTimeCacheEnabled() {
 inline bool IsWorkSerializerDispatchEnabled() {
   return IsExperimentEnabled(kExperimentIdWorkSerializerDispatch);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
-inline bool IsWriteSizeCapEnabled() {
-  return IsExperimentEnabled(kExperimentIdWriteSizeCap);
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() {
   return IsExperimentEnabled(kExperimentIdWriteSizePolicy);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
+inline bool IsWriteSizeCapEnabled() {
+  return IsExperimentEnabled(kExperimentIdWriteSizeCap);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() {

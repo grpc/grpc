@@ -752,6 +752,7 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/directory_reader.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
@@ -1569,11 +1570,13 @@ libs:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
+  - src/core/lib/gprpp/posix/directory_reader.cc
   - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
   - src/core/lib/gprpp/validation_errors.cc
+  - src/core/lib/gprpp/windows/directory_reader.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/http/format_request.cc
@@ -6674,12 +6677,14 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/cpp/end2end/channelz_service_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -6971,6 +6976,27 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: client_fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/client_fork_test.cc
+  deps:
+  - gtest
+  - grpc++
+  - grpc_test_util
+  - grpc++_test_config
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: client_interceptors_end2end_test
   gtest: true
   build: test
@@ -7067,6 +7093,36 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: client_transport_error_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/lib/promise/detail/join_state.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/try_join.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/chaotic_good/client_transport_error_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: client_transport_test
   gtest: true
   build: test
@@ -7077,12 +7133,13 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.h
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/promise/test_wakeup_schedulers.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chaotic_good/client_transport.cc
@@ -7529,6 +7586,17 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+- name: directory_reader_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/directory_reader_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: disappearing_server_test
   gtest: true
   build: test
@@ -9469,11 +9537,18 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/util/fuzz_config_vars.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/security/grpc_tls_crl_provider_test.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
 - name: grpc_tool_test
   gtest: true
@@ -12168,6 +12243,44 @@ targets:
   - absl/meta:type_traits
   - gpr
   uses_polling: false
+- name: promise_mutex_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/promise_mutex.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/trace.h
+  - test/core/promise/test_wakeup_schedulers.h
+  src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/trace.cc
+  - test/core/promise/promise_mutex_test.cc
+  deps:
+  - gtest
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
 - name: promise_test
   gtest: true
   build: test
@@ -16616,6 +16729,22 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+- name: tls_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/tls_credentials_test.cc
+  deps:
+  - gtest
+  - grpc++_test_util
 - name: tls_key_export_test
   gtest: true
   build: test
@@ -18091,92 +18220,6 @@ targets:
   - protoc
   - grpc_test_util
   uses_polling: false
-- name: xds_interop_client
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/cpp/server/csds/csds.h
-  - test/cpp/interop/rpc_behavior_lb_policy.h
-  - test/cpp/interop/xds_stats_watcher.h
-  src:
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/config_dump.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/cpp/server/admin/admin_services.cc
-  - src/cpp/server/csds/csds.cc
-  - test/cpp/interop/rpc_behavior_lb_policy.cc
-  - test/cpp/interop/xds_interop_client.cc
-  - test/cpp/interop/xds_stats_watcher.cc
-  deps:
-  - grpc++_reflection
-  - grpcpp_channelz
-  - grpc_test_util
-  - grpc++_test_config
-- name: xds_interop_server
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/cpp/server/csds/csds.h
-  - test/cpp/end2end/test_health_check_service_impl.h
-  - test/cpp/interop/pre_stop_hook_server.h
-  - test/cpp/interop/xds_interop_server_lib.h
-  src:
-  - src/proto/grpc/health/v1/health.proto
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/config_dump.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/cpp/server/admin/admin_services.cc
-  - src/cpp/server/csds/csds.cc
-  - test/cpp/end2end/test_health_check_service_impl.cc
-  - test/cpp/interop/pre_stop_hook_server.cc
-  - test/cpp/interop/xds_interop_server.cc
-  - test/cpp/interop/xds_interop_server_lib.cc
-  deps:
-  - grpc++_reflection
-  - grpcpp_channelz
-  - grpc_test_util
-  - grpc++_test_config
-- name: xds_interop_server_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/cpp/server/csds/csds.h
-  - test/cpp/end2end/test_health_check_service_impl.h
-  - test/cpp/interop/pre_stop_hook_server.h
-  - test/cpp/interop/xds_interop_server_lib.h
-  src:
-  - src/proto/grpc/health/v1/health.proto
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/istio_echo.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/config_dump.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/cpp/server/admin/admin_services.cc
-  - src/cpp/server/csds/csds.cc
-  - test/cpp/end2end/test_health_check_service_impl.cc
-  - test/cpp/interop/pre_stop_hook_server.cc
-  - test/cpp/interop/xds_interop_server_lib.cc
-  - test/cpp/interop/xds_interop_server_test.cc
-  deps:
-  - gtest
-  - grpc++_reflection
-  - grpcpp_channelz
-  - grpc_test_util
-  - grpc++_test_config
 - name: xds_lb_policy_registry_test
   gtest: true
   build: test

@@ -240,6 +240,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "directory_reader",
+    srcs = [
+        "lib/gprpp/posix/directory_reader.cc",
+        "lib/gprpp/windows/directory_reader.cc",
+    ],
+    hdrs = [
+        "lib/gprpp/directory_reader.h",
+    ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:gpr",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "chunked_vector",
     hdrs = ["lib/gprpp/chunked_vector.h"],
     deps = [
@@ -882,6 +903,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise_mutex",
+    hdrs = [
+        "lib/promise/promise_mutex.h",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "poll",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "inter_activity_pipe",
     hdrs = [
         "lib/promise/inter_activity_pipe.h",
@@ -1435,9 +1469,7 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/forkable.h",
     ],
-    external_deps = ["absl/base:core_headers"],
     deps = [
-        "no_destruct",
         "//:config_vars",
         "//:gpr",
         "//:gpr_platform",
@@ -1580,9 +1612,9 @@ grpc_cc_library(
         "event_engine_trace",
         "event_engine_work_queue",
         "forkable",
+        "no_destruct",
         "notification",
         "time",
-        "useful",
         "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -1643,6 +1675,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_poller",
+        "forkable",
         "posix_event_engine_closure",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -1775,7 +1808,6 @@ grpc_cc_library(
     deps = [
         "event_engine_poller",
         "event_engine_time_util",
-        "forkable",
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
@@ -1813,7 +1845,6 @@ grpc_cc_library(
         "common_event_engine_closures",
         "event_engine_poller",
         "event_engine_time_util",
-        "forkable",
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
@@ -1838,7 +1869,9 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     deps = [
+        "forkable",
         "iomgr_port",
+        "no_destruct",
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_epoll1",
         "posix_event_engine_poller_posix_poll",
@@ -2052,8 +2085,10 @@ grpc_cc_library(
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
+        "forkable",
         "init_internally",
         "iomgr_port",
+        "no_destruct",
         "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
@@ -2201,6 +2236,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_map",
+        "absl/strings",
         "absl/strings:str_format",
     ],
     deps = [
@@ -3081,15 +3117,23 @@ grpc_cc_library(
         "lib/security/credentials/tls/grpc_tls_crl_provider.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
         "absl/types:span",
         "libcrypto",
         "libssl",
     ],
     deps = [
+        "default_event_engine",
+        "directory_reader",
+        "load_file",
+        "slice",
+        "time",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
     ],
@@ -5681,7 +5725,6 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chttp2/transport/hpack_encoder_table.h",
     ],
-    external_deps = ["absl/container:inlined_vector"],
     language = "c++",
     deps = [
         "hpack_constants",
@@ -6027,6 +6070,7 @@ grpc_cc_library(
         "arena",
         "bitset",
         "chaotic_good_frame_header",
+        "context",
         "no_destruct",
         "slice",
         "slice_buffer",
@@ -6189,29 +6233,43 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/random",
+        "absl/random:bit_gen_ref",
         "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
         "absl/types:variant",
     ],
     language = "c++",
     deps = [
         "activity",
+        "arena",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "context",
         "event_engine_wakeup_scheduler",
         "for_each",
         "grpc_promise_endpoint",
-        "join",
+        "if",
+        "inter_activity_pipe",
         "loop",
         "match",
+        "memory_quota",
         "mpsc",
         "pipe",
-        "seq",
+        "poll",
+        "resource_quota",
         "slice",
         "slice_buffer",
+        "try_join",
+        "try_seq",
+        "//:exec_ctx",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
         "//:hpack_encoder",
+        "//:hpack_parser",
+        "//:ref_counted_ptr",
     ],
 )
 

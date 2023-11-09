@@ -3749,9 +3749,9 @@ grpc_cc_library(
     hdrs = ["//src/core:ext/filters/client_channel/resolver/fake/fake_resolver.h"],
     external_deps = [
         "absl/base:core_headers",
-        "absl/status",
-        "absl/status:statusor",
         "absl/strings",
+        "absl/time",
+        "absl/types:optional",
     ],
     language = "c++",
     visibility = [
@@ -3761,7 +3761,6 @@ grpc_cc_library(
     deps = [
         "config",
         "debug_location",
-        "endpoint_addresses",
         "gpr",
         "grpc_public_hdrs",
         "grpc_resolver",
@@ -3770,7 +3769,6 @@ grpc_cc_library(
         "uri_parser",
         "work_serializer",
         "//src/core:channel_args",
-        "//src/core:grpc_service_config",
         "//src/core:notification",
         "//src/core:ref_counted",
         "//src/core:useful",
@@ -3864,8 +3862,10 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_base",
+        "ref_counted_ptr",
         "//src/core:error",
         "//src/core:hpack_constants",
+        "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:status_helper",
     ],

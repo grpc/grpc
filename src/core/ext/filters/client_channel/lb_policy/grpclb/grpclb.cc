@@ -866,14 +866,10 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
 
 void GrpcLb::Helper::RequestReresolution() {
   if (parent()->shutting_down_) return;
-  // If we are talking to a balancer, we expect to get updated addresses
-  // from the balancer, so we can ignore the re-resolution request from
-  // the child policy. Otherwise, pass the re-resolution request up to the
-  // channel.
-  if (parent()->lb_calld_ == nullptr ||
-      !parent()->lb_calld_->seen_initial_response()) {
-    parent()->channel_control_helper()->RequestReresolution();
-  }
+  // Ignore if we're not in fallback mode, because if we got the backend
+  // addresses from the balancer, re-resolving is not going to fix it.
+  if (!parent()->fallback_mode_) return;
+  parent()->channel_control_helper()->RequestReresolution();
 }
 
 //
@@ -1542,6 +1538,10 @@ class GrpcLb::NullLbTokenEndpointIterator : public EndpointAddressesIterator {
   void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+        gpr_log(GPR_INFO, "[grpclb %p] fallback address: %s", this,
+                endpoint.ToString().c_str());
+      }
       callback(EndpointAddresses(endpoint.addresses(),
                                  endpoint.args().SetObject(empty_token_)));
     });
@@ -1554,6 +1554,9 @@ class GrpcLb::NullLbTokenEndpointIterator : public EndpointAddressesIterator {
 };
 
 absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+    gpr_log(GPR_INFO, "[grpclb %p] received update", this);
+  }
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config;
   GPR_ASSERT(config_ != nullptr);
@@ -1611,6 +1614,12 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
 absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   // Get balancer addresses.
   EndpointAddressesList balancer_addresses = ExtractBalancerAddresses(args_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+    for (const auto& endpoint : balancer_addresses) {
+      gpr_log(GPR_INFO, "[grpclb %p] balancer address: %s", this,
+              endpoint.ToString().c_str());
+    }
+  }
   absl::Status status;
   if (balancer_addresses.empty()) {
     status = absl::UnavailableError("balancer address list must be non-empty");

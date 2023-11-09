@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
@@ -34,6 +35,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
@@ -42,6 +44,7 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
@@ -206,7 +209,8 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     proxy_builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 1);
     proxy_builder.AddChannelArgument(
         GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024);
-    proxy_builder.RegisterService(&proxy_service_);
+    proxy_service_ = std::make_unique<Proxy>();
+    proxy_builder.RegisterService(proxy_service_.get());
     proxy_server_ = proxy_builder.BuildAndStart();
   }
 
@@ -216,6 +220,16 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     }
     proxy_server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     grpc_shutdown();
+    proxy_server_.reset();
+    echo_stub_.reset();
+    channelz_stub_.reset();
+    backends_.clear();
+    proxy_service_.reset();
+    // Ensure all pending callbacks are handled before finishing the test
+    // to ensure hygene between test cases.
+    // (requires any grpc-object-holding values be cleared out first).
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        grpc_event_engine::experimental::GetDefaultEventEngine());
   }
 
   // Sets the proxy up to have an arbitrary number of backends.
@@ -243,7 +257,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
       std::shared_ptr<Channel> channel_to_backend = grpc::CreateCustomChannel(
           backend_server_address, GetChannelCredentials(GetParam(), &args),
           args);
-      proxy_service_.AddChannelToBackend(channel_to_backend);
+      proxy_service_->AddChannelToBackend(channel_to_backend);
     }
   }
 
@@ -279,8 +293,8 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     request.mutable_param()->set_backend_channel_idx(channel_idx);
     ClientContext context;
     Status s = echo_stub_->Echo(&context, request, &response);
-    EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+    if (s.ok()) EXPECT_EQ(response.message(), request.message());
   }
 
   void SendSuccessfulStream(int num_messages) {
@@ -344,7 +358,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
   // proxy server to ping with channelz requests.
   std::unique_ptr<Server> proxy_server_;
   int proxy_port_;
-  Proxy proxy_service_;
+  std::unique_ptr<Proxy> proxy_service_;
 
   // backends. All implement the echo service.
   std::vector<BackendData> backends_;
@@ -840,8 +854,8 @@ TEST_P(ChannelzServerTest, GetServerSocketsPaginationTest) {
     request.mutable_param()->set_backend_channel_idx(0);
     ClientContext context;
     Status s = stubs.back()->Echo(&context, request, &response);
-    EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+    if (s.ok()) EXPECT_EQ(response.message(), request.message());
   }
   GetServersRequest get_server_request;
   GetServersResponse get_server_response;
@@ -902,7 +916,7 @@ TEST_P(ChannelzServerTest, GetServerListenSocketsTest) {
   // The resolver might return one or two addresses depending on the
   // configuration, one for ipv4 and one for ipv6.
   int listen_socket_size = get_server_response.server(0).listen_socket_size();
-  EXPECT_TRUE(listen_socket_size == 1 || listen_socket_size == 2);
+  EXPECT_THAT(listen_socket_size, ::testing::AnyOf(1, 2));
   GetSocketRequest get_socket_request;
   GetSocketResponse get_socket_response;
   get_socket_request.set_socket_id(
