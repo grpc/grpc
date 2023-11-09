@@ -34,7 +34,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -42,6 +41,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
@@ -73,6 +73,19 @@ class ClientTransport {
     }
     if (reader_ != nullptr) {
       reader_.reset();
+    }
+  }
+  void AbortWithError() {
+    // Mark transport as unavailable when the endpoint write/read failed.
+    // Close all the available pipes.
+    if (!outgoing_frames_.IsClosed()) {
+      outgoing_frames_.MarkClosed();
+    }
+    MutexLock lock(&mu_);
+    for (const auto& pair : stream_map_) {
+      if (!pair.second->IsClose()) {
+        pair.second->MarkClose();
+      }
     }
   }
   auto AddStream(CallArgs call_args) {
@@ -119,8 +132,11 @@ class ClientTransport {
                       outgoing_frames.Send(ClientFrame(std::move(frame))),
                       [](bool success) -> absl::Status {
                         if (!success) {
-                          return absl::InternalError(
-                              "Send frame to outgoing_frames failed.");
+                          // TODO(ladynana): propagate the actual error message
+                          // from EventEngine.
+                          return absl::UnavailableError(
+                              "Transport closed due to endpoint write/read "
+                              "failed.");
                         }
                         return absl::OkStatus();
                       });
@@ -137,38 +153,51 @@ class ClientTransport {
                   // Save incomming frame results to call_args.
                   [server_initial_metadata, server_to_client_messages](
                       absl::optional<ServerFrame> server_frame) mutable {
-                    GPR_ASSERT(server_frame.has_value());
-                    auto frame = std::move(
-                        absl::get<ServerFragmentFrame>(*server_frame));
+                    bool transport_closed = false;
+                    ServerFragmentFrame frame;
+                    if (!server_frame.has_value()) {
+                      // Incoming server frame pipe is closed, which only
+                      // happens when transport is aborted.
+                      transport_closed = true;
+                    } else {
+                      frame = std::move(
+                          absl::get<ServerFragmentFrame>(*server_frame));
+                    };
                     bool has_headers = (frame.headers != nullptr);
                     bool has_message = (frame.message != nullptr);
                     bool has_trailers = (frame.trailers != nullptr);
                     return TrySeq(
-                        If(
-                            has_headers,
-                            [server_initial_metadata,
-                             headers = std::move(frame.headers)]() mutable {
-                              return server_initial_metadata->Push(
-                                  std::move(headers));
-                            },
-                            [] { return false; }),
-                        If(
-                            has_message,
-                            [server_to_client_messages,
-                             message = std::move(frame.message)]() mutable {
-                              return server_to_client_messages->Push(
-                                  std::move(message));
-                            },
-                            [] { return false; }),
-                        If(
-                            has_trailers,
-                            [trailers = std::move(frame.trailers)]() mutable
-                            -> LoopCtl<ServerMetadataHandle> {
-                              return std::move(trailers);
-                            },
-                            []() -> LoopCtl<ServerMetadataHandle> {
-                              return Continue();
-                            }));
+                        If((!transport_closed) && has_headers,
+                           [server_initial_metadata,
+                            headers = std::move(frame.headers)]() mutable {
+                             return server_initial_metadata->Push(
+                                 std::move(headers));
+                           },
+                           [] { return false; }),
+                        If((!transport_closed) && has_message,
+                           [server_to_client_messages,
+                            message = std::move(frame.message)]() mutable {
+                             return server_to_client_messages->Push(
+                                 std::move(message));
+                           },
+                           [] { return false; }),
+                        If((!transport_closed) && has_trailers,
+                           [trailers = std::move(frame.trailers)]() mutable
+                           -> LoopCtl<ServerMetadataHandle> {
+                             return std::move(trailers);
+                           },
+                           [transport_closed]()
+                               -> LoopCtl<ServerMetadataHandle> {
+                             if (transport_closed) {
+                               // TODO(ladynana): propagate the actual error
+                               // message from EventEngine.
+                               return ServerMetadataFromStatus(
+                                   absl::UnavailableError(
+                                       "Transport closed due to endpoint "
+                                       "write/read failed."));
+                             }
+                             return Continue();
+                           }));
                   });
             })),
         [](std::tuple<Empty, ServerMetadataHandle> ret) {
@@ -204,6 +233,7 @@ class ClientTransport {
   std::shared_ptr<FrameHeader> frame_header_;
   MemoryAllocator memory_allocator_;
   ScopedArenaPtr arena_;
+  promise_detail::Context<Arena> context_;
   // Use to synchronize writer_ and reader_ activity with outside activities;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };

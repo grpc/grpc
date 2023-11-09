@@ -240,10 +240,6 @@ class HPackParser {
     uint32_t frame_length = 0;
     // Length of the string being parsed
     uint32_t string_length;
-    // How many more dynamic table updates are allowed
-    uint8_t dynamic_table_updates_allowed;
-    // Current parse state
-    ParseState parse_state = ParseState::kTop;
     // RED for overly large metadata sets
     RandomEarlyDetection metadata_early_detection;
     // Should the current header be added to the hpack table?
@@ -252,6 +248,10 @@ class HPackParser {
     bool is_string_huff_compressed;
     // Is the value being parsed binary?
     bool is_binary_header;
+    // How many more dynamic table updates are allowed
+    uint8_t dynamic_table_updates_allowed;
+    // Current parse state
+    ParseState parse_state = ParseState::kTop;
     absl::variant<const HPackTable::Memento*, Slice> key;
   };
 

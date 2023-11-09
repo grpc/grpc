@@ -903,6 +903,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise_mutex",
+    hdrs = [
+        "lib/promise/promise_mutex.h",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "poll",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "inter_activity_pipe",
     hdrs = [
         "lib/promise/inter_activity_pipe.h",
@@ -1456,9 +1469,7 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/forkable.h",
     ],
-    external_deps = ["absl/base:core_headers"],
     deps = [
-        "no_destruct",
         "//:config_vars",
         "//:gpr",
         "//:gpr_platform",
@@ -1601,9 +1612,9 @@ grpc_cc_library(
         "event_engine_trace",
         "event_engine_work_queue",
         "forkable",
+        "no_destruct",
         "notification",
         "time",
-        "useful",
         "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -1664,6 +1675,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_poller",
+        "forkable",
         "posix_event_engine_closure",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -1796,7 +1808,6 @@ grpc_cc_library(
     deps = [
         "event_engine_poller",
         "event_engine_time_util",
-        "forkable",
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
@@ -1834,7 +1845,6 @@ grpc_cc_library(
         "common_event_engine_closures",
         "event_engine_poller",
         "event_engine_time_util",
-        "forkable",
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
@@ -1859,7 +1869,9 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     deps = [
+        "forkable",
         "iomgr_port",
+        "no_destruct",
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_epoll1",
         "posix_event_engine_poller_posix_poll",
@@ -2073,8 +2085,10 @@ grpc_cc_library(
         "event_engine_thread_pool",
         "event_engine_trace",
         "event_engine_utils",
+        "forkable",
         "init_internally",
         "iomgr_port",
+        "no_destruct",
         "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
@@ -6225,6 +6239,7 @@ grpc_cc_library(
         "arena",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "context",
         "event_engine_wakeup_scheduler",
         "for_each",
         "grpc_promise_endpoint",

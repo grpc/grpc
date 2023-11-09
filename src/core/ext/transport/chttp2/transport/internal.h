@@ -319,7 +319,6 @@ struct grpc_chttp2_transport final
   };
 
   grpc_closure write_action_begin_locked;
-  grpc_closure write_action;
   grpc_closure write_action_end_locked;
 
   grpc_closure read_action_locked;
@@ -464,12 +463,8 @@ struct grpc_chttp2_transport final
   // keep-alive ping support
   /// Closure to initialize a keepalive ping
   grpc_closure init_keepalive_ping_locked;
-  /// Closure to run when the keepalive ping is sent
-  grpc_closure start_keepalive_ping_locked;
   /// Closure to run when the keepalive ping ack is received
   grpc_closure finish_keepalive_ping_locked;
-  /// Closure to run when the keepalive ping timeouts
-  grpc_closure keepalive_watchdog_fired_locked;
   /// timer to initiate ping events
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       keepalive_ping_timer_handle;
@@ -506,6 +501,9 @@ struct grpc_chttp2_transport final
   /// how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
   uint32_t write_buffer_size = grpc_core::chttp2::kDefaultWindow;
 
+  /// write execution state of the transport
+  grpc_chttp2_write_state write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
+
   /// policy for how much data we're willing to put into one http2 write
   grpc_core::Chttp2WriteSizePolicy write_size_policy;
 
@@ -525,8 +523,6 @@ struct grpc_chttp2_transport final
 
   /// if keepalive pings are allowed when there's no outstanding streams
   bool keepalive_permit_without_calls = false;
-  /// If start_keepalive_ping_locked has been called
-  bool keepalive_ping_started = false;
 
   // bdp estimator
   bool bdp_ping_blocked =
@@ -534,9 +530,6 @@ struct grpc_chttp2_transport final
 
   /// is the transport destroying itself?
   uint8_t destroying = false;
-
-  /// is there a read request to the endpoint outstanding?
-  uint8_t endpoint_reading = 1;
 
   /// is this a client?
   bool is_client;
@@ -559,9 +552,6 @@ struct grpc_chttp2_transport final
   // What percentage of rst_stream frames on the server should cause a ping
   // frame to be generated.
   uint8_t ping_on_rst_stream_percent;
-
-  /// write execution state of the transport
-  grpc_chttp2_write_state write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
 };
 
 typedef enum {

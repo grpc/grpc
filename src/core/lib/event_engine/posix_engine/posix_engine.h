@@ -104,9 +104,10 @@ class PosixEnginePollerManager
  public:
   explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
   explicit PosixEnginePollerManager(
-      grpc_event_engine::experimental::PosixEventPoller* poller);
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+          poller);
   grpc_event_engine::experimental::PosixEventPoller* Poller() {
-    return poller_;
+    return poller_.get();
   }
 
   ThreadPool* Executor() { return executor_.get(); }
@@ -124,7 +125,7 @@ class PosixEnginePollerManager
 
  private:
   enum class PollerState { kExternal, kOk, kShuttingDown };
-  grpc_event_engine::experimental::PosixEventPoller* poller_ = nullptr;
+  std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
   std::atomic<PollerState> poller_state_{PollerState::kOk};
   std::shared_ptr<ThreadPool> executor_;
   bool trigger_shutdown_called_;
@@ -160,11 +161,13 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   };
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-  // Constructs an EventEngine which does not own the poller. Do not call this
-  // constructor directly. Instead use the MakeTestOnlyPosixEventEngine static
-  // method. Its expected to be used only in tests.
+  // Constructs an EventEngine which has a shared ownership of the poller. Do
+  // not call this constructor directly. Instead use the
+  // MakeTestOnlyPosixEventEngine static method. Its expected to be used only in
+  // tests.
   explicit PosixEventEngine(
-      grpc_event_engine::experimental::PosixEventPoller* poller);
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+          poller);
   PosixEventEngine();
 #else   // GRPC_POSIX_SOCKET_TCP
   PosixEventEngine();
@@ -210,14 +213,15 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   bool Cancel(TaskHandle handle) override;
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-  // The posix EventEngine returned by this method would not own the poller
-  // and would not be in-charge of driving the poller by calling its Work(..)
-  // method. Instead its upto the test to drive the poller. The returned posix
-  // EventEngine will also not attempt to shutdown the poller since it does not
-  // own it.
+  // The posix EventEngine returned by this method would have a shared ownership
+  // of the poller and would not be in-charge of driving the poller by calling
+  // its Work(..) method. Instead its upto the test to drive the poller. The
+  // returned posix EventEngine will also not attempt to shutdown the poller
+  // since it does not own it.
   static std::shared_ptr<PosixEventEngine> MakeTestOnlyPosixEventEngine(
-      grpc_event_engine::experimental::PosixEventPoller* test_only_poller) {
-    return std::make_shared<PosixEventEngine>(test_only_poller);
+      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+          test_only_poller) {
+    return std::make_shared<PosixEventEngine>(std::move(test_only_poller));
   }
 #endif  // GRPC_POSIX_SOCKET_TCP
 
@@ -255,7 +259,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
   std::shared_ptr<ThreadPool> executor_;
-  TimerManager timer_manager_;
+  std::shared_ptr<TimerManager> timer_manager_;
 #ifdef GRPC_POSIX_SOCKET_TCP
   std::shared_ptr<PosixEnginePollerManager> poller_manager_;
 #endif  // GRPC_POSIX_SOCKET_TCP
