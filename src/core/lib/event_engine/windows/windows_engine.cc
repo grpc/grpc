@@ -99,7 +99,7 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
 
 WindowsEventEngine::WindowsEventEngine()
     : thread_pool_(
-          MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+          MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       iocp_(thread_pool_.get()),
       timer_manager_(thread_pool_),
       iocp_worker_(thread_pool_.get(), &iocp_) {
