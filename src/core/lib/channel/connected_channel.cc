@@ -411,6 +411,8 @@ auto ConnectedChannelStream::RecvMessages(
             }
             if (cancel_on_error && !status.ok()) {
               incoming_messages.CloseWithError();
+            } else {
+              incoming_messages.Close();
             }
             return Immediate(LoopCtl<absl::Status>(status.status()));
           };
