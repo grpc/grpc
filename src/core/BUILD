@@ -1315,7 +1315,10 @@ grpc_cc_library(
         "absl/hash",
         "absl/strings",
     ],
-    visibility = ["@grpc:alt_grpc_base_legacy"],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+        "@grpc:tsi_interface",
+    ],
     deps = [
         "slice_cast",
         "slice_refcount",
@@ -1334,6 +1337,7 @@ grpc_cc_library(
         "lib/slice/slice_buffer.h",
         "//:include/grpc/slice_buffer.h",
     ],
+    visibility = ["@grpc:tsi_interface"],
     deps = [
         "slice",
         "slice_refcount",
