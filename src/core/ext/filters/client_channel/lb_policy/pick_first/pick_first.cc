@@ -771,15 +771,17 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
         "[PF %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
         " (subchannel_state %p): connectivity changed: old_state=%s, "
         "new_state=%s, status=%s, seen_transient_failure=%d, p->selected_=%p, "
-        "p->subchannel_list_=%p",
+        "p->subchannel_list_=%p, p->subchannel_list_->shutting_down_=%d",
         p, subchannel_list_, index_, subchannel_list_->size(),
         subchannel_state_.get(),
         (connectivity_state_.has_value()
              ? ConnectivityStateName(*connectivity_state_)
              : "N/A"),
         ConnectivityStateName(new_state), status.ToString().c_str(),
-        seen_transient_failure_, p->selected_.get(), p->subchannel_list_.get());
+        seen_transient_failure_, p->selected_.get(), p->subchannel_list_.get(),
+        p->subchannel_list_->shutting_down_);
   }
+  if (subchannel_list_->shutting_down_) return;
   // The notification must be for a subchannel in the current list.
   GPR_ASSERT(subchannel_list_ == p->subchannel_list_.get());
   // SHUTDOWN should never happen.
