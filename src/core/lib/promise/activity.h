@@ -502,7 +502,7 @@ class PromiseActivity final
   // the activity to an external threadpool to run. If the activity is already
   // running on this thread, a note is taken of such and the activity is
   // repolled if it doesn't complete.
-  void Wakeup(WakeupMask) final {
+  void Wakeup(WakeupMask m) final {
     // If there is an active activity, but hey it's us, flag that and we'll loop
     // in RunLoop (that's calling from above here!).
     if (Activity::is_current()) {
@@ -511,6 +511,10 @@ class PromiseActivity final
       WakeupComplete();
       return;
     }
+    WakeupAsync(m);
+  }
+
+  void WakeupAsync(WakeupMask) final {
     if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
       // Can't safely run, so ask to run later.
       this->ScheduleWakeup();
@@ -519,8 +523,6 @@ class PromiseActivity final
       WakeupComplete();
     }
   }
-
-  void WakeupAsync(WakeupMask) final { Crash("not implemented"); }
 
   // Drop a wakeup
   void Drop(WakeupMask) final { this->WakeupComplete(); }

@@ -457,6 +457,7 @@ grpc_cc_library(
         "arena",
         "construct_destruct",
         "context",
+        "poll",
         "promise_factory",
         "promise_trace",
         "ref_counted",
@@ -849,6 +850,25 @@ grpc_cc_library(
         "activity",
         "poll",
         "promise_trace",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "inter_activity_latch",
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/strings",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/inter_activity_latch.h",
+    ],
+    deps = [
+        "activity",
+        "poll",
+        "promise_trace",
+        "wait_set",
         "//:gpr",
     ],
 )
