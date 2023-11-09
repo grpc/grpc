@@ -441,9 +441,9 @@ if(BUILD_SHARED_LIBS AND WIN32)
 # for DLL builds - and should be completely removed when source files are
 # generated with the necessary __declspec annotations.
 set(gRPC_UPB_GEN_DUPL_SRC
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
 )
 set(gRPC_ADDITIONAL_DLL_SRC
   src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
@@ -1861,319 +1861,319 @@ add_library(grpc
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/transport/inproc/legacy_inproc_transport.cc
-  src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c
-  src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c
-  src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c
-  src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.c
-  src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.c
-  src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.c
-  src/core/ext/upb-generated/envoy/admin/v3/memory.upb.c
-  src/core/ext/upb-generated/envoy/admin/v3/metrics.upb.c
-  src/core/ext/upb-generated/envoy/admin/v3/mutex_stats.upb.c
-  src/core/ext/upb-generated/envoy/admin/v3/server_info.upb.c
-  src/core/ext/upb-generated/envoy/admin/v3/tap.upb.c
-  src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
-  src/core/ext/upb-generated/envoy/annotations/resource.upb.c
-  src/core/ext/upb-generated/envoy/config/accesslog/v3/accesslog.upb.c
-  src/core/ext/upb-generated/envoy/config/bootstrap/v3/bootstrap.upb.c
-  src/core/ext/upb-generated/envoy/config/cluster/v3/circuit_breaker.upb.c
-  src/core/ext/upb-generated/envoy/config/cluster/v3/cluster.upb.c
-  src/core/ext/upb-generated/envoy/config/cluster/v3/filter.upb.c
-  src/core/ext/upb-generated/envoy/config/cluster/v3/outlier_detection.upb.c
-  src/core/ext/upb-generated/envoy/config/common/matcher/v3/matcher.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/address.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/backoff.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/base.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/grpc_method_list.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c
-  src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c
-  src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c
-  src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c
-  src/core/ext/upb-generated/envoy/config/listener/v3/api_listener.upb.c
-  src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c
-  src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c
-  src/core/ext/upb-generated/envoy/config/listener/v3/quic_config.upb.c
-  src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c
-  src/core/ext/upb-generated/envoy/config/metrics/v3/metrics_service.upb.c
-  src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c
-  src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c
-  src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c
-  src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c
-  src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
-  src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
-  src/core/ext/upb-generated/envoy/config/tap/v3/common.upb.c
-  src/core/ext/upb-generated/envoy/config/trace/v3/datadog.upb.c
-  src/core/ext/upb-generated/envoy/config/trace/v3/dynamic_ot.upb.c
-  src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c
-  src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.c
-  src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.c
-  src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.c
-  src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.c
-  src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c
-  src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c
-  src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c
-  src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c
-  src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c
-  src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
-  src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c
-  src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c
-  src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c
-  src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c
-  src/core/ext/upb-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.c
-  src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
-  src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c
-  src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c
-  src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c
-  src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c
-  src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c
-  src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c
-  src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
-  src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c
-  src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/secret.upb.c
-  src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/tls.upb.c
-  src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb.c
-  src/core/ext/upb-generated/envoy/service/discovery/v3/ads.upb.c
-  src/core/ext/upb-generated/envoy/service/discovery/v3/discovery.upb.c
-  src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c
-  src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c
-  src/core/ext/upb-generated/envoy/type/http/v3/cookie.upb.c
-  src/core/ext/upb-generated/envoy/type/http/v3/path_transformation.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
-  src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c
-  src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/hash_policy.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/http.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/http_status.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/percent.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/range.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/api/httpbody.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/ext/upb-generated/opencensus/proto/trace/v1/trace_config.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.c
-  src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
-  src/core/ext/upb-generated/udpa/annotations/security.upb.c
-  src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
-  src/core/ext/upb-generated/udpa/annotations/status.upb.c
-  src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
-  src/core/ext/upb-generated/xds/annotations/v3/migrate.upb.c
-  src/core/ext/upb-generated/xds/annotations/v3/security.upb.c
-  src/core/ext/upb-generated/xds/annotations/v3/sensitive.upb.c
-  src/core/ext/upb-generated/xds/annotations/v3/status.upb.c
-  src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c
-  src/core/ext/upb-generated/xds/core/v3/authority.upb.c
-  src/core/ext/upb-generated/xds/core/v3/cidr.upb.c
-  src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
-  src/core/ext/upb-generated/xds/core/v3/context_params.upb.c
-  src/core/ext/upb-generated/xds/core/v3/extension.upb.c
-  src/core/ext/upb-generated/xds/core/v3/resource.upb.c
-  src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
-  src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
-  src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
-  src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
-  src/core/ext/upb-generated/xds/type/v3/cel.upb.c
-  src/core/ext/upb-generated/xds/type/v3/range.upb.c
-  src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c
-  src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/admin/v3/memory.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/admin/v3/metrics.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/admin/v3/mutex_stats.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/admin/v3/server_info.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/admin/v3/tap.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/bootstrap/v3/bootstrap.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/cluster/v3/circuit_breaker.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/cluster/v3/cluster.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/cluster/v3/filter.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/cluster/v3/outlier_detection.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/common/matcher/v3/matcher.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/address.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/backoff.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/base.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/config_source.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/event_service_config.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/extension.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/grpc_method_list.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/grpc_service.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/health_check.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/resolver.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/core/v3/udp_socket_config.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/listener/v3/quic_config.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/metrics/v3/metrics_service.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/rbac/v3/rbac.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/tap/v3/common.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/trace/v3/datadog.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/trace/v3/dynamic_ot.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/service/discovery/v3/ads.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/service/discovery/v3/discovery.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/service/load_stats/v3/lrs.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/http/v3/cookie.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/http/v3/path_transformation.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/filter_state.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/http_inputs.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/status_code_input.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/metadata/v3/metadata.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/tracing/v3/custom_tag.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/v3/hash_policy.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/v3/http.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/v3/http_status.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c
-  src/core/ext/upbdefs-generated/envoy/type/v3/token_bucket.upbdefs.c
-  src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c
-  src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/checked.upbdefs.c
-  src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/syntax.upbdefs.c
-  src/core/ext/upbdefs-generated/google/api/http.upbdefs.c
-  src/core/ext/upbdefs-generated/google/api/httpbody.upbdefs.c
-  src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c
-  src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c
-  src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c
-  src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c
-  src/core/ext/upbdefs-generated/google/protobuf/timestamp.upbdefs.c
-  src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c
-  src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c
-  src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.c
-  src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
-  src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c
-  src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c
-  src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c
-  src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c
-  src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c
-  src/core/ext/upbdefs-generated/validate/validate.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/annotations/v3/migrate.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/annotations/v3/security.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/annotations/v3/sensitive.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/core/v3/cidr.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/type/matcher/v3/cel.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/type/matcher/v3/domain.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/type/matcher/v3/http_inputs.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/type/matcher/v3/ip.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/type/matcher/v3/range.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/type/v3/cel.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/type/v3/range.upbdefs.c
-  src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c
+  src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c
+  src/core/ext/upb-gen/envoy/admin/v3/clusters.upb_minitable.c
+  src/core/ext/upb-gen/envoy/admin/v3/config_dump.upb_minitable.c
+  src/core/ext/upb-gen/envoy/admin/v3/config_dump_shared.upb_minitable.c
+  src/core/ext/upb-gen/envoy/admin/v3/init_dump.upb_minitable.c
+  src/core/ext/upb-gen/envoy/admin/v3/listeners.upb_minitable.c
+  src/core/ext/upb-gen/envoy/admin/v3/memory.upb_minitable.c
+  src/core/ext/upb-gen/envoy/admin/v3/metrics.upb_minitable.c
+  src/core/ext/upb-gen/envoy/admin/v3/mutex_stats.upb_minitable.c
+  src/core/ext/upb-gen/envoy/admin/v3/server_info.upb_minitable.c
+  src/core/ext/upb-gen/envoy/admin/v3/tap.upb_minitable.c
+  src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
+  src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/accesslog/v3/accesslog.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/bootstrap/v3/bootstrap.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/cluster/v3/circuit_breaker.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/cluster/v3/cluster.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/cluster/v3/filter.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/endpoint/v3/endpoint.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/endpoint/v3/endpoint_components.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/endpoint/v3/load_report.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/listener/v3/api_listener.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/listener/v3/listener.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/listener/v3/listener_components.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/listener/v3/quic_config.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/listener/v3/udp_listener_config.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/metrics/v3/metrics_service.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/metrics/v3/stats.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/overload/v3/overload.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/rbac/v3/rbac.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/route/v3/route.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/route/v3/route_components.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/route/v3/scoped_route.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/tap/v3/common.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/trace/v3/datadog.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/trace/v3/dynamic_ot.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/trace/v3/http_tracer.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/trace/v3/service.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/trace/v3/skywalking.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/trace/v3/trace.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/trace/v3/xray.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/trace/v3/zipkin.upb_minitable.c
+  src/core/ext/upb-gen/envoy/data/accesslog/v3/accesslog.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/filters/http/router/v3/router.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3/common.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/common.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c
+  src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c
+  src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c
+  src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c
+  src/core/ext/upb-gen/envoy/service/status/v3/csds.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/node.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/number.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/path.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/regex.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/status_code_input.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/string.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/struct.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/value.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/metadata/v3/metadata.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/tracing/v3/custom_tag.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/hash_policy.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/http.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/http_status.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/percent.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c
+  src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
+  src/core/ext/upb-gen/google/api/http.upb_minitable.c
+  src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb_minitable.c
+  src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
+  src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
+  src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
+  src/core/ext/upb-gen/udpa/annotations/status.upb_minitable.c
+  src/core/ext/upb-gen/udpa/annotations/versioning.upb_minitable.c
+  src/core/ext/upb-gen/validate/validate.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
+  src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
+  src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
+  src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/admin/v3/clusters.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/admin/v3/config_dump.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/admin/v3/config_dump_shared.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/admin/v3/init_dump.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/admin/v3/listeners.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/admin/v3/memory.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/admin/v3/metrics.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/admin/v3/mutex_stats.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/admin/v3/server_info.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/admin/v3/tap.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/annotations/deprecation.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/annotations/resource.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/accesslog/v3/accesslog.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/bootstrap/v3/bootstrap.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/cluster/v3/circuit_breaker.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/cluster/v3/cluster.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/cluster/v3/filter.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/core/v3/udp_socket_config.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/endpoint/v3/endpoint.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/endpoint/v3/endpoint_components.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/endpoint/v3/load_report.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/listener/v3/api_listener.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/listener/v3/listener.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/listener/v3/listener_components.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/listener/v3/quic_config.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/listener/v3/udp_listener_config.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/metrics/v3/metrics_service.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/metrics/v3/stats.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/overload/v3/overload.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/rbac/v3/rbac.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/route/v3/route.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/route/v3/route_components.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/route/v3/scoped_route.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/tap/v3/common.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/trace/v3/datadog.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/trace/v3/dynamic_ot.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/trace/v3/skywalking.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/trace/v3/trace.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/trace/v3/xray.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/config/trace/v3/zipkin.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/data/accesslog/v3/accesslog.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/filters/http/router/v3/router.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/service/status/v3/csds.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/metadata.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/node.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/number.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/path.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/regex.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/status_code_input.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/string.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/struct.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/matcher/v3/value.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/metadata/v3/metadata.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/tracing/v3/custom_tag.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/v3/hash_policy.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/v3/http.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/v3/http_status.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/v3/percent.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/v3/range.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c
+  src/core/ext/upbdefs-gen/google/api/annotations.upbdefs.c
+  src/core/ext/upbdefs-gen/google/api/expr/v1alpha1/checked.upbdefs.c
+  src/core/ext/upbdefs-gen/google/api/expr/v1alpha1/syntax.upbdefs.c
+  src/core/ext/upbdefs-gen/google/api/http.upbdefs.c
+  src/core/ext/upbdefs-gen/google/api/httpbody.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/struct.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
+  src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
+  src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
+  src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c
+  src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c
+  src/core/ext/upbdefs-gen/udpa/annotations/sensitive.upbdefs.c
+  src/core/ext/upbdefs-gen/udpa/annotations/status.upbdefs.c
+  src/core/ext/upbdefs-gen/udpa/annotations/versioning.upbdefs.c
+  src/core/ext/upbdefs-gen/validate/validate.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/annotations/v3/migrate.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/annotations/v3/security.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/annotations/v3/sensitive.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/annotations/v3/status.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/annotations/v3/versioning.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/core/v3/authority.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/core/v3/cidr.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/core/v3/collection_entry.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/core/v3/context_params.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/core/v3/extension.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/core/v3/resource.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/core/v3/resource_locator.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/core/v3/resource_name.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/type/matcher/v3/cel.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/type/matcher/v3/domain.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/type/matcher/v3/http_inputs.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/type/matcher/v3/ip.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/type/matcher/v3/matcher.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/type/matcher/v3/range.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/type/matcher/v3/regex.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/type/matcher/v3/string.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c
+  src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c
   src/core/ext/xds/certificate_provider_store.cc
   src/core/ext/xds/file_watcher_certificate_provider_factory.cc
   src/core/ext/xds/xds_api.cc
@@ -2569,9 +2569,11 @@ target_include_directories(grpc
 )
 target_link_libraries(grpc
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  ${_gRPC_RE2_LIBRARIES}
+  upb_collections_lib
   upb_json_lib
   upb_textformat_lib
+  upb
+  ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   absl::algorithm_container
   absl::cleanup
@@ -2907,25 +2909,25 @@ add_library(grpc_unsecure
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/transport/inproc/legacy_inproc_transport.cc
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
-  src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
-  src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
+  src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  src/core/ext/upb-gen/google/api/http.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c
+  src/core/ext/upb-gen/validate/validate.upb_minitable.c
+  src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
+  src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
@@ -3197,7 +3199,13 @@ add_library(grpc_unsecure
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
@@ -3240,6 +3248,7 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb_collections_lib
   upb
+  utf8_range_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::algorithm_container
   absl::cleanup
@@ -3431,25 +3440,8 @@ endif()
 
 add_library(upb ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/base/status.c
-  third_party/upb/upb/collections/array.c
-  third_party/upb/upb/collections/map.c
-  third_party/upb/upb/collections/map_sorter.c
-  third_party/upb/upb/hash/common.c
-  third_party/upb/upb/lex/atoi.c
-  third_party/upb/upb/lex/round_trip.c
-  third_party/upb/upb/lex/strtod.c
-  third_party/upb/upb/lex/unicode.c
   third_party/upb/upb/mem/alloc.c
   third_party/upb/upb/mem/arena.c
-  third_party/upb/upb/message/message.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/decode_fast.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb PUBLIC cxx_std_14)
@@ -3485,7 +3477,6 @@ target_include_directories(upb
 )
 target_link_libraries(upb
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  utf8_range_lib
 )
 
 
@@ -3503,12 +3494,12 @@ endif()
 
 add_library(upb_collections_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/base/status.c
-  third_party/upb/upb/collections/array.c
-  third_party/upb/upb/collections/map.c
-  third_party/upb/upb/collections/map_sorter.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/mem/alloc.c
   third_party/upb/upb/mem/arena.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
   third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_table/extension_registry.c
   third_party/upb/upb/mini_table/internal/message.c
@@ -3564,16 +3555,30 @@ endif()
 
 
 add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  third_party/upb/upb/base/status.c
+  third_party/upb/upb/hash/common.c
   third_party/upb/upb/json/decode.c
   third_party/upb/upb/json/encode.c
+  third_party/upb/upb/lex/atoi.c
+  third_party/upb/upb/lex/round_trip.c
+  third_party/upb/upb/lex/strtod.c
+  third_party/upb/upb/lex/unicode.c
+  third_party/upb/upb/mem/alloc.c
+  third_party/upb/upb/mem/arena.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/reflection/def_builder.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
   third_party/upb/upb/reflection/desc_state.c
@@ -3583,12 +3588,19 @@ add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/reflection/extension_range.c
   third_party/upb/upb/reflection/field_def.c
   third_party/upb/upb/reflection/file_def.c
+  third_party/upb/upb/reflection/internal/def_builder.c
+  third_party/upb/upb/reflection/internal/strdup2.c
   third_party/upb/upb/reflection/message.c
   third_party/upb/upb/reflection/message_def.c
   third_party/upb/upb/reflection/message_reserved_range.c
   third_party/upb/upb/reflection/method_def.c
   third_party/upb/upb/reflection/oneof_def.c
   third_party/upb/upb/reflection/service_def.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_json_lib PUBLIC cxx_std_14)
@@ -3624,8 +3636,7 @@ target_include_directories(upb_json_lib
 )
 target_link_libraries(upb_json_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  upb_collections_lib
-  upb
+  utf8_range_lib
 )
 
 
@@ -3642,14 +3653,28 @@ endif()
 
 
 add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  third_party/upb/upb/base/status.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/lex/atoi.c
+  third_party/upb/upb/lex/round_trip.c
+  third_party/upb/upb/lex/strtod.c
+  third_party/upb/upb/lex/unicode.c
+  third_party/upb/upb/mem/alloc.c
+  third_party/upb/upb/mem/arena.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/reflection/def_builder.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
   third_party/upb/upb/reflection/desc_state.c
@@ -3659,6 +3684,8 @@ add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/reflection/extension_range.c
   third_party/upb/upb/reflection/field_def.c
   third_party/upb/upb/reflection/file_def.c
+  third_party/upb/upb/reflection/internal/def_builder.c
+  third_party/upb/upb/reflection/internal/strdup2.c
   third_party/upb/upb/reflection/message.c
   third_party/upb/upb/reflection/message_def.c
   third_party/upb/upb/reflection/message_reserved_range.c
@@ -3666,6 +3693,11 @@ add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/reflection/oneof_def.c
   third_party/upb/upb/reflection/service_def.c
   third_party/upb/upb/text/encode.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_textformat_lib PUBLIC cxx_std_14)
@@ -3701,8 +3733,7 @@ target_include_directories(upb_textformat_lib
 )
 target_link_libraries(upb_textformat_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  upb_collections_lib
-  upb
+  utf8_range_lib
 )
 
 
@@ -4879,12 +4910,12 @@ endif()
 
 
 add_library(grpc_authorization_provider
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
@@ -5141,11 +5172,25 @@ add_library(grpc_authorization_provider
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(grpc_authorization_provider PUBLIC cxx_std_14)
@@ -5182,8 +5227,9 @@ target_include_directories(grpc_authorization_provider
 )
 target_link_libraries(grpc_authorization_provider
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  ${_gRPC_RE2_LIBRARIES}
   upb
+  ${_gRPC_RE2_LIBRARIES}
+  utf8_range_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::cleanup
   absl::flat_hash_map
@@ -8062,93 +8108,93 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cel_authorization_engine_test
-  src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
-  src/core/ext/upb-generated/envoy/annotations/resource.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/address.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/backoff.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/base.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/grpc_method_list.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/resolver.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c
-  src/core/ext/upb-generated/envoy/config/core/v3/udp_socket_config.upb.c
-  src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c
-  src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c
-  src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
-  src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/filter_state.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/http_inputs.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/status_code_input.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c
-  src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
-  src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c
-  src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/hash_policy.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/http.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/http_status.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/percent.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/range.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c
-  src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/api/httpbody.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
-  src/core/ext/upb-generated/udpa/annotations/security.upb.c
-  src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
-  src/core/ext/upb-generated/udpa/annotations/status.upb.c
-  src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
-  src/core/ext/upb-generated/xds/annotations/v3/migrate.upb.c
-  src/core/ext/upb-generated/xds/annotations/v3/security.upb.c
-  src/core/ext/upb-generated/xds/annotations/v3/sensitive.upb.c
-  src/core/ext/upb-generated/xds/annotations/v3/status.upb.c
-  src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c
-  src/core/ext/upb-generated/xds/core/v3/authority.upb.c
-  src/core/ext/upb-generated/xds/core/v3/cidr.upb.c
-  src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
-  src/core/ext/upb-generated/xds/core/v3/context_params.upb.c
-  src/core/ext/upb-generated/xds/core/v3/extension.upb.c
-  src/core/ext/upb-generated/xds/core/v3/resource.upb.c
-  src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
-  src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/cel.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/domain.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/http_inputs.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/ip.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/range.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
-  src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
-  src/core/ext/upb-generated/xds/type/v3/cel.upb.c
-  src/core/ext/upb-generated/xds/type/v3/range.upb.c
-  src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c
+  src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
+  src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/rbac/v3/rbac.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/route/v3/route.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/route/v3/route_components.upb_minitable.c
+  src/core/ext/upb-gen/envoy/config/route/v3/scoped_route.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/node.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/number.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/path.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/regex.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/status_code_input.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/string.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/struct.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/matcher/v3/value.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/metadata/v3/metadata.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/tracing/v3/custom_tag.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/hash_policy.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/http.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/http_status.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/percent.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c
+  src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
+  src/core/ext/upb-gen/google/api/http.upb_minitable.c
+  src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
+  src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
+  src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
+  src/core/ext/upb-gen/udpa/annotations/status.upb_minitable.c
+  src/core/ext/upb-gen/udpa/annotations/versioning.upb_minitable.c
+  src/core/ext/upb-gen/validate/validate.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
   src/core/lib/security/authorization/cel_authorization_engine.cc
   test/core/security/cel_authorization_engine_test.cc
   test/core/util/cmdline.cc
@@ -8804,9 +8850,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(chunked_vector_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/experiments/config.cc
@@ -8832,11 +8878,25 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
+  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(chunked_vector_test PUBLIC cxx_std_14)
 target_include_directories(chunked_vector_test
@@ -8862,6 +8922,7 @@ target_link_libraries(chunked_vector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -11393,9 +11454,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(exec_ctx_wakeup_scheduler_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
@@ -11413,11 +11474,25 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
+  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(exec_ctx_wakeup_scheduler_test PUBLIC cxx_std_14)
 target_include_directories(exec_ctx_wakeup_scheduler_test
@@ -11443,6 +11518,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::hash
   absl::type_traits
   absl::statusor
@@ -12071,9 +12147,9 @@ if(gRPC_BUILD_TESTS)
 add_executable(flow_control_test
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/experiments/config.cc
@@ -12100,11 +12176,25 @@ add_executable(flow_control_test
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/pid_controller.cc
   test/core/transport/chttp2/flow_control_test.cc
+  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(flow_control_test PUBLIC cxx_std_14)
 target_include_directories(flow_control_test
@@ -12130,6 +12220,7 @@ target_link_libraries(flow_control_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -12142,9 +12233,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(for_each_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/experiments/config.cc
@@ -12170,11 +12261,25 @@ add_executable(for_each_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
+  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(for_each_test PUBLIC cxx_std_14)
 target_include_directories(for_each_test
@@ -12200,6 +12305,7 @@ target_link_libraries(for_each_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -14872,9 +14978,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(interceptor_list_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/experiments/config.cc
@@ -14900,11 +15006,25 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/interceptor_list_test.cc
+  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(interceptor_list_test PUBLIC cxx_std_14)
 target_include_directories(interceptor_list_test
@@ -14930,6 +15050,7 @@ target_link_libraries(interceptor_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -15781,9 +15902,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(map_pipe_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/experiments/config.cc
@@ -15809,11 +15930,25 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/map_pipe_test.cc
+  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(map_pipe_test PUBLIC cxx_std_14)
 target_include_directories(map_pipe_test
@@ -15839,6 +15974,7 @@ target_link_libraries(map_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -17471,9 +17607,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(periodic_update_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
@@ -17491,11 +17627,25 @@ add_executable(periodic_update_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
+  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(periodic_update_test PUBLIC cxx_std_14)
 target_include_directories(periodic_update_test
@@ -17521,6 +17671,7 @@ target_link_libraries(periodic_update_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::statusor
@@ -24300,12 +24451,12 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/ext/transport/chttp2/transport/http_trace.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/varint.cc
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
@@ -24533,11 +24684,25 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/lib/uri/uri_parser.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   test/core/transport/chaotic_good/frame_test.cc
+  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(test_core_transport_chaotic_good_frame_test PUBLIC cxx_std_14)
 target_include_directories(test_core_transport_chaotic_good_frame_test
@@ -24563,6 +24728,7 @@ target_link_libraries(test_core_transport_chaotic_good_frame_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::cleanup
   absl::flat_hash_map
@@ -30196,7 +30362,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
-  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb -lutf8_range_lib -lupb_collections_lib"
+  "-laddress_sorting -lupb -lupb_textformat_lib -lupb_json_lib -lutf8_range_lib -lupb_collections_lib"
   "grpc.pc")
 
 # grpc_unsecure .pc file
@@ -30207,7 +30373,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
   "libcares zlib"
   "-lgrpc_unsecure"
-  "-laddress_sorting -lupb -lutf8_range_lib -lupb_collections_lib"
+  "-laddress_sorting -lutf8_range_lib -lupb -lupb_collections_lib"
   "grpc_unsecure.pc")
 
 # grpc++ .pc file
@@ -30218,7 +30384,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
-  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb -lutf8_range_lib -lupb_collections_lib"
+  "-laddress_sorting -lupb -lupb_textformat_lib -lupb_json_lib -lutf8_range_lib -lupb_collections_lib"
   "grpc++.pc")
 
 # grpc++_unsecure .pc file
@@ -30229,5 +30395,5 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
-  "-laddress_sorting -lupb -lutf8_range_lib -lupb_collections_lib"
+  "-laddress_sorting -lutf8_range_lib -lupb -lupb_collections_lib"
   "grpc++_unsecure.pc")
