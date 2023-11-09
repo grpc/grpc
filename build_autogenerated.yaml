@@ -15125,6 +15125,20 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: status_flag_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/status_flag.h
+  src:
+  - test/core/promise/status_flag_test.cc
+  deps:
+  - gtest
+  - absl/status:status
+  - absl/status:statusor
+  uses_polling: false
 - name: status_helper_test
   gtest: true
   build: test
