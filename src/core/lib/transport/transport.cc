@@ -268,4 +268,55 @@ std::string Message::DebugString() const {
   return out;
 }
 
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
+                 ClientMetadataHandle client_initial_metadata) {
+  call_initiator.SpawnGuarded(
+      "send_initial_metadata",
+      [client_initial_metadata = std::move(client_initial_metadata),
+       call_initiator]() mutable {
+        return call_initiator.PushClientInitialMetadata(
+            std::move(client_initial_metadata));
+      });
+  call_handler.SpawnGuarded(
+      "read_messages", [call_handler, call_initiator]() mutable {
+        ForEach(OutgoingMessages(call_handler), [call_initiator](
+                                                    MessageHandle msg) mutable {
+          call_initiator.SpawnGuarded(
+              "send_message", [msg = std::move(msg), call_initiator]() mutable {
+                return call_initiator.PushMessage(std::move(msg));
+              });
+        });
+      });
+  call_initiator.SpawnInfallible("read_the_things", [call_initiator,
+                                                     call_handler]() mutable {
+    return Seq(
+        call_initiator.CancelIfFails(TrySeq(
+            call_initiator.PullServerInitialMetadata(),
+            [call_handler](ServerMetadataHandle md) mutable {
+              call_handler.SpawnGuarded(
+                  "recv_initial_metadata",
+                  [md = std::move(md), call_handler]() mutable {
+                    return call_handler.PushServerInitialMetadata(
+                        std::move(md));
+                  });
+            },
+            ForEach(OutgoingMessages(call_initiator),
+                    [call_handler](MessageHandle msg) mutable {
+                      call_handler.SpawnGuarded(
+                          "recv_message",
+                          [msg = std::move(msg), call_handler]() mutable {
+                            return call_handler.PushMessage(std::move(msg));
+                          });
+                    }))),
+        call_initiator.PullServerTrailingMetadata(),
+        [call_handler](ServerMetadataHandle md) mutable {
+          call_handler.SpawnGuarded(
+              "recv_trailing_metadata",
+              [md = std::move(md), call_handler]() mutable {
+                return call_handler.PushServerTrailingMetadata(std::move(md));
+              });
+        });
+  });
+}
+
 }  // namespace grpc_core

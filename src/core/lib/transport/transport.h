@@ -55,6 +55,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -227,6 +228,208 @@ struct CallArgs {
 
 using NextPromiseFactory =
     std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
+
+class CallSpine {
+ public:
+  Pipe<ClientMetadataHandle>& client_initial_metadata() {
+    return client_initial_metadata_;
+  }
+
+  Pipe<MessageHandle>& client_to_server_messages() {
+    return *client_to_server_messages_;
+  }
+
+  Pipe<ServerMetadataHandle>& server_initial_metadata() {
+    return *server_initial_metadata_;
+  }
+
+  Pipe<MessageHandle>& server_to_client_messages() {
+    return *server_to_client_messages_;
+  }
+
+  Pipe<ServerMetadataHandle>& server_trailing_metadata() {
+    return server_trailing_metadata_;
+  }
+
+  Party* party() { return party_; }
+
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    using FactoryType =
+        promise_detail::OncePromiseFactory<void, PromiseFactory>;
+    using PromiseType = typename FactoryType::Promise;
+    using ResultType = typename PromiseType::Result;
+    party()->Spawn(name, std::move(promise_factory), [this](ResultType r) {
+      if (!IsStatusOk(r) && !cancel_latch_.is_set()) {
+        cancel_latch_.Set(StatusCast<ServerMetadataHandle>(std::move(r)));
+      }
+    });
+  }
+
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    GPR_DEBUG_ASSERT(Activity::current() == party_);
+    using P = promise_detail::PromiseLike<Promise>;
+    using ResultType = typename P::Result;
+    return Map(std::move(promise), [this](ResultType r) {
+      if (!IsStatusOk(r) && !cancel_latch_.is_set()) {
+        cancel_latch_.Set(StatusCast<ServerMetadataHandle>(std::move(r)));
+      }
+      return Empty{};
+    });
+  }
+
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    party()->Spawn(name, std::move(promise_factory), [this](Empty) {});
+  }
+
+ private:
+  Pipe<ClientMetadataHandle> client_initial_metadata_;
+  Pipe<ServerMetadataHandle> server_trailing_metadata_;
+  Latch<ServerMetadataHandle> cancel_latch_;
+
+  // TODO(ctiller): Shared with outer call for now
+  //
+  // These are the three pipes that server, client calls need to have for the
+  // initial landing of promise based calls.
+  //
+  // Eventually the core call abstraction is going to be
+  // CallInitiator/CallHandler directly, and at that point we'll want to move
+  // those members into this type - but we have several transition steps to
+  // achieve before we do that.
+  Pipe<MessageHandle>* const client_to_server_messages_;
+  Pipe<ServerMetadataHandle>* const server_initial_metadata_;
+  Pipe<MessageHandle>* const server_to_client_messages_;
+  Party* const party_;
+};
+
+class CallInitiator {
+ public:
+  auto PushClientInitialMetadata(ClientMetadataHandle md) {
+    GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
+    return Map(spine_->client_initial_metadata().sender.Push(std::move(md)),
+               [](bool ok) -> absl::optional<ClientMetadata> {
+                 return StatusFlag(ok);
+               });
+  }
+
+  auto PullServerInitialMetadata() {
+    GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
+    return Map(
+        spine_->server_initial_metadata().receiver.Next(),
+        [](NextResult<ClientMetadata> md) -> absl::optional<ClientMetadata> {
+          if (!md.has_value()) return absl::nullopt;
+          return std::move(*md);
+        });
+  }
+
+  auto PullServerTrailingMetadata() {
+    GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
+    return Map(spine_->server_trailing_metadata().receiver.Next(),
+               [](NextResult<ServerMetadataHandle> md) -> ServerMetadataHandle {
+                 GPR_ASSERT(md.has_value());
+                 return std::move(*md);
+               });
+  }
+
+  auto PullMessage() {
+    GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
+    return spine_->server_to_client_messages().receiver.Next();
+  }
+
+  auto PushMessage(MessageHandle message) {
+    GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
+    return spine_->client_to_server_messages().sender.Push(std::move(message));
+  }
+
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    return spine_->CancelIfFails(std::move(promise));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnGuarded(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnInfallible(name, std::move(promise_factory));
+  }
+
+ private:
+  RefCountedPtr<CallSpine> spine_;
+};
+
+class CallHandler {
+ public:
+  auto PullClientInitialMetadata() {
+    GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
+    return Map(
+        spine_->client_initial_metadata().receiver.Next(),
+        [](NextResult<ClientMetadata> md) -> absl::optional<ClientMetadata> {
+          if (!md.has_value()) return absl::nullopt;
+          return std::move(*md);
+        });
+  }
+
+  auto PushServerInitialMetadata(ClientMetadataHandle md) {
+    GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
+    return Map(spine_->server_initial_metadata().sender.Push(std::move(md)),
+               [](bool ok) -> absl::optional<ClientMetadata> {
+                 return StatusFlag(ok);
+               });
+  }
+
+  auto PushServerTrailingMetadata(ClientMetadataHandle md) {
+    GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
+    return Map(spine_->server_initial_metadata().sender.Push(std::move(md)),
+               [](bool ok) -> absl::optional<ClientMetadata> {
+                 return StatusFlag(ok);
+               });
+  }
+
+  auto PullMessage() {
+    GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
+    return spine_->client_to_server_messages().receiver.Next();
+  }
+
+  auto PushMessage(MessageHandle message) {
+    GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
+    return spine_->server_to_client_messages().sender.Push(std::move(message));
+  }
+
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    return spine_->CancelIfFails(std::move(promise));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnGuarded(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnInfallible(name, std::move(promise_factory));
+  }
+
+ private:
+  RefCountedPtr<CallSpine> spine_;
+};
+
+template <typename CallHalf>
+auto OutgoingMessages(CallHalf& h) {
+  struct Wrapper {
+    CallHalf& h;
+    auto Next() { return h.PullMessage(); }
+  };
+  return Wrapper{h};
+}
+
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
+                 ClientMetadataHandle client_initial_metadata);
 
 }  // namespace grpc_core
 
@@ -633,9 +836,7 @@ class FilterStackTransport {
 
 class ClientTransport {
  public:
-  // Create a promise to execute one client call.
-  virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args) = 0;
+  virtual void StartCall(CallHandler call_handler) = 0;
 
  protected:
   ~ClientTransport() = default;
@@ -643,10 +844,14 @@ class ClientTransport {
 
 class ServerTransport {
  public:
-  // Register the factory function for the filter stack part of a call
-  // promise.
-  void SetCallPromiseFactory(
-      absl::AnyInvocable<ArenaPromise<ServerMetadataHandle>(CallArgs) const>);
+  // AcceptFunction takes initial metadata for a new call and returns a
+  // CallInitiator object for it, for the transport to use to communicate with
+  // the CallHandler object passed to the application.
+  using AcceptFunction =
+      absl::AnyInvocable<CallInitiator(ClientMetadata&) const>;
+
+  // Called once slightly after transport setup to register the accept function.
+  virtual void SetAcceptFunction(AcceptFunction accept_function) = 0;
 
  protected:
   ~ServerTransport() = default;
