@@ -814,34 +814,25 @@ static void close_transport_locked(grpc_chttp2_transport* t,
       t->event_engine->Cancel(
           std::exchange(t->settings_ack_watchdog, TaskHandle::kInvalid));
     }
-    if (t->delayed_ping_timer_handle != grpc_event_engine::experimental::
-                                            EventEngine::TaskHandle::kInvalid &&
+    if (t->delayed_ping_timer_handle != TaskHandle::kInvalid &&
         t->event_engine->Cancel(t->delayed_ping_timer_handle)) {
       t->delayed_ping_timer_handle = TaskHandle::kInvalid;
     }
-    if (t->next_bdp_ping_timer_handle !=
-            grpc_event_engine::experimental::EventEngine::TaskHandle::
-                kInvalid &&
+    if (t->next_bdp_ping_timer_handle != TaskHandle::kInvalid &&
         t->event_engine->Cancel(t->next_bdp_ping_timer_handle)) {
       t->next_bdp_ping_timer_handle = TaskHandle::kInvalid;
     }
     switch (t->keepalive_state) {
       case GRPC_CHTTP2_KEEPALIVE_STATE_WAITING:
-        if (t->keepalive_ping_timer_handle !=
-                grpc_event_engine::experimental::EventEngine::TaskHandle::
-                    kInvalid &&
+        if (t->keepalive_ping_timer_handle != TaskHandle::kInvalid &&
             t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
-          t->keepalive_ping_timer_handle = grpc_event_engine::experimental::
-              EventEngine::TaskHandle::kInvalid;
+          t->keepalive_ping_timer_handle = TaskHandle::kInvalid;
         }
         break;
       case GRPC_CHTTP2_KEEPALIVE_STATE_PINGING:
-        if (t->keepalive_ping_timer_handle !=
-                grpc_event_engine::experimental::EventEngine::TaskHandle::
-                    kInvalid &&
+        if (t->keepalive_ping_timer_handle != TaskHandle::kInvalid &&
             t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
-          t->keepalive_ping_timer_handle = grpc_event_engine::experimental::
-              EventEngine::TaskHandle::kInvalid;
+          t->keepalive_ping_timer_handle = TaskHandle::kInvalid;
         }
         break;
       case GRPC_CHTTP2_KEEPALIVE_STATE_DYING:
