@@ -17,12 +17,9 @@
 
 #include <memory>
 
-#include <grpc/support/cpu.h>
-
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
 namespace grpc_event_engine {
@@ -39,9 +36,8 @@ class ThreadPoolForkCallbackMethods {
 };
 }  // namespace
 
-std::shared_ptr<ThreadPool> MakeThreadPool(size_t /* reserve_threads */) {
-  auto thread_pool = std::make_shared<WorkStealingThreadPool>(
-      grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
+std::shared_ptr<ThreadPool> MakeThreadPool(size_t reserve_threads) {
+  auto thread_pool = std::make_shared<WorkStealingThreadPool>(reserve_threads);
   g_thread_pool_fork_manager->RegisterForkable(
       thread_pool, ThreadPoolForkCallbackMethods::Prefork,
       ThreadPoolForkCallbackMethods::PostforkParent,

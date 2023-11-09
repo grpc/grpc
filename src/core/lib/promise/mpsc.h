@@ -107,6 +107,12 @@ class Center : public RefCounted<Center<T>> {
     receiver_closed_ = true;
   }
 
+  // Return whether the receiver is closed.
+  bool IsClosed() {
+    MutexLock lock(&mu_);
+    return receiver_closed_;
+  }
+
  private:
   Mutex mu_;
   const size_t max_queued_;
@@ -162,6 +168,10 @@ class MpscReceiver {
       : center_(MakeRefCounted<mpscpipe_detail::Center<T>>(
             std::max(static_cast<size_t>(1), max_buffer_hint / 2))) {}
   ~MpscReceiver() {
+    if (center_ != nullptr) center_->ReceiverClosed();
+  }
+  bool IsClosed() { return center_->IsClosed(); }
+  void MarkClosed() {
     if (center_ != nullptr) center_->ReceiverClosed();
   }
   MpscReceiver(const MpscReceiver&) = delete;
