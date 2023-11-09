@@ -16,12 +16,18 @@
 
 #include <thread>
 #include <utility>
+#include <variant>
 #include <vector>
 
-#include "gmock/gmock.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/mutex.h"
+#include "absl/time/time.h"
 #include "gtest/gtest.h"
 
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/sync.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
