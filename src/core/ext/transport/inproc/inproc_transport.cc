@@ -23,12 +23,15 @@
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
 namespace {
-class InprocServerTransport final : public Transport, public ServerTransport {
+class InprocServerTransport final : public RefCounted<InprocServerTransport>,
+                                    public Transport,
+                                    public ServerTransport {
  public:
   void SetAcceptFunction(AcceptFunction accept_function) override {
     accept_ = std::move(accept_function);
@@ -38,7 +41,7 @@ class InprocServerTransport final : public Transport, public ServerTransport {
                                    std::memory_order_acquire);
   }
 
-  void Orphan() override { grpc_core::Crash("unimplemented"); }
+  void Orphan() override { Unref(); }
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -79,7 +82,14 @@ class InprocClientTransport final : public Transport, public ClientTransport {
                }));
   }
 
-  void Orphan() override { grpc_core::Crash("unimplemented"); }
+  void Orphan() override {
+    server_transport_->Disconnect();
+    delete this;
+  }
+
+  OrphanablePtr<Transport> GetServerTransport() {
+    return OrphanablePtr<Transport>(server_transport_->Ref().release());
+  }
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return this; }
@@ -112,6 +122,44 @@ bool UsePromiseBasedTransport() {
   }
   return true;
 }
+
+RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
+                                       absl::Status error) {
+  gpr_log(GPR_ERROR, "%s: %s", std::string(why).c_str(),
+          std::string(error.message()).c_str());
+  intptr_t integer;
+  grpc_status_code status = GRPC_STATUS_INTERNAL;
+  if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
+                         &integer)) {
+    status = static_cast<grpc_status_code>(integer);
+  }
+  return RefCountedPtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
+      nullptr, status, std::string(why).c_str())));
+}
+
+RefCountedPtr<Channel> MakeInprocChannel(Server* server,
+                                         ChannelArgs client_channel_args) {
+  auto client_transport = MakeOrphanable<InprocClientTransport>();
+  auto server_transport = client_transport->GetServerTransport();
+  auto error =
+      server->SetupTransport(server_transport.get(), nullptr,
+                             server->channel_args()
+                                 .Remove(GRPC_ARG_MAX_CONNECTION_IDLE_MS)
+                                 .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS),
+                             nullptr);
+  if (!error.ok()) {
+    return MakeLameChannel("Failed to create server channel", std::move(error));
+  }
+  server_transport.release();
+  auto channel = Channel::Create(
+      "inproc",
+      client_channel_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority"),
+      GRPC_CLIENT_DIRECT_CHANNEL, client_transport.release());
+  if (!channel.ok()) {
+    return MakeLameChannel("Failed to create client channel", channel.status());
+  }
+  return std::move(*channel);
+}
 }  // namespace
 
 }  // namespace grpc_core
@@ -122,5 +170,10 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   if (!grpc_core::UsePromiseBasedTransport()) {
     return grpc_legacy_inproc_channel_create(server, args, reserved);
   }
-  grpc_core::Crash("unimplemented");
+  return grpc_core::MakeInprocChannel(grpc_core::Server::FromC(server),
+                                      grpc_core::CoreConfiguration::Get()
+                                          .channel_args_preconditioning()
+                                          .PreconditionChannelArgs(args))
+      .release()
+      ->c_ptr();
 }
