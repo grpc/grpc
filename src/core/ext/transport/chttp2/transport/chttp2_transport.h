@@ -119,6 +119,15 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
 
   std::string ToString() const override;
 
+  Type http_type() const { return type_; }
+  Timestamp time() const { return time_; }
+  absl::optional<chttp2::TransportFlowControl::Stats> transport_stats() const {
+    return transport_stats_;
+  }
+  absl::optional<chttp2::StreamFlowControl::Stats> stream_stats() const {
+    return stream_stats_;
+  }
+
  private:
   const Type type_;
   const Timestamp time_;
