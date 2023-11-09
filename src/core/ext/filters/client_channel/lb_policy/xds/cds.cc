@@ -39,6 +39,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/certificate_provider_store.h"
+#include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_cluster.h"
@@ -123,11 +124,12 @@ class CdsLb : public LoadBalancingPolicy {
         : parent_(std::move(parent)), name_(std::move(name)) {}
 
     void OnResourceChanged(
-        std::shared_ptr<const XdsClusterResource> cluster_data) override {
+        std::shared_ptr<const XdsClusterResource> cluster_data,
+        RefCountedPtr<XdsApi::ReadDelayHandle> read_delay_handle) override {
       RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          [self = std::move(self),
-           cluster_data = std::move(cluster_data)]() mutable {
+          [self = std::move(self), cluster_data = std::move(cluster_data),
+           read_delay_handle = std::move(read_delay_handle)]() mutable {
             self->parent_->OnClusterChanged(self->name_,
                                             std::move(cluster_data));
           },
@@ -141,10 +143,12 @@ class CdsLb : public LoadBalancingPolicy {
           },
           DEBUG_LOCATION);
     }
-    void OnResourceDoesNotExist() override {
+    void OnResourceDoesNotExist(
+        RefCountedPtr<XdsApi::ReadDelayHandle> read_delay_handle) override {
       RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          [self = std::move(self)]() {
+          [self = std::move(self),
+           read_delay_handle = std::move(read_delay_handle)]() {
             self->parent_->OnResourceDoesNotExist(self->name_);
           },
           DEBUG_LOCATION);

@@ -37,6 +37,7 @@
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
+#include "src/core/ext/xds/xds_transport.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -147,7 +148,8 @@ class Fuzzer {
         : resource_name_(std::move(resource_name)) {}
 
     void OnResourceChanged(
-        std::shared_ptr<const typename ResourceType::ResourceType> resource)
+        std::shared_ptr<const typename ResourceType::ResourceType> resource,
+        RefCountedPtr<XdsApi::ReadDelayHandle> /* read_delay_handle */)
         override {
       gpr_log(GPR_INFO, "==> OnResourceChanged(%s %s): %s",
               std::string(ResourceType::Get()->type_url()).c_str(),
@@ -160,7 +162,9 @@ class Fuzzer {
               resource_name_.c_str(), status.ToString().c_str());
     }
 
-    void OnResourceDoesNotExist() override {
+    void OnResourceDoesNotExist(
+        RefCountedPtr<XdsApi::ReadDelayHandle> /* read_delay_handle */)
+        override {
       gpr_log(GPR_INFO, "==> OnResourceDoesNotExist(%s %s)",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str());
