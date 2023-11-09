@@ -1615,7 +1615,6 @@ grpc_cc_library(
         "no_destruct",
         "notification",
         "time",
-        "useful",
         "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",
