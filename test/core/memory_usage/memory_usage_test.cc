@@ -49,6 +49,7 @@
 #include "src/core/lib/gpr/subprocess.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
+#include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"

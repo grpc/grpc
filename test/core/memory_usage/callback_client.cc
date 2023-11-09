@@ -28,6 +28,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
@@ -166,7 +167,7 @@ int main(int argc, char** argv) {
   std::string prefix;
   if (absl::StartsWith(absl::GetFlag(FLAGS_target), "xds:")) prefix = "xds ";
   if (absl::GetFlag(FLAGS_server_pid) == 0) {
-    prefix = absl::StrCat(prefix, "multi_address ");
+    absl::StrAppend(&prefix, "multi_address ");
   }
   printf("---------Client channel stats--------\n");
   printf("%sclient channel memory usage: %f bytes per channel\n",
