@@ -919,6 +919,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise_mutex",
+    hdrs = [
+        "lib/promise/promise_mutex.h",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "poll",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "inter_activity_pipe",
     hdrs = [
         "lib/promise/inter_activity_pipe.h",
@@ -1618,7 +1631,6 @@ grpc_cc_library(
         "no_destruct",
         "notification",
         "time",
-        "useful",
         "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -6253,6 +6265,7 @@ grpc_cc_library(
         "arena",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "context",
         "event_engine_wakeup_scheduler",
         "for_each",
         "grpc_promise_endpoint",
