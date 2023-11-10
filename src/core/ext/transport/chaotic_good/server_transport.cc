@@ -37,7 +37,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
-#include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -52,13 +51,12 @@ namespace grpc_core {
 namespace chaotic_good {
 
 ServerTransport::ServerTransport(
-    absl::AnyInvocable<ArenaPromise<ServerMetadataHandle>(CallArgs)>
-        start_receive_callback,
     std::unique_ptr<PromiseEndpoint> control_endpoint,
     std::unique_ptr<PromiseEndpoint> data_endpoint,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
-    : outgoing_frames_(MpscReceiver<ServerFrame>(4)),
-      start_receive_callback_(std::move(start_receive_callback)),
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    AcceptFn accept_fn)
+    : accept_fn_(std::move(accept_fn)),
+      outgoing_frames_(MpscReceiver<ServerFrame>(4)),
       control_endpoint_(std::move(control_endpoint)),
       data_endpoint_(std::move(data_endpoint)),
       control_endpoint_write_buffer_(SliceBuffer()),
@@ -121,9 +119,7 @@ ServerTransport::ServerTransport(
       // Continuously write next outgoing frames to promise endpoints.
       std::move(write_loop), EventEngineWakeupScheduler(event_engine_),
       [this](absl::Status status) {
-        GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
-                   status.code() == absl::StatusCode::kInternal);
-        if (status.code() == absl::StatusCode::kInternal) {
+        if (!(status.ok() || status.code() == absl::StatusCode::kCancelled)) {
           this->AbortWithError();
         }
       },
@@ -167,26 +163,13 @@ ServerTransport::ServerTransport(
           GPR_ASSERT(status.ok());
           auto message = arena_->MakePooled<Message>(
               std::move(data_endpoint_read_buffer_), 0);
-          // Construct call args for stream.
-          auto call_data = ConstructCallData(frame.frame_header.stream_id);
-          auto call_args =
-              CallArgs{std::move(frame.headers),
-                       ClientInitialMetadataOutstandingToken::Empty(),
-                       nullptr,
-                       &call_data->pipe_server_intial_metadata_.sender,
-                       &call_data->pipe_client_to_server_messages_.receiver,
-                       &call_data->pipe_server_to_client_messages_.sender};
-          return Join(
-              // Push message into pipe_client_to_server_messages_.
-              call_data->pipe_client_to_server_messages_.sender.Push(
-                  std::move(message)),
-              // Execute start_receive_callback.
-              start_receive_callback_(std::move(call_args)));
+          // Initialize call.
+          auto call_initiator = accept_fn_(*frame.headers);
+          AddCall(call_initiator);
+          return call_initiator.PushClientToServerMessage(std::move(message));
         },
-        [](std::tuple<bool, ServerMetadataHandle> ret)
-            -> LoopCtl<absl::Status> {
-          // TODO(ladynana): figure out what to do with ServerMetadataHandle.
-          if (std::get<0>(ret)) {
+        [](bool ret) -> LoopCtl<absl::Status> {
+          if (ret) {
             return Continue();
           } else {
             return absl::InternalError("Send message to pipe failed.");
@@ -197,9 +180,7 @@ ServerTransport::ServerTransport(
       // Continuously read next incoming frames from promise endpoints.
       std::move(read_loop), EventEngineWakeupScheduler(event_engine_),
       [this](absl::Status status) {
-        GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
-                   status.code() == absl::StatusCode::kInternal);
-        if (status.code() == absl::StatusCode::kInternal) {
+        if (!(status.ok() || status.code() == absl::StatusCode::kCancelled)) {
           this->AbortWithError();
         }
       },

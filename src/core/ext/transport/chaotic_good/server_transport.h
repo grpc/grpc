@@ -21,12 +21,13 @@
 
 #include <cstddef>
 #include <initializer_list>  // IWYU pragma: keep
-#include <map>
 #include <memory>
 #include <utility>
+#include <variant>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -35,30 +36,79 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 
+// Prototype based on gRPC Call 3.0.
+// TODO(ladynana): convert to the true Call/CallInitiator once available.
+struct CallData {
+  uint32_t stream_id;
+  Pipe<MessageHandle> pipe_client_to_server_messages_;
+  Pipe<MessageHandle> pipe_server_to_client_messages_;
+  Pipe<ServerMetadataHandle> pipe_server_intial_metadata_;
+};
+class CallInitiator {
+ public:
+  explicit CallInitiator(std::unique_ptr<CallData> call_data)
+      : call_(std::move(call_data)) {}
+  // Returns a promise that push/pull message/metadata from corresponding pipe.
+  auto PushServerInitialMetadata(ServerMetadataHandle metadata) {
+    return call_->pipe_server_intial_metadata_.sender.Push(std::move(metadata));
+  }
+  auto PushServerToClientMessage(MessageHandle message) {
+    return call_->pipe_server_to_client_messages_.sender.Push(
+        std::move(message));
+  }
+  auto PushClientToServerMessage(MessageHandle message) {
+    return call_->pipe_client_to_server_messages_.sender.Push(
+        std::move(message));
+  }
+  auto PullServerInitialMetadata() {
+    return call_->pipe_server_intial_metadata_.receiver.Next();
+  }
+  auto PullServerToClientMessage() {
+    return call_->pipe_server_to_client_messages_.receiver.Next();
+  }
+  auto PullClientToServerMessage() {
+    return call_->pipe_client_to_server_messages_.receiver.Next();
+  }
+  uint32_t GetStreamId() { return call_->stream_id; }
+  void SetCall(std::unique_ptr<CallData> call_data) {
+    call_ = std::move(call_data);
+  }
+  template <typename Promise>
+  void Spawn(Promise p) {
+    // TODO(ladynana): call/implement Spawn method such as party->Spawn.
+    // party_->Spawn("Run promise", std::move(p), [](){return
+    // absl::OkStatus();});
+  }
+
+ private:
+  std::unique_ptr<CallData> call_;
+};
+
 class ServerTransport {
  public:
-  ServerTransport(
-      absl::AnyInvocable<ArenaPromise<ServerMetadataHandle>(CallArgs)>
-          start_receive_callback,
-      std::unique_ptr<PromiseEndpoint> control_endpoint,
-      std::unique_ptr<PromiseEndpoint> data_endpoint,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+  using AcceptFn = absl::AnyInvocable<CallInitiator(ClientMetadata&) const>;
+  ServerTransport(std::unique_ptr<PromiseEndpoint> control_endpoint,
+                  std::unique_ptr<PromiseEndpoint> data_endpoint,
+                  std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                      event_engine,
+                  AcceptFn accept_fn);
   ~ServerTransport() {
     if (writer_ != nullptr) {
       writer_.reset();
@@ -73,66 +123,59 @@ class ServerTransport {
     if (!outgoing_frames_.IsClosed()) {
       outgoing_frames_.MarkClosed();
     }
-    std::map<uint32_t, std::shared_ptr<CallData>> stream_map;
-    {
-      MutexLock lock(&mu_);
-      stream_map = stream_map_;
-    }
-    for (const auto& pair : stream_map) {
-      auto call_data = pair.second;
-      call_data->pipe_client_to_server_messages_.receiver.CloseWithError();
-      call_data->pipe_server_intial_metadata_.sender.CloseWithError();
-      call_data->pipe_server_to_client_messages_.sender.CloseWithError();
-    }
+    // MutexLock lock(&mu_);
+    // for (const auto& pair : stream_map_) {
+    //   if (!pair.second->IsClose()) {
+    //     pair.second->MarkClose();
+    //   }
+    // }
   }
-
-  // Prototype of what start_receive_callback will do.
-  // ArenaPromise<ServerMetadataHandle> start_receive_callback (CallArgs
-  // callargs){
-  //   return TrySeq(
-  //     ProcessClientInitialMetadata(callargs.client_initial_metadata),
-  //     ForEach(callargs.client_to_server_messages,
-  //     [](MessageHandle message){
-  //       ProcessClientMessage();
-  //     }),
-  //     // Send server initial metadata to client.
-  //     callargs.server_initial_metadata->Push(md),
-  //     // Send server message to client.
-  //     callargs.server_to_client_messages->Push(md)
-  //   );
-  // }
 
  private:
-  struct CallData {
-    Pipe<MessageHandle> pipe_client_to_server_messages_;
-    Pipe<MessageHandle> pipe_server_to_client_messages_;
-    Pipe<ServerMetadataHandle> pipe_server_intial_metadata_;
-  };
-  // Construct call data of each stream
-  CallData* ConstructCallData(uint32_t stream_id) {
-    MutexLock lock(&mu_);
-    auto iter = stream_map_.find(stream_id);
-    if (iter != stream_map_.end()) {
-      return stream_map_[stream_id].get();
-    } else {
-      CallData call_data{Pipe<MessageHandle>(arena_.get()),
-                         Pipe<MessageHandle>(arena_.get()),
-                         Pipe<ServerMetadataHandle>(arena_.get())};
-      stream_map_[stream_id] = std::make_shared<CallData>(std::move(call_data));
-      return stream_map_[stream_id].get();
-    }
+  void AddCall(CallInitiator& r) {
+    // Add server write promise.
+    auto server_write = Loop([&r, this] {
+      return TrySeq(
+          // TODO(ladynana): add initial metadata in server frame.
+          r.PullServerToClientMessage(),
+          [this, stream_id = r.GetStreamId()](
+              NextResult<MessageHandle> result) mutable {
+            auto outgoing_frames = outgoing_frames_.MakeSender();
+            ServerFragmentFrame frame;
+            uint32_t message_length = result.value()->payload()->Length();
+            uint32_t message_padding = message_length % aligned_bytes;
+            frame.frame_header = FrameHeader{
+                FrameType::kFragment, {}, stream_id, 0, message_length,
+                message_padding,      0};
+            frame.message = std::move(*result);
+            return outgoing_frames.Send(ServerFrame(std::move(frame)));
+          },
+          [](bool success) -> LoopCtl<absl::Status> {
+            if (!success) {
+              // TODO(ladynana): propagate the actual error message
+              // from EventEngine.
+              return absl::UnavailableError(
+                  "Transport closed due to endpoint write/read "
+                  "failed.");
+            }
+            return Continue();
+          });
+    });
+    r.Spawn(std::move(server_write));
   }
+  AcceptFn accept_fn_;
   // Max buffer is set to 4, so that for stream writes each time it will queue
   // at most 2 frames.
   MpscReceiver<ServerFrame> outgoing_frames_;
   static const size_t client_frame_queue_size_ = 2;
-  Mutex mu_;
-  uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
-  // Map of stream outgoing client frames, key is stream_id.
-  std::map<uint32_t, std::shared_ptr<CallData>> stream_map_
-      ABSL_GUARDED_BY(mu_);
-  absl::AnyInvocable<ArenaPromise<ServerMetadataHandle>(CallArgs)>
-      start_receive_callback_;
+  // Assigned aligned bytes from setting frame.
+  size_t aligned_bytes = 64;
+  // Mutex mu_;
+  // // Map of outgoing client frames, key is stream_id.
+  // std::map<uint32_t, std::shared_ptr<InterActivityPipe<
+  //                        ClientFrame, client_frame_queue_size_>::Receiver>>
+  //                        stream_map_
+  //     ABSL_GUARDED_BY(mu_);
   ActivityPtr writer_;
   ActivityPtr reader_;
   std::unique_ptr<PromiseEndpoint> control_endpoint_;
