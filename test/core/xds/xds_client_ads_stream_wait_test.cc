@@ -66,17 +66,17 @@ TEST_F(XdsClientNotifyWatchersDone, Basic) {
   EXPECT_EQ(resource->first->value, 6);
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
-  EXPECT_EQ(stream->read_count(), 0);
   ASSERT_TRUE(request.has_value());
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"1", /*response_nonce=*/"A",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
+  EXPECT_EQ(stream->read_count(), 0);
+  resource->second.reset();
+  EXPECT_EQ(stream->read_count(), 1);
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
   EXPECT_TRUE(stream->Orphaned());
-  resource->second.reset();
-  EXPECT_EQ(stream->read_count(), 1);
 }
 
 }  // namespace
