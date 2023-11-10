@@ -64,6 +64,7 @@ Pod::Spec.new do |s|
   # because Cocoapods lets omit the pod name when including headers of static libraries, the
   # following lets users write `#include <grpc/grpc.h>`.
   s.header_dir = name
+  s.static_framework = true
 
   # The module map created automatically by Cocoapods doesn't work for C libraries like gRPC-Core.
   s.module_map = 'include/grpc/module.modulemap'

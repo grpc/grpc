@@ -49,6 +49,7 @@ Pod::Spec.new do |s|
   # Add include prefix `grpcpp` so that `#include <grpcpp/xxx.h>` works when built as static
   # library.
   s.header_dir = name
+  s.static_framework = true
 
   s.pod_target_xcconfig = {
     'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',

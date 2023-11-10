@@ -35,6 +35,7 @@ Pod::Spec.new do |s|
   name = 'GRPCClient'
   s.module_name = name
   s.header_dir = name
+  s.static_framework = true
 
   s.default_subspec = 'Interface', 'GRPCCore', 'Interface-Legacy'
 

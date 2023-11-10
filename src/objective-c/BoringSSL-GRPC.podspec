@@ -102,6 +102,7 @@ Pod::Spec.new do |s|
   # because Cocoapods lets omit the pod name when including headers of static libraries, the
   # following lets users write `#include <openssl/ssl.h>`.
   s.header_dir = name
+  s.static_framework = true
 
   # We don't need to inhibit all warnings; only -Wno-shorten-64-to-32. But Cocoapods' linter doesn't
   # want that for some reason.
