@@ -92,7 +92,7 @@ export EXCLUSION_REGEX=`echo $DISABLED_MODULES | sed 's/ /|/g' | sed 's,\\(.*\\)
 # figure out which files to include
 cat compile_commands.json | jq -r '.[].file'                                     \
   | grep -E $INCLUSION_REGEX                                                     \
-  | grep -v -E "/upb-generated/|/upbdefs-generated/"                             \
+  | grep -v -E "/upb-gen/|/upbdefs-gen/"                             \
   | grep -v -E $EXCLUSION_REGEX                                                  \
   | grep -v src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
   | grep -v test/core/end2end/end2end_tests.cc                                   \
