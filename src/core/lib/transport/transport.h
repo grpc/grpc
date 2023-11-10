@@ -57,6 +57,7 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -148,6 +149,15 @@ struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
   }
 };
 
+template <typename T>
+struct StatusCastImpl<
+    ServerMetadataHandle, T,
+    absl::void_t<decltype(StatusCast<absl::Status>(std::declval<T>()))>> {
+  static ServerMetadataHandle Cast(const T& m) {
+    return ServerMetadataFromStatus(StatusCast<absl::Status>(m));
+  }
+};
+
 // Move only type that tracks call startup.
 // Allows observation of when client_initial_metadata has been processed by the
 // end of the local call stack.
@@ -229,8 +239,10 @@ struct CallArgs {
 using NextPromiseFactory =
     std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
 
-class CallSpine {
+class CallSpine : public RefCounted<CallSpine> {
  public:
+  CallSpine();
+
   Pipe<ClientMetadataHandle>& client_initial_metadata() {
     return client_initial_metadata_;
   }
@@ -259,6 +271,10 @@ class CallSpine {
         promise_detail::OncePromiseFactory<void, PromiseFactory>;
     using PromiseType = typename FactoryType::Promise;
     using ResultType = typename PromiseType::Result;
+    static_assert(
+        std::is_same<bool,
+                     decltype(IsStatusOk(std::declval<ResultType>()))>::value,
+        "SpawnGuarded promise must return a status-like object");
     party()->Spawn(name, std::move(promise_factory), [this](ResultType r) {
       if (!IsStatusOk(r) && !cancel_latch_.is_set()) {
         cancel_latch_.Set(StatusCast<ServerMetadataHandle>(std::move(r)));
@@ -281,7 +297,7 @@ class CallSpine {
 
   template <typename PromiseFactory>
   void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
-    party()->Spawn(name, std::move(promise_factory), [this](Empty) {});
+    party()->Spawn(name, std::move(promise_factory), [](Empty) {});
   }
 
  private:
@@ -309,19 +325,17 @@ class CallInitiator {
   auto PushClientInitialMetadata(ClientMetadataHandle md) {
     GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
     return Map(spine_->client_initial_metadata().sender.Push(std::move(md)),
-               [](bool ok) -> absl::optional<ClientMetadata> {
-                 return StatusFlag(ok);
-               });
+               [](bool ok) { return StatusFlag(ok); });
   }
 
   auto PullServerInitialMetadata() {
     GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
-    return Map(
-        spine_->server_initial_metadata().receiver.Next(),
-        [](NextResult<ClientMetadata> md) -> absl::optional<ClientMetadata> {
-          if (!md.has_value()) return absl::nullopt;
-          return std::move(*md);
-        });
+    return Map(spine_->server_initial_metadata().receiver.Next(),
+               [](NextResult<ClientMetadataHandle> md)
+                   -> ValueOrFailure<ClientMetadataHandle> {
+                 if (!md.has_value()) return Failure{};
+                 return std::move(*md);
+               });
   }
 
   auto PullServerTrailingMetadata() {
@@ -366,28 +380,24 @@ class CallHandler {
  public:
   auto PullClientInitialMetadata() {
     GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
-    return Map(
-        spine_->client_initial_metadata().receiver.Next(),
-        [](NextResult<ClientMetadata> md) -> absl::optional<ClientMetadata> {
-          if (!md.has_value()) return absl::nullopt;
-          return std::move(*md);
-        });
+    return Map(spine_->client_initial_metadata().receiver.Next(),
+               [](NextResult<ClientMetadataHandle> md)
+                   -> ValueOrFailure<ClientMetadataHandle> {
+                 if (!md.has_value()) return Failure{};
+                 return std::move(*md);
+               });
   }
 
   auto PushServerInitialMetadata(ClientMetadataHandle md) {
     GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
     return Map(spine_->server_initial_metadata().sender.Push(std::move(md)),
-               [](bool ok) -> absl::optional<ClientMetadata> {
-                 return StatusFlag(ok);
-               });
+               [](bool ok) { return StatusFlag(ok); });
   }
 
   auto PushServerTrailingMetadata(ClientMetadataHandle md) {
     GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
     return Map(spine_->server_initial_metadata().sender.Push(std::move(md)),
-               [](bool ok) -> absl::optional<ClientMetadata> {
-                 return StatusFlag(ok);
-               });
+               [](bool ok) { return StatusFlag(ok); });
   }
 
   auto PullMessage() {

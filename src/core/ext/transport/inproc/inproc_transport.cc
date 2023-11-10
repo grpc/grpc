@@ -23,6 +23,8 @@
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -71,15 +73,18 @@ class InprocClientTransport final : public Transport, public ClientTransport {
   ~InprocClientTransport() { server_transport_->Disconnect(); }
 
   void StartCall(CallHandler call_handler) override {
-    call_handler.Spawn(
-        TrySeq(call_handler.PullClientInitialMetadata(),
-               [server_transport = server_transport_,
-                call_handler](ClientMetadataHandle md) {
-                 auto call_initiator = server_transport->AcceptCall(*md);
-                 ForwardCall(std::move(call_handler), std::move(call_initiator),
-                             std::move(md));
-                 return StatusFlag(true);
-               }));
+    call_handler.SpawnGuarded(
+        "pull_initial_metadata",
+        TrySeq(
+            call_handler.PullClientInitialMetadata(),
+            [server_transport = server_transport_,
+             call_handler](ClientMetadataHandle md) {
+              auto call_initiator = server_transport->AcceptCall(*md);
+              ForwardCall(std::move(call_handler), std::move(call_initiator),
+                          std::move(md));
+              return Success{};
+            },
+            ImmediateOkStatus()));
   }
 
   void Orphan() override {

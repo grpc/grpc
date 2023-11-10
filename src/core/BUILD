@@ -431,7 +431,10 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/status_flag.h",
     ],
-    deps = ["promise_status"],
+    deps = [
+        "promise_status",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -776,6 +779,7 @@ grpc_cc_library(
         "promise_like",
         "promise_status",
         "seq_state",
+        "status_flag",
         "//:gpr_platform",
     ],
 )
@@ -6086,6 +6090,7 @@ grpc_cc_library(
         "slice_buffer",
         "status_helper",
         "time",
+        "try_seq",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
@@ -6094,6 +6099,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
+        "//:promise",
         "//:ref_counted_ptr",
     ],
 )

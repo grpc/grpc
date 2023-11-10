@@ -35,6 +35,9 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -277,16 +280,19 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
         return call_initiator.PushClientInitialMetadata(
             std::move(client_initial_metadata));
       });
-  call_handler.SpawnGuarded(
-      "read_messages", [call_handler, call_initiator]() mutable {
-        ForEach(OutgoingMessages(call_handler), [call_initiator](
-                                                    MessageHandle msg) mutable {
+  call_handler.SpawnGuarded("read_messages", [call_handler,
+                                              call_initiator]() mutable {
+    return ForEach(
+        OutgoingMessages(call_handler),
+        [call_initiator](MessageHandle msg) mutable {
           call_initiator.SpawnGuarded(
               "send_message", [msg = std::move(msg), call_initiator]() mutable {
-                return call_initiator.PushMessage(std::move(msg));
+                return Map(call_initiator.PushMessage(std::move(msg)),
+                           [](bool r) { return StatusFlag(r); });
               });
+          return Success{};
         });
-      });
+  });
   call_initiator.SpawnInfallible("read_the_things", [call_initiator,
                                                      call_handler]() mutable {
     return Seq(
@@ -299,15 +305,19 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                     return call_handler.PushServerInitialMetadata(
                         std::move(md));
                   });
+              return Success{};
             },
             ForEach(OutgoingMessages(call_initiator),
                     [call_handler](MessageHandle msg) mutable {
                       call_handler.SpawnGuarded(
                           "recv_message",
                           [msg = std::move(msg), call_handler]() mutable {
-                            return call_handler.PushMessage(std::move(msg));
+                            return Map(call_handler.PushMessage(std::move(msg)),
+                                       [](bool r) { return StatusFlag(r); });
                           });
-                    }))),
+                      return Success{};
+                    }),
+            ImmediateOkStatus())),
         call_initiator.PullServerTrailingMetadata(),
         [call_handler](ServerMetadataHandle md) mutable {
           call_handler.SpawnGuarded(
@@ -315,6 +325,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
               [md = std::move(md), call_handler]() mutable {
                 return call_handler.PushServerTrailingMetadata(std::move(md));
               });
+          return Empty{};
         });
   });
 }

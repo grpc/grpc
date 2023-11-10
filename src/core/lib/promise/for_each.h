@@ -24,6 +24,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "status_flag.h"
 
 #include <grpc/support/log.h>
 
@@ -46,6 +47,16 @@ struct Done;
 template <>
 struct Done<absl::Status> {
   static absl::Status Make() { return absl::OkStatus(); }
+};
+
+template <>
+struct Done<StatusFlag> {
+  static StatusFlag Make() { return StatusFlag(true); }
+};
+
+template <>
+struct Done<Success> {
+  static Success Make() { return Success{}; }
 };
 
 template <typename Reader, typename Action>
@@ -139,7 +150,7 @@ class ForEach {
     }
     auto r = in_action_.promise();
     if (auto* p = r.value_if_ready()) {
-      if (p->ok()) {
+      if (IsStatusOk(*p)) {
         Destruct(&in_action_);
         Construct(&reader_next_, reader_.Next());
         reading_next_ = true;
