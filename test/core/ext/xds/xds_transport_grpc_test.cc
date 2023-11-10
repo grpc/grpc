@@ -27,6 +27,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/util/test_config.h"
 
@@ -72,7 +73,6 @@ class AdsServer {
     kNew,
     kReady,
     kStopping,
-    kStopped,
   };
 
   static void ServerThread(AdsServer* ads_server) { ads_server->Run(); }
@@ -106,15 +106,15 @@ class AdsServer {
 
 TEST(GrpcTransportTest, WaitsWithAdsRead) {
   AdsServer ads_server;
-  // ExecCtx exec_ctx;
-  // ChannelArgs args;
-  // auto factory = MakeOrphanable<GrpcXdsTransportFactory>(args);
-  // GrpcXdsBootstrap::GrpcXdsServer server;
-  // absl::Status status;
-  // std::vector<absl::Status> statuses;
-  // auto transport = factory->Create(
-  //     server, [&statuses](auto s) { statuses.emplace_back(std::move(s)); },
-  //     &status);
+  ExecCtx exec_ctx;
+  ChannelArgs args;
+  auto factory = MakeOrphanable<GrpcXdsTransportFactory>(args);
+  GrpcXdsBootstrap::GrpcXdsServer server;
+  absl::Status status;
+  std::vector<absl::Status> statuses;
+  auto transport = factory->Create(
+      server, [&statuses](auto s) { statuses.emplace_back(std::move(s)); },
+      &status);
   // ASSERT_TRUE(status.ok()) << status;
   // std::vector<EventHandlerEvent> events;
   // auto call = transport->CreateStreamingCall(
