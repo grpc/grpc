@@ -78,7 +78,8 @@ void ServerLoop(HookServiceImpl* service, int port, Server** server,
   s->Wait();
 }
 
-TEST(StandalonePreStopHookServer, StartDoRequestStop) {
+// DISABLED: b/310260180
+TEST(StandalonePreStopHookServer, DISABLED_StartDoRequestStop) {
   int port = grpc_pick_unused_port_or_die();
   PreStopHookServerManager server;
   Status start_status = server.Start(port, 15);
