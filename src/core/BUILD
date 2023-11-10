@@ -431,7 +431,10 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/status_flag.h",
     ],
-    deps = ["promise_status"],
+    deps = [
+        "promise_status",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
