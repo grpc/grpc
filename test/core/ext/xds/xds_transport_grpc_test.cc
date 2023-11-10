@@ -58,46 +58,50 @@ class TestEventHandler
 
 class AdsServer {
  public:
-  AdsServer() : server_thread_() {
-    gpr_log(GPR_INFO, "Waiting");
-    MutexLock lock(&mu_);
-    mu_.AwaitWithTimeout(absl::Condition(this, &AdsServer::ready),
-                         absl::Seconds(15));
-    gpr_log(GPR_INFO, "Ready");
+  AdsServer() : server_thread_(ServerThread, this) {
+    WaitForState<State::kReady>();
   }
 
   ~AdsServer() {
-    {
-      MutexLock lock(&mu_);
-      stop_ = true;
-    }
-    gpr_log(GPR_INFO, "Stopping");
+    set_state(State::kStopping);
     server_thread_.join();
-    gpr_log(GPR_INFO, "Done");
   }
 
  private:
+  enum class State {
+    kNew,
+    kReady,
+    kStopping,
+    kStopped,
+  };
+
   static void ServerThread(AdsServer* ads_server) { ads_server->Run(); }
 
   void Run() {
-    gpr_log(GPR_INFO, "Starting");
-    {
-      MutexLock lock(&mu_);
-      ready_ = true;
-    }
-    gpr_log(GPR_INFO, "Running");
-    mu_.Await(absl::Condition(this, &AdsServer::stop));
-    gpr_log(GPR_INFO, "Done");
+    set_state(State::kReady);
+    WaitForState<State::kStopping>();
   }
 
-  bool stop() ABSL_NO_THREAD_SAFETY_ANALYSIS { return stop_; }
+  template <State state>
+  void WaitForState() {
+    MutexLock lock(&mu_);
+    mu_.AwaitWithTimeout(
+        absl::Condition(
+            +[](AdsServer* server) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+              return server->state_ != state;
+            },
+            this),
+        absl::Seconds(15));
+  }
 
-  bool ready() ABSL_NO_THREAD_SAFETY_ANALYSIS { return ready_; }
+  void set_state(State state) {
+    MutexLock lock(&mu_);
+    state_ = state;
+  }
 
   std::thread server_thread_;
   Mutex mu_;
-  bool ready_ ABSL_GUARDED_BY(mu_) = false;
-  bool stop_ ABSL_GUARDED_BY(mu_) = false;
+  State state_ ABSL_GUARDED_BY(mu_) = State::kNew;
 };
 
 TEST(GrpcTransportTest, WaitsWithAdsRead) {
