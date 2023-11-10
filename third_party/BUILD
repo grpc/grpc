@@ -11,6 +11,5 @@ exports_files([
     "enum34.BUILD",
     "futures.BUILD",
     "protobuf.patch",
-    "rules_python.patch",
     "protoc-gen-validate.patch",
 ])

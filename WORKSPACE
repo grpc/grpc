@@ -10,6 +10,10 @@ load("//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 
 grpc_extra_deps()
 
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
+
 load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_rbe_exec_properties_dict", "custom_exec_properties")
 
 custom_exec_properties(
@@ -59,7 +63,7 @@ local_repository(
     path = "third_party/utf8_range",
 )
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_install")
+load("@rules_python//python:pip.bzl", "pip_install")
 
 pip_install(
     name = "grpc_python_dependencies",
