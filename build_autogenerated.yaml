@@ -738,6 +738,7 @@ libs:
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_endpoint.h
@@ -1560,6 +1561,7 @@ libs:
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_endpoint.cc
@@ -2170,6 +2172,7 @@ libs:
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_endpoint.h
@@ -2605,6 +2608,7 @@ libs:
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_endpoint.cc
@@ -4200,6 +4204,7 @@ libs:
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_endpoint.h
@@ -4511,6 +4516,7 @@ libs:
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_endpoint.cc
@@ -12135,6 +12141,7 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.h
   - test/core/util/fake_udp_and_tcp_server.h
   - test/cpp/util/get_grpc_test_runfile_dir.h
+  - test/cpp/util/windows/manifest_file.h
   src:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
@@ -12146,6 +12153,7 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.cc
   - test/core/util/fake_udp_and_tcp_server.cc
   - test/cpp/util/get_grpc_test_runfile_dir.cc
+  - test/cpp/util/windows/manifest_file.cc
   deps:
   - gtest
   - grpc++_test_util
@@ -15950,6 +15958,7 @@ targets:
   - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_endpoint.h
@@ -16242,6 +16251,7 @@ targets:
   - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_endpoint.cc
