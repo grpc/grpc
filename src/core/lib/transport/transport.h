@@ -858,7 +858,7 @@ class ServerTransport {
   // CallInitiator object for it, for the transport to use to communicate with
   // the CallHandler object passed to the application.
   using AcceptFunction =
-      absl::AnyInvocable<CallInitiator(ClientMetadata&) const>;
+      absl::AnyInvocable<absl::StatusOr<CallInitiator>(ClientMetadata&) const>;
 
   // Called once slightly after transport setup to register the accept function.
   virtual void SetAcceptFunction(AcceptFunction accept_function) = 0;

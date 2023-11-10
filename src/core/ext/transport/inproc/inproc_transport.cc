@@ -55,23 +55,36 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
   void PerformOp(grpc_transport_op* op) override { Crash("unimplemented"); }
   grpc_endpoint* GetEndpoint() override { return nullptr; }
 
-  void Disconnect() {
+  void Disconnect(absl::Status error) {
+    if (disconnecting_.exchange(true, std::memory_order_relaxed)) return;
+    disconnect_error_ = std::move(error);
     state_.store(ConnectionState::kDisconnected, std::memory_order_relaxed);
   }
 
-  CallInitiator AcceptCall(ClientMetadata& md);
+  absl::StatusOr<CallInitiator> AcceptCall(ClientMetadata& md) {
+    switch (state_.load(std::memory_order_acquire)) {
+      case ConnectionState::kInitial:
+        return absl::InternalError(
+            "inproc transport hasn't started accepting calls");
+      case ConnectionState::kDisconnected:
+        return absl::UnavailableError("inproc transport is disconnected");
+      case ConnectionState::kReady:
+        break;
+    }
+    return accept_(md);
+  }
 
  private:
   enum class ConnectionState : uint8_t { kInitial, kReady, kDisconnected };
 
   std::atomic<ConnectionState> state_{ConnectionState::kInitial};
+  std::atomic<bool> disconnecting_{false};
   AcceptFunction accept_;
+  absl::Status disconnect_error_;
 };
 
 class InprocClientTransport final : public Transport, public ClientTransport {
  public:
-  ~InprocClientTransport() { server_transport_->Disconnect(); }
-
   void StartCall(CallHandler call_handler) override {
     call_handler.SpawnGuarded(
         "pull_initial_metadata",
@@ -80,17 +93,15 @@ class InprocClientTransport final : public Transport, public ClientTransport {
             [server_transport = server_transport_,
              call_handler](ClientMetadataHandle md) {
               auto call_initiator = server_transport->AcceptCall(*md);
-              ForwardCall(std::move(call_handler), std::move(call_initiator),
+              if (!call_initiator.ok()) return call_initiator.status();
+              ForwardCall(std::move(call_handler), std::move(*call_initiator),
                           std::move(md));
-              return Success{};
+              return absl::OkStatus();
             },
             ImmediateOkStatus()));
   }
 
-  void Orphan() override {
-    server_transport_->Disconnect();
-    delete this;
-  }
+  void Orphan() override { delete this; }
 
   OrphanablePtr<Transport> GetServerTransport() {
     return OrphanablePtr<Transport>(server_transport_->Ref().release());
@@ -107,6 +118,11 @@ class InprocClientTransport final : public Transport, public ClientTransport {
   grpc_endpoint* GetEndpoint() override { return nullptr; }
 
  private:
+  ~InprocClientTransport() override {
+    server_transport_->Disconnect(
+        absl::UnavailableError("Client transport closed"));
+  }
+
   RefCountedPtr<InprocServerTransport> server_transport_ =
       MakeRefCounted<InprocServerTransport>();
 };
