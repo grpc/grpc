@@ -223,7 +223,7 @@ class PythonArtifact:
                     "32" if self.arch == "x86" else "64",
                 ],
                 environ=environ,
-                timeout_seconds=45 * 60,
+                timeout_seconds=60 * 60 * 2,
                 use_workspace=True,
             )
         else:
