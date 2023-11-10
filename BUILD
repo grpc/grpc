@@ -213,7 +213,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gjallarhorn"  # @unused
 
-core_version = "36.0.0"  # @unused
+core_version = "37.0.0"  # @unused
 
 version = "1.60.0-dev"  # @unused
 
