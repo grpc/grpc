@@ -1,5 +1,5 @@
-src/core/ext/upb-generated/** linguist-generated=true
-src/core/ext/upbdefs-generated/** linguist-generated=true
+src/core/ext/upb-gen/** linguist-generated=true
+src/core/ext/upbdefs-gen/** linguist-generated=true
 Makefile linguist-generated=true
 BUILD.gn linguist-generated=true
 CMakeLists.txt linguist-generated=true
