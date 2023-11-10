@@ -35,9 +35,10 @@ do
     files="$files `find ${CLANG_FORMAT_ROOT}/$dir -name $glob \
     -and -not -name '*.generated.*' \
     -and -not -name '*.upb.h' \
-    -and -not -name '*.upb.c' \
     -and -not -name '*.upbdefs.h' \
     -and -not -name '*.upbdefs.c' \
+    -and -not -name '*.upb_minitable.h' \
+    -and -not -name '*.upb_minitable.c' \
     -and -not -name '*.pb.h' \
     -and -not -name '*.pb.c' \
     -and -not -name '*.pb.cc' \

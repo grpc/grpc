@@ -66,7 +66,7 @@ pip_install(
     requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
 
-load("@upb//bazel:system_python.bzl", "system_python")
+load("@com_google_protobuf//bazel:system_python.bzl", "system_python")
 
 system_python(
     name = "system_python",
@@ -77,9 +77,9 @@ load("@system_python//:pip.bzl", "pip_parse")
 
 pip_parse(
     name = "pip_deps",
-    requirements = "@upb//python:requirements.txt",
+    requirements = "@com_google_protobuf//python:requirements.txt",
     requirements_overrides = {
-        "3.11": "@upb//python:requirements_311.txt",
+        "3.11": "@com_google_protobuf//python:requirements_311.txt",
     },
 )
 
