@@ -39,9 +39,10 @@ def check_port_platform_inclusion(directory_root, legal_list):
             # Skip check for upb generated code.
             if (
                 filename.endswith(".upb.h")
-                or filename.endswith(".upb.c")
                 or filename.endswith(".upbdefs.h")
                 or filename.endswith(".upbdefs.c")
+                or filename.endswith(".upb_minitable.h")
+                or filename.endswith(".upb_minitable.c")
             ):
                 continue
             with open(path) as f:
