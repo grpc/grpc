@@ -117,10 +117,12 @@ grpc_cc_library(
         "lib/experiments/config.h",
         "lib/experiments/experiments.h",
     ],
-    defines = select({
-        "//:grpc_experiments_are_final": ["GRPC_EXPERIMENTS_ARE_FINAL"],
-        "//conditions:default": [],
-    }),
+    defines = select(
+        {
+            "//:grpc_experiments_are_final": ["GRPC_EXPERIMENTS_ARE_FINAL"],
+            "//conditions:default": [],
+        },
+    ),
     external_deps = [
         "absl/functional:any_invocable",
         "absl/strings",
@@ -416,6 +418,20 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
     ],
+)
+
+grpc_cc_library(
+    name = "status_flag",
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/status_flag.h",
+    ],
+    deps = ["promise_status"],
 )
 
 grpc_cc_library(
@@ -2136,6 +2152,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "ares_resolver",
         "channel_args_endpoint_config",
         "common_event_engine_closures",
         "error",
@@ -2145,6 +2162,7 @@ grpc_cc_library(
         "event_engine_trace",
         "event_engine_utils",
         "init_internally",
+        "iomgr_port",
         "posix_event_engine_timer_manager",
         "time",
         "windows_endpoint",
@@ -2345,27 +2363,29 @@ grpc_cc_library(
     srcs = ["lib/event_engine/default_event_engine_factory.cc"],
     hdrs = ["lib/event_engine/default_event_engine_factory.h"],
     external_deps = ["absl/memory"],
-    select_deps = [{
-        "//:windows": ["windows_event_engine"],
-        "//:windows_msvc": ["windows_event_engine"],
-        "//:windows_other": ["windows_event_engine"],
-        "//:mac": [
-            "posix_event_engine",
-            "cf_event_engine",
-        ],
-        "//:mac_x86_64": [
-            "posix_event_engine",
-            "cf_event_engine",
-        ],
-        "//:mac_arm64": [
-            "posix_event_engine",
-            "cf_event_engine",
-        ],
-        "//:ios": ["cf_event_engine"],
-        "//:tvos": ["cf_event_engine"],
-        "//:watchos": ["cf_event_engine"],
-        "//conditions:default": ["posix_event_engine"],
-    }],
+    select_deps = [
+        {
+            "//:windows": ["windows_event_engine"],
+            "//:windows_msvc": ["windows_event_engine"],
+            "//:windows_other": ["windows_event_engine"],
+            "//:mac": [
+                "posix_event_engine",
+                "cf_event_engine",
+            ],
+            "//:mac_x86_64": [
+                "posix_event_engine",
+                "cf_event_engine",
+            ],
+            "//:mac_arm64": [
+                "posix_event_engine",
+                "cf_event_engine",
+            ],
+            "//:ios": ["cf_event_engine"],
+            "//:tvos": ["cf_event_engine"],
+            "//:watchos": ["cf_event_engine"],
+            "//conditions:default": ["posix_event_engine"],
+        },
+    ],
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -2439,12 +2459,14 @@ grpc_cc_library(
     name = "ares_resolver",
     srcs = [
         "lib/event_engine/ares_resolver.cc",
+        "lib/event_engine/windows/grpc_polled_fd_windows.cc",
     ],
     hdrs = [
         "lib/event_engine/ares_resolver.h",
         "lib/event_engine/grpc_polled_fd.h",
         "lib/event_engine/nameser.h",
         "lib/event_engine/posix_engine/grpc_polled_fd_posix.h",
+        "lib/event_engine/windows/grpc_polled_fd_windows.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2460,6 +2482,7 @@ grpc_cc_library(
         "cares",
     ],
     deps = [
+        "common_event_engine_closures",
         "error",
         "event_engine_time_util",
         "grpc_sockaddr",
@@ -2468,6 +2491,8 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_tcp_socket_utils",
         "resolved_address",
+        "slice",
+        "windows_iocp",
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -5451,8 +5476,12 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "service_config_helper",
-    srcs = ["ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc"],
-    hdrs = ["ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h"],
+    srcs = [
+        "ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h",
+    ],
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
@@ -5472,8 +5501,12 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_resolver_dns_event_engine",
-    srcs = ["ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc"],
-    hdrs = ["ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"],
+    srcs = [
+        "ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h",
+    ],
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
@@ -6415,7 +6448,9 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
-    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg"],
+    deps = [
+        "@envoy_api//envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg",
+    ],
 )
 
 grpc_upb_proto_library(
@@ -6435,12 +6470,16 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_network_http_connection_manager_upb",
-    deps = ["@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
+    deps = [
+        "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg",
+    ],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_network_http_connection_manager_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
+    deps = [
+        "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg",
+    ],
 )
 
 grpc_upb_proto_library(
@@ -6567,14 +6606,20 @@ WELL_KNOWN_PROTO_TARGETS = [
     "wrappers",
 ]
 
-[grpc_upb_proto_library(
-    name = "protobuf_" + target + "_upb",
-    deps = ["@com_google_protobuf//:" + target + "_proto"],
-) for target in WELL_KNOWN_PROTO_TARGETS]
+[
+    grpc_upb_proto_library(
+        name = "protobuf_" + target + "_upb",
+        deps = ["@com_google_protobuf//:" + target + "_proto"],
+    )
+    for target in WELL_KNOWN_PROTO_TARGETS
+]
 
-[grpc_upb_proto_reflection_library(
-    name = "protobuf_" + target + "_upbdefs",
-    deps = ["@com_google_protobuf//:" + target + "_proto"],
-) for target in WELL_KNOWN_PROTO_TARGETS]
+[
+    grpc_upb_proto_reflection_library(
+        name = "protobuf_" + target + "_upbdefs",
+        deps = ["@com_google_protobuf//:" + target + "_proto"],
+    )
+    for target in WELL_KNOWN_PROTO_TARGETS
+]
 
 grpc_generate_one_off_internal_targets()
