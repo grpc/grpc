@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_STATUS_FLAG_H
 #define GRPC_SRC_CORE_LIB_PROMISE_STATUS_FLAG_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
