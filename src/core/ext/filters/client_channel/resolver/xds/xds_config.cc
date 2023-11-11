@@ -107,8 +107,9 @@ class XdsConfigWatcher::RouteConfigWatcher
     config_watcher_->work_serializer_->Run(
         [self = std::move(self)]() {
           self->config_watcher_->OnResourceDoesNotExist(
-              absl::StrCat(self->name_,
-                           ": xDS route config resource does not exist"));
+              absl::StrCat(
+                  self->name_,
+                  ": xDS route configuration resource does not exist"));
         },
         DEBUG_LOCATION);
   }
