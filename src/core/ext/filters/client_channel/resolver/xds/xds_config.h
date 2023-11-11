@@ -35,7 +35,7 @@ constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
 
 // Watches all xDS resources and handles dependencies between them.
 // Reports updates only when all necessary resources have been obtained.
-class XdsConfigWatcher : public InternallyRefCounted<XdsConfigWatcher> {
+class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
  public:
   struct XdsConfig {
     std::shared_ptr<const XdsListenerResource> listener;
@@ -60,7 +60,7 @@ class XdsConfigWatcher : public InternallyRefCounted<XdsConfigWatcher> {
     virtual void OnResourceDoesNotExist(std::string context) = 0;
   };
 
-  XdsConfigWatcher(
+  XdsDependencyManager(
       RefCountedPtr<GrpcXdsClient> xds_client,
       std::shared_ptr<WorkSerializer> work_serializer,
       std::unique_ptr<Watcher> watcher, std::string data_plane_authority,

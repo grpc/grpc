@@ -137,12 +137,12 @@ class XdsResolver : public Resolver {
   }
 
  private:
-  class XdsWatcher : public XdsConfigWatcher::Watcher {
+  class XdsWatcher : public XdsDependencyManager::Watcher {
    public:
     explicit XdsWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
 
-    void OnUpdate(XdsConfigWatcher::XdsConfig config) override {
+    void OnUpdate(XdsDependencyManager::XdsConfig config) override {
       resolver_->OnUpdate(std::move(config));
     }
 
@@ -337,7 +337,7 @@ class XdsResolver : public Resolver {
     return it->second->Ref();
   }
 
-  void OnUpdate(XdsConfigWatcher::XdsConfig config);
+  void OnUpdate(XdsDependencyManager::XdsConfig config);
   void OnError(absl::string_view context, absl::Status status);
   void OnResourceDoesNotExist(std::string context);
 
@@ -355,8 +355,8 @@ class XdsResolver : public Resolver {
   std::string data_plane_authority_;
   const uint64_t channel_id_;
 
-  OrphanablePtr<XdsConfigWatcher> watcher_;
-  XdsConfigWatcher::XdsConfig current_config_;
+  OrphanablePtr<XdsDependencyManager> dependency_mgr_;
+  XdsDependencyManager::XdsConfig current_config_;
   std::map<absl::string_view, WeakRefCountedPtr<ClusterRef>> cluster_ref_map_;
 };
 
@@ -909,7 +909,7 @@ void XdsResolver::StartLocked() {
   grpc_pollset_set_add_pollset_set(
       static_cast<GrpcXdsClient*>(xds_client_.get())->interested_parties(),
       interested_parties_);
-  watcher_ = MakeOrphanable<XdsConfigWatcher>(
+  dependency_mgr_ = MakeOrphanable<XdsDependencyManager>(
       xds_client_, work_serializer_, std::make_unique<XdsWatcher>(Ref()),
       data_plane_authority_, lds_resource_name_);
 }
@@ -919,7 +919,7 @@ void XdsResolver::ShutdownLocked() {
     gpr_log(GPR_INFO, "[xds_resolver %p] shutting down", this);
   }
   if (xds_client_ != nullptr) {
-    watcher_.reset();
+    dependency_mgr_.reset();
     grpc_pollset_set_del_pollset_set(
         static_cast<GrpcXdsClient*>(xds_client_.get())->interested_parties(),
         interested_parties_);
@@ -927,7 +927,7 @@ void XdsResolver::ShutdownLocked() {
   }
 }
 
-void XdsResolver::OnUpdate(XdsConfigWatcher::XdsConfig config) {
+void XdsResolver::OnUpdate(XdsDependencyManager::XdsConfig config) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated xDS config", this);
   }
