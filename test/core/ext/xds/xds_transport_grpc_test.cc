@@ -25,10 +25,9 @@
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
