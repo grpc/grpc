@@ -697,27 +697,27 @@ void XdsDependencyManager::MaybeUpdateClusterAndEndpointWatches() {
 
 void XdsDependencyManager::MaybeReportUpdate() {
   if (current_virtual_host_ == nullptr) return;
-  XdsConfig config;
-  config.listener = current_listener_;
-  config.route_config = current_route_config_;
-  config.virtual_host = current_virtual_host_;
+  auto config = std::make_shared<XdsConfig>();
+  config->listener = current_listener_;
+  config->route_config = current_route_config_;
+  config->virtual_host = current_virtual_host_;
   for (const auto& p : cluster_watchers_) {
     if (p.second.update.ok() && *p.second.update == nullptr) return;
-    config.clusters.emplace(p.first, p.second.update);
+    config->clusters.emplace(p.first, p.second.update);
   }
   for (const auto& p : endpoint_watchers_) {
     if (p.second.update.endpoints == nullptr &&
         p.second.update.resolution_note.empty()) {
       return;
     }
-    config.endpoints.emplace(p.first, p.second.update);
+    config->endpoints.emplace(p.first, p.second.update);
   }
   for (const auto& p : dns_resolvers_) {
     if (p.second.update.endpoints == nullptr &&
         p.second.update.resolution_note.empty()) {
       return;
     }
-    config.dns_results.emplace(p.first, p.second.update);
+    config->dns_results.emplace(p.first, p.second.update);
   }
   watcher_->OnUpdate(std::move(config));
 }

@@ -47,12 +47,19 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
     };
     std::map<std::string, EndpointConfig> endpoints;
     std::map<std::string, EndpointConfig> dns_results;
+
+    static absl::string_view ChannelArgName() {
+      return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_config";
+    }
+    static int ChannelArgsCompare(const XdsConfig* a, const XdsConfig* b) {
+      return QsortCompare(a, b);
+    }
   };
 
   class Watcher {
    public:
     virtual ~Watcher() = default;
-    virtual void OnUpdate(XdsConfig config) = 0;
+    virtual void OnUpdate(std::shared_ptr<const XdsConfig> config) = 0;
     virtual void OnError(absl::string_view context, absl::Status status) = 0;
     virtual void OnResourceDoesNotExist(std::string context) = 0;
   };

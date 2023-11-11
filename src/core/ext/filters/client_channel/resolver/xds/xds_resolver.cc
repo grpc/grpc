@@ -142,7 +142,8 @@ class XdsResolver : public Resolver {
     explicit XdsWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
 
-    void OnUpdate(XdsDependencyManager::XdsConfig config) override {
+    void OnUpdate(std::shared_ptr<const XdsDependencyManager::XdsConfig> config)
+        override {
       resolver_->OnUpdate(std::move(config));
     }
 
@@ -337,7 +338,7 @@ class XdsResolver : public Resolver {
     return it->second->Ref();
   }
 
-  void OnUpdate(XdsDependencyManager::XdsConfig config);
+  void OnUpdate(std::shared_ptr<const XdsDependencyManager::XdsConfig> config);
   void OnError(absl::string_view context, absl::Status status);
   void OnResourceDoesNotExist(std::string context);
 
@@ -356,7 +357,7 @@ class XdsResolver : public Resolver {
   const uint64_t channel_id_;
 
   OrphanablePtr<XdsDependencyManager> dependency_mgr_;
-  XdsDependencyManager::XdsConfig current_config_;
+  std::shared_ptr<const XdsDependencyManager::XdsConfig> current_config_;
   std::map<absl::string_view, WeakRefCountedPtr<ClusterRef>> cluster_ref_map_;
 };
 
@@ -396,8 +397,8 @@ XdsResolver::RouteConfigData::Create(
   // weighted_cluster_state field points to the memory in the route field, so
   // moving the entry in a reallocation will cause the string_view to point to
   // invalid data.
-  data->routes_.reserve(resolver->current_config_.virtual_host->routes.size());
-  for (auto& route : resolver->current_config_.virtual_host->routes) {
+  data->routes_.reserve(resolver->current_config_->virtual_host->routes.size());
+  for (auto& route : resolver->current_config_->virtual_host->routes) {
     absl::Status status = data->AddRouteEntry(resolver, route,
                                               default_max_stream_duration);
     if (!status.ok()) {
@@ -472,11 +473,11 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
   }
   // Handle xDS HTTP filters.
   const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
-      resolver->current_config_.listener->listener);
+      resolver->current_config_->listener->listener);
   auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
       static_cast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
           .http_filter_registry(),
-      hcm.http_filters, *resolver->current_config_.virtual_host, route,
+      hcm.http_filters, *resolver->current_config_->virtual_host, route,
       cluster_weight, resolver->args_);
   if (!result.ok()) return result.status();
   for (const auto& p : result->per_filter_configs) {
@@ -600,7 +601,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
       static_cast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
           .http_filter_registry();
   const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
-      resolver_->current_config_.listener->listener);
+      resolver_->current_config_->listener->listener);
   for (const auto& http_filter : hcm.http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
@@ -927,7 +928,8 @@ void XdsResolver::ShutdownLocked() {
   }
 }
 
-void XdsResolver::OnUpdate(XdsDependencyManager::XdsConfig config) {
+void XdsResolver::OnUpdate(
+    std::shared_ptr<const XdsDependencyManager::XdsConfig> config) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated xDS config", this);
   }
@@ -979,7 +981,7 @@ XdsResolver::CreateServiceConfig() {
           "        \"childPolicy\": %s\n"
           "       }",
           cluster.first,
-          current_config_.route_config->cluster_specifier_plugin_map.at(
+          current_config_->route_config->cluster_specifier_plugin_map.at(
               std::string(child_name))));
     } else {
       absl::ConsumePrefix(&child_name, "cluster:");
@@ -1014,7 +1016,7 @@ void XdsResolver::GenerateResult() {
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map.
   const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
-      current_config_.listener->listener);
+      current_config_->listener->listener);
   auto route_config_data =
       RouteConfigData::Create(this, hcm.http_max_stream_duration);
   if (!route_config_data.ok()) {
@@ -1039,7 +1041,9 @@ void XdsResolver::GenerateResult() {
   RefCountedPtr<GrpcXdsClient> xds_client =
       xds_client_->Ref(DEBUG_LOCATION, "xds resolver result");
   result.args =
-      args_.SetObject(std::move(xds_client)).SetObject(config_selector);
+      args_.SetObject(std::move(xds_client))
+           .SetObject(config_selector)
+           .SetObject(current_config_);
   result_handler_->ReportResult(std::move(result));
 }
 
