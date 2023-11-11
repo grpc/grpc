@@ -20,7 +20,9 @@
 
 #include "absl/strings/str_join.h"
 
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_vhost_iterator.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
+#include "src/core/ext/xds/xds_routing.h"
+#include "src/core/lib/gprpp/match.h"
 
 namespace grpc_core {
 
@@ -58,7 +60,7 @@ class XdsConfigWatcher::ListenerWatcher
     config_watcher_->work_serializer_->Run(
         [config_watcher = config_watcher_]() {
           config_watcher->OnResourceDoesNotExist(
-              absl::StrCat(config_watcher->listner_resource_name_,
+              absl::StrCat(config_watcher->listener_resource_name_,
                            ": xDS listener resource does not exist"));
         },
         DEBUG_LOCATION);
@@ -81,8 +83,10 @@ class XdsConfigWatcher::RouteConfigWatcher
 
   void OnResourceChanged(
       std::shared_ptr<const XdsRouteConfigResource> route_config) override {
+    RefCountedPtr<RouteConfigWatcher> self = Ref();
     config_watcher_->work_serializer_->Run(
-        [self = Ref(), route_config = std::move(route_config)]() mutable {
+        [self = std::move(self),
+         route_config = std::move(route_config)]() mutable {
           self->config_watcher_->OnRouteConfigUpdate(self->name_,
                                                      std::move(route_config));
         },
@@ -90,16 +94,18 @@ class XdsConfigWatcher::RouteConfigWatcher
   }
 
   void OnError(absl::Status status) override {
+    RefCountedPtr<RouteConfigWatcher> self = Ref();
     config_watcher_->work_serializer_->Run(
-        [self = Ref(), status = std::move(status)]() mutable {
+        [self = std::move(self), status = std::move(status)]() mutable {
           self->config_watcher_->OnError(self->name_, std::move(status));
         },
         DEBUG_LOCATION);
   }
 
   void OnResourceDoesNotExist() override {
+    RefCountedPtr<RouteConfigWatcher> self = Ref();
     config_watcher_->work_serializer_->Run(
-        [self = Ref()]() {
+        [self = std::move(self)]() {
           self->config_watcher_->OnResourceDoesNotExist(
               absl::StrCat(self->name_,
                            ": xDS route config resource does not exist"));
@@ -109,6 +115,7 @@ class XdsConfigWatcher::RouteConfigWatcher
 
  private:
   RefCountedPtr<XdsConfigWatcher> config_watcher_;
+  std::string name_;
 };
 
 //
@@ -124,8 +131,9 @@ class XdsConfigWatcher::ClusterWatcher
 
   void OnResourceChanged(
       std::shared_ptr<const XdsClusterResource> cluster) override {
+    RefCountedPtr<ClusterWatcher> self = Ref();
     config_watcher_->work_serializer_->Run(
-        [self = Ref(), cluster = std::move(cluster)]() mutable {
+        [self = std::move(self), cluster = std::move(cluster)]() mutable {
           self->config_watcher_->OnClusterUpdate(self->name_,
                                                  std::move(cluster));
         },
@@ -133,19 +141,19 @@ class XdsConfigWatcher::ClusterWatcher
   }
 
   void OnError(absl::Status status) override {
+    RefCountedPtr<ClusterWatcher> self = Ref();
     config_watcher_->work_serializer_->Run(
-        [self = Ref(), status = std::move(status)]() mutable {
-          self->config_watcher_->OnError(self->name_, std::move(status));
+        [self = std::move(self), status = std::move(status)]() mutable {
+          self->config_watcher_->OnClusterError(self->name_, std::move(status));
         },
         DEBUG_LOCATION);
   }
 
   void OnResourceDoesNotExist() override {
-// FIXME: do we want to put the entire channel in TF in this case, or
-// only fail RPCs for this cluster?  probably the latter.
+    RefCountedPtr<ClusterWatcher> self = Ref();
     config_watcher_->work_serializer_->Run(
-        [self = Ref()]() {
-          self->config_watcher_->OnResourceDoesNotExist(
+        [self = std::move(self)]() {
+          self->config_watcher_->OnClusterDoesNotExist(
               absl::StrCat(self->name_,
                            ": xDS cluster resource does not exist"));
         },
@@ -154,6 +162,7 @@ class XdsConfigWatcher::ClusterWatcher
 
  private:
   RefCountedPtr<XdsConfigWatcher> config_watcher_;
+  std::string name_;
 };
 
 //
@@ -169,8 +178,9 @@ class XdsConfigWatcher::EndpointWatcher
 
   void OnResourceChanged(
       std::shared_ptr<const XdsEndpointResource> endpoint) override {
+    RefCountedPtr<EndpointWatcher> self = Ref();
     config_watcher_->work_serializer_->Run(
-        [self = Ref(), endpoint = std::move(endpoint)]() mutable {
+        [self = std::move(self), endpoint = std::move(endpoint)]() mutable {
           self->config_watcher_->OnEndpointUpdate(self->name_,
                                                   std::move(endpoint));
         },
@@ -178,19 +188,20 @@ class XdsConfigWatcher::EndpointWatcher
   }
 
   void OnError(absl::Status status) override {
+    RefCountedPtr<EndpointWatcher> self = Ref();
     config_watcher_->work_serializer_->Run(
-        [self = Ref(), status = std::move(status)]() mutable {
-          self->config_watcher_->OnError(self->name_, std::move(status));
+        [self = std::move(self), status = std::move(status)]() mutable {
+          self->config_watcher_->OnEndpointError(self->name_,
+                                                 std::move(status));
         },
         DEBUG_LOCATION);
   }
 
   void OnResourceDoesNotExist() override {
-// FIXME: do we want to put the entire channel in TF in this case, or
-// only fail RPCs for this cluster?  probably the latter.
+    RefCountedPtr<EndpointWatcher> self = Ref();
     config_watcher_->work_serializer_->Run(
-        [self = Ref()]() {
-          self->config_watcher_->OnResourceDoesNotExist(
+        [self = std::move(self)]() {
+          self->config_watcher_->OnEndpointDoesNotExist(
               absl::StrCat(self->name_,
                            ": xDS endpoint resource does not exist"));
         },
@@ -199,6 +210,7 @@ class XdsConfigWatcher::EndpointWatcher
 
  private:
   RefCountedPtr<XdsConfigWatcher> config_watcher_;
+  std::string name_;
 };
 
 //
@@ -213,12 +225,12 @@ XdsConfigWatcher::XdsConfigWatcher(
     : xds_client_(std::move(xds_client)),
       work_serializer_(std::move(work_serializer)),
       watcher_(std::move(watcher)),
-      data_plane_authority_(std::move(data_plane_authority)) {
+      data_plane_authority_(std::move(data_plane_authority)),
       listener_resource_name_(std::move(listener_resource_name)) {
-  auto watcher = MakeRefCounted<ListenerWatcher>(Ref());
-  listener_watcher_ = watcher.get();
+  auto listener_watcher = MakeRefCounted<ListenerWatcher>(Ref());
+  listener_watcher_ = listener_watcher.get();
   XdsListenerResourceType::StartWatch(
-      xds_client_.get(), listener_resource_name_, std::move(watcher));
+      xds_client_.get(), listener_resource_name_, std::move(listener_watcher));
 }
 
 void XdsConfigWatcher::Orphan() {
@@ -243,7 +255,7 @@ void XdsConfigWatcher::Orphan() {
         /*delay_unsubscription=*/false);
   }
   xds_client_.reset();
-  for (const auto& p : dns_resolvers_) {
+  for (auto& p : dns_resolvers_) {
     p.second.resolver.reset();
   }
   Unref();
@@ -292,7 +304,6 @@ void XdsConfigWatcher::OnListenerUpdate(
           // RDS resource name has not changed, so no watch needs to be
           // updated, but we still need to propagate any changes in the
           // HCM config (e.g., the list of HTTP filters).
-          MaybeUpdateClusterAndEndpointWatches();
           MaybeReportUpdate();
         }
       },
@@ -306,14 +317,36 @@ void XdsConfigWatcher::OnListenerUpdate(
           route_config_watcher_ = nullptr;
           route_config_name_.clear();
         }
-        OnRouteConfigUpdate(route_config);
+        OnRouteConfigUpdate("", route_config);
       });
 }
+
+namespace {
+
+class XdsVirtualHostListIterator : public XdsRouting::VirtualHostListIterator {
+ public:
+  explicit XdsVirtualHostListIterator(
+      const std::vector<XdsRouteConfigResource::VirtualHost>* virtual_hosts)
+      : virtual_hosts_(virtual_hosts) {}
+
+  size_t Size() const override { return virtual_hosts_->size(); }
+
+  const std::vector<std::string>& GetDomainsForVirtualHost(
+      size_t index) const override {
+    return (*virtual_hosts_)[index].domains;
+  }
+
+ private:
+  const std::vector<XdsRouteConfigResource::VirtualHost>* virtual_hosts_;
+};
+
+}  // namespace
 
 void XdsConfigWatcher::OnRouteConfigUpdate(
     const std::string& name,
     std::shared_ptr<const XdsRouteConfigResource> route_config) {
   if (xds_client_ == nullptr) return;
+  if (name != route_config_name_) return;
   // Find the relevant VirtualHost from the RouteConfiguration.
   // If the resource doesn't have the right vhost, fail without updating
   // our data.
@@ -332,11 +365,25 @@ void XdsConfigWatcher::OnRouteConfigUpdate(
   }
   // Update our data.
   current_route_config_ = std::move(route_config);
+  current_virtual_host_ = &current_route_config_->virtual_hosts[*vhost_index];
   clusters_from_route_config_ =
       GetClustersFromRouteConfig(*current_route_config_);
   // The set of clusters we need may have changed.
   MaybeUpdateClusterAndEndpointWatches();
   MaybeReportUpdate();
+}
+
+void XdsConfigWatcher::OnError(std::string context,
+                               absl::Status status) {
+  if (xds_client_ == nullptr) return;
+  if (current_virtual_host_ != nullptr) return;
+  watcher_->OnError(context, std::move(status));
+}
+
+void XdsConfigWatcher::OnResourceDoesNotExist(std::string context) {
+  if (xds_client_ == nullptr) return;
+  current_virtual_host_ = nullptr;
+  watcher_->OnResourceDoesNotExist(std::move(context));
 }
 
 void XdsConfigWatcher::OnClusterUpdate(
@@ -352,48 +399,108 @@ void XdsConfigWatcher::OnClusterUpdate(
   MaybeReportUpdate();
 }
 
+void XdsConfigWatcher::OnClusterError(const std::string& name,
+                                      absl::Status status) {
+  if (xds_client_ == nullptr) return;
+  auto it = cluster_watchers_.find(name);
+  if (it == cluster_watchers_.end()) return;
+  if (it->second.update.value_or(nullptr) == nullptr) {
+    it->second.update = std::move(status);
+  }
+  MaybeReportUpdate();
+}
+
+void XdsConfigWatcher::OnClusterDoesNotExist(const std::string& name) {
+  if (xds_client_ == nullptr) return;
+  auto it = cluster_watchers_.find(name);
+  if (it == cluster_watchers_.end()) return;
+  it->second.update = absl::UnavailableError(
+      absl::StrCat("CDS resource ", name, " does not exist"));
+  MaybeReportUpdate();
+}
+
 void XdsConfigWatcher::OnEndpointUpdate(
     const std::string& name,
-    std::shared_ptr<const XdsEndpointResource> endpoint,
-    std::string resolution_note) {
+    std::shared_ptr<const XdsEndpointResource> endpoint) {
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
   if (it == endpoint_watchers_.end()) return;
-  it->second.update = std::move(endpoint);
-  it->second.resolution_note = std::move(resolution_note);
+  if (endpoint->priorities.empty()) {
+    it->second.update.resolution_note =
+        absl::StrCat("EDS resource ", name, " contains no localities");
+  } else {
+    std::set<std::string> empty_localities;
+    for (const auto& priority : endpoint->priorities) {
+      for (const auto& p : priority.localities) {
+        if (p.second.endpoints.empty()) {
+          empty_localities.insert(p.first->AsHumanReadableString());
+        }
+      }
+    }
+    if (!empty_localities.empty()) {
+      it->second.update.resolution_note = absl::StrCat(
+          "EDS resource ", name, " contains empty localities: [",
+          absl::StrJoin(empty_localities, "; "), "]");
+    }
+  }
+  it->second.update.endpoints = std::move(endpoint);
   MaybeReportUpdate();
 }
 
-void XdsConfigWatcher::OnDnsResult(
-    const std::string& dns_name, EndpointAddressesList addresses,
-    std::string resolution_note) {
+void XdsConfigWatcher::OnEndpointError(const std::string& name,
+                                       absl::Status status) {
+  if (xds_client_ == nullptr) return;
+  auto it = endpoint_watchers_.find(name);
+  if (it == endpoint_watchers_.end()) return;
+  if (it->second.update.endpoints == nullptr) {
+    it->second.update.resolution_note =
+        absl::StrCat("EDS resource ", name, ": ", status.ToString());
+    MaybeReportUpdate();
+  }
+}
+
+void XdsConfigWatcher::OnEndpointDoesNotExist(const std::string& name) {
+  if (xds_client_ == nullptr) return;
+  auto it = endpoint_watchers_.find(name);
+  if (it == endpoint_watchers_.end()) return;
+  it->second.update.endpoints.reset();
+  it->second.update.resolution_note =
+      absl::StrCat("EDS resource ", name, " does not exist");
+  MaybeReportUpdate();
+}
+
+void XdsConfigWatcher::OnDnsResult(const std::string& dns_name,
+                                   Resolver::Result result) {
   if (xds_client_ == nullptr) return;
   auto it = dns_resolvers_.find(dns_name);
   if (it == dns_resolvers_.end()) return;
-  it->second.addresses = std::move(addresses);
-  it->second.resolution_note = std::move(resolution_note);
+  // Convert resolver result to EDS update.
+  XdsEndpointResource::Priority::Locality locality;
+  locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
+  locality.lb_weight = 1;
+  if (result.addresses.ok()) {
+    locality.endpoints = std::move(*result.addresses);
+    it->second.update.resolution_note = std::move(result.resolution_note);
+  } else if (result.resolution_note.empty()) {
+    it->second.update.resolution_note = absl::StrCat(
+        "DNS resolution failed for ", dns_name, ": ",
+        result.addresses.status().ToString());
+  }
+  XdsEndpointResource::Priority priority;
+  priority.localities.emplace(locality.name.get(), std::move(locality));
+  auto resource = std::make_shared<XdsEndpointResource>();
+  resource->priorities.emplace_back(std::move(priority));
+  it->second.update.endpoints = std::move(resource);
   MaybeReportUpdate();
-}
-
-void XdsConfigWatcher::OnError(std::string context,
-                               absl::Status status) {
-  if (xds_client_ == nullptr) return;
-  watcher_->OnError(context, std::move(status));
-}
-
-void XdsConfigWatcher::OnResourceDoesNotExist(std::string context) {
-  if (xds_client_ == nullptr) return;
-  watcher_->OnResourceDoesNotExist(std::move(context));
 }
 
 std::set<std::string> XdsConfigWatcher::GetClustersFromRouteConfig(
     const XdsRouteConfigResource& route_config) const {
   std::set<std::string> clusters;
-  for (auto& route
-       : current_route_config_->virtual_hosts[*vhost_index].routes) {
+  for (auto& route : current_virtual_host_->routes) {
     auto* route_action =
         absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
-            &route.route.action);
+            &route.action);
     if (route_action == nullptr) continue;
     Match(
         route_action->action,
@@ -433,7 +540,7 @@ absl::Status XdsConfigWatcher::MaybeStartClusterWatch(
   // Create a new watcher if needed.
   if (state.watcher == nullptr) {
     auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), name);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
               name.c_str());
     }
@@ -443,10 +550,10 @@ absl::Status XdsConfigWatcher::MaybeStartClusterWatch(
     return absl::OkStatus();
   }
   // If we don't have the resource yet, stop here.
-  if (state.update == nullptr) return absl::OkStatus();
+  if (!state.update.ok() || *state.update == nullptr) return absl::OkStatus();
   // Check cluster type.
   return Match(
-      state.update->type,
+      (*state.update)->type,
       // EDS cluster.  Start EDS watch if needed.
       [&](const XdsClusterResource::Eds& eds) {
         std::string eds_resource_name =
@@ -457,8 +564,8 @@ absl::Status XdsConfigWatcher::MaybeStartClusterWatch(
           auto watcher =
               MakeRefCounted<EndpointWatcher>(Ref(), eds_resource_name);
           state.watcher = watcher.get();
-          XdsEndpointResource::StartWatch(xds_client_.get(), eds_resource_name,
-                                          std::move(watcher));
+          XdsEndpointResourceType::StartWatch(
+              xds_client_.get(), eds_resource_name, std::move(watcher));
         }
         return absl::OkStatus();
       },
@@ -486,7 +593,7 @@ void XdsConfigWatcher::MaybeUpdateClusterAndEndpointWatches() {
   for (const std::string& cluster : clusters_from_route_config_) {
     auto result = MaybeStartClusterWatch(
         cluster, 0, &clusters_seen, &eds_resources_seen);
-    if (!result.ok()) return OnError(cluster, result.status());
+    if (!result.ok()) return OnError(cluster, std::move(result));
   }
   // Remove entries in cluster_watchers_ for any clusters not in clusters_seen.
   for (auto it = cluster_watchers_.begin(); it != cluster_watchers_.end();) {
@@ -495,12 +602,13 @@ void XdsConfigWatcher::MaybeUpdateClusterAndEndpointWatches() {
       ++it;
       continue;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
               cluster_name.c_str());
     }
-    CancelClusterDataWatch(cluster_name, it->second.watcher,
-                           /*delay_unsubscription=*/false);
+    XdsClusterResourceType::CancelWatch(
+        xds_client_.get(), cluster_name, it->second.watcher,
+        /*delay_unsubscription=*/false);
     it = cluster_watchers_.erase(it);
   }
   // Remove entries in endpoint_watchers_ for any EDS resources not in
@@ -512,41 +620,36 @@ void XdsConfigWatcher::MaybeUpdateClusterAndEndpointWatches() {
       ++it;
       continue;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for EDS resource %s", this,
               eds_resource_name.c_str());
     }
-    CancelEndpointDataWatch(eds_resource_name, it->second.watcher,
-                            /*delay_unsubscription=*/false);
+    XdsEndpointResourceType::CancelWatch(
+        xds_client_.get(), eds_resource_name, it->second.watcher,
+        /*delay_unsubscription=*/false);
     it = endpoint_watchers_.erase(it);
   }
 }
 
 void XdsConfigWatcher::MaybeReportUpdate() {
-  if (current_listener_ == nullptr) return;
-  if (current_route_config_ == nullptr) return;
+  if (current_virtual_host_ == nullptr) return;
   XdsConfig config;
   config.listener = current_listener_;
   config.route_config = current_route_config_;
+  config.virtual_host = current_virtual_host_;
   for (const auto& p : cluster_watchers_) {
-    if (p.second.update == nullptr) return;
+    if (p.second.update.ok() && *p.second.update == nullptr) return;
     config.clusters.emplace(p.first, p.second.update);
   }
-  std::vector<absl::string_view> resolution_notes;
   for (const auto& p : endpoint_watchers_) {
-    if (p.second.update == nullptr) return;
+    if (p.second.update.endpoints == nullptr) return;
     config.endpoints.emplace(p.first, p.second.update);
-    resolution_notes.push_back(p.second.resolution_note);
   }
   for (const auto& p : dns_resolvers_) {
-    if (p.second.addresses == nullptr) return;
-    config.dns_results.emplace(p.first, p.second.addresses);
-    resolution_notes.push_back(p.second.resolution_note);
+    if (p.second.update.endpoints == nullptr) return;
+    config.dns_results.emplace(p.first, p.second.update);
   }
-  config.resolution_notes = absl::StrJoin(resolution_notes, "; ");
   watcher_->OnUpdate(std::move(config));
 }
 
 }  // namespace grpc_core
-
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_XDS_XDS_CONFIG_H

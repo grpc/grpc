@@ -5615,6 +5615,10 @@ grpc_cc_library(
     name = "grpc_resolver_xds",
     srcs = [
         "ext/filters/client_channel/resolver/xds/xds_resolver.cc",
+        "ext/filters/client_channel/resolver/xds/xds_config.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/resolver/xds/xds_config.h",
     ],
     external_deps = [
         "absl/meta:type_traits",
