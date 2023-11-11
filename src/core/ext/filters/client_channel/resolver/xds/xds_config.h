@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_XDS_XDS_CONFIG_H
-#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_XDS_XDS_CONFIG_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_CONFIG_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,9 +29,6 @@
 #include "src/core/lib/resolver/resolver.h"
 
 namespace grpc_core {
-
-// Maximum depth of aggregate cluster tree.
-constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
 
 // Watches all xDS resources and handles dependencies between them.
 // Reports updates only when all necessary resources have been obtained.
@@ -164,4 +161,4 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_XDS_XDS_CONFIG_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_CONFIG_H
