@@ -153,9 +153,7 @@ class XdsConfigWatcher::ClusterWatcher
     RefCountedPtr<ClusterWatcher> self = Ref();
     config_watcher_->work_serializer_->Run(
         [self = std::move(self)]() {
-          self->config_watcher_->OnClusterDoesNotExist(
-              absl::StrCat(self->name_,
-                           ": xDS cluster resource does not exist"));
+          self->config_watcher_->OnClusterDoesNotExist(self->name_);
         },
         DEBUG_LOCATION);
   }
@@ -201,9 +199,7 @@ class XdsConfigWatcher::EndpointWatcher
     RefCountedPtr<EndpointWatcher> self = Ref();
     config_watcher_->work_serializer_->Run(
         [self = std::move(self)]() {
-          self->config_watcher_->OnEndpointDoesNotExist(
-              absl::StrCat(self->name_,
-                           ": xDS endpoint resource does not exist"));
+          self->config_watcher_->OnEndpointDoesNotExist(self->name_);
         },
         DEBUG_LOCATION);
   }
@@ -227,6 +223,10 @@ XdsConfigWatcher::XdsConfigWatcher(
       watcher_(std::move(watcher)),
       data_plane_authority_(std::move(data_plane_authority)),
       listener_resource_name_(std::move(listener_resource_name)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] starting watch for listener %s",
+            this, listener_resource_name_.c_str());
+  }
   auto listener_watcher = MakeRefCounted<ListenerWatcher>(Ref());
   listener_watcher_ = listener_watcher.get();
   XdsListenerResourceType::StartWatch(
@@ -234,6 +234,9 @@ XdsConfigWatcher::XdsConfigWatcher(
 }
 
 void XdsConfigWatcher::Orphan() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] shutting down", this);
+  }
   if (listener_watcher_ != nullptr) {
     XdsListenerResourceType::CancelWatch(
         xds_client_.get(), listener_resource_name_, listener_watcher_,
@@ -264,7 +267,7 @@ void XdsConfigWatcher::Orphan() {
 void XdsConfigWatcher::OnListenerUpdate(
     std::shared_ptr<const XdsListenerResource> listener) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data", this);
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] received Listener update", this);
   }
   if (xds_client_ == nullptr) return;
   const auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
@@ -345,6 +348,10 @@ class XdsVirtualHostListIterator : public XdsRouting::VirtualHostListIterator {
 void XdsConfigWatcher::OnRouteConfigUpdate(
     const std::string& name,
     std::shared_ptr<const XdsRouteConfigResource> route_config) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] received RouteConfig update",
+            this);
+  }
   if (xds_client_ == nullptr) return;
   if (name != route_config_name_) return;
   // Find the relevant VirtualHost from the RouteConfiguration.
@@ -375,12 +382,21 @@ void XdsConfigWatcher::OnRouteConfigUpdate(
 
 void XdsConfigWatcher::OnError(std::string context,
                                absl::Status status) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(
+        GPR_INFO,
+        "[XdsConfigWatcher %p] received Listener or RouteConfig error: %s %s",
+        this, context.c_str(), status.ToString().c_str());
+  }
   if (xds_client_ == nullptr) return;
   if (current_virtual_host_ != nullptr) return;
   watcher_->OnError(context, std::move(status));
 }
 
 void XdsConfigWatcher::OnResourceDoesNotExist(std::string context) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] %s", this, context.c_str());
+  }
   if (xds_client_ == nullptr) return;
   current_virtual_host_ = nullptr;
   watcher_->OnResourceDoesNotExist(std::move(context));
@@ -389,6 +405,10 @@ void XdsConfigWatcher::OnResourceDoesNotExist(std::string context) {
 void XdsConfigWatcher::OnClusterUpdate(
     const std::string& name,
     std::shared_ptr<const XdsClusterResource> cluster) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] received Cluster update: %s",
+            this, name.c_str());
+  }
   if (xds_client_ == nullptr) return;
   auto it = cluster_watchers_.find(name);
   if (it == cluster_watchers_.end()) return;
@@ -401,27 +421,45 @@ void XdsConfigWatcher::OnClusterUpdate(
 
 void XdsConfigWatcher::OnClusterError(const std::string& name,
                                       absl::Status status) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] received Cluster error: %s %s",
+            this, name.c_str(), status.ToString().c_str());
+  }
   if (xds_client_ == nullptr) return;
   auto it = cluster_watchers_.find(name);
   if (it == cluster_watchers_.end()) return;
   if (it->second.update.value_or(nullptr) == nullptr) {
     it->second.update = std::move(status);
   }
+  // The set of clusters we need may have changed if this was an
+  // aggregate cluster.
+  MaybeUpdateClusterAndEndpointWatches();
   MaybeReportUpdate();
 }
 
 void XdsConfigWatcher::OnClusterDoesNotExist(const std::string& name) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] Cluster does not exist: %s",
+            this, name.c_str());
+  }
   if (xds_client_ == nullptr) return;
   auto it = cluster_watchers_.find(name);
   if (it == cluster_watchers_.end()) return;
   it->second.update = absl::UnavailableError(
       absl::StrCat("CDS resource ", name, " does not exist"));
+  // The set of clusters we need may have changed if this was an
+  // aggregate cluster.
+  MaybeUpdateClusterAndEndpointWatches();
   MaybeReportUpdate();
 }
 
 void XdsConfigWatcher::OnEndpointUpdate(
     const std::string& name,
     std::shared_ptr<const XdsEndpointResource> endpoint) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] received Endpoint update: %s",
+            this, name.c_str());
+  }
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
   if (it == endpoint_watchers_.end()) return;
@@ -449,6 +487,10 @@ void XdsConfigWatcher::OnEndpointUpdate(
 
 void XdsConfigWatcher::OnEndpointError(const std::string& name,
                                        absl::Status status) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] received Endpoint error: %s %s",
+            this, name.c_str(), status.ToString().c_str());
+  }
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
   if (it == endpoint_watchers_.end()) return;
@@ -460,6 +502,10 @@ void XdsConfigWatcher::OnEndpointError(const std::string& name,
 }
 
 void XdsConfigWatcher::OnEndpointDoesNotExist(const std::string& name) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] Endpoint does not exist: %s",
+            this, name.c_str());
+  }
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
   if (it == endpoint_watchers_.end()) return;
@@ -471,6 +517,10 @@ void XdsConfigWatcher::OnEndpointDoesNotExist(const std::string& name) {
 
 void XdsConfigWatcher::OnDnsResult(const std::string& dns_name,
                                    Resolver::Result result) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsConfigWatcher %p] received DNS update: %s",
+            this, dns_name.c_str());
+  }
   if (xds_client_ == nullptr) return;
   auto it = dns_resolvers_.find(dns_name);
   if (it == dns_resolvers_.end()) return;
@@ -541,8 +591,8 @@ absl::Status XdsConfigWatcher::MaybeStartClusterWatch(
   if (state.watcher == nullptr) {
     auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), name);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-      gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
-              name.c_str());
+      gpr_log(GPR_INFO, "[XdsConfigWatcher %p] starting watch for cluster %s",
+              this, name.c_str());
     }
     state.watcher = watcher.get();
     XdsClusterResourceType::StartWatch(xds_client_.get(), name,
@@ -561,6 +611,11 @@ absl::Status XdsConfigWatcher::MaybeStartClusterWatch(
         eds_resources_seen->insert(eds_resource_name);
         auto& state = endpoint_watchers_[eds_resource_name];
         if (state.watcher == nullptr) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+            gpr_log(GPR_INFO,
+                    "[XdsConfigWatcher %p] starting watch for endpoint %s",
+                    this, eds_resource_name.c_str());
+          }
           auto watcher =
               MakeRefCounted<EndpointWatcher>(Ref(), eds_resource_name);
           state.watcher = watcher.get();
@@ -603,8 +658,8 @@ void XdsConfigWatcher::MaybeUpdateClusterAndEndpointWatches() {
       continue;
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-      gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
-              cluster_name.c_str());
+      gpr_log(GPR_INFO, "[XdsConfigWatcher %p] cancelling watch for cluster %s",
+              this, cluster_name.c_str());
     }
     XdsClusterResourceType::CancelWatch(
         xds_client_.get(), cluster_name, it->second.watcher,
@@ -621,8 +676,9 @@ void XdsConfigWatcher::MaybeUpdateClusterAndEndpointWatches() {
       continue;
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-      gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for EDS resource %s", this,
-              eds_resource_name.c_str());
+      gpr_log(GPR_INFO,
+              "[XdsConfigWatcher %p] cancelling watch for EDS resource %s",
+              this, eds_resource_name.c_str());
     }
     XdsEndpointResourceType::CancelWatch(
         xds_client_.get(), eds_resource_name, it->second.watcher,
