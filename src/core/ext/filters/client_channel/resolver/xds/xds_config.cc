@@ -698,11 +698,17 @@ void XdsConfigWatcher::MaybeReportUpdate() {
     config.clusters.emplace(p.first, p.second.update);
   }
   for (const auto& p : endpoint_watchers_) {
-    if (p.second.update.endpoints == nullptr) return;
+    if (p.second.update.endpoints == nullptr &&
+        p.second.update.resolution_note.empty()) {
+      return;
+    }
     config.endpoints.emplace(p.first, p.second.update);
   }
   for (const auto& p : dns_resolvers_) {
-    if (p.second.update.endpoints == nullptr) return;
+    if (p.second.update.endpoints == nullptr &&
+        p.second.update.resolution_note.empty()) {
+      return;
+    }
     config.dns_results.emplace(p.first, p.second.update);
   }
   watcher_->OnUpdate(std::move(config));
