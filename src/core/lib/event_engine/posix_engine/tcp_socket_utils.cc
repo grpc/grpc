@@ -75,6 +75,7 @@ int AdjustValue(int default_value, int min_value, int max_value,
   return *actual_value;
 }
 
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 // The default values for TCP_USER_TIMEOUT are currently configured to be in
 // line with the default values of KEEPALIVE_TIMEOUT as proposed in
 // https://github.com/grpc/proposal/blob/master/A18-tcp-user-timeout.md */
@@ -83,7 +84,6 @@ int kDefaultServerUserTimeoutMs = 20000;
 bool kDefaultClientUserTimeoutEnabled = false;
 bool kDefaultServerUserTimeoutEnabled = true;
 
-#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
 absl::Status ErrorForFd(
     int fd, const experimental::EventEngine::ResolvedAddress& addr) {
