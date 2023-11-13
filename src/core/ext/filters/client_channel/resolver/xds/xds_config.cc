@@ -657,6 +657,8 @@ void XdsDependencyManager::MaybeUpdateClusterAndEndpointWatches() {
     auto result = MaybeStartClusterWatch(
         cluster, 0, &clusters_seen, &eds_resources_seen);
     if (!result.ok()) return OnError(cluster, std::move(result));
+// FIXME: need to report an error if aggregate cluster dependency graph
+// has no leafs
   }
   // Remove entries in cluster_watchers_ for any clusters not in clusters_seen.
   for (auto it = cluster_watchers_.begin(); it != cluster_watchers_.end();) {

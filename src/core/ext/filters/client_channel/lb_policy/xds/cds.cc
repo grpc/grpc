@@ -38,6 +38,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_config.h"
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -116,53 +117,6 @@ class CdsLb : public LoadBalancingPolicy {
   void ExitIdleLocked() override;
 
  private:
-  // Watcher for getting cluster data from XdsClient.
-  class ClusterWatcher : public XdsClusterResourceType::WatcherInterface {
-   public:
-    ClusterWatcher(RefCountedPtr<CdsLb> parent, std::string name)
-        : parent_(std::move(parent)), name_(std::move(name)) {}
-
-    void OnResourceChanged(
-        std::shared_ptr<const XdsClusterResource> cluster_data) override {
-      RefCountedPtr<ClusterWatcher> self = Ref();
-      parent_->work_serializer()->Run(
-          [self = std::move(self),
-           cluster_data = std::move(cluster_data)]() mutable {
-            self->parent_->OnClusterChanged(self->name_,
-                                            std::move(cluster_data));
-          },
-          DEBUG_LOCATION);
-    }
-    void OnError(absl::Status status) override {
-      RefCountedPtr<ClusterWatcher> self = Ref();
-      parent_->work_serializer()->Run(
-          [self = std::move(self), status = std::move(status)]() mutable {
-            self->parent_->OnError(self->name_, std::move(status));
-          },
-          DEBUG_LOCATION);
-    }
-    void OnResourceDoesNotExist() override {
-      RefCountedPtr<ClusterWatcher> self = Ref();
-      parent_->work_serializer()->Run(
-          [self = std::move(self)]() {
-            self->parent_->OnResourceDoesNotExist(self->name_);
-          },
-          DEBUG_LOCATION);
-    }
-
-   private:
-    RefCountedPtr<CdsLb> parent_;
-    std::string name_;
-  };
-
-  struct WatcherState {
-    // Pointer to watcher, to be used when cancelling.
-    // Not owned, so do not dereference.
-    ClusterWatcher* watcher = nullptr;
-    // Most recent update obtained from this watcher.
-    std::shared_ptr<const XdsClusterResource> update;
-  };
-
   // Delegating helper to be passed to child policy.
   using Helper = ParentOwningDelegatingChannelControlHelper<CdsLb>;
 
@@ -173,6 +127,7 @@ class CdsLb : public LoadBalancingPolicy {
   absl::StatusOr<bool> GenerateDiscoveryMechanismForCluster(
       const std::string& name, int depth, Json::Array* discovery_mechanisms,
       std::set<std::string>* clusters_added);
+
   void OnClusterChanged(const std::string& name,
                         std::shared_ptr<const XdsClusterResource> cluster_data);
   void OnError(const std::string& name, absl::Status status);
@@ -188,16 +143,10 @@ class CdsLb : public LoadBalancingPolicy {
   void MaybeDestroyChildPolicyLocked();
 
   RefCountedPtr<CdsLbConfig> config_;
+  std::shared_ptr<const XdsConfig> xds_config_;
 
   // Current channel args from the resolver.
   ChannelArgs args_;
-
-  // The xds client.
-  RefCountedPtr<GrpcXdsClient> xds_client_;
-
-  // Maps from cluster name to the state for that cluster.
-  // The root of the tree is config_->cluster().
-  std::map<std::string, WatcherState> watchers_;
 
   RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
   RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
@@ -275,8 +224,16 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   }
   // Update args.
   args_ = std::move(args.args);
+  // Compute new child config.
+  auto xds_config = args_.GetObject<XdsDependencyManager::XdsConfig>();
+// FIXME: implement this.  need to handle:
+// - xDS cert provider
+// - priority child name algorithm (check if this is still needed)
+
+
   // If cluster name changed, cancel watcher and restart.
   if (old_config == nullptr || old_config->cluster() != config_->cluster()) {
+
     if (old_config != nullptr) {
       for (auto& watcher : watchers_) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
@@ -440,6 +397,7 @@ void CdsLb::OnClusterChanged(
   if (it == watchers_.end()) return;
   it->second.update = std::move(cluster_data);
   // Take care of integration with new certificate code.
+// FIXME: this should add the underlying clusters, not the parent cluster!
   absl::Status status = UpdateXdsCertificateProvider(name, *it->second.update);
   if (!status.ok()) {
     return OnError(name, status);
