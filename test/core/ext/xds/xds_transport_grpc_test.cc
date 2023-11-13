@@ -28,6 +28,7 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -85,22 +86,20 @@ class AdsServer {
   template <State state>
   void WaitForState() {
     MutexLock lock(&mu_);
-    mu_.AwaitWithTimeout(
-        absl::Condition(
-            +[](AdsServer* server) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-              return server->state_ != state;
-            },
-            this),
-        absl::Seconds(15));
+    if (state_ != state) {
+      state_cond_.WaitWithTimeout(&mu_, absl::Seconds(15));
+    }
   }
 
   void set_state(State state) {
     MutexLock lock(&mu_);
     state_ = state;
+    state_cond_.SignalAll();
   }
 
   std::thread server_thread_;
   Mutex mu_;
+  CondVar state_cond_;
   State state_ ABSL_GUARDED_BY(mu_) = State::kNew;
 };
 
@@ -109,11 +108,20 @@ TEST(GrpcTransportTest, WaitsWithAdsRead) {
   ExecCtx exec_ctx;
   ChannelArgs args;
   auto factory = MakeOrphanable<GrpcXdsTransportFactory>(args);
-  GrpcXdsBootstrap::GrpcXdsServer server;
+  Json json = Json::FromObject(
+      {{"server_uri", Json::FromString("localhost:2020")},
+       {"channel_creds", Json::FromArray({
+                             Json::FromObject({
+                                 {"type", Json::FromString("insecure")},
+                             }),
+                         })}});
+  absl::StatusOr<GrpcXdsBootstrap::GrpcXdsServer> server =
+      LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(json);
+  ASSERT_TRUE(server.ok()) << server.status();
   absl::Status status;
   std::vector<absl::Status> statuses;
   auto transport = factory->Create(
-      server, [&statuses](auto s) { statuses.emplace_back(std::move(s)); },
+      *server, [&statuses](auto s) { statuses.emplace_back(std::move(s)); },
       &status);
   // ASSERT_TRUE(status.ok()) << status;
   // std::vector<EventHandlerEvent> events;
@@ -121,7 +129,8 @@ TEST(GrpcTransportTest, WaitsWithAdsRead) {
   //     "boop", std::make_unique<TestEventHandler>(&events));
   // call->SendMessage("booop");
   // auto deadline = absl::Now() + absl::Seconds(45);
-  // while (events.empty() && deadline > absl::Now() && statuses.empty() &&
+  // while (events.empty() && deadline > absl::Now() && statuses.empty()
+  // &&
   //        status.ok()) {
   //   absl::SleepFor(absl::Seconds(1));
   // }
