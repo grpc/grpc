@@ -122,11 +122,7 @@ using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
-using ::grpc::experimental::RegisterAuditLoggerFactory;
 using ::grpc::experimental::StaticDataCertificateProvider;
-using ::grpc_core::experimental::AuditLoggerRegistry;
-using ::grpc_core::testing::ScopedExperimentalEnvVar;
-using ::grpc_core::testing::TestAuditLoggerFactory;
 
 // Global variables for each provider.
 FakeCertificateProvider::CertDataMapWrapper* g_fake1_cert_data_map = nullptr;
