@@ -95,9 +95,11 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
         std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
             grpc_event_engine::experimental::FuzzingEventEngine::Options(),
             fuzzing_event_engine::Actions());
-    // Without this the test had a failure dealing with grpc timers on TSAN
-    grpc_timer_manager_set_start_threaded(false);
     grpc_init();
+    // Without this the test had a failure dealing with grpc timers on TSAN
+    // Slight change for 1.59.x backport - beyond use
+    // `grpc_timer_manager_set_start_threaded`
+    grpc_timer_manager_set_threading(false);
   }
   void TearDown() override {
     ExecCtx exec_ctx;
