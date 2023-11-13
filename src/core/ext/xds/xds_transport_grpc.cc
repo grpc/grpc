@@ -204,8 +204,12 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_reader_destroy(&bbr);
   grpc_byte_buffer_destroy(self->recv_message_payload_);
   self->recv_message_payload_ = nullptr;
-  self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
+  bool read =
+      self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
   CSliceUnref(response_slice);
+  if (read) {
+    self->Read();
+  }
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::Read() {

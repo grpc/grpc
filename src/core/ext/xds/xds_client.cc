@@ -289,8 +289,8 @@ class XdsClient::ChannelState::AdsCallState
         : ads_calld_(std::move(ads_calld)) {}
 
     void OnRequestSent(bool ok) override { ads_calld_->OnRequestSent(ok); }
-    void OnRecvMessage(absl::string_view payload) override {
-      ads_calld_->OnRecvMessage(payload);
+    bool OnRecvMessage(absl::string_view payload) override {
+      return ads_calld_->OnRecvMessage(payload);
     }
     void OnStatusReceived(absl::Status status) override {
       ads_calld_->OnStatusReceived(std::move(status));
@@ -315,7 +315,7 @@ class XdsClient::ChannelState::AdsCallState
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   void OnRequestSent(bool ok);
-  void OnRecvMessage(absl::string_view payload);
+  bool OnRecvMessage(absl::string_view payload);
   void OnStatusReceived(absl::Status status);
 
   bool IsCurrentCallOnChannel() const;
@@ -368,8 +368,8 @@ class XdsClient::ChannelState::LrsCallState
         : lrs_calld_(std::move(lrs_calld)) {}
 
     void OnRequestSent(bool ok) override { lrs_calld_->OnRequestSent(ok); }
-    void OnRecvMessage(absl::string_view payload) override {
-      lrs_calld_->OnRecvMessage(payload);
+    bool OnRecvMessage(absl::string_view payload) override {
+      return lrs_calld_->OnRecvMessage(payload);
     }
     void OnStatusReceived(absl::Status status) override {
       lrs_calld_->OnStatusReceived(std::move(status));
@@ -416,7 +416,7 @@ class XdsClient::ChannelState::LrsCallState
   };
 
   void OnRequestSent(bool ok);
-  void OnRecvMessage(absl::string_view payload);
+  bool OnRecvMessage(absl::string_view payload);
   void OnStatusReceived(absl::Status status);
 
   bool IsCurrentCallOnChannel() const;
@@ -1036,11 +1036,11 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSent(bool ok) {
   }
 }
 
-void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
+bool XdsClient::ChannelState::AdsCallState::OnRecvMessage(
     absl::string_view payload) {
   {
     MutexLock lock(&xds_client()->mu_);
-    if (!IsCurrentCallOnChannel()) return;
+    if (!IsCurrentCallOnChannel()) return true;
     RefCountedPtr<XdsApi::ReadDelayHandle> read_delay_handle =
         MakeRefCounted<XdsApi::ReadDelayHandle>([ref = Ref()]() {
           if (ref->call_ != nullptr) {
@@ -1143,6 +1143,7 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
     }
   }
   xds_client()->work_serializer_.DrainQueue();
+  return false;
 }
 
 void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
@@ -1391,11 +1392,11 @@ void XdsClient::ChannelState::LrsCallState::OnRequestSent(bool /*ok*/) {
   }
 }
 
-void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
+bool XdsClient::ChannelState::LrsCallState::OnRecvMessage(
     absl::string_view payload) {
   MutexLock lock(&xds_client()->mu_);
   // If we're no longer the current call, ignore the result.
-  if (!IsCurrentCallOnChannel()) return;
+  if (!IsCurrentCallOnChannel()) return true;
   // Parse the response.
   bool send_all_clusters = false;
   std::set<std::string> new_cluster_names;
@@ -1408,7 +1409,7 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
             "[xds_client %p] xds server %s: LRS response parsing failed: %s",
             xds_client(), chand()->server_.server_uri().c_str(),
             status.ToString().c_str());
-    return;
+    return true;
   }
   seen_response_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1448,7 +1449,7 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
               "to current, ignoring.",
               xds_client(), chand()->server_.server_uri().c_str());
     }
-    return;
+    return true;
   }
   // Stop current load reporting (if any) to adopt the new config.
   reporter_.reset();
@@ -1458,6 +1459,7 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
   load_reporting_interval_ = new_load_reporting_interval;
   // Try starting sending load report.
   MaybeStartReportingLocked();
+  return true;
 }
 
 void XdsClient::ChannelState::LrsCallState::OnStatusReceived(
