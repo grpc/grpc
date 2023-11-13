@@ -204,8 +204,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// For failed read operations, implementations should pass the appropriate
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
-    virtual bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                      SliceBuffer* buffer, const ReadArgs* args) = 0;
+    virtual ABSL_MUST_USE_RESULT bool Read(
+        absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+        const ReadArgs* args) = 0;
     /// A struct representing optional arguments that may be provided to an
     /// EventEngine Endpoint Write API call.
     ///
@@ -240,8 +241,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
-    virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-                       SliceBuffer* data, const WriteArgs* args) = 0;
+    virtual ABSL_MUST_USE_RESULT bool Write(
+        absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
+        const WriteArgs* args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
@@ -319,7 +321,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// If the associated connection has not been completed, it will be cancelled,
   /// and this method will return true. The \a OnConnectCallback will not be
   /// called, and \a on_connect will be destroyed before this method returns.
-  virtual bool CancelConnect(ConnectionHandle handle) = 0;
+  virtual ABSL_MUST_USE_RESULT bool CancelConnect(ConnectionHandle handle) = 0;
   /// Provides asynchronous resolution.
   ///
   /// This object has a destruction-is-cancellation semantic.
@@ -460,7 +462,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// cancelled, and this method will return true. The associated
   /// absl::AnyInvocable or \a Closure* will not be called. If the closure type
   /// was an absl::AnyInvocable, it will be destroyed before the method returns.
-  virtual bool Cancel(TaskHandle handle) = 0;
+  virtual ABSL_MUST_USE_RESULT bool Cancel(TaskHandle handle) = 0;
 };
 
 /// Replace gRPC's default EventEngine factory.
