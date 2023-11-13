@@ -39,7 +39,7 @@
 - name: block_excessive_requests_before_settings_ack
   default: true
 - name: call_status_override_on_cancellation
-  default: debug
+  default: false
 - name: canary_client_privacy
   default: false
 - name: chttp2_batch_requests

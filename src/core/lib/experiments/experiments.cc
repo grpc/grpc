@@ -203,11 +203,6 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -219,8 +214,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
-     additional_constraints_call_status_override_on_cancellation,
-     kDefaultForDebugOnly, true},
+     additional_constraints_call_status_override_on_cancellation, false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, false, false},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
@@ -505,11 +499,6 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -521,8 +510,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
-     additional_constraints_call_status_override_on_cancellation,
-     kDefaultForDebugOnly, true},
+     additional_constraints_call_status_override_on_cancellation, false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, false, false},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
@@ -807,11 +795,6 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -823,8 +806,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
-     additional_constraints_call_status_override_on_cancellation,
-     kDefaultForDebugOnly, true},
+     additional_constraints_call_status_override_on_cancellation, false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, false, false},
     {"chttp2_batch_requests", description_chttp2_batch_requests,

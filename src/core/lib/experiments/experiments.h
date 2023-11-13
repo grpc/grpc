@@ -59,16 +59,7 @@ namespace grpc_core {
 #if defined(GRPC_CFSTREAM)
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
 inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return true; }
-#ifndef NDEBUG
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
-#endif
-inline bool IsCallStatusOverrideOnCancellationEnabled() {
-#ifdef NDEBUG
-  return false;
-#else
-  return true;
-#endif
-}
+inline bool IsCallStatusOverrideOnCancellationEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
@@ -140,16 +131,7 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
 inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return true; }
-#ifndef NDEBUG
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
-#endif
-inline bool IsCallStatusOverrideOnCancellationEnabled() {
-#ifdef NDEBUG
-  return false;
-#else
-  return true;
-#endif
-}
+inline bool IsCallStatusOverrideOnCancellationEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
@@ -222,16 +204,7 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
 inline bool IsBlockExcessiveRequestsBeforeSettingsAckEnabled() { return true; }
-#ifndef NDEBUG
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
-#endif
-inline bool IsCallStatusOverrideOnCancellationEnabled() {
-#ifdef NDEBUG
-  return false;
-#else
-  return true;
-#endif
-}
+inline bool IsCallStatusOverrideOnCancellationEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
 inline bool IsChttp2BatchRequestsEnabled() { return true; }
