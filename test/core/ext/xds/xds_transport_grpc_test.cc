@@ -44,8 +44,9 @@ class TestEventHandler
 
   void OnRequestSent(bool ok) override { events_->emplace_back(ok); }
 
-  void OnRecvMessage(absl::string_view payload) override {
+  bool OnRecvMessage(absl::string_view payload) override {
     events_->emplace_back(std::string(payload));
+    return true;
   }
 
   void OnStatusReceived(absl::Status status) override {
