@@ -52,7 +52,9 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
   void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
   void SetPollsetSet(grpc_stream* stream,
                      grpc_pollset_set* pollset_set) override {}
-  void PerformOp(grpc_transport_op* op) override { Crash("unimplemented"); }
+  void PerformOp(grpc_transport_op* op) override {
+    Crash(absl::StrCat("unimplemented: ", grpc_transport_op_string(op)));
+  }
   grpc_endpoint* GetEndpoint() override { return nullptr; }
 
   void Disconnect(absl::Status error) {
@@ -81,6 +83,8 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
   std::atomic<bool> disconnecting_{false};
   AcceptFunction accept_;
   absl::Status disconnect_error_;
+  Mutex state_tracker_mu_;
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_tracker_mu_);
 };
 
 class InprocClientTransport final : public Transport, public ClientTransport {
@@ -129,18 +133,8 @@ class InprocClientTransport final : public Transport, public ClientTransport {
 
 bool UsePromiseBasedTransport() {
   if (!IsPromiseBasedInprocTransportEnabled()) return false;
-  if (!IsPromiseBasedClientCallEnabled()) {
-    gpr_log(GPR_ERROR,
-            "Promise based inproc transport requested but promise based client "
-            "calls are disabled: using legacy implementation.");
-    return false;
-  }
-  if (!IsPromiseBasedServerCallEnabled()) {
-    gpr_log(GPR_ERROR,
-            "Promise based inproc transport requested but promise based server "
-            "calls are disabled: using legacy implementation.");
-    return false;
-  }
+  GPR_ASSERT(IsPromiseBasedClientCallEnabled());
+  GPR_ASSERT(IsPromiseBasedServerCallEnabled());
   return true;
 }
 
