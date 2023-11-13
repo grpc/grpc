@@ -20,14 +20,17 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
+
+#include <grpc/support/json.h>
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "test/core/util/test_config.h"
 
