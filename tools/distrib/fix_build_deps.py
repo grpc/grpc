@@ -437,6 +437,7 @@ for dirname in [
             "grpc_package": lambda **kwargs: None,
             "filegroup": lambda name, **kwargs: None,
             "sh_library": lambda name, **kwargs: None,
+            "compile_pip_requirements": lambda name, **kwargs: None,
         },
         {},
     )
