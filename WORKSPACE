@@ -67,8 +67,12 @@ load("@rules_python//python:pip.bzl", "pip_install")
 
 pip_install(
     name = "grpc_python_dependencies",
-    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
+    requirements_lock = "@com_github_grpc_grpc//:requirements_lock.txt",
 )
+
+load("@grpc_python_dependencies//:requirements.bzl", "install_deps")
+
+install_deps()
 
 load("@com_google_protobuf//bazel:system_python.bzl", "system_python")
 

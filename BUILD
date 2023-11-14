@@ -24,6 +24,7 @@ load(
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 
 licenses(["reciprocal"])
 
@@ -33,6 +34,12 @@ package(
         "layering_check",
         "-parse_headers",
     ],
+)
+
+compile_pip_requirements(
+    name = "requirements",
+    requirements_in = "requirements.bazel.txt",
+    requirements_txt = "requirements_lock.txt",
 )
 
 exports_files([
