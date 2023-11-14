@@ -30,8 +30,8 @@ licenses(["reciprocal"])
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "layering_check",
         "-parse_headers",
+        "layering_check",
     ],
 )
 
@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gjallarhorn"  # @unused
+g_stands_for = "grand"  # @unused
 
-core_version = "36.0.0"  # @unused
+core_version = "37.0.0"  # @unused
 
-version = "1.60.0-dev"  # @unused
+version = "1.61.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1009,6 +1009,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "absl/types:span",
+        "upb_base_lib",
         "upb_collections_lib",
         "upb_lib",
     ],
@@ -1213,6 +1214,7 @@ grpc_cc_library(
         "include/grpcpp/security/alts_util.h",
     ],
     external_deps = [
+        "upb_base_lib",
         "upb_collections_lib",
         "upb_lib",
     ],
@@ -1930,6 +1932,7 @@ grpc_cc_library(
         "absl/synchronization",
         "absl/memory",
         "absl/types:optional",
+        "upb_base_lib",
         "upb_lib",
         "protobuf_headers",
         "absl/container:inlined_vector",
@@ -2004,6 +2007,7 @@ grpc_cc_library(
         "absl/synchronization",
         "absl/types:optional",
         "absl/memory",
+        "upb_base_lib",
         "upb_lib",
         "absl/strings:str_format",
         "protobuf_headers",
@@ -2173,6 +2177,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/time",
         "absl/types:optional",
+        "upb_base_lib",
         "upb_lib",
     ],
     language = "c++",
@@ -3063,6 +3068,7 @@ grpc_cc_library(
         "absl/strings:cord",
         "absl/types:optional",
         "absl/types:variant",
+        "upb_base_lib",
         "upb_collections_lib",
         "upb_lib",
     ],
@@ -3487,6 +3493,7 @@ grpc_cc_library(
         "//src/core:tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h",
     ],
     external_deps = [
+        "absl/types:span",
         "libcrypto",
         "libssl",
     ],
@@ -3672,7 +3679,9 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
+        "upb_base_lib",
         "upb_lib",
+        "upb_mem_lib",
         "upb_textformat_lib",
         "upb_json_lib",
         "upb_reflection",
@@ -3747,9 +3756,9 @@ grpc_cc_library(
     hdrs = ["//src/core:ext/filters/client_channel/resolver/fake/fake_resolver.h"],
     external_deps = [
         "absl/base:core_headers",
-        "absl/status",
-        "absl/status:statusor",
         "absl/strings",
+        "absl/time",
+        "absl/types:optional",
     ],
     language = "c++",
     visibility = [
@@ -3759,7 +3768,6 @@ grpc_cc_library(
     deps = [
         "config",
         "debug_location",
-        "endpoint_addresses",
         "gpr",
         "grpc_public_hdrs",
         "grpc_resolver",
@@ -3768,7 +3776,6 @@ grpc_cc_library(
         "uri_parser",
         "work_serializer",
         "//src/core:channel_args",
-        "//src/core:grpc_service_config",
         "//src/core:notification",
         "//src/core:ref_counted",
         "//src/core:useful",
@@ -3862,8 +3869,10 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_base",
+        "ref_counted_ptr",
         "//src/core:error",
         "//src/core:hpack_constants",
+        "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:status_helper",
     ],

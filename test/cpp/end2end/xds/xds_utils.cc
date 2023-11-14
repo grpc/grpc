@@ -23,9 +23,6 @@
 #include <thread>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -89,7 +86,7 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
       "          \"server_uri\": \"<SERVER_URI>\",\n"
       "          \"channel_creds\": [\n"
       "            {\n"
-      "              \"type\": \"fake\"\n"
+      "              \"type\": \"<SERVER_CREDS_TYPE>\"\n"
       "            }\n"
       "          ],\n"
       "          \"server_features\": [<SERVER_FEATURES>]\n"
@@ -102,6 +99,7 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
   return absl::StrReplaceAll(
       kXdsServerTemplate,
       {{"<SERVER_URI>", server_uri},
+       {"<SERVER_CREDS_TYPE>", xds_channel_creds_type_},
        {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}});
 }
 

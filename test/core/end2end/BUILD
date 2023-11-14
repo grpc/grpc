@@ -575,14 +575,23 @@ grpc_cc_test(
 grpc_cc_test(
     name = "no_server_test",
     srcs = ["no_server_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/time",
+    ],
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:endpoint_addresses",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_public_hdrs",
+        "//:grpc_resolver",
         "//:grpc_resolver_fake",
         "//:ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:grpc_service_config",
         "//test/core/util:grpc_test_util",
     ],
 )

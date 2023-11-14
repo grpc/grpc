@@ -83,6 +83,11 @@ class InterActivityPipe {
       on_available.Wakeup();
     }
 
+    bool IsClosed() {
+      MutexLock lock(&mu_);
+      return closed_;
+    }
+
    private:
     Mutex mu_;
     std::array<T, kQueueSize> queue_ ABSL_GUARDED_BY(mu_);
@@ -105,6 +110,12 @@ class InterActivityPipe {
     Sender& operator=(Sender&&) noexcept = default;
 
     ~Sender() {
+      if (center_ != nullptr) center_->MarkClosed();
+    }
+
+    bool IsClose() { return center_->IsClosed(); }
+
+    void MarkClose() {
       if (center_ != nullptr) center_->MarkClosed();
     }
 

@@ -137,8 +137,8 @@
     s.pod_target_xcconfig = {
       'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
       'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'${"\\"}
-          ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-generated"'${"\\"}
-          ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-gen"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-gen"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',

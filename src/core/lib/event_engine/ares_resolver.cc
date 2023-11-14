@@ -62,10 +62,12 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -188,6 +190,18 @@ AresResolver::CreateAresResolver(
       std::move(polled_fd_factory), std::move(event_engine), channel);
 }
 
+AresResolver::AresResolver(
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    std::shared_ptr<EventEngine> event_engine, ares_channel channel)
+    : grpc_core::InternallyRefCounted<AresResolver>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
+                                                            : nullptr),
+      channel_(channel),
+      polled_fd_factory_(std::move(polled_fd_factory)),
+      event_engine_(std::move(event_engine)) {
+  polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
+}
+
 AresResolver::~AresResolver() {
   GPR_ASSERT(fd_node_list_.empty());
   GPR_ASSERT(callback_map_.empty());
@@ -206,8 +220,8 @@ void AresResolver::Orphan() {
       if (!fd_node->already_shutdown) {
         GRPC_ARES_RESOLVER_TRACE_LOG("resolver: %p shutdown fd: %s", this,
                                      fd_node->polled_fd->GetName());
-        fd_node->polled_fd->ShutdownLocked(
-            absl::CancelledError("AresResolver::Orphan"));
+        GPR_ASSERT(fd_node->polled_fd->ShutdownLocked(
+            absl::CancelledError("AresResolver::Orphan")));
         fd_node->already_shutdown = true;
       }
     }
@@ -339,20 +353,10 @@ void AresResolver::LookupTXT(
   MaybeStartTimerLocked();
 }
 
-AresResolver::AresResolver(
-    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    std::shared_ptr<EventEngine> event_engine, ares_channel channel)
-    : grpc_core::InternallyRefCounted<AresResolver>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
-                                                            : nullptr),
-      channel_(channel),
-      polled_fd_factory_(std::move(polled_fd_factory)),
-      event_engine_(std::move(event_engine)) {}
-
 void AresResolver::CheckSocketsLocked() {
   FdNodeList new_list;
   if (!shutting_down_) {
-    ares_socket_t socks[ARES_GETSOCK_MAXNUM];
+    ares_socket_t socks[ARES_GETSOCK_MAXNUM] = {};
     int socks_bitmask = ares_getsock(channel_, socks, ARES_GETSOCK_MAXNUM);
     for (size_t i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
       if (ARES_GETSOCK_READABLE(socks_bitmask, i) ||
@@ -415,13 +419,17 @@ void AresResolver::CheckSocketsLocked() {
   // Any remaining fds in fd_node_list_ were not returned by ares_getsock()
   // and are therefore no longer in use, so they can be shut down and removed
   // from the list.
+  // TODO(yijiem): Since we are keeping the underlying socket opened for both
+  // Posix and Windows, it might be reasonable to also keep the FdNodes alive
+  // till the end. But we need to change the state management of FdNodes in this
+  // file. This may simplify the code a bit.
   while (!fd_node_list_.empty()) {
     FdNode* fd_node = fd_node_list_.front().get();
     if (!fd_node->already_shutdown) {
       GRPC_ARES_RESOLVER_TRACE_LOG("resolver: %p shutdown fd: %s", this,
                                    fd_node->polled_fd->GetName());
-      fd_node->polled_fd->ShutdownLocked(absl::OkStatus());
-      fd_node->already_shutdown = true;
+      fd_node->already_shutdown =
+          fd_node->polled_fd->ShutdownLocked(absl::OkStatus());
     }
     if (!fd_node->readable_registered && !fd_node->writable_registered) {
       GRPC_ARES_RESOLVER_TRACE_LOG("resolver: %p delete fd: %s", this,

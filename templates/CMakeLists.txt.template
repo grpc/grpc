@@ -444,7 +444,10 @@
     find_package(Threads)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m Threads::Threads)
     if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-      set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> rt)
+      find_library(LIBRT rt)
+      if(LIBRT)
+        set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> rt)
+      endif()
     endif()
   endif()
 
@@ -523,9 +526,9 @@
   # for DLL builds - and should be completely removed when source files are
   # generated with the necessary __declspec annotations.
   set(gRPC_UPB_GEN_DUPL_SRC
-    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+    src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+    src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
+    src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   )
   set(gRPC_ADDITIONAL_DLL_SRC
     src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc

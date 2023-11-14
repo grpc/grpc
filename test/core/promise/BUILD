@@ -565,6 +565,34 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "status_flag_test",
+    srcs = ["status_flag_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:status_flag"],
+)
+
+grpc_cc_test(
+    name = "promise_mutex_test",
+    srcs = ["promise_mutex_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    deps = [
+        "test_wakeup_schedulers",
+        "//:promise",
+        "//src/core:activity",
+        "//src/core:join",
+        "//src/core:promise_mutex",
+        "//src/core:seq",
+    ],
+)
+
+grpc_cc_test(
     name = "party_test",
     srcs = ["party_test.cc"],
     external_deps = [

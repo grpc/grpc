@@ -23,12 +23,8 @@ grpc_package(
 
 grpc_cc_library(
     name = "xds_server",
-    testonly = True,
     srcs = ["xds_server.cc"],
     hdrs = ["xds_server.h"],
-    external_deps = [
-        "gtest",
-    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -47,7 +43,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "xds_utils",
-    testonly = True,
     srcs = ["xds_utils.cc"],
     hdrs = ["xds_utils.h"],
     deps = [

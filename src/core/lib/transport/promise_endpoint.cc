@@ -46,10 +46,10 @@ PromiseEndpoint::PromiseEndpoint(
 }
 
 PromiseEndpoint::~PromiseEndpoint() {
-  // Last write result has not been polled.
-  GPR_ASSERT(!write_result_.has_value());
-  // Last read result has not been polled.
-  GPR_ASSERT(!read_result_.has_value());
+  // Promise endpoint close when last write result has not been polled.
+  write_result_.reset();
+  // Promise endpoint close when last read result has not been polled.
+  read_result_.reset();
 }
 
 const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
