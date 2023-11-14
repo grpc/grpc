@@ -44,6 +44,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -214,11 +215,14 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
       void OnResourceChanged(
-          std::shared_ptr<const XdsEndpointResource> update) override {
+          std::shared_ptr<const XdsEndpointResource> update,
+          RefCountedPtr<XdsApi::ReadDelayHandle> read_delay_handle) override {
         RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [self = std::move(self), update = std::move(update)]() mutable {
-              self->OnResourceChangedHelper(std::move(update));
+            [self = std::move(self), update = std::move(update),
+             read_delay_handle = std::move(read_delay_handle)]() mutable {
+              self->OnResourceChangedHelper(std::move(update),
+                                            std::move(read_delay_handle));
             },
             DEBUG_LOCATION);
       }
@@ -230,10 +234,12 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
             },
             DEBUG_LOCATION);
       }
-      void OnResourceDoesNotExist() override {
+      void OnResourceDoesNotExist(
+          RefCountedPtr<XdsApi::ReadDelayHandle> read_delay_handle) override {
         RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [self = std::move(self)]() {
+            [self = std::move(self),
+             read_delay_handle = std::move(read_delay_handle)]() {
               self->OnResourceDoesNotExistHelper();
             },
             DEBUG_LOCATION);
@@ -244,7 +250,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       // in methods of this class rather than in lambdas to work around an MSVC
       // bug.
       void OnResourceChangedHelper(
-          std::shared_ptr<const XdsEndpointResource> update) {
+          std::shared_ptr<const XdsEndpointResource> update,
+          RefCountedPtr<XdsApi::ReadDelayHandle> /*read_delay_handle*/) {
         std::string resolution_note;
         if (update->priorities.empty()) {
           resolution_note = absl::StrCat(
