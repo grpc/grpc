@@ -315,7 +315,9 @@ PROTO_FILES=[
 ]
 
 CC_INCLUDES=[
- 'third_party/abseil-cpp', 'third_party/protobuf/src'
+    'third_party/abseil-cpp',
+    'third_party/protobuf/src',
+    'third_party/protobuf/third_party/utf8_range'
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
