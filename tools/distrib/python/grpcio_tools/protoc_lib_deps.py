@@ -296,7 +296,8 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/text_format.cc',
     'third_party/protobuf/src/google/protobuf/unknown_field_set.cc',
     'third_party/protobuf/src/google/protobuf/wire_format.cc',
-    'third_party/protobuf/src/google/protobuf/wire_format_lite.cc'
+    'third_party/protobuf/src/google/protobuf/wire_format_lite.cc',
+    'third_party/protobuf/third_party/utf8_range/utf8_validity.cc'
 ]
 
 PROTO_FILES=[
