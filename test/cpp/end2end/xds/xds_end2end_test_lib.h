@@ -36,12 +36,9 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/server_metric_recorder.h>
-#include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -57,11 +54,6 @@
 
 namespace grpc {
 namespace testing {
-
-constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
-constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
-constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
-constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
 
 // The parameter type for INSTANTIATE_TEST_SUITE_P().
 class XdsTestType {
@@ -975,132 +967,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   char* bootstrap_file_ = nullptr;
   absl::InlinedVector<grpc_arg, 3> xds_channel_args_to_add_;
   grpc_channel_args xds_channel_args_;
-};
-
-// Based on StaticDataCertificateProvider, but provides alternate certificates
-// if the certificate name is not empty.
-class FakeCertificateProvider final : public grpc_tls_certificate_provider {
- public:
-  struct CertData {
-    std::string root_certificate;
-    grpc_core::PemKeyCertPairList identity_key_cert_pairs;
-  };
-
-  using CertDataMap = std::map<std::string /*cert_name */, CertData>;
-  class CertDataMapWrapper {
-   public:
-    CertDataMap Get() {
-      grpc_core::MutexLock lock(&mu_);
-      return cert_data_map_;
-    }
-
-    void Set(CertDataMap data) {
-      grpc_core::MutexLock lock(&mu_);
-      cert_data_map_ = std::move(data);
-    }
-
-   private:
-    grpc_core::Mutex mu_;
-    CertDataMap cert_data_map_ ABSL_GUARDED_BY(mu_);
-  };
-
-  explicit FakeCertificateProvider(CertDataMap cert_data_map)
-      : distributor_(
-            grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>()),
-        cert_data_map_(std::move(cert_data_map)) {
-    distributor_->SetWatchStatusCallback([this](std::string cert_name,
-                                                bool root_being_watched,
-                                                bool identity_being_watched) {
-      if (!root_being_watched && !identity_being_watched) return;
-      auto it = cert_data_map_.find(cert_name);
-      if (it == cert_data_map_.end()) {
-        grpc_error_handle error = GRPC_ERROR_CREATE(absl::StrCat(
-            "No certificates available for cert_name \"", cert_name, "\""));
-        distributor_->SetErrorForCert(cert_name, error, error);
-      } else {
-        absl::optional<std::string> root_certificate;
-        absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
-        if (root_being_watched) {
-          root_certificate = it->second.root_certificate;
-        }
-        if (identity_being_watched) {
-          pem_key_cert_pairs = it->second.identity_key_cert_pairs;
-        }
-        distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
-                                      std::move(pem_key_cert_pairs));
-      }
-    });
-  }
-
-  ~FakeCertificateProvider() override {
-    distributor_->SetWatchStatusCallback(nullptr);
-  }
-
-  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
-      const override {
-    return distributor_;
-  }
-
-  grpc_core::UniqueTypeName type() const override {
-    static grpc_core::UniqueTypeName::Factory kFactory("fake");
-    return kFactory.Create();
-  }
-
- private:
-  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
-    // TODO(yashykt): Maybe do something better here.
-    return grpc_core::QsortCompare(
-        static_cast<const grpc_tls_certificate_provider*>(this), other);
-  }
-
-  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  CertDataMap cert_data_map_;
-};
-
-class FakeCertificateProviderFactory
-    : public grpc_core::CertificateProviderFactory {
- public:
-  class Config : public grpc_core::CertificateProviderFactory::Config {
-   public:
-    explicit Config(absl::string_view name) : name_(name) {}
-
-    absl::string_view name() const override { return name_; }
-
-    std::string ToString() const override { return "{}"; }
-
-   private:
-    absl::string_view name_;
-  };
-
-  FakeCertificateProviderFactory(
-      absl::string_view name,
-      FakeCertificateProvider::CertDataMapWrapper* cert_data_map)
-      : name_(name), cert_data_map_(cert_data_map) {
-    GPR_ASSERT(cert_data_map != nullptr);
-  }
-
-  absl::string_view name() const override { return name_; }
-
-  grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(
-      const grpc_core::Json& /*config_json*/,
-      const grpc_core::JsonArgs& /*args*/,
-      grpc_core::ValidationErrors* /*errors*/) override {
-    return grpc_core::MakeRefCounted<Config>(name_);
-  }
-
-  grpc_core::RefCountedPtr<grpc_tls_certificate_provider>
-  CreateCertificateProvider(
-      grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-      /*config*/) override {
-    GPR_ASSERT(cert_data_map_ != nullptr);
-    return grpc_core::MakeRefCounted<FakeCertificateProvider>(
-        cert_data_map_->Get());
-  }
-
- private:
-  absl::string_view name_;
-  FakeCertificateProvider::CertDataMapWrapper* cert_data_map_;
 };
 
 }  // namespace testing
