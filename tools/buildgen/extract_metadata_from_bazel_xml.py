@@ -99,6 +99,7 @@ EXTERNAL_PROTO_LIBRARIES = {
 # For that we need mapping from external repo name to a corresponding
 # path to a git submodule.
 EXTERNAL_SOURCE_PREFIXES = {
+    "@utf8_range": "third_party/protobuf/third_party/utf8_range",
     "@com_googlesource_code_re2": "third_party/re2",
     "@com_google_googletest": "third_party/googletest",
     "@com_google_protobuf": "third_party/upb",
@@ -1086,7 +1087,7 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_textformat_lib",
     },
-    "@com_google_protobuf//third_party/utf8_range:utf8_range": {
+    "@utf8_range//:utf8_range": {
         "language": "c",
         "build": "all",
         # rename to utf8_range_lib is necessary for now to avoid clash with utf8_range target in protobuf's cmake

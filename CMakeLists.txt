@@ -3751,9 +3751,9 @@ endif()
 
 
 add_library(utf8_range_lib
-  third_party/utf8_range/naive.c
-  third_party/utf8_range/range2-neon.c
-  third_party/utf8_range/range2-sse.c
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
 )
 
 target_compile_features(utf8_range_lib PUBLIC cxx_std_14)

@@ -2732,9 +2732,9 @@ endif
 # deps: []
 # transitive_deps: []
 LIBUTF8_RANGE_LIB_SRC = \
-    third_party/utf8_range/naive.c \
-    third_party/utf8_range/range2-neon.c \
-    third_party/utf8_range/range2-sse.c \
+    third_party/protobuf/third_party/utf8_range/naive.c \
+    third_party/protobuf/third_party/utf8_range/range2-neon.c \
+    third_party/protobuf/third_party/utf8_range/range2-sse.c \
 
 PUBLIC_HEADERS_C += \
 

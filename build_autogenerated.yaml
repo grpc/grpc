@@ -3561,11 +3561,11 @@ libs:
   language: c
   public_headers: []
   headers:
-  - third_party/utf8_range/utf8_range.h
+  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   src:
-  - third_party/utf8_range/naive.c
-  - third_party/utf8_range/range2-neon.c
-  - third_party/utf8_range/range2-sse.c
+  - third_party/protobuf/third_party/utf8_range/naive.c
+  - third_party/protobuf/third_party/utf8_range/range2-neon.c
+  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   deps: []
 - name: z
   build: private

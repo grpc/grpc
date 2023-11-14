@@ -1237,6 +1237,9 @@ if (PHP_GRPC != "no") {
     "third_party\\boringssl-with-bazel\\src\\ssl\\tls13_server.cc " +
     "third_party\\boringssl-with-bazel\\src\\ssl\\tls_method.cc " +
     "third_party\\boringssl-with-bazel\\src\\ssl\\tls_record.cc " +
+    "third_party\\protobuf\\third_party\\utf8_range\\naive.c " +
+    "third_party\\protobuf\\third_party\\utf8_range\\range2-neon.c " +
+    "third_party\\protobuf\\third_party\\utf8_range\\range2-sse.c " +
     "third_party\\re2\\re2\\bitstate.cc " +
     "third_party\\re2\\re2\\compile.cc " +
     "third_party\\re2\\re2\\dfa.cc " +
@@ -1305,9 +1308,6 @@ if (PHP_GRPC != "no") {
     "third_party\\upb\\upb\\wire\\encode.c " +
     "third_party\\upb\\upb\\wire\\eps_copy_input_stream.c " +
     "third_party\\upb\\upb\\wire\\reader.c " +
-    "third_party\\utf8_range\\naive.c " +
-    "third_party\\utf8_range\\range2-neon.c " +
-    "third_party\\utf8_range\\range2-sse.c " +
     "third_party\\zlib\\adler32.c " +
     "third_party\\zlib\\compress.c " +
     "third_party\\zlib\\crc32.c " +
@@ -1782,6 +1782,9 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\x509");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\crypto\\x509v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl-with-bazel\\src\\ssl");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\protobuf");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\protobuf\\third_party");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\protobuf\\third_party\\utf8_range");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\re2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\re2\\re2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\re2\\util");
@@ -1801,7 +1804,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\reflection\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\text");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\wire");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\utf8_range");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
   _build_dirs = new Array();
   for (i = 0; i < build_dirs.length; i++) {
