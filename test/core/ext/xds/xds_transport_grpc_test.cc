@@ -14,7 +14,6 @@
 
 #include "src/core/ext/xds/xds_transport_grpc.h"
 
-#include <cstddef>
 #include <memory>
 #include <string>
 #include <thread>
@@ -27,18 +26,26 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "gtest/gtest.h"
 
-#include <grpc/support/json.h>
+#include <grpc/support/log.h>
+#include <grpcpp/impl/call_op_set.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/status.h>
+#include <grpcpp/support/sync_stream.h>
 
-#include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
