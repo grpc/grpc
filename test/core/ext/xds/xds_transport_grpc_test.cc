@@ -22,7 +22,6 @@
 #include <vector>
 
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
