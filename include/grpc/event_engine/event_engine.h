@@ -413,6 +413,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// closure can proceed, running the closure immediately would cause a
   /// deadlock.
   virtual void Run(Closure* closure) = 0;
+
   /// Asynchronously executes a task as soon as possible.
   ///
   /// \a Closures scheduled with \a Run cannot be cancelled. Unlike the
@@ -426,6 +427,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// Implementations must not execute the closure in the calling thread before
   /// \a Run returns.
   virtual void Run(absl::AnyInvocable<void()> closure) = 0;
+
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
@@ -482,10 +484,15 @@ void SetEventEngineFactory(
 /// used going forward. This has no affect on any EventEngines that were created
 /// using the previous factories.
 void EventEngineFactoryReset();
+
 /// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+
+
+
 
 #endif  // GRPC_EVENT_ENGINE_EVENT_ENGINE_H
