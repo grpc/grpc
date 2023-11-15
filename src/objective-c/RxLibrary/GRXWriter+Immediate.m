@@ -16,10 +16,10 @@
  *
  */
 
-#import "GRXWriter+Immediate.h"
+#import <RxLibrary/GRXWriter+Immediate.h>
 
-#import "GRXImmediateSingleWriter.h"
-#import "GRXImmediateWriter.h"
+#import <RxLibrary/GRXImmediateSingleWriter.h>
+#import <RxLibrary/GRXImmediateWriter.h>
 
 @implementation GRXWriter (Immediate)
 

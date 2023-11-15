@@ -18,9 +18,9 @@
 
 #import <objc/runtime.h>
 
-#import "ProtoMethod.h"
-#import "ProtoRPCLegacy.h"
-#import "ProtoService.h"
+#import <ProtoRPC/ProtoMethod.h>
+#import <ProtoRPC/ProtoRPCLegacy.h>
+#import <ProtoRPC/ProtoService.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-implementations"

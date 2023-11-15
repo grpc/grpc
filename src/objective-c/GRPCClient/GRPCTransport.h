@@ -18,7 +18,7 @@
 
 // The interface for a transport implementation
 
-#import "GRPCInterceptor.h"
+#import <GRPCClient/GRPCInterceptor.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

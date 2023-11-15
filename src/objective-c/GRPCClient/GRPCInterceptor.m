@@ -18,7 +18,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRPCInterceptor.h"
+#import <GRPCClient/GRPCInterceptor.h>
 #import "private/GRPCTransport+Private.h"
 
 @interface GRPCInterceptorManager () <GRPCInterceptorInterface, GRPCResponseHandler>

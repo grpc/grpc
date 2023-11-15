@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRPCTypes.h"
+#import <GRPCClient/GRPCTypes.h>
 
 NSString *const kGRPCHeadersKey = @"io.grpc.HeadersKey";
 NSString *const kGRPCTrailersKey = @"io.grpc.TrailersKey";

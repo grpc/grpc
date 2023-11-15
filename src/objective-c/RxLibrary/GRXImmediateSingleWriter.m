@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRXImmediateSingleWriter.h"
+#import <RxLibrary/GRXImmediateSingleWriter.h>
 
 @implementation GRXImmediateSingleWriter {
   id _value;

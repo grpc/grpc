@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRXWriteable.h"
+#import <RxLibrary/GRXWriteable.h>
 
 @implementation GRXWriteable {
   GRXValueHandler _valueHandler;
