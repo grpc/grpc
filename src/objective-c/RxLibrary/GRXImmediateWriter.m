@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRXImmediateWriter.h"
+#import <RxLibrary/GRXImmediateWriter.h>
 
 #import "NSEnumerator+GRXUtil.h"
 

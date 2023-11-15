@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRPCCall+GID.h"
+#import <GRPCClient/GRPCCall+GID.h>
 
 @implementation GIDSignIn (GRPC)
 

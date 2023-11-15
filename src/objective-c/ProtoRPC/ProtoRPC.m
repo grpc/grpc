@@ -16,7 +16,7 @@
  *
  */
 
-#import "ProtoRPC.h"
+#import <ProtoRPC/ProtoRPC.h>
 
 #if GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS
 #import <Protobuf/GPBProtocolBuffers.h>

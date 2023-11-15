@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRPCCallLegacy.h"
+#import <GRPCClient/GRPCCallLegacy.h>
 
 #include <AvailabilityMacros.h>
 

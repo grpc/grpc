@@ -19,7 +19,7 @@
 #import <Foundation/Foundation.h>
 
 #import <GRPCClient/GRPCCallOptions.h>
-#import "ProtoRPC.h"
+#import <ProtoRPC/ProtoRPC.h>
 
 @protocol GRXWriteable;
 @class GRXWriter;

@@ -18,8 +18,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRXWriteable.h"
-#import "GRXWriter.h"
+#import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter.h>
 
 /**
  * A buffered pipe is a Writer that also acts as a Writeable.
