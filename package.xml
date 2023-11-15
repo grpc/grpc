@@ -45,6 +45,7 @@
     <file baseinstalldir="/" name="include/grpc/fork.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_audit_logging.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/grpc_crl_provider.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
@@ -1205,6 +1206,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/crash.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/crash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/directory_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.cc" role="src" />
@@ -1229,6 +1231,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/packed_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/per_cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/per_cpu.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/posix/directory_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/env.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/stat.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/thd.cc" role="src" />
@@ -1258,6 +1261,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/unique_type_name.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/validation_errors.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/validation_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/windows/directory_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/windows/env.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/windows/stat.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/windows/thd.cc" role="src" />
@@ -1572,6 +1576,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_utils.cc" role="src" />

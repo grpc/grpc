@@ -1056,3 +1056,30 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "crl_provider_test",
+    srcs = ["crl_provider_test.cc"],
+    data = [
+        "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:revoked.key",
+        "//test/core/tsi/test_creds/crl_data:revoked.pem",
+        "//test/core/tsi/test_creds/crl_data:valid.key",
+        "//test/core/tsi/test_creds/crl_data:valid.pem",
+        "//test/core/tsi/test_creds/crl_data/crls:current.crl",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["crl_provider_test"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)

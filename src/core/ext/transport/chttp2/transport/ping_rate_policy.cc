@@ -68,7 +68,8 @@ Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval,
   if (max_pings_without_data_ != 0 && pings_before_data_required_ == 0) {
     return TooManyRecentPings{};
   }
-  if (max_inflight_pings_ != 0 && inflight_pings > max_inflight_pings_) {
+  if (max_inflight_pings_ != 0 &&
+      inflight_pings > static_cast<size_t>(max_inflight_pings_)) {
     return TooManyRecentPings{};
   }
   const Timestamp next_allowed_ping =

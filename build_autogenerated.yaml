@@ -158,6 +158,7 @@ libs:
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_audit_logging.h
+  - include/grpc/grpc_crl_provider.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -748,6 +749,7 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/directory_reader.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
@@ -932,6 +934,7 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
+  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/credentials/tls/tls_utils.h
   - src/core/lib/security/credentials/xds/xds_credentials.h
@@ -1561,11 +1564,13 @@ libs:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
+  - src/core/lib/gprpp/posix/directory_reader.cc
   - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
   - src/core/lib/gprpp/validation_errors.cc
+  - src/core/lib/gprpp/windows/directory_reader.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/http/format_request.cc
@@ -1715,6 +1720,7 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/credentials/tls/tls_utils.cc
   - src/core/lib/security/credentials/xds/xds_credentials.cc
@@ -1914,6 +1920,7 @@ libs:
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_audit_logging.h
+  - include/grpc/grpc_crl_provider.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -3512,6 +3519,7 @@ libs:
   - include/grpcpp/security/tls_certificate_provider.h
   - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
+  - include/grpcpp/security/tls_crl_provider.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
@@ -3936,6 +3944,7 @@ libs:
   - include/grpcpp/security/tls_certificate_provider.h
   - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
+  - include/grpcpp/security/tls_crl_provider.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
@@ -4036,6 +4045,7 @@ libs:
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_audit_logging.h
+  - include/grpc/grpc_crl_provider.h
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
@@ -7401,6 +7411,22 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: crl_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/crl_provider_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - gtest
+  - grpc++_test_util
 - name: crl_ssl_transport_security_test
   gtest: true
   build: test
@@ -7489,6 +7515,17 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+- name: directory_reader_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/directory_reader_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: disappearing_server_test
   gtest: true
   build: test
@@ -9434,6 +9471,23 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
+  - grpc_test_util
+- name: grpc_tls_crl_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/util/fuzz_config_vars.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/security/grpc_tls_crl_provider_test.cc
+  deps:
+  - gtest
+  - protobuf
   - grpc_test_util
 - name: grpc_tool_test
   gtest: true
