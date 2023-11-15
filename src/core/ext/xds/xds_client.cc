@@ -2094,6 +2094,11 @@ XdsClient::ReadDelayHandle::ReadDelayHandle(
     : channel_state_(std::move(channel_state)) {}
 
 XdsClient::ReadDelayHandle::~ReadDelayHandle() {
+  XdsClient* client = channel_state_->xds_client();
+  if (client == nullptr) {
+    return;
+  }
+  MutexLock lock(&client->mu_);
   auto call = channel_state_->ads_calld() != nullptr
                   ? channel_state_->ads_calld()->call()
                   : nullptr;

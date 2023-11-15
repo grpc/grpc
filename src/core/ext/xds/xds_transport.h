@@ -48,7 +48,6 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
         // Called when a SendMessage() operation completes.
         virtual void OnRequestSent(bool ok) = 0;
         // Called when a message is received on the stream.
-        // Returns true to immediately resume the read.
         virtual void OnRecvMessage(absl::string_view payload) = 0;
         // Called when status is received on the stream.
         virtual void OnStatusReceived(absl::Status status) = 0;

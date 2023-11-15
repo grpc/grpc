@@ -323,8 +323,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
       const XdsBootstrap::XdsServer& server, const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  void AdsReadNext();
-
   std::unique_ptr<XdsBootstrap> bootstrap_;
   OrphanablePtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
