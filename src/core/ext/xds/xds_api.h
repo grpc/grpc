@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "envoy/admin/v3/config_dump_shared.upb.h"
@@ -37,7 +36,6 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -51,20 +49,6 @@ class XdsClient;
 // - CSDS response generation
 class XdsApi {
  public:
-  class ReadDelayHandle : public InternallyRefCounted<ReadDelayHandle> {
-   public:
-    explicit ReadDelayHandle(absl::AnyInvocable<void()> read)
-        : read_(std::move(read)) {}
-    ~ReadDelayHandle() override { read_(); }
-
-    void Orphan() override {}
-
-    static RefCountedPtr<ReadDelayHandle> NoWait() { return nullptr; }
-
-   private:
-    absl::AnyInvocable<void()> read_;
-  };
-
   // Interface defined by caller and passed to ParseAdsResponse().
   class AdsResponseParserInterface {
    public:
@@ -85,10 +69,10 @@ class XdsApi {
     // Called to parse each individual resource in the ADS response.
     // Note that resource_name is non-empty only when the resource was
     // wrapped in a Resource wrapper proto.
-    virtual void ParseResource(
-        upb_Arena* arena, size_t idx, absl::string_view type_url,
-        absl::string_view resource_name, absl::string_view serialized_resource,
-        RefCountedPtr<ReadDelayHandle> read_delay_handle) = 0;
+    virtual void ParseResource(upb_Arena* arena, size_t idx,
+                               absl::string_view type_url,
+                               absl::string_view resource_name,
+                               absl::string_view serialized_resource) = 0;
 
     // Called when a resource is wrapped in a Resource wrapper proto but
     // we fail to parse the Resource wrapper.
@@ -176,9 +160,8 @@ class XdsApi {
 
   // Returns non-OK when failing to deserialize response message.
   // Otherwise, all events are reported to the parser.
-  absl::Status ParseAdsResponse(
-      absl::string_view encoded_response, AdsResponseParserInterface* parser,
-      RefCountedPtr<ReadDelayHandle> read_delay_handle);
+  absl::Status ParseAdsResponse(absl::string_view encoded_response,
+                                AdsResponseParserInterface* parser);
 
   // Creates an initial LRS request.
   std::string CreateLrsInitialRequest();

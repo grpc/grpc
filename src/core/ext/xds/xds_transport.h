@@ -61,7 +61,7 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
       virtual void SendMessage(std::string payload) = 0;
 
       // Resumes reading messages from the stream.
-      virtual void Read() = 0;
+      virtual void StartRecvMessage() = 0;
     };
 
     // Create a streaming call on this transport for the specified method.

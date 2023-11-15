@@ -101,7 +101,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
 
   void SendMessage(std::string payload) override;
 
-  void Read() override;
+  void StartRecvMessage() override;
 
  private:
   static void OnRequestSent(void* arg, grpc_error_handle error);

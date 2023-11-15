@@ -125,7 +125,7 @@ class CdsLb : public LoadBalancingPolicy {
 
     void OnResourceChanged(
         std::shared_ptr<const XdsClusterResource> cluster_data,
-        RefCountedPtr<XdsApi::ReadDelayHandle> read_delay_handle) override {
+        RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
       RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
           [self = std::move(self), cluster_data = std::move(cluster_data),
@@ -144,7 +144,7 @@ class CdsLb : public LoadBalancingPolicy {
           DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist(
-        RefCountedPtr<XdsApi::ReadDelayHandle> read_delay_handle) override {
+        RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
       RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
           [self = std::move(self),

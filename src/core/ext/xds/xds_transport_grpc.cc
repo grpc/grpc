@@ -208,11 +208,12 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
       self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
   CSliceUnref(response_slice);
   if (read) {
-    self->Read();
+    self->StartRecvMessage();
   }
 }
 
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::Read() {
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    StartRecvMessage() {
   // Set the flag, exit if it had already been set to true
   if (is_reading_.exchange(true)) {
     return;

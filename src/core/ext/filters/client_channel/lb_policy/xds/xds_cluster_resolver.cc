@@ -214,9 +214,9 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       ~EndpointWatcher() override {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
-      void OnResourceChanged(
-          std::shared_ptr<const XdsEndpointResource> update,
-          RefCountedPtr<XdsApi::ReadDelayHandle> read_delay_handle) override {
+      void OnResourceChanged(std::shared_ptr<const XdsEndpointResource> update,
+                             RefCountedPtr<XdsClient::ReadDelayHandle>
+                                 read_delay_handle) override {
         RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
             [self = std::move(self), update = std::move(update),
@@ -234,8 +234,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
             },
             DEBUG_LOCATION);
       }
-      void OnResourceDoesNotExist(
-          RefCountedPtr<XdsApi::ReadDelayHandle> read_delay_handle) override {
+      void OnResourceDoesNotExist(RefCountedPtr<XdsClient::ReadDelayHandle>
+                                      read_delay_handle) override {
         RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
             [self = std::move(self),
@@ -251,7 +251,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       // bug.
       void OnResourceChangedHelper(
           std::shared_ptr<const XdsEndpointResource> update,
-          RefCountedPtr<XdsApi::ReadDelayHandle> /*read_delay_handle*/) {
+          RefCountedPtr<XdsClient::ReadDelayHandle> /*read_delay_handle*/) {
         std::string resolution_note;
         if (update->priorities.empty()) {
           resolution_note = absl::StrCat(

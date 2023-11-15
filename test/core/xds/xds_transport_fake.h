@@ -68,7 +68,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void Orphan() override;
 
-    void Read() override { read_count_ += 1; }
+    void StartRecvMessage() override { read_count_ += 1; }
 
     using StreamingCall::Ref;  // Make it public.
 

@@ -92,7 +92,7 @@
 namespace grpc_core {
 namespace {
 
-using ReadDelayHandle = XdsApi::ReadDelayHandle;
+using ReadDelayHandle = XdsClient::ReadDelayHandle;
 
 TraceFlag grpc_xds_server_config_fetcher_trace(false,
                                                "xds_server_config_fetcher");

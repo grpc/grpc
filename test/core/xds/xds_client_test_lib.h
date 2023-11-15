@@ -238,7 +238,7 @@ class XdsClientTestBase : public ::testing::Test {
    public:
     using ResourceAndReadDelayHandle =
         std::pair<std::shared_ptr<const ResourceStruct>,
-                  RefCountedPtr<XdsApi::ReadDelayHandle>>;
+                  RefCountedPtr<XdsClient::ReadDelayHandle>>;
 
     // A watcher implementation that queues delivered watches.
     class Watcher : public XdsResourceTypeImpl<
@@ -330,9 +330,9 @@ class XdsClientTestBase : public ::testing::Test {
       using Event =
           absl::variant<ResourceAndReadDelayHandle, absl::Status, DoesNotExist>;
 
-      void OnResourceChanged(
-          std::shared_ptr<const ResourceStruct> foo,
-          RefCountedPtr<XdsApi::ReadDelayHandle> read_delay_handle) override {
+      void OnResourceChanged(std::shared_ptr<const ResourceStruct> foo,
+                             RefCountedPtr<XdsClient::ReadDelayHandle>
+                                 read_delay_handle) override {
         MutexLock lock(&mu_);
         queue_.emplace_back(
             std::make_pair(std::move(foo), std::move(read_delay_handle)));
@@ -344,7 +344,7 @@ class XdsClientTestBase : public ::testing::Test {
         cv_.Signal();
       }
       void OnResourceDoesNotExist(
-          RefCountedPtr<XdsApi::ReadDelayHandle> /* read_delay_handle */)
+          RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
           override {
         MutexLock lock(&mu_);
         queue_.push_back(DoesNotExist());
@@ -687,8 +687,9 @@ class XdsClientTestBase : public ::testing::Test {
   // Helper function to check the fields of a DiscoveryRequest.
   void CheckRequest(const DiscoveryRequest& request, absl::string_view type_url,
                     absl::string_view version_info,
-                    absl::string_view response_nonce, absl::Status error_detail,
-                    std::set<absl::string_view> resource_names,
+                    absl::string_view response_nonce,
+                    const absl::Status& error_detail,
+                    const std::set<absl::string_view>& resource_names,
                     SourceLocation location = SourceLocation()) {
     EXPECT_EQ(request.type_url(),
               absl::StrCat("type.googleapis.com/", type_url))
