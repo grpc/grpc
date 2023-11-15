@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRPCCall+Cronet.h"
+#import <GRPCClient/GRPCCall+Cronet.h>
 
 const GRPCTransportID gGRPCCoreCronetID = "io.grpc.transport.core.cronet";
 

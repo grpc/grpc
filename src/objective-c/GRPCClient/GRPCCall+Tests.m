@@ -16,11 +16,11 @@
  *
  */
 
-#import "GRPCCall+Tests.h"
+#import <GRPCClient/GRPCCall+Tests.h>
 
 #import "private/GRPCCore/GRPCHost.h"
 
-#import "GRPCCallOptions.h"
+#import <GRPCClient/GRPCCallOptions.h>
 
 @implementation GRPCCall (Tests)
 

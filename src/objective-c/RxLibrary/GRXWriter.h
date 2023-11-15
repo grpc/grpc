@@ -18,7 +18,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRXWriteable.h"
+#import <RxLibrary/GRXWriteable.h>
 
 /** States of a writer. */
 typedef NS_ENUM(NSInteger, GRXWriterState) {
