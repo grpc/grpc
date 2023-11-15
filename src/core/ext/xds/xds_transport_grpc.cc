@@ -25,7 +25,6 @@
 #include <string_view>
 #include <utility>
 
-#include "absl/cleanup/cleanup.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/byte_buffer.h>
@@ -205,7 +204,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_destroy(self->recv_message_payload_);
   self->recv_message_payload_ = nullptr;
   self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
-      CSliceUnref(response_slice);
+  CSliceUnref(response_slice);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::

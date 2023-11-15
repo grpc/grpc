@@ -30281,7 +30281,6 @@ add_executable(xds_transport_grpc_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
-  test/core/ext/xds/xds_transport_grpc_test.cc
   test/core/util/cmdline.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
@@ -30292,6 +30291,7 @@ add_executable(xds_transport_grpc_test
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
+  test/core/xds/xds_transport_grpc_test.cc
   test/cpp/end2end/xds/xds_server.cc
   test/cpp/end2end/xds/xds_utils.cc
 )
