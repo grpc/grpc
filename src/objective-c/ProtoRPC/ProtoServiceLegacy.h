@@ -16,7 +16,7 @@
  *
  */
 
-#import "ProtoService.h"
+#import <ProtoRPC/ProtoService.h>
 
 @class GRPCProtoCall;
 @class GRXWriter;

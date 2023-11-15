@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRXWriter.h"
+#import <RxLibrary/GRXWriter.h>
 
 /**
  * A "proxy" class that simply forwards values, completion, and errors from its input writer to its

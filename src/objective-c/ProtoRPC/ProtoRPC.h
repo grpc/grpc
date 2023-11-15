@@ -19,9 +19,9 @@
 #import <Foundation/Foundation.h>
 
 // import legacy header for compatibility with users using the ProtoRPC interface
-#import "ProtoRPCLegacy.h"
+#import <ProtoRPC/ProtoRPCLegacy.h>
 
-#import "ProtoMethod.h"
+#import <ProtoRPC/ProtoMethod.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

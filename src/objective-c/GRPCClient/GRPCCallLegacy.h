@@ -17,7 +17,7 @@
  */
 
 #import <RxLibrary/GRXWriter.h>
-#import "GRPCTypes.h"
+#import <GRPCClient/GRPCTypes.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"

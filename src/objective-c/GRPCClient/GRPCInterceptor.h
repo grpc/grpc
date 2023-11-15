@@ -113,8 +113,8 @@
  * by receiving state sharing object from the factory upon construction.
  */
 
-#import "GRPCCall.h"
-#import "GRPCDispatchable.h"
+#import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCDispatchable.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

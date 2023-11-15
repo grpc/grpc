@@ -16,8 +16,8 @@
  *
  */
 
-#import "GRPCCall+Interceptor.h"
-#import "GRPCInterceptor.h"
+#import <GRPCClient/GRPCCall+Interceptor.h>
+#import <GRPCClient/GRPCInterceptor.h>
 
 static id<GRPCInterceptorFactory> globalInterceptorFactory = nil;
 static NSLock *globalInterceptorLock = nil;
