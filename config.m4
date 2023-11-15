@@ -1272,9 +1272,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/tls13_server.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
-    third_party/protobuf/third_party/utf8_range/naive.c \
-    third_party/protobuf/third_party/utf8_range/range2-neon.c \
-    third_party/protobuf/third_party/utf8_range/range2-sse.c \
     third_party/re2/re2/bitstate.cc \
     third_party/re2/re2/compile.cc \
     third_party/re2/re2/dfa.cc \
@@ -1297,6 +1294,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/re2/re2/unicode_groups.cc \
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
+    third_party/upb/third_party/utf8_range/naive.c \
+    third_party/upb/third_party/utf8_range/range2-neon.c \
+    third_party/upb/third_party/utf8_range/range2-sse.c \
     third_party/upb/upb/base/status.c \
     third_party/upb/upb/hash/common.c \
     third_party/upb/upb/json/decode.c \
@@ -1309,6 +1309,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/accessors.c \
     third_party/upb/upb/message/array.c \
+    third_party/upb/upb/message/copy.c \
     third_party/upb/upb/message/map.c \
     third_party/upb/upb/message/map_sorter.c \
     third_party/upb/upb/message/message.c \
@@ -1635,9 +1636,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/protobuf/third_party/utf8_range)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/third_party/utf8_range)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/base)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/hash)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/json)

@@ -3012,9 +3012,9 @@ libs:
   - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/reader.c
   deps:
+  - utf8_range_lib
   - upb_collections_lib
   - upb
-  - utf8_range_lib
   - z
   - absl/algorithm:container
   - absl/cleanup:cleanup
@@ -3207,6 +3207,7 @@ libs:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -3249,7 +3250,6 @@ libs:
   language: c
   public_headers: []
   headers:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - third_party/upb/upb/base/descriptor_constants.h
   - third_party/upb/upb/base/internal/log2.h
   - third_party/upb/upb/base/status.h
@@ -3270,6 +3270,7 @@ libs:
   - third_party/upb/upb/mem/internal/arena.h
   - third_party/upb/upb/message/accessors.h
   - third_party/upb/upb/message/array.h
+  - third_party/upb/upb/message/copy.h
   - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/message/internal/array.h
   - third_party/upb/upb/message/internal/extension.h
@@ -3277,6 +3278,7 @@ libs:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -3336,6 +3338,7 @@ libs:
   - third_party/upb/upb/reflection/internal/oneof_def.h
   - third_party/upb/upb/reflection/internal/service_def.h
   - third_party/upb/upb/reflection/internal/strdup2.h
+  - third_party/upb/upb/reflection/internal/upb_edition_defaults.h
   - third_party/upb/upb/reflection/message.h
   - third_party/upb/upb/reflection/message.hpp
   - third_party/upb/upb/reflection/message_def.h
@@ -3353,7 +3356,6 @@ libs:
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - third_party/upb/upb/base/status.c
   - third_party/upb/upb/hash/common.c
   - third_party/upb/upb/json/decode.c
@@ -3366,6 +3368,7 @@ libs:
   - third_party/upb/upb/mem/arena.c
   - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/message/array.c
+  - third_party/upb/upb/message/copy.c
   - third_party/upb/upb/message/map.c
   - third_party/upb/upb/message/map_sorter.c
   - third_party/upb/upb/message/message.c
@@ -3406,7 +3409,6 @@ libs:
   language: c
   public_headers: []
   headers:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - third_party/upb/upb/base/descriptor_constants.h
   - third_party/upb/upb/base/internal/log2.h
   - third_party/upb/upb/base/status.h
@@ -3425,6 +3427,7 @@ libs:
   - third_party/upb/upb/mem/internal/arena.h
   - third_party/upb/upb/message/accessors.h
   - third_party/upb/upb/message/array.h
+  - third_party/upb/upb/message/copy.h
   - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/message/internal/array.h
   - third_party/upb/upb/message/internal/extension.h
@@ -3432,6 +3435,7 @@ libs:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -3491,6 +3495,7 @@ libs:
   - third_party/upb/upb/reflection/internal/oneof_def.h
   - third_party/upb/upb/reflection/internal/service_def.h
   - third_party/upb/upb/reflection/internal/strdup2.h
+  - third_party/upb/upb/reflection/internal/upb_edition_defaults.h
   - third_party/upb/upb/reflection/message.h
   - third_party/upb/upb/reflection/message.hpp
   - third_party/upb/upb/reflection/message_def.h
@@ -3509,7 +3514,6 @@ libs:
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - third_party/upb/upb/base/status.c
   - third_party/upb/upb/hash/common.c
   - third_party/upb/upb/lex/atoi.c
@@ -3520,6 +3524,7 @@ libs:
   - third_party/upb/upb/mem/arena.c
   - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/message/array.c
+  - third_party/upb/upb/message/copy.c
   - third_party/upb/upb/message/map.c
   - third_party/upb/upb/message/map_sorter.c
   - third_party/upb/upb/message/message.c
@@ -3561,11 +3566,11 @@ libs:
   language: c
   public_headers: []
   headers:
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
+  - third_party/upb/third_party/utf8_range/utf8_range.h
   src:
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
+  - third_party/upb/third_party/utf8_range/naive.c
+  - third_party/upb/third_party/utf8_range/range2-neon.c
+  - third_party/upb/third_party/utf8_range/range2-sse.c
   deps: []
 - name: z
   build: private
@@ -4401,7 +4406,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
@@ -4728,6 +4732,7 @@ libs:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -4768,7 +4773,6 @@ libs:
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
@@ -5049,9 +5053,9 @@ libs:
   - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/reader.c
   deps:
+  - utf8_range_lib
   - upb
   - re2
-  - utf8_range_lib
   - z
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
@@ -7193,7 +7197,6 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
@@ -7255,6 +7258,7 @@ targets:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -7295,7 +7299,6 @@ targets:
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -7343,8 +7346,8 @@ targets:
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb
   - utf8_range_lib
+  - upb
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8631,7 +8634,6 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
@@ -8678,6 +8680,7 @@ targets:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -8718,7 +8721,6 @@ targets:
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -8758,8 +8760,8 @@ targets:
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb
   - utf8_range_lib
+  - upb
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -9175,7 +9177,6 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
@@ -9238,6 +9239,7 @@ targets:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -9280,7 +9282,6 @@ targets:
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -9329,8 +9330,8 @@ targets:
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb
   - utf8_range_lib
+  - upb
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9344,7 +9345,6 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
@@ -9414,6 +9414,7 @@ targets:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -9454,7 +9455,6 @@ targets:
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -9502,8 +9502,8 @@ targets:
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb
   - utf8_range_lib
+  - upb
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10876,7 +10876,6 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
@@ -10939,6 +10938,7 @@ targets:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -10979,7 +10979,6 @@ targets:
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -11027,8 +11026,8 @@ targets:
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb
   - utf8_range_lib
+  - upb
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11500,7 +11499,6 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
@@ -11570,6 +11568,7 @@ targets:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -11610,7 +11609,6 @@ targets:
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -11658,8 +11656,8 @@ targets:
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb
   - utf8_range_lib
+  - upb
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -12496,7 +12494,6 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
@@ -12533,6 +12530,7 @@ targets:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -12573,7 +12571,6 @@ targets:
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -12613,8 +12610,8 @@ targets:
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb
   - utf8_range_lib
+  - upb
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
@@ -16701,7 +16698,6 @@ targets:
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
@@ -16997,6 +16993,7 @@ targets:
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/size_log2.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
@@ -17049,7 +17046,6 @@ targets:
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
@@ -17302,8 +17298,8 @@ targets:
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb
   - utf8_range_lib
+  - upb
   - z
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map

@@ -1107,9 +1107,9 @@
       'target_name': 'grpc_unsecure',
       'type': 'static_library',
       'dependencies': [
+        'utf8_range_lib',
         'upb_collections_lib',
         'upb',
-        'utf8_range_lib',
         'z',
         'absl/algorithm:container',
         'absl/cleanup:cleanup',
@@ -1630,7 +1630,6 @@
         'utf8_range_lib',
       ],
       'sources': [
-        'src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c',
         'third_party/upb/upb/base/status.c',
         'third_party/upb/upb/hash/common.c',
         'third_party/upb/upb/json/decode.c',
@@ -1643,6 +1642,7 @@
         'third_party/upb/upb/mem/arena.c',
         'third_party/upb/upb/message/accessors.c',
         'third_party/upb/upb/message/array.c',
+        'third_party/upb/upb/message/copy.c',
         'third_party/upb/upb/message/map.c',
         'third_party/upb/upb/message/map_sorter.c',
         'third_party/upb/upb/message/message.c',
@@ -1685,7 +1685,6 @@
         'utf8_range_lib',
       ],
       'sources': [
-        'src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c',
         'third_party/upb/upb/base/status.c',
         'third_party/upb/upb/hash/common.c',
         'third_party/upb/upb/lex/atoi.c',
@@ -1696,6 +1695,7 @@
         'third_party/upb/upb/mem/arena.c',
         'third_party/upb/upb/message/accessors.c',
         'third_party/upb/upb/message/array.c',
+        'third_party/upb/upb/message/copy.c',
         'third_party/upb/upb/message/map.c',
         'third_party/upb/upb/message/map_sorter.c',
         'third_party/upb/upb/message/message.c',
@@ -1738,9 +1738,9 @@
       'dependencies': [
       ],
       'sources': [
-        'third_party/protobuf/third_party/utf8_range/naive.c',
-        'third_party/protobuf/third_party/utf8_range/range2-neon.c',
-        'third_party/protobuf/third_party/utf8_range/range2-sse.c',
+        'third_party/upb/third_party/utf8_range/naive.c',
+        'third_party/upb/third_party/utf8_range/range2-neon.c',
+        'third_party/upb/third_party/utf8_range/range2-sse.c',
       ],
     },
     {
@@ -2001,9 +2001,9 @@
       'target_name': 'grpc_authorization_provider',
       'type': 'static_library',
       'dependencies': [
+        'utf8_range_lib',
         'upb',
         're2',
-        'utf8_range_lib',
         'z',
         'absl/cleanup:cleanup',
         'absl/container:flat_hash_map',
@@ -2022,7 +2022,6 @@
       ],
       'sources': [
         'src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c',
-        'src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c',
         'src/core/ext/upb-gen/google/rpc/status.upb_minitable.c',
         'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c',
         'src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c',

@@ -2849,10 +2849,6 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_32.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64_msvc.h" role="src" />
-    <file baseinstalldir="/" name="third_party/protobuf/third_party/utf8_range/naive.c" role="src" />
-    <file baseinstalldir="/" name="third_party/protobuf/third_party/utf8_range/range2-neon.c" role="src" />
-    <file baseinstalldir="/" name="third_party/protobuf/third_party/utf8_range/range2-sse.c" role="src" />
-    <file baseinstalldir="/" name="third_party/protobuf/third_party/utf8_range/utf8_range.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/bitmap256.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/bitstate.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/compile.cc" role="src" />
@@ -2896,6 +2892,10 @@
     <file baseinstalldir="/" name="third_party/re2/util/strutil.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/naive.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/range2-neon.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/range2-sse.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/utf8_range.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/descriptor_constants.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/internal/log2.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/status.c" role="src" />
@@ -2931,6 +2931,8 @@
     <file baseinstalldir="/" name="third_party/upb/upb/message/accessors.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/array.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/array.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/copy.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/copy.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/accessors.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/array.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/extension.h" role="src" />
@@ -2938,6 +2940,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/map_entry.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/map_sorter.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/message.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/internal/size_log2.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/types.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/map.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/map.h" role="src" />
@@ -3019,6 +3022,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/internal/service_def.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/internal/strdup2.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/internal/strdup2.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/reflection/internal/upb_edition_defaults.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/message.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/message.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/message.hpp" role="src" />
