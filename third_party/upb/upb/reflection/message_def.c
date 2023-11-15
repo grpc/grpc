@@ -1,45 +1,28 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
+#include "upb/reflection/internal/message_def.h"
+
+#include "upb/base/descriptor_constants.h"
 #include "upb/hash/int_table.h"
 #include "upb/hash/str_table.h"
 #include "upb/mini_descriptor/decode.h"
 #include "upb/mini_descriptor/internal/modifiers.h"
 #include "upb/reflection/def.h"
-#include "upb/reflection/def_builder_internal.h"
 #include "upb/reflection/def_type.h"
-#include "upb/reflection/desc_state_internal.h"
-#include "upb/reflection/enum_def_internal.h"
-#include "upb/reflection/extension_range_internal.h"
-#include "upb/reflection/field_def_internal.h"
-#include "upb/reflection/file_def_internal.h"
-#include "upb/reflection/message_def_internal.h"
-#include "upb/reflection/message_reserved_range_internal.h"
-#include "upb/reflection/oneof_def_internal.h"
+#include "upb/reflection/internal/def_builder.h"
+#include "upb/reflection/internal/desc_state.h"
+#include "upb/reflection/internal/enum_def.h"
+#include "upb/reflection/internal/extension_range.h"
+#include "upb/reflection/internal/field_def.h"
+#include "upb/reflection/internal/file_def.h"
+#include "upb/reflection/internal/message_reserved_range.h"
+#include "upb/reflection/internal/oneof_def.h"
+#include "upb/reflection/internal/strdup2.h"
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -55,6 +38,9 @@ struct upb_MessageDef {
   upb_inttable itof;
   upb_strtable ntof;
 
+  // Looking up fields by json name.
+  upb_strtable jtof;
+
   /* All nested defs.
    * MEM: We could save some space here by putting nested defs in a contiguous
    * region and calculating counts from offsets or vice-versa. */
@@ -67,7 +53,7 @@ struct upb_MessageDef {
   const upb_EnumDef* nested_enums;
   const upb_FieldDef* nested_exts;
 
-  // TODO(salo): These counters don't need anywhere near 32 bits.
+  // TODO: These counters don't need anywhere near 32 bits.
   int field_count;
   int real_oneof_count;
   int oneof_count;
@@ -80,9 +66,6 @@ struct upb_MessageDef {
   bool in_message_set;
   bool is_sorted;
   upb_WellKnown well_known_type;
-#if UINTPTR_MAX == 0xffffffff
-  uint32_t padding;  // Increase size to a multiple of 8.
-#endif
 };
 
 static void assign_msg_wellknowntype(upb_MessageDef* m) {
@@ -225,16 +208,16 @@ bool upb_MessageDef_FindByNameWithSize(const upb_MessageDef* m,
 const upb_FieldDef* upb_MessageDef_FindByJsonNameWithSize(
     const upb_MessageDef* m, const char* name, size_t size) {
   upb_value val;
-  const upb_FieldDef* f;
+
+  if (upb_strtable_lookup2(&m->jtof, name, size, &val)) {
+    return upb_value_getconstptr(val);
+  }
 
   if (!upb_strtable_lookup2(&m->ntof, name, size, &val)) {
     return NULL;
   }
 
-  f = _upb_DefType_Unpack(val, UPB_DEFTYPE_FIELD);
-  if (!f) f = _upb_DefType_Unpack(val, UPB_DEFTYPE_FIELD_JSONNAME);
-
-  return f;
+  return _upb_DefType_Unpack(val, UPB_DEFTYPE_FIELD);
 }
 
 int upb_MessageDef_ExtensionRangeCount(const upb_MessageDef* m) {
@@ -414,16 +397,24 @@ void _upb_MessageDef_InsertField(upb_DefBuilder* ctx, upb_MessageDef* m,
       _upb_MessageDef_Insert(m, shortname, shortnamelen, field_v, ctx->arena);
   if (!ok) _upb_DefBuilder_OomErr(ctx);
 
-  if (strcmp(shortname, json_name) != 0) {
-    if (upb_strtable_lookup(&m->ntof, json_name, &v)) {
-      _upb_DefBuilder_Errf(ctx, "duplicate json_name (%s)", json_name);
-    }
-
-    const size_t json_size = strlen(json_name);
-    const upb_value json_v = _upb_DefType_Pack(f, UPB_DEFTYPE_FIELD_JSONNAME);
-    ok = _upb_MessageDef_Insert(m, json_name, json_size, json_v, ctx->arena);
-    if (!ok) _upb_DefBuilder_OomErr(ctx);
+  // TODO: Once editions is supported this should turn into a
+  // check on LEGACY_BEST_EFFORT
+  if (strcmp(shortname, json_name) != 0 &&
+      upb_FileDef_Syntax(m->file) == kUpb_Syntax_Proto3 &&
+      upb_strtable_lookup(&m->ntof, json_name, &v)) {
+    _upb_DefBuilder_Errf(
+        ctx, "duplicate json_name for (%s) with original field name (%s)",
+        shortname, json_name);
   }
+
+  if (upb_strtable_lookup(&m->jtof, json_name, &v)) {
+    _upb_DefBuilder_Errf(ctx, "duplicate json_name (%s)", json_name);
+  }
+
+  const size_t json_size = strlen(json_name);
+  ok = upb_strtable_insert(&m->jtof, json_name, json_size,
+                           upb_value_constptr(f), ctx->arena);
+  if (!ok) _upb_DefBuilder_OomErr(ctx);
 
   if (upb_inttable_lookup(&m->itof, field_number, NULL)) {
     _upb_DefBuilder_Errf(ctx, "duplicate field number (%u)", field_number);
@@ -507,15 +498,37 @@ void _upb_MessageDef_LinkMiniTable(upb_DefBuilder* ctx,
 #endif
 }
 
+static bool _upb_MessageDef_ValidateUtf8(const upb_MessageDef* m) {
+  bool has_string = false;
+  for (int i = 0; i < m->field_count; i++) {
+    const upb_FieldDef* f = upb_MessageDef_Field(m, i);
+    // Old binaries do not recognize the field-level "FlipValidateUtf8" wire
+    // modifier, so we do not actually have field-level control for old
+    // binaries.  Given this, we judge that the better failure mode is to be
+    // more lax than intended, rather than more strict.  To achieve this, we
+    // only mark the message with the ValidateUtf8 modifier if *all* fields
+    // validate UTF-8.
+    if (!_upb_FieldDef_ValidateUtf8(f)) return false;
+    if (upb_FieldDef_Type(f) == kUpb_FieldType_String) has_string = true;
+  }
+  return has_string;
+}
+
 static uint64_t _upb_MessageDef_Modifiers(const upb_MessageDef* m) {
   uint64_t out = 0;
+
   if (upb_FileDef_Syntax(m->file) == kUpb_Syntax_Proto3) {
-    out |= kUpb_MessageModifier_ValidateUtf8;
     out |= kUpb_MessageModifier_DefaultIsPacked;
   }
+
+  if (_upb_MessageDef_ValidateUtf8(m)) {
+    out |= kUpb_MessageModifier_ValidateUtf8;
+  }
+
   if (m->ext_range_count) {
     out |= kUpb_MessageModifier_IsExtendable;
   }
+
   return out;
 }
 
@@ -609,7 +622,7 @@ bool upb_MessageDef_MiniDescriptorEncode(const upb_MessageDef* m, upb_Arena* a,
 static upb_StringView* _upb_ReservedNames_New(upb_DefBuilder* ctx, int n,
                                               const upb_StringView* protos) {
   upb_StringView* sv = _upb_DefBuilder_Alloc(ctx, sizeof(upb_StringView) * n);
-  for (size_t i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++) {
     sv[i].data =
         upb_strdup2(protos[i].data, protos[i].size, _upb_DefBuilder_Arena(ctx));
     sv[i].size = protos[i].size;
@@ -653,6 +666,9 @@ static void create_msgdef(upb_DefBuilder* ctx, const char* prefix,
   if (!ok) _upb_DefBuilder_OomErr(ctx);
 
   ok = upb_strtable_init(&m->ntof, n_oneof + n_field, ctx->arena);
+  if (!ok) _upb_DefBuilder_OomErr(ctx);
+
+  ok = upb_strtable_init(&m->jtof, n_field, ctx->arena);
   if (!ok) _upb_DefBuilder_OomErr(ctx);
 
   UPB_DEF_SET_OPTIONS(m->opts, DescriptorProto, MessageOptions, msg_proto);

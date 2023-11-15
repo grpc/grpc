@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
+
 #include "src/core/lib/debug/trace.h"
 
 #if GRPC_ARES == 1
@@ -87,8 +89,8 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
   // close the socket (possibly through ares_destroy).
   struct FdNode {
     FdNode() = default;
-    FdNode(ares_socket_t as, GrpcPolledFd* polled_fd)
-        : as(as), polled_fd(polled_fd) {}
+    FdNode(ares_socket_t as, std::unique_ptr<GrpcPolledFd> pf)
+        : as(as), polled_fd(std::move(pf)) {}
     ares_socket_t as;
     std::unique_ptr<GrpcPolledFd> polled_fd;
     // true if the readable closure has been registered

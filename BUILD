@@ -30,8 +30,8 @@ licenses(["reciprocal"])
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "layering_check",
         "-parse_headers",
+        "layering_check",
     ],
 )
 
@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gjallarhorn"  # @unused
+g_stands_for = "grand"  # @unused
 
-core_version = "36.0.0"  # @unused
+core_version = "37.0.0"  # @unused
 
-version = "1.60.0-dev"  # @unused
+version = "1.61.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1009,6 +1009,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "absl/types:span",
+        "upb_base_lib",
         "upb_collections_lib",
         "upb_lib",
     ],
@@ -1213,6 +1214,7 @@ grpc_cc_library(
         "include/grpcpp/security/alts_util.h",
     ],
     external_deps = [
+        "upb_base_lib",
         "upb_collections_lib",
         "upb_lib",
     ],
@@ -1930,6 +1932,7 @@ grpc_cc_library(
         "absl/synchronization",
         "absl/memory",
         "absl/types:optional",
+        "upb_base_lib",
         "upb_lib",
         "protobuf_headers",
         "absl/container:inlined_vector",
@@ -2004,6 +2007,7 @@ grpc_cc_library(
         "absl/synchronization",
         "absl/types:optional",
         "absl/memory",
+        "upb_base_lib",
         "upb_lib",
         "absl/strings:str_format",
         "protobuf_headers",
@@ -2173,6 +2177,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/time",
         "absl/types:optional",
+        "upb_base_lib",
         "upb_lib",
     ],
     language = "c++",
@@ -3063,6 +3068,7 @@ grpc_cc_library(
         "absl/strings:cord",
         "absl/types:optional",
         "absl/types:variant",
+        "upb_base_lib",
         "upb_collections_lib",
         "upb_lib",
     ],
@@ -3673,7 +3679,9 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
+        "upb_base_lib",
         "upb_lib",
+        "upb_mem_lib",
         "upb_textformat_lib",
         "upb_json_lib",
         "upb_reflection",

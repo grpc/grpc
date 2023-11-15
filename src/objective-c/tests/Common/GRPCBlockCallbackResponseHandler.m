@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#import "GRPCBlockCallbackResponseHandler.h"
+#import <GRPCClient/GRPCBlockCallbackResponseHandler.h>
 
 @implementation GRPCBlockCallbackResponseHandler {
   void (^_initialMetadataCallback)(NSDictionary *);

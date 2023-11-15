@@ -63,4 +63,18 @@ class XdsUpdateHealthServiceClient extends \Grpc\BaseStub {
         $metadata, $options);
     }
 
+    /**
+     * @param \Grpc\Testing\HookRequest $argument input argument
+     * @param array $metadata metadata
+     * @param array $options call options
+     * @return \Grpc\UnaryCall
+     */
+    public function SendHookRequest(\Grpc\Testing\HookRequest $argument,
+      $metadata = [], $options = []) {
+        return $this->_simpleRequest('/grpc.testing.XdsUpdateHealthService/SendHookRequest',
+        $argument,
+        ['\Grpc\Testing\HookResponse', 'decode'],
+        $metadata, $options);
+    }
+
 }
