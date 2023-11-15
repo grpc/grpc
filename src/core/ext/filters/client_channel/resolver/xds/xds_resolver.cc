@@ -154,10 +154,13 @@ class XdsResolver : public Resolver {
           },
           DEBUG_LOCATION);
     }
-    void OnError(absl::Status status) override {
+    void OnError(
+        absl::Status status,
+        RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
       RefCountedPtr<ListenerWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [self = std::move(self), status = std::move(status)]() mutable {
+          [self = std::move(self), status = std::move(status),
+           read_delay_handle = std::move(read_delay_handle)]() mutable {
             self->resolver_->OnError(self->resolver_->lds_resource_name_,
                                      std::move(status));
           },
@@ -197,10 +200,12 @@ class XdsResolver : public Resolver {
           },
           DEBUG_LOCATION);
     }
-    void OnError(absl::Status status) override {
+    void OnError(absl::Status status,
+                 RefCountedPtr<ReadDelayHandle> read_delay_handle) override {
       RefCountedPtr<RouteConfigWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [self = std::move(self), status = std::move(status)]() mutable {
+          [self = std::move(self), status = std::move(status),
+           read_delay_handle = std::move(read_delay_handle)]() mutable {
             if (self != self->resolver_->route_config_watcher_) return;
             self->resolver_->OnError(self->resolver_->route_config_name_,
                                      std::move(status));

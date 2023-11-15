@@ -68,7 +68,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
         std::shared_ptr<const XdsResourceType::ResourceData> resource,
         RefCountedPtr<ReadDelayHandle> read_delay_handle)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnError(absl::Status status)
+    virtual void OnError(absl::Status status,
+                         RefCountedPtr<ReadDelayHandle> read_delay_handle)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnResourceDoesNotExist(
         RefCountedPtr<ReadDelayHandle> read_delay_handle)
@@ -241,14 +242,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
  public:
   class ReadDelayHandle : public RefCounted<ReadDelayHandle> {
    public:
-    explicit ReadDelayHandle(
-        RefCountedPtr<ChannelState::AdsCallState> ads_call_state);
+    explicit ReadDelayHandle(WeakRefCountedPtr<ChannelState> channel_state);
     ~ReadDelayHandle() override;
 
     static RefCountedPtr<ReadDelayHandle> NoWait() { return nullptr; }
 
    private:
-    RefCountedPtr<ChannelState::AdsCallState> ads_call_state_;
+    WeakRefCountedPtr<ChannelState> channel_state_;
   };
 
  private:
@@ -295,7 +295,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void NotifyWatchersOnErrorLocked(
       const std::map<ResourceWatcherInterface*,
                      RefCountedPtr<ResourceWatcherInterface>>& watchers,
-      absl::Status status);
+      absl::Status status, RefCountedPtr<ReadDelayHandle> read_delay_handle);
   // Sends a resource-does-not-exist notification to a specific set of watchers.
   void NotifyWatchersOnResourceDoesNotExist(
       const std::map<ResourceWatcherInterface*,

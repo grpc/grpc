@@ -19,7 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <atomic>
 #include <functional>
 #include <memory>
 #include <string>
@@ -111,8 +110,6 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
   RefCountedPtr<GrpcXdsTransportFactory> factory_;
 
   std::unique_ptr<StreamingCall::EventHandler> event_handler_;
-
-  std::atomic_bool is_reading_;
 
   // Always non-NULL.
   grpc_call* call_;

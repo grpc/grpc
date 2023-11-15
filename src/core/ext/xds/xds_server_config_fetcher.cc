@@ -39,6 +39,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "xds_client_stats.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -157,7 +158,9 @@ class XdsServerConfigFetcher::ListenerWatcher
       std::shared_ptr<const XdsListenerResource> listener,
       RefCountedPtr<ReadDelayHandle> read_delay_handle) override;
 
-  void OnError(absl::Status status) override;
+  void OnError(
+      absl::Status status,
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override;
 
   void OnResourceDoesNotExist(
       RefCountedPtr<ReadDelayHandle> read_delay_handle) override;
@@ -303,7 +306,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
                                                       std::move(route_config));
   }
 
-  void OnError(absl::Status status) override {
+  void OnError(
+      absl::Status status,
+      RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) override {
     filter_chain_match_manager_->OnError(resource_name_, status);
   }
 
@@ -500,7 +505,12 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     parent_->OnRouteConfigChanged(std::move(route_config));
   }
 
-  void OnError(absl::Status status) override { parent_->OnError(status); }
+  void OnError(
+      absl::Status status,
+      RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
+      override {
+    parent_->OnError(status);
+  }
 
   void OnResourceDoesNotExist(
       RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) override {
@@ -621,7 +631,9 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
   }
 }
 
-void XdsServerConfigFetcher::ListenerWatcher::OnError(absl::Status status) {
+void XdsServerConfigFetcher::ListenerWatcher::OnError(
+    absl::Status status,
+    RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
   MutexLock lock(&mu_);
   if (filter_chain_match_manager_ != nullptr ||
       pending_filter_chain_match_manager_ != nullptr) {

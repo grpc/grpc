@@ -338,7 +338,10 @@ class XdsClientTestBase : public ::testing::Test {
             std::make_pair(std::move(foo), std::move(read_delay_handle)));
         cv_.Signal();
       }
-      void OnError(absl::Status status) override {
+      void OnError(
+          absl::Status status,
+          RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
+          override {
         MutexLock lock(&mu_);
         queue_.push_back(std::move(status));
         cv_.Signal();

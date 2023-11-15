@@ -204,23 +204,12 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_reader_destroy(&bbr);
   grpc_byte_buffer_destroy(self->recv_message_payload_);
   self->recv_message_payload_ = nullptr;
-  bool read =
-      self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
-  CSliceUnref(response_slice);
-  if (read) {
-    self->StartRecvMessage();
-  }
+  self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
+      CSliceUnref(response_slice);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     StartRecvMessage() {
-  // Set the flag, exit if it had already been set to true
-  if (is_reading_.exchange(true)) {
-    return;
-  }
-  // Reset the flag when function exits.
-  auto cleanup_flag =
-      absl::MakeCleanup([this]() { this->is_reading_.store(false); });
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_MESSAGE;

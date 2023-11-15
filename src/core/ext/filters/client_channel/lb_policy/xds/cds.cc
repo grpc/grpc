@@ -135,10 +135,13 @@ class CdsLb : public LoadBalancingPolicy {
           },
           DEBUG_LOCATION);
     }
-    void OnError(absl::Status status) override {
+    void OnError(
+        absl::Status status,
+        RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
       RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          [self = std::move(self), status = std::move(status)]() mutable {
+          [self = std::move(self), status = std::move(status),
+           read_delay_handle = std::move(read_delay_handle)]() mutable {
             self->parent_->OnError(self->name_, std::move(status));
           },
           DEBUG_LOCATION);
