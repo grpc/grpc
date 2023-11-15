@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRXWriter.h"
+#import <RxLibrary/GRXWriter.h>
 
 @implementation GRXWriter
 

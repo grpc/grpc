@@ -16,8 +16,8 @@
  *
  */
 
-#import "GRPCCallLegacy.h"
-#import "GRPCTypes.h"
+#import <GRPCClient/GRPCCallLegacy.h>
+#import <GRPCClient/GRPCTypes.h>
 
 typedef struct stream_engine stream_engine;
 

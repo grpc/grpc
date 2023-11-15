@@ -18,7 +18,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRPCTypes.h"
+#import <GRPCClient/GRPCTypes.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

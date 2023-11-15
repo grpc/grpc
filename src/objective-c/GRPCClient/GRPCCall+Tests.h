@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRPCCallLegacy.h"
+#import <GRPCClient/GRPCCallLegacy.h>
 
 /**
  * The interface is deprecated. Please use GRPCCallOptions instead for corresponding configurations.

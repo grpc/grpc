@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRPCTransport.h"
+#import <GRPCClient/GRPCTransport.h>
 
 static const GRPCTransportID gGRPCCoreSecureID = "io.grpc.transport.core.secure";
 static const GRPCTransportID gGRPCCoreInsecureID = "io.grpc.transport.core.insecure";
@@ -30,8 +30,8 @@ static GRPCTransportRegistry *gTransportRegistry = nil;
 static dispatch_once_t initTransportRegistry;
 
 BOOL TransportIDIsEqual(GRPCTransportID lhs, GRPCTransportID rhs) {
-  // Directly comparing pointers works because we require users to use the id provided by each
-  // implementation, not coming up with their own string.
+  // Directly comparing pointers works because we require users to use the id provided
+  // by each implementation, not coming up with their own string.
   return lhs == rhs;
 }
 

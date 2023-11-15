@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRXMappingWriter.h"
+#import <RxLibrary/GRXMappingWriter.h>
 
 @interface GRXForwardingWriter () <GRXWriteable>
 @end

@@ -16,11 +16,11 @@
  *
  */
 
-#import "GRPCCallLegacy.h"
+#import <GRPCClient/GRPCCallLegacy.h>
 
-#import "GRPCCall+OAuth2.h"
-#import "GRPCCallOptions.h"
-#import "GRPCTypes.h"
+#import <GRPCClient/GRPCCall+OAuth2.h>
+#import <GRPCClient/GRPCCallOptions.h>
+#import <GRPCClient/GRPCTypes.h>
 
 #import "private/GRPCCore/GRPCChannelPool.h"
 #import "private/GRPCCore/GRPCCompletionQueue.h"
