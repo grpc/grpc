@@ -18,7 +18,7 @@
 
 // The global interceptor feature is experimental and might be modified or removed at any time.
 
-#import "GRPCCall.h"
+#import <GRPCClient/GRPCCall.h>
 
 @protocol GRPCInterceptorFactory;
 

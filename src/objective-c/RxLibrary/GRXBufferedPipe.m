@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRXBufferedPipe.h"
+#import <RxLibrary/GRXBufferedPipe.h>
 
 @interface GRXBufferedPipe ()
 @property(atomic) id<GRXWriteable> writeable;

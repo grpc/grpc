@@ -18,8 +18,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRXWriteable.h"
-#import "GRXWriter.h"
+#import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter.h>
 
 /**
  * This is a thread-safe wrapper over a GRXWriteable instance. It lets one enqueue calls to a

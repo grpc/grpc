@@ -16,8 +16,8 @@
  *
  */
 
-#import "GRPCCallOptions.h"
-#import "GRPCTransport.h"
+#import <GRPCClient/GRPCCallOptions.h>
+#import <GRPCClient/GRPCTransport.h>
 #import "internal/GRPCCallOptions+Internal.h"
 
 // The default values for the call options.
