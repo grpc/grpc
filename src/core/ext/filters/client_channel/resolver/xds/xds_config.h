@@ -30,17 +30,29 @@
 
 namespace grpc_core {
 
+// Maximum depth of aggregate cluster tree.
+constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
+
 // Watches all xDS resources and handles dependencies between them.
 // Reports updates only when all necessary resources have been obtained.
 class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
  public:
   struct XdsConfig {
+    // Listener resource.
     std::shared_ptr<const XdsListenerResource> listener;
+    // RouteConfig resource.  Will be populated even if RouteConfig is
+    // inlined into the Listener resource.
     std::shared_ptr<const XdsRouteConfigResource> route_config;
+    // Virtual host.  Points into route_config.  Will always be non-null.
     const XdsRouteConfigResource::VirtualHost* virtual_host;
+    // Cluster map.  A cluster will have a non-OK status if either
+    // (a) there was an error and we did not already have a valid
+    // resource or (b) the resource does not exist.
     std::map<std::string,
              absl::StatusOr<std::shared_ptr<const XdsClusterResource>>>
         clusters;
+    // Endpoint map.  If there is an error, endpoints will be null and
+    // resolution_note will indicate the error.
     struct EndpointConfig {
       std::shared_ptr<const XdsEndpointResource> endpoints;
       std::string resolution_note;
@@ -59,7 +71,11 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
   class Watcher {
    public:
     virtual ~Watcher() = default;
+
     virtual void OnUpdate(std::shared_ptr<const XdsConfig> config) = 0;
+
+    // These methods are invoked when there is an error or
+    // does-not-exist on LDS or RDS only.
     virtual void OnError(absl::string_view context, absl::Status status) = 0;
     virtual void OnResourceDoesNotExist(std::string context) = 0;
   };

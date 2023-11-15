@@ -498,8 +498,8 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
         config_->cluster_name(), config_->eds_service_name());
   } else {
     // Cluster name, EDS service name, and LRS server name should never
-    // change, because the xds_cluster_resolver policy above us should be
-    // swapped out if that happens.
+    // change, because the cds policy will assign a different priority
+    // child name to us if that happens.
     GPR_ASSERT(config_->cluster_name() == old_config->cluster_name());
     GPR_ASSERT(config_->eds_service_name() == old_config->eds_service_name());
     GPR_ASSERT(config_->lrs_load_reporting_server() ==

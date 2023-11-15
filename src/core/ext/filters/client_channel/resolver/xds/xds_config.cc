@@ -26,13 +26,6 @@
 
 namespace grpc_core {
 
-namespace {
-
-// Maximum depth of aggregate cluster tree.
-constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
-
-}  // namespace
-
 //
 // XdsDependencyManager::ListenerWatcher
 //
