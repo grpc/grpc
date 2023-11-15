@@ -69,6 +69,12 @@ class WaitSet final {
     return ret;
   }
 
+  void WakeupAsync() {
+    while (!pending_.empty()) {
+      pending_.extract(pending_.begin()).value().WakeupAsync();
+    }
+  }
+
  private:
   // Handles to activities that need to be awoken.
   WakerSet pending_;
