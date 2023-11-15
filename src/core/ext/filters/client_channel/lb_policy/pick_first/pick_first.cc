@@ -14,10 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -28,19 +31,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#include "absl/algorithm/container.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/health_check_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -66,6 +56,13 @@
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "absl/algorithm/container.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -786,7 +783,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
         // cancel the timer and start connecting on the next subchannel.
         if (Index() == subchannel_list_->attempting_index_) {
           if (subchannel_list_->timer_handle_.has_value()) {
-            p->channel_control_helper()->GetEventEngine()->Cancel(
+            (void)p->channel_control_helper()->GetEventEngine()->Cancel(
                 *subchannel_list_->timer_handle_);
           }
           ++subchannel_list_->attempting_index_;
@@ -989,7 +986,7 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
   PickFirst* p = subchannel_list_->policy_.get();
   // Cancel Happy Eyeballs timer, if any.
   if (subchannel_list_->timer_handle_.has_value()) {
-    p->channel_control_helper()->GetEventEngine()->Cancel(
+    (void)p->channel_control_helper()->GetEventEngine()->Cancel(
         *subchannel_list_->timer_handle_);
   }
   // If we get here, there are two possible cases:
@@ -1112,7 +1109,8 @@ void PickFirst::SubchannelList::Orphan() {
     sd.ShutdownLocked();
   }
   if (timer_handle_.has_value()) {
-    policy_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+    (void)policy_->channel_control_helper()->GetEventEngine()->Cancel(
+        *timer_handle_);
   }
   Unref();
 }

@@ -14,10 +14,18 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
@@ -32,29 +40,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#include "absl/base/attributes.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/hash/hash.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/strings/cord.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -107,6 +92,18 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/base/attributes.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -807,11 +804,11 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
     if (t->keepalive_ping_timeout_handle != TaskHandle::kInvalid) {
-      t->event_engine->Cancel(std::exchange(t->keepalive_ping_timeout_handle,
-                                            TaskHandle::kInvalid));
+      (void)t->event_engine->Cancel(std::exchange(
+          t->keepalive_ping_timeout_handle, TaskHandle::kInvalid));
     }
     if (t->settings_ack_watchdog != TaskHandle::kInvalid) {
-      t->event_engine->Cancel(
+      (void)t->event_engine->Cancel(
           std::exchange(t->settings_ack_watchdog, TaskHandle::kInvalid));
     }
     if (t->delayed_ping_timer_handle != TaskHandle::kInvalid &&
@@ -2861,7 +2858,7 @@ static void read_action_locked(
               "%s[%p]: Clear keepalive timer because data was received",
               t->is_client ? "CLIENT" : "SERVER", t.get());
     }
-    t->event_engine->Cancel(
+    (void)t->event_engine->Cancel(
         std::exchange(t->keepalive_ping_timeout_handle, TaskHandle::kInvalid));
   }
   grpc_error_handle err = error;

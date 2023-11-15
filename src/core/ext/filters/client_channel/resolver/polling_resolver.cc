@@ -14,23 +14,16 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <functional>
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/strip.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -41,6 +34,10 @@
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_core {
 
@@ -137,7 +134,7 @@ void PollingResolver::MaybeCancelNextResolutionTimer() {
       gpr_log(GPR_INFO, "[polling resolver %p] cancel re-resolution timer",
               this);
     }
-    channel_args_.GetObject<EventEngine>()->Cancel(
+    (void)channel_args_.GetObject<EventEngine>()->Cancel(
         *next_resolution_timer_handle_);
     next_resolution_timer_handle_.reset();
   }

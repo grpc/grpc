@@ -294,7 +294,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     MutexLock lock(&on_resolved_mu_);
     orphaned_ = true;
     if (timeout_handle_.has_value()) {
-      resolver_->event_engine_->Cancel(*timeout_handle_);
+      (void)resolver_->event_engine_->Cancel(*timeout_handle_);
       timeout_handle_.reset();
     }
     // Even if cancellation fails here, OnResolvedLocked will return early, and

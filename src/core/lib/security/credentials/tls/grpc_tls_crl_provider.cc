@@ -159,7 +159,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
 
 DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
   if (refresh_handle_.has_value()) {
-    event_engine_->Cancel(refresh_handle_.value());
+    (void)event_engine_->Cancel(refresh_handle_.value());
   }
 }
 

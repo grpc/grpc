@@ -14,8 +14,10 @@
 // limitations under the License.
 //
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,21 +32,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/lb_policy/endpoint_list.h"
@@ -77,6 +64,16 @@
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 namespace grpc_core {
 
@@ -541,7 +538,8 @@ void OldWeightedRoundRobin::Picker::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] cancelling timer", wrr_.get(), this);
   }
-  wrr_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+  (void)wrr_->channel_control_helper()->GetEventEngine()->Cancel(
+      *timer_handle_);
   timer_handle_.reset();
 }
 
@@ -1374,7 +1372,8 @@ void WeightedRoundRobin::Picker::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] cancelling timer", wrr_.get(), this);
   }
-  wrr_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+  (void)wrr_->channel_control_helper()->GetEventEngine()->Cancel(
+      *timer_handle_);
   timer_handle_.reset();
   wrr_.reset();
 }

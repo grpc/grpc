@@ -16,23 +16,18 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/handshaker.h"
-
-#include <inttypes.h>
-
-#include <string>
-#include <utility>
-
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <inttypes.h>
+
+#include <string>
+#include <utility>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -40,6 +35,8 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 
@@ -134,7 +131,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
-    event_engine_->Cancel(deadline_timer_handle_);
+    (void)event_engine_->Cancel(deadline_timer_handle_);
     ExecCtx::Run(DEBUG_LOCATION, &on_handshake_done_, error);
     is_shutdown_ = true;
   } else {

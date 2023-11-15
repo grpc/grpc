@@ -443,7 +443,7 @@ void XdsClusterManagerLb::ClusterChild::Orphan() {
   // the child.
   picker_.reset();
   if (delayed_removal_timer_handle_.has_value()) {
-    xds_cluster_manager_policy_->channel_control_helper()
+    (void)xds_cluster_manager_policy_->channel_control_helper()
         ->GetEventEngine()
         ->Cancel(*delayed_removal_timer_handle_);
   }

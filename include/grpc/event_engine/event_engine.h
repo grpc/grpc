@@ -14,19 +14,18 @@
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
-#include <grpc/support/port_platform.h>
-
-#include <functional>
-#include <vector>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+
+#include <vector>
+
+#include "absl/base/attributes.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 // TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
@@ -460,7 +459,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// cancelled, and this method will return true. The associated
   /// absl::AnyInvocable or \a Closure* will not be called. If the closure type
   /// was an absl::AnyInvocable, it will be destroyed before the method returns.
-  virtual bool Cancel(TaskHandle handle) = 0;
+  virtual ABSL_MUST_USE_RESULT bool Cancel(TaskHandle handle) = 0;
 };
 
 /// Replace gRPC's default EventEngine factory.

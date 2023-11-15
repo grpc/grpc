@@ -502,7 +502,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
               weighted_child_->weighted_target_policy_.get(),
               weighted_child_.get(), weighted_child_->name_.c_str());
     }
-    weighted_child_->weighted_target_policy_->channel_control_helper()
+    (void)weighted_child_->weighted_target_policy_->channel_control_helper()
         ->GetEventEngine()
         ->Cancel(*timer_handle_);
   }

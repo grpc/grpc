@@ -49,16 +49,24 @@
 /// \see https://github.com/grpc/grpc/blob/master/doc/load-balancing.md for the
 /// high level design and details.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 // IWYU pragma: no_include <sys/socket.h>
 
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -70,27 +78,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#include "absl/container/inlined_vector.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-#include "upb/upb.hpp"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
@@ -142,6 +129,16 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "upb/upb.hpp"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -491,7 +488,7 @@ class GrpcLb : public LoadBalancingPolicy {
                 "entering fallback mode",
                 parent_.get(), status.ToString().c_str());
         parent_->fallback_at_startup_checks_pending_ = false;
-        parent_->channel_control_helper()->GetEventEngine()->Cancel(
+        (void)parent_->channel_control_helper()->GetEventEngine()->Cancel(
             *parent_->lb_fallback_timer_handle_);
         parent_->fallback_mode_ = true;
         parent_->CreateOrUpdateChildPolicyLocked();
@@ -1229,8 +1226,10 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
           }
           if (grpclb_policy()->fallback_at_startup_checks_pending_) {
             grpclb_policy()->fallback_at_startup_checks_pending_ = false;
-            grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
-                *grpclb_policy()->lb_fallback_timer_handle_);
+            (void)grpclb_policy()
+                ->channel_control_helper()
+                ->GetEventEngine()
+                ->Cancel(*grpclb_policy()->lb_fallback_timer_handle_);
             grpclb_policy()->CancelBalancerChannelConnectivityWatchLocked();
           }
           // Update the serverlist in the GrpcLb instance. This serverlist
@@ -1248,8 +1247,10 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
                   grpclb_policy());
           if (grpclb_policy()->fallback_at_startup_checks_pending_) {
             grpclb_policy()->fallback_at_startup_checks_pending_ = false;
-            grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
-                *grpclb_policy()->lb_fallback_timer_handle_);
+            (void)grpclb_policy()
+                ->channel_control_helper()
+                ->GetEventEngine()
+                ->Cancel(*grpclb_policy()->lb_fallback_timer_handle_);
             grpclb_policy()->CancelBalancerChannelConnectivityWatchLocked();
           }
           grpclb_policy()->fallback_mode_ = true;
@@ -1316,7 +1317,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
               "serverlist; entering fallback mode",
               grpclb_policy());
       grpclb_policy()->fallback_at_startup_checks_pending_ = false;
-      grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
+      (void)grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
           *grpclb_policy()->lb_fallback_timer_handle_);
       grpclb_policy()->CancelBalancerChannelConnectivityWatchLocked();
       grpclb_policy()->fallback_mode_ = true;
@@ -1454,18 +1455,18 @@ void GrpcLb::ShutdownLocked() {
   shutting_down_ = true;
   lb_calld_.reset();
   if (subchannel_cache_timer_handle_.has_value()) {
-    channel_control_helper()->GetEventEngine()->Cancel(
+    (void)channel_control_helper()->GetEventEngine()->Cancel(
         *subchannel_cache_timer_handle_);
     subchannel_cache_timer_handle_.reset();
   }
   cached_subchannels_.clear();
   if (lb_call_retry_timer_handle_.has_value()) {
-    channel_control_helper()->GetEventEngine()->Cancel(
+    (void)channel_control_helper()->GetEventEngine()->Cancel(
         *lb_call_retry_timer_handle_);
   }
   if (fallback_at_startup_checks_pending_) {
     fallback_at_startup_checks_pending_ = false;
-    channel_control_helper()->GetEventEngine()->Cancel(
+    (void)channel_control_helper()->GetEventEngine()->Cancel(
         *lb_fallback_timer_handle_);
     CancelBalancerChannelConnectivityWatchLocked();
   }

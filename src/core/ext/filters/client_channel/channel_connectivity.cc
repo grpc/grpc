@@ -14,19 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
-#include <inttypes.h>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/types/optional.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <inttypes.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -45,6 +39,9 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/lame_client.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
 
 namespace grpc_core {
 namespace {
@@ -188,7 +185,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     {
       MutexLock lock(&self->mu_);
       if (self->timer_handle_.has_value()) {
-        self->channel_->channel_stack()->EventEngine()->Cancel(
+        (void)self->channel_->channel_stack()->EventEngine()->Cancel(
             *self->timer_handle_);
       }
     }

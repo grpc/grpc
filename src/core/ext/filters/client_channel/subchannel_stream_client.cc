@@ -96,7 +96,7 @@ void SubchannelStreamClient::Orphan() {
     event_handler_.reset();
     call_state_.reset();
     if (retry_timer_handle_.has_value()) {
-      event_engine_->Cancel(*retry_timer_handle_);
+      (void)event_engine_->Cancel(*retry_timer_handle_);
       retry_timer_handle_.reset();
     }
   }
