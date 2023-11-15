@@ -16,13 +16,14 @@
 
 #include "src/core/lib/gprpp/directory_reader.h"
 
+#include <algorithm>
 #include <string>
 #include <vector>
-#include <algorithm>
 
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
 #include "test/core/util/test_config.h"
 
 static constexpr absl::string_view kCrlDirectory =
