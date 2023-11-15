@@ -16,13 +16,13 @@
  *
  */
 
-#import "GRPCCall.h"
+#import <GRPCClient/GRPCCall.h>
 
-#import "GRPCCall+Interceptor.h"
-#import "GRPCCallOptions.h"
-#import "GRPCInterceptor.h"
+#import <GRPCClient/GRPCCall+Interceptor.h>
+#import <GRPCClient/GRPCCallOptions.h>
+#import <GRPCClient/GRPCInterceptor.h>
 
-#import "GRPCTransport.h"
+#import <GRPCClient/GRPCTransport.h>
 #import "private/GRPCTransport+Private.h"
 
 /**

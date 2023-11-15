@@ -18,7 +18,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRXWriter.h"
+#import <RxLibrary/GRXWriter.h>
 
 /**
  * Utility to construct GRXWriter instances from values that are immediately available when

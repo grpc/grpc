@@ -16,14 +16,14 @@
  *
  */
 
-#import "ProtoService.h"
+#import <ProtoRPC/ProtoService.h>
 
 #import <GRPCClient/GRPCCall.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter.h>
 
-#import "ProtoMethod.h"
-#import "ProtoRPC.h"
+#import <ProtoRPC/ProtoMethod.h>
+#import <ProtoRPC/ProtoRPC.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-implementations"

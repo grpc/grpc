@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRPCCall+ChannelCredentials.h"
+#import <GRPCClient/GRPCCall+ChannelCredentials.h>
 
 #import "private/GRPCCore/GRPCHost.h"
 

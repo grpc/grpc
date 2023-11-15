@@ -18,7 +18,7 @@
 
 #import <objc/runtime.h>
 
-#import "GRPCCall+OAuth2.h"
+#import <GRPCClient/GRPCCall+OAuth2.h>
 
 static NSString *const kAuthorizationHeader = @"authorization";
 static NSString *const kBearerPrefix = @"Bearer ";

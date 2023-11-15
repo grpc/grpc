@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRPCCall+ChannelArg.h"
+#import <GRPCClient/GRPCCall+ChannelArg.h>
 
 #import "private/GRPCCore/GRPCChannelPool.h"
 #import "private/GRPCCore/GRPCHost.h"
