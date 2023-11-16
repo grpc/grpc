@@ -46,8 +46,6 @@
 #include <netinet/in.h>  // IWYU pragma: keep
 #include <sys/socket.h>  // IWYU pragma: keep
 #include <unistd.h>      // IWYU pragma: keep
-
-#include "absl/strings/str_cat.h"
 #endif
 
 namespace grpc_event_engine {
