@@ -98,7 +98,7 @@ class InprocClientTransport final : public Transport, public ClientTransport {
              call_handler](ClientMetadataHandle md) {
               auto call_initiator = server_transport->AcceptCall(*md);
               if (!call_initiator.ok()) return call_initiator.status();
-              ForwardCall(std::move(call_handler), std::move(*call_initiator),
+              ForwardCall(call_handler, std::move(*call_initiator),
                           std::move(md));
               return absl::OkStatus();
             },
@@ -144,8 +144,7 @@ RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
           std::string(error.message()).c_str());
   intptr_t integer;
   grpc_status_code status = GRPC_STATUS_INTERNAL;
-  if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
-                         &integer)) {
+  if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {
     status = static_cast<grpc_status_code>(integer);
   }
   return RefCountedPtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(

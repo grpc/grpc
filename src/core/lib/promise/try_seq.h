@@ -26,6 +26,8 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/seq_state.h"
