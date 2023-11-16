@@ -467,6 +467,7 @@ bool PrivateGenerator::PrintStub(
           out->Print(
               method_dict,
               "response_deserializer=$ResponseModuleAndClass$.FromString,\n");
+          out->Print("registered_method=True,\n");
           out->Print(")\n");
         }
       }
@@ -657,7 +658,7 @@ bool PrivateGenerator::PrintServiceClass(
           out->Print("options, channel_credentials,\n");
           out->Print(
               "insecure, call_credentials, compression, wait_for_ready, "
-              "timeout, metadata)\n");
+              "timeout, metadata, registered_method=True)\n");
         }
       }
     }

@@ -689,9 +689,10 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        registered_method: Optional[bool] = False,
     ) -> grpc.UnaryUnaryMultiCallable:
         thunk = lambda m: self._channel.unary_unary(
-            m, request_serializer, response_deserializer
+            m, request_serializer, response_deserializer, registered_method
         )
         if isinstance(self._interceptor, grpc.UnaryUnaryClientInterceptor):
             return _UnaryUnaryMultiCallable(thunk, method, self._interceptor)
@@ -703,9 +704,10 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        registered_method: Optional[bool] = False,
     ) -> grpc.UnaryStreamMultiCallable:
         thunk = lambda m: self._channel.unary_stream(
-            m, request_serializer, response_deserializer
+            m, request_serializer, response_deserializer, registered_method
         )
         if isinstance(self._interceptor, grpc.UnaryStreamClientInterceptor):
             return _UnaryStreamMultiCallable(thunk, method, self._interceptor)
@@ -717,9 +719,10 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        registered_method: Optional[bool] = False,
     ) -> grpc.StreamUnaryMultiCallable:
         thunk = lambda m: self._channel.stream_unary(
-            m, request_serializer, response_deserializer
+            m, request_serializer, response_deserializer, registered_method
         )
         if isinstance(self._interceptor, grpc.StreamUnaryClientInterceptor):
             return _StreamUnaryMultiCallable(thunk, method, self._interceptor)
@@ -731,9 +734,10 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        registered_method: Optional[bool] = False,
     ) -> grpc.StreamStreamMultiCallable:
         thunk = lambda m: self._channel.stream_stream(
-            m, request_serializer, response_deserializer
+            m, request_serializer, response_deserializer, registered_method
         )
         if isinstance(self._interceptor, grpc.StreamStreamClientInterceptor):
             return _StreamStreamMultiCallable(thunk, method, self._interceptor)

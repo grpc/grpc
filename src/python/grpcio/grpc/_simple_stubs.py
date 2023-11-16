@@ -219,6 +219,7 @@ def unary_unary(
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
     metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
+    registered_method: Optional[bool] = False,
 ) -> ResponseType:
     """Invokes a unary-unary RPC without an explicitly specified channel.
 
@@ -268,6 +269,7 @@ def unary_unary(
         unset, defaults to 60 seconds. Supply a value of None to indicate that
         no timeout should be enforced.
       metadata: Optional metadata to send to the server.
+      registered_method: Whether this RPC is made for a registered method.
 
     Returns:
       The response to the RPC.
@@ -276,7 +278,7 @@ def unary_unary(
         target, options, channel_credentials, insecure, compression
     )
     multicallable = channel.unary_unary(
-        method, request_serializer, response_deserializer
+        method, request_serializer, response_deserializer, registered_method
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
@@ -303,6 +305,7 @@ def unary_stream(
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
     metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
+    registered_method: Optional[bool] = False,
 ) -> Iterator[ResponseType]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
 
@@ -351,6 +354,7 @@ def unary_stream(
         unset, defaults to 60 seconds. Supply a value of None to indicate that
         no timeout should be enforced.
       metadata: Optional metadata to send to the server.
+      registered_method: Whether this RPC is made for a registered method.
 
     Returns:
       An iterator of responses.
@@ -359,7 +363,7 @@ def unary_stream(
         target, options, channel_credentials, insecure, compression
     )
     multicallable = channel.unary_stream(
-        method, request_serializer, response_deserializer
+        method, request_serializer, response_deserializer, registered_method
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
@@ -386,6 +390,7 @@ def stream_unary(
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
     metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
+    registered_method: Optional[bool] = False,
 ) -> ResponseType:
     """Invokes a stream-unary RPC without an explicitly specified channel.
 
@@ -434,6 +439,7 @@ def stream_unary(
         unset, defaults to 60 seconds. Supply a value of None to indicate that
         no timeout should be enforced.
       metadata: Optional metadata to send to the server.
+      registered_method: Whether this RPC is made for a registered method.
 
     Returns:
       The response to the RPC.
@@ -442,7 +448,7 @@ def stream_unary(
         target, options, channel_credentials, insecure, compression
     )
     multicallable = channel.stream_unary(
-        method, request_serializer, response_deserializer
+        method, request_serializer, response_deserializer, registered_method
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
@@ -469,6 +475,7 @@ def stream_stream(
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
     metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
+    registered_method: Optional[bool] = False,
 ) -> Iterator[ResponseType]:
     """Invokes a stream-stream RPC without an explicitly specified channel.
 
@@ -517,6 +524,7 @@ def stream_stream(
         unset, defaults to 60 seconds. Supply a value of None to indicate that
         no timeout should be enforced.
       metadata: Optional metadata to send to the server.
+      registered_method: Whether this RPC is made for a registered method.
 
     Returns:
       An iterator of responses.
@@ -525,7 +533,7 @@ def stream_stream(
         target, options, channel_credentials, insecure, compression
     )
     multicallable = channel.stream_stream(
-        method, request_serializer, response_deserializer
+        method, request_serializer, response_deserializer, registered_method
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
