@@ -62,7 +62,7 @@
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/proto/grpc/health/v1/health.upb.h"
+#include "third_party/grpc_proto/grpc/health/v1/health.upb.h"
 
 namespace grpc_core {
 

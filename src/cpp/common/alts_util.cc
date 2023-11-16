@@ -32,7 +32,7 @@
 #include <grpcpp/support/string_ref.h>
 
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
-#include "src/proto/grpc/gcp/altscontext.upb.h"
+#include "third_party/grpc_proto/grpc/gcp/altscontext.upb.h"
 
 namespace grpc {
 namespace experimental {

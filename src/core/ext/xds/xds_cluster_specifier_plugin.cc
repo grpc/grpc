@@ -35,8 +35,8 @@
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
-#include "src/proto/grpc/lookup/v1/rls_config.upb.h"
-#include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
+#include "third_party/grpc_proto/grpc/lookup/v1/rls_config.upb.h"
+#include "third_party/grpc_proto/grpc/lookup/v1/rls_config.upbdefs.h"
 
 namespace grpc_core {
 

@@ -25,7 +25,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/tsi/transport_security_interface.h"
-#include "src/proto/grpc/gcp/handshaker.upb.h"
+#include "third_party/grpc_proto/grpc/gcp/handshaker.upb.h"
 
 ///
 /// This method converts grpc_status_code code to the corresponding tsi_result

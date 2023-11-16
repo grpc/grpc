@@ -33,7 +33,7 @@
 #include <grpcpp/impl/server_callback_handlers.h>
 #include <grpcpp/support/slice.h>
 
-#include "src/proto/grpc/health/v1/health.upb.h"
+#include "third_party/grpc_proto/grpc/health/v1/health.upb.h"
 
 #define MAX_SERVICE_NAME_LENGTH 200
 

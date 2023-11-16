@@ -101,7 +101,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/proto/grpc/lookup/v1/rls.upb.h"
+#include "third_party/grpc_proto/grpc/lookup/v1/rls.upb.h"
 
 namespace grpc_core {
 

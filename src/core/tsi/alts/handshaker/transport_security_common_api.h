@@ -27,7 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/proto/grpc/gcp/transport_security_common.upb.h"
+#include "third_party/grpc_proto/grpc/gcp/transport_security_common.upb.h"
 
 // C struct coresponding to protobuf message RpcProtocolVersions.Version
 typedef struct _grpc_gcp_RpcProtocolVersions_Version {

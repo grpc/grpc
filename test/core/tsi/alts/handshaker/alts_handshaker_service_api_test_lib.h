@@ -20,7 +20,7 @@
 #define GRPC_TEST_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_SERVICE_API_TEST_LIB_H
 
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
-#include "src/proto/grpc/gcp/handshaker.upb.h"
+#include "third_party/grpc_proto/grpc/gcp/handshaker.upb.h"
 
 ///
 /// The first part of this file contains function signatures for de-serializing
