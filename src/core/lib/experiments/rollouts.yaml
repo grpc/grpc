@@ -22,6 +22,10 @@
 #              - debug   - the experiment defaults to on in debug builds,
 #                          off in release builds in all platforms.
 #              - true    - the experiment defaults to on in all platforms.
+# requires:    A list of names of experiments that this experiment depends on.
+#              Defaults to the empty list.
+#              If any of the experiments in the required list is determined to
+#              be disabled at runtime, this experiment is disabled at runtime.
 #
 # [OR] the default can be platform specific:
 #  -----------------------------------------
@@ -101,9 +105,11 @@
 - name: ping_on_rst_stream
   default: true
 - name: promise_based_client_call
-  default: false
+  default: true
+- name: promise_based_inproc_transport
+  default: true
 - name: promise_based_server_call
-  default: false
+  default: true
 - name: red_max_concurrent_streams
   default: false
 - name: registered_method_lookup_in_transport

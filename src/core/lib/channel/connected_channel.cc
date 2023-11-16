@@ -865,15 +865,17 @@ grpc_channel_filter MakeConnectedFilter() {
       sizeof(channel_data),
       connected_channel_init_channel_elem,
       +[](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
+        auto* const filter_stack_transport =
+            static_cast<channel_data*>(elem->channel_data)
+                ->transport->filter_stack_transport();
+        if (filter_stack_transport == nullptr) return;
         // HACK(ctiller): increase call stack size for the channel to make
         // space for channel data. We need a cleaner (but performant) way to
         // do this, and I'm not sure what that is yet. This is only "safe"
         // because call stacks place no additional data after the last call
         // element, and the last call element MUST be the connected channel.
         channel_stack->call_stack_size +=
-            static_cast<channel_data*>(elem->channel_data)
-                ->transport->filter_stack_transport()
-                ->SizeOfStream();
+            filter_stack_transport->SizeOfStream();
       },
       connected_channel_destroy_channel_elem,
       connected_channel_get_channel_info,
@@ -883,7 +885,7 @@ grpc_channel_filter MakeConnectedFilter() {
 
 ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
     Transport* transport, CallArgs call_args, NextPromiseFactory) {
-  return transport->client_transport()->MakeCallPromise(std::move(call_args));
+  Crash("not implemented");
 }
 
 const grpc_channel_filter kPromiseBasedTransportFilter =

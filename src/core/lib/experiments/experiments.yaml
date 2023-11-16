@@ -22,6 +22,10 @@
 # allow_in_fuzzing_config: optional boolean (true if not specified)
 #              if false, this experiment will not be included in fuzzers that
 #              explore the config space
+# requires:    A list of names of experiments that this experiment depends on.
+#              Defaults to the empty list.
+#              If any of the experiments in the required list is determined to
+#              be disabled at runtime, this experiment is disabled at runtime.
 #
 # Well known test tags:
 #   core_end2end_test:   all tests, fixtures in the core end2end suite
@@ -59,12 +63,14 @@
   expiry: 2024/03/03
   owner: ctiller@google.com
   test_tags: ["cpp_end2end_test", "flow_control_test"]
+  requires: [combiner_offload_to_event_engine]
 - name: chttp2_offload_on_rst_stream
   description:
     Offload work on RST_STREAM.
   expiry: 2024/03/03
   owner: ctiller@google.com
   test_tags: ["cpp_end2end_test", "flow_control_test"]
+  requires: [combiner_offload_to_event_engine]
 - name: client_idleness
   description: If enabled, client channel idleness is enabled by default.
   expiry: 2023/12/15
@@ -202,6 +208,7 @@
   expiry: 2024/06/06
   owner: ctiller@google.com
   test_tags: []
+  requires: [promise_based_client_call, promise_based_server_call]
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
 - name: promise_based_server_call
   description:
@@ -210,6 +217,7 @@
   expiry: 2024/06/14
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
+  requires: [lazier_stream_updates]
 - name: red_max_concurrent_streams
   description:
     Perform random early rejection of requests that would exceed a newly reduced
@@ -331,6 +339,7 @@
   expiry: 2024/03/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+  requires: [write_size_policy]
 - name: write_size_policy
   description:
     Try to size writes such that they don't create too large of a backlog
