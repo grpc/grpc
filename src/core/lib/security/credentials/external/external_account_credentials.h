@@ -101,7 +101,7 @@ class ExternalAccountCredentials
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) = 0;
 
-  virtual std::string CredentialSourceType();
+  virtual absl::string_view CredentialSourceType();
 
   std::string MetricsHeaderValue();
 

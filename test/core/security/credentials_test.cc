@@ -2131,8 +2131,8 @@ void validate_external_account_creds_token_exchage_request(
   GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
   GPR_ASSERT(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].value,
+  GPR_ASSERT(strcmp(request->hdrs[2].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[2].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
 
@@ -2159,8 +2159,8 @@ void validate_external_account_creds_token_exchage_request_with_url_encode(
   GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
   GPR_ASSERT(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].value,
+  GPR_ASSERT(strcmp(request->hdrs[2].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[2].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
 
@@ -2315,11 +2315,11 @@ void validate_aws_external_account_creds_token_exchage_request(
   GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
   GPR_ASSERT(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].value,
+  GPR_ASSERT(strcmp(request->hdrs[1].key, "x-goog-api-client") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[1].value, "gl-cpp/unknown auth/36.0.0 google-byoid-sdk source/aws sa-impersonation/false config-lifetime/false") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[2].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[2].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[2].key, "x-goog-api-client") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[2].value, "gl-cpp/unknown auth/36.0.0 google-byoid-sdk source/aws sa-impersonation/false config-lifetime/false") == 0);
 }
 
 int aws_external_account_creds_httpcli_get_success(
@@ -2420,9 +2420,11 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeader) {
   };
   TestExternalAccountCredentials creds(options, {});
 
-  GPR_ASSERT(strcmp(creds.GetMetricsValue().c_str(),
-    absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown sa-impersonation/false config-lifetime/false",
-      grpc_version_string()).c_str()) == 0);
+  EXPECT_EQ(
+      creds.GetMetricsValue(),
+      absl::StrFormat( "gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
+                      "sa-impersonation/false config-lifetime/false",
+                      grpc_version_string()));
 }
 
 TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithServiceAccountImpersonation) {
@@ -2446,9 +2448,11 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithServiceAccountImp
   };
   TestExternalAccountCredentials creds(options, {});
 
-  GPR_ASSERT(strcmp(creds.GetMetricsValue().c_str(),
-    absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown sa-impersonation/true config-lifetime/false",
-      grpc_version_string()).c_str()) == 0);
+  EXPECT_EQ(
+      creds.GetMetricsValue(),
+      absl::StrFormat( "gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
+                      "sa-impersonation/true config-lifetime/false",
+                      grpc_version_string()));
 }
 
 TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
@@ -2472,9 +2476,11 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
   };
   TestExternalAccountCredentials creds(options, {});
 
-  GPR_ASSERT(strcmp(creds.GetMetricsValue().c_str(),
-    absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown sa-impersonation/true config-lifetime/true",
-      grpc_version_string()).c_str()) == 0);
+  EXPECT_EQ(
+      creds.GetMetricsValue(),
+      absl::StrFormat( "gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
+                      "sa-impersonation/true config-lifetime/true",
+                      grpc_version_string()));
 }
 
 TEST(CredentialsTest, TestExternalAccountCredsSuccess) {

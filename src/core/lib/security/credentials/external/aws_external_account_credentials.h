@@ -72,7 +72,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
 
   void AddMetadataRequestHeaders(grpc_http_request* request);
 
-  std::string CredentialSourceType() override;
+  absl::string_view CredentialSourceType() override;
 
   std::string audience_;
   OrphanablePtr<HttpRequest> http_request_;

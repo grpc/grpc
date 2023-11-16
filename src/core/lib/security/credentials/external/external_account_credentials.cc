@@ -274,15 +274,15 @@ std::string ExternalAccountCredentials::debug_string() {
 }
 
 std::string ExternalAccountCredentials::MetricsHeaderValue() {
-  return absl::StrFormat("gl-cpp/%s auth/%s google-byoid-sdk source/%s sa-impersonation/%v config-lifetime/%v",
-      "unknown",
+  return absl::StrFormat("gl-cpp/unknown"
+      " auth/%s google-byoid-sdk source/%s sa-impersonation/%v config-lifetime/%v",
       grpc_version_string(),
       CredentialSourceType(),
       !options_.service_account_impersonation_url.empty(),
       options_.service_account_impersonation.token_lifetime_seconds != IMPERSONATED_CRED_DEFAULT_LIFETIME_IN_SECONDS);
 }
 
-std::string ExternalAccountCredentials::CredentialSourceType() {
+absl::string_view ExternalAccountCredentials::CredentialSourceType() {
   return "unknown";
 }
 
@@ -333,32 +333,24 @@ void ExternalAccountCredentials::ExchangeToken(
   }
   grpc_http_request request;
   memset(&request, 0, sizeof(grpc_http_request));
-  grpc_http_header* headers = nullptr;
-  if (!options_.client_id.empty() && !options_.client_secret.empty()) {
-    request.hdr_count = 3;
-    headers = static_cast<grpc_http_header*>(
-        gpr_malloc(sizeof(grpc_http_header) * request.hdr_count));
-    headers[0].key = gpr_strdup("Content-Type");
-    headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
+  const bool add_authorization_header =
+      !options_.client_id.empty() && !options_.client_secret.empty();
+  request.hdr_count = add_authorization_header ? 3 : 2;
+  auto* headers = static_cast<grpc_http_header*>(
+      gpr_malloc(sizeof(grpc_http_header) * request.hdr_count));
+  headers[0].key = gpr_strdup("Content-Type");
+  headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
+  headers[1].key = gpr_strdup("x-goog-api-client");
+  headers[1].value = gpr_strdup(MetricsHeaderValue().c_str());
+  if (add_authorization_header) {
     std::string raw_cred =
         absl::StrFormat("%s:%s", options_.client_id, options_.client_secret);
     char* encoded_cred =
         grpc_base64_encode(raw_cred.c_str(), raw_cred.length(), 0, 0);
-    std::string str = absl::StrFormat("Basic %s", std::string(encoded_cred));
-    headers[1].key = gpr_strdup("Authorization");
-    headers[1].value = gpr_strdup(str.c_str());
-    gpr_free(encoded_cred);
-    headers[2].key = gpr_strdup("x-goog-api-client");
-    headers[2].value = gpr_strdup(MetricsHeaderValue().c_str());
-  } else {
-    request.hdr_count = 2;
-    headers = static_cast<grpc_http_header*>(
-        gpr_malloc(sizeof(grpc_http_header) * request.hdr_count));
-    headers[0].key = gpr_strdup("Content-Type");
-    headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
-    headers[1].key = gpr_strdup("x-goog-api-client");
-    headers[1].value = gpr_strdup(MetricsHeaderValue().c_str());
-  }
+  std::string str = absl::StrFormat("Basic %s", std::string(encoded_cred));
+  headers[2].key = gpr_strdup("Authorization");
+  headers[2].value = gpr_strdup(str.c_str());
+}
   request.hdrs = headers;
   std::vector<std::string> body_parts;
   body_parts.push_back(

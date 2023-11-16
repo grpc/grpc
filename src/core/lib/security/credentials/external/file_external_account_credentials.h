@@ -44,7 +44,7 @@ class FileExternalAccountCredentials final : public ExternalAccountCredentials {
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) override;
 
-  std::string CredentialSourceType() override;
+  absl::string_view CredentialSourceType() override;
 
   // Fields of credential source
   std::string file_;

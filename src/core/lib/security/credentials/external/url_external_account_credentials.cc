@@ -242,7 +242,7 @@ void UrlExternalAccountCredentials::FinishRetrieveSubjectToken(
   }
 }
 
-std::string UrlExternalAccountCredentials::CredentialSourceType(){
+absl::string_view UrlExternalAccountCredentials::CredentialSourceType(){
   return "url";
 }
 
