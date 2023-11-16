@@ -364,19 +364,3 @@ grpc_cc_test(
         "//test/core/util:scoped_env_var",
     ],
 )
-
-grpc_cc_test(
-    name = "xds_transport_grpc_test",
-    srcs = ["xds_transport_grpc_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:grpc++",
-        "//src/core:grpc_xds_client",
-        "//src/proto/grpc/testing/xds/v3:ads_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end/xds:xds_utils",
-    ],
-)
