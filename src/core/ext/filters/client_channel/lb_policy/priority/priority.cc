@@ -537,7 +537,7 @@ void PriorityLb::ChildPriority::DeactivationTimer::Orphan() {
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    child_priority_->priority_policy_->channel_control_helper()
+    (void)child_priority_->priority_policy_->channel_control_helper()
         ->GetEventEngine()
         ->Cancel(*timer_handle_);
     timer_handle_.reset();
@@ -598,7 +598,7 @@ void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    child_priority_->priority_policy_->channel_control_helper()
+    (void)child_priority_->priority_policy_->channel_control_helper()
         ->GetEventEngine()
         ->Cancel(*timer_handle_);
     timer_handle_.reset();

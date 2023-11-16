@@ -77,7 +77,7 @@ void SendMessage(EventEngine::Endpoint* endpoint, int message_id) {
   buf.Append(Slice::FromCopiedString(
       absl::StrFormat("Waiting for message %d ... \n", message_id)));
   grpc_core::Notification write_done;
-  endpoint->Write(
+  (void)endpoint->Write(
       [&](absl::Status status) {
         GPR_ASSERT(status.ok());
         write_done.Notify();
@@ -89,7 +89,7 @@ void SendMessage(EventEngine::Endpoint* endpoint, int message_id) {
 void ReceiveAndEchoMessage(EventEngine::Endpoint* endpoint, int message_id) {
   SliceBuffer buf;
   grpc_core::Notification read_done;
-  endpoint->Read(
+  (void)endpoint->Read(
       [&](absl::Status status) {
         if (!status.ok()) {
           gpr_log(GPR_ERROR, "Error reading from endpoint: %s",

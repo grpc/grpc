@@ -1275,8 +1275,10 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
                   grpclb_policy());
           if (grpclb_policy()->fallback_at_startup_checks_pending_) {
             grpclb_policy()->fallback_at_startup_checks_pending_ = false;
-            grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
-                *grpclb_policy()->lb_fallback_timer_handle_);
+            (void)grpclb_policy()
+                ->channel_control_helper()
+                ->GetEventEngine()
+                ->Cancel(*grpclb_policy()->lb_fallback_timer_handle_);
             grpclb_policy()->CancelBalancerChannelConnectivityWatchLocked();
           }
           grpclb_policy()->fallback_mode_ = true;
