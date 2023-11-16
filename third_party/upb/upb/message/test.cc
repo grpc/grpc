@@ -1,44 +1,38 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
+#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include "google/protobuf/test_messages_proto3.upb.h"
+#include "upb/base/status.hpp"
+#include "upb/base/string_view.h"
 #include "upb/json/decode.h"
 #include "upb/json/encode.h"
+#include "upb/mem/arena.h"
+#include "upb/mem/arena.hpp"
+#include "upb/message/message.h"
 #include "upb/message/test.upb.h"
+#include "upb/message/test.upb_minitable.h"
 #include "upb/message/test.upbdefs.h"
+#include "upb/message/value.h"
+#include "upb/mini_table/extension_registry.h"
+#include "upb/mini_table/message.h"
+#include "upb/reflection/def.h"
 #include "upb/reflection/def.hpp"
+#include "upb/reflection/message.h"
 #include "upb/test/fuzz_util.h"
-#include "upb/upb.hpp"
 #include "upb/wire/decode.h"
+#include "upb/wire/encode.h"
 
 // begin:google_only
 // #include "testing/fuzzing/fuzztest.h"
@@ -319,7 +313,7 @@ TEST(MessageTest, DecodeRequiredFieldsTopLevelMessage) {
   // Fails, because required fields are missing.
   EXPECT_EQ(
       kUpb_DecodeStatus_MissingRequired,
-      upb_Decode(nullptr, 0, test_msg, &upb_test_TestRequiredFields_msg_init,
+      upb_Decode(nullptr, 0, test_msg, &upb_0test__TestRequiredFields_msg_init,
                  nullptr, kUpb_DecodeOption_CheckRequired, arena.ptr()));
 
   upb_test_TestRequiredFields_set_required_int32(test_msg, 1);
@@ -333,7 +327,7 @@ TEST(MessageTest, DecodeRequiredFieldsTopLevelMessage) {
   // payload is not empty.
   EXPECT_EQ(kUpb_DecodeStatus_MissingRequired,
             upb_Decode(serialized, size, test_msg,
-                       &upb_test_TestRequiredFields_msg_init, nullptr,
+                       &upb_0test__TestRequiredFields_msg_init, nullptr,
                        kUpb_DecodeOption_CheckRequired, arena.ptr()));
 
   empty_msg = upb_test_EmptyMessage_new(arena.ptr());
@@ -344,7 +338,7 @@ TEST(MessageTest, DecodeRequiredFieldsTopLevelMessage) {
   // Succeeds, because required fields are present (though not in the input).
   EXPECT_EQ(
       kUpb_DecodeStatus_Ok,
-      upb_Decode(nullptr, 0, test_msg, &upb_test_TestRequiredFields_msg_init,
+      upb_Decode(nullptr, 0, test_msg, &upb_0test__TestRequiredFields_msg_init,
                  nullptr, kUpb_DecodeOption_CheckRequired, arena.ptr()));
 
   // Serialize a complete payload.
@@ -363,7 +357,7 @@ TEST(MessageTest, DecodeRequiredFieldsTopLevelMessage) {
       test_msg2, upb_test_TestRequiredFields_new(arena.ptr()));
   EXPECT_EQ(kUpb_DecodeStatus_Ok,
             upb_Decode(serialized, size, test_msg2,
-                       &upb_test_TestRequiredFields_msg_init, nullptr,
+                       &upb_0test__TestRequiredFields_msg_init, nullptr,
                        kUpb_DecodeOption_CheckRequired, arena.ptr()));
 }
 

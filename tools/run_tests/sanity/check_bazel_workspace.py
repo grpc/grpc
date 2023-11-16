@@ -47,7 +47,6 @@ _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME = (
 _TWISTED_CONSTANTLY_DEP_NAME = "com_github_twisted_constantly"
 
 _GRPC_DEP_NAMES = [
-    "upb",
     "boringssl",
     "zlib",
     "com_google_protobuf",
@@ -84,7 +83,6 @@ _GRPC_DEP_NAMES = [
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
-    "upb",  # third_party/upb is checked in locally
     "rules_cc",
     "com_google_absl",
     "com_google_fuzztest",

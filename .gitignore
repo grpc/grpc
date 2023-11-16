@@ -17,7 +17,7 @@ cython_debug/
 dist/
 htmlcov/
 py3*/
-python_build/
+pyb/
 python_pylint_venv/
 src/python/grpcio_*/=*
 src/python/grpcio_*/build/
