@@ -414,17 +414,19 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
             config->address().c_str());
     auto uri = URI::Parse(config->address());
     args.config.reset();
-    args.addresses = EndpointAddressesList();
+    EndpointAddressesList addresses;
     if (uri.ok()) {
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*uri, &address));
-      args.addresses->emplace_back(address, ChannelArgs());
+      addresses.emplace_back(address, ChannelArgs());
     } else {
       gpr_log(GPR_ERROR,
               "%s: could not parse URI (%s), using empty address list",
               kFixedAddressLbPolicyName, uri.status().ToString().c_str());
       args.resolution_note = "no address in fixed_address_lb policy";
     }
+    args.addresses =
+        std::make_shared<EndpointAddressesListIterator>(std::move(addresses));
     return ForwardingLoadBalancingPolicy::UpdateLocked(std::move(args));
   }
 
