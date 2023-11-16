@@ -138,7 +138,7 @@ void JsonWriter::EscapeUtf16(uint16_t utf16) {
   OutputChar(hex[(utf16 >> 12) & 0x0f]);
   OutputChar(hex[(utf16 >> 8) & 0x0f]);
   OutputChar(hex[(utf16 >> 4) & 0x0f]);
-  OutputChar(hex[(utf16) & 0x0f]);
+  OutputChar(hex[(utf16)&0x0f]);
 }
 
 void JsonWriter::EscapeString(const std::string& string) {

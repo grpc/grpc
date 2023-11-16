@@ -31,7 +31,7 @@ size_t OsaDistance(absl::string_view s1, absl::string_view s2) {
   const auto height = s2.size() + 1;
   std::vector<size_t> matrix(width * height,
                              std::numeric_limits<size_t>::max());
-#define MATRIX_CELL(x, y) matrix[(y) * width + (x)]
+#define MATRIX_CELL(x, y) matrix[(y)*width + (x)]
 
   MATRIX_CELL(0, 0) = 0;
   for (size_t i = 1; i <= s1.size(); ++i) {

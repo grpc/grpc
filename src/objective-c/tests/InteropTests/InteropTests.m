@@ -851,7 +851,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call setResponseDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)];
     [call start];
   }
-  while (completedCallCount < kNumRpcs && [waitUntil timeIntervalSinceNow] > 0) {
+  while (completedCallCount<kNumRpcs && [waitUntil timeIntervalSinceNow]> 0) {
     [cv waitUntilDate:waitUntil];
   }
   [cv unlock];

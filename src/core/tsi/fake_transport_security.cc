@@ -121,7 +121,7 @@ static void store32_little_endian(uint32_t value, unsigned char* buf) {
   buf[3] = static_cast<unsigned char>((value >> 24) & 0xFF);
   buf[2] = static_cast<unsigned char>((value >> 16) & 0xFF);
   buf[1] = static_cast<unsigned char>((value >> 8) & 0xFF);
-  buf[0] = static_cast<unsigned char>((value) & 0xFF);
+  buf[0] = static_cast<unsigned char>((value)&0xFF);
 }
 
 static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
