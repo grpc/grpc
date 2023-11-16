@@ -2316,7 +2316,11 @@ void validate_aws_external_account_creds_token_exchage_request(
   GPR_ASSERT(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
   GPR_ASSERT(strcmp(request->hdrs[1].key, "x-goog-api-client") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].value, "gl-cpp/unknown auth/36.0.0 google-byoid-sdk source/aws sa-impersonation/false config-lifetime/false") == 0);
+  EXPECT_EQ(
+      request->hdrs[1].value,
+      absl::StrFormat( "gl-cpp/unknown auth/%s google-byoid-sdk source/aws "
+                      "sa-impersonation/false config-lifetime/false",
+                      grpc_version_string()));
   GPR_ASSERT(strcmp(request->hdrs[2].key, "Authorization") == 0);
   GPR_ASSERT(strcmp(request->hdrs[2].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
