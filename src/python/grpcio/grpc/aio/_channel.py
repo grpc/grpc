@@ -483,6 +483,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        registered_method: Optional[bool] = False,
     ) -> UnaryUnaryMultiCallable:
         return UnaryUnaryMultiCallable(
             self._channel,
@@ -499,6 +500,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        registered_method: Optional[bool] = False,
     ) -> UnaryStreamMultiCallable:
         return UnaryStreamMultiCallable(
             self._channel,
@@ -515,6 +517,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        registered_method: Optional[bool] = False,
     ) -> StreamUnaryMultiCallable:
         return StreamUnaryMultiCallable(
             self._channel,
@@ -531,6 +534,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        registered_method: Optional[bool] = False,
     ) -> StreamStreamMultiCallable:
         return StreamStreamMultiCallable(
             self._channel,
