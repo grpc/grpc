@@ -149,21 +149,24 @@ class Fuzzer {
 
     void OnResourceChanged(
         std::shared_ptr<const typename ResourceType::ResourceType> resource,
-        RefCountedPtr<XdsApi::ReadDelayHandle> /* read_delay_handle */)
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
       gpr_log(GPR_INFO, "==> OnResourceChanged(%s %s): %s",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str(), resource->ToString().c_str());
     }
 
-    void OnError(absl::Status status) override {
+    void OnError(
+        absl::Status status,
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
+        override {
       gpr_log(GPR_INFO, "==> OnError(%s %s): %s",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str(), status.ToString().c_str());
     }
 
     void OnResourceDoesNotExist(
-        RefCountedPtr<XdsApi::ReadDelayHandle> /* read_delay_handle */)
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
       gpr_log(GPR_INFO, "==> OnResourceDoesNotExist(%s %s)",
               std::string(ResourceType::Get()->type_url()).c_str(),
