@@ -445,9 +445,9 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     gpr_log(GPR_INFO, "[PF %p] Shutting down previous subchannel list %p", this,
             subchannel_list_.get());
   }
-  subchannel_list_ = MakeOrphanable<SubchannelList>(
-      Ref(DEBUG_LOCATION, "SubchannelList"), addresses,
-      latest_update_args_.args);
+  subchannel_list_ =
+      MakeOrphanable<SubchannelList>(Ref(DEBUG_LOCATION, "SubchannelList"),
+                                     addresses, latest_update_args_.args);
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE and request re-resolution.  Also unset the
   // current selected subchannel.
