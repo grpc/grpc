@@ -32,7 +32,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"

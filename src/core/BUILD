@@ -4141,6 +4141,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4668,6 +4669,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
     ],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4690,6 +4692,7 @@ grpc_cc_library(
         "no_destruct",
         "pollset_set",
         "ref_counted_string",
+        "resolved_address",
         "validation_errors",
         "//:channel_arg_names",
         "//:config",
@@ -4838,6 +4841,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/address_filtering.h",
     ],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -4846,6 +4850,7 @@ grpc_cc_library(
         "channel_args",
         "ref_counted",
         "ref_counted_string",
+        "resolved_address",
         "//:endpoint_addresses",
         "//:gpr_platform",
         "//:ref_counted_ptr",
@@ -4915,6 +4920,7 @@ grpc_cc_library(
         "lb_policy",
         "subchannel_interface",
         "//:debug_location",
+        "//:endpoint_addresses",
         "//:gpr",
         "//:grpc_base",
         "//:ref_counted_ptr",
@@ -4932,7 +4938,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/endpoint_list.h",
     ],
     external_deps = [
-        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
@@ -5326,6 +5332,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

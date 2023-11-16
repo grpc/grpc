@@ -23,7 +23,10 @@
 
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
+
+#include "absl/functional/function_ref.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -63,6 +66,9 @@ class EndpointAddresses {
 
   bool operator==(const EndpointAddresses& other) const {
     return Cmp(other) == 0;
+  }
+  bool operator!=(const EndpointAddresses& other) const {
+    return Cmp(other) != 0;
   }
   bool operator<(const EndpointAddresses& other) const {
     return Cmp(other) < 0;
@@ -109,6 +115,48 @@ class EndpointAddressSet {
 
  private:
   std::set<grpc_resolved_address, ResolvedAddressLessThan> addresses_;
+};
+
+// An iterator interface for endpoints.
+class EndpointAddressesIterator {
+ public:
+  virtual ~EndpointAddressesIterator() = default;
+
+  // Invokes callback once for each endpoint.
+  virtual void ForEach(
+      absl::FunctionRef<void(const EndpointAddresses&)> callback) const = 0;
+};
+
+// Iterator over a fixed list of endpoints.
+class EndpointAddressesListIterator : public EndpointAddressesIterator {
+ public:
+  explicit EndpointAddressesListIterator(EndpointAddressesList endpoints)
+      : endpoints_(std::move(endpoints)) {}
+
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+      const override {
+    for (const auto& endpoint : endpoints_) {
+      callback(endpoint);
+    }
+  }
+
+ private:
+  EndpointAddressesList endpoints_;
+};
+
+// Iterator that returns only a single endpoint.
+class SingleEndpointIterator : public EndpointAddressesIterator {
+ public:
+  explicit SingleEndpointIterator(EndpointAddresses endpoint)
+      : endpoint_(std::move(endpoint)) {}
+
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+      const override {
+    callback(endpoint_);
+  }
+
+ private:
+  EndpointAddresses endpoint_;
 };
 
 }  // namespace grpc_core
