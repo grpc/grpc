@@ -186,8 +186,8 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
     }
     sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
     return absl::FailedPreconditionError(
-        absl::StrCat("Error in bind for address '%s': ", *sockaddr_str,
-                     std::strerror(errno)));
+        absl::StrCat("Error in bind for address '", *sockaddr_str,
+                     "': ", std::strerror(errno)));
   }
 
   if (listen(fd, GetMaxAcceptQueueSize()) < 0) {
