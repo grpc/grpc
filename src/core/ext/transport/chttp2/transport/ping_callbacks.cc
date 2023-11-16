@@ -12,20 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include <utility>
 
 #include "absl/meta/type_traits.h"
 #include "absl/random/distributions.h"
-
-#include <grpc/support/log.h>
+#include "third_party/grpc/src/core/lib/gprpp/time.h"
 
 grpc_core::TraceFlag grpc_ping_trace(false, "http2_ping");
 
 namespace grpc_core {
+
+namespace {
+using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
+using ::grpc_event_engine::experimental::EventEngine;
+}  // namespace
 
 void Chttp2PingCallbacks::OnPing(Callback on_start, Callback on_ack) {
   on_start_.emplace_back(std::move(on_start));
@@ -62,13 +68,11 @@ uint64_t Chttp2PingCallbacks::StartPing(absl::BitGenRef bitgen) {
   return id;
 }
 
-bool Chttp2PingCallbacks::AckPing(
-    uint64_t id, grpc_event_engine::experimental::EventEngine* event_engine) {
+bool Chttp2PingCallbacks::AckPing(uint64_t id, EventEngine* event_engine) {
   auto ping = inflight_.extract(id);
   if (ping.empty()) return false;
-  if (ping.mapped().on_timeout !=
-      grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
-    event_engine->Cancel(ping.mapped().on_timeout);
+  if (ping.mapped().on_timeout != TaskHandle::kInvalid) {
+    (void)event_engine->Cancel(ping.mapped().on_timeout);
   }
   for (auto& cb : ping.mapped().on_ack) {
     cb();
@@ -76,26 +80,21 @@ bool Chttp2PingCallbacks::AckPing(
   return true;
 }
 
-void Chttp2PingCallbacks::CancelAll(
-    grpc_event_engine::experimental::EventEngine* event_engine) {
+void Chttp2PingCallbacks::CancelAll(EventEngine* event_engine) {
   CallbackVec().swap(on_start_);
   CallbackVec().swap(on_ack_);
   for (auto& cbs : inflight_) {
     CallbackVec().swap(cbs.second.on_ack);
-    if (cbs.second.on_timeout !=
-        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
-      event_engine->Cancel(std::exchange(
-          cbs.second.on_timeout,
-          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
+    if (cbs.second.on_timeout != TaskHandle::kInvalid) {
+      (void)event_engine->Cancel(std::exchange(
+          cbs.second.on_timeout, EventEngine::TaskHandle::kInvalid));
     }
   }
   ping_requested_ = false;
 }
 
 absl::optional<uint64_t> Chttp2PingCallbacks::OnPingTimeout(
-    Duration ping_timeout,
-    grpc_event_engine::experimental::EventEngine* event_engine,
-    Callback callback) {
+    Duration ping_timeout, EventEngine* event_engine, Callback callback) {
   GPR_ASSERT(started_new_ping_without_setting_timeout_);
   started_new_ping_without_setting_timeout_ = false;
   auto it = inflight_.find(most_recent_inflight_);

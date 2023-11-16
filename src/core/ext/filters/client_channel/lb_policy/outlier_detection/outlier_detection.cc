@@ -14,10 +14,12 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -31,18 +33,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h"
@@ -72,6 +62,13 @@
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
 
 namespace grpc_core {
 
@@ -877,7 +874,8 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
 
 void OutlierDetectionLb::EjectionTimer::Orphan() {
   if (timer_handle_.has_value()) {
-    parent_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+    (void)parent_->channel_control_helper()->GetEventEngine()->Cancel(
+        *timer_handle_);
     timer_handle_.reset();
   }
   Unref();

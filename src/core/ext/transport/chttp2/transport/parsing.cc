@@ -16,8 +16,11 @@
 //
 //
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <string.h>
 
@@ -27,20 +30,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-
-#include "absl/base/attributes.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
@@ -75,6 +64,14 @@
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/base/attributes.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
 
 using grpc_core::HPackParser;
 
@@ -888,13 +885,13 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
         t, nullptr);
     if (t->settings_ack_watchdog !=
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
-      t->event_engine->Cancel(std::exchange(
+      (void)t->event_engine->Cancel(std::exchange(
           t->settings_ack_watchdog,
           grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
     }
     t->sent_local_settings = false;
     // This is more streams than can be started in http2, so setting this
-    // effictively removes the limit for the rest of the connection.
+    // effectively removes the limit for the rest of the connection.
     t->num_incoming_streams_before_settings_ack =
         std::numeric_limits<uint32_t>::max();
   }

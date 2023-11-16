@@ -436,7 +436,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::
   {
     MutexLock lock(&self->connection_->mu_);
     if (self->timer_handle_.has_value()) {
-      self->connection_->event_engine_->Cancel(*self->timer_handle_);
+      (void)self->connection_->event_engine_->Cancel(*self->timer_handle_);
       self->timer_handle_.reset();
     }
   }
@@ -645,7 +645,7 @@ void Chttp2ServerListener::ActiveConnection::OnClose(
     }
     // Cancel the drain_grace_timer_ if needed.
     if (self->drain_grace_timer_handle_.has_value()) {
-      self->event_engine_->Cancel(*self->drain_grace_timer_handle_);
+      (void)self->event_engine_->Cancel(*self->drain_grace_timer_handle_);
       self->drain_grace_timer_handle_.reset();
     }
   }
