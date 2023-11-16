@@ -1,27 +1,9 @@
-// Copyright (c) 2009-2021, Google LLC
-// All rights reserved.
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of Google LLC nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 // Tests for upb_table.
 
@@ -32,13 +14,13 @@
 #include <map>
 #include <set>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+#include "absl/container/flat_hash_map.h"
 #include "upb/hash/int_table.h"
 #include "upb/hash/str_table.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -141,7 +123,7 @@ TEST_P(IntTableTest, TestIntTable) {
   upb_inttable_init(&t, arena.ptr());
   uint32_t largest_key = 0;
   std::map<uint32_t, uint32_t> m;
-  std::unordered_map<uint32_t, uint32_t> hm;
+  absl::flat_hash_map<uint32_t, uint32_t> hm;
   for (const auto& key : keys_) {
     largest_key = UPB_MAX((int32_t)largest_key, key);
     upb_value val = upb_value_uint32(key * 2);
@@ -235,15 +217,15 @@ TEST(Table, Delete) {
   upb_inttable_insert(&t, 2, upb_value_bool(true), arena.ptr());
   upb_inttable_insert(&t, 4, upb_value_bool(true), arena.ptr());
   upb_inttable_compact(&t, arena.ptr());
-  upb_inttable_remove(&t, 0, NULL);
-  upb_inttable_remove(&t, 2, NULL);
-  upb_inttable_remove(&t, 4, NULL);
+  upb_inttable_remove(&t, 0, nullptr);
+  upb_inttable_remove(&t, 2, nullptr);
+  upb_inttable_remove(&t, 4, nullptr);
 
   intptr_t iter = UPB_INTTABLE_BEGIN;
   uintptr_t key;
   upb_value val;
   while (upb_inttable_next(&t, &key, &val, &iter)) {
-    ASSERT_TRUE(false);
+    FAIL();
   }
 }
 

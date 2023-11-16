@@ -22,42 +22,57 @@ def grpc_deps():
 
     native.bind(
         name = "upb_lib",
-        actual = "@upb//:upb",
+        actual = "@com_google_protobuf//upb",
+    )
+
+    native.bind(
+        name = "upb_amalgamation_lib",
+        actual = "@com_google_protobuf//upb:amalgamation",
+    )
+
+    native.bind(
+        name = "upb_base_lib",
+        actual = "@com_google_protobuf//upb/base",
     )
 
     native.bind(
         name = "upb_collections_lib",
-        actual = "@upb//:collections",
+        actual = "@com_google_protobuf//upb/collections",
+    )
+
+    native.bind(
+        name = "upb_mem_lib",
+        actual = "@com_google_protobuf//upb/mem",
     )
 
     native.bind(
         name = "upb_reflection",
-        actual = "@upb//:reflection",
+        actual = "@com_google_protobuf//upb:reflection",
     )
 
     native.bind(
         name = "upb_lib_descriptor",
-        actual = "@upb//:descriptor_upb_proto",
+        actual = "@com_google_protobuf//upb:descriptor_upb_proto",
     )
 
     native.bind(
         name = "upb_lib_descriptor_reflection",
-        actual = "@upb//:descriptor_upb_proto_reflection",
+        actual = "@com_google_protobuf//upb:descriptor_upb_proto_reflection",
     )
 
     native.bind(
         name = "upb_textformat_lib",
-        actual = "@upb//:textformat",
+        actual = "@com_google_protobuf//upb/text",
     )
 
     native.bind(
         name = "upb_json_lib",
-        actual = "@upb//:json",
+        actual = "@com_google_protobuf//upb/json",
     )
 
     native.bind(
         name = "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-        actual = "@upb//:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+        actual = "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     )
 
     native.bind(
@@ -243,12 +258,12 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "660ce016f987550bc1ccec4a6ee4199afb871799b696227098e3641476a7d566",
-            strip_prefix = "protobuf-b2b7a51158418f41cff0520894836c15b1738721",
+            sha256 = "7ed5fc41fe1614e551025f8e14b79b026a015b3ed337d38920c586f3ea35d818",
+            strip_prefix = "protobuf-6b5d8db01fe47478e8d400f550e797e6230d464e",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v24.3
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b2b7a51158418f41cff0520894836c15b1738721.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/b2b7a51158418f41cff0520894836c15b1738721.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v25.0
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/6b5d8db01fe47478e8d400f550e797e6230d464e.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/6b5d8db01fe47478e8d400f550e797e6230d464e.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -377,18 +392,6 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-cpp/archive/5501a1a255805e0be83a41348bb5f2630d5ed6b3.tar.gz",
                 "https://github.com/census-instrumentation/opencensus-cpp/archive/5501a1a255805e0be83a41348bb5f2630d5ed6b3.tar.gz",
-            ],
-        )
-
-    if "upb" not in native.existing_rules():
-        http_archive(
-            name = "upb",
-            sha256 = "5147e0ab6a28421d1e49004f4a205d84f06b924585e15eaa884cfe13289165b7",
-            strip_prefix = "upb-42cd08932e364a4cde35033b73f15c30250d7c2e",
-            urls = [
-                # https://github.com/protocolbuffers/upb/commits/24.x
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/42cd08932e364a4cde35033b73f15c30250d7c2e.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/42cd08932e364a4cde35033b73f15c30250d7c2e.tar.gz",
             ],
         )
 

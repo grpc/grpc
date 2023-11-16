@@ -262,6 +262,7 @@ class Server::RealRequestMatcherFilterStack : public RequestMatcherInterface {
     for (LockedMultiProducerSingleConsumerQueue& queue : requests_per_cq_) {
       GPR_ASSERT(queue.Pop() == nullptr);
     }
+    GPR_ASSERT(pending_.empty());
   }
 
   void ZombifyPending() override {
@@ -301,6 +302,8 @@ class Server::RealRequestMatcherFilterStack : public RequestMatcherInterface {
           MutexLock lock(&server_->mu_call_);
           while (!pending_.empty() &&
                  pending_.front().Age() > server_->max_time_in_pending_queue_) {
+            pending_.front().calld->SetState(CallData::CallState::ZOMBIED);
+            pending_.front().calld->KillZombie();
             pending_.pop();
           }
           if (!pending_.empty()) {

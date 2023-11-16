@@ -172,7 +172,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
               too_soon.next_allowed_ping_interval.ToString().c_str(),
               too_soon.wait.ToString().c_str());
         }
-        if (!t->delayed_ping_timer_handle.has_value()) {
+        if (t->delayed_ping_timer_handle ==
+            grpc_event_engine::experimental::EventEngine::TaskHandle::
+                kInvalid) {
           t->delayed_ping_timer_handle = t->event_engine->RunAfter(
               too_soon.wait, [t = t->Ref()]() mutable {
                 grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;

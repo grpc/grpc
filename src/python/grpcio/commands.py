@@ -349,7 +349,7 @@ class Clean(setuptools.Command):
     ]
 
     _FILE_PATTERNS = (
-        "python_build",
+        "pyb",
         "src/python/grpcio/__pycache__/",
         "src/python/grpcio/grpc/_cython/cygrpc.cpp",
         "src/python/grpcio/grpc/_cython/*.so",
