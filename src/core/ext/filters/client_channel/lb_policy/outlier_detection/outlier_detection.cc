@@ -661,7 +661,7 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   if (args.addresses.ok()) {
     std::set<EndpointAddressSet> current_endpoints;
     std::set<grpc_resolved_address, ResolvedAddressLessThan> current_addresses;
-    for (const EndpointAddresses& endpoint : *args.addresses) {
+    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
       EndpointAddressSet key(endpoint.addresses());
       current_endpoints.emplace(key);
       for (const grpc_resolved_address& address : endpoint.addresses()) {
@@ -708,7 +708,7 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         }
         it->second->DisableEjection();
       }
-    }
+    });
     // Remove any entries we no longer need in the subchannel map.
     for (auto it = subchannel_state_map_.begin();
          it != subchannel_state_map_.end();) {
@@ -753,7 +753,6 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   update_args.addresses = std::move(args.addresses);
   update_args.resolution_note = std::move(args.resolution_note);
   update_args.config = config_->child_policy();
-  // Update the policy.
   update_args.args = std::move(args.args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,

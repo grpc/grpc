@@ -2941,6 +2941,7 @@ grpc_cc_library(
         "//src/core:lib/resolver/endpoint_addresses.h",
     ],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
