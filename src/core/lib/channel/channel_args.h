@@ -125,6 +125,16 @@ struct ChannelArgTypeTraits<
   };
 };
 
+// Define a check for shared_ptr supported types, which must extend
+// enable_shared_from_this.
+template <typename T>
+struct SupportedSharedPtrType
+    : std::integral_constant<
+          bool, std::is_base_of<std::enable_shared_from_this<T>, T>::value> {};
+template <>
+struct SupportedSharedPtrType<grpc_event_engine::experimental::EventEngine>
+    : std::true_type {};
+
 // Specialization for shared_ptr
 // Incurs an allocation because shared_ptr.release is not a thing.
 template <typename T>
@@ -132,6 +142,10 @@ struct is_shared_ptr : std::false_type {};
 template <typename T>
 struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
 template <typename T>
+// struct ChannelArgTypeTraits<
+//     T, absl::enable_if_t<is_shared_ptr<T>::value &&
+//     SupportedSharedPtrType<T>::value,
+//                          void>> {
 struct ChannelArgTypeTraits<T,
                             absl::enable_if_t<is_shared_ptr<T>::value, void>> {
   static void* TakeUnownedPointer(T* p) { return p; }
@@ -174,18 +188,12 @@ struct ChannelArgTypeTraits<T,
 };
 
 // GetObject support for shared_ptr and RefCountedPtr
-template <typename T>
-struct WrapInSharedPtr
-    : std::integral_constant<
-          bool, std::is_base_of<std::enable_shared_from_this<T>, T>::value> {};
-template <>
-struct WrapInSharedPtr<grpc_event_engine::experimental::EventEngine>
-    : std::true_type {};
 template <typename T, typename Ignored = void /* for SFINAE */>
 struct GetObjectImpl;
 // std::shared_ptr implementation
 template <typename T>
-struct GetObjectImpl<T, absl::enable_if_t<WrapInSharedPtr<T>::value, void>> {
+struct GetObjectImpl<
+    T, absl::enable_if_t<SupportedSharedPtrType<T>::value, void>> {
   using Result = T*;
   using ReffedResult = std::shared_ptr<T>;
   using StoredType = std::shared_ptr<T>*;
@@ -205,7 +213,8 @@ struct GetObjectImpl<T, absl::enable_if_t<WrapInSharedPtr<T>::value, void>> {
 };
 // RefCountedPtr
 template <typename T>
-struct GetObjectImpl<T, absl::enable_if_t<!WrapInSharedPtr<T>::value, void>> {
+struct GetObjectImpl<
+    T, absl::enable_if_t<!SupportedSharedPtrType<T>::value, void>> {
   using Result = T*;
   using ReffedResult = RefCountedPtr<T>;
   using StoredType = Result;
@@ -386,9 +395,10 @@ class ChannelArgs {
   }
   template <typename T>
   GRPC_MUST_USE_RESULT absl::enable_if_t<
-      std::is_same<
-          const grpc_arg_pointer_vtable*,
-          decltype(ChannelArgTypeTraits<std::shared_ptr<T>>::VTable())>::value,
+      std::is_same<const grpc_arg_pointer_vtable*,
+                   decltype(ChannelArgTypeTraits<
+                            std::shared_ptr<T>>::VTable())>::value &&
+          SupportedSharedPtrType<T>::value,
       ChannelArgs>
   Set(absl::string_view name, std::shared_ptr<T> value) const {
     auto* store_value = new std::shared_ptr<T>(value);
