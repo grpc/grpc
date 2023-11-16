@@ -10835,6 +10835,20 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: inter_activity_latch_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/wait_set.h
+  src:
+  - test/core/promise/inter_activity_latch_test.cc
+  deps:
+  - gtest
+  - grpc
+  uses_polling: false
 - name: inter_activity_pipe_test
   gtest: true
   build: test
@@ -12434,7 +12448,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/wait_set.h
   src:
   - test/core/promise/party_test.cc
   deps:

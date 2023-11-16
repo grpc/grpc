@@ -554,7 +554,8 @@ void RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
   GPR_ASSERT(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
-  update_args.addresses.emplace().emplace_back(ring_hash_->endpoints_[index_]);
+  update_args.addresses =
+      std::make_shared<SingleEndpointIterator>(ring_hash_->endpoints_[index_]);
   update_args.args = ring_hash_->args_;
   update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,
@@ -622,18 +623,14 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   // Check address list.
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-      gpr_log(GPR_INFO, "[RH %p] received update with %" PRIuPTR " addresses",
-              this, args.addresses->size());
+      gpr_log(GPR_INFO, "[RH %p] received update", this);
     }
     // De-dup endpoints, taking weight into account.
     endpoints_.clear();
-    endpoints_.reserve(args.addresses->size());
     std::map<EndpointAddressSet, size_t> endpoint_indices;
-    size_t num_skipped = 0;
-    for (size_t i = 0; i < args.addresses->size(); ++i) {
-      EndpointAddresses& endpoint = (*args.addresses)[i];
+    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
       const EndpointAddressSet key(endpoint.addresses());
-      auto p = endpoint_indices.emplace(key, i - num_skipped);
+      auto p = endpoint_indices.emplace(key, endpoints_.size());
       if (!p.second) {
         // Duplicate endpoint.  Combine weights and skip the dup.
         EndpointAddresses& prev_endpoint = endpoints_[p.first->second];
@@ -651,11 +648,10 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
             prev_endpoint.addresses(),
             prev_endpoint.args().Set(GRPC_ARG_ADDRESS_WEIGHT,
                                      weight_arg + prev_weight_arg));
-        ++num_skipped;
       } else {
-        endpoints_.push_back(std::move(endpoint));
+        endpoints_.push_back(endpoint);
       }
-    }
+    });
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
