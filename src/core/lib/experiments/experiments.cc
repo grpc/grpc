@@ -120,15 +120,18 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
-const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
-const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
 const uint8_t required_experiments_promise_based_server_call[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdLazierStreamUpdates)};
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const uint8_t required_experiments_promise_based_inproc_transport[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_red_max_concurrent_streams =
     "Perform random early rejection of requests that would exceed a newly "
     "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
@@ -281,14 +284,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"ping_on_rst_stream", description_ping_on_rst_stream,
      additional_constraints_ping_on_rst_stream, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call, nullptr, 0, false, true},
-    {"promise_based_inproc_transport",
-     description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
-     false},
+     additional_constraints_promise_based_client_call, nullptr, 0, true, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call,
-     required_experiments_promise_based_server_call, 1, false, true},
+     required_experiments_promise_based_server_call, 1, true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport,
+     required_experiments_promise_based_inproc_transport, 2, true, false},
     {"red_max_concurrent_streams", description_red_max_concurrent_streams,
      additional_constraints_red_max_concurrent_streams, nullptr, 0, false,
      true},
@@ -447,15 +450,18 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
-const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
-const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
 const uint8_t required_experiments_promise_based_server_call[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdLazierStreamUpdates)};
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const uint8_t required_experiments_promise_based_inproc_transport[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_red_max_concurrent_streams =
     "Perform random early rejection of requests that would exceed a newly "
     "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
@@ -608,14 +614,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"ping_on_rst_stream", description_ping_on_rst_stream,
      additional_constraints_ping_on_rst_stream, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call, nullptr, 0, false, true},
-    {"promise_based_inproc_transport",
-     description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
-     false},
+     additional_constraints_promise_based_client_call, nullptr, 0, true, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call,
-     required_experiments_promise_based_server_call, 1, false, true},
+     required_experiments_promise_based_server_call, 1, true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport,
+     required_experiments_promise_based_inproc_transport, 2, true, false},
     {"red_max_concurrent_streams", description_red_max_concurrent_streams,
      additional_constraints_red_max_concurrent_streams, nullptr, 0, false,
      true},
@@ -774,15 +780,18 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
-const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
-const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
 const uint8_t required_experiments_promise_based_server_call[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdLazierStreamUpdates)};
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const uint8_t required_experiments_promise_based_inproc_transport[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_red_max_concurrent_streams =
     "Perform random early rejection of requests that would exceed a newly "
     "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
@@ -935,14 +944,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"ping_on_rst_stream", description_ping_on_rst_stream,
      additional_constraints_ping_on_rst_stream, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call, nullptr, 0, false, true},
-    {"promise_based_inproc_transport",
-     description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
-     false},
+     additional_constraints_promise_based_client_call, nullptr, 0, true, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call,
-     required_experiments_promise_based_server_call, 1, false, true},
+     required_experiments_promise_based_server_call, 1, true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport,
+     required_experiments_promise_based_inproc_transport, 2, true, false},
     {"red_max_concurrent_streams", description_red_max_concurrent_streams,
      additional_constraints_red_max_concurrent_streams, nullptr, 0, false,
      true},
