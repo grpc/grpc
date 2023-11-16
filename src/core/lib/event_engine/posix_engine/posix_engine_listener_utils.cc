@@ -176,8 +176,15 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
       GRPC_FD_SERVER_LISTENER_USAGE, options));
 
   if (bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
+    auto sockaddr_str = ResolvedAddressToString(socket.addr);
+    if (!sockaddr_str.ok()) {
+      gpr_log(GPR_ERROR, "Could not convert sockaddr to string: %s",
+              sockaddr_str.status().ToString().c_str());
+      sockaddr_str = "<unparsable>";
+    }
     return absl::FailedPreconditionError(
-        absl::StrCat("Error in bind: ", std::strerror(errno)));
+        absl::StrCat("Error in bind for address '%s': ", sockaddr_str.value(),
+                     std::strerror(errno)));
   }
 
   if (listen(fd, GetMaxAcceptQueueSize()) < 0) {
