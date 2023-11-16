@@ -35,6 +35,7 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "upb/mem/arena.h"
+#include "xds_client.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -1044,6 +1045,8 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSent(bool ok) {
 
 void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
     absl::string_view payload) {
+  // Needs to be destroyed after the mutex is released.
+  RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle;
   {
     MutexLock lock(&xds_client()->mu_);
     if (!IsCurrentCallOnChannel()) {
@@ -1055,6 +1058,7 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
     absl::Status status = xds_client()->api_.ParseAdsResponse(payload, &parser);
     // This includes a handle that will trigger an ADS read.
     AdsResponseParser::Result result = parser.TakeResult();
+    read_delay_handle = std::move(result.read_delay_handle);
     if (!status.ok()) {
       // Ignore unparsable response.
       gpr_log(GPR_ERROR,
@@ -1124,7 +1128,7 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
                 resource_state.meta.client_status =
                     XdsApi::ResourceMetadata::DOES_NOT_EXIST;
                 xds_client()->NotifyWatchersOnResourceDoesNotExist(
-                    resource_state.watchers, result.read_delay_handle);
+                    resource_state.watchers, read_delay_handle);
               }
             }
           }
