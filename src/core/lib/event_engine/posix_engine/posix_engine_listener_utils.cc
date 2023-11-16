@@ -25,6 +25,8 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_replace.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -182,8 +184,9 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
               sockaddr_str.status().ToString().c_str());
       sockaddr_str = "<unparsable>";
     }
+    sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
     return absl::FailedPreconditionError(
-        absl::StrCat("Error in bind for address '%s': ", sockaddr_str.value(),
+        absl::StrCat("Error in bind for address '%s': ", *sockaddr_str,
                      std::strerror(errno)));
   }
 
