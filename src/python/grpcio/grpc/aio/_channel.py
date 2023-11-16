@@ -478,6 +478,7 @@ class Channel(_base_channel.Channel):
             await self.wait_for_state_change(state)
             state = self.get_state(try_to_connect=True)
 
+    # pylint: disable=arguments-differ,unused-argument
     def unary_unary(
         self,
         method: str,
@@ -495,6 +496,7 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
+    # pylint: disable=arguments-differ,unused-argument
     def unary_stream(
         self,
         method: str,
@@ -512,6 +514,7 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
+    # pylint: disable=arguments-differ,unused-argument
     def stream_unary(
         self,
         method: str,
@@ -529,6 +532,7 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
+    # pylint: disable=arguments-differ,unused-argument
     def stream_stream(
         self,
         method: str,
