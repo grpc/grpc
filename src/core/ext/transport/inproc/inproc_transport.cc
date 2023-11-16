@@ -18,6 +18,7 @@
 
 #include <atomic>
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
@@ -41,6 +42,9 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
     state_.compare_exchange_strong(expect, ConnectionState::kReady,
                                    std::memory_order_acq_rel,
                                    std::memory_order_acquire);
+    MutexLock lock(&state_tracker_mu_);
+    state_tracker_.SetState(GRPC_CHANNEL_READY, absl::OkStatus(),
+                            "accept function set");
   }
 
   void Orphan() override { Unref(); }
@@ -53,7 +57,17 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
   void SetPollsetSet(grpc_stream* stream,
                      grpc_pollset_set* pollset_set) override {}
   void PerformOp(grpc_transport_op* op) override {
-    Crash(absl::StrCat("unimplemented: ", grpc_transport_op_string(op)));
+    gpr_log(GPR_INFO, "inproc server op: %s",
+            grpc_transport_op_string(op).c_str());
+    if (op->start_connectivity_watch != nullptr) {
+      MutexLock lock(&state_tracker_mu_);
+      state_tracker_.AddWatcher(op->start_connectivity_watch_state,
+                                std::move(op->start_connectivity_watch));
+    }
+    if (op->stop_connectivity_watch != nullptr) {
+      MutexLock lock(&state_tracker_mu_);
+      state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
+    }
   }
   grpc_endpoint* GetEndpoint() override { return nullptr; }
 
@@ -61,6 +75,9 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
     if (disconnecting_.exchange(true, std::memory_order_relaxed)) return;
     disconnect_error_ = std::move(error);
     state_.store(ConnectionState::kDisconnected, std::memory_order_relaxed);
+    MutexLock lock(&state_tracker_mu_);
+    state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN, disconnect_error_,
+                            "inproc transport disconnected");
   }
 
   absl::StatusOr<CallInitiator> AcceptCall(ClientMetadata& md) {
@@ -84,7 +101,8 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
   AcceptFunction accept_;
   absl::Status disconnect_error_;
   Mutex state_tracker_mu_;
-  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_tracker_mu_);
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_tracker_mu_){
+      "inproc_server_transport", GRPC_CHANNEL_CONNECTING};
 };
 
 class InprocClientTransport final : public Transport, public ClientTransport {
@@ -182,6 +200,8 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                                          const grpc_channel_args* args,
                                          void* reserved) {
+  grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   if (!grpc_core::UsePromiseBasedTransport()) {
     return grpc_legacy_inproc_channel_create(server, args, reserved);
   }
