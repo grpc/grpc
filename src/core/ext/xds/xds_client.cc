@@ -617,7 +617,7 @@ void XdsClient::ChannelState::RetryableCall<T>::Orphan() {
   shutting_down_ = true;
   calld_.reset();
   if (timer_handle_.has_value()) {
-    chand()->xds_client()->engine()->Cancel(*timer_handle_);
+    (void)chand()->xds_client()->engine()->Cancel(*timer_handle_);
     timer_handle_.reset();
   }
   this->Unref(DEBUG_LOCATION, "RetryableCall+orphaned");

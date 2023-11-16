@@ -876,7 +876,8 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
 
 void OutlierDetectionLb::EjectionTimer::Orphan() {
   if (timer_handle_.has_value()) {
-    parent_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+    (void)parent_->channel_control_helper()->GetEventEngine()->Cancel(
+        *timer_handle_);
     timer_handle_.reset();
   }
   Unref();

@@ -210,7 +210,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   TaskHandle RunAfter(Duration when, Closure* closure) override;
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
-  bool Cancel(TaskHandle handle) override;
+  bool ABSL_MUST_USE_RESULT Cancel(TaskHandle handle) override;
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   // The posix EventEngine returned by this method would have a shared ownership

@@ -134,7 +134,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
-    event_engine_->Cancel(deadline_timer_handle_);
+    (void)event_engine_->Cancel(deadline_timer_handle_);
     ExecCtx::Run(DEBUG_LOCATION, &on_handshake_done_, error);
     is_shutdown_ = true;
   } else {

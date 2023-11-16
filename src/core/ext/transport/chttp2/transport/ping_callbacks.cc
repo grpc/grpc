@@ -68,7 +68,7 @@ bool Chttp2PingCallbacks::AckPing(
   if (ping.empty()) return false;
   if (ping.mapped().on_timeout !=
       grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
-    event_engine->Cancel(ping.mapped().on_timeout);
+    (void)event_engine->Cancel(ping.mapped().on_timeout);
   }
   for (auto& cb : ping.mapped().on_ack) {
     cb();
@@ -84,7 +84,7 @@ void Chttp2PingCallbacks::CancelAll(
     CallbackVec().swap(cbs.second.on_ack);
     if (cbs.second.on_timeout !=
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
-      event_engine->Cancel(std::exchange(
+      (void)event_engine->Cancel(std::exchange(
           cbs.second.on_timeout,
           grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
     }

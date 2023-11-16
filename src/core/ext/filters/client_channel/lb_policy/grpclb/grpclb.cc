@@ -494,7 +494,7 @@ class GrpcLb : public LoadBalancingPolicy {
                 "entering fallback mode",
                 parent_.get(), status.ToString().c_str());
         parent_->fallback_at_startup_checks_pending_ = false;
-        parent_->channel_control_helper()->GetEventEngine()->Cancel(
+        (void)parent_->channel_control_helper()->GetEventEngine()->Cancel(
             *parent_->lb_fallback_timer_handle_);
         parent_->fallback_mode_ = true;
         parent_->CreateOrUpdateChildPolicyLocked();
@@ -1254,8 +1254,10 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
           }
           if (grpclb_policy()->fallback_at_startup_checks_pending_) {
             grpclb_policy()->fallback_at_startup_checks_pending_ = false;
-            grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
-                *grpclb_policy()->lb_fallback_timer_handle_);
+            (void)grpclb_policy()
+                ->channel_control_helper()
+                ->GetEventEngine()
+                ->Cancel(*grpclb_policy()->lb_fallback_timer_handle_);
             grpclb_policy()->CancelBalancerChannelConnectivityWatchLocked();
           }
           // Update the serverlist in the GrpcLb instance. This serverlist
@@ -1341,7 +1343,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
               "serverlist; entering fallback mode",
               grpclb_policy());
       grpclb_policy()->fallback_at_startup_checks_pending_ = false;
-      grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
+      (void)grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
           *grpclb_policy()->lb_fallback_timer_handle_);
       grpclb_policy()->CancelBalancerChannelConnectivityWatchLocked();
       grpclb_policy()->fallback_mode_ = true;
@@ -1479,18 +1481,18 @@ void GrpcLb::ShutdownLocked() {
   shutting_down_ = true;
   lb_calld_.reset();
   if (subchannel_cache_timer_handle_.has_value()) {
-    channel_control_helper()->GetEventEngine()->Cancel(
+    (void)channel_control_helper()->GetEventEngine()->Cancel(
         *subchannel_cache_timer_handle_);
     subchannel_cache_timer_handle_.reset();
   }
   cached_subchannels_.clear();
   if (lb_call_retry_timer_handle_.has_value()) {
-    channel_control_helper()->GetEventEngine()->Cancel(
+    (void)channel_control_helper()->GetEventEngine()->Cancel(
         *lb_call_retry_timer_handle_);
   }
   if (fallback_at_startup_checks_pending_) {
     fallback_at_startup_checks_pending_ = false;
-    channel_control_helper()->GetEventEngine()->Cancel(
+    (void)channel_control_helper()->GetEventEngine()->Cancel(
         *lb_fallback_timer_handle_);
     CancelBalancerChannelConnectivityWatchLocked();
   }

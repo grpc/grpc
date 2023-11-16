@@ -213,7 +213,7 @@ void AresResolver::Orphan() {
     grpc_core::MutexLock lock(&mutex_);
     shutting_down_ = true;
     if (ares_backup_poll_alarm_handle_.has_value()) {
-      event_engine_->Cancel(*ares_backup_poll_alarm_handle_);
+      (void)event_engine_->Cancel(*ares_backup_poll_alarm_handle_);
       ares_backup_poll_alarm_handle_.reset();
     }
     for (const auto& fd_node : fd_node_list_) {

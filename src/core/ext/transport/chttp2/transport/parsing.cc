@@ -888,7 +888,7 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
         t, nullptr);
     if (t->settings_ack_watchdog !=
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
-      t->event_engine->Cancel(std::exchange(
+      (void)t->event_engine->Cancel(std::exchange(
           t->settings_ack_watchdog,
           grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
     }

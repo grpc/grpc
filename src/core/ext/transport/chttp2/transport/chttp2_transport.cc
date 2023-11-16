@@ -807,11 +807,11 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
     if (t->keepalive_ping_timeout_handle != TaskHandle::kInvalid) {
-      t->event_engine->Cancel(std::exchange(t->keepalive_ping_timeout_handle,
-                                            TaskHandle::kInvalid));
+      (void)t->event_engine->Cancel(std::exchange(
+          t->keepalive_ping_timeout_handle, TaskHandle::kInvalid));
     }
     if (t->settings_ack_watchdog != TaskHandle::kInvalid) {
-      t->event_engine->Cancel(
+      (void)t->event_engine->Cancel(
           std::exchange(t->settings_ack_watchdog, TaskHandle::kInvalid));
     }
     if (t->delayed_ping_timer_handle != TaskHandle::kInvalid &&
@@ -2861,7 +2861,7 @@ static void read_action_locked(
               "%s[%p]: Clear keepalive timer because data was received",
               t->is_client ? "CLIENT" : "SERVER", t.get());
     }
-    t->event_engine->Cancel(
+    (void)t->event_engine->Cancel(
         std::exchange(t->keepalive_ping_timeout_handle, TaskHandle::kInvalid));
   }
   grpc_error_handle err = error;

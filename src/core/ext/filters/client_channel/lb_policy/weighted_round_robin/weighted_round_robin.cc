@@ -540,7 +540,8 @@ void OldWeightedRoundRobin::Picker::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] cancelling timer", wrr_.get(), this);
   }
-  wrr_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+  (void)wrr_->channel_control_helper()->GetEventEngine()->Cancel(
+      *timer_handle_);
   timer_handle_.reset();
 }
 
@@ -1374,7 +1375,8 @@ void WeightedRoundRobin::Picker::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] cancelling timer", wrr_.get(), this);
   }
-  wrr_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+  (void)wrr_->channel_control_helper()->GetEventEngine()->Cancel(
+      *timer_handle_);
   timer_handle_.reset();
   wrr_.reset();
 }

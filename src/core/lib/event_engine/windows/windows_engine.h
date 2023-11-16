@@ -95,7 +95,7 @@ class WindowsEventEngine : public EventEngine,
   TaskHandle RunAfter(Duration when, Closure* closure) override;
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
-  bool Cancel(TaskHandle handle) override;
+  bool ABSL_MUST_USE_RESULT Cancel(TaskHandle handle) override;
 
   // Retrieve the base ThreadPool.
   // This is public because most classes that know the concrete

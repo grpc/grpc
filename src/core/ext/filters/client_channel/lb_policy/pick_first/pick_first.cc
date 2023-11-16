@@ -787,7 +787,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
         // cancel the timer and start connecting on the next subchannel.
         if (index_ == subchannel_list_->attempting_index_) {
           if (subchannel_list_->timer_handle_.has_value()) {
-            p->channel_control_helper()->GetEventEngine()->Cancel(
+            (void)p->channel_control_helper()->GetEventEngine()->Cancel(
                 *subchannel_list_->timer_handle_);
           }
           ++subchannel_list_->attempting_index_;
@@ -990,7 +990,7 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
   PickFirst* p = subchannel_list_->policy_.get();
   // Cancel Happy Eyeballs timer, if any.
   if (subchannel_list_->timer_handle_.has_value()) {
-    p->channel_control_helper()->GetEventEngine()->Cancel(
+    (void)p->channel_control_helper()->GetEventEngine()->Cancel(
         *subchannel_list_->timer_handle_);
   }
   // If we get here, there are two possible cases:
@@ -1111,7 +1111,8 @@ void PickFirst::SubchannelList::Orphan() {
     sd.ShutdownLocked();
   }
   if (timer_handle_.has_value()) {
-    policy_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+    (void)policy_->channel_control_helper()->GetEventEngine()->Cancel(
+        *timer_handle_);
   }
   Unref();
 }

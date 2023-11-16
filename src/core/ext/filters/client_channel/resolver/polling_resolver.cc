@@ -137,7 +137,7 @@ void PollingResolver::MaybeCancelNextResolutionTimer() {
       gpr_log(GPR_INFO, "[polling resolver %p] cancel re-resolution timer",
               this);
     }
-    channel_args_.GetObject<EventEngine>()->Cancel(
+    (void)channel_args_.GetObject<EventEngine>()->Cancel(
         *next_resolution_timer_handle_);
     next_resolution_timer_handle_.reset();
   }

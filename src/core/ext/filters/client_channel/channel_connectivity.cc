@@ -188,7 +188,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     {
       MutexLock lock(&self->mu_);
       if (self->timer_handle_.has_value()) {
-        self->channel_->channel_stack()->EventEngine()->Cancel(
+        (void)self->channel_->channel_stack()->EventEngine()->Cancel(
             *self->timer_handle_);
       }
     }
