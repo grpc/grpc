@@ -491,9 +491,9 @@ def grpc_deps():
             patch_args = ["-p1"],
         )
 
-    if "com_github_cncf_udpa" not in native.existing_rules():
+    if "com_github_cncf_xds" not in native.existing_rules():
         http_archive(
-            name = "com_github_cncf_udpa",
+            name = "com_github_cncf_xds",
             sha256 = "0d33b83f8c6368954e72e7785539f0d272a8aba2f6e2e336ed15fd1514bc9899",
             strip_prefix = "xds-e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7",
             urls = [
