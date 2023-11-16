@@ -179,8 +179,24 @@ class CdsLb : public LoadBalancingPolicy {
 
   LeafClusterList leaf_cluster_list_;
 
+  // TODO(roth, yashkt): These are here because we need to handle
+  // pollset_set linkage as clusters are added or removed from the
+  // XdsCertificateProvider.  However, in the aggregate cluster case,
+  // there may be multiple clusters in the same cert provider, and we're
+  // only tracking the cert providers for the most recent underlying
+  // cluster here.  I think this is a bug that could cause us to starve
+  // the underlying cert providers of polling.  However, it is not
+  // actually causing any problem in practice today, because (a) we have
+  // no cert provider impl that relies on gRPC's polling and (b)
+  // probably no one is actually configuring an aggregate cluster with
+  // different cert providers in different underlying clusters.
+  // Hopefully, this problem won't be an issue in practice until after
+  // the EventEngine migration is done, at which point the need for
+  // handling pollset_set linkage will go away, and these fields can
+  // simply be removed.
   RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
   RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
+
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
 
   // Child LB policy.
