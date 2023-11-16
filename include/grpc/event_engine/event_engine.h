@@ -13,6 +13,9 @@
 // limitations under the License.
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
+#ifdef GRPC_CHOOSE_GOOGLE_LINUX_BUILD
+#include "base/callback.h"
+#endif
 
 #include <grpc/support/port_platform.h>
 
@@ -114,9 +117,18 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// cancellation, the EventEngine will simply forget the Closure exists. The
   /// caller is responsible for all necessary cleanup.
 
+#ifdef GRPC_CHOOSE_GOOGLE_LINUX_BUILD
+  class Closure : public ::Closure {
+   private:
+    bool IsRepeatable() const final { return true; }
+
+   public:
+    Closure() : ::Closure(::base::Context::kDefault) {}
+#else
   class Closure {
    public:
     Closure() = default;
+#endif
     // Closure's are an interface, and thus non-copyable.
     Closure(const Closure&) = delete;
     Closure& operator=(const Closure&) = delete;
