@@ -18,9 +18,9 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>
 

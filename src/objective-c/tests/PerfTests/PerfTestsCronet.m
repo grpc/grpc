@@ -19,8 +19,8 @@
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
-#import <GRPCClient/GRPCCall+Cronet.h>
 #import <Cronet/Cronet.h>
+#import <GRPCClient/GRPCCall+Cronet.h>
 
 #import "../ConfigureCronet.h"
 #import "PerfTests.h"

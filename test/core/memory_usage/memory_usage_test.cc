@@ -29,7 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "google/protobuf/wrappers.pb.h"
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -37,6 +36,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "google/protobuf/wrappers.pb.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>

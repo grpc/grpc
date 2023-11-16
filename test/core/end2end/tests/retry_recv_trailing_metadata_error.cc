@@ -17,9 +17,9 @@
 #include <memory>
 #include <new>
 
-#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>

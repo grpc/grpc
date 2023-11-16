@@ -25,8 +25,6 @@
 #include <string>
 #include <utility>
 
-#include "opentelemetry/context/context.h"
-#include "opentelemetry/metrics/sync_instruments.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -35,6 +33,8 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
+#include "opentelemetry/context/context.h"
+#include "opentelemetry/metrics/sync_instruments.h"
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"

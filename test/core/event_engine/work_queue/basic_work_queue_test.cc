@@ -18,8 +18,8 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 

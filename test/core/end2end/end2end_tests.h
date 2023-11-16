@@ -31,7 +31,6 @@
 #include <utility>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
@@ -39,6 +38,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>

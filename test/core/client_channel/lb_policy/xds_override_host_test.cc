@@ -23,8 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
@@ -32,6 +30,8 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>

@@ -30,7 +30,6 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
@@ -38,6 +37,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

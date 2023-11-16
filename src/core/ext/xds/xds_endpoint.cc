@@ -27,7 +27,6 @@
 #include <set>
 #include <vector>
 
-#include "google/protobuf/wrappers.upb.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -39,6 +38,7 @@
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/type/v3/percent.upb.h"
+#include "google/protobuf/wrappers.upb.h"
 #include "upb/text/encode.h"
 
 #include <grpc/support/log.h>

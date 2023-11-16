@@ -30,12 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "opencensus/stats/stats.h"
-#include "opencensus/tags/tag_key.h"
-#include "opencensus/tags/tag_map.h"
-#include "opencensus/trace/span.h"
-#include "opencensus/trace/span_context.h"
-#include "opencensus/trace/status_code.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -43,6 +37,12 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+#include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
+#include "opencensus/trace/span.h"
+#include "opencensus/trace/span_context.h"
+#include "opencensus/trace/status_code.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>

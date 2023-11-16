@@ -24,9 +24,9 @@
 #include "src/compiler/php_generator.h"
 #include "src/compiler/php_generator_helpers.h"
 
+using google::protobuf::compiler::ParseGeneratorParameter;
 using grpc_php_generator::GenerateFile;
 using grpc_php_generator::GetPHPServiceFilename;
-using google::protobuf::compiler::ParseGeneratorParameter;
 
 class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:

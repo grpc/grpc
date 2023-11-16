@@ -21,9 +21,9 @@
 #include <string>
 #include <tuple>
 
+#include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/functional/any_invocable.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/port.h>  // IWYU pragma: keep

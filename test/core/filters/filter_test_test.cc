@@ -19,9 +19,9 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/status/statusor.h"
 
 #include <grpc/compression.h>
 

@@ -18,9 +18,9 @@
 
 #include <memory>
 
+#include "absl/strings/str_cat.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/strings/str_cat.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>

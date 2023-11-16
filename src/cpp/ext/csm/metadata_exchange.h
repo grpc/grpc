@@ -26,8 +26,8 @@
 #include <utility>
 #include <vector>
 
-#include "opentelemetry/sdk/common/attribute_utils.h"
 #include "absl/strings/string_view.h"
+#include "opentelemetry/sdk/common/attribute_utils.h"
 
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"

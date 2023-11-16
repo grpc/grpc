@@ -27,11 +27,11 @@
 
 #include <gtest/gtest.h>
 
-#include "gmock/gmock.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>

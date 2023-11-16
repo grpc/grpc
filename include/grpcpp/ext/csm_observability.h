@@ -23,10 +23,10 @@
 
 #include <memory>
 
-#include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include "src/cpp/ext/otel/otel_plugin.h"
 

@@ -21,12 +21,12 @@
 #include <memory>
 #include <string>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 

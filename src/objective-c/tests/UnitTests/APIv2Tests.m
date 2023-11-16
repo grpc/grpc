@@ -16,10 +16,10 @@
  *
  */
 
-#import <XCTest/XCTest.h>
-#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 #import <GRPCClient/GRPCCall.h>
 #import <ProtoRPC/ProtoMethod.h>
+#import <XCTest/XCTest.h>
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>

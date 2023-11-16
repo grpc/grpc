@@ -27,8 +27,6 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "google/protobuf/struct.upb.h"
-#include "opentelemetry/sdk/resource/semantic_conventions.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
@@ -36,6 +34,8 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "google/protobuf/struct.upb.h"
+#include "opentelemetry/sdk/resource/semantic_conventions.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/upb.hpp"

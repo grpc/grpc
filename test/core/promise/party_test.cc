@@ -22,8 +22,8 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "absl/base/thread_annotations.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>

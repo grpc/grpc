@@ -14,8 +14,8 @@
 
 #include "src/core/lib/config/load_config.h"
 
-#include "gtest/gtest.h"
 #include "absl/flags/flag.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/gprpp/env.h"
 

@@ -14,8 +14,8 @@
 
 #include "src/core/lib/promise/detail/promise_factory.h"
 
-#include "gtest/gtest.h"
 #include "absl/functional/bind_front.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/promise/poll.h"
 

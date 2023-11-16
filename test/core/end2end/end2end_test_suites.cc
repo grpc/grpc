@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
@@ -32,6 +31,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>

@@ -16,8 +16,8 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/promise/promise.h"
 

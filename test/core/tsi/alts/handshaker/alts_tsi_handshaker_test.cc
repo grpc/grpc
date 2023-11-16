@@ -23,7 +23,6 @@
 
 #include <gtest/gtest.h>
 
-#include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
@@ -35,6 +34,7 @@
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/core/tsi/transport_security_grpc.h"
+#include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 #include "test/core/util/test_config.h"
 

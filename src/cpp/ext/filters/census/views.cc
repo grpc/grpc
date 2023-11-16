@@ -20,8 +20,8 @@
 
 #include <vector>
 
-#include "opencensus/stats/stats.h"
 #include "absl/time/time.h"
+#include "opencensus/stats/stats.h"
 
 #include <grpcpp/opencensus.h>
 

@@ -24,16 +24,16 @@
 #include <map>
 #include <utility>
 
-#include "google/api/monitored_resource.pb.h"
-#include "google/logging/v2/log_entry.pb.h"
-#include "google/logging/v2/logging.grpc.pb.h"
-#include "google/logging/v2/logging.pb.h"
-#include "google/protobuf/text_format.h"
 #include "absl/numeric/int128.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "google/api/monitored_resource.pb.h"
+#include "google/logging/v2/log_entry.pb.h"
+#include "google/logging/v2/logging.grpc.pb.h"
+#include "google/logging/v2/logging.pb.h"
+#include "google/protobuf/text_format.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>

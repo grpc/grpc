@@ -26,8 +26,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "opencensus/stats/testing/test_utils.h"
 #include "absl/memory/memory.h"
+#include "opencensus/stats/testing/test_utils.h"
 
 #include <grpc/grpc.h>
 

@@ -42,12 +42,9 @@ namespace grpc {
 namespace testing {
 namespace {
 
-constexpr char kCaCertPath[] =
-    "src/core/tsi/test_creds/ca.pem";
-constexpr char kServerCertPath[] =
-    "src/core/tsi/test_creds/server1.pem";
-constexpr char kServerKeyPath[] =
-    "src/core/tsi/test_creds/server1.key";
+constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
+constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
+constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
 constexpr char kClientCertPath[] =
     "src/core/tsi/test_creds/client-with-spiffe.pem";
 constexpr char kClientKeyPath[] =

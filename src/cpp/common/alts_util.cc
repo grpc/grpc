@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-#include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc_security_constants.h>
@@ -33,6 +32,7 @@
 #include <grpcpp/support/string_ref.h>
 
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
+#include "src/proto/grpc/gcp/altscontext.upb.h"
 
 namespace grpc {
 namespace experimental {

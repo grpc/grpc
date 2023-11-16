@@ -29,12 +29,12 @@
 #include <utility>
 #include <vector>  // IWYU pragma: keep
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"     // IWYU pragma: keep
 #include "absl/strings/str_format.h"  // IWYU pragma: keep
 #include "absl/types/optional.h"      // IWYU pragma: keep
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>

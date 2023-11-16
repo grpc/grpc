@@ -26,8 +26,8 @@
 #include <string>
 #include <thread>
 
-#include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

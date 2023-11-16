@@ -18,9 +18,9 @@
 
 #import <XCTest/XCTest.h>
 
-#import "src/objective-c/GRPCClient/private/GRPCTransport+Private.h"
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCTransport.h>
+#import "src/objective-c/GRPCClient/private/GRPCTransport+Private.h"
 
 @interface TransportRegistryTests : XCTestCase
 

@@ -128,16 +128,11 @@ enum class CredentialsType {
   kMtls = 2,
 };
 
-constexpr char kCaCertPath[] =
-    "src/core/tsi/test_creds/ca.pem";
-constexpr char kServerCertPath[] =
-    "src/core/tsi/test_creds/server1.pem";
-constexpr char kServerKeyPath[] =
-    "src/core/tsi/test_creds/server1.key";
-constexpr char kClientCertPath[] =
-    "src/core/tsi/test_creds/client.pem";
-constexpr char kClientKeyPath[] =
-    "src/core/tsi/test_creds/client.key";
+constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
+constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
+constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
+constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
+constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 
 std::string ReadFile(const char* file_path) {
   grpc_slice slice;

@@ -23,7 +23,6 @@
 #include <string>
 #include <utility>
 
-#include "google/protobuf/wrappers.upb.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -32,6 +31,7 @@
 #include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
 #include "envoy/type/v3/percent.upb.h"
+#include "google/protobuf/wrappers.upb.h"
 
 #include <grpc/status.h>
 #include <grpc/support/json.h>

@@ -18,9 +18,9 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
 #include <grpc/status.h>
 

@@ -20,7 +20,6 @@
 #import <grpc/grpc.h>
 #import <grpc/support/port_platform.h>
 
-#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+OAuth2.h>
 #import <GRPCClient/GRPCCall+Tests.h>
@@ -30,6 +29,7 @@
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 
 #include <netinet/in.h>
 

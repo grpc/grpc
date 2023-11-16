@@ -27,9 +27,9 @@
 
 #include <string>
 
-#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>

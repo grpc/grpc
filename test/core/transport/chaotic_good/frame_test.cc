@@ -16,10 +16,10 @@
 
 #include <cstdint>
 
-#include "gtest/gtest.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace chaotic_good {

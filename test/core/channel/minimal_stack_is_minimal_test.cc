@@ -34,9 +34,9 @@
 #include <string>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>

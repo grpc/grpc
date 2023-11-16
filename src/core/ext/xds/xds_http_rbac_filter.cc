@@ -25,7 +25,6 @@
 #include <string>
 #include <utility>
 
-#include "google/protobuf/wrappers.upb.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -40,6 +39,7 @@
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/range.upb.h"
+#include "google/protobuf/wrappers.upb.h"
 #include "upb/collections/map.h"
 
 #include <grpc/support/json.h>

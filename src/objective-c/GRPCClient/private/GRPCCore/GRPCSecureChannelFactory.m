@@ -18,8 +18,8 @@
 
 #import "GRPCSecureChannelFactory.h"
 
-#include <grpc/grpc_security.h>
 #import <GRPCClient/GRPCTypes.h>
+#include <grpc/grpc_security.h>
 
 #import "ChannelArgsUtil.h"
 #import "GRPCChannel.h"

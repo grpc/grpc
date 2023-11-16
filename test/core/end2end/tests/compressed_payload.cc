@@ -22,8 +22,8 @@
 #include <string>
 #include <utility>
 
-#include "gtest/gtest.h"
 #include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>

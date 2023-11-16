@@ -22,10 +22,10 @@
 
 #include <atomic>
 
-#include "opencensus/tags/tag_key.h"
-#include "opencensus/trace/span.h"
 #include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
+#include "opencensus/tags/tag_key.h"
+#include "opencensus/trace/span.h"
 
 #include <grpcpp/opencensus.h>
 #include <grpcpp/server_context.h>

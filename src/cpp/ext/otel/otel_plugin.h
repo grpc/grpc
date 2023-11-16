@@ -28,13 +28,13 @@
 #include <string>
 #include <utility>
 
-#include "opentelemetry/metrics/meter_provider.h"
-#include "opentelemetry/metrics/sync_instruments.h"
-#include "opentelemetry/nostd/shared_ptr.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "opentelemetry/metrics/meter_provider.h"
+#include "opentelemetry/metrics/sync_instruments.h"
+#include "opentelemetry/nostd/shared_ptr.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/metadata_batch.h"

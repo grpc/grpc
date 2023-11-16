@@ -20,8 +20,8 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "absl/container/flat_hash_set.h"
+#include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
 

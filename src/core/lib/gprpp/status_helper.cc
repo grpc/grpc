@@ -24,8 +24,6 @@
 
 #include <utility>
 
-#include "google/protobuf/any.upb.h"
-#include "google/rpc/status.upb.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -33,6 +31,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/time/clock.h"
+#include "google/protobuf/any.upb.h"
+#include "google/rpc/status.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/upb.hpp"

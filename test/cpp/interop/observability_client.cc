@@ -19,10 +19,10 @@
 #include <memory>
 #include <unordered_map>
 
+#include "absl/flags/flag.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
-#include "absl/flags/flag.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

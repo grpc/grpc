@@ -27,10 +27,10 @@
 #include <queue>
 #include <string>
 
-#include "google/protobuf/text_format.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "google/protobuf/text_format.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>

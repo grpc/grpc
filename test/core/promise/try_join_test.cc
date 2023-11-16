@@ -18,8 +18,8 @@
 #include <memory>
 #include <utility>
 
-#include "gtest/gtest.h"
 #include "absl/utility/utility.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

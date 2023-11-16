@@ -53,18 +53,12 @@ namespace grpc {
 namespace testing {
 namespace {
 
-const char* kRootPath =
-    "test/core/tsi/test_creds/crl_data/ca.pem";
-const char* kRevokedKeyPath =
-    "test/core/tsi/test_creds/crl_data/revoked.key";
-const char* kRevokedCertPath =
-    "test/core/tsi/test_creds/crl_data/revoked.pem";
-const char* kValidKeyPath =
-    "test/core/tsi/test_creds/crl_data/valid.key";
-const char* kValidCertPath =
-    "test/core/tsi/test_creds/crl_data/valid.pem";
-const char* kRootCrlPath =
-    "test/core/tsi/test_creds/crl_data/crls/current.crl";
+const char* kRootPath = "test/core/tsi/test_creds/crl_data/ca.pem";
+const char* kRevokedKeyPath = "test/core/tsi/test_creds/crl_data/revoked.key";
+const char* kRevokedCertPath = "test/core/tsi/test_creds/crl_data/revoked.pem";
+const char* kValidKeyPath = "test/core/tsi/test_creds/crl_data/valid.key";
+const char* kValidCertPath = "test/core/tsi/test_creds/crl_data/valid.pem";
+const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 constexpr char kMessage[] = "Hello";
 
 class CrlProviderTest : public ::testing::Test {

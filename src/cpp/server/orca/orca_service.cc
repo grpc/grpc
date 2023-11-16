@@ -20,15 +20,15 @@
 #include <memory>
 #include <utility>
 
-#include "google/protobuf/duration.upb.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-#include "xds/data/orca/v3/orca_load_report.upb.h"
-#include "xds/service/orca/v3/orca.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/upb.hpp"
+#include "xds/data/orca/v3/orca_load_report.upb.h"
+#include "xds/service/orca/v3/orca.upb.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -128,21 +128,13 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
 
   bool MaybeScheduleTimer() {
     grpc::internal::MutexLock lock(&timer_mu_);
-    if (cancelled_) return false;
-    timer_handle_ = engine_->RunAfter(
-        report_interval_,
-        [self = Ref(DEBUG_LOCATION, "Orca Service")] { self->OnTimer(); });
-    return true;
+    return !cancelled_;
   }
 
   bool MaybeCancelTimer() {
     grpc::internal::MutexLock lock(&timer_mu_);
     cancelled_ = true;
-    if (timer_handle_.has_value() && engine_->Cancel(*timer_handle_)) {
-      timer_handle_.reset();
-      return true;
-    }
-    return false;
+    return timer_handle_.has_value() && engine_->Cancel(*timer_handle_);
   }
 
   void OnTimer() {

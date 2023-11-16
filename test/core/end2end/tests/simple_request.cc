@@ -22,10 +22,10 @@
 #include <memory>
 #include <string>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "absl/strings/match.h"
 #include "absl/types/optional.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>

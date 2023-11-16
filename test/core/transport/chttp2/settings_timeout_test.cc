@@ -24,10 +24,10 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

@@ -25,10 +25,6 @@
 #include <map>
 #include <utility>
 
-#include "google/protobuf/any.upb.h"
-#include "google/protobuf/struct.upb.h"
-#include "google/protobuf/struct.upbdefs.h"
-#include "google/protobuf/wrappers.upb.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -38,11 +34,15 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
-#include "xds/type/v3/typed_struct.upb.h"
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/struct.upb.h"
+#include "google/protobuf/struct.upbdefs.h"
+#include "google/protobuf/wrappers.upb.h"
 #include "upb/base/status.h"
 #include "upb/json/encode.h"
 #include "upb/mem/arena.h"
 #include "upb/upb.hpp"
+#include "xds/type/v3/typed_struct.upb.h"
 
 #include <grpc/support/json.h>
 

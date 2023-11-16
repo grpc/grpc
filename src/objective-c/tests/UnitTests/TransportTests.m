@@ -16,10 +16,10 @@
  *
  */
 
-#import <XCTest/XCTest.h>
 #import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/GRPCInterceptor.h>
 #import <GRPCClient/GRPCTransport.h>
+#import <XCTest/XCTest.h>
 
 #define TEST_TIMEOUT (8.0)
 

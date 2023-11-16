@@ -18,9 +18,9 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>

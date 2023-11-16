@@ -25,11 +25,6 @@
 #include <string>
 #include <vector>
 
-#include "google/protobuf/any.upb.h"
-#include "google/protobuf/duration.upb.h"
-#include "google/protobuf/struct.upb.h"
-#include "google/protobuf/timestamp.upb.h"
-#include "google/rpc/status.upb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 #include "envoy/config/core/v3/base.upb.h"
@@ -39,6 +34,11 @@
 #include "envoy/service/load_stats/v3/lrs.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
 #include "envoy/service/status/v3/csds.upb.h"
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
+#include "google/protobuf/struct.upb.h"
+#include "google/protobuf/timestamp.upb.h"
+#include "google/rpc/status.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/reflection/def.h"
 #include "upb/text/encode.h"

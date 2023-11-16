@@ -18,10 +18,10 @@
 #include <tuple>
 #include <utility>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>

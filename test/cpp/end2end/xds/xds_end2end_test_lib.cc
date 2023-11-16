@@ -355,8 +355,7 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
 // XdsEnd2endTest
 //
 
-const char XdsEnd2endTest::kCaCertPath[] =
-    "src/core/tsi/test_creds/ca.pem";
+const char XdsEnd2endTest::kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 const char XdsEnd2endTest::kServerCertPath[] =
     "src/core/tsi/test_creds/server1.pem";
 const char XdsEnd2endTest::kServerKeyPath[] =

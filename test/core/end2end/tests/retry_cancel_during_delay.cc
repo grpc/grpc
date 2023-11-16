@@ -16,9 +16,9 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>

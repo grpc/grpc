@@ -17,8 +17,8 @@
 #include <map>
 #include <string>
 
-#include "gtest/gtest.h"
 #include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"

@@ -25,9 +25,9 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "xds/data/orca/v3/orca_load_report.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/upb.hpp"
+#include "xds/data/orca/v3/orca_load_report.upb.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>

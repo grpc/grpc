@@ -27,11 +27,11 @@
 #include "src/compiler/config.h"
 #include "src/compiler/objective_c_generator_helpers.h"
 
+using ::google::protobuf::compiler::objectivec::ClassName;
 using ::grpc::protobuf::FileDescriptor;
 using ::grpc::protobuf::MethodDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
 using ::grpc::protobuf::io::Printer;
-using ::google::protobuf::compiler::objectivec::ClassName;
 using ::std::map;
 using ::std::set;
 
