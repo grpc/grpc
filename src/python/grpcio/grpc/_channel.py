@@ -2103,6 +2103,7 @@ class Channel(grpc.Channel):
     ) -> None:
         _unsubscribe(self._connectivity_state, callback)
 
+    # pylint: disable=arguments-differ
     def unary_unary(
         self,
         method: str,
@@ -2120,6 +2121,7 @@ class Channel(grpc.Channel):
             registered_method,
         )
 
+    # pylint: disable=arguments-differ
     def unary_stream(
         self,
         method: str,
@@ -2151,6 +2153,7 @@ class Channel(grpc.Channel):
                 registered_method,
             )
 
+    # pylint: disable=arguments-differ
     def stream_unary(
         self,
         method: str,
@@ -2168,6 +2171,7 @@ class Channel(grpc.Channel):
             registered_method,
         )
 
+    # pylint: disable=arguments-differ
     def stream_stream(
         self,
         method: str,

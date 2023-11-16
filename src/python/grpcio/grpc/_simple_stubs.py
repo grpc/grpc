@@ -205,6 +205,7 @@ class ChannelCache:
 
 
 @experimental_api
+# pylint: disable=too-many-locals
 def unary_unary(
     request: RequestType,
     target: str,
@@ -291,6 +292,7 @@ def unary_unary(
 
 
 @experimental_api
+# pylint: disable=too-many-locals
 def unary_stream(
     request: RequestType,
     target: str,
@@ -376,6 +378,7 @@ def unary_stream(
 
 
 @experimental_api
+# pylint: disable=too-many-locals
 def stream_unary(
     request_iterator: Iterator[RequestType],
     target: str,
@@ -461,6 +464,7 @@ def stream_unary(
 
 
 @experimental_api
+# pylint: disable=too-many-locals
 def stream_stream(
     request_iterator: Iterator[RequestType],
     target: str,
