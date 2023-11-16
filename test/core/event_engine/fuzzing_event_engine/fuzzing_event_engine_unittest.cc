@@ -18,8 +18,8 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
-#include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
+#include "absl/synchronization/notification.h"
 
 #include "src/core/lib/gprpp/time.h"
 

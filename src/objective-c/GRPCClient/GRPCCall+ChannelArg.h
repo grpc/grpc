@@ -21,7 +21,8 @@
 #include <AvailabilityMacros.h>
 
 /**
- * The interface is deprecated. Please use GRPCCallOptions instead for corresponding configurations.
+ * The interface is deprecated. Please use GRPCCallOptions instead for
+ * corresponding configurations.
  */
 @interface GRPCCall (ChannelArg)
 

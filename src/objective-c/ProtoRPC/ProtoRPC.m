@@ -145,7 +145,8 @@
     _callOptions = [callOptions copy];
     _responseClass = responseClass;
 
-    // Set queue QoS only when iOS version is 8.0 or above and Xcode version is 9.0 or above
+    // Set queue QoS only when iOS version is 8.0 or above and Xcode version
+    // is 9.0 or above
 #if __IPHONE_OS_VERSION_MAX_ALLOWED < 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED < 101300
     if (@available(iOS 8.0, macOS 10.10, *)) {
       _dispatchQueue = dispatch_queue_create(
@@ -319,7 +320,8 @@
 @end
 
 /**
- * Generate an NSError object that represents a failure in parsing a proto class.
+ * Generate an NSError object that represents a failure in parsing a proto
+ * class.
  */
 NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsingError) {
   NSDictionary *info = @{
@@ -332,6 +334,7 @@ NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsingError) 
     @"Expected class" : expectedClass,
     @"Received value" : proto,
   };
-  // TODO(jcanizales): Use kGRPCErrorDomain and GRPCErrorCodeInternal when they're public.
+  // TODO(jcanizales): Use kGRPCErrorDomain and GRPCErrorCodeInternal when
+  // they're public.
   return [NSError errorWithDomain:@"io.grpc" code:13 userInfo:info];
 }

@@ -21,9 +21,9 @@
 
 #include <benchmark/benchmark.h>
 
+#include "opencensus/stats/stats.h"
 #include "absl/base/call_once.h"
 #include "absl/strings/str_cat.h"
-#include "opencensus/stats/stats.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>

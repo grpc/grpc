@@ -25,11 +25,11 @@
 #include <utility>
 #include <vector>
 
+#include "google/protobuf/duration.upb.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "google/protobuf/duration.upb.h"
-#include "upb/upb.hpp"
 #include "xds/service/orca/v3/orca.upb.h"
+#include "upb/upb.hpp"
 
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>

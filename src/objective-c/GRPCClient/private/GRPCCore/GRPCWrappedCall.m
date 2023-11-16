@@ -35,8 +35,8 @@
 
 @implementation GRPCOperation {
  @protected
-  // Most operation subclasses don't set any flags in the grpc_op, and rely on the flag member being
-  // initialized to zero.
+  // Most operation subclasses don't set any flags in the grpc_op, and rely on
+  // the flag member being initialized to zero.
   grpc_op _op;
   void (^_handler)(void);
 }
@@ -265,8 +265,8 @@
 }
 
 - (void)startBatchWithOperations:(NSArray *)operations errorHandler:(void (^)(void))errorHandler {
-// Keep logs of op batches when we are running tests. Disabled when in production for improved
-// performance.
+// Keep logs of op batches when we are running tests. Disabled when in
+// production for improved performance.
 #ifdef GRPC_TEST_OBJC
   [GRPCOpBatchLog addOpBatchToLog:operations];
 #endif
@@ -315,10 +315,11 @@
 - (void)channelDisconnected {
   @synchronized(self) {
     if (_call != NULL) {
-      // Unreference the call will lead to its cancellation in the core. Note that since
-      // this function is only called with a network state change, any existing GRPCCall object will
-      // also receive the same notification and cancel themselves with GRPCErrorCodeUnavailable, so
-      // the user gets GRPCErrorCodeUnavailable in this case.
+      // Unreference the call will lead to its cancellation in the core. Note
+      // that since this function is only called with a network state change,
+      // any existing GRPCCall object will also receive the same notification
+      // and cancel themselves with GRPCErrorCodeUnavailable, so the user gets
+      // GRPCErrorCodeUnavailable in this case.
       grpc_call_unref(_call);
       _call = NULL;
     }

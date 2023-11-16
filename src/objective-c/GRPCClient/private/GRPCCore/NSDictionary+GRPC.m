@@ -91,8 +91,8 @@
   return metadata;
 }
 
-// Preconditions: All keys are ASCII strings. Keys ending in -bin have NSData values; the others
-// have NSString values.
+// Preconditions: All keys are ASCII strings. Keys ending in -bin have NSData
+// values; the others have NSString values.
 - (grpc_metadata *)grpc_metadataArray {
   grpc_metadata *metadata = (grpc_metadata *)gpr_malloc([self count] * sizeof(grpc_metadata));
   grpc_metadata *current = metadata;

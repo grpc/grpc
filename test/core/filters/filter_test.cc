@@ -19,11 +19,11 @@
 #include <memory>
 #include <queue>
 
+#include "gtest/gtest.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 

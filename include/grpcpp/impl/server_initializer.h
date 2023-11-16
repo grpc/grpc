@@ -46,7 +46,7 @@ class ServerInitializer {
 
  private:
   grpc::Server* server_;
-  std::vector<std::shared_ptr<grpc::Service> > default_services_;
+  std::vector<std::shared_ptr<grpc::Service>> default_services_;
 };
 
 }  // namespace grpc

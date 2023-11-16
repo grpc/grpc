@@ -23,8 +23,8 @@
 #include <thread>
 #include <vector>
 
-#include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>

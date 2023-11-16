@@ -17,8 +17,8 @@
 #include <memory>
 #include <string>
 
-#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 

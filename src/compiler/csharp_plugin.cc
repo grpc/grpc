@@ -37,7 +37,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                 const std::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
                 std::string* error) const override {
-    std::vector<std::pair<std::string, std::string> > options;
+    std::vector<std::pair<std::string, std::string>> options;
     grpc::protobuf::compiler::ParseGeneratorParameter(parameter, &options);
 
     bool generate_client = true;

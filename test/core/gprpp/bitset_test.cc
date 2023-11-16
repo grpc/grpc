@@ -43,7 +43,7 @@ using TestSizes = ::testing::Types<
     // Values around 96 bits
     Size<95>, Size<96>, Size<97>,
     // Silly numbers of bits
-    Size<1024>, Size<4000>, Size<4321> >;
+    Size<1024>, Size<4000>, Size<4321>>;
 
 template <typename S>
 struct BitSetTest : public ::testing::Test {};

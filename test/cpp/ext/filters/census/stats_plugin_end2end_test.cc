@@ -20,14 +20,14 @@
 #include <thread>  // NOLINT
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc++/grpc++.h>
 #include <grpcpp/opencensus.h>

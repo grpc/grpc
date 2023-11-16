@@ -86,31 +86,33 @@ static NSString *const kBearerPrefix = @"Bearer ";
   // correct ordering.
   GRXConcurrentWriteable *_responseWriteable;
 
-  // The network thread wants the requestWriter to resume (when the server is ready for more input),
-  // or to stop (on errors), concurrently with user threads that want to start it, pause it or stop
-  // it. Because a writer isn't thread-safe, we'll synchronize those operations on it.
-  // We don't use a dispatch queue for that purpose, because the writer can call writeValue: or
-  // writesFinishedWithError: on this GRPCCall as part of those operations. We want to be able to
-  // pause the writer immediately on writeValue:, so we need our locking to be recursive.
+  // The network thread wants the requestWriter to resume (when the server is
+  // ready for more input), or to stop (on errors), concurrently with user
+  // threads that want to start it, pause it or stop it. Because a writer isn't
+  // thread-safe, we'll synchronize those operations on it. We don't use a
+  // dispatch queue for that purpose, because the writer can call writeValue: or
+  // writesFinishedWithError: on this GRPCCall as part of those operations. We
+  // want to be able to pause the writer immediately on writeValue:, so we need
+  // our locking to be recursive.
   GRXWriter *_requestWriter;
 
   // To create a retain cycle when a call is started, up until it finishes. See
-  // |startWithWriteable:| and |finishWithError:|. This saves users from having to retain a
-  // reference to the call object if all they're interested in is the handler being executed when
-  // the response arrives.
+  // |startWithWriteable:| and |finishWithError:|. This saves users from having
+  // to retain a reference to the call object if all they're interested in is
+  // the handler being executed when the response arrives.
   GRPCCall *_retainSelf;
 
   GRPCRequestHeaders *_requestHeaders;
 
-  // In the case that the call is a unary call (i.e. the writer to GRPCCall is of type
-  // GRXImmediateSingleWriter), GRPCCall will delay sending ops (not send them to C core
-  // immediately) and buffer them into a batch _unaryOpBatch. The batch is sent to C core when
-  // the SendClose op is added.
+  // In the case that the call is a unary call (i.e. the writer to GRPCCall is
+  // of type GRXImmediateSingleWriter), GRPCCall will delay sending ops (not
+  // send them to C core immediately) and buffer them into a batch
+  // _unaryOpBatch. The batch is sent to C core when the SendClose op is added.
   BOOL _unaryCall;
   NSMutableArray *_unaryOpBatch;
 
-  // The dispatch queue to be used for enqueuing responses to user. Defaulted to the main dispatch
-  // queue
+  // The dispatch queue to be used for enqueuing responses to user. Defaulted to
+  // the main dispatch queue
   dispatch_queue_t _responseQueue;
 
   // The OAuth2 token fetched from a token provider.
@@ -177,7 +179,8 @@ static NSString *const kBearerPrefix = @"Bearer ";
               requestsWriter:(GRXWriter *)requestsWriter
                  callOptions:(GRPCCallOptions *)callOptions
                    writeDone:(void (^)(void))writeDone {
-  // Purposely using pointer rather than length (host.length == 0) for backwards compatibility.
+  // Purposely using pointer rather than length (host.length == 0) for backwards
+  // compatibility.
   NSAssert(host != nil && path != nil, @"Neither host nor path can be nil.");
   NSAssert(safety <= GRPCCallSafetyDefault, @"Invalid call safety value.");
   NSAssert(requestsWriter.state == GRXWriterStateNotStarted,
@@ -227,8 +230,9 @@ static NSString *const kBearerPrefix = @"Bearer ";
 
 #pragma mark Finish
 
-// This function should support being called within a @synchronized(self) block in another function
-// Should not manipulate _requestWriter for deadlock prevention.
+// This function should support being called within a @synchronized(self) block
+// in another function Should not manipulate _requestWriter for deadlock
+// prevention.
 - (void)finishWithError:(NSError *)errorOrNil {
   @synchronized(self) {
     if (_state == GRXWriterStateFinished) {
@@ -282,10 +286,9 @@ static NSString *const kBearerPrefix = @"Bearer ";
 }
 
 // Called initially from the network queue once response headers are received,
-// then "recursively" from the responseWriteable queue after each response from the
-// server has been written.
-// If the call is currently paused, this is a noop. Restarting the call will invoke this
-// method.
+// then "recursively" from the responseWriteable queue after each response from
+// the server has been written. If the call is currently paused, this is a noop.
+// Restarting the call will invoke this method.
 // TODO(jcanizales): Rename to readResponseIfNotPaused.
 - (void)maybeStartNextRead {
   @synchronized(self) {
@@ -438,7 +441,8 @@ static NSString *const kBearerPrefix = @"Bearer ";
   _requestWriter.state = GRXWriterStatePaused;
 
   dispatch_async(_callQueue, ^{
-    // Write error is not processed here. It is handled by op batch of GRPC_OP_RECV_STATUS_ON_CLIENT
+    // Write error is not processed here. It is handled by op batch of
+    // GRPC_OP_RECV_STATUS_ON_CLIENT
     [self writeMessage:value withErrorHandler:nil];
   });
 }
@@ -460,7 +464,8 @@ static NSString *const kBearerPrefix = @"Bearer ";
     [self cancel];
   } else {
     dispatch_async(_callQueue, ^{
-      // EOS error is not processed here. It is handled by op batch of GRPC_OP_RECV_STATUS_ON_CLIENT
+      // EOS error is not processed here. It is handled by op batch of
+      // GRPC_OP_RECV_STATUS_ON_CLIENT
       [self finishRequestWithErrorHandler:nil];
     });
   }
@@ -468,10 +473,10 @@ static NSString *const kBearerPrefix = @"Bearer ";
 
 #pragma mark Invoke
 
-// Both handlers will eventually be called, from the network queue. Writes can start immediately
-// after this.
-// The first one (headersHandler), when the response headers are received.
-// The second one (completionHandler), whenever the RPC finishes for any reason.
+// Both handlers will eventually be called, from the network queue. Writes can
+// start immediately after this. The first one (headersHandler), when the
+// response headers are received. The second one (completionHandler), whenever
+// the RPC finishes for any reason.
 - (void)invokeCallWithHeadersHandler:(void (^)(NSDictionary *))headersHandler
                    completionHandler:(void (^)(NSError *, NSDictionary *))completionHandler {
   dispatch_async(_callQueue, ^{
@@ -493,7 +498,8 @@ static NSString *const kBearerPrefix = @"Bearer ";
           @synchronized(strongSelf) {
             // it is ok to set nil because headers are only received once
             strongSelf.responseHeaders = nil;
-            // copy the header so that the GRPCOpRecvMetadata object may be dealloc'ed
+            // copy the header so that the GRPCOpRecvMetadata object may be
+            // dealloc'ed
             NSDictionary *copiedHeaders = [[NSDictionary alloc] initWithDictionary:headers
                                                                          copyItems:YES];
             strongSelf.responseHeaders = copiedHeaders;
@@ -513,8 +519,8 @@ static NSString *const kBearerPrefix = @"Bearer ";
               [userInfo addEntriesFromDictionary:error.userInfo];
             }
             userInfo[kGRPCTrailersKey] = strongSelf.responseTrailers;
-            // Since gRPC core does not guarantee the headers block being called before this block,
-            // responseHeaders might be nil.
+            // Since gRPC core does not guarantee the headers block being called
+            // before this block, responseHeaders might be nil.
             userInfo[kGRPCHeadersKey] = strongSelf.responseHeaders;
             error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
           }
@@ -565,16 +571,17 @@ static NSString *const kBearerPrefix = @"Bearer ";
   @synchronized(self) {
     _state = GRXWriterStateStarted;
 
-    // Create a retain cycle so that this instance lives until the RPC finishes (or is cancelled).
-    // This makes RPCs in which the call isn't externally retained possible (as long as it is
-    // started before being autoreleased). Care is taken not to retain self strongly in any of the
-    // blocks used in this implementation, so that the life of the instance is determined by this
-    // retain cycle.
+    // Create a retain cycle so that this instance lives until the RPC finishes
+    // (or is cancelled). This makes RPCs in which the call isn't externally
+    // retained possible (as long as it is started before being autoreleased).
+    // Care is taken not to retain self strongly in any of the blocks used in
+    // this implementation, so that the life of the instance is determined by
+    // this retain cycle.
     _retainSelf = self;
 
-    // If _callOptions is nil, people must be using the deprecated v1 interface. In this case,
-    // generate the call options from the corresponding GRPCHost configs and apply other options
-    // that are not covered by GRPCHost.
+    // If _callOptions is nil, people must be using the deprecated v1 interface.
+    // In this case, generate the call options from the corresponding GRPCHost
+    // configs and apply other options that are not covered by GRPCHost.
     if (_callOptions == nil) {
       GRPCMutableCallOptions *callOptions = [[GRPCHost callOptionsForHost:_host] mutableCopy];
       if (_serverName.length != 0) {
@@ -592,7 +599,8 @@ static NSString *const kBearerPrefix = @"Bearer ";
     }
 
     NSAssert(_callOptions.authTokenProvider == nil || _callOptions.oauth2AccessToken == nil,
-             @"authTokenProvider and oauth2AccessToken cannot be set at the same time");
+             @"authTokenProvider and oauth2AccessToken cannot be set at the "
+             @"same time");
 
     tokenProvider = _callOptions.authTokenProvider;
   }

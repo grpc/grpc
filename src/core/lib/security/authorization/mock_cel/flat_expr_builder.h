@@ -22,9 +22,9 @@
 #include <string>
 #include <vector>
 
+#include "google/api/expr/v1alpha1/syntax.upb.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "google/api/expr/v1alpha1/syntax.upb.h"
 
 #include "src/core/lib/security/authorization/mock_cel/cel_expression.h"
 #include "src/core/lib/security/authorization/mock_cel/evaluator_core.h"

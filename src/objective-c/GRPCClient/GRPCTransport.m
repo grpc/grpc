@@ -30,8 +30,8 @@ static GRPCTransportRegistry *gTransportRegistry = nil;
 static dispatch_once_t initTransportRegistry;
 
 BOOL TransportIDIsEqual(GRPCTransportID lhs, GRPCTransportID rhs) {
-  // Directly comparing pointers works because we require users to use the id provided by each
-  // implementation, not coming up with their own string.
+  // Directly comparing pointers works because we require users to use the id
+  // provided by each implementation, not coming up with their own string.
   return lhs == rhs;
 }
 
@@ -88,7 +88,8 @@ NSUInteger TransportIDHash(GRPCTransportID transportID) {
     if (_defaultFactory == nil) {
       // fall back to default transport if no transport is provided
       [NSException raise:NSInvalidArgumentException
-                  format:@"Did not specify transport and unable to find a default transport."];
+                  format:@"Did not specify transport and unable to find a "
+                         @"default transport."];
       return nil;
     }
     return _defaultFactory;
@@ -98,7 +99,8 @@ NSUInteger TransportIDHash(GRPCTransportID transportID) {
   if (transportFactory == nil) {
     if (_defaultFactory != nil) {
       // fall back to default transport if no transport is found
-      NSLog(@"Unable to find transport with id %s; falling back to default transport.",
+      NSLog(@"Unable to find transport with id %s; falling back to default "
+            @"transport.",
             transportID);
       return _defaultFactory;
     } else {

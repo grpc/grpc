@@ -73,7 +73,7 @@ class ObjectGroupForkHandler {
  private:
   GRPC_UNUSED bool registered_ = false;
   bool is_forking_ = false;
-  std::vector<std::weak_ptr<Forkable> > forkables_;
+  std::vector<std::weak_ptr<Forkable>> forkables_;
 };
 
 }  // namespace experimental

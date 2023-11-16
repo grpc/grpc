@@ -22,13 +22,14 @@
 #import "GRPCCallOptions.h"
 #import "GRPCInterceptor.h"
 
-#import "GRPCTransport.h"
 #import "private/GRPCTransport+Private.h"
+#import "GRPCTransport.h"
 
 /**
- * The response dispatcher creates its own serial dispatch queue and target the queue to the
- * dispatch queue of a user provided response handler. It removes the requirement of having to use
- * serial dispatch queue in the user provided response handler.
+ * The response dispatcher creates its own serial dispatch queue and target the
+ * queue to the dispatch queue of a user provided response handler. It removes
+ * the requirement of having to use serial dispatch queue in the user provided
+ * response handler.
  */
 @interface GRPCResponseDispatcher : NSObject <GRPCResponseHandler>
 
@@ -72,8 +73,9 @@
 }
 
 - (void)didReceiveData:(id)data {
-  // For backwards compatibility with didReceiveRawMessage, if the user provided a response handler
-  // that handles didReceiveRawMesssage, we issue to that method instead
+  // For backwards compatibility with didReceiveRawMessage, if the user provided
+  // a response handler that handles didReceiveRawMesssage, we issue to that
+  // method instead
   if ([_responseHandler respondsToSelector:@selector(didReceiveRawMessage:)]) {
     [_responseHandler didReceiveRawMessage:data];
   } else if ([_responseHandler respondsToSelector:@selector(didReceiveData:)]) {
@@ -134,8 +136,9 @@
   id<GRPCInterceptorInterface> _firstInterceptor;
 
   /**
-   * The actual call options being used by this call. It is different from the user-provided
-   * call options when the user provided a NULL call options object.
+   * The actual call options being used by this call. It is different from the
+   * user-provided call options when the user provided a NULL call options
+   * object.
    */
   GRPCCallOptions *_actualCallOptions;
 }

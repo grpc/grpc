@@ -19,11 +19,11 @@
 #include <chrono>
 #include <thread>  // NOLINT
 
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc++/grpc++.h>
 #include <grpcpp/support/status.h>

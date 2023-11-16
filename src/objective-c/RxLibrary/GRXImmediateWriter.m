@@ -75,15 +75,17 @@
 
 #pragma mark Conformance with GRXWriter
 
-// Most of the complexity in this implementation is the result of supporting pause and resumption of
-// the GRXWriter. It's an important feature for instances of GRXWriter that are backed by a
-// container (which may be huge), or by a NSEnumerator (which may even be infinite).
+// Most of the complexity in this implementation is the result of supporting
+// pause and resumption of the GRXWriter. It's an important feature for
+// instances of GRXWriter that are backed by a container (which may be huge), or
+// by a NSEnumerator (which may even be infinite).
 
 - (void)writeUntilPausedOrStopped {
   id value;
   while (value = [_enumerator nextObject]) {
     [_writeable writeValue:value];
-    // If the writeable has a reference to us, it might change our state to paused or finished.
+    // If the writeable has a reference to us, it might change our state to
+    // paused or finished.
     if (_state == GRXWriterStatePaused || _state == GRXWriterStateFinished) {
       return;
     }

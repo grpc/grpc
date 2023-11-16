@@ -27,25 +27,27 @@ NS_ASSUME_NONNULL_BEGIN
 @interface GRPCTransportRegistry (Private)
 
 /**
- * Get a transport implementation's factory by its transport id. If the transport id was not
- * registered with the registry, the default transport factory (core + secure) is returned. If the
- * default transport does not exist, an exception is thrown.
+ * Get a transport implementation's factory by its transport id. If the
+ * transport id was not registered with the registry, the default transport
+ * factory (core + secure) is returned. If the default transport does not exist,
+ * an exception is thrown.
  */
 - (id<GRPCTransportFactory>)getTransportFactoryWithID:(GRPCTransportID)transportID;
 
 @end
 
 /**
- * GRPCTransportManager is a helper class to forward messages between the last interceptor and the
- * transport instance.
+ * GRPCTransportManager is a helper class to forward messages between the last
+ * interceptor and the transport instance.
  *
- * All methods except the initializer of the class can only be called on the manager's dispatch
- * queue. Since the manager's dispatch queue is the same as the transport's dispatch queue, it is
- * also safe to call the manager's methods in the corresponding transport instance's methods that
- * implement GRPCInterceptorInterface.
+ * All methods except the initializer of the class can only be called on the
+ * manager's dispatch queue. Since the manager's dispatch queue is the same as
+ * the transport's dispatch queue, it is also safe to call the manager's methods
+ * in the corresponding transport instance's methods that implement
+ * GRPCInterceptorInterface.
  *
- * When a transport instance is shutting down, it must call -shutDown method of its associated
- * transport manager for proper clean-up.
+ * When a transport instance is shutting down, it must call -shutDown method of
+ * its associated transport manager for proper clean-up.
  */
 @interface GRPCTransportManager : NSObject <GRPCInterceptorInterface>
 
@@ -53,23 +55,28 @@ NS_ASSUME_NONNULL_BEGIN
                 previousInterceptor:(id<GRPCResponseHandler>)previousInterceptor;
 
 /**
- * Notify the manager that the transport has shut down and the manager should release references to
- * its response handler and stop forwarding requests/responses.
+ * Notify the manager that the transport has shut down and the manager should
+ * release references to its response handler and stop forwarding
+ * requests/responses.
  */
 - (void)shutDown;
 
-/** Forward initial metadata to the previous interceptor in the interceptor chain */
+/** Forward initial metadata to the previous interceptor in the interceptor
+ * chain */
 - (void)forwardPreviousInterceptorWithInitialMetadata:(nullable NSDictionary *)initialMetadata;
 
-/** Forward a received message to the previous interceptor in the interceptor chain */
+/** Forward a received message to the previous interceptor in the interceptor
+ * chain */
 - (void)forwardPreviousInterceptorWithData:(nullable id)data;
 
-/** Forward call close and trailing metadata to the previous interceptor in the interceptor chain */
+/** Forward call close and trailing metadata to the previous interceptor in the
+ * interceptor chain */
 - (void)forwardPreviousInterceptorCloseWithTrailingMetadata:
             (nullable NSDictionary *)trailingMetadata
                                                       error:(nullable NSError *)error;
 
-/** Forward write completion to the previous interceptor in the interceptor chain */
+/** Forward write completion to the previous interceptor in the interceptor
+ * chain */
 - (void)forwardPreviousInterceptorDidWriteData;
 
 @end

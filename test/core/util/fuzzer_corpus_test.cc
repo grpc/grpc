@@ -26,9 +26,9 @@
 #include <string>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "absl/flags/flag.h"
 #include "absl/types/optional.h"
-#include "gtest/gtest.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>

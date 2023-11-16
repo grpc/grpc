@@ -17,11 +17,11 @@
 #include <thread>  // NOLINT
 #include <vector>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 #include <grpc++/grpc++.h>
 #include <grpc/grpc.h>

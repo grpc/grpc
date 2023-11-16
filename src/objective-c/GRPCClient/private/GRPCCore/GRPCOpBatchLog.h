@@ -25,7 +25,8 @@
 @interface GRPCOpBatchLog : NSObject
 
 /**
- * Enables logging of op batches. Memory consumption increases as more ops are logged.
+ * Enables logging of op batches. Memory consumption increases as more ops are
+ * logged.
  */
 + (void)enableOpBatchLog:(BOOL)enabled;
 

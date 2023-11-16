@@ -21,16 +21,16 @@
 #import "GRXImmediateWriter.h"
 
 /**
- * Utility to construct GRXWriter instances from values that are immediately available when
- * required.
+ * Utility to construct GRXWriter instances from values that are immediately
+ * available when required.
  *
  * Thread safety: the methods of this class are thread safe.
  */
 @interface GRXImmediateSingleWriter : GRXImmediateWriter
 
 /**
- * Returns a writer that sends the passed value to its writeable and then finishes (releasing the
- * value).
+ * Returns a writer that sends the passed value to its writeable and then
+ * finishes (releasing the value).
  */
 + (GRXWriter *)writerWithValue:(id)value;
 

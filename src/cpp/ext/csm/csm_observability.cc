@@ -24,13 +24,13 @@
 #include <string>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/statusor.h"
-#include "absl/types/optional.h"
 #include "google/cloud/opentelemetry/resource_detector.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/resource/resource.h"
 #include "opentelemetry/sdk/resource/resource_detector.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/statusor.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/ext/csm_observability.h>

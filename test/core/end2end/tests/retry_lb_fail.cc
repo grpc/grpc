@@ -17,8 +17,8 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/status/status.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>

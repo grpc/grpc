@@ -48,6 +48,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "src/proto/grpc/lookup/v1/rls.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/upb.hpp"
 
@@ -101,7 +102,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/proto/grpc/lookup/v1/rls.upb.h"
 
 namespace grpc_core {
 

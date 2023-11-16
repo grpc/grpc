@@ -31,12 +31,12 @@
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/struct.pb.h>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "upb/reflection/def.h"
 
 #include <grpc/grpc.h>

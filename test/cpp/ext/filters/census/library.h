@@ -23,10 +23,10 @@
 #include <thread>  // NOLINT
 #include <vector>
 
-#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/trace/exporter/span_exporter.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc++/grpc++.h>
 #include <grpcpp/opencensus.h>

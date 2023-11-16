@@ -42,10 +42,13 @@
 #include "test/core/util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
-#define CLIENT_CERT_PATH "src/core/tsi/test_creds/multi-domain.pem"
-#define SERVER_CERT_PATH_0 "src/core/tsi/test_creds/server0.pem"
+#define CLIENT_CERT_PATH \
+  "src/core/tsi/test_creds/multi-domain.pem"
+#define SERVER_CERT_PATH_0 \
+  "src/core/tsi/test_creds/server0.pem"
 #define SERVER_KEY_PATH_0 "src/core/tsi/test_creds/server0.key"
-#define SERVER_CERT_PATH_1 "src/core/tsi/test_creds/server1.pem"
+#define SERVER_CERT_PATH_1 \
+  "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH_1 "src/core/tsi/test_creds/server1.key"
 
 namespace grpc_core {

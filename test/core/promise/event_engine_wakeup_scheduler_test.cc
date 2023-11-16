@@ -18,8 +18,8 @@
 
 #include <memory>
 
-#include "absl/status/status.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>

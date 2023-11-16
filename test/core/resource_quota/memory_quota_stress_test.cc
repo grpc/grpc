@@ -24,10 +24,10 @@
 #include <utility>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-#include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/memory_request.h>

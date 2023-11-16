@@ -25,34 +25,36 @@
  */
 @interface TestBase : XCTestCase
 /**
- * The test suite to run, checking if the current XCTestCase instance is the base class.
- * If so, run no tests (disabled). Otherwise, proceed to normal execution.
+ * The test suite to run, checking if the current XCTestCase instance is the
+ * base class. If so, run no tests (disabled). Otherwise, proceed to normal
+ * execution.
  */
 @property(class, readonly) XCTestSuite *defaultTestSuite;
 
 /**
- * Host to send the RPCs to. The base implementation returns nil, which would make all tests to
- * fail.
- * Override in a subclass to perform these tests against a specific address.
+ * Host to send the RPCs to. The base implementation returns nil, which would
+ * make all tests to fail. Override in a subclass to perform these tests against
+ * a specific address.
  */
 + (NSString *)host;
 
 /**
- * Bytes of overhead of test proto responses due to encoding. This is used to exercise the behavior
- * when responses are just above or below the max response size. For some reason, the local and
- * remote servers enconde responses with different overhead (?), so this is defined per-subclass.
+ * Bytes of overhead of test proto responses due to encoding. This is used to
+ * exercise the behavior when responses are just above or below the max response
+ * size. For some reason, the local and remote servers enconde responses with
+ * different overhead (?), so this is defined per-subclass.
  */
 - (int32_t)encodingOverhead;
 
 /*
- * The transport to be used. The base implementation returns NULL. Subclasses should override to
- * appropriate settings.
+ * The transport to be used. The base implementation returns NULL. Subclasses
+ * should override to appropriate settings.
  */
 + (GRPCTransportID)transport;
 
 /**
- * The root certificates to be used. The base implementation returns nil. Subclasses should override
- * to appropriate settings.
+ * The root certificates to be used. The base implementation returns nil.
+ * Subclasses should override to appropriate settings.
  */
 + (NSString *)PEMRootCertificates;
 

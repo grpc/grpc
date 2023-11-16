@@ -35,7 +35,8 @@ extern const char *kCFStreamVarName;
 static GRPCChannelPool *gChannelPool;
 static dispatch_once_t gInitChannelPool;
 
-/** When all calls of a channel are destroyed, destroy the channel after this much seconds. */
+/** When all calls of a channel are destroyed, destroy the channel after this
+ * much seconds. */
 static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 @implementation GRPCPooledChannel {
@@ -140,22 +141,25 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     return;
   }
   @synchronized(self) {
-    // Detect if all objects weakly referenced in _wrappedCalls are (implicitly) removed.
-    // _wrappedCalls.count does not work here since the hash table may include deallocated weak
-    // references. _wrappedCalls.allObjects forces removal of those objects.
+    // Detect if all objects weakly referenced in _wrappedCalls are (implicitly)
+    // removed. _wrappedCalls.count does not work here since the hash table may
+    // include deallocated weak references. _wrappedCalls.allObjects forces
+    // removal of those objects.
     if (_wrappedCalls.allObjects.count == 0) {
-      // No more call has reference to this channel. We may start the timer for destroying the
-      // channel now.
+      // No more call has reference to this channel. We may start the timer for
+      // destroying the channel now.
       NSDate *now = [NSDate date];
       NSAssert(now != nil, @"Unable to create NSDate object 'now'.");
       _lastTimedDestroy = now;
       dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)_destroyDelay * NSEC_PER_SEC),
                      _timerQueue, ^{
                        @synchronized(self) {
-                         // Check _lastTimedDestroy against now in case more calls are created (and
-                         // maybe destroyed) after this dispatch_async. In that case the current
-                         // dispatch_after block should be discarded; the channel should be
-                         // destroyed in a later dispatch_after block.
+                         // Check _lastTimedDestroy against now in case more
+                         // calls are created (and maybe destroyed) after this
+                         // dispatch_async. In that case the current
+                         // dispatch_after block should be discarded; the
+                         // channel should be destroyed in a later
+                         // dispatch_after block.
                          if (now != nil && self->_lastTimedDestroy == now) {
                            self->_wrappedChannel = nil;
                            self->_lastTimedDestroy = nil;

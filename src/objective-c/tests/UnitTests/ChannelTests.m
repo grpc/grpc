@@ -98,8 +98,8 @@ static NSString *kPhonyPath = @"/phony/path";
   [channel disconnect];
   XCTAssertNil(channel.wrappedChannel);
 
-  // Create a new call and unref the old call; confirm that destroy of the old call does not make
-  // the channel disconnect, even after the destroy delay.
+  // Create a new call and unref the old call; confirm that destroy of the old
+  // call does not make the channel disconnect, even after the destroy delay.
   GRPCWrappedCall *wrappedCall2 = [channel wrappedCallWithPath:kPhonyPath
                                                completionQueue:cq
                                                    callOptions:options];

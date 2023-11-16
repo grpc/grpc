@@ -21,8 +21,8 @@
 #include <memory>
 #include <utility>
 
-#include "absl/status/status.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 #include <grpc/status.h>
 

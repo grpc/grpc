@@ -28,9 +28,10 @@
   return nil;
 }
 
-// This number indicates how many bytes of overhead does Protocol Buffers encoding add onto the
-// message. The number varies as different message.proto is used on different servers. The actual
-// number for each interop server is overridden in corresponding derived test classes.
+// This number indicates how many bytes of overhead does Protocol Buffers
+// encoding add onto the message. The number varies as different message.proto
+// is used on different servers. The actual number for each interop server is
+// overridden in corresponding derived test classes.
 - (int32_t)encodingOverhead {
   return 0;
 }

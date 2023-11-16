@@ -18,8 +18,8 @@
 
 #import "GRPCSecureChannelFactory.h"
 
-#import <GRPCClient/GRPCTypes.h>
 #include <grpc/grpc_security.h>
+#import <GRPCClient/GRPCTypes.h>
 
 #import "ChannelArgsUtil.h"
 #import "GRPCChannel.h"
@@ -58,7 +58,8 @@
   dispatch_once(&loading, ^{
     NSString *rootsPEM = @"roots";
     NSString *resourceBundlePath = @"gRPCCertificates.bundle";  // .pem
-    // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
+    // Do not use NSBundle.mainBundle, as it's nil for tests of library
+    // projects.
     NSBundle *bundle = [NSBundle bundleForClass:[self class]];
     NSBundle *resourceBundle = [NSBundle
         bundleWithURL:[[bundle resourceURL] URLByAppendingPathComponent:resourceBundlePath]];

@@ -23,6 +23,7 @@
 #include <memory>
 #include <utility>
 
+#include "src/proto/grpc/health/v1/health.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/upb.hpp"
 
@@ -32,8 +33,6 @@
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/impl/server_callback_handlers.h>
 #include <grpcpp/support/slice.h>
-
-#include "src/proto/grpc/health/v1/health.upb.h"
 
 #define MAX_SERVICE_NAME_LENGTH 200
 

@@ -29,6 +29,9 @@
 #include <utility>
 #include <vector>
 
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
+#include "google/protobuf/wrappers.upb.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -47,9 +50,6 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "envoy/type/v3/range.upb.h"
-#include "google/protobuf/any.upb.h"
-#include "google/protobuf/duration.upb.h"
-#include "google/protobuf/wrappers.upb.h"
 #include "re2/re2.h"
 #include "upb/base/string_view.h"
 #include "upb/collections/map.h"

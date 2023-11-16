@@ -20,6 +20,11 @@
 
 #include <grpc/status.h>
 
+#import <grpc/grpc.h>
+#import <grpc/support/log.h>
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall+Interceptor.h>
@@ -29,11 +34,6 @@
 #import <ProtoRPC/ProtoRPC.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
-#import <grpc/grpc.h>
-#import <grpc/support/log.h>
-#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
-#import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
-#import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 
 #import "../Common/TestUtils.h"
 #import "InteropTestsBlockCallbacks.h"
@@ -423,9 +423,10 @@ static dispatch_once_t initGlobalInterceptorFactory;
   return nil;
 }
 
-// This number indicates how many bytes of overhead does Protocol Buffers encoding add onto the
-// message. The number varies as different message.proto is used on different servers. The actual
-// number for each interop server is overridden in corresponding derived test classes.
+// This number indicates how many bytes of overhead does Protocol Buffers
+// encoding add onto the message. The number varies as different message.proto
+// is used on different servers. The actual number for each interop server is
+// overridden in corresponding derived test classes.
 - (int32_t)encodingOverhead {
   return 0;
 }
@@ -885,9 +886,10 @@ static dispatch_once_t initGlobalInterceptorFactory;
                             expectedResponse.payload.body = [NSMutableData dataWithLength:10];
                             XCTAssertEqualObjects(response, expectedResponse);
 
-                            // The test is a success if there is a batch of exactly 3 ops
-                            // (SEND_INITIAL_METADATA, SEND_MESSAGE, SEND_CLOSE_FROM_CLIENT).
-                            // Without packet coalescing each batch of ops contains only one op.
+                            // The test is a success if there is a batch of exactly 3
+                            // ops (SEND_INITIAL_METADATA, SEND_MESSAGE,
+                            // SEND_CLOSE_FROM_CLIENT). Without packet coalescing
+                            // each batch of ops contains only one op.
                             NSArray *opBatches = [GRPCCall obtainAndCleanOpBatchLog];
                             const NSInteger kExpectedOpBatchSize = 3;
                             for (NSObject *o in opBatches) {
@@ -947,18 +949,18 @@ static dispatch_once_t initGlobalInterceptorFactory;
                             if (weakService == nil) {
                               return;
                             }
-                            // TODO(jcanizales): Catch the error and rethrow it with an
-                            // actionable message:
-                            // - Use +[GRPCCall setResponseSizeLimit:forHost:] to set a
-                            // higher limit.
-                            // - If you're developing the server, consider using response
-                            // streaming, or let clients filter
-                            //   responses by setting a google.protobuf.FieldMask in the
-                            //   request:
+                            // TODO(jcanizales): Catch the error and rethrow it with
+                            // an actionable message:
+                            // - Use +[GRPCCall setResponseSizeLimit:forHost:] to set
+                            // a higher limit.
+                            // - If you're developing the server, consider using
+                            // response streaming, or let clients filter
+                            //   responses by setting a google.protobuf.FieldMask in
+                            //   the request:
                             //   https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/field_mask.proto
-                            XCTAssertEqualObjects(
-                                error.localizedDescription,
-                                @"Received message larger than max (4194305 vs. 4194304)");
+                            XCTAssertEqualObjects(error.localizedDescription,
+                                                  @"Received message larger than "
+                                                  @"max (4194305 vs. 4194304)");
                             [expectation fulfill];
                           }];
     waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
@@ -1012,23 +1014,24 @@ static dispatch_once_t initGlobalInterceptorFactory;
     GRXWriter *writer = [GRXWriter writerWithContainer:@[ request1, request2, request3, request4 ]];
 
     __weak RMTTestService *weakService = service;
-    [service
-        streamingInputCallWithRequestsWriter:writer
-                                     handler:^(RMTStreamingInputCallResponse *response,
-                                               NSError *error) {
-                                       if (weakService == nil) {
-                                         return;
-                                       }
-                                       XCTAssertNil(error, @"Finished with unexpected error: %@",
-                                                    error);
+    [service streamingInputCallWithRequestsWriter:writer
+                                          handler:^(RMTStreamingInputCallResponse *response,
+                                                    NSError *error) {
+                                            if (weakService == nil) {
+                                              return;
+                                            }
+                                            XCTAssertNil(error,
+                                                         @"Finished with unexpected "
+                                                         @"error: %@",
+                                                         error);
 
-                                       RMTStreamingInputCallResponse *expectedResponse =
-                                           [RMTStreamingInputCallResponse message];
-                                       expectedResponse.aggregatedPayloadSize = 74922;
-                                       XCTAssertEqualObjects(response, expectedResponse);
+                                            RMTStreamingInputCallResponse *expectedResponse =
+                                                [RMTStreamingInputCallResponse message];
+                                            expectedResponse.aggregatedPayloadSize = 74922;
+                                            XCTAssertEqualObjects(response, expectedResponse);
 
-                                       [expectation fulfill];
-                                     }];
+                                            [expectation fulfill];
+                                          }];
 
     waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
@@ -1070,20 +1073,19 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
                               id expected = [RMTStreamingOutputCallResponse
                                   messageWithPayloadSize:expectedSizes[index]];
-                              assertBlock(
-                                  [response isEqual:expected],
-                                  [NSString
-                                      stringWithFormat:@"response %@ not equal to expected %@",
-                                                       response, expected]);
+                              assertBlock([response isEqual:expected],
+                                          [NSString stringWithFormat:@"response %@ not equal "
+                                                                     @"to expected %@",
+                                                                     response, expected]);
 
                               index += 1;
                             }
 
                             if (done) {
-                              assertBlock(
-                                  index == 4,
-                                  [NSString stringWithFormat:@"Received %@ responses instead of 4.",
-                                                             @(index)]);
+                              assertBlock(index == 4,
+                                          [NSString stringWithFormat:@"Received %@ responses "
+                                                                     @"instead of 4.",
+                                                                     @(index)]);
                               [expectation fulfill];
                             }
                           }];
@@ -1129,11 +1131,10 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
                                 id expected = [RMTStreamingOutputCallResponse
                                     messageWithPayloadSize:responses[index]];
-                                assertBlock(
-                                    [response isEqual:expected],
-                                    [NSString
-                                        stringWithFormat:@"response %@ not equal to expected %@",
-                                                         response, expected]);
+                                assertBlock([response isEqual:expected],
+                                            [NSString stringWithFormat:@"response %@ not equal to "
+                                                                       @"expected %@",
+                                                                       response, expected]);
 
                                 index += 1;
                                 if (index < 4) {
@@ -1147,11 +1148,10 @@ static dispatch_once_t initGlobalInterceptorFactory;
                               }
 
                               if (done) {
-                                assertBlock(
-                                    index == 4,
-                                    [NSString
-                                        stringWithFormat:@"Received %@ responses instead of 4.",
-                                                         @(index)]);
+                                assertBlock(index == 4,
+                                            [NSString stringWithFormat:@"Received %@ responses "
+                                                                       @"instead of 4.",
+                                                                       @(index)]);
                                 [expectation fulfill];
                               }
                             }];
@@ -1328,7 +1328,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBegin"];
 
-    // A buffered pipe to which we never write any value acts as a writer that just hangs.
+    // A buffered pipe to which we never write any value acts as a writer
+    // that just hangs.
     GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
 
     __weak RMTTestService *weakService = service;
@@ -1360,7 +1361,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"CancelAfterBeginWithV2API"];
 
-    // A buffered pipe to which we never write any value acts as a writer that just hangs.
+    // A buffered pipe to which we never write any value acts as a writer that
+    // just hangs.
     __weak RMTTestService *weakService = service;
     GRPCStreamingProtoCall *call = [service
         streamingInputCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
@@ -1544,15 +1546,14 @@ static dispatch_once_t initGlobalInterceptorFactory;
                        [GRPCCall closeOpenConnections];
 #pragma clang diagnostic pop
 
-                       [weakService
-                           emptyCallWithRequest:request
-                                        handler:^(GPBEmpty *response, NSError *error) {
-                                          XCTAssertNil(
-                                              error,
-                                              @"Second RPC finished with unexpected error: %@",
-                                              error);
-                                          [expectation fulfill];
-                                        }];
+                       [weakService emptyCallWithRequest:request
+                                                 handler:^(GPBEmpty *response, NSError *error) {
+                                                   XCTAssertNil(error,
+                                                                @"Second RPC finished with "
+                                                                @"unexpected error: %@",
+                                                                error);
+                                                   [expectation fulfill];
+                                                 }];
                      }];
 
     waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
@@ -1560,8 +1561,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testCompressedUnaryRPC {
-  // This test needs to be disabled for remote test because interop server grpc-test
-  // does not support compression.
+  // This test needs to be disabled for remote test because interop server
+  // grpc-test does not support compression.
   if (isRemoteInteropTest([[self class] host])) {
     return;
   }
@@ -1599,8 +1600,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
   });
 }
 
-// TODO(b/268379869): This test has a race and is flaky in any configurations. One possible way to
-// deflake this test is to find a way to disable ping ack on the interop server for this test case.
+// TODO(b/268379869): This test has a race and is flaky in any configurations.
+// One possible way to deflake this test is to find a way to disable ping ack on
+// the interop server for this test case.
 - (void)testKeepaliveWithV2API {
   return;
 
@@ -1637,10 +1639,10 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                       return;
                                     }
                                     XCTAssertNotNil(error);
-                                    XCTAssertEqual(
-                                        error.code, GRPC_STATUS_UNAVAILABLE,
-                                        @"Received status %@ instead of UNAVAILABLE (14).",
-                                        @(error.code));
+                                    XCTAssertEqual(error.code, GRPC_STATUS_UNAVAILABLE,
+                                                   @"Received status %@ instead of "
+                                                   @"UNAVAILABLE (14).",
+                                                   @(error.code));
                                     [expectation fulfill];
                                   }]
                               callOptions:options];
@@ -1862,8 +1864,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
   });
 }
 
-// Chain a default interceptor and a hook interceptor which, after one write, cancels the call
-// under the hood but forward further data to the user.
+// Chain a default interceptor and a hook interceptor which, after one write,
+// cancels the call under the hood but forward further data to the user.
 - (void)testHijackingInterceptor {
   GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
@@ -1907,7 +1909,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
         }
         finishHook:^(GRPCInterceptorManager *manager) {
           finishCount++;
-          // finish must happen after the hijacking, so directly reply with a close
+          // finish must happen after the hijacking, so directly reply with a
+          // close
           [manager forwardPreviousInterceptorCloseWithTrailingMetadata:@{@"grpc-status" : @"0"}
                                                                  error:nil];
           [manager shutDown];
@@ -2145,7 +2148,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
              didWriteDataHook:nil];
   @try {
     [GRPCCall2 registerGlobalInterceptor:factory];
-    XCTFail(@"Did not receive an exception when registering global interceptor the second time");
+    XCTFail(@"Did not receive an exception when registering global interceptor "
+            @"the second time");
   } @catch (NSException *exception) {
     // Do nothing; test passes
   }

@@ -28,10 +28,10 @@
 
 #include <string>
 
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>

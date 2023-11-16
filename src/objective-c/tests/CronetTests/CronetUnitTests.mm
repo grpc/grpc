@@ -214,7 +214,8 @@ unsigned int parse_h2_length(const char *field) {
     int s = accept(sl, NULL, NULL);
     GPR_ASSERT(s >= 0);
 
-    // Close the connection after 1 second to trigger Cronet's on_failed()
+    // Close the connection after 1 second to trigger Cronet's
+    // on_failed()
     sleep(1);
     close(s);
     close(sl);

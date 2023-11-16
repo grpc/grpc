@@ -28,13 +28,13 @@
 @implementation GRXConcurrentWriteable {
   dispatch_queue_t _writeableQueue;
 
-  // This ivar ensures that writesFinishedWithError: is only sent once to the writeable. Protected
-  // by _writeableQueue.
+  // This ivar ensures that writesFinishedWithError: is only sent once to the
+  // writeable. Protected by _writeableQueue.
   BOOL _alreadyFinished;
 
-  // This ivar ensures that a cancelWithError: call prevents further values to be sent to
-  // self.writeable. It must support manipulation outside of _writeableQueue and thus needs to be
-  // protected by self lock.
+  // This ivar ensures that a cancelWithError: call prevents further values to
+  // be sent to self.writeable. It must support manipulation outside of
+  // _writeableQueue and thus needs to be protected by self lock.
   BOOL _cancelled;
 }
 
@@ -87,7 +87,8 @@
     }
     [self.writeable writesFinishedWithError:nil];
 
-    // Skip any possible message to the wrapped writeable enqueued after this one.
+    // Skip any possible message to the wrapped writeable enqueued after this
+    // one.
     self->_alreadyFinished = YES;
     self.writeable = nil;
   });
@@ -105,7 +106,8 @@
     }
     [self.writeable writesFinishedWithError:error];
 
-    // Skip any possible message to the wrapped writeable enqueued after this one.
+    // Skip any possible message to the wrapped writeable enqueued after this
+    // one.
     self->_alreadyFinished = YES;
     self.writeable = nil;
   });

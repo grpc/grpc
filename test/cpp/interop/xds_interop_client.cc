@@ -30,12 +30,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/algorithm/container.h"
-#include "absl/flags/flag.h"
-#include "absl/strings/str_split.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
+#include "absl/algorithm/container.h"
+#include "absl/flags/flag.h"
+#include "absl/strings/str_split.h"
 
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/csm_observability.h>

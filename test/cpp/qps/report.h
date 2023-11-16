@@ -87,7 +87,7 @@ class CompositeReporter : public Reporter {
   void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
 
  private:
-  std::vector<std::unique_ptr<Reporter> > reporters_;
+  std::vector<std::unique_ptr<Reporter>> reporters_;
 };
 
 /// Reporter to gpr_log(GPR_INFO).

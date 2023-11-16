@@ -25,11 +25,11 @@
 #include <utility>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/synchronization/barrier.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>

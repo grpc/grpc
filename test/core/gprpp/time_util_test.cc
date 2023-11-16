@@ -19,8 +19,8 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/time/time.h"
 #include "gtest/gtest.h"
+#include "absl/time/time.h"
 
 #include <grpc/support/time.h>
 

@@ -31,9 +31,9 @@
 
 #include <google/protobuf/struct.pb.h>
 
+#include "google/logging/v2/logging.grpc.pb.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
-#include "google/logging/v2/logging.grpc.pb.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -101,8 +101,8 @@ class ObservabilityLoggingSink : public grpc_core::LoggingSink {
   bool registered_env_fetch_notification_ = false;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> ABSL_GUARDED_BY(
       mu_) event_engine_;
-  std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface> stub_
-      ABSL_GUARDED_BY(mu_);
+  std::unique_ptr<google::logging::v2::LoggingServiceV2::StubInterface>
+      stub_ ABSL_GUARDED_BY(mu_);
   std::vector<Entry> entries_ ABSL_GUARDED_BY(mu_);
   uint64_t entries_memory_footprint_ ABSL_GUARDED_BY(mu_) = 0;
   const EnvironmentAutoDetect::ResourceType* resource_ ABSL_GUARDED_BY(mu_) =

@@ -52,10 +52,11 @@ static NSMutableDictionary *gHostCache;
     return nil;
   }
 
-  // To provide a default port, we try to interpret the address. If it's just a host name without
-  // scheme and without port, we'll use port 443. If it has a scheme, we pass it untouched to the C
-  // gRPC library.
-  // TODO(jcanizales): Add unit tests for the types of addresses we want to let pass untouched.
+  // To provide a default port, we try to interpret the address. If it's just a
+  // host name without scheme and without port, we'll use port 443. If it has a
+  // scheme, we pass it untouched to the C gRPC library.
+  // TODO(jcanizales): Add unit tests for the types of addresses we want to let
+  // pass untouched.
   if (![address hasPrefix:@"dns:"] && ![address hasPrefix:@"unix:"] &&
       ![address hasPrefix:@"ipv4:"] && ![address hasPrefix:@"ipv6:"]) {
     NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];

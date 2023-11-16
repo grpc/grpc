@@ -219,9 +219,9 @@ TEST_F(ForEachTest, NextResultHeldThroughCallback) {
                               // has the side effect of stalling for some
                               // iterations
                               MoveableUntilPolled(), [sender] {
-                                // Perform the same test verifying the same
-                                // properties for NextResult holding: all should
-                                // still be true.
+                                // Perform the same test verifying the
+                                // same properties for NextResult
+                                // holding: all should still be true.
                                 EXPECT_TRUE((*sender)->Push(2)().pending());
                                 return absl::OkStatus();
                               });

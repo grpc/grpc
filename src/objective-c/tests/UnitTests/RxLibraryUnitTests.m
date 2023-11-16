@@ -24,8 +24,8 @@
 
 #define TEST_TIMEOUT 1
 
-// A mock of a GRXSingleValueHandler block that can be queried for how many times it was called and
-// what were the last values passed to it.
+// A mock of a GRXSingleValueHandler block that can be queried for how many
+// times it was called and what were the last values passed to it.
 //
 // TODO(jcanizales): Move this to a test util library, and add tests for it.
 @interface CapturingSingleValueHandler : NSObject

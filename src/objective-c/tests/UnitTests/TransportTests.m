@@ -16,10 +16,10 @@
  *
  */
 
+#import <XCTest/XCTest.h>
 #import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/GRPCInterceptor.h>
 #import <GRPCClient/GRPCTransport.h>
-#import <XCTest/XCTest.h>
 
 #define TEST_TIMEOUT (8.0)
 
@@ -106,7 +106,11 @@ static GRPCFakeTransportFactory *fakeTransportFactory;
                                                                          code:GRPCErrorCodeCancelled
                                                                      userInfo:@{
                                                                        NSLocalizedDescriptionKey :
-                                                                           @"Canceled."
+                                                                           @"Ca"
+                                                                           @"nc"
+                                                                           @"el"
+                                                                           @"ed"
+                                                                           @"."
                                                                      }]];
     [_manager shutDown];
   }

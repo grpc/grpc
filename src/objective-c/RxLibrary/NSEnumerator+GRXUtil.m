@@ -25,7 +25,8 @@
 @implementation NSEnumerator (GRXUtil)
 
 + (NSEnumerator *)grx_enumeratorWithContainer:(id<NSFastEnumeration>)container {
-  // TODO(jcanizales): Consider checking if container responds to objectEnumerator and return that?
+  // TODO(jcanizales): Consider checking if container responds to
+  // objectEnumerator and return that?
   return [[GRXNSFastEnumerator alloc] initWithContainer:container];
 }
 

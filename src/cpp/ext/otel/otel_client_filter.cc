@@ -28,6 +28,8 @@
 #include <string>
 #include <utility>
 
+#include "opentelemetry/context/context.h"
+#include "opentelemetry/metrics/sync_instruments.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
@@ -37,8 +39,6 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "opentelemetry/context/context.h"
-#include "opentelemetry/metrics/sync_instruments.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>

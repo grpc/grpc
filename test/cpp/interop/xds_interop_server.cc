@@ -18,10 +18,10 @@
 
 #include <iostream>
 
-#include "absl/flags/flag.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
+#include "absl/flags/flag.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/ext/csm_observability.h>

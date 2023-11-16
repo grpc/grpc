@@ -19,9 +19,9 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
 
 #include "test/core/util/test_config.h"
 

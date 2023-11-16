@@ -19,8 +19,8 @@
 #import <Foundation/Foundation.h>
 
 /**
- * A fully-qualified proto service method name. Full qualification is needed because a gRPC endpoint
- * can implement multiple services.
+ * A fully-qualified proto service method name. Full qualification is needed
+ * because a gRPC endpoint can implement multiple services.
  */
 __attribute__((deprecated("Please use GRPCProtoMethod.")))
 @interface ProtoMethod : NSObject

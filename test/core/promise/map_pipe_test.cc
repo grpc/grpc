@@ -87,8 +87,8 @@ TEST_F(MapPipeTest, SendThriceWithPipeInterceptingReceive) {
                       sender->reset();
                       return absl::OkStatus();
                     }),
-                // Use a ForEach loop to read them out and verify all values are
-                // seen (but with 1 added).
+                // Use a ForEach loop to read them out and verify all values
+                // are seen (but with 1 added).
                 ForEach(std::move(pipe.receiver),
                         [&num_received](int i) {
                           num_received++;
@@ -127,8 +127,8 @@ TEST_F(MapPipeTest, SendThriceWithPipeInterceptingSend) {
                       sender->reset();
                       return absl::OkStatus();
                     }),
-                // Use a ForEach loop to read them out and verify all values are
-                // seen (but with 1 added).
+                // Use a ForEach loop to read them out and verify all values
+                // are seen (but with 1 added).
                 ForEach(std::move(pipe.receiver),
                         [&num_received](int i) {
                           num_received++;

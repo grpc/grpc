@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -34,7 +35,6 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>

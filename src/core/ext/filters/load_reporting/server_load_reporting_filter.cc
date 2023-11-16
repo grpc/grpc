@@ -28,6 +28,8 @@
 #include <string>
 #include <utility>
 
+#include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/strings/ascii.h"
@@ -35,8 +37,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "opencensus/stats/stats.h"
-#include "opencensus/tags/tag_key.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
