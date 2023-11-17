@@ -28,6 +28,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -275,8 +276,7 @@ std::string ExternalAccountCredentials::debug_string() {
 
 std::string ExternalAccountCredentials::MetricsHeaderValue() {
   return absl::StrFormat(
-      "gl-cpp/unknown"
-      " auth/%s google-byoid-sdk source/%s sa-impersonation/%v "
+      "gl-cpp/unknown auth/%s google-byoid-sdk source/%s sa-impersonation/%v "
       "config-lifetime/%v",
       grpc_version_string(), CredentialSourceType(),
       !options_.service_account_impersonation_url.empty(),
@@ -346,12 +346,9 @@ void ExternalAccountCredentials::ExchangeToken(
   if (add_authorization_header) {
     std::string raw_cred =
         absl::StrFormat("%s:%s", options_.client_id, options_.client_secret);
-    char* encoded_cred =
-        grpc_base64_encode(raw_cred.c_str(), raw_cred.length(), 0, 0);
-    std::string str = absl::StrFormat("Basic %s", std::string(encoded_cred));
+    std::string str = absl::StrFormat("Basic %s", absl::Base64Escape(raw_cred));
     headers[2].key = gpr_strdup("Authorization");
     headers[2].value = gpr_strdup(str.c_str());
-    gpr_free(encoded_cred);
   }
   request.hdrs = headers;
   std::vector<std::string> body_parts;
