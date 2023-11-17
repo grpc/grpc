@@ -16,8 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
-
 #include <stdint.h>
 #include <string.h>
 
@@ -54,6 +52,8 @@
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_config.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver_attributes.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -95,8 +95,6 @@
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
-
-TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
 namespace {
 
@@ -142,7 +140,7 @@ class XdsResolver : public Resolver {
     explicit XdsWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
 
-    void OnUpdate(std::shared_ptr<const XdsDependencyManager::XdsConfig> config)
+    void OnUpdate(RefCountedPtr<XdsDependencyManager::XdsConfig> config)
         override {
       resolver_->OnUpdate(std::move(config));
     }
@@ -338,7 +336,7 @@ class XdsResolver : public Resolver {
     return it->second->Ref();
   }
 
-  void OnUpdate(std::shared_ptr<const XdsDependencyManager::XdsConfig> config);
+  void OnUpdate(RefCountedPtr<XdsDependencyManager::XdsConfig> config);
   void OnError(absl::string_view context, absl::Status status);
   void OnResourceDoesNotExist(std::string context);
 
@@ -357,7 +355,7 @@ class XdsResolver : public Resolver {
   const uint64_t channel_id_;
 
   OrphanablePtr<XdsDependencyManager> dependency_mgr_;
-  std::shared_ptr<const XdsDependencyManager::XdsConfig> current_config_;
+  RefCountedPtr<XdsDependencyManager::XdsConfig> current_config_;
   std::map<absl::string_view, WeakRefCountedPtr<ClusterRef>> cluster_ref_map_;
 };
 
@@ -862,6 +860,9 @@ void XdsResolver::StartLocked() {
     return;
   }
   xds_client_ = std::move(*xds_client);
+  grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
+                                   interested_parties_);
+  // Determine LDS resource name.
   std::string resource_name_fragment(absl::StripPrefix(uri_.path(), "/"));
   if (!uri_.authority().empty()) {
     // target_uri.authority is set case
@@ -907,9 +908,7 @@ void XdsResolver::StartLocked() {
     gpr_log(GPR_INFO, "[xds_resolver %p] Started with lds_resource_name %s.",
             this, lds_resource_name_.c_str());
   }
-  grpc_pollset_set_add_pollset_set(
-      static_cast<GrpcXdsClient*>(xds_client_.get())->interested_parties(),
-      interested_parties_);
+  // Start watch for xDS config.
   dependency_mgr_ = MakeOrphanable<XdsDependencyManager>(
       xds_client_, work_serializer_, std::make_unique<XdsWatcher>(Ref()),
       data_plane_authority_, lds_resource_name_);
@@ -921,15 +920,14 @@ void XdsResolver::ShutdownLocked() {
   }
   if (xds_client_ != nullptr) {
     dependency_mgr_.reset();
-    grpc_pollset_set_del_pollset_set(
-        static_cast<GrpcXdsClient*>(xds_client_.get())->interested_parties(),
-        interested_parties_);
+    grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
+                                     interested_parties_);
     xds_client_.reset(DEBUG_LOCATION, "xds resolver");
   }
 }
 
 void XdsResolver::OnUpdate(
-    std::shared_ptr<const XdsDependencyManager::XdsConfig> config) {
+    RefCountedPtr<XdsDependencyManager::XdsConfig> config) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated xDS config", this);
   }

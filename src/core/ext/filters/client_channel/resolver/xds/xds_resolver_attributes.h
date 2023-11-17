@@ -14,20 +14,17 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_H
-#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_ATTRIBUTES_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_ATTRIBUTES_H
 
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 
 namespace grpc_core {
-
-extern TraceFlag grpc_xds_resolver_trace;
 
 class XdsClusterAttribute
     : public ServiceConfigCallData::CallAttributeInterface {
@@ -62,4 +59,4 @@ class XdsRouteStateAttribute
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_ATTRIBUTES_H

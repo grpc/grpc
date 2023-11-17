@@ -20,7 +20,7 @@
 
 #include "absl/strings/str_join.h"
 
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/gprpp/match.h"
 
@@ -692,7 +692,7 @@ void XdsDependencyManager::MaybeUpdateClusterAndEndpointWatches() {
 
 void XdsDependencyManager::MaybeReportUpdate() {
   if (current_virtual_host_ == nullptr) return;
-  auto config = std::make_shared<XdsConfig>();
+  auto config = MakeRefCounted<XdsConfig>();
   config->listener = current_listener_;
   config->route_config = current_route_config_;
   config->virtual_host = current_virtual_host_;

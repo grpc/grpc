@@ -26,6 +26,7 @@
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_endpoint.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/resolver/resolver.h"
 
 namespace grpc_core {
@@ -37,7 +38,7 @@ constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
 // Reports updates only when all necessary resources have been obtained.
 class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
  public:
-  struct XdsConfig {
+  struct XdsConfig : public RefCounted<XdsConfig> {
     // Listener resource.
     std::shared_ptr<const XdsListenerResource> listener;
     // RouteConfig resource.  Will be populated even if RouteConfig is
@@ -72,7 +73,7 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
    public:
     virtual ~Watcher() = default;
 
-    virtual void OnUpdate(std::shared_ptr<const XdsConfig> config) = 0;
+    virtual void OnUpdate(RefCountedPtr<XdsConfig> config) = 0;
 
     // These methods are invoked when there is an error or
     // does-not-exist on LDS or RDS only.
