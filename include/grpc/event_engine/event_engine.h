@@ -462,7 +462,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
                               absl::AnyInvocable<void()> closure) = 0;
   /// Request cancellation of a task.
   ///
-  /// If the associated closure cannot be cancelled for any reason, and this
+  /// If the associated closure cannot be cancelled for any reason, this
   /// function will return false.
   ///
   /// If the associated closure can be cancelled, the associated callback will
