@@ -56,7 +56,10 @@ extern TraceFlag grpc_xds_client_refcount_trace;
 
 class XdsClient : public DualRefCounted<XdsClient> {
  public:
-  class ReadDelayHandle;
+  class ReadDelayHandle : public RefCounted<ReadDelayHandle> {
+   public:
+    static RefCountedPtr<ReadDelayHandle> NoWait() { return nullptr; }
+  };
 
   // Resource watcher interface.  Implemented by callers.
   // Note: Most callers will not use this API directly but rather via a
@@ -240,16 +243,16 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
  public:
-  class ReadDelayHandle : public RefCounted<ReadDelayHandle> {
-   public:
-    explicit ReadDelayHandle(WeakRefCountedPtr<ChannelState> channel_state);
-    ~ReadDelayHandle() override;
+  //   class ReadDelayHandle : public RefCounted<ReadDelayHandle> {
+  //    public:
+  //     explicit ReadDelayHandle(WeakRefCountedPtr<ChannelState>
+  //     channel_state); ~ReadDelayHandle() override;
 
-    static RefCountedPtr<ReadDelayHandle> NoWait() { return nullptr; }
+  //     static RefCountedPtr<ReadDelayHandle> NoWait() { return nullptr; }
 
-   private:
-    WeakRefCountedPtr<ChannelState> channel_state_;
-  };
+  //    private:
+  //     WeakRefCountedPtr<ChannelState> channel_state_;
+  //   };
 
  private:
   struct ResourceState {

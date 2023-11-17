@@ -135,6 +135,16 @@ class XdsClient::ChannelState::AdsCallState
   bool HasSubscribedResources() const;
 
  private:
+  class AdsReadDelayHandle : public ReadDelayHandle {
+   public:
+    explicit AdsReadDelayHandle(RefCountedPtr<AdsCallState> ads_call_state)
+        : ads_call_state_(std::move(ads_call_state)) {}
+    ~AdsReadDelayHandle() override;
+
+   private:
+    RefCountedPtr<AdsCallState> ads_call_state_;
+  };
+
   class AdsResponseParser : public XdsApi::AdsResponseParserInterface {
    public:
     struct Result {
@@ -266,7 +276,7 @@ class XdsClient::ChannelState::AdsCallState
         ResourceState& state = authority_state.resource_map[type_][name_.key];
         state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
         ads_calld_->xds_client()->NotifyWatchersOnResourceDoesNotExist(
-            state.watchers, XdsClient::ReadDelayHandle::NoWait());
+            state.watchers, ReadDelayHandle::NoWait());
       }
       ads_calld_->xds_client()->work_serializer_.DrainQueue();
       ads_calld_.reset();
@@ -595,7 +605,7 @@ void XdsClient::ChannelState::SetChannelStatusLocked(absl::Status status) {
       [watchers = std::move(watchers), status = std::move(status)]()
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(xds_client_->work_serializer_) {
             for (const auto& watcher : watchers) {
-              watcher->OnError(status, XdsClient::ReadDelayHandle::NoWait());
+              watcher->OnError(status, ReadDelayHandle::NoWait());
             }
           },
       DEBUG_LOCATION);
@@ -710,7 +720,7 @@ absl::Status XdsClient::ChannelState::AdsCallState::AdsResponseParser::
         fields.num_resources);
   }
   result_.read_delay_handle =
-      MakeRefCounted<ReadDelayHandle>(ads_call_state_->chand()->WeakRef());
+      MakeRefCounted<AdsReadDelayHandle>(ads_call_state_->Ref());
   result_.type =
       ads_call_state_->xds_client()->GetResourceTypeLocked(fields.type_url);
   if (result_.type == nullptr) {
@@ -1046,13 +1056,10 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSent(bool ok) {
 void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
     absl::string_view payload) {
   // Needs to be destroyed after the mutex is released.
-  RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle;
+  RefCountedPtr<ReadDelayHandle> read_delay_handle;
   {
     MutexLock lock(&xds_client()->mu_);
-    if (!IsCurrentCallOnChannel()) {
-      call_->StartRecvMessage();
-      return;
-    }
+    if (!IsCurrentCallOnChannel()) return;
     // Parse and validate the response.
     AdsResponseParser parser(this);
     absl::Status status = xds_client()->api_.ParseAdsResponse(payload, &parser);
@@ -1401,10 +1408,11 @@ void XdsClient::ChannelState::LrsCallState::OnRequestSent(bool /*ok*/) {
 void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
     absl::string_view payload) {
   MutexLock lock(&xds_client()->mu_);
-  auto cleanup =
-      absl::MakeCleanup([call = call_.get()]() { call->StartRecvMessage(); });
   // If we're no longer the current call, ignore the result.
   if (!IsCurrentCallOnChannel()) return;
+  // Start recv after any code branch
+  auto cleanup =
+      absl::MakeCleanup([call = call_.get()]() { call->StartRecvMessage(); });
   // Parse the response.
   bool send_all_clusters = false;
   std::set<std::string> new_cluster_names;
@@ -1575,7 +1583,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     work_serializer_.Run(
         [watcher = std::move(watcher), status = std::move(status)]()
             ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-              watcher->OnError(status, XdsClient::ReadDelayHandle::NoWait());
+              watcher->OnError(status, ReadDelayHandle::NoWait());
             },
         DEBUG_LOCATION);
   };
@@ -1626,8 +1634,8 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       work_serializer_.Schedule(
           [watcher, value = resource_state.resource]()
               ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-                watcher->OnGenericResourceChanged(
-                    value, XdsClient::ReadDelayHandle::NoWait());
+                watcher->OnGenericResourceChanged(value,
+                                                  ReadDelayHandle::NoWait());
               },
           DEBUG_LOCATION);
     } else if (resource_state.meta.client_status ==
@@ -1639,8 +1647,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       }
       work_serializer_.Schedule(
           [watcher]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-            watcher->OnResourceDoesNotExist(
-                XdsClient::ReadDelayHandle::NoWait());
+            watcher->OnResourceDoesNotExist(ReadDelayHandle::NoWait());
           },
           DEBUG_LOCATION);
     } else if (resource_state.meta.client_status ==
@@ -1662,7 +1669,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
               ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
                 watcher->OnError(absl::UnavailableError(absl::StrCat(
                                      "invalid resource: ", details)),
-                                 XdsClient::ReadDelayHandle::NoWait());
+                                 ReadDelayHandle::NoWait());
               },
           DEBUG_LOCATION);
     }
@@ -1683,8 +1690,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       work_serializer_.Schedule(
           [watcher = std::move(watcher), status = std::move(channel_status)]()
               ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) mutable {
-                watcher->OnError(std::move(status),
-                                 XdsClient::ReadDelayHandle::NoWait());
+                watcher->OnError(std::move(status), ReadDelayHandle::NoWait());
               },
           DEBUG_LOCATION);
     }
@@ -1951,8 +1957,7 @@ void XdsClient::ResetBackoff() {
 void XdsClient::NotifyWatchersOnErrorLocked(
     const std::map<ResourceWatcherInterface*,
                    RefCountedPtr<ResourceWatcherInterface>>& watchers,
-    absl::Status status,
-    RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) {
+    absl::Status status, RefCountedPtr<ReadDelayHandle> read_delay_handle) {
   const auto* node = bootstrap_->node();
   if (node != nullptr) {
     status = absl::Status(
@@ -1973,7 +1978,7 @@ void XdsClient::NotifyWatchersOnErrorLocked(
 void XdsClient::NotifyWatchersOnResourceDoesNotExist(
     const std::map<ResourceWatcherInterface*,
                    RefCountedPtr<ResourceWatcherInterface>>& watchers,
-    RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) {
+    RefCountedPtr<ReadDelayHandle> read_delay_handle) {
   work_serializer_.Schedule(
       [watchers, read_delay_handle = std::move(read_delay_handle)]()
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
@@ -2090,19 +2095,14 @@ std::string XdsClient::DumpClientConfigBinary() {
   return api_.AssembleClientConfig(resource_type_metadata_map);
 }
 
-XdsClient::ReadDelayHandle::ReadDelayHandle(
-    WeakRefCountedPtr<ChannelState> channel_state)
-    : channel_state_(std::move(channel_state)) {}
-
-XdsClient::ReadDelayHandle::~ReadDelayHandle() {
-  XdsClient* client = channel_state_->xds_client();
+XdsClient::ChannelState::AdsCallState::AdsReadDelayHandle::
+    ~AdsReadDelayHandle() {
+  XdsClient* client = ads_call_state_->xds_client();
   if (client == nullptr) {
     return;
   }
   MutexLock lock(&client->mu_);
-  auto call = channel_state_->ads_calld() != nullptr
-                  ? channel_state_->ads_calld()->call()
-                  : nullptr;
+  auto call = ads_call_state_->call_.get();
   if (call != nullptr) {
     call->StartRecvMessage();
   }

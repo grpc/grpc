@@ -59,7 +59,7 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
       // messages will not be sent until this one is done.
       virtual void SendMessage(std::string payload) = 0;
 
-      // Resumes reading messages from the stream.
+      // Starts a recv_message operation on the stream.
       virtual void StartRecvMessage() = 0;
     };
 

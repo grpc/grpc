@@ -157,9 +157,8 @@ class XdsServerConfigFetcher::ListenerWatcher
       std::shared_ptr<const XdsListenerResource> listener,
       RefCountedPtr<ReadDelayHandle> read_delay_handle) override;
 
-  void OnError(
-      absl::Status status,
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override;
+  void OnError(absl::Status status,
+               RefCountedPtr<ReadDelayHandle> read_delay_handle) override;
 
   void OnResourceDoesNotExist(
       RefCountedPtr<ReadDelayHandle> read_delay_handle) override;
@@ -506,8 +505,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
   void OnError(
       absl::Status status,
-      RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
-      override {
+      RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) override {
     parent_->OnError(status);
   }
 
