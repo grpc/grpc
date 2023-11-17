@@ -466,7 +466,20 @@ void XdsClusterImplLb::ShutdownLocked() {
                                      interested_parties());
     child_policy_.reset();
   }
-// FIXME: clean up cert provider stuff, including pollset_set linkage
+  // Clean up cert provider state.
+  if (root_certificate_provider_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(
+        interested_parties(),
+        root_certificate_provider_->interested_parties());
+    root_certificate_provider_.reset();
+  }
+  if (identity_certificate_provider_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(
+        interested_parties(),
+        identity_certificate_provider_->interested_parties());
+    identity_certificate_provider_.reset();
+  }
+  xds_certificate_provider_.reset();
   // Drop our ref to the child's picker, in case it's holding a ref to
   // the child.
   picker_.reset();

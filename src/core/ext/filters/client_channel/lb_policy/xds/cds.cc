@@ -103,7 +103,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
 // CDS LB policy.
 class CdsLb : public LoadBalancingPolicy {
  public:
-  CdsLb(Args args);
+  explicit CdsLb(Args args);
 
   absl::string_view name() const override { return kCds; }
 
