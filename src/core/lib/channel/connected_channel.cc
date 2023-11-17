@@ -883,13 +883,26 @@ grpc_channel_filter MakeConnectedFilter() {
   };
 }
 
-ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
+ArenaPromise<ServerMetadataHandle> MakeClientTransportCallPromise(
     Transport* transport, CallArgs call_args, NextPromiseFactory) {
+  auto initiator_and_handler =
+      GetContext<CallContext>()->MakeTransitionCallInitiatorAndHandler(
+          std::move(call_args));
+  return Seq(initiator.PushClientInitialMetadata(
+                 std::move(call_args.client_initial_metadata)),
+             initiator.PullServerTrailingMetadata());
+}
+
+const grpc_channel_filter kClientPromiseBasedTransportFilter =
+    MakeConnectedFilter<MakeClientTransportCallPromise>();
+
+ArenaPromise<ServerMetadataHandle> MakeServerTransportCallPromise(
+    Transport*, CallArgs, NextPromiseFactory) {
   Crash("not implemented");
 }
 
-const grpc_channel_filter kPromiseBasedTransportFilter =
-    MakeConnectedFilter<MakeTransportCallPromise>();
+const grpc_channel_filter kServerPromiseBasedTransportFilter =
+    MakeConnectedFilter<MakeServerTransportCallPromise>();
 
 #ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 const grpc_channel_filter kClientEmulatedFilter =
@@ -907,9 +920,19 @@ const grpc_channel_filter kServerEmulatedFilter =
     MakeConnectedFilter<nullptr>();
 #endif
 
-bool TransportSupportsPromiseBasedCalls(const ChannelArgs& args) {
+bool TransportSupportsClientPromiseBasedCalls(const ChannelArgs& args) {
   auto* transport = args.GetObject<Transport>();
   return transport->client_transport() != nullptr;
+}
+
+bool TransportSupportsServerPromiseBasedCalls(const ChannelArgs& args) {
+  auto* transport = args.GetObject<Transport>();
+  return transport->server_transport() != nullptr;
+}
+
+bool TransportSupportsFilterStackBasedCalls(const ChannelArgs& args) {
+  auto* transport = args.GetObject<Transport>();
+  return transport->filter_stack_transport() != nullptr;
 }
 
 }  // namespace
@@ -924,32 +947,33 @@ void RegisterConnectedChannel(CoreConfiguration::Builder* builder) {
   // Option 1, and our ideal: the transport supports promise based calls,
   // and so we simply use the transport directly.
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &kPromiseBasedTransportFilter)
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                       &kClientPromiseBasedTransportFilter)
       .Terminal()
-      .If(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsClientPromiseBasedCalls);
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &kPromiseBasedTransportFilter)
+                       &kClientPromiseBasedTransportFilter)
       .Terminal()
-      .If(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsClientPromiseBasedCalls);
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kPromiseBasedTransportFilter)
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kServerPromiseBasedTransportFilter)
       .Terminal()
-      .If(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsServerPromiseBasedCalls);
 
   // Option 2: the transport does not support promise based calls.
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &kClientEmulatedFilter)
       .Terminal()
-      .IfNot(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsFilterStackBasedCalls);
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL, &kClientEmulatedFilter)
       .Terminal()
-      .IfNot(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsFilterStackBasedCalls);
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL, &kServerEmulatedFilter)
       .Terminal()
-      .IfNot(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsFilterStackBasedCalls);
 }
 
 }  // namespace grpc_core
