@@ -35,13 +35,13 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "upb/mem/arena.h"
-#include "xds_client.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gprpp/debug_location.h"
