@@ -96,10 +96,6 @@ class CertificateProviderStore
       return certificate_provider_->distributor();
     }
 
-    grpc_pollset_set* interested_parties() const override {
-      return certificate_provider_->interested_parties();
-    }
-
     int CompareImpl(const grpc_tls_certificate_provider* other) const override {
       // TODO(yashykt): This should probably delegate to the `Compare` method of
       // the wrapped certificate_provider_ object.

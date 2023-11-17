@@ -55,8 +55,6 @@
 struct grpc_tls_certificate_provider
     : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
-  virtual grpc_pollset_set* interested_parties() const { return nullptr; }
-
   virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
   distributor() const = 0;
 
