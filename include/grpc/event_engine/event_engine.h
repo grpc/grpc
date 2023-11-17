@@ -79,7 +79,7 @@ namespace experimental {
 ///
 ///
 /// Blocking EventEngine Callbacks
-/// -----------------------------
+/// ------------------------------
 ///
 /// Doing blocking work in EventEngine callbacks is generally not advisable.
 /// While gRPC's default EventEngine implementations have some capacity to scale
@@ -89,6 +89,15 @@ namespace experimental {
 ///
 /// *Best Practice* : Occasional blocking work may be fine, but we do not
 /// recommend running a mostly blocking workload in EventEngine threads.
+///
+///
+/// Thread-safety guarantees
+/// ------------------------
+///
+/// All EventEngine methods are guaranteed to be thread-safe, no external
+/// synchronization is required to call any EventEngine method. Please note that
+/// this does not apply to application callbacks, which may be run concurrently;
+/// application state synchronization must be managed by the application.
 ///
 ////////////////////////////////////////////////////////////////////////////////
 class EventEngine : public std::enable_shared_from_this<EventEngine> {
@@ -405,8 +414,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 
   /// Asynchronously executes a task as soon as possible.
   ///
-  /// \a Closures scheduled with \a Run cannot be cancelled. The \a closure will
-  /// not be deleted after it has been run, ownership remains with the caller.
+  /// \a Closures passed to \a Run cannot be cancelled. The \a closure will not
+  /// be deleted after it has been run, ownership remains with the caller.
   ///
   /// Implementations must not execute the closure in the calling thread before
   /// \a Run returns. For example, if the caller must release a lock before the
@@ -415,9 +424,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   virtual void Run(Closure* closure) = 0;
   /// Asynchronously executes a task as soon as possible.
   ///
-  /// \a Closures scheduled with \a Run cannot be cancelled. Unlike the
-  /// overloaded \a Closure alternative, the absl::AnyInvocable version's \a
-  /// closure will be deleted by the EventEngine after the closure has been run.
+  /// \a Closures passed to \a Run cannot be cancelled. Unlike the overloaded \a
+  /// Closure alternative, the absl::AnyInvocable version's \a closure will be
+  /// deleted by the EventEngine after the closure has been run.
   ///
   /// This version of \a Run may be less performant than the \a Closure version
   /// in some scenarios. This overload is useful in situations where performance
@@ -453,13 +462,12 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
                               absl::AnyInvocable<void()> closure) = 0;
   /// Request cancellation of a task.
   ///
-  /// If the associated closure has already been scheduled to run, it will not
-  /// be cancelled, and this function will return false.
+  /// If the associated closure cannot be cancelled for any reason, this
+  /// function will return false.
   ///
-  /// If the associated closure has not been scheduled to run, it will be
-  /// cancelled, and this method will return true. The associated
-  /// absl::AnyInvocable or \a Closure* will not be called. If the closure type
-  /// was an absl::AnyInvocable, it will be destroyed before the method returns.
+  /// If the associated closure can be cancelled, the associated callback will
+  /// never be run, and this method will return true. If the callback type was
+  /// an absl::AnyInvocable, it will be destroyed before the method returns.
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 
