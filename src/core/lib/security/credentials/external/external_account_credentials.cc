@@ -274,18 +274,19 @@ std::string ExternalAccountCredentials::debug_string() {
 }
 
 std::string ExternalAccountCredentials::MetricsHeaderValue() {
-  return absl::StrFormat("gl-cpp/unknown"
-      " auth/%s google-byoid-sdk source/%s sa-impersonation/%v config-lifetime/%v",
-      grpc_version_string(),
-      CredentialSourceType(),
+  return absl::StrFormat(
+      "gl-cpp/unknown"
+      " auth/%s google-byoid-sdk source/%s sa-impersonation/%v "
+      "config-lifetime/%v",
+      grpc_version_string(), CredentialSourceType(),
       !options_.service_account_impersonation_url.empty(),
-      options_.service_account_impersonation.token_lifetime_seconds != IMPERSONATED_CRED_DEFAULT_LIFETIME_IN_SECONDS);
+      options_.service_account_impersonation.token_lifetime_seconds !=
+          IMPERSONATED_CRED_DEFAULT_LIFETIME_IN_SECONDS);
 }
 
 absl::string_view ExternalAccountCredentials::CredentialSourceType() {
   return "unknown";
 }
-
 
 // The token fetching flow:
 // 1. Retrieve subject token - Subclass's RetrieveSubjectToken() gets called
@@ -347,10 +348,11 @@ void ExternalAccountCredentials::ExchangeToken(
         absl::StrFormat("%s:%s", options_.client_id, options_.client_secret);
     char* encoded_cred =
         grpc_base64_encode(raw_cred.c_str(), raw_cred.length(), 0, 0);
-  std::string str = absl::StrFormat("Basic %s", std::string(encoded_cred));
-  headers[2].key = gpr_strdup("Authorization");
-  headers[2].value = gpr_strdup(str.c_str());
-}
+    std::string str = absl::StrFormat("Basic %s", std::string(encoded_cred));
+    headers[2].key = gpr_strdup("Authorization");
+    headers[2].value = gpr_strdup(str.c_str());
+    gpr_free(encoded_cred);
+  }
   request.hdrs = headers;
   std::vector<std::string> body_parts;
   body_parts.push_back(

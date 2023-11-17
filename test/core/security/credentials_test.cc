@@ -2318,7 +2318,7 @@ void validate_aws_external_account_creds_token_exchage_request(
   GPR_ASSERT(strcmp(request->hdrs[1].key, "x-goog-api-client") == 0);
   EXPECT_EQ(
       request->hdrs[1].value,
-      absl::StrFormat( "gl-cpp/unknown auth/%s google-byoid-sdk source/aws "
+      absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/aws "
                       "sa-impersonation/false config-lifetime/false",
                       grpc_version_string()));
   GPR_ASSERT(strcmp(request->hdrs[2].key, "Authorization") == 0);
@@ -2391,9 +2391,7 @@ class TestExternalAccountCredentials final : public ExternalAccountCredentials {
                                  std::vector<std::string> scopes)
       : ExternalAccountCredentials(std::move(options), std::move(scopes)) {}
 
-  std::string GetMetricsValue(){
-    return MetricsHeaderValue();
-  }
+  std::string GetMetricsValue() { return MetricsHeaderValue(); }
 
  protected:
   void RetrieveSubjectToken(
@@ -2426,20 +2424,21 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeader) {
 
   EXPECT_EQ(
       creds.GetMetricsValue(),
-      absl::StrFormat( "gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
+      absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
                       "sa-impersonation/false config-lifetime/false",
                       grpc_version_string()));
 }
 
-TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithServiceAccountImpersonation) {
+TEST(CredentialsTest,
+     TestExternalAccountCredsMetricsHeaderWithServiceAccountImpersonation) {
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
   TestExternalAccountCredentials::Options options = {
-      "external_account",                 // type;
-      "audience",                         // audience;
-      "subject_token_type",               // subject_token_type;
+      "external_account",    // type;
+      "audience",            // audience;
+      "subject_token_type",  // subject_token_type;
       "https://foo.com:5555/service_account_impersonation",  // service_account_impersonation_url;
       service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
@@ -2454,7 +2453,7 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithServiceAccountImp
 
   EXPECT_EQ(
       creds.GetMetricsValue(),
-      absl::StrFormat( "gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
+      absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
                       "sa-impersonation/true config-lifetime/false",
                       grpc_version_string()));
 }
@@ -2465,9 +2464,9 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 5000;
   TestExternalAccountCredentials::Options options = {
-      "external_account",                 // type;
-      "audience",                         // audience;
-      "subject_token_type",               // subject_token_type;
+      "external_account",    // type;
+      "audience",            // audience;
+      "subject_token_type",  // subject_token_type;
       "https://foo.com:5555/service_account_impersonation",  // service_account_impersonation_url;
       service_account_impersonation,      // service_account_impersonation;
       "https://foo.com:5555/token",       // token_url;
@@ -2482,7 +2481,7 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
 
   EXPECT_EQ(
       creds.GetMetricsValue(),
-      absl::StrFormat( "gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
+      absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
                       "sa-impersonation/true config-lifetime/true",
                       grpc_version_string()));
 }

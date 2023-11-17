@@ -526,7 +526,7 @@ void AwsExternalAccountCredentials::FinishRetrieveSubjectToken(
   }
 }
 
-absl::string_view AwsExternalAccountCredentials::CredentialSourceType(){
+absl::string_view AwsExternalAccountCredentials::CredentialSourceType() {
   return "aws";
 }
 
