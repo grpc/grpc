@@ -226,7 +226,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   if (it == new_xds_config->clusters.end()) {
     // Should never happen.
     absl::Status status = absl::InternalError(absl::StrCat(
-        "xDS config policy has no entry for cluster ", new_config->cluster()));
+        "xDS config has no entry for cluster ", new_config->cluster()));
     ReportTransientFailure(status);
     return status;
   }

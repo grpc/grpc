@@ -367,10 +367,15 @@ void XdsDependencyManager::OnRouteConfigUpdate(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO,
             "[XdsDependencyManager %p] received RouteConfig update for %s",
-            this, name.c_str());
+            this, name.empty() ? "<inline>" : name.c_str());
   }
   if (xds_client_ == nullptr) return;
-  if (name != route_config_name_) return;
+  // Ignore updates for stale names.
+  if (name.empty()) {
+    if (!route_config_name_.empty()) return;
+  } else {
+    if (name != route_config_name_) return;
+  }
   // Find the relevant VirtualHost from the RouteConfiguration.
   // If the resource doesn't have the right vhost, fail without updating
   // our data.
