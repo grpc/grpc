@@ -140,8 +140,8 @@ class XdsResolver : public Resolver {
     explicit XdsWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
 
-    void OnUpdate(RefCountedPtr<XdsDependencyManager::XdsConfig> config)
-        override {
+    void OnUpdate(
+        RefCountedPtr<XdsDependencyManager::XdsConfig> config) override {
       resolver_->OnUpdate(std::move(config));
     }
 
@@ -397,8 +397,8 @@ XdsResolver::RouteConfigData::Create(
   // invalid data.
   data->routes_.reserve(resolver->current_config_->virtual_host->routes.size());
   for (auto& route : resolver->current_config_->virtual_host->routes) {
-    absl::Status status = data->AddRouteEntry(resolver, route,
-                                              default_max_stream_duration);
+    absl::Status status =
+        data->AddRouteEntry(resolver, route, default_max_stream_duration);
     if (!status.ok()) {
       return status;
     }
@@ -544,8 +544,8 @@ absl::Status XdsResolver::RouteConfigData::AddRouteEntry(
                 weighted_clusters) {
           uint32_t end = 0;
           for (const auto& weighted_cluster : weighted_clusters) {
-            auto result = CreateMethodConfig(
-                resolver, route_entry->route, &weighted_cluster);
+            auto result = CreateMethodConfig(resolver, route_entry->route,
+                                             &weighted_cluster);
             if (!result.ok()) {
               return result.status();
             }
@@ -1038,10 +1038,9 @@ void XdsResolver::GenerateResult() {
   // use with ChannelArgs::SetObject().
   RefCountedPtr<GrpcXdsClient> xds_client =
       xds_client_->Ref(DEBUG_LOCATION, "xds resolver result");
-  result.args =
-      args_.SetObject(std::move(xds_client))
-           .SetObject(config_selector)
-           .SetObject(current_config_);
+  result.args = args_.SetObject(std::move(xds_client))
+                    .SetObject(config_selector)
+                    .SetObject(current_config_);
   result_handler_->ReportResult(std::move(result));
 }
 

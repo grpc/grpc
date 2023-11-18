@@ -912,10 +912,9 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(status.error_message(),
-            absl::StrCat(
-                kNewClusterName,
-                ": authority \"xds.unknown.com\" not present in "
-                "bootstrap config"));
+            absl::StrCat(kNewClusterName,
+                         ": authority \"xds.unknown.com\" not present in "
+                         "bootstrap config"));
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 

@@ -22,10 +22,10 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/xds_client_grpc.h"
-#include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_cluster.h"
-#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_endpoint.h"
+#include "src/core/ext/xds/xds_listener.h"
+#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/resolver/resolver.h"
 
@@ -59,8 +59,8 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
       std::string resolution_note;
 
       bool operator==(const ClusterConfig& other) const {
-        return cluster_name == other.cluster_name &&
-               cluster == other.cluster && endpoints == other.endpoints &&
+        return cluster_name == other.cluster_name && cluster == other.cluster &&
+               endpoints == other.endpoints &&
                resolution_note == other.resolution_note;
       }
     };
@@ -78,7 +78,7 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
    public:
     virtual ~Watcher() = default;
 
-// FIXME: see if we can make this const
+    // FIXME: see if we can make this const
     virtual void OnUpdate(RefCountedPtr<XdsConfig> config) = 0;
 
     // These methods are invoked when there is an error or
@@ -87,11 +87,11 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
     virtual void OnResourceDoesNotExist(std::string context) = 0;
   };
 
-  XdsDependencyManager(
-      RefCountedPtr<GrpcXdsClient> xds_client,
-      std::shared_ptr<WorkSerializer> work_serializer,
-      std::unique_ptr<Watcher> watcher, std::string data_plane_authority,
-      std::string listener_resource_name);
+  XdsDependencyManager(RefCountedPtr<GrpcXdsClient> xds_client,
+                       std::shared_ptr<WorkSerializer> work_serializer,
+                       std::unique_ptr<Watcher> watcher,
+                       std::string data_plane_authority,
+                       std::string listener_resource_name);
 
   void Orphan() override;
 
@@ -164,8 +164,8 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
   // Returns true if all resources have been obtained.
   absl::StatusOr<bool> PopulateClusterConfigList(
       const std::string& name,
-      std::vector<XdsConfig::ClusterConfig>* cluster_list,
-      int depth, std::set<std::string>* clusters_seen,
+      std::vector<XdsConfig::ClusterConfig>* cluster_list, int depth,
+      std::set<std::string>* clusters_seen,
       std::set<std::string>* eds_resources_seen);
 
   // Checks whether all necessary resources have been obtained, and if
