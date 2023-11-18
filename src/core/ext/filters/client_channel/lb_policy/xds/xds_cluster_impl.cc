@@ -557,29 +557,52 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
                                  std::move(args.resolution_note), args.args);
 }
 
+absl::StatusOr<const XdsClusterResource*> FindClusterConfig(
+    const XdsDependencyManager::XdsConfig& xds_config,
+    const std::string& cluster_name) {
+  auto it = xds_config.clusters.find(cluster_name);
+  if (it != xds_config.clusters.end()) {
+    if (!it->second.ok()) {
+      // Shouldn't happen.
+      return absl::InternalError(
+          absl::StrCat("xDS config does not contain entry for cluster ",
+                       cluster_name));
+    }
+    return it->second->front().cluster.get();
+  }
+  // Fall back to brute-force search for leaf clusters under an
+  // aggregate cluster.
+  // TODO(roth): If this becomes a performance problem, consider if we
+  // can do something smarter here.
+  for (const auto& p : xds_config.clusters) {
+    if (!p.second.ok()) continue;
+    for (const auto& cluster : *p.second) {
+      if (cluster.cluster_name == cluster_name) return cluster.cluster.get();
+    }
+  }
+  return absl::InternalError(
+      absl::StrCat("xDS config does not contain entry for cluster ",
+                   cluster_name));
+}
+
 absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
     ChannelArgs* args) {
   if (xds_certificate_provider_ == nullptr) return absl::OkStatus();
   // Get CDS resource.
-  auto xds_config = args->GetObject<XdsDependencyManager::XdsConfig>();
+  auto xds_config = args->GetObjectRef<XdsDependencyManager::XdsConfig>();
   if (xds_config == nullptr) {
     return absl::InternalError(
         "xDS config not passed to xds_cluster_impl policy");
   }
-  auto it = xds_config->clusters.find(config_->cluster_name());
-  if (it == xds_config->clusters.end() || !it->second.ok() ||
-      *it->second == nullptr) {
-    return absl::InternalError(
-        absl::StrCat("xDS config does not contain entry for cluster ",
-                     config_->cluster_name()));
-  }
-  auto& cluster_resource = **it->second;
+  auto cluster_resource =
+      FindClusterConfig(*xds_config, config_->cluster_name());
+  if (!cluster_resource.ok()) return cluster_resource.status();
   // Configure root cert.
   absl::string_view root_provider_instance_name =
-      cluster_resource.common_tls_context.certificate_validation_context
+      (*cluster_resource)->common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.instance_name;
   absl::string_view root_provider_cert_name =
-      cluster_resource.common_tls_context.certificate_validation_context
+      (*cluster_resource)->common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.certificate_name;
   RefCountedPtr<XdsCertificateProvider> new_root_provider;
   if (!root_provider_instance_name.empty()) {
@@ -613,10 +636,10 @@ absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
           : root_certificate_provider_->distributor());
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
-      cluster_resource.common_tls_context.tls_certificate_provider_instance
+      (*cluster_resource)->common_tls_context.tls_certificate_provider_instance
           .instance_name;
   absl::string_view identity_provider_cert_name =
-      cluster_resource.common_tls_context.tls_certificate_provider_instance
+      (*cluster_resource)->common_tls_context.tls_certificate_provider_instance
           .certificate_name;
   RefCountedPtr<XdsCertificateProvider> new_identity_provider;
   if (!identity_provider_instance_name.empty()) {
@@ -650,7 +673,7 @@ absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
           : identity_certificate_provider_->distributor());
   // Configure SAN matchers.
   const std::vector<StringMatcher>& match_subject_alt_names =
-      cluster_resource.common_tls_context.certificate_validation_context
+      (*cluster_resource)->common_tls_context.certificate_validation_context
           .match_subject_alt_names;
   xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
       config_->cluster_name(), match_subject_alt_names);

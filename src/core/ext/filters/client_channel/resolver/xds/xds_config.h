@@ -31,9 +31,6 @@
 
 namespace grpc_core {
 
-// Maximum depth of aggregate cluster tree.
-constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
-
 // Watches all xDS resources and handles dependencies between them.
 // Reports updates only when all necessary resources have been obtained.
 class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
@@ -46,20 +43,28 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
     std::shared_ptr<const XdsRouteConfigResource> route_config;
     // Virtual host.  Points into route_config.  Will always be non-null.
     const XdsRouteConfigResource::VirtualHost* virtual_host;
+
     // Cluster map.  A cluster will have a non-OK status if either
     // (a) there was an error and we did not already have a valid
     // resource or (b) the resource does not exist.
-    std::map<std::string,
-             absl::StatusOr<std::shared_ptr<const XdsClusterResource>>>
-        clusters;
-    // Endpoint map.  If there is an error, endpoints will be null and
-    // resolution_note will indicate the error.
-    struct EndpointConfig {
+    // For aggregate clusters, the aggregate cluster will be first in
+    // the list, followed by the list of leaf clusters.
+    struct ClusterConfig {
+      // Cluster name and resource.
+      std::string cluster_name;
+      std::shared_ptr<const XdsClusterResource> cluster;
+      // Endpoint info.  If there was an error, endpoints will be null
+      // and resolution_note will be set.
       std::shared_ptr<const XdsEndpointResource> endpoints;
       std::string resolution_note;
+
+      bool operator==(const ClusterConfig& other) const {
+        return cluster_name == other.cluster_name &&
+               cluster == other.cluster && endpoints == other.endpoints &&
+               resolution_note == other.resolution_note;
+      }
     };
-    std::map<std::string, EndpointConfig> endpoints;
-    std::map<std::string, EndpointConfig> dns_results;
+    std::map<std::string, absl::StatusOr<std::vector<ClusterConfig>>> clusters;
 
     static absl::string_view ChannelArgName() {
       return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_config";
@@ -73,6 +78,7 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
    public:
     virtual ~Watcher() = default;
 
+// FIXME: see if we can make this const
     virtual void OnUpdate(RefCountedPtr<XdsConfig> config) = 0;
 
     // These methods are invoked when there is an error or
@@ -103,18 +109,25 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
     absl::StatusOr<std::shared_ptr<const XdsClusterResource>> update = nullptr;
   };
 
+  struct EndpointConfig {
+    // If there was an error, update will be null and resolution_note
+    // will be non-empty.
+    std::shared_ptr<const XdsEndpointResource> endpoints;
+    std::string resolution_note;
+  };
+
   struct EndpointWatcherState {
     // Pointer to watcher, to be used when cancelling.
     // Not owned, so do not dereference.
     EndpointWatcher* watcher = nullptr;
     // Most recent update obtained from this watcher.
-    XdsConfig::EndpointConfig update;
+    EndpointConfig update;
   };
 
   struct DnsState {
     OrphanablePtr<Resolver> resolver;
     // Most recent result from the resolver.
-    XdsConfig::EndpointConfig update;
+    EndpointConfig update;
   };
 
   // Event handlers.
@@ -142,16 +155,18 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
       const XdsRouteConfigResource& route_config) const;
 
   // Starts CDS and EDS/DNS watches for the specified cluster if needed.
+  // If the resource is available, adds an entry to cluster_list.
   // Adds each cluster to clusters_seen.
   // For each EDS cluster, adds the EDS resource to eds_resources_seen.
-  // For aggregate clusters, calls itself recursively.  Returns an error if
-  // max depth is exceeded.
-  absl::Status MaybeStartClusterWatch(
-      const std::string& name, int depth, std::set<std::string>* clusters_seen,
+  // For aggregate clusters, calls itself recursively.
+  // Returns an error if max depth is exceeded or if any of the clusters
+  // in the graph report an error.
+  // Returns true if all resources have been obtained.
+  absl::StatusOr<bool> PopulateClusterConfigList(
+      const std::string& name,
+      std::vector<XdsConfig::ClusterConfig>* cluster_list,
+      int depth, std::set<std::string>* clusters_seen,
       std::set<std::string>* eds_resources_seen);
-
-  // Updates CDS and EDS watchers and DNS resolvers as needed.
-  void MaybeUpdateClusterAndEndpointWatches();
 
   // Checks whether all necessary resources have been obtained, and if
   // so reports an update to the watcher.

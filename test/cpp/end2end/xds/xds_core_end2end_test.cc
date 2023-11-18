@@ -429,8 +429,7 @@ TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat(kDefaultClusterName, ": CDS resource ", kDefaultClusterName,
-                   " does not exist"),
+      absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -438,8 +437,7 @@ TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat(kDefaultClusterName, ": CDS resource ",
-                   kDefaultClusterName, " does not exist"),
+      absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -463,9 +461,9 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
       [&](const RpcResult& result) {
         if (result.status.ok()) return true;  // Keep going.
         EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        EXPECT_EQ(absl::StrCat(kNewClusterName, ": CDS resource ",
-                               kNewClusterName, " does not exist"),
-                  result.status.error_message());
+        EXPECT_EQ(
+            absl::StrCat("CDS resource ", kNewClusterName, " does not exist"),
+            result.status.error_message());
         return false;
       },
       /*timeout_ms=*/30000, RpcOptions().set_timeout_ms(4000));

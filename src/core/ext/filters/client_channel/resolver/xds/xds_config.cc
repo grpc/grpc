@@ -26,6 +26,13 @@
 
 namespace grpc_core {
 
+namespace {
+
+// Max depth of aggregate cluster dependency graph.
+constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
+
+}  // namespace
+
 //
 // XdsDependencyManager::ListenerWatcher
 //
@@ -225,7 +232,8 @@ XdsDependencyManager::XdsDependencyManager(
       data_plane_authority_(std::move(data_plane_authority)),
       listener_resource_name_(std::move(listener_resource_name)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] starting watch for listener %s",
+    gpr_log(GPR_INFO,
+            "[XdsDependencyManager %p] starting watch for listener %s",
             this, listener_resource_name_.c_str());
   }
   auto listener_watcher = MakeRefCounted<ListenerWatcher>(Ref());
@@ -268,7 +276,8 @@ void XdsDependencyManager::Orphan() {
 void XdsDependencyManager::OnListenerUpdate(
     std::shared_ptr<const XdsListenerResource> listener) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] received Listener update", this);
+    gpr_log(GPR_INFO, "[XdsDependencyManager %p] received Listener update",
+            this);
   }
   if (xds_client_ == nullptr) return;
   const auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
@@ -299,6 +308,12 @@ void XdsDependencyManager::OnListenerUpdate(
           }
           // Start watch for the new RDS resource name.
           route_config_name_ = rds_name;
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+            gpr_log(
+                GPR_INFO,
+                "[XdsDependencyManager %p] starting watch for route config %s",
+                this, route_config_name_.c_str());
+          }
           auto watcher =
               MakeRefCounted<RouteConfigWatcher>(Ref(), route_config_name_);
           route_config_watcher_ = watcher.get();
@@ -350,8 +365,9 @@ void XdsDependencyManager::OnRouteConfigUpdate(
     const std::string& name,
     std::shared_ptr<const XdsRouteConfigResource> route_config) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] received RouteConfig update",
-            this);
+    gpr_log(GPR_INFO,
+            "[XdsDependencyManager %p] received RouteConfig update for %s",
+            this, name.c_str());
   }
   if (xds_client_ == nullptr) return;
   if (name != route_config_name_) return;
@@ -376,18 +392,16 @@ void XdsDependencyManager::OnRouteConfigUpdate(
   current_virtual_host_ = &current_route_config_->virtual_hosts[*vhost_index];
   clusters_from_route_config_ =
       GetClustersFromRouteConfig(*current_route_config_);
-  // The set of clusters we need may have changed.
-  MaybeUpdateClusterAndEndpointWatches();
   MaybeReportUpdate();
 }
 
 void XdsDependencyManager::OnError(std::string context,
                                absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[XdsDependencyManager %p] received Listener or RouteConfig error: %s %s",
-        this, context.c_str(), status.ToString().c_str());
+    gpr_log(GPR_INFO,
+            "[XdsDependencyManager %p] received Listener or RouteConfig "
+            "error: %s %s",
+            this, context.c_str(), status.ToString().c_str());
   }
   if (xds_client_ == nullptr) return;
   if (current_virtual_host_ != nullptr) return;
@@ -414,9 +428,6 @@ void XdsDependencyManager::OnClusterUpdate(
   auto it = cluster_watchers_.find(name);
   if (it == cluster_watchers_.end()) return;
   it->second.update = std::move(cluster);
-  // The set of clusters we need may have changed if this was an
-  // aggregate cluster.
-  MaybeUpdateClusterAndEndpointWatches();
   MaybeReportUpdate();
 }
 
@@ -430,11 +441,9 @@ void XdsDependencyManager::OnClusterError(const std::string& name,
   auto it = cluster_watchers_.find(name);
   if (it == cluster_watchers_.end()) return;
   if (it->second.update.value_or(nullptr) == nullptr) {
-    it->second.update = std::move(status);
+    it->second.update = absl::Status(
+        status.code(), absl::StrCat(name, ": ", status.message()));
   }
-  // The set of clusters we need may have changed if this was an
-  // aggregate cluster.
-  MaybeUpdateClusterAndEndpointWatches();
   MaybeReportUpdate();
 }
 
@@ -448,9 +457,6 @@ void XdsDependencyManager::OnClusterDoesNotExist(const std::string& name) {
   if (it == cluster_watchers_.end()) return;
   it->second.update = absl::UnavailableError(
       absl::StrCat("CDS resource ", name, " does not exist"));
-  // The set of clusters we need may have changed if this was an
-  // aggregate cluster.
-  MaybeUpdateClusterAndEndpointWatches();
   MaybeReportUpdate();
 }
 
@@ -577,8 +583,10 @@ std::set<std::string> XdsDependencyManager::GetClustersFromRouteConfig(
   return clusters;
 }
 
-absl::Status XdsDependencyManager::MaybeStartClusterWatch(
-    const std::string& name, int depth, std::set<std::string>* clusters_seen,
+absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
+    const std::string& name,
+    std::vector<XdsConfig::ClusterConfig>* cluster_list,
+    int depth, std::set<std::string>* clusters_seen,
     std::set<std::string>* eds_resources_seen) {
   if (depth == kMaxXdsAggregateClusterRecursionDepth) {
     return absl::FailedPreconditionError(
@@ -586,32 +594,41 @@ absl::Status XdsDependencyManager::MaybeStartClusterWatch(
   }
   // Don't process the cluster again if we've already seen it in some
   // other branch of the recursion tree.
-  if (!clusters_seen->insert(name).second) return absl::OkStatus();
+  if (!clusters_seen->insert(name).second) return true;
   auto& state = cluster_watchers_[name];
   // Create a new watcher if needed.
   if (state.watcher == nullptr) {
     auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), name);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-      gpr_log(GPR_INFO, "[XdsDependencyManager %p] starting watch for cluster %s",
+      gpr_log(GPR_INFO,
+              "[XdsDependencyManager %p] starting watch for cluster %s",
               this, name.c_str());
     }
     state.watcher = watcher.get();
     XdsClusterResourceType::StartWatch(xds_client_.get(), name,
                                        std::move(watcher));
-    return absl::OkStatus();
+    return false;
   }
-  // If we don't have the resource yet, stop here.
-  if (!state.update.ok() || *state.update == nullptr) return absl::OkStatus();
-  // Check cluster type.
+  // If there was an error fetching the CDS resource, report the error.
+  if (!state.update.ok()) return state.update.status();
+  // If we don't have the resource yet, we can't return a config yet.
+  if (*state.update == nullptr) return false;
+  // We have the resource, so add an entry to the map.
+  cluster_list->emplace_back();
+  auto& entry = cluster_list->back();
+  entry.cluster_name = name;
+  entry.cluster = *state.update;
+  // Populate endpoint info based on cluster type.
   return Match(
       (*state.update)->type,
-      // EDS cluster.  Start EDS watch if needed.
-      [&](const XdsClusterResource::Eds& eds) {
-        std::string eds_resource_name =
+      // EDS cluster.
+      [&](const XdsClusterResource::Eds& eds) -> absl::StatusOr<bool> {
+        const std::string& eds_resource_name =
             eds.eds_service_name.empty() ? name : eds.eds_service_name;
         eds_resources_seen->insert(eds_resource_name);
-        auto& state = endpoint_watchers_[eds_resource_name];
-        if (state.watcher == nullptr) {
+        // Start EDS watch if needed.
+        auto& eds_state = endpoint_watchers_[eds_resource_name];
+        if (eds_state.watcher == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
             gpr_log(GPR_INFO,
                     "[XdsDependencyManager %p] starting watch for endpoint %s",
@@ -619,39 +636,70 @@ absl::Status XdsDependencyManager::MaybeStartClusterWatch(
           }
           auto watcher =
               MakeRefCounted<EndpointWatcher>(Ref(), eds_resource_name);
-          state.watcher = watcher.get();
+          eds_state.watcher = watcher.get();
           XdsEndpointResourceType::StartWatch(
               xds_client_.get(), eds_resource_name, std::move(watcher));
+          return false;
         }
-        return absl::OkStatus();
+        // Check if EDS resource has been returned.
+        if (eds_state.update.endpoints == nullptr &&
+            eds_state.update.resolution_note.empty()) {
+          return false;
+        }
+        // Populate endpoint info.
+        entry.endpoints = eds_state.update.endpoints;
+        entry.resolution_note = eds_state.update.resolution_note;
+        return true;
       },
       // LOGICAL_DNS cluster.
-      [&](const XdsClusterResource::LogicalDns& logical_dns) {
-// FIXME
-        return absl::OkStatus();
+      [&](const XdsClusterResource::LogicalDns& logical_dns)
+          -> absl::StatusOr<bool> {
+// FIXME: implement
+        return true;
       },
       // Aggregate cluster.  Recursively expand to child clusters.
-      [&](const XdsClusterResource::Aggregate& aggregate) {
+      [&](const XdsClusterResource::Aggregate& aggregate)
+          -> absl::StatusOr<bool> {
+        bool missing_cluster = false;
         for (const std::string& child_name
              : aggregate.prioritized_cluster_names) {
-          auto result = MaybeStartClusterWatch(
-              child_name, depth + 1, clusters_seen, eds_resources_seen);
+          auto result = PopulateClusterConfigList(
+              child_name, cluster_list, depth + 1, clusters_seen,
+              eds_resources_seen);
           if (!result.ok()) return result;
+          if (!*result) missing_cluster = true;
         }
-        return absl::OkStatus();
+        return !missing_cluster;
       });
 }
 
-void XdsDependencyManager::MaybeUpdateClusterAndEndpointWatches() {
+void XdsDependencyManager::MaybeReportUpdate() {
+  // Populate Listener and RouteConfig fields.
+  if (current_virtual_host_ == nullptr) return;
+  auto config = MakeRefCounted<XdsConfig>();
+  config->listener = current_listener_;
+  config->route_config = current_route_config_;
+  config->virtual_host = current_virtual_host_;
+  // Populate Cluster map.
+  // We traverse the entire graph even if we don't yet have all of the
+  // resources we need to ensure that the right set of watches are active.
   std::set<std::string> clusters_seen;
   std::set<std::string> eds_resources_seen;
-  // Start all necessary cluster and endpoint watches.
+  bool missing_data = false;
   for (const std::string& cluster : clusters_from_route_config_) {
-    auto result = MaybeStartClusterWatch(
-        cluster, 0, &clusters_seen, &eds_resources_seen);
-    if (!result.ok()) return OnError(cluster, std::move(result));
-// FIXME: need to report an error if aggregate cluster dependency graph
-// has no leafs
+    auto& cluster_list = config->clusters[cluster];
+    cluster_list.emplace();
+    auto result = PopulateClusterConfigList(
+        cluster, &*cluster_list, 0, &clusters_seen, &eds_resources_seen);
+    if (!result.ok()) {
+      cluster_list = result.status();
+    } else if (!*result) {
+      missing_data = true;
+    } else if (cluster_list->empty()) {
+      cluster_list = absl::UnavailableError(absl::StrCat(
+          "aggregate cluster dependency graph for ", cluster,
+          " has no leaf clusters"));
+    }
   }
   // Remove entries in cluster_watchers_ for any clusters not in clusters_seen.
   for (auto it = cluster_watchers_.begin(); it != cluster_watchers_.end();) {
@@ -661,7 +709,8 @@ void XdsDependencyManager::MaybeUpdateClusterAndEndpointWatches() {
       continue;
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-      gpr_log(GPR_INFO, "[XdsDependencyManager %p] cancelling watch for cluster %s",
+      gpr_log(GPR_INFO,
+              "[XdsDependencyManager %p] cancelling watch for cluster %s",
               this, cluster_name.c_str());
     }
     XdsClusterResourceType::CancelWatch(
@@ -688,33 +737,12 @@ void XdsDependencyManager::MaybeUpdateClusterAndEndpointWatches() {
         /*delay_unsubscription=*/false);
     it = endpoint_watchers_.erase(it);
   }
-}
-
-void XdsDependencyManager::MaybeReportUpdate() {
-  if (current_virtual_host_ == nullptr) return;
-  auto config = MakeRefCounted<XdsConfig>();
-  config->listener = current_listener_;
-  config->route_config = current_route_config_;
-  config->virtual_host = current_virtual_host_;
-  for (const auto& p : cluster_watchers_) {
-    if (p.second.update.ok() && *p.second.update == nullptr) return;
-    config->clusters.emplace(p.first, p.second.update);
+  // If we have all the data we need, then send an update.
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsDependencyManager %p] %sreturning updated config",
+            this, missing_data ? "NOT " : "");
   }
-  for (const auto& p : endpoint_watchers_) {
-    if (p.second.update.endpoints == nullptr &&
-        p.second.update.resolution_note.empty()) {
-      return;
-    }
-    config->endpoints.emplace(p.first, p.second.update);
-  }
-  for (const auto& p : dns_resolvers_) {
-    if (p.second.update.endpoints == nullptr &&
-        p.second.update.resolution_note.empty()) {
-      return;
-    }
-    config->dns_results.emplace(p.first, p.second.update);
-  }
-  watcher_->OnUpdate(std::move(config));
+  if (!missing_data) watcher_->OnUpdate(std::move(config));
 }
 
 }  // namespace grpc_core
