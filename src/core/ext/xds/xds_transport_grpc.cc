@@ -108,18 +108,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &recv_message_payload_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  Ref(DEBUG_LOCATION, "OnResponseReceived").release();
-  GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this, nullptr);
-  call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), &on_response_received_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Start a batch for recv_trailing_metadata.
-  op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv_;
   op->data.recv_status_on_client.status = &status_code_;
@@ -127,6 +116,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
+  Ref(DEBUG_LOCATION, "OnStatusReceived").release();
   // This callback signals the end of the call, so it relies on the initial
   // ref instead of a new ref. When it's invoked, it's the initial ref that is
   // unreffed.
@@ -134,6 +124,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
+  GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this, nullptr);
 }
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
@@ -189,11 +180,14 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     OnResponseReceived(void* arg, grpc_error_handle /*error*/) {
-  auto* self = static_cast<GrpcStreamingCall*>(arg);
+  auto self = static_cast<GrpcStreamingCall*>(arg);
+  // Create a ref that will leave till the end of this function and reduce the
+  // ref count to account for the ref obtained in StartRecvMessage
+  auto ref = self->Ref();
+  self->Unref(DEBUG_LOCATION, "OnResponseReceived");
   // If there was no payload, then we received status before we received
   // another message, so we stop reading.
   if (self->recv_message_payload_ == nullptr) {
-    self->Unref(DEBUG_LOCATION, "OnResponseReceived");
     return;
   }
   // Process the response.
@@ -209,6 +203,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     StartRecvMessage() {
+  Ref(DEBUG_LOCATION, "OnResponseReceived").release();
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_MESSAGE;

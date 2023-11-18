@@ -950,6 +950,7 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   for (const auto& p : state_map_) {
     SendMessageLocked(p.first);
   }
+  call_->StartRecvMessage();
 }
 
 void XdsClient::ChannelState::AdsCallState::Orphan() {
