@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <deque>
 #include <functional>
 #include <map>
@@ -66,6 +68,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void Orphan() override;
 
+    void StartRecvMessage() override { read_count_ += 1; }
+
     using StreamingCall::Ref;  // Make it public.
 
     bool HaveMessageFromClient();
@@ -83,6 +87,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void MaybeSendStatusToClient(absl::Status status);
 
     bool Orphaned();
+
+    size_t read_count() const { return read_count_; }
 
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
@@ -117,6 +123,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
+    size_t read_count_ = 0;
   };
 
   FakeXdsTransportFactory() = default;
