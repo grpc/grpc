@@ -40,6 +40,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_config.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -66,6 +67,7 @@
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -253,6 +255,8 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
       absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses,
       std::string resolution_note, const ChannelArgs& args);
 
+  absl::Status MaybeConfigureCertificateProviderLocked(ChannelArgs* args);
+
   void MaybeUpdatePickerLocked();
 
   // Current config from the resolver.
@@ -265,7 +269,11 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   bool shutting_down_ = false;
 
   // The xds client.
-  RefCountedPtr<XdsClient> xds_client_;
+  RefCountedPtr<GrpcXdsClient> xds_client_;
+
+  RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
+  RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
+  RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
 
   // The stats for client-side load reporting.
   RefCountedPtr<XdsClusterDropStats> drop_stats_;
@@ -430,6 +438,12 @@ XdsClusterImplLb::XdsClusterImplLb(RefCountedPtr<XdsClient> xds_client,
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] created -- using xds client %p",
             this, xds_client_.get());
   }
+  // If the channel is using XdsCreds, create the XdsCertificateProvider.
+  auto channel_credentials = channel_control_helper()->GetChannelCredentials();
+  if (channel_credentials != nullptr &&
+      channel_credentials->type() == XdsCredentials::Type()) {
+    xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>();
+  }
 }
 
 XdsClusterImplLb::~XdsClusterImplLb() {
@@ -452,6 +466,20 @@ void XdsClusterImplLb::ShutdownLocked() {
                                      interested_parties());
     child_policy_.reset();
   }
+  // Clean up cert provider state.
+  if (root_certificate_provider_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(
+        interested_parties(),
+        root_certificate_provider_->interested_parties());
+    root_certificate_provider_.reset();
+  }
+  if (identity_certificate_provider_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(
+        interested_parties(),
+        identity_certificate_provider_->interested_parties());
+    identity_certificate_provider_.reset();
+  }
+  xds_certificate_provider_.reset();
   // Drop our ref to the child's picker, in case it's holding a ref to
   // the child.
   picker_.reset();
@@ -498,12 +526,26 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
         config_->cluster_name(), config_->eds_service_name());
   } else {
     // Cluster name, EDS service name, and LRS server name should never
-    // change, because the xds_cluster_resolver policy above us should be
-    // swapped out if that happens.
+    // change, because the cds policy will assign a different priority
+    // child name if that happens, which means that this policy instance
+    // will get replaced instead of being updated.
     GPR_ASSERT(config_->cluster_name() == old_config->cluster_name());
     GPR_ASSERT(config_->eds_service_name() == old_config->eds_service_name());
     GPR_ASSERT(config_->lrs_load_reporting_server() ==
                old_config->lrs_load_reporting_server());
+  }
+  // Update cert provider if needed.
+  absl::Status status = MaybeConfigureCertificateProviderLocked(&args.args);
+  if (!status.ok()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_cluster_impl_lb %p] failed to update cert provider: %s",
+              this, status.ToString().c_str());
+    }
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        MakeRefCounted<TransientFailurePicker>(status));
+    return status;
   }
   // Update picker if max_concurrent_requests has changed.
   if (is_initial_update || config_->max_concurrent_requests() !=
@@ -513,6 +555,131 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // Update child policy.
   return UpdateChildPolicyLocked(std::move(args.addresses),
                                  std::move(args.resolution_note), args.args);
+}
+
+absl::StatusOr<const XdsClusterResource*> FindClusterConfig(
+    const XdsDependencyManager::XdsConfig& xds_config,
+    const std::string& cluster_name) {
+  auto it = xds_config.clusters.find(cluster_name);
+  if (it != xds_config.clusters.end()) {
+    if (!it->second.ok()) {
+      // Shouldn't happen.
+      return absl::InternalError(
+          absl::StrCat("xDS config does not contain entry for cluster ",
+                       cluster_name));
+    }
+    return it->second->front().cluster.get();
+  }
+  // Fall back to brute-force search for leaf clusters under an
+  // aggregate cluster.
+  // TODO(roth): If this becomes a performance problem, consider if we
+  // can do something smarter here.
+  for (const auto& p : xds_config.clusters) {
+    if (!p.second.ok()) continue;
+    for (const auto& cluster : *p.second) {
+      if (cluster.cluster_name == cluster_name) return cluster.cluster.get();
+    }
+  }
+  return absl::InternalError(
+      absl::StrCat("xDS config does not contain entry for cluster ",
+                   cluster_name));
+}
+
+absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
+    ChannelArgs* args) {
+  if (xds_certificate_provider_ == nullptr) return absl::OkStatus();
+  // Get CDS resource.
+  auto xds_config = args->GetObjectRef<XdsDependencyManager::XdsConfig>();
+  if (xds_config == nullptr) {
+    return absl::InternalError(
+        "xDS config not passed to xds_cluster_impl policy");
+  }
+  auto cluster_resource =
+      FindClusterConfig(*xds_config, config_->cluster_name());
+  if (!cluster_resource.ok()) return cluster_resource.status();
+  // Configure root cert.
+  absl::string_view root_provider_instance_name =
+      (*cluster_resource)->common_tls_context.certificate_validation_context
+          .ca_certificate_provider_instance.instance_name;
+  absl::string_view root_provider_cert_name =
+      (*cluster_resource)->common_tls_context.certificate_validation_context
+          .ca_certificate_provider_instance.certificate_name;
+  RefCountedPtr<XdsCertificateProvider> new_root_provider;
+  if (!root_provider_instance_name.empty()) {
+    new_root_provider =
+        xds_client_->certificate_provider_store()
+            .CreateOrGetCertificateProvider(root_provider_instance_name);
+    if (new_root_provider == nullptr) {
+      return absl::InternalError(
+          absl::StrCat("Certificate provider instance name: \"",
+                       root_provider_instance_name, "\" not recognized."));
+    }
+  }
+  if (root_certificate_provider_ != new_root_provider) {
+    if (root_certificate_provider_ != nullptr &&
+        root_certificate_provider_->interested_parties() != nullptr) {
+      grpc_pollset_set_del_pollset_set(
+          interested_parties(),
+          root_certificate_provider_->interested_parties());
+    }
+    if (new_root_provider != nullptr &&
+        new_root_provider->interested_parties() != nullptr) {
+      grpc_pollset_set_add_pollset_set(interested_parties(),
+                                       new_root_provider->interested_parties());
+    }
+    root_certificate_provider_ = std::move(new_root_provider);
+  }
+  xds_certificate_provider_->UpdateRootCertNameAndDistributor(
+      config_->cluster_name(), root_provider_cert_name,
+      root_certificate_provider_ == nullptr
+          ? nullptr
+          : root_certificate_provider_->distributor());
+  // Configure identity cert.
+  absl::string_view identity_provider_instance_name =
+      (*cluster_resource)->common_tls_context.tls_certificate_provider_instance
+          .instance_name;
+  absl::string_view identity_provider_cert_name =
+      (*cluster_resource)->common_tls_context.tls_certificate_provider_instance
+          .certificate_name;
+  RefCountedPtr<XdsCertificateProvider> new_identity_provider;
+  if (!identity_provider_instance_name.empty()) {
+    new_identity_provider =
+        xds_client_->certificate_provider_store()
+            .CreateOrGetCertificateProvider(identity_provider_instance_name);
+    if (new_identity_provider == nullptr) {
+      return absl::InternalError(
+          absl::StrCat("Certificate provider instance name: \"",
+                       identity_provider_instance_name, "\" not recognized."));
+    }
+  }
+  if (identity_certificate_provider_ != new_identity_provider) {
+    if (identity_certificate_provider_ != nullptr &&
+        identity_certificate_provider_->interested_parties() != nullptr) {
+      grpc_pollset_set_del_pollset_set(
+          interested_parties(),
+          identity_certificate_provider_->interested_parties());
+    }
+    if (new_identity_provider != nullptr &&
+        new_identity_provider->interested_parties() != nullptr) {
+      grpc_pollset_set_add_pollset_set(
+          interested_parties(), new_identity_provider->interested_parties());
+    }
+    identity_certificate_provider_ = std::move(new_identity_provider);
+  }
+  xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
+      config_->cluster_name(), identity_provider_cert_name,
+      identity_certificate_provider_ == nullptr
+          ? nullptr
+          : identity_certificate_provider_->distributor());
+  // Configure SAN matchers.
+  const std::vector<StringMatcher>& match_subject_alt_names =
+      (*cluster_resource)->common_tls_context.certificate_validation_context
+          .match_subject_alt_names;
+  xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
+      config_->cluster_name(), match_subject_alt_names);
+  // Add cert provider to channel args.
+  *args = args->SetObject(xds_certificate_provider_);
+  return absl::OkStatus();
 }
 
 void XdsClusterImplLb::MaybeUpdatePickerLocked() {

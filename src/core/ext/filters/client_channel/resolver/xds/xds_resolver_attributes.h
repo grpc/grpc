@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_H
-#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_ATTRIBUTES_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_ATTRIBUTES_H
 
 #include <grpc/support/port_platform.h>
 
@@ -49,13 +49,14 @@ class XdsRouteStateAttribute
     : public ServiceConfigCallData::CallAttributeInterface {
  public:
   static UniqueTypeName TypeName() {
-    static UniqueTypeName::Factory factory("xds_cluster_lb_data");
+    static UniqueTypeName::Factory factory("xds_route_state");
     return factory.Create();
   }
 
   virtual bool HasClusterForRoute(absl::string_view cluster_name) const = 0;
   UniqueTypeName type() const override { return TypeName(); }
 };
+
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_XDS_XDS_RESOLVER_ATTRIBUTES_H
