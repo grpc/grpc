@@ -56,10 +56,8 @@ bool HasNonEmptyMetadata(
         metadata_by_peer) {
   for (const auto& entry : metadata_by_peer) {
     for (const auto& rpc_metadata : entry.second.rpc_metadata()) {
-      for (const auto& metadata : rpc_metadata.metadata()) {
-        if (!metadata.key().empty() || !metadata.value().empty()) {
-          return true;
-        }
+      if (rpc_metadata.metadata_size() > 0) {
+        return true;
       }
     }
   }
