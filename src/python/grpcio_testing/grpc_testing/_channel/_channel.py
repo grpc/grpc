@@ -36,7 +36,7 @@ class TestingChannel(grpc_testing.Channel):
         method,
         request_serializer=None,
         response_deserializer=None,
-        registered_method=False,
+        _registered_method=False,
     ):
         return _multi_callable.UnaryUnary(method, self._state)
 
@@ -45,7 +45,7 @@ class TestingChannel(grpc_testing.Channel):
         method,
         request_serializer=None,
         response_deserializer=None,
-        registered_method=False,
+        _registered_method=False,
     ):
         return _multi_callable.UnaryStream(method, self._state)
 
@@ -54,7 +54,7 @@ class TestingChannel(grpc_testing.Channel):
         method,
         request_serializer=None,
         response_deserializer=None,
-        registered_method=False,
+        _registered_method=False,
     ):
         return _multi_callable.StreamUnary(method, self._state)
 
@@ -63,7 +63,7 @@ class TestingChannel(grpc_testing.Channel):
         method,
         request_serializer=None,
         response_deserializer=None,
-        registered_method=False,
+        _registered_method=False,
     ):
         return _multi_callable.StreamStream(method, self._state)
 
