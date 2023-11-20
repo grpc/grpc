@@ -19,19 +19,19 @@ class GreeterStub(object):
                 '/helloworld.Greeter/SayHello',
                 request_serializer=helloworld__pb2.HelloRequest.SerializeToString,
                 response_deserializer=helloworld__pb2.HelloReply.FromString,
-                registered_method=True,
+                _registered_method=True,
                 )
         self.SayHelloStreamReply = channel.unary_stream(
                 '/helloworld.Greeter/SayHelloStreamReply',
                 request_serializer=helloworld__pb2.HelloRequest.SerializeToString,
                 response_deserializer=helloworld__pb2.HelloReply.FromString,
-                registered_method=True,
+                _registered_method=True,
                 )
         self.SayHelloBidiStream = channel.stream_stream(
                 '/helloworld.Greeter/SayHelloBidiStream',
                 request_serializer=helloworld__pb2.HelloRequest.SerializeToString,
                 response_deserializer=helloworld__pb2.HelloReply.FromString,
-                registered_method=True,
+                _registered_method=True,
                 )
 
 
@@ -102,7 +102,7 @@ class Greeter(object):
             helloworld__pb2.HelloRequest.SerializeToString,
             helloworld__pb2.HelloReply.FromString,
             options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata, registered_method=True)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata, _registered_method=True)
 
     @staticmethod
     def SayHelloStreamReply(request,
@@ -119,7 +119,7 @@ class Greeter(object):
             helloworld__pb2.HelloRequest.SerializeToString,
             helloworld__pb2.HelloReply.FromString,
             options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata, registered_method=True)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata, _registered_method=True)
 
     @staticmethod
     def SayHelloBidiStream(request_iterator,
@@ -136,4 +136,4 @@ class Greeter(object):
             helloworld__pb2.HelloRequest.SerializeToString,
             helloworld__pb2.HelloReply.FromString,
             options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata, registered_method=True)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata, _registered_method=True)
