@@ -447,7 +447,9 @@ class ObservabilityTest(unittest.TestCase):
 
 def unary_unary_call(port, metadata=None):
     with grpc.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.unary_unary(_UNARY_UNARY)
+        multi_callable = channel.unary_unary(
+            _UNARY_UNARY, _registered_method=True
+        )
         if metadata:
             unused_response, call = multi_callable.with_call(
                 _REQUEST, metadata=metadata
@@ -458,7 +460,9 @@ def unary_unary_call(port, metadata=None):
 
 def unary_stream_call(port):
     with grpc.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.unary_stream(_UNARY_STREAM)
+        multi_callable = channel.unary_stream(
+            _UNARY_STREAM, _registered_method=True
+        )
         call = multi_callable(_REQUEST)
         for _ in call:
             pass
@@ -466,7 +470,9 @@ def unary_stream_call(port):
 
 def stream_unary_call(port):
     with grpc.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.stream_unary(_STREAM_UNARY)
+        multi_callable = channel.stream_unary(
+            _STREAM_UNARY, _registered_method=True
+        )
         unused_response, call = multi_callable.with_call(
             iter([_REQUEST] * STREAM_LENGTH)
         )
@@ -474,7 +480,9 @@ def stream_unary_call(port):
 
 def stream_stream_call(port):
     with grpc.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.stream_stream(_STREAM_STREAM)
+        multi_callable = channel.stream_stream(
+            _STREAM_STREAM, _registered_method=True
+        )
         call = multi_callable(iter([_REQUEST] * STREAM_LENGTH))
         for _ in call:
             pass

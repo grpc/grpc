@@ -543,6 +543,15 @@ class PythonPluginTest(unittest.TestCase):
         )
         service.server.stop(None)
 
+    def testRegisteredMethod(self):
+        """Tests that we're setting registered_method to True when create call using generated stub."""
+        service = _CreateService()
+        self.assertTrue(service.stub.UnaryCall._registered_method)
+        self.assertTrue(service.stub.StreamingOutputCall._registered_method)
+        self.assertTrue(service.stub.StreamingInputCall._registered_method)
+        self.assertTrue(service.stub.FullDuplexCall._registered_method)
+        service.server.stop(None)
+
 
 @unittest.skipIf(
     sys.version_info[0] < 3 or sys.version_info[1] < 6,

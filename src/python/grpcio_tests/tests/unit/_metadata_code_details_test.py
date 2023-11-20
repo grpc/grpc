@@ -215,6 +215,7 @@ class MetadataCodeDetailsTest(unittest.TestCase):
                     _UNARY_UNARY,
                 )
             ),
+            _registered_method=True,
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
         )
@@ -226,6 +227,7 @@ class MetadataCodeDetailsTest(unittest.TestCase):
                     _UNARY_STREAM,
                 )
             ),
+            _registered_method=True,
         )
         self._stream_unary = self._channel.stream_unary(
             "/".join(
@@ -235,6 +237,7 @@ class MetadataCodeDetailsTest(unittest.TestCase):
                     _STREAM_UNARY,
                 )
             ),
+            _registered_method=True,
         )
         self._stream_stream = self._channel.stream_stream(
             "/".join(
@@ -246,6 +249,7 @@ class MetadataCodeDetailsTest(unittest.TestCase):
             ),
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
+            _registered_method=True,
         )
 
     def tearDown(self):
@@ -838,6 +842,7 @@ class InspectContextTest(unittest.TestCase):
             ),
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
+            _registered_method=True,
         )
 
     def tearDown(self):
