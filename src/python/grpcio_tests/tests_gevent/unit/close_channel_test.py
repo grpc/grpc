@@ -65,7 +65,8 @@ class CloseChannelTest(unittest.TestCase):
             _UNARY_CALL_METHOD_WITH_SLEEP,
             request_serializer=messages_pb2.SimpleRequest.SerializeToString,
             response_deserializer=messages_pb2.SimpleResponse.FromString,
-            _registered_method=True,)
+            _registered_method=True,
+        )
         greenlet = group.spawn(self._run_client, UnaryCallWithSleep)
         # release loop so that greenlet can take control
         gevent.sleep()
@@ -78,7 +79,8 @@ class CloseChannelTest(unittest.TestCase):
             _UNARY_CALL_METHOD_WITH_SLEEP,
             request_serializer=messages_pb2.SimpleRequest.SerializeToString,
             response_deserializer=messages_pb2.SimpleResponse.FromString,
-            _registered_method=True)
+            _registered_method=True,
+        )
         greenlet = group.spawn(self._run_client, UnaryCallWithSleep)
         # release loop so that greenlet can take control
         gevent.sleep()

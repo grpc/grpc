@@ -312,7 +312,9 @@ def stream_stream_multi_callable(channel):
 
 
 def stream_stream_non_blocking_multi_callable(channel):
-    return channel.stream_stream(_STREAM_STREAM_NON_BLOCKING, _registered_method=True)
+    return channel.stream_stream(
+        _STREAM_STREAM_NON_BLOCKING, _registered_method=True
+    )
 
 
 class BaseRPCTest(object):

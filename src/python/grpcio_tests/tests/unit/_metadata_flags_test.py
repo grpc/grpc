@@ -134,7 +134,9 @@ def perform_unary_unary_future(channel, wait_for_ready=None):
 
 
 def perform_unary_stream_call(channel, wait_for_ready=None):
-    response_iterator = channel.unary_stream(_UNARY_STREAM, _registered_method=True).__call__(
+    response_iterator = channel.unary_stream(
+        _UNARY_STREAM, _registered_method=True
+    ).__call__(
         _REQUEST,
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
@@ -168,7 +170,9 @@ def perform_stream_unary_future(channel, wait_for_ready=None):
 
 
 def perform_stream_stream_call(channel, wait_for_ready=None):
-    response_iterator = channel.stream_stream(_STREAM_STREAM, _registered_method=True).__call__(
+    response_iterator = channel.stream_stream(
+        _STREAM_STREAM, _registered_method=True
+    ).__call__(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,

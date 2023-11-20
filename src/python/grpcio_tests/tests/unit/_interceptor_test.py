@@ -81,7 +81,9 @@ class _Handler(object):
     def handle_unary_unary(self, request, servicer_context):
         self._append_to_log("handle_unary_unary")
         self._control.control()
-        print(f">>>>>>servicer_context:{servicer_context.invocation_metadata()}")
+        print(
+            f">>>>>>servicer_context:{servicer_context.invocation_metadata()}"
+        )
         if servicer_context is not None:
             servicer_context.set_trailing_metadata(
                 (

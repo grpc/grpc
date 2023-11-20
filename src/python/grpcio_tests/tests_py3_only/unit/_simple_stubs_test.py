@@ -215,8 +215,10 @@ class SimpleStubsTest(unittest.TestCase):
             target = f"localhost:{port}"
             test_name = inspect.stack()[0][3]
             args = (_REQUEST, target, _UNARY_UNARY)
-            kwargs = {"channel_credentials": grpc.local_channel_credentials(),
-                      "_registered_method": True}
+            kwargs = {
+                "channel_credentials": grpc.local_channel_credentials(),
+                "_registered_method": True,
+            }
 
             def _invoke(seed: str):
                 run_kwargs = dict(kwargs)
@@ -327,7 +329,10 @@ class SimpleStubsTest(unittest.TestCase):
             with _server(server_creds) as port:
                 target = f"localhost:{port}"
                 response = grpc.experimental.unary_unary(
-                    _REQUEST, target, _UNARY_UNARY, options=_property_options,
+                    _REQUEST,
+                    target,
+                    _UNARY_UNARY,
+                    options=_property_options,
                     _registered_method=True,
                 )
 
@@ -335,7 +340,11 @@ class SimpleStubsTest(unittest.TestCase):
         with _server(None) as port:
             target = f"localhost:{port}"
             response = grpc.experimental.unary_unary(
-                _REQUEST, target, _UNARY_UNARY, insecure=True, _registered_method=True,
+                _REQUEST,
+                target,
+                _UNARY_UNARY,
+                insecure=True,
+                _registered_method=True,
             )
             self.assertEqual(_REQUEST, response)
 
@@ -386,7 +395,11 @@ class SimpleStubsTest(unittest.TestCase):
         def _send_rpc():
             try:
                 response = grpc.experimental.unary_unary(
-                    _REQUEST, target, _UNARY_UNARY, timeout=None, insecure=True,
+                    _REQUEST,
+                    target,
+                    _UNARY_UNARY,
+                    timeout=None,
+                    insecure=True,
                     _registered_method=True,
                 )
                 rpc_finished_event.set()

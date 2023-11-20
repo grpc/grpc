@@ -134,7 +134,9 @@ class AbortTest(unittest.TestCase):
 
     def test_abort_with_status(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
-            self._channel.unary_unary(_ABORT_WITH_STATUS, _registered_method=True)(_REQUEST)
+            self._channel.unary_unary(
+                _ABORT_WITH_STATUS, _registered_method=True
+            )(_REQUEST)
         rpc_error = exception_context.exception
 
         self.assertEqual(rpc_error.code(), grpc.StatusCode.INTERNAL)
@@ -143,7 +145,9 @@ class AbortTest(unittest.TestCase):
 
     def test_invalid_code(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
-            self._channel.unary_unary(_INVALID_CODE, _registered_method=True)(_REQUEST)
+            self._channel.unary_unary(_INVALID_CODE, _registered_method=True)(
+                _REQUEST
+            )
         rpc_error = exception_context.exception
 
         self.assertEqual(rpc_error.code(), grpc.StatusCode.UNKNOWN)

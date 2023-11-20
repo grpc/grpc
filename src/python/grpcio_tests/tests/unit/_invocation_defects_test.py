@@ -245,11 +245,15 @@ def _stream_stream_multi_callable(channel):
 
 
 def _defective_handler_multi_callable(channel):
-    return channel.unary_unary(_DEFECTIVE_GENERIC_RPC_HANDLER, _registered_method=True)
+    return channel.unary_unary(
+        _DEFECTIVE_GENERIC_RPC_HANDLER, _registered_method=True
+    )
 
 
 def _defective_nested_exception_handler_multi_callable(channel):
-    return channel.unary_unary(_UNARY_UNARY_NESTED_EXCEPTION, _registered_method=True)
+    return channel.unary_unary(
+        _UNARY_UNARY_NESTED_EXCEPTION, _registered_method=True
+    )
 
 
 class InvocationDefectsTest(unittest.TestCase):

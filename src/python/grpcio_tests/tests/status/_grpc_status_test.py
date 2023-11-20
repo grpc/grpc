@@ -138,7 +138,9 @@ class StatusTest(unittest.TestCase):
         self._channel.close()
 
     def test_status_ok(self):
-        _, call = self._channel.unary_unary(_STATUS_OK, _registered_method=True).with_call(_REQUEST)
+        _, call = self._channel.unary_unary(
+            _STATUS_OK, _registered_method=True
+        ).with_call(_REQUEST)
 
         # Succeed RPC doesn't have status
         status = rpc_status.from_call(call)
@@ -146,7 +148,9 @@ class StatusTest(unittest.TestCase):
 
     def test_status_not_ok(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
-            self._channel.unary_unary(_STATUS_NOT_OK, _registered_method=True).with_call(_REQUEST)
+            self._channel.unary_unary(
+                _STATUS_NOT_OK, _registered_method=True
+            ).with_call(_REQUEST)
         rpc_error = exception_context.exception
 
         self.assertEqual(rpc_error.code(), grpc.StatusCode.INTERNAL)
@@ -156,7 +160,9 @@ class StatusTest(unittest.TestCase):
 
     def test_error_details(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
-            self._channel.unary_unary(_ERROR_DETAILS, _registered_method=True).with_call(_REQUEST)
+            self._channel.unary_unary(
+                _ERROR_DETAILS, _registered_method=True
+            ).with_call(_REQUEST)
         rpc_error = exception_context.exception
 
         status = rpc_status.from_call(rpc_error)
@@ -173,7 +179,9 @@ class StatusTest(unittest.TestCase):
 
     def test_code_message_validation(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
-            self._channel.unary_unary(_INCONSISTENT, _registered_method=True).with_call(_REQUEST)
+            self._channel.unary_unary(
+                _INCONSISTENT, _registered_method=True
+            ).with_call(_REQUEST)
         rpc_error = exception_context.exception
         self.assertEqual(rpc_error.code(), grpc.StatusCode.NOT_FOUND)
 
@@ -182,7 +190,9 @@ class StatusTest(unittest.TestCase):
 
     def test_invalid_code(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
-            self._channel.unary_unary(_INVALID_CODE, _registered_method=True).with_call(_REQUEST)
+            self._channel.unary_unary(
+                _INVALID_CODE, _registered_method=True
+            ).with_call(_REQUEST)
         rpc_error = exception_context.exception
         self.assertEqual(rpc_error.code(), grpc.StatusCode.UNKNOWN)
         # Invalid status code exception raised during coversion
