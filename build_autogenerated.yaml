@@ -18960,7 +18960,6 @@ targets:
 - name: xds_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/util/audit_logging_utils.h
