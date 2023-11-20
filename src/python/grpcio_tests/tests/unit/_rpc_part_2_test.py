@@ -55,7 +55,7 @@ class RPCPart2Test(BaseRPCTest, unittest.TestCase):
         request = b"abc"
 
         with self.assertRaises(grpc.RpcError) as exception_context:
-            self._channel.unary_unary("NoSuchMethod")(request)
+            self._channel.unary_unary("NoSuchMethod", _registered_method=False)(request)
 
         self.assertEqual(
             grpc.StatusCode.UNIMPLEMENTED, exception_context.exception.code()

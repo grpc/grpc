@@ -270,7 +270,8 @@ def unary_unary(
         unset, defaults to 60 seconds. Supply a value of None to indicate that
         no timeout should be enforced.
       metadata: Optional metadata to send to the server.
-      _registered_method: Whether this RPC is made for a registered method.
+      _registered_method: INTERNAL USE ONLY. Whether this RPC is made for a
+        registered method.
 
     Returns:
       The response to the RPC.

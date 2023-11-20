@@ -478,6 +478,8 @@ class Channel(_base_channel.Channel):
             await self.wait_for_state_change(state)
             state = self.get_state(try_to_connect=True)
 
+    # TODO(xuanwn): Implement _registered_method after we have
+    # observability for Asyncio.
     # pylint: disable=arguments-differ,unused-argument
     def unary_unary(
         self,
@@ -496,6 +498,8 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
+    # TODO(xuanwn): Implement _registered_method after we have
+    # observability for Asyncio.
     # pylint: disable=arguments-differ,unused-argument
     def unary_stream(
         self,
@@ -514,6 +518,8 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
+    # TODO(xuanwn): Implement _registered_method after we have
+    # observability for Asyncio.
     # pylint: disable=arguments-differ,unused-argument
     def stream_unary(
         self,
@@ -532,6 +538,8 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
+    # TODO(xuanwn): Implement _registered_method after we have
+    # observability for Asyncio.
     # pylint: disable=arguments-differ,unused-argument
     def stream_stream(
         self,

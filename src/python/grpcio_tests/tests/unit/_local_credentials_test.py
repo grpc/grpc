@@ -53,7 +53,7 @@ class LocalCredentialsTest(unittest.TestCase):
         ) as channel:
             self.assertEqual(
                 b"abc",
-                channel.unary_unary("/test/method")(
+                channel.unary_unary("/test/method", _registered_method=True)(
                     b"abc", wait_for_ready=True
                 ),
             )
@@ -77,7 +77,7 @@ class LocalCredentialsTest(unittest.TestCase):
         with grpc.secure_channel(server_addr, channel_creds) as channel:
             self.assertEqual(
                 b"abc",
-                channel.unary_unary("/test/method")(
+                channel.unary_unary("/test/method", _registered_method=True)(
                     b"abc", wait_for_ready=True
                 ),
             )
