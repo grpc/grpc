@@ -102,7 +102,8 @@ class Greeter(object):
             helloworld__pb2.HelloRequest.SerializeToString,
             helloworld__pb2.HelloReply.FromString,
             options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata, _registered_method=True)
+            insecure, call_credentials, compression, wait_for_ready,
+            timeout, metadata, _registered_method=True)
 
     @staticmethod
     def SayHelloStreamReply(request,
@@ -119,7 +120,8 @@ class Greeter(object):
             helloworld__pb2.HelloRequest.SerializeToString,
             helloworld__pb2.HelloReply.FromString,
             options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata, _registered_method=True)
+            insecure, call_credentials, compression, wait_for_ready,
+            timeout, metadata, _registered_method=True)
 
     @staticmethod
     def SayHelloBidiStream(request_iterator,
@@ -136,4 +138,5 @@ class Greeter(object):
             helloworld__pb2.HelloRequest.SerializeToString,
             helloworld__pb2.HelloReply.FromString,
             options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata, _registered_method=True)
+            insecure, call_credentials, compression, wait_for_ready,
+            timeout, metadata, _registered_method=True)
