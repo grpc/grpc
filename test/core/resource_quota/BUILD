@@ -56,7 +56,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     tags = [
-        "cpu:10",
+        "cpu_placeholder_tag:32",
         "resource_quota_test",
     ],
     uses_event_engine = False,
@@ -101,6 +101,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     tags = [
+        "cpu:20",
         "resource_quota_test",
     ],
     uses_event_engine = False,
@@ -124,6 +125,7 @@ grpc_cc_test(
     # We only run this test under Linux, and really only care about the
     # TSAN results.
     tags = [
+        "cpu:30",
         "no_mac",
         "no_windows",
         "resource_quota_test",
