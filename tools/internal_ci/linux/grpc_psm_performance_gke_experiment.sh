@@ -103,9 +103,9 @@ psmBuildConfigs() {
         -o "psm_${proxy_type}_loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-psmBuildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxied -a queue="${WORKER_POOL_8CORE}-proxied"  -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
+psmBuildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxied -a queue="${WORKER_POOL_8CORE}-proxied" -l java --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
 
-psmBuildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxyless -a queue="${WORKER_POOL_8CORE}-proxyless" -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
+psmBuildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxyless -a queue="${WORKER_POOL_8CORE}-proxyless" -l java --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
 
 # Build regular test configurations.
 buildConfigs() {
@@ -132,7 +132,7 @@ buildConfigs() {
         -o "regular_loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -a queue="${WORKER_POOL_8CORE}-regular" -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -a queue="${WORKER_POOL_8CORE}-regular" -l java --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -145,7 +145,6 @@ trap deleteImages EXIT
 
 # Build and push prebuilt images for running tests.
 time ../test-infra/bin/prepare_prebuilt_workers \
-    -l "cxx:${GRPC_CORE_GITREF}" \
     -l "java:${GRPC_JAVA_GITREF}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \
     -t "${UNIQUE_IDENTIFIER}" \
