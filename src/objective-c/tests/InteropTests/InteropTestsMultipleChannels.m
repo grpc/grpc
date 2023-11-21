@@ -18,7 +18,7 @@
 
 #import <XCTest/XCTest.h>
 
-#import <Cronet/Cronet.h>
+#import "third_party/objective_c/Cronet/Cronet.h"
 #import <GRPCClient/GRPCCallOptions.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 #import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"

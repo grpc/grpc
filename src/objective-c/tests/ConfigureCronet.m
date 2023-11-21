@@ -17,7 +17,7 @@
  */
 
 #import "ConfigureCronet.h"
-#import <Cronet/Cronet.h>
+#import "third_party/objective_c/Cronet/Cronet.h"
 
 void configureCronet(bool enable_netlog) {
   static dispatch_once_t configureCronet;

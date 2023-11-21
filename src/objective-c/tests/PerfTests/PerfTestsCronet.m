@@ -19,7 +19,7 @@
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
-#import <Cronet/Cronet.h>
+#import "third_party/objective_c/Cronet/Cronet.h"
 #import <GRPCClient/GRPCCall+Cronet.h>
 
 #import "../ConfigureCronet.h"

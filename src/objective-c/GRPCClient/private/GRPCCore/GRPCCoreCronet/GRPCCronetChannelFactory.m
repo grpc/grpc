@@ -21,7 +21,7 @@
 #import "../ChannelArgsUtil.h"
 #import "../GRPCChannel.h"
 
-#import <Cronet/Cronet.h>
+#import "third_party/objective_c/Cronet/Cronet.h"
 #include <grpc/grpc_cronet.h>
 
 @implementation GRPCCronetChannelFactory {
