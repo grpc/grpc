@@ -51,6 +51,19 @@ std::unordered_set<std::string> ToLowerCase(
   return result;
 }
 
+bool HasNonEmptyMetadata(
+    const std::map<std::string, LoadBalancerStatsResponse::MetadataByPeer>&
+        metadata_by_peer) {
+  for (const auto& entry : metadata_by_peer) {
+    for (const auto& rpc_metadata : entry.second.rpc_metadata()) {
+      if (rpc_metadata.metadata_size() > 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 XdsStatsWatcher::XdsStatsWatcher(int start_id, int end_id,
@@ -113,8 +126,12 @@ LoadBalancerStatsResponse XdsStatsWatcher::WaitForRpcStatsResponse(
                [this] { return rpcs_needed_ == 0; });
   response.mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
                                           rpcs_by_peer_.end());
-  response.mutable_metadatas_by_peer()->insert(metadata_by_peer_.begin(),
-                                               metadata_by_peer_.end());
+  // Return metadata if at least one RPC had relevant metadata. Note that empty
+  // entries would be returned for RCPs with no relevant metadata in this case.
+  if (HasNonEmptyMetadata(metadata_by_peer_)) {
+    response.mutable_metadatas_by_peer()->insert(metadata_by_peer_.begin(),
+                                                 metadata_by_peer_.end());
+  }
   auto& response_rpcs_by_method = *response.mutable_rpcs_by_method();
   for (const auto& rpc_by_type : rpcs_by_type_) {
     std::string method_name;
