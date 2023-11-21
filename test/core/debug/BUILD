@@ -27,7 +27,7 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = [
-        "cpu:10",
+        "cpu:1",
     ],
     uses_event_engine = False,
     uses_polling = False,
