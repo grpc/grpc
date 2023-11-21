@@ -126,9 +126,9 @@ declare -a configLangArgs32core=()
 declare -a runnerLangArgs=()
 
 # c++
-configLangArgs8core+=( -l c++ )
-configLangArgs32core+=( -l c++ )
-runnerLangArgs+=( -l "cxx:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" )
+# configLangArgs8core+=( -l c++ )
+# configLangArgs32core+=( -l c++ )
+# runnerLangArgs+=( -l "cxx:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" )
 
 # dotnet
 configLangArgs8core+=( -l dotnet )
