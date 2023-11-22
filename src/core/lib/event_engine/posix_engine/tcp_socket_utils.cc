@@ -84,7 +84,6 @@ int kDefaultServerUserTimeoutMs = 20000;
 bool kDefaultClientUserTimeoutEnabled = false;
 bool kDefaultServerUserTimeoutEnabled = true;
 
-
 absl::Status ErrorForFd(
     int fd, const experimental::EventEngine::ResolvedAddress& addr) {
   if (fd >= 0) return absl::OkStatus();
