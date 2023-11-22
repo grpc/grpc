@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <initializer_list>  // IWYU pragma: keep
 #include <memory>
+#include <string>
 #include <utility>
 #include <variant>
 
@@ -36,11 +37,15 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -55,16 +60,40 @@ namespace chaotic_good {
 
 // Prototype based on gRPC Call 3.0.
 // TODO(ladynana): convert to the true Call/CallInitiator once available.
-struct CallData {
-  uint32_t stream_id;
+class Call : public Party {
+ public:
+  explicit Call(Arena* arena, uint32_t stream_id)
+      : Party(arena, 1), stream_id_(stream_id){};
+  ~Call() override {}
+  std::string DebugTag() const override { return "TestParty"; }
+  bool RunParty() override {
+    promise_detail::Context<grpc_event_engine::experimental::EventEngine>
+        ee_ctx(ee_.get());
+    return Party::RunParty();
+  }
+  void PartyOver() override {
+    {
+      promise_detail::Context<grpc_event_engine::experimental::EventEngine>
+          ee_ctx(ee_.get());
+      CancelRemainingParticipants();
+    }
+    delete this;
+  }
+  uint32_t stream_id_;
   Pipe<MessageHandle> pipe_client_to_server_messages_;
   Pipe<MessageHandle> pipe_server_to_client_messages_;
   Pipe<ServerMetadataHandle> pipe_server_intial_metadata_;
+
+ private:
+  grpc_event_engine::experimental::EventEngine* event_engine() const final {
+    return ee_.get();
+  }
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 class CallInitiator {
  public:
-  explicit CallInitiator(std::unique_ptr<CallData> call_data)
-      : call_(std::move(call_data)) {}
+  explicit CallInitiator(RefCountedPtr<Call> call) : call_(call) {}
   // Returns a promise that push/pull message/metadata from corresponding pipe.
   auto PushServerInitialMetadata(ServerMetadataHandle metadata) {
     return call_->pipe_server_intial_metadata_.sender.Push(std::move(metadata));
@@ -86,19 +115,20 @@ class CallInitiator {
   auto PullClientToServerMessage() {
     return call_->pipe_client_to_server_messages_.receiver.Next();
   }
-  uint32_t GetStreamId() { return call_->stream_id; }
-  void SetCall(std::unique_ptr<CallData> call_data) {
-    call_ = std::move(call_data);
-  }
+  uint32_t GetStreamId() { return call_->stream_id_; }
   template <typename Promise>
   void Spawn(Promise p) {
-    // TODO(ladynana): call/implement Spawn method such as party->Spawn.
-    // party_->Spawn("Run promise", std::move(p), [](){return
-    // absl::OkStatus();});
+    call_->Spawn(
+        "run_transport_write_promise",
+        [p = std::move(p)]() mutable {
+          p();
+          return Empty{};
+        },
+        [](Empty) {});
   }
 
  private:
-  std::unique_ptr<CallData> call_;
+  RefCountedPtr<Call> call_;
 };
 
 class ServerTransport {
@@ -123,12 +153,6 @@ class ServerTransport {
     if (!outgoing_frames_.IsClosed()) {
       outgoing_frames_.MarkClosed();
     }
-    // MutexLock lock(&mu_);
-    // for (const auto& pair : stream_map_) {
-    //   if (!pair.second->IsClose()) {
-    //     pair.second->MarkClose();
-    //   }
-    // }
   }
 
  private:
@@ -170,12 +194,6 @@ class ServerTransport {
   static const size_t client_frame_queue_size_ = 2;
   // Assigned aligned bytes from setting frame.
   size_t aligned_bytes = 64;
-  // Mutex mu_;
-  // // Map of outgoing client frames, key is stream_id.
-  // std::map<uint32_t, std::shared_ptr<InterActivityPipe<
-  //                        ClientFrame, client_frame_queue_size_>::Receiver>>
-  //                        stream_map_
-  //     ABSL_GUARDED_BY(mu_);
   ActivityPtr writer_;
   ActivityPtr reader_;
   std::unique_ptr<PromiseEndpoint> control_endpoint_;

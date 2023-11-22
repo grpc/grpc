@@ -112,11 +112,8 @@ class ServerTransportTest : public ::testing::Test {
         pipe_server_intial_metadata_(arena_.get()) {}
   void InitialServerTransport() {
     auto accept_fn = [this](ClientMetadata& md) {
-      CallData call_data{1, Pipe<MessageHandle>(arena_.get()),
-                         Pipe<MessageHandle>(arena_.get()),
-                         Pipe<ServerMetadataHandle>(arena_.get())};
-      CallInitiator call_initiator(
-          std::make_unique<CallData>(std::move(call_data)));
+      auto call = MakeRefCounted<Call>(arena_.get(), 1);
+      CallInitiator call_initiator(call);
       return call_initiator;
     };
     server_transport_ = std::make_unique<ServerTransport>(
