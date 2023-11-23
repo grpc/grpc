@@ -62,10 +62,11 @@ namespace chaotic_good {
 // TODO(ladynana): convert to the true Call/CallInitiator once available.
 class Call : public Party {
  public:
-  explicit Call(Arena* arena, uint32_t stream_id)
-      : Party(arena, 1), stream_id_(stream_id){};
+  explicit Call(Arena* arena, uint32_t stream_id, std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                      event_engine)
+      : Party(arena, 1), stream_id_(stream_id), ee_(event_engine){};
   ~Call() override {}
-  std::string DebugTag() const override { return "TestParty"; }
+  std::string DebugTag() const override { return "TestCall"; }
   bool RunParty() override {
     promise_detail::Context<grpc_event_engine::experimental::EventEngine>
         ee_ctx(ee_.get());
@@ -80,40 +81,50 @@ class Call : public Party {
     delete this;
   }
   uint32_t stream_id_;
-  Pipe<MessageHandle> pipe_client_to_server_messages_;
-  Pipe<MessageHandle> pipe_server_to_client_messages_;
-  Pipe<ServerMetadataHandle> pipe_server_intial_metadata_;
+  Pipe<MessageHandle>* pipe_client_to_server_messages_;
+  Pipe<MessageHandle>* pipe_server_to_client_messages_;
+  Pipe<ServerMetadataHandle>* pipe_server_intial_metadata_;
 
  private:
   grpc_event_engine::experimental::EventEngine* event_engine() const final {
     return ee_.get();
   }
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee_ =
-      grpc_event_engine::experimental::GetDefaultEventEngine();
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee_;
 };
 class CallInitiator {
  public:
   explicit CallInitiator(RefCountedPtr<Call> call) : call_(call) {}
   // Returns a promise that push/pull message/metadata from corresponding pipe.
   auto PushServerInitialMetadata(ServerMetadataHandle metadata) {
-    return call_->pipe_server_intial_metadata_.sender.Push(std::move(metadata));
+    GPR_ASSERT(call_->pipe_server_intial_metadata_!=nullptr);
+    return call_->pipe_server_intial_metadata_->sender.Push(
+        std::move(metadata));
   }
   auto PushServerToClientMessage(MessageHandle message) {
-    return call_->pipe_server_to_client_messages_.sender.Push(
+    GPR_ASSERT(call_->pipe_server_to_client_messages_!=nullptr);
+    return call_->pipe_server_to_client_messages_->sender.Push(
         std::move(message));
   }
   auto PushClientToServerMessage(MessageHandle message) {
-    return call_->pipe_client_to_server_messages_.sender.Push(
+    GPR_ASSERT(call_->pipe_client_to_server_messages_!=nullptr);
+    std::cout << "push client to server message " << "\n";
+    fflush(stdout);
+    return call_->pipe_client_to_server_messages_->sender.Push(
         std::move(message));
   }
   auto PullServerInitialMetadata() {
-    return call_->pipe_server_intial_metadata_.receiver.Next();
+    GPR_ASSERT(call_->pipe_server_intial_metadata_!=nullptr);
+    return call_->pipe_server_intial_metadata_->receiver.Next();
   }
   auto PullServerToClientMessage() {
-    return call_->pipe_server_to_client_messages_.receiver.Next();
+    GPR_ASSERT(call_->pipe_server_to_client_messages_!=nullptr);
+    std::cout << "pull server to client message " << "\n";
+    fflush(stdout);
+    return call_->pipe_server_to_client_messages_->receiver.Next();
   }
   auto PullClientToServerMessage() {
-    return call_->pipe_client_to_server_messages_.receiver.Next();
+    GPR_ASSERT(call_->pipe_client_to_server_messages_!=nullptr);
+    return call_->pipe_client_to_server_messages_->receiver.Next();
   }
   uint32_t GetStreamId() { return call_->stream_id_; }
   template <typename Promise>
@@ -121,10 +132,21 @@ class CallInitiator {
     call_->Spawn(
         "run_transport_write_promise",
         [p = std::move(p)]() mutable {
-          p();
-          return Empty{};
+          return std::move(p);
         },
-        [](Empty) {});
+        [](absl::Status){});
+  }
+  void SetServerInitialMetadata(
+      Pipe<ServerMetadataHandle>* pipe_server_intial_metadata) {
+    call_->pipe_server_intial_metadata_ = pipe_server_intial_metadata;
+  }
+  void SetServerToClientMessage(
+      Pipe<MessageHandle>* pipe_server_to_client_messages) {
+    call_->pipe_server_to_client_messages_ = pipe_server_to_client_messages;
+  }
+  void SetClientToServerMessage(
+      Pipe<MessageHandle>* pipe_client_to_server_messages) {
+    call_->pipe_client_to_server_messages_ = pipe_client_to_server_messages;
   }
 
  private:
@@ -164,6 +186,8 @@ class ServerTransport {
           r.PullServerToClientMessage(),
           [this, stream_id = r.GetStreamId()](
               NextResult<MessageHandle> result) mutable {
+            std::cout << "write promise get message " << "\n";
+            fflush(stdout);
             auto outgoing_frames = outgoing_frames_.MakeSender();
             ServerFragmentFrame frame;
             uint32_t message_length = result.value()->payload()->Length();
@@ -172,6 +196,7 @@ class ServerTransport {
                 FrameType::kFragment, {}, stream_id, 0, message_length,
                 message_padding,      0};
             frame.message = std::move(*result);
+        
             return outgoing_frames.Send(ServerFrame(std::move(frame)));
           },
           [](bool success) -> LoopCtl<absl::Status> {
@@ -182,6 +207,8 @@ class ServerTransport {
                   "Transport closed due to endpoint write/read "
                   "failed.");
             }
+            std::cout << "write promise continue " << "\n";
+            fflush(stdout);
             return Continue();
           });
     });

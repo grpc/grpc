@@ -170,8 +170,12 @@ ServerTransport::ServerTransport(
         },
         [](bool ret) -> LoopCtl<absl::Status> {
           if (ret) {
+            std::cout << "reader continue " << "\n";
+            fflush(stdout);
             return Continue();
           } else {
+            std::cout << "reader failed " << "\n";
+            fflush(stdout);
             return absl::InternalError("Send message to pipe failed.");
           }
         });
