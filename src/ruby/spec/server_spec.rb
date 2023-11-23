@@ -14,13 +14,6 @@
 
 require 'spec_helper'
 
-def load_test_certs
-  test_root = File.join(File.dirname(__FILE__), 'testdata')
-  files = ['ca.pem', 'server1.key', 'server1.pem']
-  contents = files.map { |f| File.open(File.join(test_root, f)).read }
-  [contents[0], [{ private_key: contents[1], cert_chain: contents[2] }], false]
-end
-
 Server = GRPC::Core::Server
 
 describe Server do
