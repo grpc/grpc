@@ -130,6 +130,8 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         # To compensate for this, we double the timeout for GAMMA tests.
         return self._start_test_client(
             server_target,
-            wait_for_active_channel_timeout=datetime.timedelta(minutes=10),
+            wait_for_server_channel_ready_timeout=datetime.timedelta(
+                minutes=10
+            ),
             **kwargs,
         )

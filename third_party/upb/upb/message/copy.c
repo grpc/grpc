@@ -1,35 +1,23 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #include "upb/message/copy.h"
 
+#include <stdbool.h>
+#include <string.h>
+
+#include "upb/base/descriptor_constants.h"
+#include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/message/accessors.h"
+#include "upb/message/internal/message.h"
 #include "upb/message/message.h"
+#include "upb/mini_table/field.h"
+#include "upb/mini_table/internal/field.h"
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -287,20 +275,17 @@ upb_Message* _upb_Message_Copy(upb_Message* dst, const upb_Message* src,
   if (unknown_size != 0) {
     UPB_ASSERT(ptr);
     // Make a copy into destination arena.
-    void* dst_unknowns = upb_Arena_Malloc(arena, unknown_size);
-    if (dst_unknowns == NULL) return NULL;
-    memcpy(dst_unknowns, ptr, unknown_size);
-    if (!_upb_Message_AddUnknown(dst, dst_unknowns, unknown_size, arena)) {
+    if (!_upb_Message_AddUnknown(dst, ptr, unknown_size, arena)) {
       return NULL;
     }
   }
   return dst;
 }
 
-void upb_Message_DeepCopy(upb_Message* dst, const upb_Message* src,
+bool upb_Message_DeepCopy(upb_Message* dst, const upb_Message* src,
                           const upb_MiniTable* mini_table, upb_Arena* arena) {
   upb_Message_Clear(dst, mini_table);
-  _upb_Message_Copy(dst, src, mini_table, arena);
+  return _upb_Message_Copy(dst, src, mini_table, arena) != NULL;
 }
 
 // Deep clones a message using the provided target arena.

@@ -193,6 +193,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/java/generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/generator_factory.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/helpers.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/java/java_features.pb.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/kotlin_generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/map_field.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/map_field_lite.cc',
@@ -239,12 +240,16 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/retention.cc',
     'third_party/protobuf/src/google/protobuf/compiler/ruby/ruby_generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/accessors.cc',
-    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_bytes.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_message.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_scalar.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_string.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/unsupported_field.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/context.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/message.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/naming.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/oneof.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/relative_path.cc',
     'third_party/protobuf/src/google/protobuf/compiler/subprocess.cc',
     'third_party/protobuf/src/google/protobuf/compiler/zip_writer.cc',
     'third_party/protobuf/src/google/protobuf/cpp_features.pb.cc',
@@ -315,4 +320,4 @@ CC_INCLUDES=[
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="b2b7a51158418f41cff0520894836c15b1738721"
+PROTOBUF_SUBMODULE_VERSION="6b5d8db01fe47478e8d400f550e797e6230d464e"

@@ -157,10 +157,10 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     void Orphan() override;
 
-    absl::Status UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
-                              absl::StatusOr<EndpointAddressesList> addresses,
-                              const std::string& resolution_note,
-                              const ChannelArgs& args);
+    absl::Status UpdateLocked(
+        const WeightedTargetLbConfig::ChildConfig& config,
+        absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses,
+        const std::string& resolution_note, const ChannelArgs& args);
     void ResetBackoffLocked();
     void DeactivateLocked();
 
@@ -338,11 +338,12 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
       target = MakeOrphanable<WeightedChild>(
           Ref(DEBUG_LOCATION, "WeightedChild"), name);
     }
-    absl::StatusOr<EndpointAddressesList> addresses;
+    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses;
     if (address_map.ok()) {
       auto it = address_map->find(name);
       if (it == address_map->end()) {
-        addresses.emplace();
+        addresses = std::make_shared<EndpointAddressesListIterator>(
+            EndpointAddressesList());
       } else {
         addresses = std::move(it->second);
       }
@@ -589,7 +590,7 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
 
 absl::Status WeightedTargetLb::WeightedChild::UpdateLocked(
     const WeightedTargetLbConfig::ChildConfig& config,
-    absl::StatusOr<EndpointAddressesList> addresses,
+    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses,
     const std::string& resolution_note, const ChannelArgs& args) {
   if (weighted_target_policy_->shutting_down_) return absl::OkStatus();
   // Update child weight.

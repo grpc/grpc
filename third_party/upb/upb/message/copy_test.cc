@@ -1,29 +1,9 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 /* Test of mini table accessors.
  *
@@ -33,19 +13,24 @@
 
 #include "upb/message/copy.h"
 
+#include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <string>
 #include <vector>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "google/protobuf/test_messages_proto2.upb.h"
-#include "google/protobuf/test_messages_proto3.upb.h"
+#include "google/protobuf/test_messages_proto2.upb_minitable.h"
 #include "upb/base/string_view.h"
-#include "upb/collections/array.h"
-#include "upb/collections/map.h"
 #include "upb/mem/arena.h"
 #include "upb/message/accessors.h"
-#include "upb/test/test.upb.h"
-#include "upb/upb.h"
+#include "upb/message/internal/message.h"
+#include "upb/message/map.h"
+#include "upb/message/message.h"
+#include "upb/mini_table/field.h"
+#include "upb/mini_table/message.h"
+#include "upb/wire/encode.h"
 
 namespace {
 
@@ -61,7 +46,8 @@ const int32_t kTestNestedInt32 = 123;
 
 const upb_MiniTableField* find_proto2_field(int field_number) {
   return upb_MiniTable_FindFieldByNumber(
-      &protobuf_test_messages_proto2_TestAllTypesProto2_msg_init, field_number);
+      &protobuf_0test_0messages__proto2__TestAllTypesProto2_msg_init,
+      field_number);
 }
 
 TEST(GeneratedCode, DeepCloneMessageScalarAndString) {
@@ -83,7 +69,7 @@ TEST(GeneratedCode, DeepCloneMessageScalarAndString) {
   upb_Arena* arena = upb_Arena_New();
   protobuf_test_messages_proto2_TestAllTypesProto2* clone =
       (protobuf_test_messages_proto2_TestAllTypesProto2*)upb_Message_DeepClone(
-          msg, &protobuf_test_messages_proto2_TestAllTypesProto2_msg_init,
+          msg, &protobuf_0test_0messages__proto2__TestAllTypesProto2_msg_init,
           arena);
   // After cloning overwrite values and destroy source arena for MSAN.
   memset(string_in_arena, 0, sizeof(kTestStr1));
@@ -114,12 +100,12 @@ TEST(GeneratedCode, DeepCloneMessageSubMessage) {
   protobuf_test_messages_proto2_TestAllTypesProto2_NestedMessage_set_a(
       nested, kTestNestedInt32);
   upb_Message_SetMessage(
-      msg, &protobuf_test_messages_proto2_TestAllTypesProto2_msg_init,
+      msg, &protobuf_0test_0messages__proto2__TestAllTypesProto2_msg_init,
       nested_message_field, nested);
   upb_Arena* arena = upb_Arena_New();
   protobuf_test_messages_proto2_TestAllTypesProto2* clone =
       (protobuf_test_messages_proto2_TestAllTypesProto2*)upb_Message_DeepClone(
-          msg, &protobuf_test_messages_proto2_TestAllTypesProto2_msg_init,
+          msg, &protobuf_0test_0messages__proto2__TestAllTypesProto2_msg_init,
           arena);
   // After cloning overwrite values and destroy source arena for MSAN.
   protobuf_test_messages_proto2_TestAllTypesProto2_NestedMessage_set_a(nested,
@@ -149,7 +135,7 @@ TEST(GeneratedCode, DeepCloneMessageArrayField) {
   upb_Arena* arena = upb_Arena_New();
   protobuf_test_messages_proto2_TestAllTypesProto2* clone =
       (protobuf_test_messages_proto2_TestAllTypesProto2*)upb_Message_DeepClone(
-          msg, &protobuf_test_messages_proto2_TestAllTypesProto2_msg_init,
+          msg, &protobuf_0test_0messages__proto2__TestAllTypesProto2_msg_init,
           arena);
   protobuf_test_messages_proto2_TestAllTypesProto2_clear_repeated_sint32(msg);
   upb_Arena_Free(source_arena);
@@ -188,7 +174,7 @@ TEST(GeneratedCode, DeepCloneMessageMapField) {
   upb_Arena* arena = upb_Arena_New();
   protobuf_test_messages_proto2_TestAllTypesProto2* clone =
       (protobuf_test_messages_proto2_TestAllTypesProto2*)upb_Message_DeepClone(
-          msg, &protobuf_test_messages_proto2_TestAllTypesProto2_msg_init,
+          msg, &protobuf_0test_0messages__proto2__TestAllTypesProto2_msg_init,
           arena);
   protobuf_test_messages_proto2_TestAllTypesProto2_NestedMessage_set_a(nested,
                                                                        0);
@@ -265,7 +251,7 @@ TEST(GeneratedCode, DeepCloneMessageExtensions) {
       (protobuf_test_messages_proto2_TestAllTypesProto2_MessageSetCorrect*)
           upb_Message_DeepClone(
               msg,
-              &protobuf_test_messages_proto2_TestAllTypesProto2_MessageSetCorrect_msg_init,
+              &protobuf_0test_0messages__proto2__TestAllTypesProto2__MessageSetCorrect_msg_init,
               arena);
 
   // Mutate original extension.
@@ -284,4 +270,55 @@ TEST(GeneratedCode, DeepCloneMessageExtensions) {
       upb_StringView_FromString(kTestStr1)));
   upb_Arena_Free(arena);
 }
+
+TEST(GeneratedCode, DeepCloneMessageWithUnknowns) {
+  upb_Arena* source_arena = upb_Arena_New();
+  upb_Arena* unknown_arena = upb_Arena_New();
+  protobuf_test_messages_proto2_TestAllTypesProto2* msg =
+      protobuf_test_messages_proto2_TestAllTypesProto2_new(source_arena);
+  ASSERT_TRUE(
+      protobuf_test_messages_proto2_TestAllTypesProto2_map_int32_double_set(
+          msg, 12, 1200.5, source_arena));
+  ASSERT_TRUE(
+      protobuf_test_messages_proto2_TestAllTypesProto2_map_string_string_set(
+          msg, upb_StringView_FromString("key1"),
+          upb_StringView_FromString("value1"), source_arena));
+  // Create unknown data.
+  protobuf_test_messages_proto2_UnknownToTestAllTypes* unknown_source =
+      protobuf_test_messages_proto2_UnknownToTestAllTypes_new(unknown_arena);
+  protobuf_test_messages_proto2_UnknownToTestAllTypes_set_optional_bool(
+      unknown_source, true);
+  protobuf_test_messages_proto2_UnknownToTestAllTypes_set_optional_int32(
+      unknown_source, 123);
+  // Encode unknown message to bytes.
+  size_t len;
+  char* data;
+  upb_Arena* encode_arena = upb_Arena_New();
+  upb_EncodeStatus status = upb_Encode(
+      unknown_source,
+      &protobuf_0test_0messages__proto2__UnknownToTestAllTypes_msg_init,
+      kUpb_EncodeOption_CheckRequired, encode_arena, &data, &len);
+  ASSERT_EQ(status, kUpb_EncodeStatus_Ok);
+  std::string unknown_data(data, len);
+  // Add unknown data.
+  _upb_Message_AddUnknown(msg, data, len, source_arena);
+  // Create clone.
+  upb_Arena* clone_arena = upb_Arena_New();
+  protobuf_test_messages_proto2_TestAllTypesProto2* clone =
+      (protobuf_test_messages_proto2_TestAllTypesProto2*)upb_Message_DeepClone(
+          msg, &protobuf_0test_0messages__proto2__TestAllTypesProto2_msg_init,
+          clone_arena);
+  upb_Arena_Free(source_arena);
+  upb_Arena_Free(unknown_arena);
+  upb_Arena_Free(encode_arena);
+  // Read unknown data from clone and verify.
+  size_t cloned_length;
+  const char* cloned_unknown_data =
+      upb_Message_GetUnknown(clone, &cloned_length);
+  EXPECT_EQ(cloned_length, len);
+  EXPECT_EQ(memcmp(cloned_unknown_data, unknown_data.c_str(), cloned_length),
+            0);
+  upb_Arena_Free(clone_arena);
+}
+
 }  // namespace
