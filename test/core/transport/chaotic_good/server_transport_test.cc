@@ -216,14 +216,16 @@ class ServerTransportTest : public ::testing::Test {
             }));
   }
   auto ReadClientToServerMessage() {
-    std::cout << "read client message" << "\n";
+    std::cout << "read client message"
+              << "\n";
     fflush(stdout);
     return Seq(pipe_client_to_server_messages_.receiver.Next(),
                [this](NextResult<MessageHandle> message) {
                  EXPECT_TRUE(message.has_value());
                  EXPECT_EQ(message.value()->payload()->JoinIntoString(),
                            message_);
-                 std::cout << "read client message done" << "\n";
+                 std::cout << "read client message done"
+                           << "\n";
                  fflush(stdout);
                  return absl::OkStatus();
                });
@@ -231,13 +233,15 @@ class ServerTransportTest : public ::testing::Test {
   auto WriteServerToClientMessage() {
     EXPECT_CALL(control_endpoint_, Write).WillOnce(Return(true));
     EXPECT_CALL(data_endpoint_, Write).WillOnce(Return(true));
-    std::cout << "write server message " << "\n";
+    std::cout << "write server message "
+              << "\n";
     fflush(stdout);
     return Seq(pipe_server_to_client_messages_.sender.Push(
                    arena_->MakePooled<Message>()),
                [this](bool success) {
                  EXPECT_TRUE(success);
-                 std::cout << "write server message done" << "\n";
+                 std::cout << "write server message done"
+                           << "\n";
                  fflush(stdout);
                  pipe_server_to_client_messages_.sender.Close();
                  return absl::OkStatus();
