@@ -24,7 +24,6 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "status_flag.h"
 
 #include <grpc/support/log.h>
 
@@ -32,6 +31,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {

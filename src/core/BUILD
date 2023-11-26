@@ -782,6 +782,7 @@ grpc_cc_library(
         "promise_status",
         "seq_state",
         "status_flag",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )

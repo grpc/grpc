@@ -23,6 +23,7 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
