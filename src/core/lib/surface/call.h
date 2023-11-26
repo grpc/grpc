@@ -135,6 +135,10 @@ class CallContext {
   void set_traced(bool traced) { traced_ = traced; }
   bool traced() const { return traced_; }
 
+  // Transition helpers: return either the CallHandler or CallInitiator half of
+  // this call (taking ownership of it).
+  std::pair<CallInitiator, CallHandler> MakeTransitionCallInitiatorAndHandler();
+
  private:
   friend class PromiseBasedCall;
   // Call final info.

@@ -865,15 +865,17 @@ grpc_channel_filter MakeConnectedFilter() {
       sizeof(channel_data),
       connected_channel_init_channel_elem,
       +[](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
+        auto* const filter_stack_transport =
+            static_cast<channel_data*>(elem->channel_data)
+                ->transport->filter_stack_transport();
+        if (filter_stack_transport == nullptr) return;
         // HACK(ctiller): increase call stack size for the channel to make
         // space for channel data. We need a cleaner (but performant) way to
         // do this, and I'm not sure what that is yet. This is only "safe"
         // because call stacks place no additional data after the last call
         // element, and the last call element MUST be the connected channel.
         channel_stack->call_stack_size +=
-            static_cast<channel_data*>(elem->channel_data)
-                ->transport->filter_stack_transport()
-                ->SizeOfStream();
+            filter_stack_transport->SizeOfStream();
       },
       connected_channel_destroy_channel_elem,
       connected_channel_get_channel_info,
@@ -881,13 +883,26 @@ grpc_channel_filter MakeConnectedFilter() {
   };
 }
 
-ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
+ArenaPromise<ServerMetadataHandle> MakeClientTransportCallPromise(
     Transport* transport, CallArgs call_args, NextPromiseFactory) {
-  return transport->client_transport()->MakeCallPromise(std::move(call_args));
+  auto initiator_and_handler =
+      GetContext<CallContext>()->MakeTransitionCallInitiatorAndHandler(
+          std::move(call_args));
+  return Seq(initiator.PushClientInitialMetadata(
+                 std::move(call_args.client_initial_metadata)),
+             initiator.PullServerTrailingMetadata());
 }
 
-const grpc_channel_filter kPromiseBasedTransportFilter =
-    MakeConnectedFilter<MakeTransportCallPromise>();
+const grpc_channel_filter kClientPromiseBasedTransportFilter =
+    MakeConnectedFilter<MakeClientTransportCallPromise>();
+
+ArenaPromise<ServerMetadataHandle> MakeServerTransportCallPromise(
+    Transport*, CallArgs, NextPromiseFactory) {
+  Crash("not implemented");
+}
+
+const grpc_channel_filter kServerPromiseBasedTransportFilter =
+    MakeConnectedFilter<MakeServerTransportCallPromise>();
 
 #ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 const grpc_channel_filter kClientEmulatedFilter =
@@ -905,9 +920,19 @@ const grpc_channel_filter kServerEmulatedFilter =
     MakeConnectedFilter<nullptr>();
 #endif
 
-bool TransportSupportsPromiseBasedCalls(const ChannelArgs& args) {
+bool TransportSupportsClientPromiseBasedCalls(const ChannelArgs& args) {
   auto* transport = args.GetObject<Transport>();
   return transport->client_transport() != nullptr;
+}
+
+bool TransportSupportsServerPromiseBasedCalls(const ChannelArgs& args) {
+  auto* transport = args.GetObject<Transport>();
+  return transport->server_transport() != nullptr;
+}
+
+bool TransportSupportsFilterStackBasedCalls(const ChannelArgs& args) {
+  auto* transport = args.GetObject<Transport>();
+  return transport->filter_stack_transport() != nullptr;
 }
 
 }  // namespace
@@ -922,32 +947,33 @@ void RegisterConnectedChannel(CoreConfiguration::Builder* builder) {
   // Option 1, and our ideal: the transport supports promise based calls,
   // and so we simply use the transport directly.
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &kPromiseBasedTransportFilter)
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                       &kClientPromiseBasedTransportFilter)
       .Terminal()
-      .If(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsClientPromiseBasedCalls);
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &kPromiseBasedTransportFilter)
+                       &kClientPromiseBasedTransportFilter)
       .Terminal()
-      .If(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsClientPromiseBasedCalls);
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kPromiseBasedTransportFilter)
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kServerPromiseBasedTransportFilter)
       .Terminal()
-      .If(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsServerPromiseBasedCalls);
 
   // Option 2: the transport does not support promise based calls.
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &kClientEmulatedFilter)
       .Terminal()
-      .IfNot(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsFilterStackBasedCalls);
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL, &kClientEmulatedFilter)
       .Terminal()
-      .IfNot(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsFilterStackBasedCalls);
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL, &kServerEmulatedFilter)
       .Terminal()
-      .IfNot(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsFilterStackBasedCalls);
 }
 
 }  // namespace grpc_core
