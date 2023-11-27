@@ -118,9 +118,6 @@ class XdsClient::ChannelState::AdsCallState
 
   RetryableCall<AdsCallState>* parent() const { return parent_.get(); }
   ChannelState* chand() const { return parent_->chand(); }
-  XdsTransportFactory::XdsTransport::StreamingCall* call() const {
-    return call_.get();
-  }
   XdsClient* xds_client() const { return chand()->xds_client(); }
   bool seen_response() const { return seen_response_; }
 

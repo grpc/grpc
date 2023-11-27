@@ -19,8 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
 #include <deque>
 #include <functional>
 #include <map>
@@ -33,6 +31,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_transport.h"
@@ -68,7 +67,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void Orphan() override;
 
-    void StartRecvMessage() override { read_count_ += 1; }
+    void StartRecvMessage() override;
 
     using StreamingCall::Ref;  // Make it public.
 
@@ -88,7 +87,10 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool Orphaned();
 
-    size_t read_count() const { return read_count_; }
+    size_t read_count() {
+      MutexLock lock(&mu_);
+      return read_count_;
+    }
 
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
@@ -113,6 +115,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void CompleteSendMessageFromClientLocked(bool ok)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+    void DispatchPendingMessageToClient();
 
     RefCountedPtr<FakeXdsTransport> transport_;
     const char* method_;
@@ -123,7 +126,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
-    size_t read_count_ = 0;
+    size_t read_count_ ABSL_GUARDED_BY(&mu_) = 0;
+    bool read_pending_ ABSL_GUARDED_BY(&mu_) = false;
+    std::deque<std::string> to_client_messages_ ABSL_GUARDED_BY(&mu_);
   };
 
   FakeXdsTransportFactory() = default;

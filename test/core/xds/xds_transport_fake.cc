@@ -18,10 +18,15 @@
 
 #include "test/core/xds/xds_transport_fake.h"
 
+#include <cstddef>
 #include <functional>
 #include <memory>
+#include <string>
+#include <thread>
 #include <type_traits>
 #include <utility>
+
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -120,15 +125,45 @@ void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
   CompleteSendMessageFromClientLocked(ok);
 }
 
+void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
+  absl::optional<std::string> pending;
+  grpc_core::ReleasableMutexLock lock(&mu_);
+  ASSERT_FALSE(read_pending_);
+  read_count_ += 1;
+  read_pending_ = true;
+  if (!to_client_messages_.empty()) {
+    // Dispatch pending message (if there's one) on a separate thread to avoid
+    // recursion
+    std::thread thread(
+        [](const RefCountedPtr<FakeStreamingCall>& call) {
+          call->DispatchPendingMessageToClient();
+        },
+        Ref());
+    thread.detach();
+  }
+}
+
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessageToClient(
     absl::string_view payload) {
-  ExecCtx exec_ctx;
-  RefCountedPtr<RefCountedEventHandler> event_handler;
-  {
-    MutexLock lock(&mu_);
-    event_handler = event_handler_->Ref();
+  ReleasableMutexLock lock(&mu_);
+  to_client_messages_.emplace_back(payload);
+  lock.Release();
+  DispatchPendingMessageToClient();
+}
+
+void FakeXdsTransportFactory::FakeStreamingCall::
+    DispatchPendingMessageToClient() {
+  ReleasableMutexLock lock(&mu_);
+  if (!read_pending_ || to_client_messages_.empty()) {
+  return;
   }
-  event_handler->OnRecvMessage(payload);
+  read_pending_ = false;
+  std::string message = std::move(to_client_messages_.front());
+  to_client_messages_.pop_front();
+  auto event_handler = event_handler_;
+  lock.Release();
+  ExecCtx exec_ctx;
+  event_handler->OnRecvMessage(message);
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(

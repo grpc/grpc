@@ -220,8 +220,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_->parent()->work_serializer()->Run(
             [self = std::move(self), update = std::move(update),
              read_delay_handle = std::move(read_delay_handle)]() mutable {
-              self->OnResourceChangedHelper(std::move(update),
-                                            std::move(read_delay_handle));
+              self->OnResourceChangedHelper(std::move(update));
             },
             DEBUG_LOCATION);
       }
@@ -232,8 +231,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_->parent()->work_serializer()->Run(
             [self = std::move(self), status = std::move(status),
              read_delay_handle = std::move(read_delay_handle)]() mutable {
-              self->OnErrorHelper(std::move(status),
-                                  std::move(read_delay_handle));
+              self->OnErrorHelper(std::move(status));
             },
             DEBUG_LOCATION);
       }
@@ -243,7 +241,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_->parent()->work_serializer()->Run(
             [self = std::move(self),
              read_delay_handle = std::move(read_delay_handle)]() {
-              self->OnResourceDoesNotExistHelper(read_delay_handle);
+              self->OnResourceDoesNotExistHelper();
             },
             DEBUG_LOCATION);
       }
@@ -253,8 +251,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       // in methods of this class rather than in lambdas to work around an MSVC
       // bug.
       void OnResourceChangedHelper(
-          std::shared_ptr<const XdsEndpointResource> update,
-          RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) {
+          std::shared_ptr<const XdsEndpointResource> update) {
         std::string resolution_note;
         if (update->priorities.empty()) {
           resolution_note = absl::StrCat(
@@ -278,26 +275,21 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         }
         discovery_mechanism_->parent()->OnEndpointChanged(
             discovery_mechanism_->index(), std::move(update),
-            std::move(resolution_note), read_delay_handle);
+            std::move(resolution_note));
       }
-      void OnErrorHelper(
-          absl::Status status,
-          RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) {
+      void OnErrorHelper(absl::Status status) {
         discovery_mechanism_->parent()->OnError(
             discovery_mechanism_->index(),
             absl::StrCat("EDS watcher error for resource ",
                          discovery_mechanism_->GetEdsResourceName(), " (",
-                         status.ToString(), ")"),
-            std::move(read_delay_handle));
+                         status.ToString(), ")"));
       }
-      void OnResourceDoesNotExistHelper(
-          RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) {
+      void OnResourceDoesNotExistHelper() {
         discovery_mechanism_->parent()->OnResourceDoesNotExist(
             discovery_mechanism_->index(),
             absl::StrCat("EDS resource ",
                          discovery_mechanism_->GetEdsResourceName(),
-                         " does not exist"),
-            read_delay_handle);
+                         " does not exist"));
       }
       RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
     };
@@ -394,15 +386,11 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  void OnEndpointChanged(
-      size_t index, std::shared_ptr<const XdsEndpointResource> update,
-      std::string resolution_note,
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle);
-  void OnError(size_t index, std::string resolution_note,
-               RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle);
-  void OnResourceDoesNotExist(
-      size_t index, std::string resolution_note,
-      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle);
+  void OnEndpointChanged(size_t index,
+                         std::shared_ptr<const XdsEndpointResource> update,
+                         std::string resolution_note);
+  void OnError(size_t index, std::string resolution_note);
+  void OnResourceDoesNotExist(size_t index, std::string resolution_note);
 
   void MaybeDestroyChildPolicyLocked();
 
@@ -484,8 +472,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
   if (resolver_ == nullptr) {
     parent()->OnResourceDoesNotExist(
         index(),
-        absl::StrCat("error creating DNS resolver for ", GetDnsHostname()),
-        XdsClient::ReadDelayHandle::NoWait());
+        absl::StrCat("error creating DNS resolver for ", GetDnsHostname()));
     return;
   }
   resolver_->StartLocked();
@@ -523,8 +510,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
           "DNS resolution failed for ", discovery_mechanism_->GetDnsHostname(),
           " (", result.addresses.status().ToString(), ")");
     }
-    lb_policy->OnError(index, result.resolution_note,
-                       XdsClient::ReadDelayHandle::NoWait());
+    lb_policy->OnError(index, result.resolution_note);
     return;
   }
   // Convert resolver result to EDS update.
@@ -537,8 +523,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
   priority.localities.emplace(locality.name.get(), std::move(locality));
   update->priorities.emplace_back(std::move(priority));
   lb_policy->OnEndpointChanged(index, std::move(update),
-                               std::move(result.resolution_note),
-                               XdsClient::ReadDelayHandle::NoWait());
+                               std::move(result.resolution_note));
 }
 
 //
@@ -663,8 +648,7 @@ const XdsEndpointResource::PriorityList& GetUpdatePriorityList(
 
 void XdsClusterResolverLb::OnEndpointChanged(
     size_t index, std::shared_ptr<const XdsEndpointResource> update,
-    std::string resolution_note,
-    RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */) {
+    std::string resolution_note) {
   if (shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
@@ -761,9 +745,7 @@ void XdsClusterResolverLb::OnEndpointChanged(
   (void)UpdateChildPolicyLocked();
 }
 
-void XdsClusterResolverLb::OnError(
-    size_t index, std::string resolution_note,
-    RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) {
+void XdsClusterResolverLb::OnError(size_t index, std::string resolution_note) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
           " reported error: %s",
@@ -773,13 +755,12 @@ void XdsClusterResolverLb::OnError(
     // Call OnEndpointChanged() with an empty update just like
     // OnResourceDoesNotExist().
     OnEndpointChanged(index, std::make_shared<XdsEndpointResource>(),
-                      std::move(resolution_note), std::move(read_delay_handle));
+                      std::move(resolution_note));
   }
 }
 
-void XdsClusterResolverLb::OnResourceDoesNotExist(
-    size_t index, std::string resolution_note,
-    RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) {
+void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index,
+                                                  std::string resolution_note) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
           " resource does not exist: %s",
@@ -787,7 +768,7 @@ void XdsClusterResolverLb::OnResourceDoesNotExist(
   if (shutting_down_) return;
   // Call OnEndpointChanged() with an empty update.
   OnEndpointChanged(index, std::make_shared<XdsEndpointResource>(),
-                    std::move(resolution_note), std::move(read_delay_handle));
+                    std::move(resolution_note));
 }
 
 //

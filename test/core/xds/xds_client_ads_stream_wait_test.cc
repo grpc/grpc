@@ -15,6 +15,7 @@
 //
 
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <utility>
 
@@ -59,11 +60,17 @@ TEST_F(XdsClientNotifyWatchersDone, Basic) {
           .set_nonce("A")
           .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("2")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 8))
+          .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResourceAndHandle();
   ASSERT_NE(resource, absl::nullopt);
-  EXPECT_EQ(resource->first->name, "foo1");
-  EXPECT_EQ(resource->first->value, 6);
+  EXPECT_EQ(resource->name(), "foo1");
+  EXPECT_EQ(resource->resource_value(), 6);
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -71,9 +78,19 @@ TEST_F(XdsClientNotifyWatchersDone, Basic) {
                /*version_info=*/"1", /*response_nonce=*/"A",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
-  EXPECT_EQ(stream->read_count(), 0);
-  resource->second.reset();
   EXPECT_EQ(stream->read_count(), 1);
+  resource = absl::nullopt;
+  EXPECT_EQ(stream->read_count(), 2);
+  resource = watcher->WaitForNextResourceAndHandle();
+  ASSERT_NE(resource, absl::nullopt);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"2", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  resource = absl::nullopt;
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
   EXPECT_TRUE(stream->Orphaned());

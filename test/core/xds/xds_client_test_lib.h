@@ -43,6 +43,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "gtest/gtest.h"
 #include "upb/reflection/def.h"
+#include "xds_transport_fake.h"
 
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
@@ -235,9 +236,22 @@ class XdsClientTestBase : public ::testing::Test {
             XdsTestResourceType<ResourceStruct, all_resources_required_in_sotw>,
             ResourceStruct> {
    public:
-    using ResourceAndReadDelayHandle =
-        std::pair<std::shared_ptr<const ResourceStruct>,
-                  RefCountedPtr<XdsClient::ReadDelayHandle>>;
+    class ResourceAndReadDelayHandle {
+     public:
+      ResourceAndReadDelayHandle(
+          std::shared_ptr<const ResourceStruct> resource,
+          RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle)
+          : resource_(std::move(resource)),
+            read_delay_handle_(std::move(read_delay_handle)) {}
+
+      absl::string_view name() const { return resource_->name; }
+
+      int resource_value() const { return resource_->value; }
+
+     private:
+      std::shared_ptr<const ResourceStruct> resource_;
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle_;
+    };
 
     // A watcher implementation that queues delivered watches.
     class Watcher : public XdsResourceTypeImpl<
@@ -333,10 +347,11 @@ class XdsClientTestBase : public ::testing::Test {
                              RefCountedPtr<XdsClient::ReadDelayHandle>
                                  read_delay_handle) override {
         MutexLock lock(&mu_);
-        queue_.emplace_back(
-            std::make_pair(std::move(foo), std::move(read_delay_handle)));
+        queue_.emplace_back(ResourceAndReadDelayHandle(
+            std::move(foo), std::move(read_delay_handle)));
         cv_.Signal();
       }
+
       void OnError(
           absl::Status status,
           RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
@@ -345,6 +360,7 @@ class XdsClientTestBase : public ::testing::Test {
         queue_.push_back(std::move(status));
         cv_.Signal();
       }
+
       void OnResourceDoesNotExist(
           RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
           override {
