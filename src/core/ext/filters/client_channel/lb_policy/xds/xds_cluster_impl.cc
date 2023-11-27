@@ -37,6 +37,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
@@ -169,6 +170,9 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   RefCountedPtr<XdsEndpointResource::DropConfig> drop_config() const {
     return drop_config_;
   }
+  std::shared_ptr<std::map<std::string, std::string>> service_labels() const {
+    return service_labels_;
+  }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs& args,
@@ -216,7 +220,8 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   class Picker : public SubchannelPicker {
    public:
     Picker(XdsClusterImplLb* xds_cluster_impl_lb,
-           RefCountedPtr<SubchannelPicker> picker);
+           RefCountedPtr<SubchannelPicker> picker,
+           std::shared_ptr<std::map<std::string, std::string>> service_labels);
 
     PickResult Pick(PickArgs args) override;
 
@@ -228,6 +233,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<SubchannelPicker> picker_;
+    std::shared_ptr<std::map<std::string, std::string>> service_labels_;
   };
 
   class Helper
@@ -354,14 +360,17 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
 // XdsClusterImplLb::Picker
 //
 
-XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
-                                 RefCountedPtr<SubchannelPicker> picker)
+XdsClusterImplLb::Picker::Picker(
+    XdsClusterImplLb* xds_cluster_impl_lb,
+    RefCountedPtr<SubchannelPicker> picker,
+    std::shared_ptr<std::map<std::string, std::string>> service_labels)
     : call_counter_(xds_cluster_impl_lb->call_counter_),
       max_concurrent_requests_(
           xds_cluster_impl_lb->config_->max_concurrent_requests()),
       drop_config_(xds_cluster_impl_lb->config_->drop_config()),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
-      picker_(std::move(picker)) {
+      picker_(std::move(picker)),
+      service_labels_(std::move(service_labels)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] constructed new picker %p",
             xds_cluster_impl_lb, this);
@@ -370,6 +379,11 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
 
 LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
+  auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
+  using OptionalLabelComponent =
+      ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
+  call_state->GetCallAttemptTracer()->AddOptionalLabels(
+      OptionalLabelComponent::kXdsServiceLabels, service_labels_);
   // Handle EDS drops.
   const std::string* drop_category;
   if (drop_config_->ShouldDrop(&drop_category)) {
@@ -507,8 +521,11 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
                old_config->lrs_load_reporting_server());
   }
   // Update picker if max_concurrent_requests has changed.
-  if (is_initial_update || config_->max_concurrent_requests() !=
-                               old_config->max_concurrent_requests()) {
+  // Update picker if service_labels has changed.
+  if (is_initial_update ||
+      config_->max_concurrent_requests() !=
+          old_config->max_concurrent_requests() ||
+      config_->service_labels() != old_config->service_labels()) {
     MaybeUpdatePickerLocked();
   }
   // Update child policy.
@@ -520,7 +537,8 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // If we're dropping all calls, report READY, regardless of what (or
   // whether) the child has reported.
   if (config_->drop_config() != nullptr && config_->drop_config()->drop_all()) {
-    auto drop_picker = MakeRefCounted<Picker>(this, picker_);
+    auto drop_picker =
+        MakeRefCounted<Picker>(this, picker_, config_->service_labels());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity (drop all): "
@@ -533,7 +551,8 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   }
   // Otherwise, update only if we have a child picker.
   if (picker_ != nullptr) {
-    auto drop_picker = MakeRefCounted<Picker>(this, picker_);
+    auto drop_picker =
+        MakeRefCounted<Picker>(this, picker_, config_->service_labels());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity: state=%s "

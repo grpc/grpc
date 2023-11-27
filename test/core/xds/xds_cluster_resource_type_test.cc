@@ -20,6 +20,7 @@
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
+#include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
@@ -69,6 +70,7 @@ using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using envoy::extensions::load_balancing_policies::wrr_locality::v3::WrrLocality;
 using envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
+using ::testing::Pair;
 using xds::type::v3::TypedStruct;
 
 namespace grpc_core {
@@ -1352,6 +1354,35 @@ TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
                   XdsHealthStatus(XdsHealthStatus::kUnknown),
                   XdsHealthStatus(XdsHealthStatus::kHealthy),
                   XdsHealthStatus(XdsHealthStatus::kDraining)));
+}
+
+using TelemetryLabelTest = XdsClusterTest;
+
+TEST_F(TelemetryLabelTest, ValidConfig) {
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  ::google::protobuf::Struct telemetry_labels;
+  ::google::protobuf::Value service_name;
+  service_name.mutable_string_value()->assign("abc");
+  ::google::protobuf::Value service_namespace;
+  service_namespace.mutable_string_value()->assign("xyz");
+  telemetry_labels.mutable_fields()->emplace("service_name", service_name);
+  telemetry_labels.mutable_fields()->emplace("service_namespace",
+                                             service_namespace);
+  cluster.mutable_metadata()->mutable_filter_metadata()->emplace(
+      "com.google.gsm.telemetry_labels", telemetry_labels);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.telemetry_labels, ::testing::UnorderedElementsAre(
+                                             Pair("service_name", "abc"),
+                                             Pair("service_namespace", "xyz")));
 }
 
 }  // namespace

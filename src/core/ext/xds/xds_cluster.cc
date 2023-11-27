@@ -45,6 +45,7 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
+#include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/text/encode.h"
@@ -639,6 +640,40 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
         auto status = XdsHealthStatus::FromUpb(statuses[i]);
         if (status.has_value()) {
           cds_update->override_host_statuses.insert(*status);
+        }
+      }
+    }
+  }
+  // Record telemetry labels (if any).
+  const envoy_config_core_v3_Metadata* metadata =
+      envoy_config_cluster_v3_Cluster_metadata(cluster);
+  if (metadata != nullptr) {
+    google_protobuf_Struct* telemetry_labels;
+    if (envoy_config_core_v3_Metadata_filter_metadata_get(
+            metadata,
+            StdStringToUpbString(
+                absl::string_view("com.google.gsm.telemetry_labels")),
+            &telemetry_labels)) {
+      google_protobuf_Value* service_name;
+      google_protobuf_Value* service_namespace;
+      if (google_protobuf_Struct_fields_get(
+              telemetry_labels,
+              StdStringToUpbString(absl::string_view("service_name")),
+              &service_name) &&
+          google_protobuf_Struct_fields_get(
+              telemetry_labels,
+              StdStringToUpbString(absl::string_view("service_namespace")),
+              &service_namespace)) {
+        if (google_protobuf_Value_has_string_value(service_name) &&
+            google_protobuf_Value_has_string_value(service_namespace)) {
+          cds_update->telemetry_labels.emplace(
+              "service_name",
+              UpbStringToStdString(
+                  google_protobuf_Value_string_value(service_name)));
+          cds_update->telemetry_labels.emplace(
+              "service_namespace",
+              UpbStringToStdString(
+                  google_protobuf_Value_string_value(service_namespace)));
         }
       }
     }

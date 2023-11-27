@@ -115,7 +115,8 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
                                    bool arena_allocated)
     : parent_(parent),
       arena_allocated_(arena_allocated),
-      start_time_(absl::Now()) {
+      start_time_(absl::Now()),
+      optional_labels_(parent->arena_) {
   if (OTelPluginState().client.attempt.started != nullptr) {
     std::array<std::pair<absl::string_view, absl::string_view>, 2>
         additional_labels = {{{OTelMethodKey(), parent_->MethodForStats()},

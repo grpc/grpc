@@ -2585,6 +2585,8 @@ class ClientChannel::LoadBalancedCall::LbCallState
   ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
       UniqueTypeName type) const override;
 
+  ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override;
+
  private:
   LoadBalancedCall* lb_call_;
 };
@@ -2674,6 +2676,11 @@ ClientChannel::LoadBalancedCall::LbCallState::GetCallAttribute(
   auto* service_config_call_data =
       GetServiceConfigCallData(lb_call_->call_context_);
   return service_config_call_data->GetCallAttribute(type);
+}
+
+ClientCallTracer::CallAttemptTracer*
+ClientChannel::LoadBalancedCall::LbCallState::GetCallAttemptTracer() const {
+  return lb_call_->call_attempt_tracer();
 }
 
 //

@@ -91,6 +91,9 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     void RecordAnnotation(absl::string_view /*annotation*/) override;
     void RecordAnnotation(const Annotation& /*annotation*/) override;
     std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
+    void AddOptionalLabels(OptionalLabelComponent component,
+                           std::shared_ptr<std::map<std::string, std::string>>
+                               service_labels) override;
 
    private:
     const OpenTelemetryCallTracer* parent_;
@@ -98,6 +101,10 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
+    grpc_core::ChunkedVector<
+        std::shared_ptr<std::map<std::string, std::string>>,
+        static_cast<size_t>(OptionalLabelComponent::kSize)>
+        optional_labels_;
   };
 
   explicit OpenTelemetryCallTracer(OpenTelemetryClientFilter* parent,

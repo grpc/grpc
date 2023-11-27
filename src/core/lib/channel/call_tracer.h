@@ -128,6 +128,11 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
   // as transparent retry attempts.)
   class CallAttemptTracer : public CallTracerInterface {
    public:
+    enum class OptionalLabelComponent : std::uint8_t {
+      kXdsServiceLabels = 0,
+      kSize = 1,  // keep last
+    };
+
     ~CallAttemptTracer() override {}
     // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
     // and `RecordEnd` should be moved into CallTracerInterface.
@@ -141,7 +146,9 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
     // library is free to destroy the object.
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
 
-    virtual void AddOptionalLabels(std::shared_ptr<std::map<std::string, std::string>> service_labels) = 0;
+    virtual void AddOptionalLabels(
+        OptionalLabelComponent component,
+        std::shared_ptr<std::map<std::string, std::string>> service_labels) = 0;
   };
 
   ~ClientCallTracer() override {}
