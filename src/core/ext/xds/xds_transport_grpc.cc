@@ -20,7 +20,6 @@
 
 #include <string.h>
 
-#include <cstddef>
 #include <functional>
 #include <memory>
 #include <string_view>
