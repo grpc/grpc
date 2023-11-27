@@ -58,6 +58,9 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
       // Only one message will be in flight at a time; subsequent
       // messages will not be sent until this one is done.
       virtual void SendMessage(std::string payload) = 0;
+
+      // Starts a recv_message operation on the stream.
+      virtual void StartRecvMessage() = 0;
     };
 
     // Create a streaming call on this transport for the specified method.
