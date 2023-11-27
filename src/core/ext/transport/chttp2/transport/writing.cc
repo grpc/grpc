@@ -711,7 +711,17 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
         // ref will be dropped at end of write
       }
     } else {
-      GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:no_write");
+      if (grpc_core::IsScheduleCancellationOverWriteEnabled() &&
+          t->outbuf.c_slice_buffer()->length > orig_len) {
+        // Data bytes belonging to the stream have not been included in the
+        // output buffer due to flow control restrictions. But other metadata
+        // bytes belonging to the stream have been included in the
+        // output buffer. The stream must not be unreffed until the write
+        // is complete.
+        grpc_chttp2_list_add_writing_stream(t, s);
+      } else {
+        GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:no_write");
+      }
     }
   }
 
