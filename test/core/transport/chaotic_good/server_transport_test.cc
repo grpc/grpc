@@ -41,8 +41,8 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
+#include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/join.h"
-#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -110,9 +110,9 @@ class ServerTransportTest : public ::testing::Test {
             }(),
             fuzzing_event_engine::Actions())),
         arena_(MakeScopedArena(initial_arena_size, &memory_allocator_)),
-        pipe_client_to_server_messages_(arena_.get()),
-        pipe_server_to_client_messages_(arena_.get()),
-        pipe_server_initial_metadata_(arena_.get()) {}
+        pipe_client_to_server_messages_(),
+        pipe_server_to_client_messages_(),
+        pipe_server_initial_metadata_() {}
   void InitialServerTransport() {
     server_transport_ = std::make_unique<ServerTransport>(
         std::make_unique<PromiseEndpoint>(
@@ -216,14 +216,16 @@ class ServerTransportTest : public ::testing::Test {
             }));
   }
   auto ReadClientToServerMessage() {
-    std::cout << "read client message" << "\n";
+    std::cout << "read client message"
+              << "\n";
     fflush(stdout);
     return Seq(pipe_client_to_server_messages_.receiver.Next(),
-               [this](NextResult<MessageHandle> message) {
+               [this](absl::optional<MessageHandle> message) {
                  EXPECT_TRUE(message.has_value());
                  EXPECT_EQ(message.value()->payload()->JoinIntoString(),
                            message_);
-                 std::cout << "read client message done" << "\n";
+                 std::cout << "read client message done"
+                           << "\n";
                  fflush(stdout);
                  return absl::OkStatus();
                });
@@ -231,15 +233,16 @@ class ServerTransportTest : public ::testing::Test {
   auto WriteServerToClientMessage() {
     EXPECT_CALL(control_endpoint_, Write).WillOnce(Return(true));
     EXPECT_CALL(data_endpoint_, Write).WillOnce(Return(true));
-    std::cout << "write server message " << "\n";
+    std::cout << "write server message "
+              << "\n";
     fflush(stdout);
     return Seq(pipe_server_to_client_messages_.sender.Push(
                    arena_->MakePooled<Message>()),
-               [this](bool success) {
+               [](bool success) {
                  EXPECT_TRUE(success);
-                 std::cout << "write server message done" << "\n";
+                 std::cout << "write server message done"
+                           << "\n";
                  fflush(stdout);
-                 pipe_server_to_client_messages_.sender.Close();
                  return absl::OkStatus();
                });
   }
@@ -259,9 +262,9 @@ class ServerTransportTest : public ::testing::Test {
       event_engine_;
   std::unique_ptr<ServerTransport> server_transport_;
   ScopedArenaPtr arena_;
-  Pipe<MessageHandle> pipe_client_to_server_messages_;
-  Pipe<MessageHandle> pipe_server_to_client_messages_;
-  Pipe<ServerMetadataHandle> pipe_server_initial_metadata_;
+  InterActivityPipe<MessageHandle, 1> pipe_client_to_server_messages_;
+  InterActivityPipe<MessageHandle, 1> pipe_server_to_client_messages_;
+  InterActivityPipe<ServerMetadataHandle, 1> pipe_server_initial_metadata_;
   StrictMock<MockFunction<CallInitiator(ClientMetadata&)>> on_accept_;
   // Added to verify received message payload.
   const std::string message_ = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
@@ -277,6 +280,9 @@ TEST_F(ServerTransportTest, ReadAndWriteOneMessage) {
           [](std::tuple<absl::Status, absl::Status> ret) {
             EXPECT_TRUE(std::get<0>(ret).ok());
             EXPECT_TRUE(std::get<1>(ret).ok());
+            std::cout << "expect done"
+                      << "\n";
+            fflush(stdout);
             return absl::OkStatus();
           }),
       EventEngineWakeupScheduler(
