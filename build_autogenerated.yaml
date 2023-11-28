@@ -15522,7 +15522,6 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/try_join.h

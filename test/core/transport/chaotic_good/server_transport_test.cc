@@ -17,6 +17,7 @@
 // IWYU pragma: no_include <sys/socket.h>
 
 #include <algorithm>  // IWYU pragma: keep
+#include <cstddef>
 #include <memory>
 #include <string>  // IWYU pragma: keep
 #include <tuple>
@@ -41,7 +42,6 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
-#include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -110,9 +110,9 @@ class ServerTransportTest : public ::testing::Test {
             }(),
             fuzzing_event_engine::Actions())),
         arena_(MakeScopedArena(initial_arena_size, &memory_allocator_)),
-        pipe_client_to_server_messages_(),
-        pipe_server_to_client_messages_(),
-        pipe_server_initial_metadata_() {}
+        pipe_client_to_server_messages_(arena_.get()),
+        pipe_server_to_client_messages_(arena_.get()),
+        pipe_server_initial_metadata_(arena_.get()) {}
   void InitialServerTransport() {
     server_transport_ = std::make_unique<ServerTransport>(
         std::make_unique<PromiseEndpoint>(
@@ -220,7 +220,7 @@ class ServerTransportTest : public ::testing::Test {
               << "\n";
     fflush(stdout);
     return Seq(pipe_client_to_server_messages_.receiver.Next(),
-               [this](absl::optional<MessageHandle> message) {
+               [this](NextResult<MessageHandle> message) {
                  EXPECT_TRUE(message.has_value());
                  EXPECT_EQ(message.value()->payload()->JoinIntoString(),
                            message_);
@@ -262,9 +262,9 @@ class ServerTransportTest : public ::testing::Test {
       event_engine_;
   std::unique_ptr<ServerTransport> server_transport_;
   ScopedArenaPtr arena_;
-  InterActivityPipe<MessageHandle, 1> pipe_client_to_server_messages_;
-  InterActivityPipe<MessageHandle, 1> pipe_server_to_client_messages_;
-  InterActivityPipe<ServerMetadataHandle, 1> pipe_server_initial_metadata_;
+  Pipe<MessageHandle> pipe_client_to_server_messages_;
+  Pipe<MessageHandle> pipe_server_to_client_messages_;
+  Pipe<ServerMetadataHandle> pipe_server_initial_metadata_;
   StrictMock<MockFunction<CallInitiator(ClientMetadata&)>> on_accept_;
   // Added to verify received message payload.
   const std::string message_ = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
@@ -280,7 +280,7 @@ TEST_F(ServerTransportTest, ReadAndWriteOneMessage) {
           [](std::tuple<absl::Status, absl::Status> ret) {
             EXPECT_TRUE(std::get<0>(ret).ok());
             EXPECT_TRUE(std::get<1>(ret).ok());
-            std::cout << "expect done"
+            std::cout << "read and write done"
                       << "\n";
             fflush(stdout);
             return absl::OkStatus();

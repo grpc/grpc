@@ -20,18 +20,15 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <cstddef>
 #include <initializer_list>  // IWYU pragma: keep
 #include <iostream>
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -42,13 +39,15 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -67,7 +66,7 @@ class Call : public Party {
   explicit Call(Arena* arena, uint32_t stream_id,
                 std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                     event_engine)
-      : Party(arena, 1), stream_id_(stream_id), ee_(event_engine){};
+      : Party(arena, 1), ee_(event_engine), stream_id_(stream_id){};
   ~Call() override {}
   std::string DebugTag() const override { return "TestCall"; }
   bool RunParty() override {
@@ -79,65 +78,94 @@ class Call : public Party {
     return Party::RunParty();
   }
   void PartyOver() override {
-    // {
-    //   promise_detail::Context<grpc_event_engine::experimental::EventEngine>
-    //       ee_ctx(ee_.get());
-    std::cout << "party over "
+    {
+      promise_detail::Context<grpc_event_engine::experimental::EventEngine>
+          ee_ctx(ee_.get());
+      std::cout << "party over "
+                << "\n";
+      fflush(stdout);
+      CancelRemainingParticipants();
+    }
+    delete this;
+  }
+  void SetServerInitialMetadata(
+      Pipe<ServerMetadataHandle>* pipe_server_intial_metadata) {
+    pipe_server_intial_metadata_ = pipe_server_intial_metadata;
+  }
+  void SetServerToClientMessage(
+      Pipe<MessageHandle>* pipe_server_to_client_messages) {
+    pipe_server_to_client_messages_ = pipe_server_to_client_messages;
+  }
+  void SetClientToServerMessage(
+      Pipe<MessageHandle>* pipe_client_to_server_messages) {
+    pipe_client_to_server_messages_ = pipe_client_to_server_messages;
+  }
+  void SetStreamId(uint32_t stream_id) { stream_id_ = stream_id; }
+  auto PushServerInitialMetadata(ServerMetadataHandle metadata) {
+    GPR_ASSERT(pipe_server_intial_metadata_ != nullptr);
+    return pipe_server_intial_metadata_->sender.Push(std::move(metadata));
+  }
+  auto PushServerToClientMessage(MessageHandle message) {
+    GPR_ASSERT(pipe_server_to_client_messages_ != nullptr);
+    return pipe_server_to_client_messages_->sender.Push(std::move(message));
+  }
+  auto PushClientToServerMessage(MessageHandle message) {
+    GPR_ASSERT(pipe_client_to_server_messages_ != nullptr);
+    std::cout << "push client to server message "
               << "\n";
     fflush(stdout);
-    //   CancelRemainingParticipants();
-    // }
-    // delete this;
+    return pipe_client_to_server_messages_->sender.Push(std::move(message));
   }
-  uint32_t stream_id_;
-  InterActivityPipe<MessageHandle, 1>* pipe_client_to_server_messages_;
-  InterActivityPipe<MessageHandle, 1>* pipe_server_to_client_messages_;
-  InterActivityPipe<ServerMetadataHandle, 1>* pipe_server_intial_metadata_;
+  auto PullServerInitialMetadata() {
+    GPR_ASSERT(pipe_server_intial_metadata_ != nullptr);
+    return pipe_server_intial_metadata_->receiver.Next();
+  }
+  auto PullServerToClientMessage() {
+    GPR_ASSERT(pipe_server_to_client_messages_ != nullptr);
+    std::cout << "pull server to client message "
+              << "\n";
+    fflush(stdout);
+    return pipe_server_to_client_messages_->receiver.Next();
+  }
+  auto PullClientToServerMessage() {
+    GPR_ASSERT(pipe_client_to_server_messages_ != nullptr);
+    return pipe_client_to_server_messages_->receiver.Next();
+  }
+  uint32_t GetStreamId() { return stream_id_; }
 
  private:
   grpc_event_engine::experimental::EventEngine* event_engine() const final {
     return ee_.get();
   }
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee_;
+  uint32_t stream_id_;
+  Pipe<MessageHandle>* pipe_client_to_server_messages_;
+  Pipe<MessageHandle>* pipe_server_to_client_messages_;
+  Pipe<ServerMetadataHandle>* pipe_server_intial_metadata_;
 };
 class CallInitiator {
  public:
   explicit CallInitiator(RefCountedPtr<Call> call) : call_(call) {}
   // Returns a promise that push/pull message/metadata from corresponding pipe.
   auto PushServerInitialMetadata(ServerMetadataHandle metadata) {
-    GPR_ASSERT(call_->pipe_server_intial_metadata_ != nullptr);
-    return call_->pipe_server_intial_metadata_->sender.Push(
-        std::move(metadata));
+    return call_->PushServerInitialMetadata(std::move(metadata));
   }
   auto PushServerToClientMessage(MessageHandle message) {
-    GPR_ASSERT(call_->pipe_server_to_client_messages_ != nullptr);
-    return call_->pipe_server_to_client_messages_->sender.Push(
-        std::move(message));
+    return call_->PushServerToClientMessage(std::move(message));
   }
   auto PushClientToServerMessage(MessageHandle message) {
-    GPR_ASSERT(call_->pipe_client_to_server_messages_ != nullptr);
-    std::cout << "push client to server message "
-              << "\n";
-    fflush(stdout);
-    return call_->pipe_client_to_server_messages_->sender.Push(
-        std::move(message));
+    return call_->PushClientToServerMessage(std::move(message));
   }
   auto PullServerInitialMetadata() {
-    GPR_ASSERT(call_->pipe_server_intial_metadata_ != nullptr);
-    return call_->pipe_server_intial_metadata_->receiver.Next();
+    return call_->PullServerInitialMetadata();
   }
   auto PullServerToClientMessage() {
-    GPR_ASSERT(call_->pipe_server_to_client_messages_ != nullptr);
-    std::cout << "pull server to client message "
-              << "\n";
-    fflush(stdout);
-    return call_->pipe_server_to_client_messages_->receiver.Next();
+    return call_->PullServerToClientMessage();
   }
   auto PullClientToServerMessage() {
-    GPR_ASSERT(call_->pipe_client_to_server_messages_ != nullptr);
-    return call_->pipe_client_to_server_messages_->receiver.Next();
+    return call_->PullClientToServerMessage();
   }
-  uint32_t GetStreamId() { return call_->stream_id_; }
+  uint32_t GetStreamId() { return call_->GetStreamId(); }
   template <typename Promise>
   void Spawn(Promise p) {
     call_->SpawnWaitable("run_transport_write_promise",
@@ -150,16 +178,16 @@ class CallInitiator {
                          });
   }
   void SetServerInitialMetadata(
-      InterActivityPipe<ServerMetadataHandle, 1>* pipe_server_intial_metadata) {
-    call_->pipe_server_intial_metadata_ = pipe_server_intial_metadata;
+      Pipe<ServerMetadataHandle>* pipe_server_intial_metadata) {
+    call_->SetServerInitialMetadata(pipe_server_intial_metadata);
   }
   void SetServerToClientMessage(
-      InterActivityPipe<MessageHandle, 1>* pipe_server_to_client_messages) {
-    call_->pipe_server_to_client_messages_ = pipe_server_to_client_messages;
+      Pipe<MessageHandle>* pipe_server_to_client_messages) {
+    call_->SetServerToClientMessage(pipe_server_to_client_messages);
   }
   void SetClientToServerMessage(
-      InterActivityPipe<MessageHandle, 1>* pipe_client_to_server_messages) {
-    call_->pipe_client_to_server_messages_ = pipe_client_to_server_messages;
+      Pipe<MessageHandle>* pipe_client_to_server_messages) {
+    call_->SetClientToServerMessage(pipe_client_to_server_messages);
   }
 
  private:
@@ -197,13 +225,13 @@ class ServerTransport {
       return TrySeq(
           // TODO(ladynana): add initial metadata in server frame.
           r.PullServerToClientMessage(),
-          [this, stream_id = r.GetStreamId()](
-              absl::optional<MessageHandle> result) mutable {
+          [this, stream_id = r.GetStreamId(),
+           outgoing_frames = outgoing_frames_.MakeSender()](
+              NextResult<MessageHandle> result) mutable {
             GPR_ASSERT(result.has_value());
             std::cout << "write promise get message "
                       << "\n";
             fflush(stdout);
-            auto outgoing_frames = outgoing_frames_.MakeSender();
             ServerFragmentFrame frame;
             uint32_t message_length = result.value()->payload()->Length();
             uint32_t message_padding = message_length % aligned_bytes;

@@ -180,7 +180,6 @@ grpc_cc_test(
         "//src/core:arena",
         "//src/core:chaotic_good_server_transport",
         "//src/core:event_engine_wakeup_scheduler",
-        "//src/core:inter_activity_pipe",
         "//src/core:join",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
