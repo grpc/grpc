@@ -99,7 +99,7 @@ class TlsCredentialsOptions {
   // verifiers other than the host name verifier is used.
   void set_check_call_host(bool check_call_host);
 
-  // Deprecated in favor of grpc_tls_credentials_options_set_crl_provider. The
+  // Deprecated in favor of set_crl_provider. The
   // crl provider interface provides a significantly more flexible approach to
   // using CRLs. See gRFC A69 for details.
   // If set, gRPC will read all hashed x.509 CRL files in the directory and
