@@ -145,11 +145,6 @@ const char* const description_rfc_max_concurrent_streams =
     "max concurrent streams are exceeded in chttp2. See "
     "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
 const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -209,10 +204,6 @@ const char* const description_write_size_cap =
 const char* const additional_constraints_write_size_cap = "{}";
 const uint8_t required_experiments_write_size_cap[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -301,10 +292,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
      additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
      true},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -343,8 +330,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"write_size_cap", description_write_size_cap,
      additional_constraints_write_size_cap, required_experiments_write_size_cap,
      1, true, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core
@@ -472,11 +457,6 @@ const char* const description_rfc_max_concurrent_streams =
     "max concurrent streams are exceeded in chttp2. See "
     "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
 const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -536,10 +516,6 @@ const char* const description_write_size_cap =
 const char* const additional_constraints_write_size_cap = "{}";
 const uint8_t required_experiments_write_size_cap[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -628,10 +604,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
      additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
      true},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -670,8 +642,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"write_size_cap", description_write_size_cap,
      additional_constraints_write_size_cap, required_experiments_write_size_cap,
      1, true, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core
@@ -799,11 +769,6 @@ const char* const description_rfc_max_concurrent_streams =
     "max concurrent streams are exceeded in chttp2. See "
     "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
 const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -863,10 +828,6 @@ const char* const description_write_size_cap =
 const char* const additional_constraints_write_size_cap = "{}";
 const uint8_t required_experiments_write_size_cap[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -955,10 +916,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
      additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
      true},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -997,8 +954,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"write_size_cap", description_write_size_cap,
      additional_constraints_write_size_cap, required_experiments_write_size_cap,
      1, true, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core

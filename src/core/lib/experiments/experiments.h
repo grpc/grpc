@@ -110,8 +110,6 @@ inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsRegisteredMethodsMapEnabled() { return false; }
 inline bool IsRfcMaxConcurrentStreamsEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
-inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
@@ -134,8 +132,6 @@ inline bool IsWorkSerializerDispatchEnabled() { return false; }
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
 inline bool IsWriteSizeCapEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
-inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
@@ -192,8 +188,6 @@ inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsRegisteredMethodsMapEnabled() { return false; }
 inline bool IsRfcMaxConcurrentStreamsEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
-inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
@@ -216,8 +210,6 @@ inline bool IsWorkSerializerDispatchEnabled() { return false; }
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
 inline bool IsWriteSizeCapEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
-inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
@@ -274,8 +266,6 @@ inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsRegisteredMethodsMapEnabled() { return false; }
 inline bool IsRfcMaxConcurrentStreamsEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
-inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SEPARATE_PING_FROM_KEEPALIVE
@@ -298,8 +288,6 @@ inline bool IsWorkSerializerDispatchEnabled() { return false; }
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
 inline bool IsWriteSizeCapEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
-inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #endif
 
 #else
@@ -335,7 +323,6 @@ enum ExperimentIds {
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdRegisteredMethodsMap,
   kExperimentIdRfcMaxConcurrentStreams,
-  kExperimentIdRoundRobinDelegateToPickFirst,
   kExperimentIdRstpit,
   kExperimentIdScheduleCancellationOverWrite,
   kExperimentIdSeparatePingFromKeepalive,
@@ -351,7 +338,6 @@ enum ExperimentIds {
   kExperimentIdWorkSerializerDispatch,
   kExperimentIdWriteSizePolicy,
   kExperimentIdWriteSizeCap,
-  kExperimentIdWrrDelegateToPickFirst,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_BLOCK_EXCESSIVE_REQUESTS_BEFORE_SETTINGS_ACK
@@ -479,10 +465,6 @@ inline bool IsRegisteredMethodsMapEnabled() {
 inline bool IsRfcMaxConcurrentStreamsEnabled() {
   return IsExperimentEnabled(kExperimentIdRfcMaxConcurrentStreams);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
-inline bool IsRoundRobinDelegateToPickFirstEnabled() {
-  return IsExperimentEnabled(kExperimentIdRoundRobinDelegateToPickFirst);
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
 inline bool IsRstpitEnabled() {
   return IsExperimentEnabled(kExperimentIdRstpit);
@@ -542,10 +524,6 @@ inline bool IsWriteSizePolicyEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
 inline bool IsWriteSizeCapEnabled() {
   return IsExperimentEnabled(kExperimentIdWriteSizeCap);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
-inline bool IsWrrDelegateToPickFirstEnabled() {
-  return IsExperimentEnabled(kExperimentIdWrrDelegateToPickFirst);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

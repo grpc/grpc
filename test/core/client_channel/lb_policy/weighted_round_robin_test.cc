@@ -41,7 +41,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -850,7 +849,6 @@ TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
 }
 
 TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
-  if (!IsWrrDelegateToPickFirstEnabled()) return;
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in WRR.
