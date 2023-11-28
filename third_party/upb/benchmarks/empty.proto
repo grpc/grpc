@@ -1,6 +1,0 @@
-
-syntax = "proto3";
-
-package upb_benchmark;
-
-message Empty {}

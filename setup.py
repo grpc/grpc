@@ -72,11 +72,9 @@ SSL_INCLUDE = (
     os.path.join("third_party", "boringssl-with-bazel", "src", "include"),
 )
 UPB_INCLUDE = (os.path.join("third_party", "upb"),)
-UPB_GRPC_GENERATED_INCLUDE = (
-    os.path.join("src", "core", "ext", "upb-generated"),
-)
+UPB_GRPC_GENERATED_INCLUDE = (os.path.join("src", "core", "ext", "upb-gen"),)
 UPBDEFS_GRPC_GENERATED_INCLUDE = (
-    os.path.join("src", "core", "ext", "upbdefs-generated"),
+    os.path.join("src", "core", "ext", "upbdefs-gen"),
 )
 UTF8_RANGE_INCLUDE = (os.path.join("third_party", "utf8_range"),)
 XXHASH_INCLUDE = (os.path.join("third_party", "xxhash"),)

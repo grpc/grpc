@@ -1,4 +1,4 @@
-# TODO(haberman): describe this package.
+# TODO: describe this package.
 
 load("//bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 load(
@@ -20,11 +20,11 @@ cc_library(
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        "//:collections",
-        "//:lex",
-        "//:port",
-        "//:reflection",
-        "//:wire",
+        "//upb:lex",
+        "//upb:message",
+        "//upb:port",
+        "//upb:reflection",
+        "//upb:wire",
     ],
 )
 
@@ -36,9 +36,9 @@ cc_test(
         ":struct_upb_proto",
         ":test_upb_proto",
         ":test_upb_proto_reflection",
-        "//:reflection",
-        "//:upb",
         "@com_google_googletest//:gtest_main",
+        "//upb:mem",
+        "//upb:reflection",
     ],
 )
 
@@ -50,9 +50,10 @@ cc_test(
         ":struct_upb_proto",
         ":test_upb_proto",
         ":test_upb_proto_reflection",
-        "//:reflection",
-        "//:upb",
         "@com_google_googletest//:gtest_main",
+        "//upb:base",
+        "//upb:mem",
+        "//upb:reflection",
     ],
 )
 
@@ -60,7 +61,7 @@ proto_library(
     name = "test_proto",
     testonly = 1,
     srcs = ["test.proto"],
-    deps = ["@com_google_protobuf//:struct_proto"],
+    deps = ["//:struct_proto"],
 )
 
 upb_proto_library(
@@ -79,5 +80,5 @@ upb_proto_reflection_library(
 upb_proto_library(
     name = "struct_upb_proto",
     testonly = 1,
-    deps = ["@com_google_protobuf//:struct_proto"],
+    deps = ["//:struct_proto"],
 )

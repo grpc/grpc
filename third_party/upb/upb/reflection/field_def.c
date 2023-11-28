@@ -1,46 +1,28 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
+
+#include "upb/reflection/internal/field_def.h"
 
 #include <ctype.h>
 #include <errno.h>
+#include <stdbool.h>
 
+#include "upb/base/descriptor_constants.h"
 #include "upb/mini_descriptor/decode.h"
 #include "upb/mini_descriptor/internal/modifiers.h"
 #include "upb/reflection/def.h"
-#include "upb/reflection/def_builder_internal.h"
-#include "upb/reflection/def_pool.h"
 #include "upb/reflection/def_type.h"
-#include "upb/reflection/desc_state_internal.h"
-#include "upb/reflection/enum_def_internal.h"
-#include "upb/reflection/enum_value_def_internal.h"
-#include "upb/reflection/field_def_internal.h"
-#include "upb/reflection/file_def_internal.h"
-#include "upb/reflection/message_def_internal.h"
-#include "upb/reflection/oneof_def_internal.h"
+#include "upb/reflection/internal/def_builder.h"
+#include "upb/reflection/internal/desc_state.h"
+#include "upb/reflection/internal/enum_def.h"
+#include "upb/reflection/internal/file_def.h"
+#include "upb/reflection/internal/message_def.h"
+#include "upb/reflection/internal/oneof_def.h"
+#include "upb/reflection/internal/strdup2.h"
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -153,7 +135,13 @@ uint32_t upb_FieldDef_Number(const upb_FieldDef* f) { return f->number_; }
 
 bool upb_FieldDef_IsExtension(const upb_FieldDef* f) { return f->is_extension; }
 
-bool upb_FieldDef_IsPacked(const upb_FieldDef* f) { return f->is_packed; }
+bool _upb_FieldDef_IsPackable(const upb_FieldDef* f) {
+  return upb_FieldDef_IsRepeated(f) && upb_FieldDef_IsPrimitive(f);
+}
+
+bool upb_FieldDef_IsPacked(const upb_FieldDef* f) {
+  return _upb_FieldDef_IsPackable(f) && f->is_packed;
+}
 
 const char* upb_FieldDef_Name(const upb_FieldDef* f) {
   return _upb_DefBuilder_FullToShort(f->full_name);
@@ -265,8 +253,31 @@ bool _upb_FieldDef_IsProto3Optional(const upb_FieldDef* f) {
 
 int _upb_FieldDef_LayoutIndex(const upb_FieldDef* f) { return f->layout_index; }
 
+// begin:google_only
+// static bool _upb_FieldDef_EnforceUtf8Option(const upb_FieldDef* f) {
+// #if defined(UPB_BOOTSTRAP_STAGE0)
+//   return true;
+// #else
+//   return UPB_DESC(FieldOptions_enforce_utf8)(f->opts);
+// #endif
+// }
+// end:google_only
+
+// begin:github_only
+static bool _upb_FieldDef_EnforceUtf8Option(const upb_FieldDef* f) {
+  return true;
+}
+// end:github_only
+
+bool _upb_FieldDef_ValidateUtf8(const upb_FieldDef* f) {
+  if (upb_FieldDef_Type(f) != kUpb_FieldType_String) return false;
+  return upb_FileDef_Syntax(upb_FieldDef_File(f)) == kUpb_Syntax_Proto3
+             ? _upb_FieldDef_EnforceUtf8Option(f)
+             : false;
+}
+
 uint64_t _upb_FieldDef_Modifiers(const upb_FieldDef* f) {
-  uint64_t out = f->is_packed ? kUpb_FieldModifier_IsPacked : 0;
+  uint64_t out = upb_FieldDef_IsPacked(f) ? kUpb_FieldModifier_IsPacked : 0;
 
   switch (f->label_) {
     case kUpb_Label_Optional:
@@ -285,6 +296,11 @@ uint64_t _upb_FieldDef_Modifiers(const upb_FieldDef* f) {
   if (_upb_FieldDef_IsClosedEnum(f)) {
     out |= kUpb_FieldModifier_IsClosedEnum;
   }
+
+  if (_upb_FieldDef_ValidateUtf8(f)) {
+    out |= kUpb_FieldModifier_ValidateUtf8;
+  }
+
   return out;
 }
 
@@ -592,14 +608,16 @@ static void _upb_FieldDef_Create(upb_DefBuilder* ctx, const char* prefix,
               f->full_name, (int)f->type_);
         }
     }
-  } else if (has_type_name) {
-    f->type_ =
-        UPB_FIELD_TYPE_UNSPECIFIED;  // We'll assign this in resolve_fielddef()
   }
 
-  if (f->type_ < kUpb_FieldType_Double || f->type_ > kUpb_FieldType_SInt64) {
-    _upb_DefBuilder_Errf(ctx, "invalid type for field %s (%d)", f->full_name,
-                         f->type_);
+  if (!has_type && has_type_name) {
+    f->type_ =
+        UPB_FIELD_TYPE_UNSPECIFIED;  // We'll assign this in resolve_subdef()
+  } else {
+    if (f->type_ < kUpb_FieldType_Double || f->type_ > kUpb_FieldType_SInt64) {
+      _upb_DefBuilder_Errf(ctx, "invalid type for field %s (%d)", f->full_name,
+                           f->type_);
+    }
   }
 
   if (f->label_ < kUpb_Label_Optional || f->label_ > kUpb_Label_Repeated) {
@@ -619,8 +637,7 @@ static void _upb_FieldDef_Create(upb_DefBuilder* ctx, const char* prefix,
   }
 
   if (UPB_DESC(FieldDescriptorProto_has_oneof_index)(field_proto)) {
-    uint32_t oneof_index =
-        UPB_DESC(FieldDescriptorProto_oneof_index)(field_proto);
+    int oneof_index = UPB_DESC(FieldDescriptorProto_oneof_index)(field_proto);
 
     if (upb_FieldDef_Label(f) != kUpb_Label_Optional) {
       _upb_DefBuilder_Errf(ctx, "fields in oneof must have OPTIONAL label (%s)",
@@ -647,15 +664,13 @@ static void _upb_FieldDef_Create(upb_DefBuilder* ctx, const char* prefix,
   if (UPB_DESC(FieldOptions_has_packed)(f->opts)) {
     f->is_packed = UPB_DESC(FieldOptions_packed)(f->opts);
   } else {
-    // Repeated fields default to packed for proto3 only.
-    f->is_packed = upb_FieldDef_IsPrimitive(f) &&
-                   f->label_ == kUpb_Label_Repeated &&
-                   upb_FileDef_Syntax(f->file) == kUpb_Syntax_Proto3;
+    f->is_packed = upb_FileDef_Syntax(f->file) == kUpb_Syntax_Proto3;
   }
 
   f->has_presence =
       (!upb_FieldDef_IsRepeated(f)) &&
-      (upb_FieldDef_IsSubMessage(f) || upb_FieldDef_ContainingOneof(f) ||
+      (f->type_ == kUpb_FieldType_Message || f->type_ == kUpb_FieldType_Group ||
+       upb_FieldDef_ContainingOneof(f) ||
        (upb_FileDef_Syntax(f->file) == kUpb_Syntax_Proto2));
 }
 
@@ -768,11 +783,13 @@ static void resolve_subdef(upb_DefBuilder* ctx, const char* prefix,
           f->sub.msgdef = def;
           f->type_ = kUpb_FieldType_Message;  // It appears there is no way of
                                               // this being a group.
+          f->has_presence = !upb_FieldDef_IsRepeated(f);
           break;
         default:
           _upb_DefBuilder_Errf(ctx, "Couldn't resolve type name for field %s",
                                f->full_name);
       }
+      break;
     }
     case kUpb_FieldType_Message:
     case kUpb_FieldType_Group:
@@ -802,7 +819,7 @@ static int _upb_FieldDef_Compare(const void* p1, const void* p2) {
 // for non-sorted lists of fields.
 const upb_FieldDef** _upb_FieldDefs_Sorted(const upb_FieldDef* f, int n,
                                            upb_Arena* a) {
-  // TODO(salo): Replace this arena alloc with a persistent scratch buffer.
+  // TODO: Replace this arena alloc with a persistent scratch buffer.
   upb_FieldDef** out = (upb_FieldDef**)upb_Arena_Malloc(a, n * sizeof(void*));
   if (!out) return NULL;
 
