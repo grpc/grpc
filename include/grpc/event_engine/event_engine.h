@@ -255,6 +255,47 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
     virtual const ResolvedAddress& GetLocalAddress() const = 0;
+
+    /// A method which allows users to query whether an Endpoint implementation
+    /// supports a specified extension. The name of the extension is provided
+    /// as an input.
+    ///
+    /// An extension could be any type with a unique string id. Each extension
+    /// may support additional capabilities and if the Endpoint implementation
+    /// supports the queried extension, it should return a valid pointer to the
+    /// extension type.
+    ///
+    /// E.g., use case of an EventEngine::Endpoint supporting a custom
+    /// extension.
+    ///
+    /// class CustomEndpointExtension {
+    ///  public:
+    ///.   static constexpr std::string Name() {
+    ///       return "my.namespace.custom_endpoint_extension";
+    ///    }
+    ///    ...
+    /// }
+    ///
+    ///
+    /// class CustomEndpoint :
+    ///        public EventEngine::Endpoint, CustomEndpointExtension {
+    ///   public:
+    ///     void* QueryExtension(absl::string_view id) override {
+    ///       if (id == CustomEndpointExtension::Name()) {
+    ///         return static_cast<CustomEndpointExtension*>(this);
+    ///       }
+    ///       return nullptr;
+    ///     }
+    ///     ...
+    /// }
+    ///
+    /// auto ext_ =
+    /// static_cast<CustomEndpointExtension*>(
+    ///   endpoint->QueryExtension(CustomrEndpointExtension::Name()));
+    /// ...
+    ///
+    ///
+    virtual void* QueryExtension(absl::string_view /*id*/) { return nullptr; }
   };
 
   /// Called when a new connection is established.
