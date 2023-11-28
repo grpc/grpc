@@ -5111,6 +5111,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "experiments",
         "grpc_backend_metric_data",
         "json",
         "json_args",
