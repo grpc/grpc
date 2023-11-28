@@ -48,7 +48,6 @@ EXPERIMENT_ENABLES = {
     "registered_method_lookup_in_transport": "registered_method_lookup_in_transport",
     "registered_methods_map": "registered_methods_map",
     "rfc_max_concurrent_streams": "rfc_max_concurrent_streams",
-    "round_robin_delegate_to_pick_first": "round_robin_delegate_to_pick_first",
     "rstpit": "rstpit",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "separate_ping_from_keepalive": "separate_ping_from_keepalive",
@@ -64,7 +63,6 @@ EXPERIMENT_ENABLES = {
     "work_serializer_dispatch": "work_serializer_dispatch",
     "write_size_policy": "write_size_policy",
     "write_size_cap": "write_size_cap,write_size_policy",
-    "wrr_delegate_to_pick_first": "wrr_delegate_to_pick_first",
 }
 
 EXPERIMENTS = {
@@ -129,8 +127,6 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -145,16 +141,12 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
             ],
             "surface_registered_method_lookup": [
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
                 "pick_first_happy_eyeballs",
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
             ],
         },
     },
@@ -216,8 +208,6 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
                 "chttp2_batch_requests",
@@ -229,16 +219,12 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
             ],
             "surface_registered_method_lookup": [
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
                 "pick_first_happy_eyeballs",
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
             ],
         },
     },
@@ -313,8 +299,6 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -329,16 +313,12 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
             ],
             "surface_registered_method_lookup": [
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
                 "pick_first_happy_eyeballs",
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
             ],
         },
     },

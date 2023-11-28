@@ -4901,34 +4901,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_subchannel_list",
-    hdrs = [
-        "ext/filters/client_channel/lb_policy/subchannel_list.h",
-    ],
-    external_deps = [
-        "absl/status",
-        "absl/types:optional",
-    ],
-    language = "c++",
-    deps = [
-        "channel_args",
-        "dual_ref_counted",
-        "gpr_manual_constructor",
-        "health_check_client",
-        "iomgr_fwd",
-        "lb_policy",
-        "subchannel_interface",
-        "//:debug_location",
-        "//:endpoint_addresses",
-        "//:gpr",
-        "//:grpc_base",
-        "//:ref_counted_ptr",
-        "//:server_address",
-        "//:work_serializer",
-    ],
-)
-
-grpc_cc_library(
     name = "lb_endpoint_list",
     srcs = [
         "ext/filters/client_channel/lb_policy/endpoint_list.cc",
@@ -5086,8 +5058,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "experiments",
-        "grpc_lb_subchannel_list",
         "json",
         "lb_endpoint_list",
         "lb_policy",
@@ -5141,9 +5111,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "experiments",
         "grpc_backend_metric_data",
-        "grpc_lb_subchannel_list",
         "json",
         "json_args",
         "json_object_loader",
