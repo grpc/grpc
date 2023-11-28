@@ -99,8 +99,9 @@ class TlsCredentialsOptions {
   // verifiers other than the host name verifier is used.
   void set_check_call_host(bool check_call_host);
 
-  // TODO(zhenlian): This is an experimental API is likely to change in the
-  // future. Before de-experiementalizing, verify the API is up to date.
+  // Deprecated in favor of grpc_tls_credentials_options_set_crl_provider. The
+  // crl provider interface provides a significantly more flexible approach to
+  // using CRLs. See gRFC A69 for details.
   // If set, gRPC will read all hashed x.509 CRL files in the directory and
   // enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
   // version > 1.1.
