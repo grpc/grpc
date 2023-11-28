@@ -18,11 +18,9 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <algorithm>
 #include <atomic>
-#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -50,7 +48,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/endpoint_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
@@ -74,7 +71,6 @@
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
