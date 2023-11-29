@@ -19,22 +19,31 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+
 #include <stdint.h>
 #include <stdlib.h>
 
 #include <atomic>
+#include <functional>
 #include <memory>
 #include <new>
 #include <string>
 #include <type_traits>
 #include <utility>
 
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/call_finalization.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -50,6 +59,8 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -58,12 +69,6 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/function_ref.h"
-#include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -221,14 +226,15 @@ struct RaceAsyncCompletion<true> {
 
 template <typename Derived>
 struct FilterCallData {
-  FilterCallData(Derived* channel) : channel(channel) {}
+  explicit FilterCallData(Derived* channel) : channel(channel) {}
   GPR_NO_UNIQUE_ADDRESS typename Derived::Call call;
   GPR_NO_UNIQUE_ADDRESS
   typename TypeIfNeeded<Latch<ServerMetadataHandle>,
                         CallHasAsyncErrorInterceptor<Derived>()>::Type
       error_latch;
   GPR_NO_UNIQUE_ADDRESS
-  TypeIfNeeded<Derived*, CallHasChannelAccess<Derived>()>::Type channel;
+  typename TypeIfNeeded<Derived*, CallHasChannelAccess<Derived>()>::Type
+      channel;
 };
 
 template <typename Promise>
