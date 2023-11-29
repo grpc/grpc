@@ -3357,6 +3357,16 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
         [this](ServerMetadataHandle result) { Finish(std::move(result)); });
 }
 
+CallInitiator MakeServerCall(Server* server, RefCountedPtr<Channel> channel) {
+  const auto initial_size = channel->CallSizeEstimate();
+  global_stats().IncrementCallInitialSize(initial_size);
+  auto alloc = Arena::CreateWithAlloc(
+      initial_size, sizeof(ServerPromiseBasedCall), channel->allocator());
+  ServerPromiseBasedCall* call = new (alloc.second)
+      ServerPromiseBasedCall(alloc.first, server, std::move(channel));
+  return CallInitiator{MakeRefCounted<CallSpine>(call)};
+}
+
 std::pair<CallInitiator, CallHandler>
 ServerPromiseBasedCall::MakeTransitionCallInitiatorAndHandler(
     CallArgs call_args) {
