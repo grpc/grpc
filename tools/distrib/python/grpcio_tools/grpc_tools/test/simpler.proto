@@ -21,5 +21,4 @@ import "simplest.proto";
 message SimplerMessage {
   int64 do_i_even_exist = 1;
   simplest.SimplestMessage simplest_message = 2;
-};
-
+}

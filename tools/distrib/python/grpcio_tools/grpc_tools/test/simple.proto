@@ -23,18 +23,18 @@ message SimpleMessage {
   oneof personal_or_business {
     bool personal = 2;
     bool business = 3;
-  };
+  }
   simpler.SimplerMessage simpler_message = 4;
-};
+}
 
 message SimpleMessageRequest {
   SimpleMessage simple_msg = 1;
-};
+}
 
 message SimpleMessageResponse {
   bool understood = 1;
-};
+}
 
 service SimpleMessageService {
   rpc Tell(SimpleMessageRequest) returns (SimpleMessageResponse);
-};
+}

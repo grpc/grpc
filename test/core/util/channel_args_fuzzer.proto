@@ -19,10 +19,10 @@ package channel_args;
 message ResourceQuota {}
 
 message ChannelArg {
-    string key = 1;
-    oneof value {
-        string str = 2;
-        int64 i = 3;
-        ResourceQuota resource_quota = 4;
-    }
+  string key = 1;
+  oneof value {
+    string str = 2;
+    int64 i = 3;
+    ResourceQuota resource_quota = 4;
+  }
 }

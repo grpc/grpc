@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-import "tests/protoc_plugin/protos/payload/test_payload.proto";
-
 package grpc_protoc_plugin;
+
+import "tests/protoc_plugin/protos/payload/test_payload.proto";
 
 message SimpleRequest {
   // Desired payload type in the response from the server.

@@ -14,6 +14,8 @@
 
 syntax = "proto3";
 
+package test_compiler;
+
 import "google/protobuf/any.proto";
 import "google/protobuf/api.proto";
 import "google/protobuf/compiler/plugin.proto";
@@ -26,5 +28,3 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/type.proto";
 import "google/protobuf/wrappers.proto";
-
-package test_compiler;

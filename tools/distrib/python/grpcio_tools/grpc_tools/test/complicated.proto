@@ -23,4 +23,4 @@ message ComplicatedMessage {
   bool no = 2;
   bool why = 3;
   simplest.SimplestMessage simplest_message = 4;
-};
+}
