@@ -32,16 +32,21 @@
 
 namespace grpc_core {
 
-class HttpClientFilter : public ChannelFilter {
+class HttpClientFilter : public ImplementChannelFilter<HttpClientFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<HttpClientFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& md, HttpClientFilter* filter);
+    absl::Status OnServerInitialMetadata(ServerMetadata& md);
+    absl::Status OnServerTrailingMetadata(ServerMetadata& md);
+    static constexpr const NoInterceptor OnClientToServerMessage{};
+    static constexpr const NoInterceptor OnServerToClientMessage{};
+  };
 
  private:
   HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent,
