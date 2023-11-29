@@ -19,8 +19,10 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -31,18 +33,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/function_ref.h"
-#include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/call_finalization.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -60,12 +52,19 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -120,6 +119,228 @@ class ChannelFilter {
   // TODO(ctiller): remove once per-channel-stack EventEngines land
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
+};
+
+struct NoInterceptor {};
+
+namespace promise_filter_detail {
+
+inline constexpr bool HasAsyncErrorInterceptor() { return false; }
+
+inline constexpr bool HasAsyncErrorInterceptor(const NoInterceptor*) {
+  return false;
+}
+
+template <typename T, typename... A>
+inline constexpr bool HasAsyncErrorInterceptor(absl::Status (T::*)(A...)) {
+  return true;
+}
+
+template <typename T, typename... A>
+inline constexpr bool HasAsyncErrorInterceptor(void (T::*)(A...)) {
+  return false;
+}
+
+template <typename I1, typename I2, typename... Interceptors>
+inline constexpr bool HasAsyncErrorInterceptor(I1 i1, I2 i2,
+                                               Interceptors... interceptors) {
+  return HasAsyncErrorInterceptor(i1) || HasAsyncErrorInterceptor(i2) ||
+         HasAsyncErrorInterceptor(interceptors...);
+}
+
+inline constexpr bool HasChannelAccess() { return false; }
+
+inline constexpr bool HasChannelAccess(const NoInterceptor*) { return false; }
+
+template <typename T, typename R, typename A>
+inline constexpr bool HasChannelAccess(R (T::*)(A)) {
+  return false;
+}
+
+template <typename T, typename R, typename A, typename C>
+inline constexpr bool HasChannelAccess(R (T::*)(A, C)) {
+  return true;
+}
+
+template <typename I1, typename I2, typename... Interceptors>
+inline constexpr bool HasChannelAccess(I1 i1, I2 i2,
+                                       Interceptors... interceptors) {
+  return HasChannelAccess(i1) || HasChannelAccess(i2) ||
+         HasChannelAccess(interceptors...);
+}
+
+template <typename Derived>
+inline constexpr bool CallHasAsyncErrorInterceptor() {
+  return HasAsyncErrorInterceptor(&Derived::Call::OnClientToServerMessage,
+                                  &Derived::Call::OnServerInitialMetadata,
+                                  &Derived::Call::OnServerToClientMessage);
+}
+
+template <typename Derived>
+inline constexpr bool CallHasChannelAccess() {
+  return HasAsyncErrorInterceptor(&Derived::Call::OnClientInitialMetadata,
+                                  &Derived::Call::OnClientToServerMessage,
+                                  &Derived::Call::OnServerInitialMetadata,
+                                  &Derived::Call::OnServerToClientMessage,
+                                  &Derived::Call::OnServerTrailingMetadata);
+}
+
+template <typename T, bool X>
+struct TypeIfNeeded;
+
+template <typename T>
+struct TypeIfNeeded<T, false> {
+  struct Type {
+    Type() = default;
+    template <typename Whatever>
+    explicit Type(Whatever) : Type() {}
+  };
+};
+
+template <typename T>
+struct TypeIfNeeded<T, true> {
+  using Type = T;
+};
+
+template <bool X>
+struct RaceAsyncCompletion;
+template <>
+struct RaceAsyncCompletion<false> {
+  template <typename Promise>
+  static Promise Run(Promise x, void*) {
+    return x;
+  }
+};
+
+template <>
+struct RaceAsyncCompletion<true> {
+  template <typename Promise>
+  static Promise Run(Promise x, Latch<ServerMetadataHandle>* latch) {
+    return Race(latch->Wait(), std::move(x));
+  }
+};
+
+template <typename Derived>
+struct FilterCallData {
+  FilterCallData(Derived* channel) : channel(channel) {}
+  GPR_NO_UNIQUE_ADDRESS typename Derived::Call call;
+  GPR_NO_UNIQUE_ADDRESS
+  typename TypeIfNeeded<Latch<ServerMetadataHandle>,
+                        CallHasAsyncErrorInterceptor<Derived>()>::Type
+      error_latch;
+  GPR_NO_UNIQUE_ADDRESS
+  typename TypeIfNeeded<Derived*, CallHasChannelAccess<Derived>()>::Type
+      channel;
+};
+
+template <typename Promise>
+auto MapResult(const NoInterceptor*, Promise x, void*) {
+  return x;
+}
+
+template <typename Promise, typename Derived>
+auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
+               FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
+  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
+    auto status = call_data->call.OnServerTrailingMetadata(*md);
+    if (!status.ok()) return ServerMetadataFromStatus(status);
+    return md;
+  });
+}
+
+inline auto RunCall(const NoInterceptor*, CallArgs call_args,
+                    NextPromiseFactory next_promise_factory, void*) {
+  return next_promise_factory(std::move(call_args));
+}
+
+template <typename Derived>
+inline auto RunCall(void (Derived::Call::*fn)(ClientMetadata& md),
+                    CallArgs call_args, NextPromiseFactory next_promise_factory,
+                    FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
+  call_data->call.OnClientInitialMetadata(*call_args.client_initial_metadata);
+  return next_promise_factory(std::move(call_args));
+}
+
+template <typename Derived>
+inline auto RunCall(void (Derived::Call::*fn)(ClientMetadata& md,
+                                              Derived* channel),
+                    CallArgs call_args, NextPromiseFactory next_promise_factory,
+                    FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
+  call_data->call.OnClientInitialMetadata(*call_args.client_initial_metadata,
+                                          call_data->channel);
+  return next_promise_factory(std::move(call_args));
+}
+
+inline void InterceptClientToServerMessage(const NoInterceptor*, void*,
+                                           CallArgs&) {}
+
+inline void InterceptServerInitialMetadata(const NoInterceptor*, void*,
+                                           CallArgs&) {}
+
+template <typename Derived>
+inline void InterceptServerInitialMetadata(
+    absl::Status (Derived::Call::*fn)(ServerMetadata&),
+    FilterCallData<Derived>* call_data, CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
+  call_args.server_initial_metadata->InterceptAndMap(
+      [call_data](
+          ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
+        auto status = call_data->call.OnServerInitialMetadata(*md);
+        if (!status.ok() && !call_data->error_latch.is_set()) {
+          call_data->error_latch.Set(ServerMetadataFromStatus(status));
+          return absl::nullopt;
+        }
+        return std::move(md);
+      });
+}
+
+inline void InterceptServerToClientMessage(const NoInterceptor*, void*,
+                                           CallArgs&) {}
+
+template <typename Derived>
+absl::enable_if_t<std::is_empty<FilterCallData<Derived>>::value,
+                  FilterCallData<Derived>*>
+MakeFilterCall(Derived*) {
+  static FilterCallData<Derived> call{nullptr};
+  return &call;
+}
+
+template <typename Derived>
+absl::enable_if_t<!std::is_empty<FilterCallData<Derived>>::value,
+                  FilterCallData<Derived>*>
+MakeFilterCall(Derived* derived) {
+  return GetContext<Arena>()->ManagedNew<FilterCallData<Derived>>(derived);
+}
+
+}  // namespace promise_filter_detail
+
+template <typename Derived>
+class ImplementChannelFilter : public ChannelFilter {
+ public:
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) final {
+    auto* call = promise_filter_detail::MakeFilterCall<Derived>(
+        static_cast<Derived*>(this));
+    promise_filter_detail::InterceptClientToServerMessage(
+        &Derived::Call::OnClientToServerMessage, call, call_args);
+    promise_filter_detail::InterceptServerInitialMetadata(
+        &Derived::Call::OnServerInitialMetadata, call, call_args);
+    promise_filter_detail::InterceptServerToClientMessage(
+        &Derived::Call::OnServerToClientMessage, call, call_args);
+    return promise_filter_detail::MapResult(
+        &Derived::Call::OnServerTrailingMetadata,
+        promise_filter_detail::RaceAsyncCompletion<
+            promise_filter_detail::CallHasAsyncErrorInterceptor<Derived>()>::
+            Run(promise_filter_detail::RunCall(
+                    &Derived::Call::OnClientInitialMetadata,
+                    std::move(call_args), std::move(next_promise_factory),
+                    call),
+                &call->error_latch),
+        call);
+  }
 };
 
 // Designator for whether a filter is client side or server side.
