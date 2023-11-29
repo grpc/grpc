@@ -346,7 +346,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   struct UpdateArgs {
     /// A list of endpoints, each with one or more address, or an error
     /// indicating a failure to obtain the list of addresses.
-    absl::StatusOr<EndpointAddressesList> addresses;
+    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses;
     /// The LB policy config.
     RefCountedPtr<Config> config;
     /// A human-readable note providing context about the name resolution that

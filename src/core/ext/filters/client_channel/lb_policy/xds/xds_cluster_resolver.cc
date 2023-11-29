@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -61,6 +62,7 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -390,7 +392,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   absl::Status UpdateChildPolicyLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
-  EndpointAddressesList CreateChildPolicyAddressesLocked();
+  std::shared_ptr<EndpointAddressesIterator> CreateChildPolicyAddressesLocked();
   std::string CreateChildPolicyResolutionNoteLocked();
   RefCountedPtr<Config> CreateChildPolicyConfigLocked();
   ChannelArgs CreateChildPolicyArgsLocked(const ChannelArgs& args_in);
@@ -529,10 +531,16 @@ XdsClusterResolverLb::DiscoveryMechanismEntry::config() const {
       ->config_->discovery_mechanisms()[discovery_mechanism->index()];
 }
 
+std::string MakeChildPolicyName(absl::string_view cluster_name,
+                                size_t child_number) {
+  return absl::StrCat("{cluster=", cluster_name,
+                      ", child_number=", child_number, "}");
+}
+
 std::string XdsClusterResolverLb::DiscoveryMechanismEntry::GetChildPolicyName(
     size_t priority) const {
-  return absl::StrCat("{cluster=", config().cluster_name,
-                      ", child_number=", priority_child_numbers[priority], "}");
+  return MakeChildPolicyName(config().cluster_name,
+                             priority_child_numbers[priority]);
 }
 
 //
@@ -768,39 +776,76 @@ void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index,
 // child policy-related methods
 //
 
-EndpointAddressesList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
-  EndpointAddressesList addresses;
-  for (const auto& discovery_entry : discovery_mechanisms_) {
-    const auto& priority_list =
-        GetUpdatePriorityList(*discovery_entry.latest_update);
-    for (size_t priority = 0; priority < priority_list.size(); ++priority) {
-      const auto& priority_entry = priority_list[priority];
-      std::string priority_child_name =
-          discovery_entry.GetChildPolicyName(priority);
-      for (const auto& p : priority_entry.localities) {
-        const auto& locality_name = p.first;
-        const auto& locality = p.second;
-        std::vector<RefCountedStringValue> hierarchical_path = {
-            RefCountedStringValue(priority_child_name),
-            RefCountedStringValue(locality_name->AsHumanReadableString())};
-        auto hierarchical_path_attr =
-            MakeRefCounted<HierarchicalPathArg>(std::move(hierarchical_path));
-        for (const auto& endpoint : locality.endpoints) {
-          uint32_t endpoint_weight =
-              locality.lb_weight *
-              endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-          addresses.emplace_back(
-              endpoint.addresses(),
-              endpoint.args()
-                  .SetObject(hierarchical_path_attr)
-                  .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
-                  .SetObject(locality_name->Ref())
-                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight));
+class PriorityEndpointIterator : public EndpointAddressesIterator {
+ public:
+  struct DiscoveryMechanismResult {
+    std::shared_ptr<const XdsEndpointResource> update;
+    std::string cluster_name;
+    std::vector<size_t /*child_number*/> priority_child_numbers;
+
+    DiscoveryMechanismResult(
+        std::shared_ptr<const XdsEndpointResource> resource,
+        std::string cluster, std::vector<size_t> child_numbers)
+        : update(std::move(resource)),
+          cluster_name(std::move(cluster)),
+          priority_child_numbers(std::move(child_numbers)) {}
+
+    std::string GetChildPolicyName(size_t priority) const {
+      return MakeChildPolicyName(cluster_name,
+                                 priority_child_numbers[priority]);
+    }
+  };
+
+  explicit PriorityEndpointIterator(
+      std::vector<DiscoveryMechanismResult> results)
+      : results_(std::move(results)) {}
+
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+      const override {
+    for (const auto& entry : results_) {
+      const auto& priority_list = GetUpdatePriorityList(*entry.update);
+      for (size_t priority = 0; priority < priority_list.size(); ++priority) {
+        const auto& priority_entry = priority_list[priority];
+        std::string priority_child_name = entry.GetChildPolicyName(priority);
+        for (const auto& p : priority_entry.localities) {
+          const auto& locality_name = p.first;
+          const auto& locality = p.second;
+          std::vector<RefCountedStringValue> hierarchical_path = {
+              RefCountedStringValue(priority_child_name),
+              RefCountedStringValue(locality_name->AsHumanReadableString())};
+          auto hierarchical_path_attr =
+              MakeRefCounted<HierarchicalPathArg>(std::move(hierarchical_path));
+          for (const auto& endpoint : locality.endpoints) {
+            uint32_t endpoint_weight =
+                locality.lb_weight *
+                endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+            callback(EndpointAddresses(
+                endpoint.addresses(),
+                endpoint.args()
+                    .SetObject(hierarchical_path_attr)
+                    .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
+                    .SetObject(locality_name->Ref())
+                    .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight)));
+          }
         }
       }
     }
   }
-  return addresses;
+
+ private:
+  std::vector<DiscoveryMechanismResult> results_;
+};
+
+std::shared_ptr<EndpointAddressesIterator>
+XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
+  std::vector<PriorityEndpointIterator::DiscoveryMechanismResult> entries;
+  entries.reserve(discovery_mechanisms_.size());
+  for (const auto& discovery_entry : discovery_mechanisms_) {
+    entries.emplace_back(discovery_entry.latest_update,
+                         discovery_entry.config().cluster_name,
+                         discovery_entry.priority_child_numbers);
+  }
+  return std::make_shared<PriorityEndpointIterator>(std::move(entries));
 }
 
 std::string XdsClusterResolverLb::CreateChildPolicyResolutionNoteLocked() {

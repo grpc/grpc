@@ -104,6 +104,19 @@ inline bool operator==(const RefCountedStringValue& lhs,
   return lhs.as_string_view() == rhs.as_string_view();
 }
 
+inline bool operator!=(const RefCountedStringValue& lhs,
+                       absl::string_view rhs) {
+  return lhs.as_string_view() != rhs;
+}
+inline bool operator!=(absl::string_view lhs,
+                       const RefCountedStringValue& rhs) {
+  return lhs != rhs.as_string_view();
+}
+inline bool operator!=(const RefCountedStringValue& lhs,
+                       const RefCountedStringValue& rhs) {
+  return lhs.as_string_view() != rhs.as_string_view();
+}
+
 inline bool operator<(const RefCountedStringValue& lhs, absl::string_view rhs) {
   return lhs.as_string_view() < rhs;
 }
