@@ -249,6 +249,8 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
+  void ResetState();
+
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
   absl::Status UpdateChildPolicyLocked(
@@ -459,6 +461,11 @@ void XdsClusterImplLb::ShutdownLocked() {
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] shutting down", this);
   }
   shutting_down_ = true;
+  ResetState();
+  xds_client_.reset(DEBUG_LOCATION, "XdsClusterImpl");
+}
+
+void XdsClusterImplLb::ResetState() {
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
   if (child_policy_ != nullptr) {
@@ -484,7 +491,6 @@ void XdsClusterImplLb::ShutdownLocked() {
   // the child.
   picker_.reset();
   drop_stats_.reset();
-  xds_client_.reset(DEBUG_LOCATION, "XdsClusterImpl");
 }
 
 void XdsClusterImplLb::ExitIdleLocked() {
@@ -502,11 +508,19 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] Received update", this);
   }
   // Update config.
-  const bool is_initial_update = config_ == nullptr;
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
-  // On initial update, create drop stats.
-  if (is_initial_update) {
+  // Cluster name should never change, because the cds policy will assign a
+  // different priority child name if that happens, which means that this
+  // policy instance will get replaced instead of being updated.
+  if (old_config != nullptr) {
+    GPR_ASSERT(config_->cluster_name() == old_config->cluster_name());
+  }
+  // Update drop stats if needed.
+  if (old_config == nullptr ||
+      old_config->eds_service_name() != config_->eds_service_name() ||
+      old_config->lrs_load_reporting_server() !=
+          config_->lrs_load_reporting_server()) {
     if (config_->lrs_load_reporting_server().has_value()) {
       drop_stats_ = xds_client_->AddClusterDropStats(
           config_->lrs_load_reporting_server().value(), config_->cluster_name(),
@@ -521,18 +535,15 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
                 config_->cluster_name().c_str(),
                 config_->eds_service_name().c_str());
       }
+    } else {
+      drop_stats_.reset();
     }
+  }
+  // Update call counter if needed.
+  if (old_config == nullptr ||
+      old_config->eds_service_name() != config_->eds_service_name()) {
     call_counter_ = g_call_counter_map->GetOrCreate(
         config_->cluster_name(), config_->eds_service_name());
-  } else {
-    // Cluster name, EDS service name, and LRS server name should never
-    // change, because the cds policy will assign a different priority
-    // child name if that happens, which means that this policy instance
-    // will get replaced instead of being updated.
-    GPR_ASSERT(config_->cluster_name() == old_config->cluster_name());
-    GPR_ASSERT(config_->eds_service_name() == old_config->eds_service_name());
-    GPR_ASSERT(config_->lrs_load_reporting_server() ==
-               old_config->lrs_load_reporting_server());
   }
   // Update cert provider if needed.
   absl::Status status = MaybeConfigureCertificateProviderLocked(&args.args);
@@ -542,16 +553,14 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
               "[xds_cluster_impl_lb %p] failed to update cert provider: %s",
               this, status.ToString().c_str());
     }
+    ResetState();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         MakeRefCounted<TransientFailurePicker>(status));
     return status;
   }
-  // Update picker if max_concurrent_requests has changed.
-  if (is_initial_update || config_->max_concurrent_requests() !=
-                               old_config->max_concurrent_requests()) {
-    MaybeUpdatePickerLocked();
-  }
+  // Update picker in case some dependent config field changed.
+  MaybeUpdatePickerLocked();
   // Update child policy.
   return UpdateChildPolicyLocked(std::move(args.addresses),
                                  std::move(args.resolution_note), args.args);
