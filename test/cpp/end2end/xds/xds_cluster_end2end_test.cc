@@ -330,8 +330,8 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
   SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
     if (result.status.ok()) return true;  // Keep going.
     EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-    EXPECT_EQ(absl::StrCat("CDS resource \"", kDefaultClusterName,
-                           "\" does not exist"),
+    EXPECT_EQ(absl::StrCat("CDS resource ", kDefaultClusterName,
+                           " does not exist"),
               result.status.error_message());
     return false;
   });

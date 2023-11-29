@@ -224,11 +224,18 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   }
   auto it = new_xds_config->clusters.find(new_config->cluster());
   if (it == new_xds_config->clusters.end()) {
-    // Should never happen.
-    absl::Status status = absl::InternalError(absl::StrCat(
-        "xDS config has no entry for cluster ", new_config->cluster()));
-    ReportTransientFailure(status);
-    return status;
+    // If the cluster is not present in the new config, that means that
+    // we're seeing an update where this cluster has just been removed
+    // from the config, and we should soon be destroyed.  In the
+    // interim, we ignore the update and keep using the old config.
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+      gpr_log(
+          GPR_INFO,
+          "[cdslb %p] xDS config has no entry for cluster %s, ignoring update",
+          this, new_config->cluster().c_str());
+    }
+    GPR_ASSERT(xds_config_ != nullptr);
+    return absl::OkStatus();
   }
   auto& new_cluster_list = it->second;
   // If new list is not OK, report TRANSIENT_FAILURE.
@@ -425,6 +432,8 @@ Json CdsLb::CreateChildPolicyConfig(
             state.cluster->type);
     const auto& priority_list = GetUpdatePriorityList(state.endpoints.get());
     const auto& cluster_resource = *state.cluster;
+    GPR_ASSERT(numbers_index < child_name_state_list_.size());
+    const auto& child_numbers = child_name_state_list_[numbers_index++];
     for (size_t priority = 0; priority < priority_list.size(); ++priority) {
       // Determine what xDS LB policy to use.
       Json child_policy;
@@ -544,8 +553,6 @@ Json CdsLb::CreateChildPolicyConfig(
            Json::FromObject(std::move(outlier_detection_config))},
       })});
       // Add priority entry, with the appropriate child name.
-      GPR_ASSERT(numbers_index < child_name_state_list_.size());
-      const auto& child_numbers = child_name_state_list_[numbers_index++];
       std::string child_name = MakeChildPolicyName(
           state.cluster_name, child_numbers.priority_child_numbers[priority]);
       priority_priorities.emplace_back(Json::FromString(child_name));
