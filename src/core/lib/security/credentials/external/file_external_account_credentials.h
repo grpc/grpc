@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
@@ -43,6 +45,8 @@ class FileExternalAccountCredentials final : public ExternalAccountCredentials {
   void RetrieveSubjectToken(
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) override;
+
+  absl::string_view CredentialSourceType() override;
 
   // Fields of credential source
   std::string file_;
