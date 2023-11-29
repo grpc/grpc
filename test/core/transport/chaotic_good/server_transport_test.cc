@@ -17,10 +17,8 @@
 // IWYU pragma: no_include <sys/socket.h>
 
 #include <algorithm>  // IWYU pragma: keep
-#include <cstddef>
 #include <memory>
 #include <string>  // IWYU pragma: keep
-#include <tuple>
 #include <vector>  // IWYU pragma: keep
 
 #include "absl/functional/any_invocable.h"
@@ -40,9 +38,6 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
-#include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -109,10 +104,7 @@ class ServerTransportTest : public ::testing::Test {
               return options;
             }(),
             fuzzing_event_engine::Actions())),
-        arena_(MakeScopedArena(initial_arena_size, &memory_allocator_)),
-        pipe_client_to_server_messages_(arena_.get()),
-        pipe_server_to_client_messages_(arena_.get()),
-        pipe_server_initial_metadata_(arena_.get()) {}
+        arena_(MakeScopedArena(initial_arena_size, &memory_allocator_)) {}
   void InitialServerTransport() {
     server_transport_ = std::make_unique<ServerTransport>(
         std::make_unique<PromiseEndpoint>(
@@ -185,15 +177,12 @@ class ServerTransportTest : public ::testing::Test {
           EXPECT_FALSE(md.empty());
           EXPECT_EQ(md.get_pointer(HttpPathMetadata())->as_string_view(),
                     "/demo.Service/Step");
-          auto call = MakeRefCounted<Call>(arena_.get(), 1, event_engine_);
-          CallInitiator call_initiator(call);
-          call_initiator.SetClientToServerMessage(
-              &pipe_client_to_server_messages_);
-          call_initiator.SetServerToClientMessage(
-              &pipe_server_to_client_messages_);
-          call_initiator.SetServerInitialMetadata(
-              &pipe_server_initial_metadata_);
-          return call_initiator;
+          call_ = MakeRefCounted<Call>(arena_.get(), 1, event_engine_);
+          call_initiator_ = std::make_shared<CallInitiator>(call_);
+          std::cout << "set pipes in call_initiator "
+                    << "\n";
+          fflush(stdout);
+          return call_initiator_;
         }));
     EXPECT_CALL(control_endpoint_, Read)
         .InSequence(control_endpoint_sequence)
@@ -215,36 +204,41 @@ class ServerTransportTest : public ::testing::Test {
               return true;
             }));
   }
-  auto ReadClientToServerMessage() {
-    std::cout << "read client message"
+  auto ReadClientToServerMessage(const std::shared_ptr<CallInitiator>& r) {
+    std::cout << "read client message "
               << "\n";
     fflush(stdout);
-    return Seq(pipe_client_to_server_messages_.receiver.Next(),
-               [this](NextResult<MessageHandle> message) {
-                 EXPECT_TRUE(message.has_value());
-                 EXPECT_EQ(message.value()->payload()->JoinIntoString(),
-                           message_);
-                 std::cout << "read client message done"
-                           << "\n";
-                 fflush(stdout);
-                 return absl::OkStatus();
-               });
+    auto read_client_message = [r, this] {
+      return Seq(r->PullClientToServerMessage(),
+                 [this, r](NextResult<MessageHandle> message) {
+                   EXPECT_TRUE(message.has_value());
+                   EXPECT_EQ(message.value()->payload()->JoinIntoString(),
+                             message_);
+                   r->CloseClientToServerPipe();
+                   std::cout << "read client message done"
+                             << "\n";
+                   fflush(stdout);
+                   return absl::OkStatus();
+                 });
+    };
+    return read_client_message;
   }
-  auto WriteServerToClientMessage() {
-    EXPECT_CALL(control_endpoint_, Write).WillOnce(Return(true));
-    EXPECT_CALL(data_endpoint_, Write).WillOnce(Return(true));
+  auto WriteServerToClientMessage(const std::shared_ptr<CallInitiator>& r) {
     std::cout << "write server message "
               << "\n";
     fflush(stdout);
-    return Seq(pipe_server_to_client_messages_.sender.Push(
-                   arena_->MakePooled<Message>()),
-               [](bool success) {
-                 EXPECT_TRUE(success);
-                 std::cout << "write server message done"
-                           << "\n";
-                 fflush(stdout);
-                 return absl::OkStatus();
-               });
+    auto write_server_message = [r, this] {
+      return Seq(r->PushServerToClientMessage(arena_->MakePooled<Message>()),
+                 [r](bool success) {
+                   EXPECT_TRUE(success);
+                   r->CloseServerToClientPipe();
+                   std::cout << "write server message done"
+                             << "\n";
+                   fflush(stdout);
+                   return absl::OkStatus();
+                 });
+    };
+    return write_server_message;
   }
 
  private:
@@ -262,36 +256,34 @@ class ServerTransportTest : public ::testing::Test {
       event_engine_;
   std::unique_ptr<ServerTransport> server_transport_;
   ScopedArenaPtr arena_;
-  Pipe<MessageHandle> pipe_client_to_server_messages_;
-  Pipe<MessageHandle> pipe_server_to_client_messages_;
-  Pipe<ServerMetadataHandle> pipe_server_initial_metadata_;
-  StrictMock<MockFunction<CallInitiator(ClientMetadata&)>> on_accept_;
+  StrictMock<MockFunction<std::shared_ptr<CallInitiator>(ClientMetadata&)>>
+      on_accept_;
+  RefCountedPtr<Call> call_;
+  std::shared_ptr<CallInitiator> call_initiator_;
   // Added to verify received message payload.
   const std::string message_ = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 };
 
 TEST_F(ServerTransportTest, ReadAndWriteOneMessage) {
   AddReadExpectation();
+  EXPECT_CALL(control_endpoint_, Write).WillOnce(Return(true));
+  EXPECT_CALL(data_endpoint_, Write).WillOnce(Return(true));
   InitialServerTransport();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
-  EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  auto activity = MakeActivity(
-      Seq(Join(ReadClientToServerMessage(), WriteServerToClientMessage()),
-          [](std::tuple<absl::Status, absl::Status> ret) {
-            EXPECT_TRUE(std::get<0>(ret).ok());
-            EXPECT_TRUE(std::get<1>(ret).ok());
-            std::cout << "read and write done"
-                      << "\n";
-            fflush(stdout);
-            return absl::OkStatus();
-          }),
-      EventEngineWakeupScheduler(
-          std::static_pointer_cast<
-              grpc_event_engine::experimental::EventEngine>(event_engine_)),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+  EXPECT_CALL(on_done, Call(absl::OkStatus())).Times(2);
+  auto on_done_action = [&on_done](absl::Status status) {
+    on_done.Call(std::move(status));
+  };
+  call_initiator_->Spawn(ReadClientToServerMessage(call_initiator_),
+                         on_done_action);
+  call_initiator_->Spawn(WriteServerToClientMessage(call_initiator_),
+                         on_done_action);
   // Wait until ClientTransport's internal activities to finish.
   event_engine_->TickUntilIdle();
   event_engine_->UnsetGlobalHooks();
+  std::cout << "ee done "
+            << "\n";
+  fflush(stdout);
 }
 
 }  // namespace testing
