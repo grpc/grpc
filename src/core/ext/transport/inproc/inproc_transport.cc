@@ -68,6 +68,9 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
       MutexLock lock(&state_tracker_mu_);
       state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
     }
+    if (op->set_accept_stream) {
+      Crash("set_accept_stream not supported on inproc transport");
+    }
   }
   grpc_endpoint* GetEndpoint() override { return nullptr; }
 

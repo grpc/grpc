@@ -57,6 +57,7 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -241,7 +242,18 @@ using NextPromiseFactory =
 
 class CallSpine : public RefCounted<CallSpine> {
  public:
-  CallSpine();
+  // Temp constructor for outer calls to initialize
+  // TODO(ctiller): remove when CallInitiator/CallHandler are the core call
+  // interface.
+  CallSpine(Party* party, Pipe<MessageHandle>* client_to_server_messages,
+            Pipe<ServerMetadataHandle>* server_initial_metadata,
+            Pipe<MessageHandle>* server_to_client_messages)
+      : client_initial_metadata_(party->arena()),
+        server_trailing_metadata_(party->arena()),
+        client_to_server_messages_(client_to_server_messages),
+        server_initial_metadata_(server_initial_metadata),
+        server_to_client_messages_(server_to_client_messages),
+        party_(party) {}
 
   Pipe<ClientMetadataHandle>& client_initial_metadata() {
     return client_initial_metadata_;
@@ -261,6 +273,11 @@ class CallSpine : public RefCounted<CallSpine> {
 
   Pipe<ServerMetadataHandle>& server_trailing_metadata() {
     return server_trailing_metadata_;
+  }
+
+  auto WaitForCancel() {
+    GPR_DEBUG_ASSERT(Activity::current() == party_);
+    return cancel_latch_.Wait();
   }
 
   Party* party() { return party_; }
@@ -322,6 +339,9 @@ class CallSpine : public RefCounted<CallSpine> {
 
 class CallInitiator {
  public:
+  explicit CallInitiator(RefCountedPtr<CallSpine> spine)
+      : spine_(std::move(spine)) {}
+
   auto PushClientInitialMetadata(ClientMetadataHandle md) {
     GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
     return Map(spine_->client_initial_metadata().sender.Push(std::move(md)),
@@ -340,11 +360,13 @@ class CallInitiator {
 
   auto PullServerTrailingMetadata() {
     GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
-    return Map(spine_->server_trailing_metadata().receiver.Next(),
-               [](NextResult<ServerMetadataHandle> md) -> ServerMetadataHandle {
-                 GPR_ASSERT(md.has_value());
-                 return std::move(*md);
-               });
+    return Race(spine_->WaitForCancel(),
+                Map(spine_->server_trailing_metadata().receiver.Next(),
+                    [spine = spine_](NextResult<ServerMetadataHandle> md)
+                        -> ServerMetadataHandle {
+                      GPR_ASSERT(md.has_value());
+                      return std::move(*md);
+                    }));
   }
 
   auto PullMessage() {
@@ -373,11 +395,14 @@ class CallInitiator {
   }
 
  private:
-  RefCountedPtr<CallSpine> spine_;
+  const RefCountedPtr<CallSpine> spine_;
 };
 
 class CallHandler {
  public:
+  explicit CallHandler(RefCountedPtr<CallSpine> spine)
+      : spine_(std::move(spine)) {}
+
   auto PullClientInitialMetadata() {
     GPR_DEBUG_ASSERT(Activity::current() == spine_->party());
     return Map(spine_->client_initial_metadata().receiver.Next(),
@@ -426,7 +451,7 @@ class CallHandler {
   }
 
  private:
-  RefCountedPtr<CallSpine> spine_;
+  const RefCountedPtr<CallSpine> spine_;
 };
 
 template <typename CallHalf>

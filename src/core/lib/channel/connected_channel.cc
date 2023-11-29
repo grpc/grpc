@@ -888,6 +888,9 @@ ArenaPromise<ServerMetadataHandle> MakeClientTransportCallPromise(
   auto initiator_and_handler =
       GetContext<CallContext>()->MakeTransitionCallInitiatorAndHandler(
           std::move(call_args));
+  auto initiator = std::move(initiator_and_handler.first);
+  transport->client_transport()->StartCall(
+      std::move(initiator_and_handler.second));
   return Seq(initiator.PushClientInitialMetadata(
                  std::move(call_args.client_initial_metadata)),
              initiator.PullServerTrailingMetadata());

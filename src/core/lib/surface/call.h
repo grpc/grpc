@@ -137,7 +137,8 @@ class CallContext {
 
   // Transition helpers: return either the CallHandler or CallInitiator half of
   // this call (taking ownership of it).
-  std::pair<CallInitiator, CallHandler> MakeTransitionCallInitiatorAndHandler();
+  std::pair<CallInitiator, CallHandler> MakeTransitionCallInitiatorAndHandler(
+      CallArgs call_args);
 
  private:
   friend class PromiseBasedCall;
@@ -153,6 +154,8 @@ class CallContext {
 
 template <>
 struct ContextType<CallContext> {};
+
+CallInitiator MakeServerCall(Server* server, RefCountedPtr<Channel> channel);
 
 }  // namespace grpc_core
 

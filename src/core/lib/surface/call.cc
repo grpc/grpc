@@ -2053,6 +2053,9 @@ class PromiseBasedCall : public Call,
     return channel()->event_engine();
   }
 
+  virtual std::pair<CallInitiator, CallHandler>
+  MakeTransitionCallInitiatorAndHandler(CallArgs call_args) = 0;
+
   using Call::arena;
 
  protected:
@@ -2685,6 +2688,11 @@ ServerCallContext* CallContext::server_call_context() {
   return call_->server_call_context();
 }
 
+std::pair<CallInitiator, CallHandler>
+CallContext::MakeTransitionCallInitiatorAndHandler(CallArgs call_args) {
+  return call_->MakeTransitionCallInitiatorAndHandler(std::move(call_args));
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // PublishMetadataArray
 
@@ -2805,6 +2813,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     return absl::StrFormat("CLIENT_CALL[%p]: ", this);
   }
 
+  std::pair<CallInitiator, CallHandler> MakeTransitionCallInitiatorAndHandler(
+      CallArgs call_args) override;
+
  private:
   // Finish the call with the given status/trailing metadata.
   void Finish(ServerMetadataHandle trailing_metadata);
@@ -2889,6 +2900,21 @@ void ClientPromiseBasedCall::StartPromise(
       [this](ServerMetadataHandle trailing_metadata) {
         Finish(std::move(trailing_metadata));
       });
+}
+
+std::pair<CallInitiator, CallHandler>
+ClientPromiseBasedCall::MakeTransitionCallInitiatorAndHandler(
+    CallArgs call_args) {
+  GPR_ASSERT(call_args.client_to_server_messages ==
+             &client_to_server_messages_.receiver);
+  GPR_ASSERT(call_args.server_initial_metadata ==
+             &server_initial_metadata_.sender);
+  GPR_ASSERT(call_args.server_to_client_messages ==
+             &server_to_client_messages_.sender);
+  auto spine = MakeRefCounted<CallSpine>(this, &client_to_server_messages_,
+                                         &server_initial_metadata_,
+                                         &server_to_client_messages_);
+  return std::make_pair(CallInitiator{spine}, CallHandler{spine});
 }
 
 grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
@@ -3190,6 +3216,9 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
 
   ServerCallContext* server_call_context() override { return &call_context_; }
 
+  std::pair<CallInitiator, CallHandler> MakeTransitionCallInitiatorAndHandler(
+      CallArgs call_args) override;
+
  private:
   class RecvCloseOpCancelState {
    public:
@@ -3326,6 +3355,12 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
             CallArgs{nullptr, ClientInitialMetadataOutstandingToken::Empty(),
                      nullptr, nullptr, nullptr, nullptr}),
         [this](ServerMetadataHandle result) { Finish(std::move(result)); });
+}
+
+std::pair<CallInitiator, CallHandler>
+ServerPromiseBasedCall::MakeTransitionCallInitiatorAndHandler(
+    CallArgs call_args) {
+  Crash("unimplemented");
 }
 
 void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
