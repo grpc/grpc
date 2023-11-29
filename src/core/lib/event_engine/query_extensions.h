@@ -57,7 +57,6 @@ class ExtendedEndpoint : public EventEngine::Endpoint, public Exports... {
   }
 };
 
-
 /// A helper method which returns a valid pointer if the extension is supported
 /// by the endpoint.
 template <typename T>
