@@ -470,6 +470,8 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
 }
 
 TEST_P(LdsRdsTest, NoMatchingRoute) {
+  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration route_config = default_route_config_;
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
