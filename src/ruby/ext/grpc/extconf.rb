@@ -111,6 +111,10 @@ if apple_toolchain && !cross_compiling
   end
 end
 
+# disable backwards compatibility mode on arm32 (arm-xxx) platforms
+if not RUBY_PLATFORM =~ /arm-/
+  env_append 'CPPFLAGS', '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
+end
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\""'
 
 require_relative '../../lib/grpc/version'
