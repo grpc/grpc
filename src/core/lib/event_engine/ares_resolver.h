@@ -54,7 +54,8 @@ extern grpc_core::TraceFlag grpc_trace_ares_resolver;
     }                                                                          \
   } while (0)
 
-class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
+class AresResolver : public EventEngine::DNSResolver,
+                     public grpc_core::InternallyRefCounted<AresResolver> {
  public:
   static absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>>
   CreateAresResolver(absl::string_view dns_server,
@@ -67,15 +68,13 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
   ~AresResolver() override;
   void Orphan() override ABSL_LOCKS_EXCLUDED(mutex_);
 
-  void LookupHostname(absl::string_view name, absl::string_view default_port,
-                      EventEngine::DNSResolver::LookupHostnameCallback callback)
-      ABSL_LOCKS_EXCLUDED(mutex_);
-  void LookupSRV(absl::string_view name,
-                 EventEngine::DNSResolver::LookupSRVCallback callback)
-      ABSL_LOCKS_EXCLUDED(mutex_);
-  void LookupTXT(absl::string_view name,
-                 EventEngine::DNSResolver::LookupTXTCallback callback)
-      ABSL_LOCKS_EXCLUDED(mutex_);
+  void LookupHostname(EventEngine::DNSResolver::LookupHostnameCallback callback,
+                      absl::string_view name, absl::string_view default_port)
+      ABSL_LOCKS_EXCLUDED(mutex_) override;
+  void LookupSRV(EventEngine::DNSResolver::LookupSRVCallback callback,
+                 absl::string_view name) ABSL_LOCKS_EXCLUDED(mutex_) override;
+  void LookupTXT(EventEngine::DNSResolver::LookupTXTCallback callback,
+                 absl::string_view name) ABSL_LOCKS_EXCLUDED(mutex_) override;
 
  private:
   // A FdNode saves (not owns) a live socket/fd which c-ares creates, and owns a

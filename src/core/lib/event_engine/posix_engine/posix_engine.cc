@@ -39,6 +39,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
+#include "src/core/lib/event_engine/native_dns_resolver.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
@@ -517,34 +518,30 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   return handle;
 }
 
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
-
 PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
-    grpc_core::OrphanablePtr<AresResolver> ares_resolver)
-    : ares_resolver_(std::move(ares_resolver)) {}
+    grpc_core::OrphanablePtr<EventEngine::DNSResolver> dns_resolver)
+    : dns_resolver_(std::move(dns_resolver)) {}
 
 void PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port) {
-  ares_resolver_->LookupHostname(name, default_port, std::move(on_resolve));
+  dns_resolver_->LookupHostname(std::move(on_resolve), name, default_port);
 }
 
 void PosixEventEngine::PosixDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
                                                    absl::string_view name) {
-  ares_resolver_->LookupSRV(name, std::move(on_resolve));
+  dns_resolver_->LookupSRV(std::move(on_resolve), name);
 }
 
 void PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
                                                    absl::string_view name) {
-  ares_resolver_->LookupTXT(name, std::move(on_resolve));
+  dns_resolver_->LookupTXT(std::move(on_resolve), name);
 }
-
-#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
 
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 PosixEventEngine::GetDNSResolver(
     const EventEngine::DNSResolver::ResolverOptions& options) {
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   auto ares_resolver = AresResolver::CreateAresResolver(
       options.dns_server,
       std::make_unique<GrpcPolledFdFactoryPosix>(poller_manager_->Poller()),
@@ -554,12 +551,12 @@ PosixEventEngine::GetDNSResolver(
   }
   return std::make_unique<PosixEventEngine::PosixDNSResolver>(
       std::move(*ares_resolver));
-#else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
-  // TODO(yijiem): Implement a basic A/AAAA-only native resolver in
-  // PosixEventEngine.
-  (void)options;
-  grpc_core::Crash("unimplemented");
-#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
+#else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+  auto native_dns_resolver =
+      grpc_core::MakeOrphanable<NativeDNSResolver>(shared_from_this());
+  return std::make_unique<PosixEventEngine::PosixDNSResolver>(
+      std::move(native_dns_resolver));
+#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 }
 
 bool PosixEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }

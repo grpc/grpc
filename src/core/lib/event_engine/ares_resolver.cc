@@ -230,8 +230,8 @@ void AresResolver::Orphan() {
 }
 
 void AresResolver::LookupHostname(
-    absl::string_view name, absl::string_view default_port,
-    EventEngine::DNSResolver::LookupHostnameCallback callback) {
+    EventEngine::DNSResolver::LookupHostnameCallback callback,
+    absl::string_view name, absl::string_view default_port) {
   absl::string_view host;
   absl::string_view port_string;
   if (!grpc_core::SplitHostPort(name, &host, &port_string)) {
@@ -296,8 +296,8 @@ void AresResolver::LookupHostname(
 }
 
 void AresResolver::LookupSRV(
-    absl::string_view name,
-    EventEngine::DNSResolver::LookupSRVCallback callback) {
+    EventEngine::DNSResolver::LookupSRVCallback callback,
+    absl::string_view name) {
   absl::string_view host;
   absl::string_view port;
   if (!grpc_core::SplitHostPort(name, &host, &port)) {
@@ -325,8 +325,8 @@ void AresResolver::LookupSRV(
 }
 
 void AresResolver::LookupTXT(
-    absl::string_view name,
-    EventEngine::DNSResolver::LookupTXTCallback callback) {
+    EventEngine::DNSResolver::LookupTXTCallback callback,
+    absl::string_view name) {
   absl::string_view host;
   absl::string_view port;
   if (!grpc_core::SplitHostPort(name, &host, &port)) {

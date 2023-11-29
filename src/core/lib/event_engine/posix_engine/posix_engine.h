@@ -141,11 +141,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
-    PosixDNSResolver() = delete;
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
     explicit PosixDNSResolver(
-        grpc_core::OrphanablePtr<AresResolver> ares_resolver);
-#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
+        grpc_core::OrphanablePtr<EventEngine::DNSResolver> dns_resolver);
     void LookupHostname(LookupHostnameCallback on_resolve,
                         absl::string_view name,
                         absl::string_view default_port) override;
@@ -154,10 +151,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
     void LookupTXT(LookupTXTCallback on_resolve,
                    absl::string_view name) override;
 
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
    private:
-    grpc_core::OrphanablePtr<AresResolver> ares_resolver_;
-#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
+    grpc_core::OrphanablePtr<EventEngine::DNSResolver> dns_resolver_;
   };
 
 #ifdef GRPC_POSIX_SOCKET_TCP
