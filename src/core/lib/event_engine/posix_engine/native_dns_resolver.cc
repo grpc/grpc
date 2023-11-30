@@ -28,7 +28,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/event_engine/native_dns_resolver.h"
+#include "src/core/lib/event_engine/posix_engine/native_dns_resolver.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 
