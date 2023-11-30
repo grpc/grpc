@@ -20,8 +20,6 @@
 
 #include <string.h>
 
-#include <memory>
-
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
