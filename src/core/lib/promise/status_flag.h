@@ -46,8 +46,8 @@ struct StatusCastImpl<absl::Status, const Success&> {
 class StatusFlag {
  public:
   explicit StatusFlag(bool value) : value_(value) {}
-  StatusFlag(Failure) : value_(false) {}
-  StatusFlag(Success) : value_(true) {}
+  explicit StatusFlag(Failure) : value_(false) {}
+  explicit StatusFlag(Success) : value_(true) {}
 
   bool ok() const { return value_; }
 
@@ -75,8 +75,8 @@ struct StatusCastImpl<absl::Status, const StatusFlag&> {
 template <typename T>
 class ValueOrFailure {
  public:
-  ValueOrFailure(T value) : value_(std::move(value)) {}
-  ValueOrFailure(Failure) {}
+  explicit ValueOrFailure(T value) : value_(std::move(value)) {}
+  explicit ValueOrFailure(Failure) {}
 
   static ValueOrFailure FromOptional(absl::optional<T> value) {
     return ValueOrFailure{std::move(value)};
