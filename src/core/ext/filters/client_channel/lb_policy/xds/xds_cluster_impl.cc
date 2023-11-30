@@ -474,18 +474,8 @@ void XdsClusterImplLb::ResetState() {
     child_policy_.reset();
   }
   // Clean up cert provider state.
-  if (root_certificate_provider_ != nullptr) {
-    grpc_pollset_set_del_pollset_set(
-        interested_parties(),
-        root_certificate_provider_->interested_parties());
-    root_certificate_provider_.reset();
-  }
-  if (identity_certificate_provider_ != nullptr) {
-    grpc_pollset_set_del_pollset_set(
-        interested_parties(),
-        identity_certificate_provider_->interested_parties());
-    identity_certificate_provider_.reset();
-  }
+  root_certificate_provider_.reset();
+  identity_certificate_provider_.reset();
   xds_certificate_provider_.reset();
   // Drop our ref to the child's picker, in case it's holding a ref to
   // the child.
@@ -624,20 +614,7 @@ absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
                        root_provider_instance_name, "\" not recognized."));
     }
   }
-  if (root_certificate_provider_ != new_root_provider) {
-    if (root_certificate_provider_ != nullptr &&
-        root_certificate_provider_->interested_parties() != nullptr) {
-      grpc_pollset_set_del_pollset_set(
-          interested_parties(),
-          root_certificate_provider_->interested_parties());
-    }
-    if (new_root_provider != nullptr &&
-        new_root_provider->interested_parties() != nullptr) {
-      grpc_pollset_set_add_pollset_set(interested_parties(),
-                                       new_root_provider->interested_parties());
-    }
-    root_certificate_provider_ = std::move(new_root_provider);
-  }
+  root_certificate_provider_ = std::move(new_root_provider);
   xds_certificate_provider_->UpdateRootCertNameAndDistributor(
       config_->cluster_name(), root_provider_cert_name,
       root_certificate_provider_ == nullptr
@@ -661,20 +638,7 @@ absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
                        identity_provider_instance_name, "\" not recognized."));
     }
   }
-  if (identity_certificate_provider_ != new_identity_provider) {
-    if (identity_certificate_provider_ != nullptr &&
-        identity_certificate_provider_->interested_parties() != nullptr) {
-      grpc_pollset_set_del_pollset_set(
-          interested_parties(),
-          identity_certificate_provider_->interested_parties());
-    }
-    if (new_identity_provider != nullptr &&
-        new_identity_provider->interested_parties() != nullptr) {
-      grpc_pollset_set_add_pollset_set(
-          interested_parties(), new_identity_provider->interested_parties());
-    }
-    identity_certificate_provider_ = std::move(new_identity_provider);
-  }
+  identity_certificate_provider_ = std::move(new_identity_provider);
   xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
       config_->cluster_name(), identity_provider_cert_name,
       identity_certificate_provider_ == nullptr
