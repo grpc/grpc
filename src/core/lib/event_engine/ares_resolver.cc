@@ -18,6 +18,8 @@
 #include <string>
 #include <vector>
 
+#include "dns_resolver.h"
+
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <ares_version.h>
@@ -193,9 +195,9 @@ AresResolver::CreateAresResolver(
 AresResolver::AresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     std::shared_ptr<EventEngine> event_engine, ares_channel channel)
-    : grpc_core::InternallyRefCounted<AresResolver>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
-                                                            : nullptr),
+    : DNSResolver(GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)
+                      ? "AresResolver"
+                      : nullptr),
       channel_(channel),
       polled_fd_factory_(std::move(polled_fd_factory)),
       event_engine_(std::move(event_engine)) {
@@ -387,7 +389,8 @@ void AresResolver::CheckSocketsLocked() {
             event_engine_->Run(
                 [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
                  fd_node]() mutable {
-                  self->OnReadable(fd_node, absl::OkStatus());
+                  static_cast<AresResolver*>(self.get())
+                      ->OnReadable(fd_node, absl::OkStatus());
                 });
           } else {
             // Otherwise register with the poller for readable event.
@@ -396,7 +399,8 @@ void AresResolver::CheckSocketsLocked() {
             fd_node->polled_fd->RegisterForOnReadableLocked(
                 [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
                  fd_node](absl::Status status) mutable {
-                  self->OnReadable(fd_node, status);
+                  static_cast<AresResolver*>(self.get())
+                      ->OnReadable(fd_node, status);
                 });
           }
         }
@@ -410,7 +414,8 @@ void AresResolver::CheckSocketsLocked() {
           fd_node->polled_fd->RegisterForOnWriteableLocked(
               [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
                fd_node](absl::Status status) mutable {
-                self->OnWritable(fd_node, status);
+                static_cast<AresResolver*>(self.get())
+                    ->OnWritable(fd_node, status);
               });
         }
       }
@@ -453,7 +458,7 @@ void AresResolver::MaybeStartTimerLocked() {
   ares_backup_poll_alarm_handle_ = event_engine_->RunAfter(
       kAresBackupPollAlarmDuration,
       [self = Ref(DEBUG_LOCATION, "MaybeStartTimerLocked")]() {
-        self->OnAresBackupPollAlarm();
+        static_cast<AresResolver*>(self.get())->OnAresBackupPollAlarm();
       });
 }
 

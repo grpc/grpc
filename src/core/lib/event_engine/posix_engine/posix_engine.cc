@@ -28,6 +28,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -36,7 +37,9 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/native_dns_resolver.h"
@@ -90,6 +93,10 @@ class TimerForkCallbackMethods {
   static void PostforkParent() { g_timer_fork_manager->PostforkParent(); }
   static void PostforkChild() { g_timer_fork_manager->PostforkChild(); }
 };
+
+bool ShouldUseAresDnsResolver(absl::string_view resolver_env) {
+  return resolver_env.empty() || absl::EqualsIgnoreCase(resolver_env, "ares");
+}
 
 }  // namespace
 
@@ -519,7 +526,8 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
 }
 
 PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
-    grpc_core::OrphanablePtr<EventEngine::DNSResolver> dns_resolver)
+    grpc_core::OrphanablePtr<grpc_event_engine::experimental::DNSResolver>
+        dns_resolver)
     : dns_resolver_(std::move(dns_resolver)) {}
 
 void PosixEventEngine::PosixDNSResolver::LookupHostname(
@@ -542,16 +550,34 @@ absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 PosixEventEngine::GetDNSResolver(
     const EventEngine::DNSResolver::ResolverOptions& options) {
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-  auto ares_resolver = AresResolver::CreateAresResolver(
-      options.dns_server,
-      std::make_unique<GrpcPolledFdFactoryPosix>(poller_manager_->Poller()),
-      shared_from_this());
-  if (!ares_resolver.ok()) {
-    return ares_resolver.status();
+  // If c-ares is supported on the platform, build according to user's
+  // configuration.
+  auto resolver = grpc_core::ConfigVars::Get().DnsResolver();
+  if (ShouldUseAresDnsResolver(resolver)) {
+    GRPC_EVENT_ENGINE_DNS_TRACE("PosixEventEngine:%p creating AresResolver",
+                                this);
+    auto ares_resolver = AresResolver::CreateAresResolver(
+        options.dns_server,
+        std::make_unique<GrpcPolledFdFactoryPosix>(poller_manager_->Poller()),
+        shared_from_this());
+    if (!ares_resolver.ok()) {
+      return ares_resolver.status();
+    }
+    return std::make_unique<PosixEventEngine::PosixDNSResolver>(
+        std::move(*ares_resolver));
+  } else {
+    GRPC_EVENT_ENGINE_DNS_TRACE(
+        "PosixEventEngine:%p creating NativeDNSResolver", this);
+    auto native_dns_resolver =
+        grpc_core::MakeOrphanable<NativeDNSResolver>(shared_from_this());
+    return std::make_unique<PosixEventEngine::PosixDNSResolver>(
+        std::move(native_dns_resolver));
   }
-  return std::make_unique<PosixEventEngine::PosixDNSResolver>(
-      std::move(*ares_resolver));
 #else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+  // If c-ares is not supported on the platform, always build with
+  // NativeDNSResolver.
+  GRPC_EVENT_ENGINE_DNS_TRACE("PosixEventEngine:%p creating NativeDNSResolver",
+                              this);
   auto native_dns_resolver =
       grpc_core::MakeOrphanable<NativeDNSResolver>(shared_from_this());
   return std::make_unique<PosixEventEngine::PosixDNSResolver>(

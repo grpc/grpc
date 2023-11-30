@@ -38,6 +38,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/dns_resolver.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -54,8 +55,7 @@ extern grpc_core::TraceFlag grpc_trace_ares_resolver;
     }                                                                          \
   } while (0)
 
-class AresResolver : public EventEngine::DNSResolver,
-                     public grpc_core::InternallyRefCounted<AresResolver> {
+class AresResolver : public DNSResolver {
  public:
   static absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>>
   CreateAresResolver(absl::string_view dns_server,

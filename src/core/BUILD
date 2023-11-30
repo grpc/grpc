@@ -2141,6 +2141,7 @@ grpc_cc_library(
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
         "useful",
+        "//:config_vars",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
@@ -2462,6 +2463,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "dns_resolver",
+    hdrs = ["lib/event_engine/dns_resolver.h"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:orphanable",
+    ],
+)
+
+grpc_cc_library(
     name = "native_dns_resolver",
     srcs = [
         "lib/event_engine/posix_engine/native_dns_resolver.cc",
@@ -2470,6 +2480,7 @@ grpc_cc_library(
         "lib/event_engine/native_dns_resolver.h",
     ],
     deps = [
+        "dns_resolver",
         "iomgr_port",
         "useful",
         "//:event_engine_base_hdrs",
@@ -2505,6 +2516,7 @@ grpc_cc_library(
     ],
     deps = [
         "common_event_engine_closures",
+        "dns_resolver",
         "error",
         "event_engine_time_util",
         "grpc_sockaddr",
