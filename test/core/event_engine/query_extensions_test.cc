@@ -11,17 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "src/core/lib/event_engine/query_extensions.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/event_engine/query_extensions.h"
 
 #include <string>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
+
 #include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_event_engine {
@@ -49,7 +51,7 @@ class ExtendedTestEndpoint
                               TestExtension<2>> {
  public:
   ExtendedTestEndpoint() = default;
-  ~ExtendedTestEndpoint() = default;
+  ~ExtendedTestEndpoint() override = default;
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* args) override {
     grpc_core::Crash("Not implemented");
