@@ -177,7 +177,7 @@ class ServerTransportTest : public ::testing::Test {
           EXPECT_FALSE(md.empty());
           EXPECT_EQ(md.get_pointer(HttpPathMetadata())->as_string_view(),
                     "/demo.Service/Step");
-          call_ = MakeRefCounted<Call>(arena_.get(), 1, event_engine_);
+          call_ = MakeRefCounted<Call>(arena_, 1, event_engine_);
           call_initiator_ = std::make_shared<CallInitiator>(call_);
           std::cout << "set pipes in call_initiator "
                     << "\n";
@@ -232,6 +232,7 @@ class ServerTransportTest : public ::testing::Test {
                  [r](bool success) {
                    EXPECT_TRUE(success);
                    r->CloseServerToClientPipe();
+                   r->CloseServerInitialMetadataPipe();
                    std::cout << "write server message done"
                              << "\n";
                    fflush(stdout);
@@ -255,13 +256,13 @@ class ServerTransportTest : public ::testing::Test {
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       event_engine_;
   std::unique_ptr<ServerTransport> server_transport_;
-  ScopedArenaPtr arena_;
   StrictMock<MockFunction<std::shared_ptr<CallInitiator>(ClientMetadata&)>>
       on_accept_;
   RefCountedPtr<Call> call_;
   std::shared_ptr<CallInitiator> call_initiator_;
   // Added to verify received message payload.
   const std::string message_ = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  std::shared_ptr<Arena> arena_;
 };
 
 TEST_F(ServerTransportTest, ReadAndWriteOneMessage) {

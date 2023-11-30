@@ -76,18 +76,19 @@ namespace chaotic_good {
 // TODO(ladynana): convert to the true Call/CallInitiator once available.
 class Call : public Party {
  public:
-  explicit Call(Arena* arena, uint32_t stream_id,
+  explicit Call(std::shared_ptr<Arena> arena, uint32_t stream_id,
                 std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                     event_engine)
-      : Party(arena, 1),
+      : Party(arena.get(), 1),
         ee_(event_engine),
+        arena_(arena),
         stream_id_(stream_id),
         pipe_client_to_server_messages_(
-            std::make_unique<Pipe<MessageHandle>>(arena)),
+            std::make_unique<Pipe<MessageHandle>>(arena_.get())),
         pipe_server_to_client_messages_(
-            std::make_unique<Pipe<MessageHandle>>(arena)),
+            std::make_unique<Pipe<MessageHandle>>(arena_.get())),
         pipe_server_initial_metadata_(
-            std::make_unique<Pipe<ServerMetadataHandle>>(arena)){};
+            std::make_unique<Pipe<ServerMetadataHandle>>(arena_.get())){};
   ~Call() override {}
   std::string DebugTag() const override { return "TestCall"; }
   bool RunParty() override {
@@ -164,12 +165,21 @@ class Call : public Party {
               << "\n";
     fflush(stdout);
   }
+  void CloseServerInitialMetadataPipe() {
+    GPR_ASSERT(Activity::current() == this);
+    pipe_server_initial_metadata_->sender.Close();
+    pipe_server_initial_metadata_->receiver.AwaitClosed();
+    std::cout << "close server to client pipe "
+              << "\n";
+    fflush(stdout);
+  }
 
  private:
   grpc_event_engine::experimental::EventEngine* event_engine() const final {
     return ee_.get();
   }
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee_;
+  std::shared_ptr<Arena> arena_;
   uint32_t stream_id_;
   std::unique_ptr<Pipe<MessageHandle>> pipe_client_to_server_messages_;
   std::unique_ptr<Pipe<MessageHandle>> pipe_server_to_client_messages_;
@@ -222,6 +232,10 @@ class CallInitiator {
     GPR_ASSERT(Activity::current() == call_->current());
     call_->CloseServerToClientPipe();
   }
+  void CloseServerInitialMetadataPipe() {
+    GPR_ASSERT(Activity::current() == call_->current());
+    call_->CloseServerInitialMetadataPipe();
+  }
 
  private:
   RefCountedPtr<Call> call_;
@@ -252,6 +266,12 @@ class ServerTransport {
     fflush(stdout);
     if (!outgoing_frames_.receiver.IsClose()) {
       outgoing_frames_.receiver.MarkClose();
+    }
+    MutexLock lock(&mu_);
+    for (const auto& pair : stream_map_) {
+      if (!pair.second->IsClose()) {
+        pair.second->MarkClose();
+      }
     }
   }
 
