@@ -245,7 +245,8 @@ class CallSpine : public RefCounted<CallSpine> {
   // Temp constructor for outer calls to initialize
   // TODO(ctiller): remove when CallInitiator/CallHandler are the core call
   // interface.
-  CallSpine(Party* party, Pipe<MessageHandle>* client_to_server_messages,
+  CallSpine(grpc_call* underlying_call, Party* party,
+            Pipe<MessageHandle>* client_to_server_messages,
             Pipe<ServerMetadataHandle>* server_initial_metadata,
             Pipe<MessageHandle>* server_to_client_messages)
       : client_initial_metadata_(party->arena()),
@@ -253,7 +254,18 @@ class CallSpine : public RefCounted<CallSpine> {
         client_to_server_messages_(client_to_server_messages),
         server_initial_metadata_(server_initial_metadata),
         server_to_client_messages_(server_to_client_messages),
-        party_(party) {}
+        party_(party),
+        underlying_call_(underlying_call) {}
+
+  ~CallSpine() {
+    if (underlying_call_ != nullptr) {
+      // HACK: server sets this when it wants us to own all the objects
+      grpc_call_unref(underlying_call_);
+      delete client_to_server_messages_;
+      delete server_to_client_messages_;
+      delete server_initial_metadata_;
+    }
+  }
 
   Pipe<ClientMetadataHandle>& client_initial_metadata() {
     return client_initial_metadata_;
@@ -335,6 +347,7 @@ class CallSpine : public RefCounted<CallSpine> {
   Pipe<ServerMetadataHandle>* const server_initial_metadata_;
   Pipe<MessageHandle>* const server_to_client_messages_;
   Party* const party_;
+  grpc_call* const underlying_call_;
 };
 
 class CallInitiator {

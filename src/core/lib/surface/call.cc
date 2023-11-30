@@ -2911,9 +2911,9 @@ ClientPromiseBasedCall::MakeTransitionCallInitiatorAndHandler(
              &server_initial_metadata_.sender);
   GPR_ASSERT(call_args.server_to_client_messages ==
              &server_to_client_messages_.sender);
-  auto spine = MakeRefCounted<CallSpine>(this, &client_to_server_messages_,
-                                         &server_initial_metadata_,
-                                         &server_to_client_messages_);
+  auto spine = MakeRefCounted<CallSpine>(
+      nullptr, this, &client_to_server_messages_, &server_initial_metadata_,
+      &server_to_client_messages_);
   return std::make_pair(CallInitiator{spine}, CallHandler{spine});
 }
 
@@ -3218,6 +3218,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
 
   std::pair<CallInitiator, CallHandler> MakeTransitionCallInitiatorAndHandler(
       CallArgs call_args) override;
+  CallInitiator MakeOwningCallInitiator();
 
  private:
   class RecvCloseOpCancelState {
@@ -3357,14 +3358,36 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
         [this](ServerMetadataHandle result) { Finish(std::move(result)); });
 }
 
+CallInitiator ServerPromiseBasedCall::MakeOwningCallInitiator() {
+  auto* client_to_server_messages = new Pipe<MessageHandle>(arena());
+  auto* server_to_client_messages = new Pipe<MessageHandle>(arena());
+  auto* server_initial_metadata = new Pipe<ServerMetadataHandle>(arena());
+  auto spine = MakeRefCounted<CallSpine>(
+      static_cast<PromiseBasedCall*>(Ref().release())->c_ptr(), this,
+      client_to_server_messages, server_to_client_messages,
+      server_initial_metadata);
+  client_to_server_messages_ = &client_to_server_messages->receiver;
+  return CallInitiator{spine};
+}
+
 CallInitiator MakeServerCall(Server* server, RefCountedPtr<Channel> channel) {
   const auto initial_size = channel->CallSizeEstimate();
   global_stats().IncrementCallInitialSize(initial_size);
   auto alloc = Arena::CreateWithAlloc(
       initial_size, sizeof(ServerPromiseBasedCall), channel->allocator());
-  ServerPromiseBasedCall* call = new (alloc.second)
-      ServerPromiseBasedCall(alloc.first, server, std::move(channel));
-  return CallInitiator{MakeRefCounted<CallSpine>(call)};
+  grpc_call_create_args args;
+  args.channel = std::move(channel);
+  args.server = server;
+  args.parent = nullptr;
+  args.propagation_mask = 0;
+  args.cq = nullptr;
+  args.pollset_set_alternative = nullptr;
+  args.server_transport_data =
+      reinterpret_cast<void*>(static_cast<uintptr_t>(1));
+  args.send_deadline = Timestamp::InfFuture();
+  ServerPromiseBasedCall* call =
+      new (alloc.second) ServerPromiseBasedCall(alloc.first, &args);
+  return call->MakeOwningCallInitiator();
 }
 
 std::pair<CallInitiator, CallHandler>
