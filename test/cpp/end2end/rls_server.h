@@ -17,8 +17,6 @@
 #ifndef GRPC_TEST_CPP_END2END_RLS_SERVER_H
 #define GRPC_TEST_CPP_END2END_RLS_SERVER_H
 
-#include "absl/types/optional.h"
-
 #include "src/core/lib/gprpp/time.h"
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
