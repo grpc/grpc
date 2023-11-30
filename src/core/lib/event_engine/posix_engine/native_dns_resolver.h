@@ -44,7 +44,7 @@ class NativeDNSResolver : public DNSResolver {
   void LookupTXT(EventEngine::DNSResolver::LookupTXTCallback on_resolved,
                  absl::string_view name) override;
 
-  void Orphan() override {}
+  void Orphan() override { delete this; }
 
  private:
   std::shared_ptr<EventEngine> event_engine_;
