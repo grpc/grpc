@@ -52,19 +52,20 @@ class ExtendedTestEndpoint
   ExtendedTestEndpoint() = default;
   ~ExtendedTestEndpoint() = default;
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* args) override {
+            const EventEngine::Endpoint::ReadArgs* args) {
     grpc_core::Crash("Not implemented");
   };
   virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-                     SliceBuffer* data, const WriteArgs* args) {
+                     SliceBuffer* data,
+                     const EventEngine::Endpoint::WriteArgs* args) {
     grpc_core::Crash("Not implemented");
   }
   /// Returns an address in the format described in DNSResolver. The returned
   /// values are expected to remain valid for the life of the Endpoint.
-  const EventEngine::ResolvedAddress& GetPeerAddress() const override {
+  const EventEngine::ResolvedAddress& GetPeerAddress() const {
     grpc_core::Crash("Not implemented");
   }
-  const EventEngine::ResolvedAddress& GetLocalAddress() const override {
+  const EventEngine::ResolvedAddress& GetLocalAddress() const {
     grpc_core::Crash("Not implemented");
   };
 };

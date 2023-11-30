@@ -50,7 +50,7 @@ struct QueryExtensionRecursion<Querying> {
 template <typename... Exports>
 class ExtendedEndpoint : public EventEngine::Endpoint, public Exports... {
  public:
-  void* QueryExtension(absl::string_view id) override {
+  void* QueryExtension(absl::string_view id) {
     return endpoint_detail::QueryExtensionRecursion<ExtendedEndpoint,
                                                     Exports...>::Query(id,
                                                                        this);
