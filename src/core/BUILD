@@ -2120,6 +2120,7 @@ grpc_cc_library(
     ],
     deps = [
         "ares_resolver",
+        "dns_resolver",
         "event_engine_common",
         "event_engine_poller",
         "event_engine_tcp_socket_utils",
