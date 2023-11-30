@@ -668,11 +668,6 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
   if (!state.update.ok()) return state.update.status();
   // If we don't have the resource yet, we can't return a config yet.
   if (*state.update == nullptr) return false;
-  // We have the resource, so add an entry to the map.
-  cluster_list->emplace_back();
-  auto& entry = cluster_list->back();
-  entry.cluster_name = name;
-  entry.cluster = *state.update;
   // Populate endpoint info based on cluster type.
   return Match(
       (*state.update)->type,
@@ -702,6 +697,10 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
           return false;
         }
         // Populate endpoint info.
+        cluster_list->emplace_back();
+        auto& entry = cluster_list->back();
+        entry.cluster_name = name;
+        entry.cluster = *state.update;
         entry.endpoints = eds_state.update.endpoints;
         entry.resolution_note = eds_state.update.resolution_note;
         return true;
@@ -750,6 +749,10 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
           return false;
         }
         // Populate endpoint info.
+        cluster_list->emplace_back();
+        auto& entry = cluster_list->back();
+        entry.cluster_name = name;
+        entry.cluster = *state.update;
         entry.endpoints = dns_state.update.endpoints;
         entry.resolution_note = dns_state.update.resolution_note;
         return true;
@@ -836,7 +839,10 @@ void XdsDependencyManager::MaybeReportUpdate() {
       cluster_list = result.status();
     } else if (!*result) {
       missing_data = true;
-    } else if (cluster_list->empty()) {
+    } else if (cluster_list->empty() ||
+               (absl::holds_alternative<XdsClusterResource::Aggregate>(
+                    cluster_list->front().cluster->type) &&
+                cluster_list->size() == 1)) {
       cluster_list = absl::UnavailableError(absl::StrCat(
           "aggregate cluster dependency graph for ", cluster,
           " has no leaf clusters"));
