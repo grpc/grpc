@@ -86,18 +86,23 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
   CdsLbConfig(CdsLbConfig&& other) = delete;
   CdsLbConfig& operator=(CdsLbConfig&& other) = delete;
 
-  const std::string& cluster() const { return cluster_; }
   absl::string_view name() const override { return kCds; }
 
+  const std::string& cluster() const { return cluster_; }
+  bool is_dynamic() const { return is_dynamic_; }
+
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* loader = JsonObjectLoader<CdsLbConfig>()
-                                    .Field("cluster", &CdsLbConfig::cluster_)
-                                    .Finish();
+    static const auto* loader =
+        JsonObjectLoader<CdsLbConfig>()
+            .Field("cluster", &CdsLbConfig::cluster_)
+            .OptionalField("isDynamic", &CdsLbConfig::is_dynamic_)
+            .Finish();
     return loader;
   }
 
  private:
   std::string cluster_;
+  bool is_dynamic_ = false;
 };
 
 // CDS LB policy.
@@ -147,6 +152,9 @@ class CdsLb : public LoadBalancingPolicy {
 
   std::string cluster_name_;
   RefCountedPtr<XdsConfig> xds_config_;
+
+  // Cluster subscription, for dynamic clusters (e.g., RLS).
+  RefCountedPtr<XdsDependencyManager::ClusterSubscription> subscription_;
 
   // The elements in this vector correspond to those in
   // xds_config_->clusters[cluster_name_].
@@ -209,8 +217,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Get new config.
   RefCountedPtr<CdsLbConfig> new_config = std::move(args.config);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s", this,
-            new_config->cluster().c_str());
+    gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s is_dynamic=%d",
+            this, new_config->cluster().c_str(), new_config->is_dynamic());
   }
   GPR_ASSERT(new_config != nullptr);
   // Get xDS config.
@@ -224,6 +232,23 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   }
   auto it = new_xds_config->clusters.find(new_config->cluster());
   if (it == new_xds_config->clusters.end()) {
+    // Cluster not present.
+    // If this is a dynamic cluster, subscribe to it if we're not yet
+    // subscribed.
+    if (new_config->is_dynamic() && subscription_ == nullptr) {
+      auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
+      if (dependency_mgr == nullptr) {
+        // Should never happen.
+        absl::Status status = absl::InternalError(
+            "xDS dependency mgr not passed to CDS LB policy");
+        ReportTransientFailure(status);
+        return status;
+      }
+      subscription_ =
+          dependency_mgr->GetClusterSubscription(new_config->cluster());
+      // Stay in CONNECTING until we get an update that has the cluster.
+      return absl::OkStatus();
+    }
     // If the cluster is not present in the new config, that means that
     // we're seeing an update where this cluster has just been removed
     // from the config, and we should soon be destroyed.  In the

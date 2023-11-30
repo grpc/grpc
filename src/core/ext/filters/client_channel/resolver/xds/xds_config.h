@@ -33,7 +33,8 @@ namespace grpc_core {
 
 // Watches all xDS resources and handles dependencies between them.
 // Reports updates only when all necessary resources have been obtained.
-class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
+class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
+                             public Orphanable {
  public:
   struct XdsConfig : public RefCounted<XdsConfig> {
     // Listener resource.
@@ -87,6 +88,20 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
     virtual void OnResourceDoesNotExist(std::string context) = 0;
   };
 
+  class ClusterSubscription : public DualRefCounted<ClusterSubscription> {
+   public:
+    ClusterSubscription(std::string cluster_name,
+                        RefCountedPtr<XdsDependencyManager> dependency_mgr)
+        : cluster_name_(std::move(cluster_name)),
+          dependency_mgr_(std::move(dependency_mgr)) {}
+
+    void Orphan() override;
+
+   private:
+    std::string cluster_name_;
+    RefCountedPtr<XdsDependencyManager> dependency_mgr_;
+  };
+
   XdsDependencyManager(
       RefCountedPtr<GrpcXdsClient> xds_client,
       std::shared_ptr<WorkSerializer> work_serializer,
@@ -94,6 +109,21 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
       std::string listener_resource_name);
 
   void Orphan() override;
+
+  // Gets an external cluster subscription.  This allows us to include
+  // clusters in the config that are referenced by something other than
+  // the route config (e.g., RLS).  The cluster will be included in the
+  // config as long as the returned object is still referenced.
+  RefCountedPtr<ClusterSubscription> GetClusterSubscription(
+      std::string cluster_name);
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_dependency_manager";
+  }
+  static int ChannelArgsCompare(const XdsDependencyManager* a,
+                                const XdsDependencyManager* b) {
+    return QsortCompare(a, b);
+  }
 
  private:
   class ListenerWatcher;
@@ -168,6 +198,10 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
       int depth, std::set<std::string>* clusters_seen,
       std::set<std::string>* eds_resources_seen);
 
+  // Called when an external cluster subscription is unreffed.
+  void OnClusterSubscriptionUnref(std::string cluster_name,
+                                  ClusterSubscription* subscription);
+
   // Checks whether all necessary resources have been obtained, and if
   // so reports an update to the watcher.
   void MaybeReportUpdate();
@@ -192,6 +226,8 @@ class XdsDependencyManager : public InternallyRefCounted<XdsDependencyManager> {
 
   // Cluster state.
   std::map<std::string, ClusterWatcherState> cluster_watchers_;
+  std::map<std::string, WeakRefCountedPtr<ClusterSubscription>>
+      cluster_subscriptions_;
 
   // Endpoint state.
   std::map<std::string, EndpointWatcherState> endpoint_watchers_;

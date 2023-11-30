@@ -218,6 +218,19 @@ class XdsDependencyManager::EndpointWatcher
 };
 
 //
+// XdsDependencyManager::ClusterSubscription
+//
+
+void XdsDependencyManager::ClusterSubscription::Orphan() {
+  dependency_mgr_->work_serializer_->Run(
+      [self = WeakRef()]() {
+        self->dependency_mgr_->OnClusterSubscriptionUnref(self->cluster_name_,
+                                                          self.get());
+      },
+      DEBUG_LOCATION);
+}
+
+//
 // XdsDependencyManager
 //
 
@@ -266,6 +279,7 @@ void XdsDependencyManager::Orphan() {
         xds_client_.get(), p.first, p.second.watcher,
         /*delay_unsubscription=*/false);
   }
+  cluster_subscriptions_.clear();
   xds_client_.reset();
   for (auto& p : dns_resolvers_) {
     p.second.resolver.reset();
@@ -581,8 +595,9 @@ std::set<std::string> XdsDependencyManager::GetClustersFromRouteConfig(
         },
         // ClusterSpecifierPlugin
         [&](const XdsRouteConfigResource::Route::RouteAction::
-                ClusterSpecifierPluginName& cluster_specifier_plugin_name) {
-// FIXME: plugin needs to expose a method to get us the list of possible clusters
+                ClusterSpecifierPluginName&) {
+          // Clusters are determined dynamically in this case, so we
+          // can't add any clusters here.
         });
   }
   return clusters;
@@ -678,6 +693,41 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
       });
 }
 
+RefCountedPtr<XdsDependencyManager::ClusterSubscription>
+XdsDependencyManager::GetClusterSubscription(std::string cluster_name) {
+  auto it = cluster_subscriptions_.find(cluster_name);
+  if (it != cluster_subscriptions_.end()) {
+    auto subscription = it->second->RefIfNonZero();
+    if (subscription != nullptr) return subscription;
+  }
+  auto subscription =
+      MakeRefCounted<ClusterSubscription>(cluster_name, Ref());
+  cluster_subscriptions_.emplace(std::move(cluster_name),
+                                 subscription->WeakRef());
+  MaybeReportUpdate();  // Trigger CDS watch.
+  return subscription;
+}
+
+void XdsDependencyManager::OnClusterSubscriptionUnref(
+    std::string cluster_name, ClusterSubscription* subscription) {
+  auto it = cluster_subscriptions_.find(cluster_name);
+  // Shouldn't happen, but ignore if it does.
+  if (it == cluster_subscriptions_.end()) return;
+  // Do nothing if the subscription has already been replaced.
+  if (it->second != subscription) return;
+  // Remove the entry.
+  cluster_subscriptions_.erase(it);
+  // If this cluster is also subscribed to by virtue of being
+  // referenced in the route config, then we don't need to generate a
+  // new update.
+  if (clusters_from_route_config_.find(cluster_name) !=
+      clusters_from_route_config_.end()) {
+    return;
+  }
+  // Return an update without this cluster.
+  MaybeReportUpdate();
+}
+
 void XdsDependencyManager::MaybeReportUpdate() {
   // Populate Listener and RouteConfig fields.
   if (current_virtual_host_ == nullptr) return;
@@ -685,13 +735,22 @@ void XdsDependencyManager::MaybeReportUpdate() {
   config->listener = current_listener_;
   config->route_config = current_route_config_;
   config->virtual_host = current_virtual_host_;
+  // Determine the set of clusters we should be watching.
+// FIXME: change this to use absl::string_view instead
+  std::set<std::string> clusters_to_watch;
+  for (const std::string& cluster : clusters_from_route_config_) {
+    clusters_to_watch.insert(cluster);
+  }
+  for (const auto& p : cluster_subscriptions_) {
+    clusters_to_watch.insert(p.first);
+  }
   // Populate Cluster map.
   // We traverse the entire graph even if we don't yet have all of the
   // resources we need to ensure that the right set of watches are active.
   std::set<std::string> clusters_seen;
   std::set<std::string> eds_resources_seen;
   bool missing_data = false;
-  for (const std::string& cluster : clusters_from_route_config_) {
+  for (const std::string& cluster : clusters_to_watch) {
     auto& cluster_list = config->clusters[cluster];
     cluster_list.emplace();
     auto result = PopulateClusterConfigList(
