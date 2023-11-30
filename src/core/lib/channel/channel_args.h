@@ -142,10 +142,6 @@ struct is_shared_ptr : std::false_type {};
 template <typename T>
 struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
 template <typename T>
-// struct ChannelArgTypeTraits<
-//     T, absl::enable_if_t<is_shared_ptr<T>::value &&
-//     SupportedSharedPtrType<T>::value,
-//                          void>> {
 struct ChannelArgTypeTraits<T,
                             absl::enable_if_t<is_shared_ptr<T>::value, void>> {
   static void* TakeUnownedPointer(T* p) { return p; }
