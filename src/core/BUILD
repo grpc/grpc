@@ -5663,12 +5663,15 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     language = "c++",
     deps = [
+        "grpc_lb_xds_channel_args",
         "grpc_resolver_xds_trace",
         "grpc_xds_client",
         "match",
         "ref_counted",
+        "//:config",
         "//:gpr",
         "//:grpc_resolver",
+        "//:grpc_resolver_fake",
     ],
 )
 

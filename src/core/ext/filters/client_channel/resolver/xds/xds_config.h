@@ -106,7 +106,8 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
       RefCountedPtr<GrpcXdsClient> xds_client,
       std::shared_ptr<WorkSerializer> work_serializer,
       std::unique_ptr<Watcher> watcher, std::string data_plane_authority,
-      std::string listener_resource_name);
+      std::string listener_resource_name, ChannelArgs args,
+      grpc_pollset_set* interested_parties);
 
   void Orphan() override;
 
@@ -130,6 +131,8 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   class RouteConfigWatcher;
   class ClusterWatcher;
   class EndpointWatcher;
+
+  class DnsResultHandler;
 
   struct ClusterWatcherState {
     // Pointer to watcher, to be used when cancelling.
@@ -179,6 +182,7 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   void OnEndpointDoesNotExist(const std::string& name);
 
   void OnDnsResult(const std::string& dns_name, Resolver::Result result);
+  void PopulateDnsUpdate(const std::string& dns_name, Resolver::Result result);
 
   // Gets the set of clusters referenced in the specified route config.
   std::set<std::string> GetClustersFromRouteConfig(
@@ -212,6 +216,8 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   std::unique_ptr<Watcher> watcher_;
   const std::string data_plane_authority_;
   const std::string listener_resource_name_;
+  ChannelArgs args_;
+  grpc_pollset_set* interested_parties_;
 
   // Listener state.
   ListenerWatcher* listener_watcher_ = nullptr;

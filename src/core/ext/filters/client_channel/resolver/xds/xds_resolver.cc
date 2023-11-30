@@ -911,7 +911,7 @@ void XdsResolver::StartLocked() {
   // Start watch for xDS config.
   dependency_mgr_ = MakeOrphanable<XdsDependencyManager>(
       xds_client_, work_serializer_, std::make_unique<XdsWatcher>(Ref()),
-      data_plane_authority_, lds_resource_name_);
+      data_plane_authority_, lds_resource_name_, args_, interested_parties_);
 }
 
 void XdsResolver::ShutdownLocked() {

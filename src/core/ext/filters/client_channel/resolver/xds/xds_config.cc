@@ -20,8 +20,11 @@
 
 #include "absl/strings/str_join.h"
 
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_routing.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/match.h"
 
 namespace grpc_core {
@@ -40,41 +43,41 @@ constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
 class XdsDependencyManager::ListenerWatcher
     : public XdsListenerResourceType::WatcherInterface {
  public:
-  explicit ListenerWatcher(RefCountedPtr<XdsDependencyManager> config_watcher)
-      : config_watcher_(std::move(config_watcher)) {}
+  explicit ListenerWatcher(RefCountedPtr<XdsDependencyManager> dependency_mgr)
+      : dependency_mgr_(std::move(dependency_mgr)) {}
 
   void OnResourceChanged(
       std::shared_ptr<const XdsListenerResource> listener) override {
-    config_watcher_->work_serializer_->Run(
-        [config_watcher = config_watcher_,
+    dependency_mgr_->work_serializer_->Run(
+        [dependency_mgr = dependency_mgr_,
          listener = std::move(listener)]() mutable {
-          config_watcher->OnListenerUpdate(std::move(listener));
+          dependency_mgr->OnListenerUpdate(std::move(listener));
         },
         DEBUG_LOCATION);
   }
 
   void OnError(absl::Status status) override {
-    config_watcher_->work_serializer_->Run(
-        [config_watcher = config_watcher_,
+    dependency_mgr_->work_serializer_->Run(
+        [dependency_mgr = dependency_mgr_,
          status = std::move(status)]() mutable {
-          config_watcher->OnError(config_watcher->listener_resource_name_,
+          dependency_mgr->OnError(dependency_mgr->listener_resource_name_,
                                   std::move(status));
         },
         DEBUG_LOCATION);
   }
 
   void OnResourceDoesNotExist() override {
-    config_watcher_->work_serializer_->Run(
-        [config_watcher = config_watcher_]() {
-          config_watcher->OnResourceDoesNotExist(
-              absl::StrCat(config_watcher->listener_resource_name_,
+    dependency_mgr_->work_serializer_->Run(
+        [dependency_mgr = dependency_mgr_]() {
+          dependency_mgr->OnResourceDoesNotExist(
+              absl::StrCat(dependency_mgr->listener_resource_name_,
                            ": xDS listener resource does not exist"));
         },
         DEBUG_LOCATION);
   }
 
  private:
-  RefCountedPtr<XdsDependencyManager> config_watcher_;
+  RefCountedPtr<XdsDependencyManager> dependency_mgr_;
 };
 
 //
@@ -84,17 +87,17 @@ class XdsDependencyManager::ListenerWatcher
 class XdsDependencyManager::RouteConfigWatcher
     : public XdsRouteConfigResourceType::WatcherInterface {
  public:
-  RouteConfigWatcher(RefCountedPtr<XdsDependencyManager> config_watcher,
+  RouteConfigWatcher(RefCountedPtr<XdsDependencyManager> dependency_mgr,
                      std::string name)
-      : config_watcher_(std::move(config_watcher)), name_(std::move(name)) {}
+      : dependency_mgr_(std::move(dependency_mgr)), name_(std::move(name)) {}
 
   void OnResourceChanged(
       std::shared_ptr<const XdsRouteConfigResource> route_config) override {
     RefCountedPtr<RouteConfigWatcher> self = Ref();
-    config_watcher_->work_serializer_->Run(
+    dependency_mgr_->work_serializer_->Run(
         [self = std::move(self),
          route_config = std::move(route_config)]() mutable {
-          self->config_watcher_->OnRouteConfigUpdate(self->name_,
+          self->dependency_mgr_->OnRouteConfigUpdate(self->name_,
                                                      std::move(route_config));
         },
         DEBUG_LOCATION);
@@ -102,18 +105,18 @@ class XdsDependencyManager::RouteConfigWatcher
 
   void OnError(absl::Status status) override {
     RefCountedPtr<RouteConfigWatcher> self = Ref();
-    config_watcher_->work_serializer_->Run(
+    dependency_mgr_->work_serializer_->Run(
         [self = std::move(self), status = std::move(status)]() mutable {
-          self->config_watcher_->OnError(self->name_, std::move(status));
+          self->dependency_mgr_->OnError(self->name_, std::move(status));
         },
         DEBUG_LOCATION);
   }
 
   void OnResourceDoesNotExist() override {
     RefCountedPtr<RouteConfigWatcher> self = Ref();
-    config_watcher_->work_serializer_->Run(
+    dependency_mgr_->work_serializer_->Run(
         [self = std::move(self)]() {
-          self->config_watcher_->OnResourceDoesNotExist(
+          self->dependency_mgr_->OnResourceDoesNotExist(
               absl::StrCat(
                   self->name_,
                   ": xDS route configuration resource does not exist"));
@@ -122,7 +125,7 @@ class XdsDependencyManager::RouteConfigWatcher
   }
 
  private:
-  RefCountedPtr<XdsDependencyManager> config_watcher_;
+  RefCountedPtr<XdsDependencyManager> dependency_mgr_;
   std::string name_;
 };
 
@@ -133,16 +136,16 @@ class XdsDependencyManager::RouteConfigWatcher
 class XdsDependencyManager::ClusterWatcher
     : public XdsClusterResourceType::WatcherInterface {
  public:
-  ClusterWatcher(RefCountedPtr<XdsDependencyManager> config_watcher,
+  ClusterWatcher(RefCountedPtr<XdsDependencyManager> dependency_mgr,
                  std::string name)
-      : config_watcher_(std::move(config_watcher)), name_(std::move(name)) {}
+      : dependency_mgr_(std::move(dependency_mgr)), name_(std::move(name)) {}
 
   void OnResourceChanged(
       std::shared_ptr<const XdsClusterResource> cluster) override {
     RefCountedPtr<ClusterWatcher> self = Ref();
-    config_watcher_->work_serializer_->Run(
+    dependency_mgr_->work_serializer_->Run(
         [self = std::move(self), cluster = std::move(cluster)]() mutable {
-          self->config_watcher_->OnClusterUpdate(self->name_,
+          self->dependency_mgr_->OnClusterUpdate(self->name_,
                                                  std::move(cluster));
         },
         DEBUG_LOCATION);
@@ -150,24 +153,24 @@ class XdsDependencyManager::ClusterWatcher
 
   void OnError(absl::Status status) override {
     RefCountedPtr<ClusterWatcher> self = Ref();
-    config_watcher_->work_serializer_->Run(
+    dependency_mgr_->work_serializer_->Run(
         [self = std::move(self), status = std::move(status)]() mutable {
-          self->config_watcher_->OnClusterError(self->name_, std::move(status));
+          self->dependency_mgr_->OnClusterError(self->name_, std::move(status));
         },
         DEBUG_LOCATION);
   }
 
   void OnResourceDoesNotExist() override {
     RefCountedPtr<ClusterWatcher> self = Ref();
-    config_watcher_->work_serializer_->Run(
+    dependency_mgr_->work_serializer_->Run(
         [self = std::move(self)]() {
-          self->config_watcher_->OnClusterDoesNotExist(self->name_);
+          self->dependency_mgr_->OnClusterDoesNotExist(self->name_);
         },
         DEBUG_LOCATION);
   }
 
  private:
-  RefCountedPtr<XdsDependencyManager> config_watcher_;
+  RefCountedPtr<XdsDependencyManager> dependency_mgr_;
   std::string name_;
 };
 
@@ -178,16 +181,16 @@ class XdsDependencyManager::ClusterWatcher
 class XdsDependencyManager::EndpointWatcher
     : public XdsEndpointResourceType::WatcherInterface {
  public:
-  EndpointWatcher(RefCountedPtr<XdsDependencyManager> config_watcher,
+  EndpointWatcher(RefCountedPtr<XdsDependencyManager> dependency_mgr,
                  std::string name)
-      : config_watcher_(std::move(config_watcher)), name_(std::move(name)) {}
+      : dependency_mgr_(std::move(dependency_mgr)), name_(std::move(name)) {}
 
   void OnResourceChanged(
       std::shared_ptr<const XdsEndpointResource> endpoint) override {
     RefCountedPtr<EndpointWatcher> self = Ref();
-    config_watcher_->work_serializer_->Run(
+    dependency_mgr_->work_serializer_->Run(
         [self = std::move(self), endpoint = std::move(endpoint)]() mutable {
-          self->config_watcher_->OnEndpointUpdate(self->name_,
+          self->dependency_mgr_->OnEndpointUpdate(self->name_,
                                                   std::move(endpoint));
         },
         DEBUG_LOCATION);
@@ -195,9 +198,9 @@ class XdsDependencyManager::EndpointWatcher
 
   void OnError(absl::Status status) override {
     RefCountedPtr<EndpointWatcher> self = Ref();
-    config_watcher_->work_serializer_->Run(
+    dependency_mgr_->work_serializer_->Run(
         [self = std::move(self), status = std::move(status)]() mutable {
-          self->config_watcher_->OnEndpointError(self->name_,
+          self->dependency_mgr_->OnEndpointError(self->name_,
                                                  std::move(status));
         },
         DEBUG_LOCATION);
@@ -205,15 +208,39 @@ class XdsDependencyManager::EndpointWatcher
 
   void OnResourceDoesNotExist() override {
     RefCountedPtr<EndpointWatcher> self = Ref();
-    config_watcher_->work_serializer_->Run(
+    dependency_mgr_->work_serializer_->Run(
         [self = std::move(self)]() {
-          self->config_watcher_->OnEndpointDoesNotExist(self->name_);
+          self->dependency_mgr_->OnEndpointDoesNotExist(self->name_);
         },
         DEBUG_LOCATION);
   }
 
  private:
-  RefCountedPtr<XdsDependencyManager> config_watcher_;
+  RefCountedPtr<XdsDependencyManager> dependency_mgr_;
+  std::string name_;
+};
+
+//
+// XdsDependencyManager::DnsResultHandler
+//
+
+class XdsDependencyManager::DnsResultHandler : public Resolver::ResultHandler {
+ public:
+  DnsResultHandler(RefCountedPtr<XdsDependencyManager> dependency_mgr,
+                   std::string name)
+      : dependency_mgr_(std::move(dependency_mgr)), name_(std::move(name)) {}
+
+  void ReportResult(Resolver::Result result) override {
+    dependency_mgr_->work_serializer_->Run(
+        [dependency_mgr = dependency_mgr_, name = name_,
+         result = std::move(result)]() mutable {
+          dependency_mgr->OnDnsResult(std::move(name), std::move(result));
+        },
+        DEBUG_LOCATION);
+  }
+
+ private:
+  RefCountedPtr<XdsDependencyManager> dependency_mgr_;
   std::string name_;
 };
 
@@ -238,12 +265,15 @@ XdsDependencyManager::XdsDependencyManager(
     RefCountedPtr<GrpcXdsClient> xds_client,
     std::shared_ptr<WorkSerializer> work_serializer,
     std::unique_ptr<Watcher> watcher, std::string data_plane_authority,
-    std::string listener_resource_name)
+    std::string listener_resource_name, ChannelArgs args,
+    grpc_pollset_set* interested_parties)
     : xds_client_(std::move(xds_client)),
       work_serializer_(std::move(work_serializer)),
       watcher_(std::move(watcher)),
       data_plane_authority_(std::move(data_plane_authority)),
-      listener_resource_name_(std::move(listener_resource_name)) {
+      listener_resource_name_(std::move(listener_resource_name)),
+      args_(std::move(args)),
+      interested_parties_(interested_parties) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO,
             "[XdsDependencyManager %p] starting watch for listener %s",
@@ -542,12 +572,18 @@ void XdsDependencyManager::OnEndpointDoesNotExist(const std::string& name) {
 }
 
 void XdsDependencyManager::OnDnsResult(const std::string& dns_name,
-                                   Resolver::Result result) {
+                                       Resolver::Result result) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[XdsDependencyManager %p] received DNS update: %s",
             this, dns_name.c_str());
   }
   if (xds_client_ == nullptr) return;
+  PopulateDnsUpdate(dns_name, std::move(result));
+  MaybeReportUpdate();
+}
+
+void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
+                                             Resolver::Result result) {
   auto it = dns_resolvers_.find(dns_name);
   if (it == dns_resolvers_.end()) return;
   // Convert resolver result to EDS update.
@@ -567,7 +603,6 @@ void XdsDependencyManager::OnDnsResult(const std::string& dns_name,
   auto resource = std::make_shared<XdsEndpointResource>();
   resource->priorities.emplace_back(std::move(priority));
   it->second.update.endpoints = std::move(resource);
-  MaybeReportUpdate();
 }
 
 std::set<std::string> XdsDependencyManager::GetClustersFromRouteConfig(
@@ -674,7 +709,49 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
       // LOGICAL_DNS cluster.
       [&](const XdsClusterResource::LogicalDns& logical_dns)
           -> absl::StatusOr<bool> {
-// FIXME: implement
+        // Start DNS resolver if needed.
+        auto& dns_state = dns_resolvers_[logical_dns.hostname];
+        if (dns_state.resolver == nullptr) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+            gpr_log(GPR_INFO,
+                    "[XdsDependencyManager %p] starting DNS resolver for %s",
+                    this, logical_dns.hostname.c_str());
+          }
+          auto* fake_resolver_response_generator =
+              args_.GetPointer<FakeResolverResponseGenerator>(
+                  GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR);
+          ChannelArgs args = args_;
+          std::string target;
+          if (fake_resolver_response_generator != nullptr) {
+            target = absl::StrCat("fake:", logical_dns.hostname);
+            args = args.SetObject(fake_resolver_response_generator->Ref());
+          } else {
+            target = absl::StrCat("dns:", logical_dns.hostname);
+          }
+          dns_state.resolver =
+              CoreConfiguration::Get().resolver_registry().CreateResolver(
+                  target, args, interested_parties_, work_serializer_,
+                  std::make_unique<DnsResultHandler>(Ref(),
+                                                     logical_dns.hostname));
+          if (dns_state.resolver == nullptr) {
+            Resolver::Result result;
+            result.addresses.emplace();  // Empty list.
+            result.resolution_note = absl::StrCat(
+                "failed to create DNS resolver for ", logical_dns.hostname);
+            PopulateDnsUpdate(logical_dns.hostname, std::move(result));
+            return true;
+          }
+          dns_state.resolver->StartLocked();
+          return false;
+        }
+        // Check if result has been returned.
+        if (dns_state.update.endpoints == nullptr &&
+            dns_state.update.resolution_note.empty()) {
+          return false;
+        }
+        // Populate endpoint info.
+        entry.endpoints = dns_state.update.endpoints;
+        entry.resolution_note = dns_state.update.resolution_note;
         return true;
       },
       // Aggregate cluster.  Recursively expand to child clusters.
