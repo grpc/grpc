@@ -391,12 +391,14 @@ class ChannelArgs {
   }
   template <typename T>
   GRPC_MUST_USE_RESULT absl::enable_if_t<
-      std::is_same<const grpc_arg_pointer_vtable*,
-                   decltype(ChannelArgTypeTraits<
-                            std::shared_ptr<T>>::VTable())>::value &&
-          SupportedSharedPtrType<T>::value,
+      std::is_same<
+          const grpc_arg_pointer_vtable*,
+          decltype(ChannelArgTypeTraits<std::shared_ptr<T>>::VTable())>::value,
       ChannelArgs>
   Set(absl::string_view name, std::shared_ptr<T> value) const {
+    static_assert(SupportedSharedPtrType<T>::value,
+                  "Type T must extend std::enable_shared_from_this to be added "
+                  "into ChannelArgs as a shared_ptr<T>");
     auto* store_value = new std::shared_ptr<T>(value);
     return Set(
         name,
