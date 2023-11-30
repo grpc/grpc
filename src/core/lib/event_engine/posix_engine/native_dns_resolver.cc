@@ -102,7 +102,7 @@ void NativeDNSResolver::LookupHostname(
 
 void NativeDNSResolver::LookupSRV(
     EventEngine::DNSResolver::LookupSRVCallback on_resolved,
-    absl::string_view name) {
+    absl::string_view /* name */) {
   // Not supported
   event_engine_->Run([on_resolved = std::move(on_resolved)]() mutable {
     on_resolved(absl::UnimplementedError(
