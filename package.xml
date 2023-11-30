@@ -1243,6 +1243,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/dns_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.h" role="src" />
@@ -1265,6 +1266,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/internal_errqueue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/lockfree_event.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/lockfree_event.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/native_dns_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/native_dns_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine.cc" role="src" />

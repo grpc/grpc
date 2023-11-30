@@ -17,6 +17,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include "absl/strings/string_view.h"
+
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gprpp/orphanable.h"

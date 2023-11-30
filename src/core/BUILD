@@ -2466,8 +2466,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "dns_resolver",
     hdrs = ["lib/event_engine/dns_resolver.h"],
+    external_deps = ["absl/strings"],
     deps = [
         "//:event_engine_base_hdrs",
+        "//:gpr_platform",
         "//:orphanable",
     ],
 )
@@ -2479,6 +2481,13 @@ grpc_cc_library(
     ],
     hdrs = [
         "lib/event_engine/posix_engine/native_dns_resolver.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "dns_resolver",
