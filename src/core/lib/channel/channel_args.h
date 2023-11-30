@@ -125,6 +125,16 @@ struct ChannelArgTypeTraits<
   };
 };
 
+// Define a check for shared_ptr supported types, which must extend
+// enable_shared_from_this.
+template <typename T>
+struct SupportedSharedPtrType
+    : std::integral_constant<
+          bool, std::is_base_of<std::enable_shared_from_this<T>, T>::value> {};
+template <>
+struct SupportedSharedPtrType<grpc_event_engine::experimental::EventEngine>
+    : std::true_type {};
+
 // Specialization for shared_ptr
 // Incurs an allocation because shared_ptr.release is not a thing.
 template <typename T>
@@ -174,18 +184,12 @@ struct ChannelArgTypeTraits<T,
 };
 
 // GetObject support for shared_ptr and RefCountedPtr
-template <typename T>
-struct WrapInSharedPtr
-    : std::integral_constant<
-          bool, std::is_base_of<std::enable_shared_from_this<T>, T>::value> {};
-template <>
-struct WrapInSharedPtr<grpc_event_engine::experimental::EventEngine>
-    : std::true_type {};
 template <typename T, typename Ignored = void /* for SFINAE */>
 struct GetObjectImpl;
 // std::shared_ptr implementation
 template <typename T>
-struct GetObjectImpl<T, absl::enable_if_t<WrapInSharedPtr<T>::value, void>> {
+struct GetObjectImpl<
+    T, absl::enable_if_t<SupportedSharedPtrType<T>::value, void>> {
   using Result = T*;
   using ReffedResult = std::shared_ptr<T>;
   using StoredType = std::shared_ptr<T>*;
@@ -205,7 +209,8 @@ struct GetObjectImpl<T, absl::enable_if_t<WrapInSharedPtr<T>::value, void>> {
 };
 // RefCountedPtr
 template <typename T>
-struct GetObjectImpl<T, absl::enable_if_t<!WrapInSharedPtr<T>::value, void>> {
+struct GetObjectImpl<
+    T, absl::enable_if_t<!SupportedSharedPtrType<T>::value, void>> {
   using Result = T*;
   using ReffedResult = RefCountedPtr<T>;
   using StoredType = Result;
@@ -391,6 +396,9 @@ class ChannelArgs {
           decltype(ChannelArgTypeTraits<std::shared_ptr<T>>::VTable())>::value,
       ChannelArgs>
   Set(absl::string_view name, std::shared_ptr<T> value) const {
+    static_assert(SupportedSharedPtrType<T>::value,
+                  "Type T must extend std::enable_shared_from_this to be added "
+                  "into ChannelArgs as a shared_ptr<T>");
     auto* store_value = new std::shared_ptr<T>(value);
     return Set(
         name,
