@@ -2477,6 +2477,7 @@ grpc_cc_library(
         "lib/event_engine/posix_engine/native_dns_resolver.cc",
     ],
     hdrs = [
+        "lib/event_engine/dns_resolver.h",
         "lib/event_engine/posix_engine/native_dns_resolver.h",
     ],
     deps = [
