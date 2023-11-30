@@ -481,7 +481,7 @@ void XdsDependencyManager::OnClusterUpdate(
 }
 
 void XdsDependencyManager::OnClusterError(const std::string& name,
-                                      absl::Status status) {
+                                          absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[XdsDependencyManager %p] received Cluster error: %s %s",
             this, name.c_str(), status.ToString().c_str());
@@ -542,7 +542,7 @@ void XdsDependencyManager::OnEndpointUpdate(
 }
 
 void XdsDependencyManager::OnEndpointError(const std::string& name,
-                                       absl::Status status) {
+                                           absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[XdsDependencyManager %p] received Endpoint error: %s %s",
             this, name.c_str(), status.ToString().c_str());
@@ -644,8 +644,7 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
     int depth, std::set<std::string>* clusters_seen,
     std::set<std::string>* eds_resources_seen) {
   if (depth == kMaxXdsAggregateClusterRecursionDepth) {
-    return absl::FailedPreconditionError(
-        "aggregate cluster graph exceeds max depth");
+    return absl::UnavailableError("aggregate cluster graph exceeds max depth");
   }
   // Don't process the cluster again if we've already seen it in some
   // other branch of the recursion tree.
