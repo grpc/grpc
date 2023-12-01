@@ -79,8 +79,7 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
    public:
     virtual ~Watcher() = default;
 
-// FIXME: see if we can make this const
-    virtual void OnUpdate(RefCountedPtr<XdsConfig> config) = 0;
+    virtual void OnUpdate(RefCountedPtr<const XdsConfig> config) = 0;
 
     // These methods are invoked when there is an error or
     // does-not-exist on LDS or RDS only.
