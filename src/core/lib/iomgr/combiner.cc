@@ -51,10 +51,6 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure,
                                   grpc_error_handle error);
 
-// TODO(ctiller): delete this when the combiner_offload_to_event_engine
-// experiment is removed.
-static void offload(void* arg, grpc_error_handle error);
-
 grpc_core::Combiner* grpc_combiner_create(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>
         event_engine) {
@@ -262,7 +258,7 @@ bool grpc_combiner_continue_exec_ctx() {
 // Define a macro to ease readability of the following switch statement.
 #define OLD_STATE_WAS(orphaned, elem_count) \
   (((orphaned) ? 0 : STATE_UNORPHANED) |    \
-   ((elem_count)*STATE_ELEM_COUNT_LOW_BIT))
+   ((elem_count) * STATE_ELEM_COUNT_LOW_BIT))
   // Depending on what the previous state was, we need to perform different
   // actions.
   switch (old_state) {
