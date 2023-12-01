@@ -330,9 +330,8 @@ class RefCounted : public Impl {
 
   // RefIfNonZero() for const types.
   GRPC_MUST_USE_RESULT RefCountedPtr<const Child> RefIfNonZero() const {
-    return RefCountedPtr<const Child>(refs_.RefIfNonZero()
-                                          ? static_cast<const Child*>(this)
-                                          : nullptr);
+    return RefCountedPtr<const Child>(
+        refs_.RefIfNonZero() ? static_cast<const Child*>(this) : nullptr);
   }
   GRPC_MUST_USE_RESULT RefCountedPtr<const Child> RefIfNonZero(
       const DebugLocation& location, const char* reason) const {
@@ -362,8 +361,8 @@ class RefCounted : public Impl {
   friend class RefCountedPtr;
 
   void IncrementRefCount() const { refs_.Ref(); }
-  void IncrementRefCount(const DebugLocation& location, const char* reason)
-      const {
+  void IncrementRefCount(const DebugLocation& location,
+                         const char* reason) const {
     refs_.Ref(location, reason);
   }
 
