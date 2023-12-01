@@ -279,8 +279,11 @@ class CallWrapper<Derived, absl::void_t<decltype(typename Derived::Call())>>
 };
 
 // For the original promise scheme polyfill: data associated with once call.
+template <typename Derived, typename SfinaeVoid = void>
+struct FilterCallData;
+
 template <typename Derived>
-struct FilterCallData {
+struct FilterCallData<Derived> {
   explicit FilterCallData(Derived* channel) : call(channel), channel(channel) {}
   GPR_NO_UNIQUE_ADDRESS CallWrapper<Derived> call;
   GPR_NO_UNIQUE_ADDRESS
@@ -345,11 +348,11 @@ inline auto RunCall(
 }
 
 template <typename Derived>
-inline auto RunCall(ServerMetadataHandle (Derived::Call::*fn)(
-                        ClientMetadata& md, Derived* channel),
-                    CallArgs call_args, NextPromiseFactory next_promise_factory,
-                    FilterCallData<Derived>* call_data)
-    -> ArenaPromise<ServerMetadataHandle> {
+inline auto RunCall(
+    ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md,
+                                              Derived* channel),
+    CallArgs call_args, NextPromiseFactory next_promise_factory,
+    FilterCallData<Derived>* call_data) -> ArenaPromise<ServerMetadataHandle> {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   auto return_md = call_data->call.OnClientInitialMetadata(
       *call_args.client_initial_metadata, call_data->channel);
@@ -366,6 +369,26 @@ inline auto RunCall(void (Derived::Call::*fn)(ClientMetadata& md,
   call_data->call.OnClientInitialMetadata(*call_args.client_initial_metadata,
                                           call_data->channel);
   return next_promise_factory(std::move(call_args));
+}
+
+template <typename Promise, typename Derived>
+auto RunCall(
+    std::enable_if_t<
+        std::is_same<void,
+                     absl::void_t<decltype(StatusCast<ServerMetadataHandle>(
+                         std::declval<PromiseResult<Promise>>))>>::value,
+        Promise> (Derived::Call::*promise_factory)(ClientMetadata& md,
+                                                   Derived* channel),
+    CallArgs call_args, NextPromiseFactory next_promise_factory,
+    FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(promise_factory == &Derived::Call::OnClientInitialMetadata);
+  ClientMetadata& md_ref = *call_args.client_initial_metadata;
+  return TrySeq(
+      call_data->call.OnClientInitialMetadata(md_ref, call_data->channel),
+      [call_args = std::move(call_args),
+       next_promise_factory = std::move(next_promise_factory)]() mutable {
+        return next_promise_factory(std::move(call_args));
+      });
 }
 
 inline void InterceptClientToServerMessage(const NoInterceptor*, void*,
@@ -486,6 +509,30 @@ inline void InterceptClientInitialMetadata(
         auto return_md = call->OnClientInitialMetadata(*md, channel);
         if (return_md == nullptr) return md;
         return call_spine->Cancel(std::move(return_md));
+      });
+}
+
+// Returning a promise that resolves to something that can be cast to
+// ServerMetadataHandle also counts
+template <typename Promise, typename Derived>
+absl::void_t<decltype(StatusCast<ServerMetadataHandle>(
+    std::declval<PromiseResult<Promise>>))>
+InterceptClientInitialMetadata(Promise (Derived::Call::*promise_factory)(
+                                   ClientMetadata& md, Derived* channel),
+                               typename Derived::Call* call, Derived* channel,
+                               CallSpine* call_spine) {
+  GPR_DEBUG_ASSERT(promise_factory == &Derived::Call::OnClientInitialMetadata);
+  call_spine->client_initial_metadata().receiver.InterceptAndMap(
+      [call, call_spine, channel](ClientMetadataHandle md) {
+        ClientMetadata& md_ref = *md;
+        return Map(call->OnClientInitialMetadata(md_ref, channel),
+                   [md = std::move(md),
+                    call_spine](PromiseResult<Promise> status) mutable
+                   -> absl::optional<ClientMetadataHandle> {
+                     if (IsStatusOk(status)) return std::move(md);
+                     return call_spine->Cancel(
+                         StatusCast<ServerMetadataHandle>(std::move(status)));
+                   });
       });
 }
 
@@ -710,6 +757,8 @@ MakeFilterCall(Derived* derived) {
 //   the filter intercepts this event, and can modify the value.
 //   it can access the channel via the second argument.
 //   it can fail, in which case the call will be aborted.
+// It's also acceptable to return a promise that resolves to the
+// relevant return type listed above.
 // Finally, OnFinalize can be added to intecept call finalization.
 // It must have one of the signatures:
 // - static const NoInterceptor OnFinalize:
