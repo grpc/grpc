@@ -63,14 +63,11 @@ auto WrapInPoll(T&& x) -> decltype(PollWrapper<T>::Wrap(std::forward<T>(x))) {
   return PollWrapper<T>::Wrap(std::forward<T>(x));
 }
 
-template <typename F>
+template <typename F, typename = absl::enable_if_t<!std::is_void<
+                          typename std::result_of<F()>::type>::value>>
 class PromiseLike {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
-
-  static_assert(!std::is_void<typename std::result_of<F()>::type>::value,
-                "PromiseLike cannot be used with a function that returns void "
-                "- return Empty{} instead");
 
  public:
   // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.

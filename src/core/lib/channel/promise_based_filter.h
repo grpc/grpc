@@ -279,11 +279,8 @@ class CallWrapper<Derived, absl::void_t<decltype(typename Derived::Call())>>
 };
 
 // For the original promise scheme polyfill: data associated with once call.
-template <typename Derived, typename SfinaeVoid = void>
-struct FilterCallData;
-
 template <typename Derived>
-struct FilterCallData<Derived> {
+struct FilterCallData {
   explicit FilterCallData(Derived* channel) : call(channel), channel(channel) {}
   GPR_NO_UNIQUE_ADDRESS CallWrapper<Derived> call;
   GPR_NO_UNIQUE_ADDRESS
@@ -321,74 +318,88 @@ auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
   });
 }
 
-inline auto RunCall(const NoInterceptor*, CallArgs call_args,
-                    NextPromiseFactory next_promise_factory, void*) {
-  return next_promise_factory(std::move(call_args));
-}
+template <typename Interceptor, typename Derived, typename SfinaeVoid = void>
+struct RunCallImpl;
 
 template <typename Derived>
-inline auto RunCall(void (Derived::Call::*fn)(ClientMetadata& md),
-                    CallArgs call_args, NextPromiseFactory next_promise_factory,
-                    FilterCallData<Derived>* call_data) {
-  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
-  call_data->call.OnClientInitialMetadata(*call_args.client_initial_metadata);
-  return next_promise_factory(std::move(call_args));
-}
+struct RunCallImpl<const NoInterceptor*, Derived> {
+  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+                  void*) {
+    return next_promise_factory(std::move(call_args));
+  }
+};
 
 template <typename Derived>
-inline auto RunCall(
-    ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md),
-    CallArgs call_args, NextPromiseFactory next_promise_factory,
-    FilterCallData<Derived>* call_data) -> ArenaPromise<ServerMetadataHandle> {
-  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
-  auto return_md = call_data->call.OnClientInitialMetadata(
-      *call_args.client_initial_metadata);
-  if (return_md == nullptr) return next_promise_factory(std::move(call_args));
-  return Immediate(std::move(return_md));
-}
+struct RunCallImpl<void (Derived::Call::*)(ClientMetadata& md), Derived> {
+  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+                  FilterCallData<Derived>* call_data) {
+    call_data->call.OnClientInitialMetadata(*call_args.client_initial_metadata);
+    return next_promise_factory(std::move(call_args));
+  }
+};
 
 template <typename Derived>
-inline auto RunCall(
-    ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md,
-                                              Derived* channel),
-    CallArgs call_args, NextPromiseFactory next_promise_factory,
-    FilterCallData<Derived>* call_data) -> ArenaPromise<ServerMetadataHandle> {
-  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
-  auto return_md = call_data->call.OnClientInitialMetadata(
-      *call_args.client_initial_metadata, call_data->channel);
-  if (return_md == nullptr) return next_promise_factory(std::move(call_args));
-  return Immediate(std::move(return_md));
-}
+struct RunCallImpl<ServerMetadataHandle (Derived::Call::*)(ClientMetadata& md),
+                   Derived> {
+  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+                  FilterCallData<Derived>* call_data)
+      -> ArenaPromise<ServerMetadataHandle> {
+    auto return_md = call_data->call.OnClientInitialMetadata(
+        *call_args.client_initial_metadata);
+    if (return_md == nullptr) return next_promise_factory(std::move(call_args));
+    return Immediate(std::move(return_md));
+  }
+};
 
 template <typename Derived>
-inline auto RunCall(void (Derived::Call::*fn)(ClientMetadata& md,
-                                              Derived* channel),
-                    CallArgs call_args, NextPromiseFactory next_promise_factory,
-                    FilterCallData<Derived>* call_data) {
-  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
-  call_data->call.OnClientInitialMetadata(*call_args.client_initial_metadata,
-                                          call_data->channel);
-  return next_promise_factory(std::move(call_args));
-}
+struct RunCallImpl<ServerMetadataHandle (Derived::Call::*)(ClientMetadata& md,
+                                                           Derived* channel),
+                   Derived> {
+  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+                  FilterCallData<Derived>* call_data)
+      -> ArenaPromise<ServerMetadataHandle> {
+    auto return_md = call_data->call.OnClientInitialMetadata(
+        *call_args.client_initial_metadata, call_data->channel);
+    if (return_md == nullptr) return next_promise_factory(std::move(call_args));
+    return Immediate(std::move(return_md));
+  }
+};
 
-template <typename Promise, typename Derived>
-auto RunCall(
-    std::enable_if_t<
-        std::is_same<void,
-                     absl::void_t<decltype(StatusCast<ServerMetadataHandle>(
-                         std::declval<PromiseResult<Promise>>))>>::value,
-        Promise> (Derived::Call::*promise_factory)(ClientMetadata& md,
-                                                   Derived* channel),
-    CallArgs call_args, NextPromiseFactory next_promise_factory,
-    FilterCallData<Derived>* call_data) {
-  GPR_DEBUG_ASSERT(promise_factory == &Derived::Call::OnClientInitialMetadata);
-  ClientMetadata& md_ref = *call_args.client_initial_metadata;
-  return TrySeq(
-      call_data->call.OnClientInitialMetadata(md_ref, call_data->channel),
-      [call_args = std::move(call_args),
-       next_promise_factory = std::move(next_promise_factory)]() mutable {
-        return next_promise_factory(std::move(call_args));
-      });
+template <typename Derived>
+struct RunCallImpl<
+    void (Derived::Call::*)(ClientMetadata& md, Derived* channel), Derived> {
+  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+                  FilterCallData<Derived>* call_data) {
+    call_data->call.OnClientInitialMetadata(*call_args.client_initial_metadata,
+                                            call_data->channel);
+    return next_promise_factory(std::move(call_args));
+  }
+};
+
+template <typename Derived, typename Promise>
+struct RunCallImpl<
+    Promise (Derived::Call::*)(ClientMetadata& md, Derived* channel), Derived,
+    absl::void_t<decltype(StatusCast<ServerMetadataHandle>(
+        std::declval<PromiseResult<Promise>>))>> {
+  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+                  FilterCallData<Derived>* call_data) {
+    ClientMetadata& md_ref = *call_args.client_initial_metadata;
+    return TrySeq(
+        call_data->call.OnClientInitialMetadata(md_ref, call_data->channel),
+        [call_args = std::move(call_args),
+         next_promise_factory = std::move(next_promise_factory)]() mutable {
+          return next_promise_factory(std::move(call_args));
+        });
+  }
+};
+
+template <typename Interceptor, typename Derived>
+auto RunCall(Interceptor interceptor, CallArgs call_args,
+             NextPromiseFactory next_promise_factory,
+             FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(interceptor == &Derived::Call::OnClientInitialMetadata);
+  return RunCallImpl<Interceptor, Derived>::Run(
+      std::move(call_args), std::move(next_promise_factory), call_data);
 }
 
 inline void InterceptClientToServerMessage(const NoInterceptor*, void*,
