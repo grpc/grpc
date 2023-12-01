@@ -42,17 +42,50 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(yashykt): This filter is not really needed. We should be able to move
-// this to the connected filter.
-class ServerCallTracerFilter : public ChannelFilter {
+class ServerCallTracerFilter
+    : public ImplementChannelFilter<ServerCallTracerFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ServerCallTracerFilter> Create(
       const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/);
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& client_initial_metadata) {
+      auto* call_tracer = CallTracer();
+      if (call_tracer == nullptr) return;
+      call_tracer->RecordReceivedInitialMetadata(&client_initial_metadata);
+    }
+
+    void OnServerInitialMetadata(ServerMetadata& server_initial_metadata) {
+      auto* call_tracer = CallTracer();
+      if (call_tracer == nullptr) return;
+      call_tracer->RecordReceivedInitialMetadata(&server_initial_metadata);
+    }
+
+    void OnFinalize(const grpc_call_final_info* final_info) {
+      auto* call_tracer = CallTracer();
+      if (call_tracer == nullptr) return;
+      call_tracer->RecordEnd(final_info);
+    }
+
+    void OnServerTrailingMetadata(ServerMetadata& server_trailing_metadata) {
+      auto* call_tracer = CallTracer();
+      if (call_tracer == nullptr) return;
+      call_tracer->RecordSendTrailingMetadata(&server_trailing_metadata);
+    }
+
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+
+   private:
+    static ServerCallTracer* CallTracer() {
+      auto* call_context = GetContext<grpc_call_context_element>();
+      return static_cast<ServerCallTracer*>(
+          call_context[GRPC_CONTEXT_CALL_TRACER].value);
+    }
+  };
 };
 
 const grpc_channel_filter ServerCallTracerFilter::kFilter =
@@ -63,34 +96,6 @@ const grpc_channel_filter ServerCallTracerFilter::kFilter =
 absl::StatusOr<ServerCallTracerFilter> ServerCallTracerFilter::Create(
     const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/) {
   return ServerCallTracerFilter();
-}
-
-ArenaPromise<ServerMetadataHandle> ServerCallTracerFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  auto* call_context = GetContext<grpc_call_context_element>();
-  auto* call_tracer = static_cast<ServerCallTracer*>(
-      call_context[GRPC_CONTEXT_CALL_TRACER].value);
-  if (call_tracer == nullptr) {
-    return next_promise_factory(std::move(call_args));
-  }
-  call_tracer->RecordReceivedInitialMetadata(
-      call_args.client_initial_metadata.get());
-  call_args.server_initial_metadata->InterceptAndMap(
-      [call_tracer](ServerMetadataHandle metadata) {
-        call_tracer->RecordSendInitialMetadata(metadata.get());
-        return metadata;
-      });
-  GetContext<CallFinalization>()->Add(
-      [call_tracer](const grpc_call_final_info* final_info) {
-        call_tracer->RecordEnd(final_info);
-      });
-  return OnCancel(
-      Map(next_promise_factory(std::move(call_args)),
-          [call_tracer](ServerMetadataHandle md) {
-            call_tracer->RecordSendTrailingMetadata(md.get());
-            return md;
-          }),
-      [call_tracer]() { call_tracer->RecordCancel(absl::CancelledError()); });
 }
 
 }  // namespace

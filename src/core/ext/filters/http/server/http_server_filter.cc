@@ -27,6 +27,7 @@
 #include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "http_server_filter.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
@@ -51,6 +52,7 @@ namespace grpc_core {
 
 const NoInterceptor HttpServerFilter::Call::OnClientToServerMessage;
 const NoInterceptor HttpServerFilter::Call::OnServerToClientMessage;
+const NoInterceptor HttpServerFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpServerFilter::kFilter =
     MakePromiseBasedFilter<HttpServerFilter, FilterEndpoint::kServer,

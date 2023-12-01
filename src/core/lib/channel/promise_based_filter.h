@@ -167,6 +167,11 @@ inline constexpr bool HasChannelAccess(R (T::*)(A)) {
   return false;
 }
 
+template <typename T, typename R, typename A>
+inline constexpr bool HasChannelAccess(R (T::*)()) {
+  return false;
+}
+
 template <typename T, typename R, typename A, typename C>
 inline constexpr bool HasChannelAccess(R (T::*)(A, C)) {
   return true;
@@ -192,7 +197,8 @@ inline constexpr bool CallHasChannelAccess() {
                                   &Derived::Call::OnClientToServerMessage,
                                   &Derived::Call::OnServerInitialMetadata,
                                   &Derived::Call::OnServerToClientMessage,
-                                  &Derived::Call::OnServerTrailingMetadata);
+                                  &Derived::Call::OnServerTrailingMetadata,
+                                  &Derived::Call::OnFinalize);
 }
 
 template <typename T, bool X>
@@ -613,6 +619,18 @@ inline void InterceptServerTrailingMetadata(
       });
 }
 
+inline void InterceptFinalize(const NoInterceptor*, void*) {}
+
+template <class Call>
+inline void InterceptFinalize(void (Call::*fn)(const grpc_call_final_info*),
+                              Call* call) {
+  GPR_DEBUG_ASSERT(fn == &Call::OnFinalize);
+  GetContext<CallFinalization>()->Add(
+      [call](const grpc_call_final_info* final_info) {
+        call->OnFinalize(final_info);
+      });
+}
+
 template <typename Derived>
 absl::enable_if_t<std::is_empty<FilterCallData<Derived>>::value,
                   FilterCallData<Derived>*>
@@ -653,6 +671,7 @@ class ImplementChannelFilter : public ChannelFilter {
     promise_filter_detail::InterceptServerTrailingMetadata(
         &Derived::Call::OnServerTrailingMetadata, call,
         static_cast<Derived*>(this), call_spine);
+    promise_filter_detail::InterceptFinalize(&Derived::Call::OnFinalize, call);
   }
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
@@ -665,6 +684,9 @@ class ImplementChannelFilter : public ChannelFilter {
         &Derived::Call::OnServerInitialMetadata, call, call_args);
     promise_filter_detail::InterceptServerToClientMessage(
         &Derived::Call::OnServerToClientMessage, call, call_args);
+    promise_filter_detail::InterceptFinalize(
+        &Derived::Call::OnFinalize,
+        static_cast<typename Derived::Call*>(&call->call));
     return promise_filter_detail::MapResult(
         &Derived::Call::OnServerTrailingMetadata,
         promise_filter_detail::RaceAsyncCompletion<
