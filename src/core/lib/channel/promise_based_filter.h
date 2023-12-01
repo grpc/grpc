@@ -19,10 +19,8 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -32,6 +30,17 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -59,12 +68,6 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/function_ref.h"
-#include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 namespace grpc_core {
 
