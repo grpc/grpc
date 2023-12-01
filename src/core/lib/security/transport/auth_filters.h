@@ -83,6 +83,15 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
     Poll<absl::Status> operator()();
 
    private:
+    // Called from application code.
+    static void OnMdProcessingDone(void* user_data,
+                                   const grpc_metadata* consumed_md,
+                                   size_t num_consumed_md,
+                                   const grpc_metadata* response_md,
+                                   size_t num_response_md,
+                                   grpc_status_code status,
+                                   const char* error_details);
+
     struct State;
     State* state_;
   };
