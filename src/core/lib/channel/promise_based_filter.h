@@ -321,11 +321,11 @@ inline auto RunCall(
 }
 
 template <typename Derived>
-inline auto RunCall(ServerMetadataHandle (Derived::Call::*fn)(
-                        ClientMetadata& md, Derived* channel),
-                    CallArgs call_args, NextPromiseFactory next_promise_factory,
-                    FilterCallData<Derived>* call_data)
-    -> ArenaPromise<ServerMetadataHandle> {
+inline auto RunCall(
+    ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md,
+                                              Derived* channel),
+    CallArgs call_args, NextPromiseFactory next_promise_factory,
+    FilterCallData<Derived>* call_data) -> ArenaPromise<ServerMetadataHandle> {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   auto return_md = call_data->call.OnClientInitialMetadata(
       *call_args.client_initial_metadata, call_data->channel);
@@ -428,6 +428,11 @@ MakeFilterCall(Derived* derived) {
 // - absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&):
 //   the filter intercepts this event, and can modify the value.
 //   it can fail, in which case the call will be aborted.
+// - ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
+//   the filter intercepts this event, and can modify the value.
+//   the filter can return nullptr for success, or a metadata handle for
+//   failure (in which case the call will be aborted).
+//   useful for cases where the exact metadata returned needs to be customized.
 // - void $INTERCEPTOR_NAME($VALUE_TYPE&, Derived*):
 //   the filter intercepts this event, and can modify the value.
 //   it can access the channel via the second argument.
@@ -436,6 +441,12 @@ MakeFilterCall(Derived* derived) {
 //   the filter intercepts this event, and can modify the value.
 //   it can access the channel via the second argument.
 //   it can fail, in which case the call will be aborted.
+// - ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, Derived*)
+//   the filter intercepts this event, and can modify the value.
+//   it can access the channel via the second argument.
+//   the filter can return nullptr for success, or a metadata handle for
+//   failure (in which case the call will be aborted).
+//   useful for cases where the exact metadata returned needs to be customized.
 template <typename Derived>
 class ImplementChannelFilter : public ChannelFilter {
  public:
