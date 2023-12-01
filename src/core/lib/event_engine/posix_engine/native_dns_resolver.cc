@@ -14,7 +14,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
+
 #include <netdb.h>
+#include <string.h>
 #include <sys/socket.h>
 
 #include <string>
@@ -27,12 +32,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include "src/core/lib/iomgr/port.h"
-
-#ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
-
-#include <string.h>
 
 #include "src/core/lib/event_engine/posix_engine/native_dns_resolver.h"
 #include "src/core/lib/gpr/useful.h"
