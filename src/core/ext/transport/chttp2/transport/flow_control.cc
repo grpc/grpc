@@ -422,23 +422,9 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
     }
     // min_progress_size_ > 0 means we have a reader ready to read.
     if (min_progress_size_ > 0) {
-      if (IsLazierStreamUpdatesEnabled()) {
-        if (announced_window_delta_ <=
-            -static_cast<int64_t>(tfc_->sent_init_window()) / 2) {
-          urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
-        }
-      } else {
-        // If we're into initial window to receive that data we should wake up
-        // and send an update.
-        if (announced_window_delta_ < 0) {
-          urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
-        } else if (announced_window_delta_ == 0 &&
-                   tfc_->queued_init_window() == 0) {
-          // Special case when initial window size is zero, meaning that
-          // announced_window_delta cannot become negative (it may already be so
-          // however).
-          urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
-        }
+      if (announced_window_delta_ <=
+          -static_cast<int64_t>(tfc_->sent_init_window()) / 2) {
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
       }
     }
     action.set_send_stream_update(urgency);
