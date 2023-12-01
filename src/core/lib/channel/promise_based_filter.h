@@ -749,6 +749,11 @@ MakeFilterCall(Derived* derived) {
 // - absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&):
 //   the filter intercepts this event, and can modify the value.
 //   it can fail, in which case the call will be aborted.
+// - ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
+//   the filter intercepts this event, and can modify the value.
+//   the filter can return nullptr for success, or a metadata handle for
+//   failure (in which case the call will be aborted).
+//   useful for cases where the exact metadata returned needs to be customized.
 // - void $INTERCEPTOR_NAME($VALUE_TYPE&, Derived*):
 //   the filter intercepts this event, and can modify the value.
 //   it can access the channel via the second argument.
@@ -757,6 +762,12 @@ MakeFilterCall(Derived* derived) {
 //   the filter intercepts this event, and can modify the value.
 //   it can access the channel via the second argument.
 //   it can fail, in which case the call will be aborted.
+// - ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, Derived*)
+//   the filter intercepts this event, and can modify the value.
+//   it can access the channel via the second argument.
+//   the filter can return nullptr for success, or a metadata handle for
+//   failure (in which case the call will be aborted).
+//   useful for cases where the exact metadata returned needs to be customized.
 // It's also acceptable to return a promise that resolves to the
 // relevant return type listed above.
 // Finally, OnFinalize can be added to intecept call finalization.

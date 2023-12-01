@@ -1542,6 +1542,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_query_extensions",
+    hdrs = [
+        "lib/event_engine/query_extensions.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_work_queue",
     hdrs = [
         "lib/event_engine/work_queue/work_queue.h",
