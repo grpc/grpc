@@ -150,6 +150,17 @@ struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
   }
 };
 
+// Anything that can be first cast to absl::Status can then be cast to
+// ServerMetadataHandle.
+template <typename T>
+struct StatusCastImpl<
+    ServerMetadataHandle, T,
+    absl::void_t<decltype(StatusCast<absl::Status>(std::declval<T>()))>> {
+  static ServerMetadataHandle Cast(const T& m) {
+    return ServerMetadataFromStatus(StatusCast<absl::Status>(m));
+  }
+};
+
 // Move only type that tracks call startup.
 // Allows observation of when client_initial_metadata has been processed by the
 // end of the local call stack.
@@ -228,6 +239,9 @@ struct CallArgs {
   PipeSender<MessageHandle>* server_to_client_messages;
 };
 
+using NextPromiseFactory =
+    std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
+
 // TODO(ctiller): eventually drop this when we don't need to reference into
 // legacy promise calls anymore
 class CallSpineInterface {
@@ -266,7 +280,7 @@ class CallSpineInterface {
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
       if (!IsStatusOk(r)) {
-        Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
       }
       return Empty{};
     });
@@ -293,7 +307,7 @@ class CallSpineInterface {
         "SpawnGuarded promise must return a status-like object");
     party().Spawn(name, std::move(promise_factory), [this](ResultType r) {
       if (!IsStatusOk(r)) {
-        Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
       }
     });
   }
@@ -462,8 +476,10 @@ auto OutgoingMessages(CallHalf& h) {
   return Wrapper{h};
 }
 
-using NextPromiseFactory =
-    std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
+// Forward a call from `call_handler` to `call_initiator` (with initial metadata
+// `client_initial_metadata`)
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
+                 ClientMetadataHandle client_initial_metadata);
 
 }  // namespace grpc_core
 
