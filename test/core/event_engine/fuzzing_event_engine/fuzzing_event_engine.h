@@ -48,7 +48,9 @@ namespace experimental {
 
 // EventEngine implementation to be used by fuzzers.
 // It's only allowed to have one FuzzingEventEngine instantiated at a time.
-class FuzzingEventEngine : public EventEngine {
+class FuzzingEventEngine
+    : public EventEngine,
+      public std::enable_shared_from_this<FuzzingEventEngine> {
  public:
   struct Options {
     Duration max_delay_run_after = std::chrono::seconds(30);
