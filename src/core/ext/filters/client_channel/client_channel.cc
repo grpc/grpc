@@ -316,10 +316,10 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
   explicit PromiseBasedCallData(ClientChannel* chand) : chand_(chand) {}
 
   ~PromiseBasedCallData() override {
-    if (was_queued_) {
+    if (was_queued_ && client_initial_metadata_ != nullptr) {
       MutexLock lock(&chand_->resolution_mu_);
-      chand_->resolver_queued_calls_.erase(this);
       RemoveCallFromResolverQueuedCallsLocked();
+      chand_->resolver_queued_calls_.erase(this);
     }
   }
 
@@ -3487,6 +3487,17 @@ ClientChannel::PromiseBasedLoadBalancedCall::PromiseBasedLoadBalancedCall(
     : LoadBalancedCall(chand, GetContext<grpc_call_context_element>(),
                        std::move(on_commit), is_transparent_retry) {}
 
+ClientChannel::PromiseBasedLoadBalancedCall::~PromiseBasedLoadBalancedCall() {
+  if (was_queued_ && client_initial_metadata_ != nullptr) {
+    MutexLock lock(&chand()->lb_mu_);
+    Commit();
+    // Remove pick from list of queued picks.
+    RemoveCallFromLbQueuedCallsLocked();
+    // Remove from queued picks list.
+    chand()->lb_queued_calls_.erase(this);
+  }
+}
+
 ArenaPromise<ServerMetadataHandle>
 ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
     CallArgs call_args, OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call) {
@@ -3599,16 +3610,6 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
                                         nullptr, nullptr, "");
         }
       });
-}
-
-ClientChannel::PromiseBasedLoadBalancedCall::~PromiseBasedLoadBalancedCall() {
-  if (was_queued_) {
-    MutexLock lock(&chand()->lb_mu_);
-    // Remove pick from list of queued picks.
-    RemoveCallFromLbQueuedCallsLocked();
-    // Remove from queued picks list.
-    chand()->lb_queued_calls_.erase(this);
-  }
 }
 
 Arena* ClientChannel::PromiseBasedLoadBalancedCall::arena() const {
