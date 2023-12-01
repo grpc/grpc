@@ -884,7 +884,7 @@ grpc_channel_filter MakeConnectedFilter() {
 
 ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
     Transport* transport, CallArgs call_args, NextPromiseFactory) {
-  return transport->client_transport()->MakeCallPromise(std::move(call_args));
+  Crash("unimplemented");
 }
 
 const grpc_channel_filter kPromiseBasedTransportFilter =

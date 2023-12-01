@@ -1605,6 +1605,7 @@ grpc_cc_library(
         "//src/core:socket_mutator",
         "//src/core:stats_data",
         "//src/core:status_helper",
+        "//src/core:status_flag",
         "//src/core:strerror",
         "//src/core:thread_quota",
         "//src/core:time",
