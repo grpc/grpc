@@ -557,8 +557,7 @@ inline void InterceptServerInitialMetadata(
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
   call_args.server_initial_metadata->InterceptAndMap(
-      [call_data](
-          ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
+      [call_data](ServerMetadataHandle md) {
         call_data->call.OnServerInitialMetadata(*md);
         return md;
       });
