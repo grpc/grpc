@@ -62,23 +62,56 @@ class ClientAuthFilter final : public ChannelFilter {
   grpc_call_credentials::GetRequestMetadataArgs args_;
 };
 
-class ServerAuthFilter final : public ChannelFilter {
+class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
+ private:
+  ServerAuthFilter(RefCountedPtr<grpc_server_credentials> server_credentials,
+                   RefCountedPtr<grpc_auth_context> auth_context);
+
+  class RunApplicationCode {
+   public:
+    RunApplicationCode(ServerAuthFilter* filter, ClientMetadata& metadata);
+
+    RunApplicationCode(const RunApplicationCode&) = delete;
+    RunApplicationCode& operator=(const RunApplicationCode&) = delete;
+    RunApplicationCode(RunApplicationCode&& other) noexcept
+        : state_(std::exchange(other.state_, nullptr)) {}
+    RunApplicationCode& operator=(RunApplicationCode&& other) noexcept {
+      state_ = std::exchange(other.state_, nullptr);
+      return *this;
+    }
+
+    Poll<absl::Status> operator()();
+
+   private:
+    struct State;
+    State* state_;
+  };
+
  public:
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ServerAuthFilter> Create(const ChannelArgs& args,
                                                  ChannelFilter::Args);
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    explicit Call(ServerAuthFilter* filter);
+    auto OnClientInitialMetadata(ClientMetadata& md, ServerAuthFilter* filter) {
+      return If(
+          filter->server_credentials_ == nullptr ||
+              filter->server_credentials_->auth_metadata_processor().process ==
+                  nullptr,
+          ImmediateOkStatus(),
+          [filter, md = &md]() { return RunApplicationCode(filter, *md); });
+    }
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnFinalize;
+  };
 
  private:
-  ServerAuthFilter(RefCountedPtr<grpc_server_credentials> server_credentials,
-                   RefCountedPtr<grpc_auth_context> auth_context);
-
-  class RunApplicationCode;
-
   ArenaPromise<absl::StatusOr<CallArgs>> GetCallCredsMetadata(
       CallArgs call_args);
 

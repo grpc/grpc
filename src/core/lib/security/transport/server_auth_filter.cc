@@ -114,6 +114,7 @@ grpc_metadata_array MetadataBatchToMetadataArray(
 
 }  // namespace
 
+#if 0
 class ServerAuthFilter::RunApplicationCode {
  public:
   // TODO(ctiller): Allocate state_ into a pool on the arena to reuse this
@@ -204,28 +205,20 @@ class ServerAuthFilter::RunApplicationCode {
 
   State* state_;
 };
+#endif
 
-ArenaPromise<ServerMetadataHandle> ServerAuthFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+ServerAuthFilter::Call::Call(ServerAuthFilter* filter) {
   // Create server security context.  Set its auth context from channel
   // data and save it in the call context.
   grpc_server_security_context* server_ctx =
       grpc_server_security_context_create(GetContext<Arena>());
   server_ctx->auth_context =
-      auth_context_->Ref(DEBUG_LOCATION, "server_auth_filter");
+      filter->auth_context_->Ref(DEBUG_LOCATION, "server_auth_filter");
   grpc_call_context_element& context =
       GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SECURITY];
   if (context.value != nullptr) context.destroy(context.value);
   context.value = server_ctx;
   context.destroy = grpc_server_security_context_destroy;
-
-  if (server_credentials_ == nullptr ||
-      server_credentials_->auth_metadata_processor().process == nullptr) {
-    return next_promise_factory(std::move(call_args));
-  }
-
-  return TrySeq(RunApplicationCode(this, std::move(call_args)),
-                std::move(next_promise_factory));
 }
 
 ServerAuthFilter::ServerAuthFilter(
