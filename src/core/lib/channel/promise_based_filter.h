@@ -225,7 +225,7 @@ struct RaceAsyncCompletion<true> {
 
 template <typename Derived>
 struct FilterCallData {
-  FilterCallData(Derived* channel) : channel(channel) {}
+  explicit FilterCallData(Derived* channel) : channel(channel) {}
   GPR_NO_UNIQUE_ADDRESS typename Derived::Call call;
   GPR_NO_UNIQUE_ADDRESS
   typename TypeIfNeeded<Latch<ServerMetadataHandle>,
