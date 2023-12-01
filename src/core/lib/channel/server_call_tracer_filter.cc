@@ -88,6 +88,9 @@ class ServerCallTracerFilter
   };
 };
 
+const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerMessage;
+const NoInterceptor ServerCallTracerFilter::Call::OnServerToClientMessage;
+
 const grpc_channel_filter ServerCallTracerFilter::kFilter =
     MakePromiseBasedFilter<ServerCallTracerFilter, FilterEndpoint::kServer,
                            kFilterExaminesServerInitialMetadata>(
