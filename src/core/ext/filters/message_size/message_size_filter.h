@@ -106,7 +106,7 @@ class ServerMessageSizeFilter final
   };
 
  private:
-  ServerMessageSizeFilter(const ChannelArgs& args)
+  explicit ServerMessageSizeFilter(const ChannelArgs& args)
       : parsed_config_(MessageSizeParsedConfig::GetFromChannelArgs(args)) {}
   const MessageSizeParsedConfig parsed_config_;
 };
@@ -134,7 +134,7 @@ class ClientMessageSizeFilter final
   };
 
  private:
-  ClientMessageSizeFilter(const ChannelArgs& args)
+  explicit ClientMessageSizeFilter(const ChannelArgs& args)
       : parsed_config_(MessageSizeParsedConfig::GetFromChannelArgs(args)) {}
   const size_t service_config_parser_index_{MessageSizeParser::ParserIndex()};
   const MessageSizeParsedConfig parsed_config_;
