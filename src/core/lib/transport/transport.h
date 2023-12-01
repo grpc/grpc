@@ -301,25 +301,25 @@ class CallSpineInterface {
 
 class CallSpine final : public CallSpineInterface {
  public:
-  Pipe<ClientMetadataHandle>& client_initial_metadata() {
+  Pipe<ClientMetadataHandle>& client_initial_metadata() override {
     return client_initial_metadata_;
   }
-  Pipe<ServerMetadataHandle>& server_initial_metadata() {
+  Pipe<ServerMetadataHandle>& server_initial_metadata() override {
     return server_initial_metadata_;
   }
-  Pipe<MessageHandle>& client_to_server_messages() {
+  Pipe<MessageHandle>& client_to_server_messages() override {
     return client_to_server_messages_;
   }
-  Pipe<MessageHandle>& server_to_client_messages() {
+  Pipe<MessageHandle>& server_to_client_messages() override {
     return server_to_client_messages_;
   }
-  Pipe<ServerMetadataHandle>& server_trailing_metadata() {
+  Pipe<ServerMetadataHandle>& server_trailing_metadata() override {
     return server_trailing_metadata_;
   }
-  Latch<ServerMetadataHandle>& cancel_latch() { return cancel_latch_; }
-  Party& party() { Crash("unimplemented"); }
-  void IncrementRefCount() { Crash("unimplemented"); }
-  void Unref() { Crash("unimplemented"); }
+  Latch<ServerMetadataHandle>& cancel_latch() override { return cancel_latch_; }
+  Party& party() override { Crash("unimplemented"); }
+  void IncrementRefCount() override { Crash("unimplemented"); }
+  void Unref() override { Crash("unimplemented"); }
 
  private:
   // Initial metadata from client to server
