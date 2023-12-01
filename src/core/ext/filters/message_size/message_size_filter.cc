@@ -50,6 +50,13 @@
 
 namespace grpc_core {
 
+const NoInterceptor ClientMessageSizeFilter::Call::OnClientInitialMetadata;
+const NoInterceptor ClientMessageSizeFilter::Call::OnServerInitialMetadata;
+const NoInterceptor ClientMessageSizeFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ServerMessageSizeFilter::Call::OnClientInitialMetadata;
+const NoInterceptor ServerMessageSizeFilter::Call::OnServerInitialMetadata;
+const NoInterceptor ServerMessageSizeFilter::Call::OnServerTrailingMetadata;
+
 //
 // MessageSizeParsedConfig
 //
