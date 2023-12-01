@@ -129,6 +129,10 @@ struct NoInterceptor {};
 
 namespace promise_filter_detail {
 
+// Determine if a list of interceptors has any that need to asyncronously error
+// the promise. If so, we need to allocate a latch for the generated promise for
+// the original promise stack polyfill code that's generated.
+
 inline constexpr bool HasAsyncErrorInterceptor() { return false; }
 
 inline constexpr bool HasAsyncErrorInterceptor(const NoInterceptor*) {
@@ -151,12 +155,27 @@ inline constexpr bool HasAsyncErrorInterceptor(void (T::*)(A...)) {
   return false;
 }
 
+// For the list case we do two interceptors to avoid amiguities with the single
+// argument forms above.
 template <typename I1, typename I2, typename... Interceptors>
 inline constexpr bool HasAsyncErrorInterceptor(I1 i1, I2 i2,
                                                Interceptors... interceptors) {
   return HasAsyncErrorInterceptor(i1) || HasAsyncErrorInterceptor(i2) ||
          HasAsyncErrorInterceptor(interceptors...);
 }
+
+// Composite for a given channel type to determine if any of its interceptors
+// fall into this category: later code should use this.
+template <typename Derived>
+inline constexpr bool CallHasAsyncErrorInterceptor() {
+  return HasAsyncErrorInterceptor(&Derived::Call::OnClientToServerMessage,
+                                  &Derived::Call::OnServerInitialMetadata,
+                                  &Derived::Call::OnServerToClientMessage);
+}
+
+// Determine if an interceptor needs to access the channel via one of its
+// arguments. If so, we need to allocate a pointer to the channel for the
+// generated polyfill promise for the original promise stack.
 
 inline constexpr bool HasChannelAccess() { return false; }
 
@@ -177,6 +196,8 @@ inline constexpr bool HasChannelAccess(R (T::*)(A, C)) {
   return true;
 }
 
+// For the list case we do two interceptors to avoid amiguities with the single
+// argument forms above.
 template <typename I1, typename I2, typename... Interceptors>
 inline constexpr bool HasChannelAccess(I1 i1, I2 i2,
                                        Interceptors... interceptors) {
@@ -184,23 +205,21 @@ inline constexpr bool HasChannelAccess(I1 i1, I2 i2,
          HasChannelAccess(interceptors...);
 }
 
-template <typename Derived>
-inline constexpr bool CallHasAsyncErrorInterceptor() {
-  return HasAsyncErrorInterceptor(&Derived::Call::OnClientToServerMessage,
-                                  &Derived::Call::OnServerInitialMetadata,
-                                  &Derived::Call::OnServerToClientMessage);
-}
-
+// Composite for a given channel type to determine if any of its interceptors
+// fall into this category: later code should use this.
 template <typename Derived>
 inline constexpr bool CallHasChannelAccess() {
-  return HasAsyncErrorInterceptor(&Derived::Call::OnClientInitialMetadata,
-                                  &Derived::Call::OnClientToServerMessage,
-                                  &Derived::Call::OnServerInitialMetadata,
-                                  &Derived::Call::OnServerToClientMessage,
-                                  &Derived::Call::OnServerTrailingMetadata,
-                                  &Derived::Call::OnFinalize);
+  return HasChannelAccess(&Derived::Call::OnClientInitialMetadata,
+                          &Derived::Call::OnClientToServerMessage,
+                          &Derived::Call::OnServerInitialMetadata,
+                          &Derived::Call::OnServerToClientMessage,
+                          &Derived::Call::OnServerTrailingMetadata,
+                          &Derived::Call::OnFinalize);
 }
 
+// Given a boolean X export a type:
+// either T if X is true
+// or an empty type if it is false
 template <typename T, bool X>
 struct TypeIfNeeded;
 
@@ -218,8 +237,13 @@ struct TypeIfNeeded<T, true> {
   using Type = T;
 };
 
+// For the original promise scheme polyfill:
+// If a set of interceptors might fail asynchronously, wrap the main
+// promise in a race with the cancellation latch.
+// If not, just return the main promise.
 template <bool X>
 struct RaceAsyncCompletion;
+
 template <>
 struct RaceAsyncCompletion<false> {
   template <typename Promise>
@@ -254,6 +278,7 @@ class CallWrapper<Derived, absl::void_t<decltype(typename Derived::Call())>>
   explicit CallWrapper(Derived* channel) : Derived::Call() {}
 };
 
+// For the original promise scheme polyfill: data associated with once call.
 template <typename Derived>
 struct FilterCallData {
   explicit FilterCallData(Derived* channel) : call(channel), channel(channel) {}
@@ -320,11 +345,11 @@ inline auto RunCall(
 }
 
 template <typename Derived>
-inline auto RunCall(ServerMetadataHandle (Derived::Call::*fn)(
-                        ClientMetadata& md, Derived* channel),
-                    CallArgs call_args, NextPromiseFactory next_promise_factory,
-                    FilterCallData<Derived>* call_data)
-    -> ArenaPromise<ServerMetadataHandle> {
+inline auto RunCall(
+    ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md,
+                                              Derived* channel),
+    CallArgs call_args, NextPromiseFactory next_promise_factory,
+    FilterCallData<Derived>* call_data) -> ArenaPromise<ServerMetadataHandle> {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   auto return_md = call_data->call.OnClientInitialMetadata(
       *call_args.client_initial_metadata, call_data->channel);
@@ -648,6 +673,42 @@ MakeFilterCall(Derived* derived) {
 
 }  // namespace promise_filter_detail
 
+// Base class for promise-based channel filters.
+// Eventually this machinery will move elsewhere (the interception logic will
+// move directly into the channel stack, and so filters will just directly
+// derive from `ChannelFilter`)
+//
+// Implements new-style call filters, and polyfills them into the previous
+// scheme.
+//
+// Call filters:
+// Derived types should declare a class `Call` with the following members:
+// - OnClientInitialMetadata  - $VALUE_TYPE = ClientMetadata
+// - OnServerInitialMetadata  - $VALUE_TYPE = ServerMetadata
+// - OnServerToClientMessage  - $VALUE_TYPE = Message
+// - OnClientToServerMessage  - $VALUE_TYPE = Message
+// - OnServerTrailingMetadata - $VALUE_TYPE = ServerMetadata
+// These members define an interception point for a particular event in
+// the call lifecycle.
+// The type of these members matters, and is selectable by the class
+// author. For $INTERCEPTOR_NAME in the above list:
+// - static const NoInterceptor $INTERCEPTOR_NAME:
+//   defines that this filter does not intercept this event.
+//   there is zero runtime cost added to handling that event by this filter.
+// - void $INTERCEPTOR_NAME($VALUE_TYPE&):
+//   the filter intercepts this event, and can modify the value.
+//   it never fails.
+// - absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&):
+//   the filter intercepts this event, and can modify the value.
+//   it can fail, in which case the call will be aborted.
+// - void $INTERCEPTOR_NAME($VALUE_TYPE&, Derived*):
+//   the filter intercepts this event, and can modify the value.
+//   it can access the channel via the second argument.
+//   it never fails.
+// - absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&, Derived*):
+//   the filter intercepts this event, and can modify the value.
+//   it can access the channel via the second argument.
+//   it can fail, in which case the call will be aborted.
 template <typename Derived>
 class ImplementChannelFilter : public ChannelFilter {
  public:
