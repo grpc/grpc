@@ -244,19 +244,19 @@ class CallWrapper<Derived, absl::void_t<decltype(typename Derived::Call(
                                std::declval<Derived*>()))>>
     : public Derived::Call {
  public:
-  CallWrapper(Derived* channel) : Derived::Call(channel) {}
+  explicit CallWrapper(Derived* channel) : Derived::Call(channel) {}
 };
 
 template <typename Derived>
 class CallWrapper<Derived, absl::void_t<decltype(typename Derived::Call())>>
     : public Derived::Call {
  public:
-  CallWrapper(Derived* channel) : Derived::Call() {}
+  explicit CallWrapper(Derived* channel) : Derived::Call() {}
 };
 
 template <typename Derived>
 struct FilterCallData {
-  FilterCallData(Derived* channel) : call(channel), channel(channel) {}
+  explicit FilterCallData(Derived* channel) : call(channel), channel(channel) {}
   GPR_NO_UNIQUE_ADDRESS CallWrapper<Derived> call;
   GPR_NO_UNIQUE_ADDRESS
   typename TypeIfNeeded<Latch<ServerMetadataHandle>,
@@ -320,11 +320,11 @@ inline auto RunCall(
 }
 
 template <typename Derived>
-inline auto RunCall(
-    ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md,
-                                              Derived* channel),
-    CallArgs call_args, NextPromiseFactory next_promise_factory,
-    FilterCallData<Derived>* call_data) -> ArenaPromise<ServerMetadataHandle> {
+inline auto RunCall(ServerMetadataHandle (Derived::Call::*fn)(
+                        ClientMetadata& md, Derived* channel),
+                    CallArgs call_args, NextPromiseFactory next_promise_factory,
+                    FilterCallData<Derived>* call_data)
+    -> ArenaPromise<ServerMetadataHandle> {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   auto return_md = call_data->call.OnClientInitialMetadata(
       *call_args.client_initial_metadata, call_data->channel);
