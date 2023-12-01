@@ -688,6 +688,7 @@ MakeFilterCall(Derived* derived) {
 // - OnServerToClientMessage  - $VALUE_TYPE = Message
 // - OnClientToServerMessage  - $VALUE_TYPE = Message
 // - OnServerTrailingMetadata - $VALUE_TYPE = ServerMetadata
+// - OnFinalize               - special, see below
 // These members define an interception point for a particular event in
 // the call lifecycle.
 // The type of these members matters, and is selectable by the class
@@ -709,6 +710,12 @@ MakeFilterCall(Derived* derived) {
 //   the filter intercepts this event, and can modify the value.
 //   it can access the channel via the second argument.
 //   it can fail, in which case the call will be aborted.
+// Finally, OnFinalize can be added to intecept call finalization.
+// It must have one of the signatures:
+// - static const NoInterceptor OnFinalize:
+//   the filter does not intercept call finalization.
+// - void OnFinalize(const grpc_call_final_info*):
+//   the filter intercepts call finalization.
 template <typename Derived>
 class ImplementChannelFilter : public ChannelFilter {
  public:
