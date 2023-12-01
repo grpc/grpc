@@ -116,7 +116,7 @@ static void grpc_rb_event_unblocking_func(void* arg) {
 
 /* This is the implementation of the thread that handles auth metadata plugin
  * events */
-static VALUE grpc_rb_event_thread(VALUE arg) {
+static VALUE grpc_rb_event_thread(void* arg) {
   grpc_rb_event* event;
   (void)arg;
   while (true) {

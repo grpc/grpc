@@ -726,7 +726,7 @@ static void run_poll_channels_loop_unblocking_func(void* arg) {
 }
 
 // Poll channel connectivity states in background thread without the GIL.
-static VALUE run_poll_channels_loop(VALUE arg) {
+static VALUE run_poll_channels_loop(void* arg) {
   (void)arg;
   gpr_log(
       GPR_DEBUG,
