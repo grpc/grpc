@@ -292,8 +292,8 @@ class ClientChannel::FilterBasedCallData : public ClientChannel::CallData {
   grpc_polling_entity* pollent_ = nullptr;
 
   // Accessed while holding ClientChannel::resolution_mu_.
-  ResolverQueuedCallCanceller* resolver_call_canceller_
-      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = nullptr;
+  ResolverQueuedCallCanceller* resolver_call_canceller_ ABSL_GUARDED_BY(
+      &ClientChannel::resolution_mu_) = nullptr;
 
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
   grpc_closure recv_trailing_metadata_ready_;
@@ -314,6 +314,13 @@ class ClientChannel::FilterBasedCallData : public ClientChannel::CallData {
 class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
  public:
   explicit PromiseBasedCallData(ClientChannel* chand) : chand_(chand) {}
+
+  ~PromiseBasedCallData() override {
+    if (was_queued_) {
+      MutexLock lock(&chand_->resolution_mu_);
+      chand_->resolver_queued_calls_.erase(this);
+    }
+  }
 
   ArenaPromise<absl::StatusOr<CallArgs>> MakeNameResolutionPromise(
       CallArgs call_args) {
@@ -881,8 +888,9 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
       ABSL_GUARDED_BY(*chand_->work_serializer_);
-  std::set<std::unique_ptr<DataWatcherInterface>, DataWatcherLessThan>
-      data_watchers_ ABSL_GUARDED_BY(*chand_->work_serializer_);
+  std::set<std::unique_ptr<DataWatcherInterface>,
+           DataWatcherLessThan> data_watchers_
+      ABSL_GUARDED_BY(*chand_->work_serializer_);
 };
 
 //
