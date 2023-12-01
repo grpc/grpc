@@ -757,6 +757,7 @@ class ChannelBroadcaster {
 const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::StartTransportStreamOpBatch,
     Server::ChannelData::MakeCallPromise,
+    /* init_call: */ nullptr,
     grpc_channel_next_op,
     sizeof(Server::CallData),
     Server::CallData::InitCallElement,

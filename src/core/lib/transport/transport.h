@@ -55,6 +55,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -227,6 +228,61 @@ struct CallArgs {
 
 using NextPromiseFactory =
     std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
+
+// TODO(ctiller): eventually drop this when we don't need to reference into
+// legacy promise calls anymore
+class CallSpineInterface {
+ public:
+  virtual ~CallSpineInterface() = default;
+  virtual Pipe<ClientMetadataHandle>& client_initial_metadata() = 0;
+  virtual Pipe<ServerMetadataHandle>& server_initial_metadata() = 0;
+  virtual Pipe<MessageHandle>& client_to_server_messages() = 0;
+  virtual Pipe<MessageHandle>& server_to_client_messages() = 0;
+  virtual Pipe<ServerMetadataHandle>& server_trailing_metadata() = 0;
+  GRPC_MUST_USE_RESULT virtual absl::nullopt_t Cancel(
+      ServerMetadataHandle metadata) = 0;
+  virtual Party& party() = 0;
+};
+
+class CallSpine final : public CallSpineInterface {
+ public:
+  Pipe<ClientMetadataHandle>& client_initial_metadata() {
+    return client_initial_metadata_;
+  }
+  Pipe<ServerMetadataHandle>& server_initial_metadata() {
+    return server_initial_metadata_;
+  }
+  Pipe<MessageHandle>& client_to_server_messages() {
+    return client_to_server_messages_;
+  }
+  Pipe<MessageHandle>& server_to_client_messages() {
+    return server_to_client_messages_;
+  }
+  Pipe<ServerMetadataHandle>& server_trailing_metadata() {
+    return server_trailing_metadata_;
+  }
+  absl::nullopt_t Cancel(ServerMetadataHandle metadata) {
+    GPR_DEBUG_ASSERT(Activity::current() == &party());
+    if (cancel_latch_.is_set()) return absl::nullopt;
+    cancel_latch_.Set(std::move(metadata));
+    return absl::nullopt;
+  }
+  Party& party() { Crash("unimplemented"); }
+
+ private:
+  // Initial metadata from client to server
+  Pipe<ClientMetadataHandle> client_initial_metadata_;
+  // Initial metadata from server to client
+  Pipe<ServerMetadataHandle> server_initial_metadata_;
+  // Messages travelling from the application to the transport.
+  Pipe<MessageHandle> client_to_server_messages_;
+  // Messages travelling from the transport to the application.
+  Pipe<MessageHandle> server_to_client_messages_;
+  // Trailing metadata from server to client
+  Pipe<ServerMetadataHandle> server_trailing_metadata_;
+  // Latch that can be set to terminate the call
+  Latch<ServerMetadataHandle> cancel_latch_;
+};
 
 }  // namespace grpc_core
 

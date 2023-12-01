@@ -292,8 +292,8 @@ class ClientChannel::FilterBasedCallData : public ClientChannel::CallData {
   grpc_polling_entity* pollent_ = nullptr;
 
   // Accessed while holding ClientChannel::resolution_mu_.
-  ResolverQueuedCallCanceller* resolver_call_canceller_
-      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = nullptr;
+  ResolverQueuedCallCanceller* resolver_call_canceller_ ABSL_GUARDED_BY(
+      &ClientChannel::resolution_mu_) = nullptr;
 
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
   grpc_closure recv_trailing_metadata_ready_;
@@ -399,6 +399,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
 const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
     ClientChannel::MakeCallPromise,
+    /* init_call: */ nullptr,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -415,6 +416,7 @@ const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
 const grpc_channel_filter ClientChannel::kFilterVtableWithoutPromises = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
     nullptr,
+    /* init_call: */ nullptr,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -562,6 +564,7 @@ class DynamicTerminationFilter::CallData {
 const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     DynamicTerminationFilter::CallData::StartTransportStreamOpBatch,
     DynamicTerminationFilter::MakeCallPromise,
+    /* init_call: */ nullptr,
     DynamicTerminationFilter::StartTransportOp,
     sizeof(DynamicTerminationFilter::CallData),
     DynamicTerminationFilter::CallData::Init,
@@ -881,8 +884,9 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
       ABSL_GUARDED_BY(*chand_->work_serializer_);
-  std::set<std::unique_ptr<DataWatcherInterface>, DataWatcherLessThan>
-      data_watchers_ ABSL_GUARDED_BY(*chand_->work_serializer_);
+  std::set<std::unique_ptr<DataWatcherInterface>,
+           DataWatcherLessThan> data_watchers_
+      ABSL_GUARDED_BY(*chand_->work_serializer_);
 };
 
 //

@@ -343,6 +343,7 @@ const grpc_channel_filter grpc_client_deadline_filter = {
        grpc_core::NextPromiseFactory next_promise_factory) {
       return next_promise_factory(std::move(call_args));
     },
+    /* init_call: */ nullptr,
     grpc_channel_next_op,
     sizeof(grpc_deadline_state),
     deadline_init_call_elem,
@@ -368,6 +369,7 @@ const grpc_channel_filter grpc_server_deadline_filter = {
       }
       return next_promise_factory(std::move(call_args));
     },
+    /* init_call: */ nullptr,
     grpc_channel_next_op,
     sizeof(server_call_data),
     deadline_init_call_elem,

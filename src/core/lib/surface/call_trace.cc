@@ -77,7 +77,8 @@ const grpc_channel_filter* PromiseTracingFilterFor(
                   return r;
                 };
               },
-              grpc_channel_next_op, /* sizeof_call_data: */ 0,
+              /* init_call: */ nullptr, grpc_channel_next_op,
+              /* sizeof_call_data: */ 0,
               // init_call_elem:
               [](grpc_call_element*, const grpc_call_element_args*) {
                 return absl::OkStatus();
@@ -108,8 +109,7 @@ const grpc_channel_filter* PromiseTracingFilterFor(
   struct Globals {
     Mutex mu;
     absl::flat_hash_map<const grpc_channel_filter*,
-                        std::unique_ptr<DerivedFilter>>
-        map ABSL_GUARDED_BY(mu);
+                        std::unique_ptr<DerivedFilter>> map ABSL_GUARDED_BY(mu);
   };
   auto* globals = NoDestructSingleton<Globals>::Get();
   MutexLock lock(&globals->mu);
