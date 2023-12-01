@@ -93,7 +93,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
     void AddOptionalLabels(OptionalLabelComponent component,
                            std::shared_ptr<std::map<std::string, std::string>>
-                               service_labels) override;
+                               optional_label) override;
 
    private:
     const OpenTelemetryCallTracer* parent_;

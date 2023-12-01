@@ -233,6 +233,23 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::StartNewTcpTrace() {
   return nullptr;
 }
 
+void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::AddOptionalLabels(
+    OptionalLabelComponent component,
+    std::shared_ptr<std::map<std::string, std::string>> optional_label) {
+  using ValueType = std::shared_ptr<std::map<std::string, std::string>>;
+  ValueType* v = nullptr;
+  auto iter = optional_labels_.begin();
+  for (int i = 0; i <= static_cast<int>(component); i++) {
+    if (iter == optional_labels_.end()) {
+      // expand
+      v = optional_labels_.EmplaceBack();
+    } else {
+      v = &*iter++;
+    }
+  }
+  *v = std::move(optional_label);
+}
+
 //
 // OpenTelemetryCallTracer
 //
