@@ -319,6 +319,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
     if (was_queued_) {
       MutexLock lock(&chand_->resolution_mu_);
       chand_->resolver_queued_calls_.erase(this);
+      RemoveCallFromResolverQueuedCallsLocked();
     }
   }
 
@@ -3599,6 +3600,16 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
                                         nullptr, nullptr, "");
         }
       });
+}
+
+ClientChannel::PromiseBasedLoadBalancedCall::~PromiseBasedLoadBalancedCall() {
+  if (was_queued_) {
+    MutexLock lock(&chand()->lb_mu_);
+    // Remove pick from list of queued picks.
+    RemoveCallFromLbQueuedCallsLocked();
+    // Remove from queued picks list.
+    chand()->lb_queued_calls_.erase(this);
+  }
 }
 
 Arena* ClientChannel::PromiseBasedLoadBalancedCall::arena() const {

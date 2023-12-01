@@ -310,28 +310,28 @@ class ClientChannel {
   //
   mutable Mutex resolution_mu_;
   // List of calls queued waiting for resolver result.
-  absl::flat_hash_set<CallData*> resolver_queued_calls_
-      ABSL_GUARDED_BY(resolution_mu_);
+  absl::flat_hash_set<CallData*> resolver_queued_calls_ ABSL_GUARDED_BY(
+      resolution_mu_);
   // Data from service config.
-  absl::Status resolver_transient_failure_error_
-      ABSL_GUARDED_BY(resolution_mu_);
+  absl::Status resolver_transient_failure_error_ ABSL_GUARDED_BY(
+      resolution_mu_);
   bool received_service_config_data_ ABSL_GUARDED_BY(resolution_mu_) = false;
   RefCountedPtr<ServiceConfig> service_config_ ABSL_GUARDED_BY(resolution_mu_);
-  RefCountedPtr<ConfigSelector> config_selector_
-      ABSL_GUARDED_BY(resolution_mu_);
-  RefCountedPtr<DynamicFilters> dynamic_filters_
-      ABSL_GUARDED_BY(resolution_mu_);
+  RefCountedPtr<ConfigSelector> config_selector_ ABSL_GUARDED_BY(
+      resolution_mu_);
+  RefCountedPtr<DynamicFilters> dynamic_filters_ ABSL_GUARDED_BY(
+      resolution_mu_);
 
   //
   // Fields related to LB picks.  Guarded by lb_mu_.
   //
   mutable Mutex lb_mu_;
-  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_
-      ABSL_GUARDED_BY(lb_mu_);
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_ ABSL_GUARDED_BY(
+      lb_mu_);
   absl::flat_hash_set<RefCountedPtr<LoadBalancedCall>,
                       RefCountedPtrHash<LoadBalancedCall>,
-                      RefCountedPtrEq<LoadBalancedCall>>
-      lb_queued_calls_ ABSL_GUARDED_BY(lb_mu_);
+                      RefCountedPtrEq<LoadBalancedCall>> lb_queued_calls_
+      ABSL_GUARDED_BY(lb_mu_);
 
   //
   // Fields used in the control plane.  Guarded by work_serializer.
@@ -339,24 +339,24 @@ class ClientChannel {
   std::shared_ptr<WorkSerializer> work_serializer_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(*work_serializer_);
   OrphanablePtr<Resolver> resolver_ ABSL_GUARDED_BY(*work_serializer_);
-  bool previous_resolution_contained_addresses_
-      ABSL_GUARDED_BY(*work_serializer_) = false;
-  RefCountedPtr<ServiceConfig> saved_service_config_
-      ABSL_GUARDED_BY(*work_serializer_);
-  RefCountedPtr<ConfigSelector> saved_config_selector_
-      ABSL_GUARDED_BY(*work_serializer_);
-  OrphanablePtr<LoadBalancingPolicy> lb_policy_
-      ABSL_GUARDED_BY(*work_serializer_);
-  RefCountedPtr<SubchannelPoolInterface> subchannel_pool_
-      ABSL_GUARDED_BY(*work_serializer_);
+  bool previous_resolution_contained_addresses_ ABSL_GUARDED_BY(
+      *work_serializer_) = false;
+  RefCountedPtr<ServiceConfig> saved_service_config_ ABSL_GUARDED_BY(
+      *work_serializer_);
+  RefCountedPtr<ConfigSelector> saved_config_selector_ ABSL_GUARDED_BY(
+      *work_serializer_);
+  OrphanablePtr<LoadBalancingPolicy> lb_policy_ ABSL_GUARDED_BY(
+      *work_serializer_);
+  RefCountedPtr<SubchannelPoolInterface> subchannel_pool_ ABSL_GUARDED_BY(
+      *work_serializer_);
   // The number of SubchannelWrapper instances referencing a given Subchannel.
-  std::map<Subchannel*, int> subchannel_refcount_map_
-      ABSL_GUARDED_BY(*work_serializer_);
+  std::map<Subchannel*, int> subchannel_refcount_map_ ABSL_GUARDED_BY(
+      *work_serializer_);
   // The set of SubchannelWrappers that currently exist.
   // No need to hold a ref, since the map is updated in the control-plane
   // work_serializer when the SubchannelWrappers are created and destroyed.
-  absl::flat_hash_set<SubchannelWrapper*> subchannel_wrappers_
-      ABSL_GUARDED_BY(*work_serializer_);
+  absl::flat_hash_set<SubchannelWrapper*> subchannel_wrappers_ ABSL_GUARDED_BY(
+      *work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
   grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_);
 
@@ -373,8 +373,9 @@ class ClientChannel {
   // synchronously via grpc_channel_num_external_connectivity_watchers().
   //
   mutable Mutex external_watchers_mu_;
-  std::map<grpc_closure*, RefCountedPtr<ExternalConnectivityWatcher>>
-      external_watchers_ ABSL_GUARDED_BY(external_watchers_mu_);
+  std::map<grpc_closure*,
+           RefCountedPtr<ExternalConnectivityWatcher>> external_watchers_
+      ABSL_GUARDED_BY(external_watchers_mu_);
 };
 
 //
@@ -580,8 +581,8 @@ class ClientChannel::FilterBasedLoadBalancedCall
   grpc_error_handle failure_error_;
 
   // Accessed while holding ClientChannel::lb_mu_.
-  LbQueuedCallCanceller* lb_call_canceller_
-      ABSL_GUARDED_BY(&ClientChannel::lb_mu_) = nullptr;
+  LbQueuedCallCanceller* lb_call_canceller_ ABSL_GUARDED_BY(
+      &ClientChannel::lb_mu_) = nullptr;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
@@ -610,6 +611,8 @@ class ClientChannel::PromiseBasedLoadBalancedCall
   PromiseBasedLoadBalancedCall(ClientChannel* chand,
                                absl::AnyInvocable<void()> on_commit,
                                bool is_transparent_retry);
+
+  ~PromiseBasedLoadBalancedCall() override;
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call);
