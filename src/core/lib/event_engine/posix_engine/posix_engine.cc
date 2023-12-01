@@ -591,6 +591,7 @@ PosixEventEngine::GetDNSResolver(
 #else   // GRPC_ARES == 1 &&
         // defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   grpc_core::Crash("Unable to get DNS resolver for this platform.");
+  (void)options;
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 }
 
