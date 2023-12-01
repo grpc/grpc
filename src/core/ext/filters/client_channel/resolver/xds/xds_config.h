@@ -73,6 +73,7 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
     static int ChannelArgsCompare(const XdsConfig* a, const XdsConfig* b) {
       return QsortCompare(a, b);
     }
+    static constexpr bool ChannelArgUseConstPtr() { return true; }
   };
 
   class Watcher {

@@ -151,7 +151,7 @@ class CdsLb : public LoadBalancingPolicy {
   void ReportTransientFailure(absl::Status status);
 
   std::string cluster_name_;
-  RefCountedPtr<XdsConfig> xds_config_;
+  RefCountedPtr<const XdsConfig> xds_config_;
 
   // Cluster subscription, for dynamic clusters (e.g., RLS).
   RefCountedPtr<XdsDependencyManager::ClusterSubscription> subscription_;

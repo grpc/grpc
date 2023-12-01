@@ -286,9 +286,6 @@ class ChannelArgs {
     Pointer(void* p, const grpc_arg_pointer_vtable* vtable);
     ~Pointer() { vtable_->destroy(p_); }
 
-    Pointer(const void* p, const grpc_arg_pointer_vtable* vtable)
-        : Pointer(const_cast<void*>(p), vtable) {}
-
     Pointer(const Pointer& other);
     Pointer& operator=(Pointer other) {
       std::swap(p_, other.p_);
