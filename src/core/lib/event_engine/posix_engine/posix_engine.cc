@@ -94,9 +94,13 @@ class TimerForkCallbackMethods {
   static void PostforkChild() { g_timer_fork_manager->PostforkChild(); }
 };
 
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+
 bool ShouldUseAresDnsResolver(absl::string_view resolver_env) {
   return resolver_env.empty() || absl::EqualsIgnoreCase(resolver_env, "ares");
 }
+
+#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
 }  // namespace
 
