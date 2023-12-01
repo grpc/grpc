@@ -3487,17 +3487,6 @@ ClientChannel::PromiseBasedLoadBalancedCall::PromiseBasedLoadBalancedCall(
     : LoadBalancedCall(chand, GetContext<grpc_call_context_element>(),
                        std::move(on_commit), is_transparent_retry) {}
 
-ClientChannel::PromiseBasedLoadBalancedCall::~PromiseBasedLoadBalancedCall() {
-  if (was_queued_ && client_initial_metadata_ != nullptr) {
-    MutexLock lock(&chand()->lb_mu_);
-    Commit();
-    // Remove pick from list of queued picks.
-    RemoveCallFromLbQueuedCallsLocked();
-    // Remove from queued picks list.
-    chand()->lb_queued_calls_.erase(this);
-  }
-}
-
 ArenaPromise<ServerMetadataHandle>
 ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
     CallArgs call_args, OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call) {

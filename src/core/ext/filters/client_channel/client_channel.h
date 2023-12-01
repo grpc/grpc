@@ -611,8 +611,6 @@ class ClientChannel::PromiseBasedLoadBalancedCall
                                absl::AnyInvocable<void()> on_commit,
                                bool is_transparent_retry);
 
-  ~PromiseBasedLoadBalancedCall() override;
-
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call);
 
