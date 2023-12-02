@@ -74,7 +74,7 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
     const LoadBalancingPolicyProto& policy) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
-  upb::SymbolTable symtab;
+  upb::DefPool symtab;
   XdsResourceType::DecodeContext context = {nullptr,
                                             GrpcXdsBootstrap::GrpcXdsServer(),
                                             nullptr, symtab.ptr(), arena.ptr()};

@@ -317,7 +317,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Stores resource type objects seen by type URL.
   std::map<absl::string_view /*resource_type*/, const XdsResourceType*>
       resource_types_ ABSL_GUARDED_BY(mu_);
-  upb::SymbolTable symtab_ ABSL_GUARDED_BY(mu_);
+  upb::DefPool symtab_ ABSL_GUARDED_BY(mu_);
 
   // Map of existing xDS server channels.
   // Key is owned by the bootstrap config.

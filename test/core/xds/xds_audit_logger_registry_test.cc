@@ -65,7 +65,7 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
     const AuditLoggerConfigProto& config) {
   std::string serialized_config = config.SerializeAsString();
   upb::Arena arena;
-  upb::SymbolTable symtab;
+  upb::DefPool symtab;
   XdsResourceType::DecodeContext context = {nullptr,
                                             GrpcXdsBootstrap::GrpcXdsServer(),
                                             nullptr, symtab.ptr(), arena.ptr()};

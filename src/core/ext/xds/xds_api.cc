@@ -57,7 +57,7 @@
 namespace grpc_core {
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
-               const XdsBootstrap::Node* node, upb::SymbolTable* symtab,
+               const XdsBootstrap::Node* node, upb::DefPool* symtab,
                std::string user_agent_name, std::string user_agent_version)
     : client_(client),
       tracer_(tracer),
