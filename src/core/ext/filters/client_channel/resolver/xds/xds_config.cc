@@ -281,7 +281,7 @@ class XdsDependencyManager::DnsResultHandler : public Resolver::ResultHandler {
     dependency_mgr_->work_serializer_->Run(
         [dependency_mgr = dependency_mgr_, name = name_,
          result = std::move(result)]() mutable {
-          dependency_mgr->OnDnsResult(std::move(name), std::move(result));
+          dependency_mgr->OnDnsResult(name, std::move(result));
         },
         DEBUG_LOCATION);
   }
