@@ -69,6 +69,8 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
     absl::flat_hash_map<std::string, absl::StatusOr<std::vector<ClusterConfig>>>
         clusters;
 
+    std::string ToString() const;
+
     static absl::string_view ChannelArgName() {
       return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_config";
     }

@@ -37,6 +37,54 @@ constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
 }  // namespace
 
 //
+// XdsDependencyManager::XdsConfig
+//
+
+std::string XdsDependencyManager::XdsConfig::ToString() const {
+  std::vector<std::string> parts = {
+      "{\n"
+      "  listener: {",
+      listener->ToString(),
+      "}\n"
+      "  route_config: {",
+      route_config->ToString(),
+      "}\n"
+      "  virtual_host: {",
+      virtual_host->ToString(),
+      "}\n"
+      "  clusters: {\n"};
+  for (const auto& p : clusters) {
+    parts.push_back(absl::StrCat("    \"", p.first, "\": "));
+    if (!p.second.ok()) {
+      parts.push_back(p.second.status().ToString());
+      parts.push_back("\n");
+    } else {
+      parts.push_back("[\n");
+      for (const auto& entry : *p.second) {
+        parts.push_back(absl::StrCat(
+            "      {\n"
+            "        name: \"",
+            entry.cluster_name,
+            "\"\n"
+            "        cluster: {",
+            entry.cluster->ToString(),
+            "}\n"
+            "        endpoints: {",
+            entry.endpoints == nullptr ? "<null>" : entry.endpoints->ToString(),
+            "}\n"
+            "        resolution_note: \"",
+            entry.resolution_note,
+            "\"\n"
+            "      }\n"));
+      }
+      parts.push_back("    ]\n");
+    }
+  }
+  parts.push_back("  }\n}");
+  return absl::StrJoin(parts, "");
+}
+
+//
 // XdsDependencyManager::ListenerWatcher
 //
 
@@ -752,6 +800,14 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
       // Aggregate cluster.  Recursively expand to child clusters.
       [&](const XdsClusterResource::Aggregate& aggregate)
           -> absl::StatusOr<bool> {
+        // If this is the root cluster, add it.
+        if (clusters_seen->size() == 1) {
+          cluster_list->emplace_back();
+          auto& entry = cluster_list->back();
+          entry.cluster_name = std::string(name);
+          entry.cluster = *state.update;
+        }
+        // Recursively expand leaf clusters.
         bool missing_cluster = false;
         for (const std::string& child_name :
              aggregate.prioritized_cluster_names) {
@@ -875,11 +931,19 @@ void XdsDependencyManager::MaybeReportUpdate() {
     endpoint_watchers_.erase(it++);
   }
   // If we have all the data we need, then send an update.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] %sreturning updated config",
-            this, missing_data ? "NOT " : "");
+  if (missing_data) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+      gpr_log(GPR_INFO,
+              "[XdsDependencyManager %p] missing data -- NOT returning config",
+              this);
+    }
+    return;
   }
-  if (!missing_data) watcher_->OnUpdate(std::move(config));
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[XdsDependencyManager %p] returning config: %s", this,
+            config->ToString().c_str());
+  }
+  watcher_->OnUpdate(std::move(config));
 }
 
 }  // namespace grpc_core
