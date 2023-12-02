@@ -183,13 +183,27 @@ struct ChannelArgTypeTraits<T,
   };
 };
 
+// Determine if the pointer for a channel arg name should be const or not
+template <typename T, typename SfinaeVoid = void>
+struct ChannelArgPointerShouldBeConst {
+  static constexpr bool kValue = false;
+};
+
+template <typename T>
+struct ChannelArgPointerShouldBeConst<
+    T, absl::void_t<decltype(T::ChannelArgUseConstPtr())>> {
+  static constexpr bool kValue = T::ChannelArgUseConstPtr();
+};
+
 // GetObject support for shared_ptr and RefCountedPtr
 template <typename T, typename Ignored = void /* for SFINAE */>
 struct GetObjectImpl;
 // std::shared_ptr implementation
 template <typename T>
 struct GetObjectImpl<
-    T, absl::enable_if_t<SupportedSharedPtrType<T>::value, void>> {
+    T, absl::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
+                             SupportedSharedPtrType<T>::value,
+                         void>> {
   using Result = T*;
   using ReffedResult = std::shared_ptr<T>;
   using StoredType = std::shared_ptr<T>*;
@@ -210,9 +224,31 @@ struct GetObjectImpl<
 // RefCountedPtr
 template <typename T>
 struct GetObjectImpl<
-    T, absl::enable_if_t<!SupportedSharedPtrType<T>::value, void>> {
+    T, absl::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
+                             !SupportedSharedPtrType<T>::value,
+                         void>> {
   using Result = T*;
   using ReffedResult = RefCountedPtr<T>;
+  using StoredType = Result;
+  static Result Get(StoredType p) { return p; };
+  static ReffedResult GetReffed(StoredType p) {
+    if (p == nullptr) return nullptr;
+    return p->Ref();
+  };
+  static ReffedResult GetReffed(StoredType p, const DebugLocation& location,
+                                const char* reason) {
+    if (p == nullptr) return nullptr;
+    return p->Ref(location, reason);
+  };
+};
+
+template <typename T>
+struct GetObjectImpl<
+    T, absl::enable_if_t<ChannelArgPointerShouldBeConst<T>::kValue &&
+                             !SupportedSharedPtrType<T>::value,
+                         void>> {
+  using Result = const T*;
+  using ReffedResult = RefCountedPtr<const T>;
   using StoredType = Result;
   static Result Get(StoredType p) { return p; };
   static ReffedResult GetReffed(StoredType p) {
@@ -242,6 +278,7 @@ struct ChannelArgNameTraits<grpc_event_engine::experimental::EventEngine> {
     return GRPC_INTERNAL_ARG_EVENT_ENGINE;
   }
 };
+
 class ChannelArgs {
  public:
   class Pointer {
@@ -381,12 +418,26 @@ class ChannelArgs {
   GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
                                 RefCountedPtr<T> value) const
       -> absl::enable_if_t<
-          std::is_same<const grpc_arg_pointer_vtable*,
-                       decltype(ChannelArgTypeTraits<
-                                absl::remove_cvref_t<T>>::VTable())>::value,
+          !ChannelArgPointerShouldBeConst<T>::kValue &&
+              std::is_same<const grpc_arg_pointer_vtable*,
+                           decltype(ChannelArgTypeTraits<
+                                    absl::remove_cvref_t<T>>::VTable())>::value,
           ChannelArgs> {
     return Set(
         name, Pointer(value.release(),
+                      ChannelArgTypeTraits<absl::remove_cvref_t<T>>::VTable()));
+  }
+  template <typename T>
+  GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
+                                RefCountedPtr<const T> value) const
+      -> absl::enable_if_t<
+          ChannelArgPointerShouldBeConst<T>::kValue &&
+              std::is_same<const grpc_arg_pointer_vtable*,
+                           decltype(ChannelArgTypeTraits<
+                                    absl::remove_cvref_t<T>>::VTable())>::value,
+          ChannelArgs> {
+    return Set(
+        name, Pointer(const_cast<T*>(value.release()),
                       ChannelArgTypeTraits<absl::remove_cvref_t<T>>::VTable()));
   }
   template <typename T>
@@ -426,6 +477,8 @@ class ChannelArgs {
   absl::optional<int> GetInt(absl::string_view name) const;
   absl::optional<absl::string_view> GetString(absl::string_view name) const;
   absl::optional<std::string> GetOwnedString(absl::string_view name) const;
+  // WARNING: this is broken if `name` represents something that was stored as a
+  // RefCounted<const T> - we will discard the const-ness.
   void* GetVoidPointer(absl::string_view name) const;
   template <typename T>
   typename GetObjectImpl<T>::StoredType GetPointer(
