@@ -5672,7 +5672,10 @@ grpc_cc_library(
     hdrs = [
         "ext/filters/client_channel/resolver/xds/xds_config.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "grpc_lb_xds_channel_args",

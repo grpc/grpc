@@ -137,8 +137,8 @@ class XdsDependencyManager::ClusterWatcher
     : public XdsClusterResourceType::WatcherInterface {
  public:
   ClusterWatcher(RefCountedPtr<XdsDependencyManager> dependency_mgr,
-                 std::string name)
-      : dependency_mgr_(std::move(dependency_mgr)), name_(std::move(name)) {}
+                 absl::string_view name)
+      : dependency_mgr_(std::move(dependency_mgr)), name_(name) {}
 
   void OnResourceChanged(
       std::shared_ptr<const XdsClusterResource> cluster) override {
@@ -182,8 +182,8 @@ class XdsDependencyManager::EndpointWatcher
     : public XdsEndpointResourceType::WatcherInterface {
  public:
   EndpointWatcher(RefCountedPtr<XdsDependencyManager> dependency_mgr,
-                 std::string name)
-      : dependency_mgr_(std::move(dependency_mgr)), name_(std::move(name)) {}
+                  absl::string_view name)
+      : dependency_mgr_(std::move(dependency_mgr)), name_(name) {}
 
   void OnResourceChanged(
       std::shared_ptr<const XdsEndpointResource> endpoint) override {
@@ -605,9 +605,9 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
   it->second.update.endpoints = std::move(resource);
 }
 
-std::set<std::string> XdsDependencyManager::GetClustersFromRouteConfig(
+std::set<absl::string_view> XdsDependencyManager::GetClustersFromRouteConfig(
     const XdsRouteConfigResource& route_config) const {
-  std::set<std::string> clusters;
+  std::set<absl::string_view> clusters;
   for (auto& route : current_virtual_host_->routes) {
     auto* route_action =
         absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
@@ -639,10 +639,10 @@ std::set<std::string> XdsDependencyManager::GetClustersFromRouteConfig(
 }
 
 absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
-    const std::string& name,
+    absl::string_view name,
     std::vector<XdsConfig::ClusterConfig>* cluster_list,
-    int depth, std::set<std::string>* clusters_seen,
-    std::set<std::string>* eds_resources_seen) {
+    int depth, std::set<absl::string_view>* clusters_seen,
+    std::set<absl::string_view>* eds_resources_seen) {
   if (depth == kMaxXdsAggregateClusterRecursionDepth) {
     return absl::UnavailableError("aggregate cluster graph exceeds max depth");
   }
@@ -656,7 +656,7 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO,
               "[XdsDependencyManager %p] starting watch for cluster %s",
-              this, name.c_str());
+              this, std::string(name).c_str());
     }
     state.watcher = watcher.get();
     XdsClusterResourceType::StartWatch(xds_client_.get(), name,
@@ -672,7 +672,7 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
       (*state.update)->type,
       // EDS cluster.
       [&](const XdsClusterResource::Eds& eds) -> absl::StatusOr<bool> {
-        const std::string& eds_resource_name =
+        absl::string_view eds_resource_name =
             eds.eds_service_name.empty() ? name : eds.eds_service_name;
         eds_resources_seen->insert(eds_resource_name);
         // Start EDS watch if needed.
@@ -681,7 +681,7 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
           if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
             gpr_log(GPR_INFO,
                     "[XdsDependencyManager %p] starting watch for endpoint %s",
-                    this, eds_resource_name.c_str());
+                    this, std::string(eds_resource_name).c_str());
           }
           auto watcher =
               MakeRefCounted<EndpointWatcher>(Ref(), eds_resource_name);
@@ -698,7 +698,7 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
         // Populate endpoint info.
         cluster_list->emplace_back();
         auto& entry = cluster_list->back();
-        entry.cluster_name = name;
+        entry.cluster_name = std::string(name);
         entry.cluster = *state.update;
         entry.endpoints = eds_state.update.endpoints;
         entry.resolution_note = eds_state.update.resolution_note;
@@ -750,7 +750,7 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
         // Populate endpoint info.
         cluster_list->emplace_back();
         auto& entry = cluster_list->back();
-        entry.cluster_name = name;
+        entry.cluster_name = std::string(name);
         entry.cluster = *state.update;
         entry.endpoints = dns_state.update.endpoints;
         entry.resolution_note = dns_state.update.resolution_note;
@@ -788,7 +788,7 @@ XdsDependencyManager::GetClusterSubscription(std::string cluster_name) {
 }
 
 void XdsDependencyManager::OnClusterSubscriptionUnref(
-    std::string cluster_name, ClusterSubscription* subscription) {
+    absl::string_view cluster_name, ClusterSubscription* subscription) {
   auto it = cluster_subscriptions_.find(cluster_name);
   // Shouldn't happen, but ignore if it does.
   if (it == cluster_subscriptions_.end()) return;
@@ -815,9 +815,8 @@ void XdsDependencyManager::MaybeReportUpdate() {
   config->route_config = current_route_config_;
   config->virtual_host = current_virtual_host_;
   // Determine the set of clusters we should be watching.
-// FIXME: change this to use absl::string_view instead
-  std::set<std::string> clusters_to_watch;
-  for (const std::string& cluster : clusters_from_route_config_) {
+  std::set<absl::string_view> clusters_to_watch;
+  for (const absl::string_view& cluster : clusters_from_route_config_) {
     clusters_to_watch.insert(cluster);
   }
   for (const auto& p : cluster_subscriptions_) {
@@ -826,10 +825,10 @@ void XdsDependencyManager::MaybeReportUpdate() {
   // Populate Cluster map.
   // We traverse the entire graph even if we don't yet have all of the
   // resources we need to ensure that the right set of watches are active.
-  std::set<std::string> clusters_seen;
-  std::set<std::string> eds_resources_seen;
+  std::set<absl::string_view> clusters_seen;
+  std::set<absl::string_view> eds_resources_seen;
   bool missing_data = false;
-  for (const std::string& cluster : clusters_to_watch) {
+  for (const absl::string_view& cluster : clusters_to_watch) {
     auto& cluster_list = config->clusters[cluster];
     cluster_list.emplace();
     auto result = PopulateClusterConfigList(
@@ -862,7 +861,7 @@ void XdsDependencyManager::MaybeReportUpdate() {
     XdsClusterResourceType::CancelWatch(
         xds_client_.get(), cluster_name, it->second.watcher,
         /*delay_unsubscription=*/false);
-    it = cluster_watchers_.erase(it);
+    cluster_watchers_.erase(it++);
   }
   // Remove entries in endpoint_watchers_ for any EDS resources not in
   // eds_resources_seen.
@@ -881,7 +880,7 @@ void XdsDependencyManager::MaybeReportUpdate() {
     XdsEndpointResourceType::CancelWatch(
         xds_client_.get(), eds_resource_name, it->second.watcher,
         /*delay_unsubscription=*/false);
-    it = endpoint_watchers_.erase(it);
+    endpoint_watchers_.erase(it++);
   }
   // If we have all the data we need, then send an update.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {

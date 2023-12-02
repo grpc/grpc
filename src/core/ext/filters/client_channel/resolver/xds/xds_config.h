@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -65,7 +66,8 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
                resolution_note == other.resolution_note;
       }
     };
-    std::map<std::string, absl::StatusOr<std::vector<ClusterConfig>>> clusters;
+    absl::flat_hash_map<std::string,
+                        absl::StatusOr<std::vector<ClusterConfig>>> clusters;
 
     static absl::string_view ChannelArgName() {
       return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_config";
@@ -185,7 +187,7 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   void PopulateDnsUpdate(const std::string& dns_name, Resolver::Result result);
 
   // Gets the set of clusters referenced in the specified route config.
-  std::set<std::string> GetClustersFromRouteConfig(
+  std::set<absl::string_view> GetClustersFromRouteConfig(
       const XdsRouteConfigResource& route_config) const;
 
   // Starts CDS and EDS/DNS watches for the specified cluster if needed.
@@ -197,13 +199,13 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   // in the graph report an error.
   // Returns true if all resources have been obtained.
   absl::StatusOr<bool> PopulateClusterConfigList(
-      const std::string& name,
+      absl::string_view name,
       std::vector<XdsConfig::ClusterConfig>* cluster_list,
-      int depth, std::set<std::string>* clusters_seen,
-      std::set<std::string>* eds_resources_seen);
+      int depth, std::set<absl::string_view>* clusters_seen,
+      std::set<absl::string_view>* eds_resources_seen);
 
   // Called when an external cluster subscription is unreffed.
-  void OnClusterSubscriptionUnref(std::string cluster_name,
+  void OnClusterSubscriptionUnref(absl::string_view cluster_name,
                                   ClusterSubscription* subscription);
 
   // Checks whether all necessary resources have been obtained, and if
@@ -228,16 +230,16 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   RouteConfigWatcher* route_config_watcher_ = nullptr;
   std::shared_ptr<const XdsRouteConfigResource> current_route_config_;
   const XdsRouteConfigResource::VirtualHost* current_virtual_host_ = nullptr;
-  std::set<std::string> clusters_from_route_config_;
+  std::set<absl::string_view> clusters_from_route_config_;
 
   // Cluster state.
-  std::map<std::string, ClusterWatcherState> cluster_watchers_;
-  std::map<std::string, WeakRefCountedPtr<ClusterSubscription>>
+  absl::flat_hash_map<std::string, ClusterWatcherState> cluster_watchers_;
+  absl::flat_hash_map<std::string, WeakRefCountedPtr<ClusterSubscription>>
       cluster_subscriptions_;
 
   // Endpoint state.
-  std::map<std::string, EndpointWatcherState> endpoint_watchers_;
-  std::map<std::string, DnsState> dns_resolvers_;
+  absl::flat_hash_map<std::string, EndpointWatcherState> endpoint_watchers_;
+  absl::flat_hash_map<std::string, DnsState> dns_resolvers_;
 };
 
 }  // namespace grpc_core
