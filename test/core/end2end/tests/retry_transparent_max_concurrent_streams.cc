@@ -104,6 +104,8 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
   EXPECT_EQ(server_status.message(), "xyz");
   // Destroy server and then restart it.
+  // TODO(hork): hack to solve PosixEventEngine Listener's async shutdown issue.
+  absl::SleepFor(absl::Milliseconds(250));
   InitServer(server_args);
   // Server should get the second call.
   auto s2 = RequestCall(201);

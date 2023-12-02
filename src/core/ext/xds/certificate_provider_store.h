@@ -36,7 +36,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -94,10 +93,6 @@ class CertificateProviderStore
     RefCountedPtr<grpc_tls_certificate_distributor> distributor()
         const override {
       return certificate_provider_->distributor();
-    }
-
-    grpc_pollset_set* interested_parties() const override {
-      return certificate_provider_->interested_parties();
     }
 
     int CompareImpl(const grpc_tls_certificate_provider* other) const override {

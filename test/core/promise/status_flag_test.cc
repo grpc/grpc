@@ -33,6 +33,8 @@ TEST(StatusFlagTest, Basics) {
   EXPECT_EQ(ValueOrFailure<int>(42).value(), 42);
   EXPECT_EQ(StatusCast<absl::StatusOr<int>>(ValueOrFailure<int>(42)).value(),
             42);
+  EXPECT_TRUE(IsStatusOk(Success{}));
+  EXPECT_FALSE(IsStatusOk(Failure{}));
 }
 
 }  // namespace grpc_core
