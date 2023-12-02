@@ -563,9 +563,8 @@ absl::StatusOr<const XdsClusterResource*> FindClusterConfig(
   if (it != xds_config.clusters.end()) {
     if (!it->second.ok()) {
       // Shouldn't happen.
-      return absl::InternalError(
-          absl::StrCat("xDS config does not contain entry for cluster ",
-                       cluster_name));
+      return absl::InternalError(absl::StrCat(
+          "xDS config does not contain entry for cluster ", cluster_name));
     }
     return it->second->front().cluster.get();
   }
@@ -579,9 +578,8 @@ absl::StatusOr<const XdsClusterResource*> FindClusterConfig(
       if (cluster.cluster_name == cluster_name) return cluster.cluster.get();
     }
   }
-  return absl::InternalError(
-      absl::StrCat("xDS config does not contain entry for cluster ",
-                   cluster_name));
+  return absl::InternalError(absl::StrCat(
+      "xDS config does not contain entry for cluster ", cluster_name));
 }
 
 absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
@@ -598,10 +596,12 @@ absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
   if (!cluster_resource.ok()) return cluster_resource.status();
   // Configure root cert.
   absl::string_view root_provider_instance_name =
-      (*cluster_resource)->common_tls_context.certificate_validation_context
+      (*cluster_resource)
+          ->common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.instance_name;
   absl::string_view root_provider_cert_name =
-      (*cluster_resource)->common_tls_context.certificate_validation_context
+      (*cluster_resource)
+          ->common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.certificate_name;
   RefCountedPtr<XdsCertificateProvider> new_root_provider;
   if (!root_provider_instance_name.empty()) {
@@ -622,10 +622,11 @@ absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
           : root_certificate_provider_->distributor());
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
-      (*cluster_resource)->common_tls_context.tls_certificate_provider_instance
-          .instance_name;
+      (*cluster_resource)
+          ->common_tls_context.tls_certificate_provider_instance.instance_name;
   absl::string_view identity_provider_cert_name =
-      (*cluster_resource)->common_tls_context.tls_certificate_provider_instance
+      (*cluster_resource)
+          ->common_tls_context.tls_certificate_provider_instance
           .certificate_name;
   RefCountedPtr<XdsCertificateProvider> new_identity_provider;
   if (!identity_provider_instance_name.empty()) {
@@ -646,7 +647,8 @@ absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
           : identity_certificate_provider_->distributor());
   // Configure SAN matchers.
   const std::vector<StringMatcher>& match_subject_alt_names =
-      (*cluster_resource)->common_tls_context.certificate_validation_context
+      (*cluster_resource)
+          ->common_tls_context.certificate_validation_context
           .match_subject_alt_names;
   xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
       config_->cluster_name(), match_subject_alt_names);

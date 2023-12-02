@@ -23,10 +23,10 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/xds_client_grpc.h"
-#include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_cluster.h"
-#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_endpoint.h"
+#include "src/core/ext/xds/xds_listener.h"
+#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/resolver/resolver.h"
 
@@ -61,13 +61,13 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
       std::string resolution_note;
 
       bool operator==(const ClusterConfig& other) const {
-        return cluster_name == other.cluster_name &&
-               cluster == other.cluster && endpoints == other.endpoints &&
+        return cluster_name == other.cluster_name && cluster == other.cluster &&
+               endpoints == other.endpoints &&
                resolution_note == other.resolution_note;
       }
     };
-    absl::flat_hash_map<std::string,
-                        absl::StatusOr<std::vector<ClusterConfig>>> clusters;
+    absl::flat_hash_map<std::string, absl::StatusOr<std::vector<ClusterConfig>>>
+        clusters;
 
     static absl::string_view ChannelArgName() {
       return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_config";
@@ -104,12 +104,12 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
     RefCountedPtr<XdsDependencyManager> dependency_mgr_;
   };
 
-  XdsDependencyManager(
-      RefCountedPtr<GrpcXdsClient> xds_client,
-      std::shared_ptr<WorkSerializer> work_serializer,
-      std::unique_ptr<Watcher> watcher, std::string data_plane_authority,
-      std::string listener_resource_name, ChannelArgs args,
-      grpc_pollset_set* interested_parties);
+  XdsDependencyManager(RefCountedPtr<GrpcXdsClient> xds_client,
+                       std::shared_ptr<WorkSerializer> work_serializer,
+                       std::unique_ptr<Watcher> watcher,
+                       std::string data_plane_authority,
+                       std::string listener_resource_name, ChannelArgs args,
+                       grpc_pollset_set* interested_parties);
 
   void Orphan() override;
 
@@ -200,8 +200,8 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   // Returns true if all resources have been obtained.
   absl::StatusOr<bool> PopulateClusterConfigList(
       absl::string_view name,
-      std::vector<XdsConfig::ClusterConfig>* cluster_list,
-      int depth, std::set<absl::string_view>* clusters_seen,
+      std::vector<XdsConfig::ClusterConfig>* cluster_list, int depth,
+      std::set<absl::string_view>* clusters_seen,
       std::set<absl::string_view>* eds_resources_seen);
 
   // Called when an external cluster subscription is unreffed.

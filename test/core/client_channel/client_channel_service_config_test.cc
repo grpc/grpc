@@ -142,8 +142,7 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingPolicy) {
 
 TEST_F(ClientChannelParserTest,
        LegacyLoadBalancingPolicySpecifiesPolicyThatRequiresConfig) {
-  const char* test_json =
-      "{\"loadBalancingPolicy\":\"rls_experimental\"}";
+  const char* test_json = "{\"loadBalancingPolicy\":\"rls_experimental\"}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
