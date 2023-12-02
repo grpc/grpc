@@ -133,7 +133,7 @@ struct grpc_channel_filter {
   // There is an on-going migration to move all filters to providing this, and
   // then to drop start_transport_stream_op_batch.
   void (*init_call)(grpc_channel_element* elem,
-                    grpc_core::CallSpine* call_spine);
+                    grpc_core::CallSpineInterface* call_spine);
   // Called to handle channel level operations - e.g. new calls, or transport
   // closure.
   // See grpc_channel_next_op on how to call the next element in the stack
