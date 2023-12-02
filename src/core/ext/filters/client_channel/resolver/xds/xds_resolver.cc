@@ -959,6 +959,7 @@ void XdsResolver::OnResourceDoesNotExist(std::string context) {
           "update and returning empty service config",
           this);
   if (xds_client_ == nullptr) return;
+  current_config_.reset();
   Result result;
   result.addresses.emplace();
   result.service_config = ServiceConfigImpl::Create(args_, "{}");
@@ -1011,6 +1012,7 @@ XdsResolver::CreateServiceConfig() {
 }
 
 void XdsResolver::GenerateResult() {
+  if (xds_client_ == nullptr || current_config_ == nullptr) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map.
   const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
@@ -1056,10 +1058,7 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
       it = cluster_ref_map_.erase(it);
     }
   }
-  if (update_needed && xds_client_ != nullptr) {
-    // Send a new result to the channel.
-    GenerateResult();
-  }
+  if (update_needed) GenerateResult();
 }
 
 //
