@@ -18,7 +18,6 @@
 
 #include "test/core/xds/xds_transport_fake.h"
 
-#include <cstddef>
 #include <functional>
 #include <memory>
 #include <string>
@@ -127,7 +126,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
 
 void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
   absl::optional<std::string> pending;
-  grpc_core::ReleasableMutexLock lock(&mu_);
+  ReleasableMutexLock lock(&mu_);
   ASSERT_FALSE(read_pending_);
   read_count_ += 1;
   read_pending_ = true;
@@ -155,7 +154,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::
     DispatchPendingMessageToClient() {
   ReleasableMutexLock lock(&mu_);
   if (!read_pending_ || to_client_messages_.empty()) {
-  return;
+    return;
   }
   read_pending_ = false;
   std::string message = std::move(to_client_messages_.front());
