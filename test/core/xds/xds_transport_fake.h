@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <deque>
 #include <functional>
 #include <map>
@@ -31,7 +33,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-#include "gtest/gtest.h"
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_transport.h"

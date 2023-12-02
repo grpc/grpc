@@ -43,7 +43,6 @@
 #include "google/protobuf/util/json_util.h"
 #include "gtest/gtest.h"
 #include "upb/reflection/def.h"
-#include "xds_transport_fake.h"
 
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
