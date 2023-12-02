@@ -80,7 +80,7 @@ const grpc_channel_filter test_filter = {
       return Immediate(ServerMetadataFromStatus(
           absl::PermissionDeniedError("access denied")));
     },
-    grpc_channel_next_op, 0, init_call_elem,
+    nullptr, grpc_channel_next_op, 0, init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set, destroy_call_elem, 0,
     init_channel_elem, grpc_channel_stack_no_post_init, destroy_channel_elem,
     grpc_channel_next_get_info,
