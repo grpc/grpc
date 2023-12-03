@@ -442,7 +442,8 @@ inline void InterceptClientToServerMessage(const NoInterceptor*, void*, void*,
 template <typename Derived>
 inline void InterceptClientToServerMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&),
-    typename Derived::Call* call, Derived* channel, CallSpine* call_spine) {
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -455,7 +456,8 @@ inline void InterceptClientToServerMessage(
 template <typename Derived>
 inline void InterceptClientToServerMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
-    typename Derived::Call* call, Derived* channel, CallSpine* call_spine) {
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, call_spine,
@@ -534,7 +536,7 @@ absl::void_t<decltype(StatusCast<ServerMetadataHandle>(
 InterceptClientInitialMetadata(Promise (Derived::Call::*promise_factory)(
                                    ClientMetadata& md, Derived* channel),
                                typename Derived::Call* call, Derived* channel,
-                               CallSpine* call_spine) {
+                               CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(promise_factory == &Derived::Call::OnClientInitialMetadata);
   call_spine->client_initial_metadata().receiver.InterceptAndMap(
       [call, call_spine, channel](ClientMetadataHandle md) {
@@ -653,7 +655,8 @@ inline void InterceptServerToClientMessage(const NoInterceptor*, void*, void*,
 template <typename Derived>
 inline void InterceptServerToClientMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&),
-    typename Derived::Call* call, Derived* channel, CallSpine* call_spine) {
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -666,7 +669,8 @@ inline void InterceptServerToClientMessage(
 template <typename Derived>
 inline void InterceptServerToClientMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
-    typename Derived::Call* call, Derived* channel, CallSpine* call_spine) {
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, call_spine,
