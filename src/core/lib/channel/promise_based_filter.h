@@ -709,6 +709,7 @@ MakeFilterCall(Derived* derived) {
 template <typename Derived>
 class ImplementChannelFilter : public ChannelFilter {
  public:
+  // Natively construct a v3 call.
   void InitCall(CallSpineInterface* call_spine) {
     typename Derived::Call* call =
         GetContext<Arena>()
@@ -731,6 +732,9 @@ class ImplementChannelFilter : public ChannelFilter {
         static_cast<Derived*>(this), call_spine);
   }
 
+  // Polyfill for the original promise scheme.
+  // Allows writing v3 filters that work with v2 stacks.
+  // (and consequently also v1 stacks since we can polyfill back to that too).
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) final {
     auto* call = promise_filter_detail::MakeFilterCall<Derived>(
