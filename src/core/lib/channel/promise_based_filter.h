@@ -506,7 +506,7 @@ inline void InterceptClientInitialMetadata(
       [call_spine,
        call](ClientMetadataHandle md) -> absl::optional<ClientMetadataHandle> {
         auto return_md = call->OnClientInitialMetadata(*md);
-        if (return_md == nullptr) return md;
+        if (return_md == nullptr) return std::move(md);
         return call_spine->Cancel(std::move(return_md));
       });
 }
@@ -522,7 +522,7 @@ inline void InterceptClientInitialMetadata(
       [call_spine, call, channel](
           ClientMetadataHandle md) -> absl::optional<ClientMetadataHandle> {
         auto return_md = call->OnClientInitialMetadata(*md, channel);
-        if (return_md == nullptr) return md;
+        if (return_md == nullptr) return std::move(md);
         return call_spine->Cancel(std::move(return_md));
       });
 }
@@ -593,7 +593,7 @@ inline void InterceptServerInitialMetadata(
     Derived* channel, CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
   call_spine->server_initial_metadata().sender.InterceptAndMap(
-      [call](ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
+      [call](ServerMetadataHandle md) {
         call->OnServerInitialMetadata(*md);
         return md;
       });
@@ -609,7 +609,7 @@ inline void InterceptServerInitialMetadata(
       [call, call_spine](
           ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
         auto status = call->OnServerInitialMetadata(*md);
-        if (status.ok()) return md;
+        if (status.ok()) return std::move(md);
         return call_spine->Cancel(ServerMetadataFromStatus(status));
       });
 }
@@ -689,7 +689,7 @@ inline void InterceptServerTrailingMetadata(
     Derived* channel, CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
   call_spine->server_trailing_metadata().sender.InterceptAndMap(
-      [call](ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
+      [call](ServerMetadataHandle md) {
         call->OnServerTrailingMetadata(*md);
         return md;
       });
@@ -704,7 +704,7 @@ inline void InterceptServerTrailingMetadata(
   call_spine->server_trailing_metadata().sender.InterceptAndMap(
       [call](ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
         auto status = call->OnServerTrailingMetadata(*md);
-        if (status.ok()) return md;
+        if (status.ok()) return std::move(md);
         return ServerMetadataFromStatus(status);
       });
 }
