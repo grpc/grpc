@@ -42,12 +42,9 @@ constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
 
 std::string XdsDependencyManager::XdsConfig::ToString() const {
   std::vector<std::string> parts = {
-      "{\n  listener: {",
-      listener->ToString(),
-      "}\n  route_config: {",
-      route_config->ToString(),
-      "}\n  virtual_host: {",
-      virtual_host->ToString(),
+      "{\n  listener: {",     listener->ToString(),
+      "}\n  route_config: {", route_config->ToString(),
+      "}\n  virtual_host: {", virtual_host->ToString(),
       "}\n  clusters: {\n"};
   for (const auto& p : clusters) {
     parts.push_back(absl::StrCat("    \"", p.first, "\": "));
