@@ -35,7 +35,9 @@ class IdleFilterState {
   IdleFilterState& operator=(const IdleFilterState&) = delete;
 
   // Increment the number of calls in progress.
-  void IncreaseCallCount();
+  // Returns true if the timer remains unexpired, false if it has expired and
+  // the call should not be permitted.
+  GRPC_MUST_USE_RESULT bool IncreaseCallCount();
 
   // Decrement the number of calls in progress.
   // Return true if we reached idle with no timer started.
@@ -48,14 +50,27 @@ class IdleFilterState {
   // we know that the channel is idle and has been for one full cycle.
   GRPC_MUST_USE_RESULT bool CheckTimer();
 
+  // Reset timer expiry: allow the timer to start again
+  GRPC_MUST_USE_RESULT bool ResetTimerExpiry();
+
+  // Start a watch for non-readyness, or not if already started
+  GRPC_MUST_USE_RESULT bool StartNonIdleWatch() {
+    auto r = state_.fetch_or(kStartedNonIdleWatch, std::memory_order_relaxed);
+    return (r & kStartedNonIdleWatch) == 0;
+  }
+
  private:
   // Bit in state_ indicating that the timer has been started.
   static constexpr uintptr_t kTimerStarted = 1;
   // Bit in state_ indicating that we've seen a call start or stop since the
   // last timer.
   static constexpr uintptr_t kCallsStartedSinceLastTimerCheck = 2;
+  // Bit in state_ indicating that we've expired the timer already
+  static constexpr uintptr_t kExpiredTimer = 4;
+  // Bit in state_ indicating if we've started a watch for non-readyness
+  static constexpr uintptr_t kStartedNonIdleWatch = 8;
   // How much should we shift to get the number of calls in progress.
-  static constexpr uintptr_t kCallsInProgressShift = 2;
+  static constexpr uintptr_t kCallsInProgressShift = 4;
   // How much to increment/decrement the state_ when a call is started/stopped.
   // Ensures we don't clobber the preceding bits.
   static constexpr uintptr_t kCallIncrement = uintptr_t{1}

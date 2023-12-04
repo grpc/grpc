@@ -17,28 +17,37 @@
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 
 #include <assert.h>
+#include <inttypes.h>
+
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 
 IdleFilterState::IdleFilterState(bool start_timer)
     : state_(start_timer ? kTimerStarted : 0) {}
 
-void IdleFilterState::IncreaseCallCount() {
+bool IdleFilterState::IncreaseCallCount() {
   uintptr_t state = state_.load(std::memory_order_relaxed);
   uintptr_t new_state;
+  gpr_log(GPR_DEBUG, "[%p] IdleFilterState::IncreaseCallCount: state=%" PRIxPTR,
+          this, state);
   do {
+    if (state & kExpiredTimer) return false;
     // Increment the counter, and flag that there's been activity.
     new_state = state;
     new_state |= kCallsStartedSinceLastTimerCheck;
     new_state += kCallIncrement;
   } while (!state_.compare_exchange_weak(
       state, new_state, std::memory_order_acq_rel, std::memory_order_relaxed));
+  return true;
 }
 
 bool IdleFilterState::DecreaseCallCount() {
   uintptr_t state = state_.load(std::memory_order_relaxed);
   uintptr_t new_state;
   bool start_timer;
+  gpr_log(GPR_DEBUG, "[%p] IdleFilterState::DecreaseCallCount: state=%" PRIxPTR,
+          this, state);
   do {
     start_timer = false;
     new_state = state;
@@ -53,7 +62,7 @@ bool IdleFilterState::DecreaseCallCount() {
       // does.
       start_timer = true;
       new_state |= kTimerStarted;
-      new_state &= ~kCallsInProgressShift;
+      new_state &= ~kCallsStartedSinceLastTimerCheck;
     }
   } while (!state_.compare_exchange_weak(
       state, new_state, std::memory_order_acq_rel, std::memory_order_relaxed));
@@ -62,6 +71,8 @@ bool IdleFilterState::DecreaseCallCount() {
 
 bool IdleFilterState::CheckTimer() {
   uintptr_t state = state_.load(std::memory_order_relaxed);
+  gpr_log(GPR_DEBUG, "[%p] IdleFilterState::CheckTimer: state=%" PRIxPTR, this,
+          state);
   uintptr_t new_state;
   bool start_timer;
   do {
@@ -87,7 +98,30 @@ bool IdleFilterState::CheckTimer() {
       // that in the updated state.
       start_timer = false;
       new_state &= ~kTimerStarted;
+      new_state |= kExpiredTimer;
     }
+  } while (!state_.compare_exchange_weak(
+      state, new_state, std::memory_order_acq_rel, std::memory_order_relaxed));
+  return start_timer;
+}
+
+bool IdleFilterState::ResetTimerExpiry() {
+  uintptr_t state = state_.load(std::memory_order_relaxed);
+  gpr_log(GPR_DEBUG, "[%p] IdleFilterState::ResetTimerExpiry: state=%" PRIxPTR,
+          this, state);
+  uintptr_t new_state;
+  bool start_timer;
+  do {
+    if ((state & kExpiredTimer) == 0) {
+      // Timer not expired: nothing needs updating, just return
+      // and keep the timer going!
+      return false;
+    }
+    GPR_ASSERT((state & kTimerStarted) == 0);
+    new_state = state;
+    new_state &= ~kExpiredTimer;
+    start_timer = (new_state >> kCallsInProgressShift) == 0;
+    if (start_timer) new_state |= kTimerStarted;
   } while (!state_.compare_exchange_weak(
       state, new_state, std::memory_order_acq_rel, std::memory_order_relaxed));
   return start_timer;

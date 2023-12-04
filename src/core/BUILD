@@ -3847,7 +3847,10 @@ grpc_cc_library(
         "ext/filters/channel_idle/idle_filter_state.h",
     ],
     language = "c++",
-    deps = ["//:gpr_platform"],
+    deps = [
+        "//:gpr",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
