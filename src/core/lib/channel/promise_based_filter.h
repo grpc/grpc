@@ -43,6 +43,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_finalization.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -60,6 +61,8 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
@@ -120,6 +123,353 @@ class ChannelFilter {
   // TODO(ctiller): remove once per-channel-stack EventEngines land
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
+};
+
+struct NoInterceptor {};
+
+namespace promise_filter_detail {
+
+// Determine if a list of interceptors has any that need to asyncronously error
+// the promise. If so, we need to allocate a latch for the generated promise for
+// the original promise stack polyfill code that's generated.
+
+inline constexpr bool HasAsyncErrorInterceptor() { return false; }
+
+inline constexpr bool HasAsyncErrorInterceptor(const NoInterceptor*) {
+  return false;
+}
+
+template <typename T, typename... A>
+inline constexpr bool HasAsyncErrorInterceptor(absl::Status (T::*)(A...)) {
+  return true;
+}
+
+template <typename T, typename... A>
+inline constexpr bool HasAsyncErrorInterceptor(
+    ServerMetadataHandle (T::*)(A...)) {
+  return true;
+}
+
+template <typename T, typename... A>
+inline constexpr bool HasAsyncErrorInterceptor(void (T::*)(A...)) {
+  return false;
+}
+
+// For the list case we do two interceptors to avoid amiguities with the single
+// argument forms above.
+template <typename I1, typename I2, typename... Interceptors>
+inline constexpr bool HasAsyncErrorInterceptor(I1 i1, I2 i2,
+                                               Interceptors... interceptors) {
+  return HasAsyncErrorInterceptor(i1) || HasAsyncErrorInterceptor(i2) ||
+         HasAsyncErrorInterceptor(interceptors...);
+}
+
+// Composite for a given channel type to determine if any of its interceptors
+// fall into this category: later code should use this.
+template <typename Derived>
+inline constexpr bool CallHasAsyncErrorInterceptor() {
+  return HasAsyncErrorInterceptor(&Derived::Call::OnClientToServerMessage,
+                                  &Derived::Call::OnServerInitialMetadata,
+                                  &Derived::Call::OnServerToClientMessage);
+}
+
+// Determine if an interceptor needs to access the channel via one of its
+// arguments. If so, we need to allocate a pointer to the channel for the
+// generated polyfill promise for the original promise stack.
+
+inline constexpr bool HasChannelAccess() { return false; }
+
+inline constexpr bool HasChannelAccess(const NoInterceptor*) { return false; }
+
+template <typename T, typename R, typename A>
+inline constexpr bool HasChannelAccess(R (T::*)(A)) {
+  return false;
+}
+
+template <typename T, typename R, typename A, typename C>
+inline constexpr bool HasChannelAccess(R (T::*)(A, C)) {
+  return true;
+}
+
+// For the list case we do two interceptors to avoid amiguities with the single
+// argument forms above.
+template <typename I1, typename I2, typename... Interceptors>
+inline constexpr bool HasChannelAccess(I1 i1, I2 i2,
+                                       Interceptors... interceptors) {
+  return HasChannelAccess(i1) || HasChannelAccess(i2) ||
+         HasChannelAccess(interceptors...);
+}
+
+// Composite for a given channel type to determine if any of its interceptors
+// fall into this category: later code should use this.
+template <typename Derived>
+inline constexpr bool CallHasChannelAccess() {
+  return HasChannelAccess(&Derived::Call::OnClientInitialMetadata,
+                          &Derived::Call::OnClientToServerMessage,
+                          &Derived::Call::OnServerInitialMetadata,
+                          &Derived::Call::OnServerToClientMessage,
+                          &Derived::Call::OnServerTrailingMetadata);
+}
+
+// Given a boolean X export a type:
+// either T if X is true
+// or an empty type if it is false
+template <typename T, bool X>
+struct TypeIfNeeded;
+
+template <typename T>
+struct TypeIfNeeded<T, false> {
+  struct Type {
+    Type() = default;
+    template <typename Whatever>
+    explicit Type(Whatever) : Type() {}
+  };
+};
+
+template <typename T>
+struct TypeIfNeeded<T, true> {
+  using Type = T;
+};
+
+// For the original promise scheme polyfill:
+// If a set of interceptors might fail asynchronously, wrap the main
+// promise in a race with the cancellation latch.
+// If not, just return the main promise.
+template <bool X>
+struct RaceAsyncCompletion;
+
+template <>
+struct RaceAsyncCompletion<false> {
+  template <typename Promise>
+  static Promise Run(Promise x, void*) {
+    return x;
+  }
+};
+
+template <>
+struct RaceAsyncCompletion<true> {
+  template <typename Promise>
+  static Promise Run(Promise x, Latch<ServerMetadataHandle>* latch) {
+    return Race(latch->Wait(), std::move(x));
+  }
+};
+
+// For the original promise scheme polyfill: data associated with once call.
+template <typename Derived>
+struct FilterCallData {
+  explicit FilterCallData(Derived* channel) : channel(channel) {}
+  GPR_NO_UNIQUE_ADDRESS typename Derived::Call call;
+  GPR_NO_UNIQUE_ADDRESS
+  typename TypeIfNeeded<Latch<ServerMetadataHandle>,
+                        CallHasAsyncErrorInterceptor<Derived>()>::Type
+      error_latch;
+  GPR_NO_UNIQUE_ADDRESS
+  typename TypeIfNeeded<Derived*, CallHasChannelAccess<Derived>()>::Type
+      channel;
+};
+
+template <typename Promise>
+auto MapResult(const NoInterceptor*, Promise x, void*) {
+  return x;
+}
+
+template <typename Promise, typename Derived>
+auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
+               FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
+  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
+    auto status = call_data->call.OnServerTrailingMetadata(*md);
+    if (!status.ok()) return ServerMetadataFromStatus(status);
+    return md;
+  });
+}
+
+template <typename Promise, typename Derived>
+auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
+               FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
+  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
+    call_data->call.OnServerTrailingMetadata(*md);
+    return md;
+  });
+}
+
+inline auto RunCall(const NoInterceptor*, CallArgs call_args,
+                    NextPromiseFactory next_promise_factory, void*) {
+  return next_promise_factory(std::move(call_args));
+}
+
+template <typename Derived>
+inline auto RunCall(void (Derived::Call::*fn)(ClientMetadata& md),
+                    CallArgs call_args, NextPromiseFactory next_promise_factory,
+                    FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
+  call_data->call.OnClientInitialMetadata(*call_args.client_initial_metadata);
+  return next_promise_factory(std::move(call_args));
+}
+
+template <typename Derived>
+inline auto RunCall(
+    ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md),
+    CallArgs call_args, NextPromiseFactory next_promise_factory,
+    FilterCallData<Derived>* call_data) -> ArenaPromise<ServerMetadataHandle> {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
+  auto return_md = call_data->call.OnClientInitialMetadata(
+      *call_args.client_initial_metadata);
+  if (return_md == nullptr) return next_promise_factory(std::move(call_args));
+  return Immediate(std::move(return_md));
+}
+
+template <typename Derived>
+inline auto RunCall(ServerMetadataHandle (Derived::Call::*fn)(
+                        ClientMetadata& md, Derived* channel),
+                    CallArgs call_args, NextPromiseFactory next_promise_factory,
+                    FilterCallData<Derived>* call_data)
+    -> ArenaPromise<ServerMetadataHandle> {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
+  auto return_md = call_data->call.OnClientInitialMetadata(
+      *call_args.client_initial_metadata, call_data->channel);
+  if (return_md == nullptr) return next_promise_factory(std::move(call_args));
+  return Immediate(std::move(return_md));
+}
+
+template <typename Derived>
+inline auto RunCall(void (Derived::Call::*fn)(ClientMetadata& md,
+                                              Derived* channel),
+                    CallArgs call_args, NextPromiseFactory next_promise_factory,
+                    FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
+  call_data->call.OnClientInitialMetadata(*call_args.client_initial_metadata,
+                                          call_data->channel);
+  return next_promise_factory(std::move(call_args));
+}
+
+inline void InterceptClientToServerMessage(const NoInterceptor*, void*,
+                                           CallArgs&) {}
+
+inline void InterceptServerInitialMetadata(const NoInterceptor*, void*,
+                                           CallArgs&) {}
+
+template <typename Derived>
+inline void InterceptServerInitialMetadata(
+    void (Derived::Call::*fn)(ServerMetadata&),
+    FilterCallData<Derived>* call_data, CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
+  call_args.server_initial_metadata->InterceptAndMap(
+      [call_data](ServerMetadataHandle md) {
+        call_data->call.OnServerInitialMetadata(*md);
+        return md;
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerInitialMetadata(
+    absl::Status (Derived::Call::*fn)(ServerMetadata&),
+    FilterCallData<Derived>* call_data, CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
+  call_args.server_initial_metadata->InterceptAndMap(
+      [call_data](
+          ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
+        auto status = call_data->call.OnServerInitialMetadata(*md);
+        if (!status.ok() && !call_data->error_latch.is_set()) {
+          call_data->error_latch.Set(ServerMetadataFromStatus(status));
+          return absl::nullopt;
+        }
+        return std::move(md);
+      });
+}
+
+inline void InterceptServerToClientMessage(const NoInterceptor*, void*,
+                                           CallArgs&) {}
+
+template <typename Derived>
+absl::enable_if_t<std::is_empty<FilterCallData<Derived>>::value,
+                  FilterCallData<Derived>*>
+MakeFilterCall(Derived*) {
+  static FilterCallData<Derived> call{nullptr};
+  return &call;
+}
+
+template <typename Derived>
+absl::enable_if_t<!std::is_empty<FilterCallData<Derived>>::value,
+                  FilterCallData<Derived>*>
+MakeFilterCall(Derived* derived) {
+  return GetContext<Arena>()->ManagedNew<FilterCallData<Derived>>(derived);
+}
+
+}  // namespace promise_filter_detail
+
+// Base class for promise-based channel filters.
+// Eventually this machinery will move elsewhere (the interception logic will
+// move directly into the channel stack, and so filters will just directly
+// derive from `ChannelFilter`)
+//
+// Implements new-style call filters, and polyfills them into the previous
+// scheme.
+//
+// Call filters:
+// Derived types should declare a class `Call` with the following members:
+// - OnClientInitialMetadata  - $VALUE_TYPE = ClientMetadata
+// - OnServerInitialMetadata  - $VALUE_TYPE = ServerMetadata
+// - OnServerToClientMessage  - $VALUE_TYPE = Message
+// - OnClientToServerMessage  - $VALUE_TYPE = Message
+// - OnServerTrailingMetadata - $VALUE_TYPE = ServerMetadata
+// These members define an interception point for a particular event in
+// the call lifecycle.
+// The type of these members matters, and is selectable by the class
+// author. For $INTERCEPTOR_NAME in the above list:
+// - static const NoInterceptor $INTERCEPTOR_NAME:
+//   defines that this filter does not intercept this event.
+//   there is zero runtime cost added to handling that event by this filter.
+// - void $INTERCEPTOR_NAME($VALUE_TYPE&):
+//   the filter intercepts this event, and can modify the value.
+//   it never fails.
+// - absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&):
+//   the filter intercepts this event, and can modify the value.
+//   it can fail, in which case the call will be aborted.
+// - ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
+//   the filter intercepts this event, and can modify the value.
+//   the filter can return nullptr for success, or a metadata handle for
+//   failure (in which case the call will be aborted).
+//   useful for cases where the exact metadata returned needs to be customized.
+// - void $INTERCEPTOR_NAME($VALUE_TYPE&, Derived*):
+//   the filter intercepts this event, and can modify the value.
+//   it can access the channel via the second argument.
+//   it never fails.
+// - absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&, Derived*):
+//   the filter intercepts this event, and can modify the value.
+//   it can access the channel via the second argument.
+//   it can fail, in which case the call will be aborted.
+// - ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, Derived*)
+//   the filter intercepts this event, and can modify the value.
+//   it can access the channel via the second argument.
+//   the filter can return nullptr for success, or a metadata handle for
+//   failure (in which case the call will be aborted).
+//   useful for cases where the exact metadata returned needs to be customized.
+template <typename Derived>
+class ImplementChannelFilter : public ChannelFilter {
+ public:
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) final {
+    auto* call = promise_filter_detail::MakeFilterCall<Derived>(
+        static_cast<Derived*>(this));
+    promise_filter_detail::InterceptClientToServerMessage(
+        &Derived::Call::OnClientToServerMessage, call, call_args);
+    promise_filter_detail::InterceptServerInitialMetadata(
+        &Derived::Call::OnServerInitialMetadata, call, call_args);
+    promise_filter_detail::InterceptServerToClientMessage(
+        &Derived::Call::OnServerToClientMessage, call, call_args);
+    return promise_filter_detail::MapResult(
+        &Derived::Call::OnServerTrailingMetadata,
+        promise_filter_detail::RaceAsyncCompletion<
+            promise_filter_detail::CallHasAsyncErrorInterceptor<Derived>()>::
+            Run(promise_filter_detail::RunCall(
+                    &Derived::Call::OnClientInitialMetadata,
+                    std::move(call_args), std::move(next_promise_factory),
+                    call),
+                &call->error_latch),
+        call);
+  }
 };
 
 // Designator for whether a filter is client side or server side.
