@@ -79,6 +79,7 @@ def get_client_rpc_stats(
 
 
 def run_ping_pong(test_client: _XdsTestClient, num_rpcs: int):
+    test_client.wait_for_active_xds_channel()
     test_client.wait_for_server_channel_ready()
     lb_stats = get_client_rpc_stats(test_client, num_rpcs)
     for backend, rpcs_count in lb_stats.rpcs_by_peer.items():
