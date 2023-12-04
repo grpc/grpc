@@ -242,6 +242,11 @@ struct CallArgs {
 using NextPromiseFactory =
     std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
 
+// The common middle part of a call - a reference is held by each of
+// CallInitiator and CallHandler - which provide interfaces that are appropriate
+// for each side of a call.
+// The spine will ultimately host the pipes, filters, and context for one part
+// of a call: ie top-half client channel, sub channel call, server call.
 // TODO(ctiller): eventually drop this when we don't need to reference into
 // legacy promise calls anymore
 class CallSpineInterface {
