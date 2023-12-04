@@ -323,6 +323,7 @@ std::string XdsRouteConfigResource::VirtualHost::ToString() const {
 
 std::string XdsRouteConfigResource::ToString() const {
   std::vector<std::string> parts;
+  parts.reserve(virtual_hosts.size());
   for (const VirtualHost& vhost : virtual_hosts) {
     parts.push_back(vhost.ToString());
   }
