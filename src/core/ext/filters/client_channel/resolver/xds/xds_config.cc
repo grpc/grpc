@@ -450,6 +450,37 @@ class XdsVirtualHostListIterator : public XdsRouting::VirtualHostListIterator {
   const std::vector<XdsRouteConfigResource::VirtualHost>* virtual_hosts_;
 };
 
+// Gets the set of clusters referenced in the specified virtual host.
+std::set<absl::string_view> GetClustersFromVirtualHost(
+    const XdsRouteConfigResource::VirtualHost& virtual_host) {
+  std::set<absl::string_view> clusters;
+  for (auto& route : virtual_host.routes) {
+    auto* route_action =
+        absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+    if (route_action == nullptr) continue;
+    Match(
+        route_action->action,
+        // cluster name
+        [&](const XdsRouteConfigResource::Route::RouteAction::ClusterName&
+                cluster_name) { clusters.insert(cluster_name.cluster_name); },
+        // WeightedClusters
+        [&](const std::vector<
+            XdsRouteConfigResource::Route::RouteAction::ClusterWeight>&
+                weighted_clusters) {
+          for (const auto& weighted_cluster : weighted_clusters) {
+            clusters.insert(weighted_cluster.name);
+          }
+        },
+        // ClusterSpecifierPlugin
+        [&](const XdsRouteConfigResource::Route::RouteAction::
+                ClusterSpecifierPluginName&) {
+          // Clusters are determined dynamically in this case, so we
+          // can't add any clusters here.
+        });
+  }
+  return clusters;
+}
+
 }  // namespace
 
 void XdsDependencyManager::OnRouteConfigUpdate(
@@ -485,7 +516,7 @@ void XdsDependencyManager::OnRouteConfigUpdate(
   current_route_config_ = std::move(route_config);
   current_virtual_host_ = &current_route_config_->virtual_hosts[*vhost_index];
   clusters_from_route_config_ =
-      GetClustersFromRouteConfig(*current_route_config_);
+      GetClustersFromVirtualHost(*current_virtual_host_);
   MaybeReportUpdate();
 }
 
@@ -648,36 +679,6 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
   auto resource = std::make_shared<XdsEndpointResource>();
   resource->priorities.emplace_back(std::move(priority));
   it->second.update.endpoints = std::move(resource);
-}
-
-std::set<absl::string_view> XdsDependencyManager::GetClustersFromRouteConfig(
-    const XdsRouteConfigResource& route_config) const {
-  std::set<absl::string_view> clusters;
-  for (auto& route : current_virtual_host_->routes) {
-    auto* route_action =
-        absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
-    if (route_action == nullptr) continue;
-    Match(
-        route_action->action,
-        // cluster name
-        [&](const XdsRouteConfigResource::Route::RouteAction::ClusterName&
-                cluster_name) { clusters.insert(cluster_name.cluster_name); },
-        // WeightedClusters
-        [&](const std::vector<
-            XdsRouteConfigResource::Route::RouteAction::ClusterWeight>&
-                weighted_clusters) {
-          for (const auto& weighted_cluster : weighted_clusters) {
-            clusters.insert(weighted_cluster.name);
-          }
-        },
-        // ClusterSpecifierPlugin
-        [&](const XdsRouteConfigResource::Route::RouteAction::
-                ClusterSpecifierPluginName&) {
-          // Clusters are determined dynamically in this case, so we
-          // can't add any clusters here.
-        });
-  }
-  return clusters;
 }
 
 absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(

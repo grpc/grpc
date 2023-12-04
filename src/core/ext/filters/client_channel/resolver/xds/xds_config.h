@@ -188,10 +188,6 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   void OnDnsResult(const std::string& dns_name, Resolver::Result result);
   void PopulateDnsUpdate(const std::string& dns_name, Resolver::Result result);
 
-  // Gets the set of clusters referenced in the specified route config.
-  std::set<absl::string_view> GetClustersFromRouteConfig(
-      const XdsRouteConfigResource& route_config) const;
-
   // Starts CDS and EDS/DNS watches for the specified cluster if needed.
   // If the resource is available, adds an entry to cluster_list.
   // Adds each cluster to clusters_seen.
