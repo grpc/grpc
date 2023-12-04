@@ -247,6 +247,10 @@ class XdsClientTestBase : public ::testing::Test {
 
       int resource_value() const { return resource_->value; }
 
+      std::shared_ptr<const ResourceStruct> resource() const {
+        return resource_;
+      }
+
      private:
       std::shared_ptr<const ResourceStruct> resource_;
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle_;
@@ -297,7 +301,7 @@ class XdsClientTestBase : public ::testing::Test {
         if (!resource_and_handle.has_value()) {
           return nullptr;
         }
-        return std::move(resource_and_handle->first);
+        return resource_and_handle->resource();
       }
 
       absl::optional<absl::Status> WaitForNextError(
