@@ -477,7 +477,7 @@ inline void InterceptClientInitialMetadata(
     Derived* channel, CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   call_spine->client_initial_metadata().receiver.InterceptAndMap(
-      [call](ClientMetadataHandle md) -> absl::optional<ClientMetadataHandle> {
+      [call](ClientMetadataHandle md) {
         call->OnClientInitialMetadata(*md);
         return md;
       });
@@ -490,8 +490,7 @@ inline void InterceptClientInitialMetadata(
     CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   call_spine->client_initial_metadata().receiver.InterceptAndMap(
-      [call, channel](
-          ClientMetadataHandle md) -> absl::optional<ClientMetadataHandle> {
+      [call, channel](ClientMetadataHandle md) {
         call->OnClientInitialMetadata(*md, channel);
         return md;
       });
