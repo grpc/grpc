@@ -315,6 +315,14 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
  public:
   explicit PromiseBasedCallData(ClientChannel* chand) : chand_(chand) {}
 
+  ~PromiseBasedCallData() override {
+    if (was_queued_ && client_initial_metadata_ != nullptr) {
+      MutexLock lock(&chand_->resolution_mu_);
+      RemoveCallFromResolverQueuedCallsLocked();
+      chand_->resolver_queued_calls_.erase(this);
+    }
+  }
+
   ArenaPromise<absl::StatusOr<CallArgs>> MakeNameResolutionPromise(
       CallArgs call_args) {
     pollent_ = NowOrNever(call_args.polling_entity->WaitAndCopy()).value();
