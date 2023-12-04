@@ -321,11 +321,11 @@ inline auto RunCall(
 }
 
 template <typename Derived>
-inline auto RunCall(ServerMetadataHandle (Derived::Call::*fn)(
-                        ClientMetadata& md, Derived* channel),
-                    CallArgs call_args, NextPromiseFactory next_promise_factory,
-                    FilterCallData<Derived>* call_data)
-    -> ArenaPromise<ServerMetadataHandle> {
+inline auto RunCall(
+    ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md,
+                                              Derived* channel),
+    CallArgs call_args, NextPromiseFactory next_promise_factory,
+    FilterCallData<Derived>* call_data) -> ArenaPromise<ServerMetadataHandle> {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   auto return_md = call_data->call.OnClientInitialMetadata(
       *call_args.client_initial_metadata, call_data->channel);
@@ -460,8 +460,7 @@ inline void InterceptServerInitialMetadata(
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
     absl::Status (Derived::Call::*fn)(ServerMetadata&),
-    typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
   call_spine->server_initial_metadata().sender.InterceptAndMap(
       [call, call_spine](
