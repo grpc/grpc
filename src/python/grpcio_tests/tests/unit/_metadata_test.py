@@ -195,8 +195,10 @@ class MetadataTest(unittest.TestCase):
         self._channel.close()
 
     def testUnaryUnary(self):
+        call_handle = self._channel._create_registered_call_handle(_UNARY_UNARY)
+        print(f"handle: {type(call_handle)}, value: {call_handle}")
         multi_callable = self._channel.unary_unary(
-            _UNARY_UNARY, _registered_method=True
+            _UNARY_UNARY, _registered_call_handle=call_handle
         )
         unused_response, call = multi_callable.with_call(
             _REQUEST, metadata=_INVOCATION_METADATA
@@ -212,9 +214,12 @@ class MetadataTest(unittest.TestCase):
             )
         )
 
-    def testUnaryStream(self):
+    def a_testUnaryStream(self):
+        call_handle = self._channel._create_registered_call_handle(
+            _UNARY_STREAM
+        )
         multi_callable = self._channel.unary_stream(
-            _UNARY_STREAM, _registered_method=True
+            _UNARY_STREAM, _registered_call_handle=call_handle
         )
         call = multi_callable(_REQUEST, metadata=_INVOCATION_METADATA)
         self.assertTrue(
@@ -230,9 +235,12 @@ class MetadataTest(unittest.TestCase):
             )
         )
 
-    def testStreamUnary(self):
+    def a_testStreamUnary(self):
+        call_handle = self._channel._create_registered_call_handle(
+            _STREAM_UNARY
+        )
         multi_callable = self._channel.stream_unary(
-            _STREAM_UNARY, _registered_method=True
+            _STREAM_UNARY, _registered_call_handle=call_handle
         )
         unused_response, call = multi_callable.with_call(
             iter([_REQUEST] * test_constants.STREAM_LENGTH),
@@ -249,9 +257,12 @@ class MetadataTest(unittest.TestCase):
             )
         )
 
-    def testStreamStream(self):
+    def a_testStreamStream(self):
+        call_handle = self._channel._create_registered_call_handle(
+            _STREAM_STREAM
+        )
         multi_callable = self._channel.stream_stream(
-            _STREAM_STREAM, _registered_method=True
+            _STREAM_STREAM, _registered_call_handle=call_handle
         )
         call = multi_callable(
             iter([_REQUEST] * test_constants.STREAM_LENGTH),

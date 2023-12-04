@@ -54,7 +54,10 @@ def main_unary(server_target):
     global per_process_rpc_future  # pylint: disable=global-statement
     with grpc.insecure_channel(server_target) as channel:
         multicallable = channel.unary_unary(
-            UNARY_UNARY, _registered_method=True
+            UNARY_UNARY,
+            _registered_call_handle=channel._create_registered_call_handle(
+                UNARY_UNARY
+            ),
         )
         signal.signal(signal.SIGINT, handle_sigint)
         per_process_rpc_future = multicallable.future(
@@ -70,7 +73,10 @@ def main_streaming(server_target):
     with grpc.insecure_channel(server_target) as channel:
         signal.signal(signal.SIGINT, handle_sigint)
         per_process_rpc_future = channel.unary_stream(
-            UNARY_STREAM, _registered_method=True
+            UNARY_STREAM,
+            _registered_call_handle=channel._create_registered_call_handle(
+                UNARY_STREAM
+            ),
         )(_MESSAGE, wait_for_ready=True)
         for result in per_process_rpc_future:
             pass
@@ -81,9 +87,12 @@ def main_unary_with_exception(server_target):
     """Initiate a unary RPC with a signal handler that will raise."""
     channel = grpc.insecure_channel(server_target)
     try:
-        channel.unary_unary(UNARY_UNARY, _registered_method=True)(
-            _MESSAGE, wait_for_ready=True
-        )
+        channel.unary_unary(
+            UNARY_UNARY,
+            _registered_call_handle=channel._create_registered_call_handle(
+                UNARY_UNARY
+            ),
+        )(_MESSAGE, wait_for_ready=True)
     except KeyboardInterrupt:
         sys.stderr.write("Running signal handler.\n")
         sys.stderr.flush()
@@ -96,9 +105,12 @@ def main_streaming_with_exception(server_target):
     """Initiate a streaming RPC with a signal handler that will raise."""
     channel = grpc.insecure_channel(server_target)
     try:
-        for _ in channel.unary_stream(UNARY_STREAM, _registered_method=True)(
-            _MESSAGE, wait_for_ready=True
-        ):
+        for _ in channel.unary_stream(
+            UNARY_STREAM,
+            _registered_call_handle=channel._create_registered_call_handle(
+                UNARY_STREAM
+            ),
+        )(_MESSAGE, wait_for_ready=True):
             pass
     except KeyboardInterrupt:
         sys.stderr.write("Running signal handler.\n")

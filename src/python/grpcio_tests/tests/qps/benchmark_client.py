@@ -32,15 +32,22 @@ _TIMEOUT = 60 * 60 * 24
 class GenericStub(object):
     def __init__(self, channel):
         self.UnaryCall = channel.unary_unary(
-            "/grpc.testing.BenchmarkService/UnaryCall", _registered_method=True
+            "/grpc.testing.BenchmarkService/UnaryCall",
+            _registered_call_handle=channel._create_registered_call_handle(
+                "/grpc.testing.BenchmarkService/UnaryCall"
+            ),
         )
         self.StreamingFromServer = channel.unary_stream(
             "/grpc.testing.BenchmarkService/StreamingFromServer",
-            _registered_method=True,
+            _registered_call_handle=channel._create_registered_call_handle(
+                "/grpc.testing.BenchmarkService/StreamingFromServer"
+            ),
         )
         self.StreamingCall = channel.stream_stream(
             "/grpc.testing.BenchmarkService/StreamingCall",
-            _registered_method=True,
+            _registered_call_handle=channel._create_registered_call_handle(
+                "/grpc.testing.BenchmarkService/StreamingCall"
+            ),
         )
 
 

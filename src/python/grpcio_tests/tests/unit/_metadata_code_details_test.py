@@ -207,49 +207,61 @@ class MetadataCodeDetailsTest(unittest.TestCase):
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:{}".format(port))
+        unary_unary_method_name = "/".join(
+            (
+                "",
+                _SERVICE,
+                _UNARY_UNARY,
+            )
+        )
         self._unary_unary = self._channel.unary_unary(
-            "/".join(
-                (
-                    "",
-                    _SERVICE,
-                    _UNARY_UNARY,
-                )
-            ),
-            _registered_method=True,
+            unary_unary_method_name,
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
+            _registered_call_handle=self._channel._create_registered_call_handle(
+                unary_unary_method_name
+            ),
+        )
+        unary_stream_method_name = "/".join(
+            (
+                "",
+                _SERVICE,
+                _UNARY_STREAM,
+            )
         )
         self._unary_stream = self._channel.unary_stream(
-            "/".join(
-                (
-                    "",
-                    _SERVICE,
-                    _UNARY_STREAM,
-                )
+            unary_stream_method_name,
+            _registered_call_handle=self._channel._create_registered_call_handle(
+                unary_stream_method_name
             ),
-            _registered_method=True,
+        )
+        stream_unary_method_name = "/".join(
+            (
+                "",
+                _SERVICE,
+                _STREAM_UNARY,
+            )
         )
         self._stream_unary = self._channel.stream_unary(
-            "/".join(
-                (
-                    "",
-                    _SERVICE,
-                    _STREAM_UNARY,
-                )
+            stream_unary_method_name,
+            _registered_call_handle=self._channel._create_registered_call_handle(
+                stream_unary_method_name
             ),
-            _registered_method=True,
+        )
+        stream_stream_method_name = "/".join(
+            (
+                "",
+                _SERVICE,
+                _STREAM_STREAM,
+            )
         )
         self._stream_stream = self._channel.stream_stream(
-            "/".join(
-                (
-                    "",
-                    _SERVICE,
-                    _STREAM_STREAM,
-                )
-            ),
+            stream_stream_method_name,
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
-            _registered_method=True,
+            _registered_call_handle=self._channel._create_registered_call_handle(
+                stream_stream_method_name
+            ),
         )
 
     def tearDown(self):
@@ -832,17 +844,20 @@ class InspectContextTest(unittest.TestCase):
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:{}".format(port))
+        unary_unary_method_name = "/".join(
+            (
+                "",
+                _SERVICE,
+                _UNARY_UNARY,
+            )
+        )
         self._unary_unary = self._channel.unary_unary(
-            "/".join(
-                (
-                    "",
-                    _SERVICE,
-                    _UNARY_UNARY,
-                )
-            ),
+            unary_unary_method_name,
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
-            _registered_method=True,
+            _registered_call_handle=self._channel._create_registered_call_handle(
+                unary_unary_method_name
+            ),
         )
 
     def tearDown(self):

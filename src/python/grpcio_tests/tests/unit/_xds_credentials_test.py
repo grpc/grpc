@@ -72,7 +72,10 @@ class XdsCredentialsTest(unittest.TestCase):
             ) as channel:
                 request = b"abc"
                 response = channel.unary_unary(
-                    "/test/method", _registered_method=True
+                    "/test/method",
+                    _registered_call_handle=channel._create_registered_call_handle(
+                        "/test/method"
+                    ),
                 )(request, wait_for_ready=True)
                 self.assertEqual(response, request)
 
@@ -90,7 +93,10 @@ class XdsCredentialsTest(unittest.TestCase):
             with grpc.secure_channel(server_address, channel_creds) as channel:
                 request = b"abc"
                 response = channel.unary_unary(
-                    "/test/method", _registered_method=True
+                    "/test/method",
+                    _registered_call_handle=channel._create_registered_call_handle(
+                        "/test/method"
+                    ),
                 )(request, wait_for_ready=True)
                 self.assertEqual(response, request)
 

@@ -81,9 +81,6 @@ class _Handler(object):
     def handle_unary_unary(self, request, servicer_context):
         self._append_to_log("handle_unary_unary")
         self._control.control()
-        print(
-            f">>>>>>servicer_context:{servicer_context.invocation_metadata()}"
-        )
         if servicer_context is not None:
             servicer_context.set_trailing_metadata(
                 (
@@ -233,30 +230,30 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
-def _unary_unary_multi_callable(channel):
-    return channel.unary_unary(_UNARY_UNARY, _registered_method=True)
+def _unary_unary_multi_callable(channel, handle):
+    return channel.unary_unary(_UNARY_UNARY, _registered_call_handle=handle)
 
 
-def _unary_stream_multi_callable(channel):
+def _unary_stream_multi_callable(channel, handle):
     return channel.unary_stream(
         _UNARY_STREAM,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
-        _registered_method=True,
+        _registered_call_handle=handle,
     )
 
 
-def _stream_unary_multi_callable(channel):
+def _stream_unary_multi_callable(channel, handle):
     return channel.stream_unary(
         _STREAM_UNARY,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
-        _registered_method=True,
+        _registered_call_handle=handle,
     )
 
 
-def _stream_stream_multi_callable(channel):
-    return channel.stream_stream(_STREAM_STREAM, _registered_method=True)
+def _stream_stream_multi_callable(channel, handle):
+    return channel.stream_stream(_STREAM_STREAM, _registered_call_handle=handle)
 
 
 class _ClientCallDetails(
@@ -484,13 +481,25 @@ class InterceptorTest(unittest.TestCase):
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:%d" % port)
+        self._unary_unary_handle = self._channel._create_registered_call_handle(
+            _UNARY_UNARY
+        )
+        self._unary_stream_handle = (
+            self._channel._create_registered_call_handle(_UNARY_STREAM)
+        )
+        self._stream_unary_handle = (
+            self._channel._create_registered_call_handle(_STREAM_UNARY)
+        )
+        self._stream_stream_handle = (
+            self._channel._create_registered_call_handle(_STREAM_STREAM)
+        )
 
     def tearDown(self):
         self._server.stop(None)
         self._server_pool.shutdown(wait=True)
         self._channel.close()
 
-    def a_testTripleRequestMessagesClientInterceptor(self):
+    def testTripleRequestMessagesClientInterceptor(self):
         def triple(request_iterator):
             while True:
                 try:
@@ -507,7 +516,9 @@ class InterceptorTest(unittest.TestCase):
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
         )
 
-        multi_callable = _stream_stream_multi_callable(channel)
+        multi_callable = _stream_stream_multi_callable(
+            channel, self._stream_stream_handle
+        )
         response_iterator = multi_callable(
             iter(requests),
             metadata=(
@@ -521,7 +532,9 @@ class InterceptorTest(unittest.TestCase):
         responses = tuple(response_iterator)
         self.assertEqual(len(responses), 3 * test_constants.STREAM_LENGTH)
 
-        multi_callable = _stream_stream_multi_callable(self._channel)
+        multi_callable = _stream_stream_multi_callable(
+            self._channel, self._stream_stream_handle
+        )
         response_iterator = multi_callable(
             iter(requests),
             metadata=(
@@ -535,13 +548,15 @@ class InterceptorTest(unittest.TestCase):
         responses = tuple(response_iterator)
         self.assertEqual(len(responses), test_constants.STREAM_LENGTH)
 
-    def a_testDefectiveClientInterceptor(self):
+    def testDefectiveClientInterceptor(self):
         interceptor = _DefectiveClientInterceptor()
         defective_channel = grpc.intercept_channel(self._channel, interceptor)
 
         request = b"\x07\x08"
 
-        multi_callable = _unary_unary_multi_callable(defective_channel)
+        multi_callable = _unary_unary_multi_callable(
+            defective_channel, self._unary_unary_handle
+        )
         call_future = multi_callable.future(
             request,
             metadata=(
@@ -552,7 +567,7 @@ class InterceptorTest(unittest.TestCase):
         self.assertIsNotNone(call_future.exception())
         self.assertEqual(call_future.code(), grpc.StatusCode.INTERNAL)
 
-    def a_testInterceptedHeaderManipulationWithServerSideVerification(self):
+    def testInterceptedHeaderManipulationWithServerSideVerification(self):
         request = b"\x07\x08"
 
         channel = grpc.intercept_channel(
@@ -566,7 +581,9 @@ class InterceptorTest(unittest.TestCase):
 
         self._record[:] = []
 
-        multi_callable = _unary_unary_multi_callable(channel)
+        multi_callable = _unary_unary_multi_callable(
+            channel, self._unary_unary_handle
+        )
         response, call = multi_callable.with_call(
             request,
             metadata=(
@@ -589,7 +606,7 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
-    def a_testInterceptedUnaryRequestBlockingUnaryResponse(self):
+    def testInterceptedUnaryRequestBlockingUnaryResponse(self):
         request = b"\x07\x08"
 
         self._record[:] = []
@@ -600,7 +617,9 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("c2", self._record),
         )
 
-        multi_callable = _unary_unary_multi_callable(channel)
+        multi_callable = _unary_unary_multi_callable(
+            channel, self._unary_unary_handle
+        )
         multi_callable(
             request,
             metadata=(
@@ -619,7 +638,7 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
-    def a_testInterceptedUnaryRequestBlockingUnaryResponseWithError(self):
+    def testInterceptedUnaryRequestBlockingUnaryResponseWithError(self):
         request = _EXCEPTION_REQUEST
 
         self._record[:] = []
@@ -630,7 +649,9 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("c2", self._record),
         )
 
-        multi_callable = _unary_unary_multi_callable(channel)
+        multi_callable = _unary_unary_multi_callable(
+            channel, self._unary_unary_handle
+        )
         with self.assertRaises(grpc.RpcError) as exception_context:
             multi_callable(
                 request,
@@ -657,7 +678,9 @@ class InterceptorTest(unittest.TestCase):
 
         self._record[:] = []
 
-        multi_callable = _unary_unary_multi_callable(channel)
+        multi_callable = _unary_unary_multi_callable(
+            channel, self._unary_unary_handle
+        )
         multi_callable.with_call(
             request,
             metadata=(
@@ -679,7 +702,7 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
-    def a_testInterceptedUnaryRequestFutureUnaryResponse(self):
+    def testInterceptedUnaryRequestFutureUnaryResponse(self):
         request = b"\x07\x08"
 
         self._record[:] = []
@@ -689,7 +712,9 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("c2", self._record),
         )
 
-        multi_callable = _unary_unary_multi_callable(channel)
+        multi_callable = _unary_unary_multi_callable(
+            channel, self._unary_unary_handle
+        )
         response_future = multi_callable.future(
             request,
             metadata=(("test", "InterceptedUnaryRequestFutureUnaryResponse"),),
@@ -707,7 +732,7 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
-    def a_testInterceptedUnaryRequestStreamResponse(self):
+    def testInterceptedUnaryRequestStreamResponse(self):
         request = b"\x37\x58"
 
         self._record[:] = []
@@ -717,7 +742,9 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("c2", self._record),
         )
 
-        multi_callable = _unary_stream_multi_callable(channel)
+        multi_callable = _unary_stream_multi_callable(
+            channel, self._unary_stream_handle
+        )
         response_iterator = multi_callable(
             request,
             metadata=(("test", "InterceptedUnaryRequestStreamResponse"),),
@@ -735,7 +762,7 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
-    def a_testInterceptedUnaryRequestStreamResponseWithError(self):
+    def testInterceptedUnaryRequestStreamResponseWithError(self):
         request = _EXCEPTION_REQUEST
 
         self._record[:] = []
@@ -745,7 +772,9 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("c2", self._record),
         )
 
-        multi_callable = _unary_stream_multi_callable(channel)
+        multi_callable = _unary_stream_multi_callable(
+            channel, self._unary_stream_handle
+        )
         response_iterator = multi_callable(
             request,
             metadata=(("test", "InterceptedUnaryRequestStreamResponse"),),
@@ -760,7 +789,7 @@ class InterceptorTest(unittest.TestCase):
             exception.result()
         self.assertIsInstance(exception.exception(), grpc.RpcError)
 
-    def a_testInterceptedStreamRequestBlockingUnaryResponse(self):
+    def testInterceptedStreamRequestBlockingUnaryResponse(self):
         requests = tuple(
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
         )
@@ -773,7 +802,9 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("c2", self._record),
         )
 
-        multi_callable = _stream_unary_multi_callable(channel)
+        multi_callable = _stream_unary_multi_callable(
+            channel, self._stream_unary_handle
+        )
         multi_callable(
             request_iterator,
             metadata=(
@@ -792,7 +823,7 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
-    def a_testInterceptedStreamRequestBlockingUnaryResponseWithCall(self):
+    def testInterceptedStreamRequestBlockingUnaryResponseWithCall(self):
         requests = tuple(
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
         )
@@ -805,7 +836,9 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("c2", self._record),
         )
 
-        multi_callable = _stream_unary_multi_callable(channel)
+        multi_callable = _stream_unary_multi_callable(
+            channel, self._stream_unary_handle
+        )
         multi_callable.with_call(
             request_iterator,
             metadata=(
@@ -827,7 +860,7 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
-    def a_testInterceptedStreamRequestFutureUnaryResponse(self):
+    def testInterceptedStreamRequestFutureUnaryResponse(self):
         requests = tuple(
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
         )
@@ -840,7 +873,9 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("c2", self._record),
         )
 
-        multi_callable = _stream_unary_multi_callable(channel)
+        multi_callable = _stream_unary_multi_callable(
+            channel, self._stream_unary_handle
+        )
         response_future = multi_callable.future(
             request_iterator,
             metadata=(("test", "InterceptedStreamRequestFutureUnaryResponse"),),
@@ -858,7 +893,7 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
-    def a_testInterceptedStreamRequestFutureUnaryResponseWithError(self):
+    def testInterceptedStreamRequestFutureUnaryResponseWithError(self):
         requests = tuple(
             _EXCEPTION_REQUEST for _ in range(test_constants.STREAM_LENGTH)
         )
@@ -871,7 +906,9 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("c2", self._record),
         )
 
-        multi_callable = _stream_unary_multi_callable(channel)
+        multi_callable = _stream_unary_multi_callable(
+            channel, self._stream_unary_handle
+        )
         response_future = multi_callable.future(
             request_iterator,
             metadata=(("test", "InterceptedStreamRequestFutureUnaryResponse"),),
@@ -886,7 +923,7 @@ class InterceptorTest(unittest.TestCase):
             exception.result()
         self.assertIsInstance(exception.exception(), grpc.RpcError)
 
-    def a_testInterceptedStreamRequestStreamResponse(self):
+    def testInterceptedStreamRequestStreamResponse(self):
         requests = tuple(
             b"\x77\x58" for _ in range(test_constants.STREAM_LENGTH)
         )
@@ -899,7 +936,9 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("c2", self._record),
         )
 
-        multi_callable = _stream_stream_multi_callable(channel)
+        multi_callable = _stream_stream_multi_callable(
+            channel, self._stream_stream_handle
+        )
         response_iterator = multi_callable(
             request_iterator,
             metadata=(("test", "InterceptedStreamRequestStreamResponse"),),
@@ -917,7 +956,7 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
-    def a_testInterceptedStreamRequestStreamResponseWithError(self):
+    def testInterceptedStreamRequestStreamResponseWithError(self):
         requests = tuple(
             _EXCEPTION_REQUEST for _ in range(test_constants.STREAM_LENGTH)
         )
@@ -930,7 +969,9 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("c2", self._record),
         )
 
-        multi_callable = _stream_stream_multi_callable(channel)
+        multi_callable = _stream_stream_multi_callable(
+            channel, self._stream_stream_handle
+        )
         response_iterator = multi_callable(
             request_iterator,
             metadata=(("test", "InterceptedStreamRequestStreamResponse"),),

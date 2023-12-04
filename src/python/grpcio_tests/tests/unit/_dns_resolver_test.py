@@ -55,7 +55,12 @@ class DNSResolverTest(unittest.TestCase):
             "loopback46.unittest.grpc.io:%d" % self._port
         ) as channel:
             self.assertEqual(
-                channel.unary_unary(_METHOD, _registered_method=True)(
+                channel.unary_unary(
+                    _METHOD,
+                    _registered_call_handle=channel._create_registered_call_handle(
+                        _METHOD
+                    ),
+                )(
                     _REQUEST,
                     timeout=10,
                 ),

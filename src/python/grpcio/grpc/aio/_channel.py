@@ -478,7 +478,7 @@ class Channel(_base_channel.Channel):
             await self.wait_for_state_change(state)
             state = self.get_state(try_to_connect=True)
 
-    # TODO(xuanwn): Implement _registered_method after we have
+    # TODO(xuanwn): Implement _registered_call_handle after we have
     # observability for Asyncio.
     # pylint: disable=arguments-differ,unused-argument
     def unary_unary(
@@ -486,7 +486,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_call_handle: Optional[int] = None,
     ) -> UnaryUnaryMultiCallable:
         return UnaryUnaryMultiCallable(
             self._channel,
@@ -498,7 +498,7 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
-    # TODO(xuanwn): Implement _registered_method after we have
+    # TODO(xuanwn): Implement _registered_call_handle after we have
     # observability for Asyncio.
     # pylint: disable=arguments-differ,unused-argument
     def unary_stream(
@@ -506,7 +506,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_call_handle: Optional[int] = None,
     ) -> UnaryStreamMultiCallable:
         return UnaryStreamMultiCallable(
             self._channel,
@@ -518,7 +518,7 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
-    # TODO(xuanwn): Implement _registered_method after we have
+    # TODO(xuanwn): Implement _registered_call_handle after we have
     # observability for Asyncio.
     # pylint: disable=arguments-differ,unused-argument
     def stream_unary(
@@ -526,7 +526,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_call_handle: Optional[int] = None,
     ) -> StreamUnaryMultiCallable:
         return StreamUnaryMultiCallable(
             self._channel,
@@ -538,7 +538,7 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
-    # TODO(xuanwn): Implement _registered_method after we have
+    # TODO(xuanwn): Implement _registered_call_handle after we have
     # observability for Asyncio.
     # pylint: disable=arguments-differ,unused-argument
     def stream_stream(
@@ -546,7 +546,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_call_handle: Optional[int] = None,
     ) -> StreamStreamMultiCallable:
         return StreamStreamMultiCallable(
             self._channel,

@@ -68,7 +68,12 @@ def _start_a_test_server():
 
 def _perform_an_rpc(address):
     channel = grpc.insecure_channel(address)
-    multicallable = channel.unary_unary(_TEST_METHOD, _registered_method=True)
+    multicallable = channel.unary_unary(
+        _TEST_METHOD,
+        _registered_call_handle=channel._create_registered_call_handle(
+            _TEST_METHOD
+        ),
+    )
     response = multicallable(_REQUEST)
     assert _REQUEST == response
 

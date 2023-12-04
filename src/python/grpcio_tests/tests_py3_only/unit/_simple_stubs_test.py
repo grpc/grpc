@@ -193,7 +193,7 @@ class SimpleStubsTest(unittest.TestCase):
                 _UNARY_UNARY,
                 channel_credentials=grpc.experimental.insecure_channel_credentials(),
                 timeout=None,
-                _registered_method=True,
+                _registered_method=0,
             )
             self.assertEqual(_REQUEST, response)
 
@@ -206,7 +206,7 @@ class SimpleStubsTest(unittest.TestCase):
                 _UNARY_UNARY,
                 channel_credentials=grpc.local_channel_credentials(),
                 timeout=None,
-                _registered_method=True,
+                _registered_method=0,
             )
             self.assertEqual(_REQUEST, response)
 
@@ -235,7 +235,7 @@ class SimpleStubsTest(unittest.TestCase):
                 target,
                 _UNARY_UNARY,
                 channel_credentials=grpc.local_channel_credentials(),
-                _registered_method=True,
+                _registered_method=0,
             )
             self.assert_eventually(
                 lambda: grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()
@@ -256,7 +256,7 @@ class SimpleStubsTest(unittest.TestCase):
                     _UNARY_UNARY,
                     options=options,
                     channel_credentials=grpc.local_channel_credentials(),
-                    _registered_method=True,
+                    _registered_method=0,
                 )
                 self.assert_eventually(
                     lambda: grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()
@@ -272,7 +272,7 @@ class SimpleStubsTest(unittest.TestCase):
                 target,
                 _UNARY_STREAM,
                 channel_credentials=grpc.local_channel_credentials(),
-                _registered_method=True,
+                _registered_method=0,
             ):
                 self.assertEqual(_REQUEST, response)
 
@@ -288,7 +288,7 @@ class SimpleStubsTest(unittest.TestCase):
                 target,
                 _STREAM_UNARY,
                 channel_credentials=grpc.local_channel_credentials(),
-                _registered_method=True,
+                _registered_method=0,
             )
             self.assertEqual(_REQUEST, response)
 
@@ -304,7 +304,7 @@ class SimpleStubsTest(unittest.TestCase):
                 target,
                 _STREAM_STREAM,
                 channel_credentials=grpc.local_channel_credentials(),
-                _registered_method=True,
+                _registered_method=0,
             ):
                 self.assertEqual(_REQUEST, response)
 
@@ -333,7 +333,7 @@ class SimpleStubsTest(unittest.TestCase):
                     target,
                     _UNARY_UNARY,
                     options=_property_options,
-                    _registered_method=True,
+                    _registered_method=0,
                 )
 
     def test_insecure_sugar(self):
@@ -344,7 +344,7 @@ class SimpleStubsTest(unittest.TestCase):
                 target,
                 _UNARY_UNARY,
                 insecure=True,
-                _registered_method=True,
+                _registered_method=0,
             )
             self.assertEqual(_REQUEST, response)
 
@@ -358,7 +358,7 @@ class SimpleStubsTest(unittest.TestCase):
                     _UNARY_UNARY,
                     insecure=True,
                     channel_credentials=grpc.local_channel_credentials(),
-                    _registered_method=True,
+                    _registered_method=0,
                 )
 
     def test_default_wait_for_ready(self):
@@ -400,7 +400,7 @@ class SimpleStubsTest(unittest.TestCase):
                     _UNARY_UNARY,
                     timeout=None,
                     insecure=True,
-                    _registered_method=True,
+                    _registered_method=0,
                 )
                 rpc_finished_event.set()
             except Exception as e:
@@ -423,7 +423,7 @@ class SimpleStubsTest(unittest.TestCase):
                     target,
                     _BLACK_HOLE,
                     insecure=True,
-                    _registered_method=True,
+                    _registered_method=0,
                     **invocation_args,
                 )
             self.assertEqual(
