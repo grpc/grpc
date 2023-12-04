@@ -229,6 +229,11 @@ struct CallArgs {
 using NextPromiseFactory =
     std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
 
+// The common middle part of a call - a reference is held by each of
+// CallInitiator and CallHandler - which provide interfaces that are appropriate
+// for each side of a call.
+// The spine will ultimately host the pipes, filters, and context for one part
+// of a call: ie top-half client channel, sub channel call, server call.
 // TODO(ctiller): eventually drop this when we don't need to reference into
 // legacy promise calls anymore
 class CallSpineInterface {
@@ -239,6 +244,15 @@ class CallSpineInterface {
   virtual Pipe<MessageHandle>& client_to_server_messages() = 0;
   virtual Pipe<MessageHandle>& server_to_client_messages() = 0;
   virtual Pipe<ServerMetadataHandle>& server_trailing_metadata() = 0;
+  // Cancel the call with the given metadata.
+  // Regarding the `MUST_USE_RESULT absl::nullopt_t`:
+  // Most cancellation calls right now happen in pipe interceptors;
+  // there `nullopt` indicates terminate processing of this pipe and close with
+  // error.
+  // It's convenient then to have the Cancel operation (setting the latch to
+  // terminate the call) be the last thing that occurs in a pipe interceptor,
+  // and this construction supports that (and has helped the author not write
+  // some bugs).
   GRPC_MUST_USE_RESULT virtual absl::nullopt_t Cancel(
       ServerMetadataHandle metadata) = 0;
   virtual Party& party() = 0;
