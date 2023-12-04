@@ -61,6 +61,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -140,6 +141,12 @@ inline constexpr bool HasAsyncErrorInterceptor(const NoInterceptor*) {
 
 template <typename T, typename... A>
 inline constexpr bool HasAsyncErrorInterceptor(absl::Status (T::*)(A...)) {
+  return true;
+}
+
+template <typename T, typename... A>
+inline constexpr bool HasAsyncErrorInterceptor(
+    ServerMetadataHandle (T::*)(A...)) {
   return true;
 }
 
@@ -277,6 +284,16 @@ auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
   });
 }
 
+template <typename Promise, typename Derived>
+auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
+               FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
+  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
+    call_data->call.OnServerTrailingMetadata(*md);
+    return md;
+  });
+}
+
 inline auto RunCall(const NoInterceptor*, CallArgs call_args,
                     NextPromiseFactory next_promise_factory, void*) {
   return next_promise_factory(std::move(call_args));
@@ -289,6 +306,31 @@ inline auto RunCall(void (Derived::Call::*fn)(ClientMetadata& md),
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   call_data->call.OnClientInitialMetadata(*call_args.client_initial_metadata);
   return next_promise_factory(std::move(call_args));
+}
+
+template <typename Derived>
+inline auto RunCall(
+    ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md),
+    CallArgs call_args, NextPromiseFactory next_promise_factory,
+    FilterCallData<Derived>* call_data) -> ArenaPromise<ServerMetadataHandle> {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
+  auto return_md = call_data->call.OnClientInitialMetadata(
+      *call_args.client_initial_metadata);
+  if (return_md == nullptr) return next_promise_factory(std::move(call_args));
+  return Immediate(std::move(return_md));
+}
+
+template <typename Derived>
+inline auto RunCall(ServerMetadataHandle (Derived::Call::*fn)(
+                        ClientMetadata& md, Derived* channel),
+                    CallArgs call_args, NextPromiseFactory next_promise_factory,
+                    FilterCallData<Derived>* call_data)
+    -> ArenaPromise<ServerMetadataHandle> {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
+  auto return_md = call_data->call.OnClientInitialMetadata(
+      *call_args.client_initial_metadata, call_data->channel);
+  if (return_md == nullptr) return next_promise_factory(std::move(call_args));
+  return Immediate(std::move(return_md));
 }
 
 template <typename Derived>
@@ -307,6 +349,18 @@ inline void InterceptClientToServerMessage(const NoInterceptor*, void*,
 
 inline void InterceptServerInitialMetadata(const NoInterceptor*, void*,
                                            CallArgs&) {}
+
+template <typename Derived>
+inline void InterceptServerInitialMetadata(
+    void (Derived::Call::*fn)(ServerMetadata&),
+    FilterCallData<Derived>* call_data, CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
+  call_args.server_initial_metadata->InterceptAndMap(
+      [call_data](ServerMetadataHandle md) {
+        call_data->call.OnServerInitialMetadata(*md);
+        return md;
+      });
+}
 
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
@@ -373,6 +427,11 @@ MakeFilterCall(Derived* derived) {
 // - absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&):
 //   the filter intercepts this event, and can modify the value.
 //   it can fail, in which case the call will be aborted.
+// - ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
+//   the filter intercepts this event, and can modify the value.
+//   the filter can return nullptr for success, or a metadata handle for
+//   failure (in which case the call will be aborted).
+//   useful for cases where the exact metadata returned needs to be customized.
 // - void $INTERCEPTOR_NAME($VALUE_TYPE&, Derived*):
 //   the filter intercepts this event, and can modify the value.
 //   it can access the channel via the second argument.
@@ -381,6 +440,12 @@ MakeFilterCall(Derived* derived) {
 //   the filter intercepts this event, and can modify the value.
 //   it can access the channel via the second argument.
 //   it can fail, in which case the call will be aborted.
+// - ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, Derived*)
+//   the filter intercepts this event, and can modify the value.
+//   it can access the channel via the second argument.
+//   the filter can return nullptr for success, or a metadata handle for
+//   failure (in which case the call will be aborted).
+//   useful for cases where the exact metadata returned needs to be customized.
 template <typename Derived>
 class ImplementChannelFilter : public ChannelFilter {
  public:
