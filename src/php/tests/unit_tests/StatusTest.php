@@ -79,4 +79,65 @@ class StatusTest extends \PHPUnit\Framework\TestCase
         );
         $this->assertEquals($status, $return);
     }
+
+    /**
+     * @param mixed $result
+     * @dataProvider provideOkResults
+     */
+    public function testThrowIfErrorOk($result)
+    {
+        \Grpc\Status::throwIfError($result);
+
+        // Dummy check to avoid marking test as suspicious
+        $this->assertTrue(true);
+    }
+
+    public function provideOkResults()
+    {
+        return [
+            [null],
+            [123],
+            ['some irrelevant string'],
+            [[]],
+            [['whatever' => 'foo']],
+            [
+                [
+                    'code' => \Grpc\STATUS_OK,
+                ]
+            ],
+            [
+                [
+                    'code' => \Grpc\STATUS_OK,
+                    'description' => "Everything's fine!",
+                ]
+            ],
+            [
+                [
+                    'code' => \Grpc\STATUS_OK,
+                    'description' => "Everything's fine!",
+                    'metadata' => ['trailingMeta' => 100],
+                ]
+            ],
+            [\Grpc\Status::ok()],
+        ];
+    }
+
+    public function testThrowIfError()
+    {
+        $status = \Grpc\Status::unimplemented();
+
+        $this->expectException(\Grpc\Exceptions\GrpcException::class);
+        $this->expectExceptionCode(\Grpc\STATUS_UNIMPLEMENTED);
+        \Grpc\Status::throwIfError($status);
+    }
+
+    public function testThrowIfErrorUnknownCode()
+    {
+        try {
+            \Grpc\Status::throwIfError(\Grpc\Status::status(12345, 'unrecognized code'));
+        } catch (Exception $ex) {
+            // Check exact class
+            $this->assertSame(\Grpc\Exceptions\GrpcException::class, get_class($ex));
+        }
+    }
 }
