@@ -18,12 +18,12 @@
 
 #import <XCTest/XCTest.h>
 
-#import <Cronet/Cronet.h>
-#import <GRPCClient/GRPCCallOptions.h>
-#import <RxLibrary/GRXBufferedPipe.h>
 #import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 #import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
 #import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
+#import <GRPCClient/GRPCCallOptions.h>
+#import <RxLibrary/GRXBufferedPipe.h>
+#import <Cronet/Cronet.h>
 
 #import "../Common/TestUtils.h"
 #import "../ConfigureCronet.h"

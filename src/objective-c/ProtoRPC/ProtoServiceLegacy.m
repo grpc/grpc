@@ -29,8 +29,9 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wobjc-designated-initializers"
-// Do not call designated initializer here due to nullability incompatibility. This method is from
-// old API and does not assert on nullability of the parameters.
+// Do not call designated initializer here due to nullability incompatibility.
+// This method is from old API and does not assert on nullability of the
+// parameters.
 
 - (instancetype)initWithHost:(NSString *)host
                  packageName:(NSString *)packageName

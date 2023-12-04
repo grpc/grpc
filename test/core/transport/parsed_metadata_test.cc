@@ -18,9 +18,9 @@
 
 #include <memory>
 
-#include "absl/strings/numbers.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/strings/numbers.h"
 
 #include <grpc/support/log.h>
 

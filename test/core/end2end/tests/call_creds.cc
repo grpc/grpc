@@ -18,8 +18,8 @@
 
 #include <memory>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

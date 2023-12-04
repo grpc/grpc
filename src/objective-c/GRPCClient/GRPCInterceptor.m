@@ -18,8 +18,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRPCInterceptor.h"
 #import "private/GRPCTransport+Private.h"
+#import "GRPCInterceptor.h"
 
 @interface GRPCInterceptorManager () <GRPCInterceptorInterface, GRPCResponseHandler>
 
@@ -195,7 +195,8 @@
   });
 }
 
-/** Forward call close and trailing metadata to the previous interceptor in the chain */
+/** Forward call close and trailing metadata to the previous interceptor in the
+ * chain */
 - (void)forwardPreviousInterceptorCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata
                                                       error:(NSError *)error {
   if (_previousInterceptor == nil) {
@@ -226,44 +227,44 @@
 
 - (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
                     callOptions:(GRPCCallOptions *)callOptions {
-  // retain this interceptor until the method exit to prevent deallocation of the interceptor within
-  // the interceptor's method
+  // retain this interceptor until the method exit to prevent deallocation of
+  // the interceptor within the interceptor's method
   GRPCInterceptor *thisInterceptor = _thisInterceptor;
   [thisInterceptor startWithRequestOptions:requestOptions callOptions:callOptions];
 }
 
 - (void)writeData:(id)data {
-  // retain this interceptor until the method exit to prevent deallocation of the interceptor within
-  // the interceptor's method
+  // retain this interceptor until the method exit to prevent deallocation of
+  // the interceptor within the interceptor's method
   GRPCInterceptor *thisInterceptor = _thisInterceptor;
   [thisInterceptor writeData:data];
 }
 
 - (void)finish {
-  // retain this interceptor until the method exit to prevent deallocation of the interceptor within
-  // the interceptor's method
+  // retain this interceptor until the method exit to prevent deallocation of
+  // the interceptor within the interceptor's method
   GRPCInterceptor *thisInterceptor = _thisInterceptor;
   [thisInterceptor finish];
 }
 
 - (void)cancel {
-  // retain this interceptor until the method exit to prevent deallocation of the interceptor within
-  // the interceptor's method
+  // retain this interceptor until the method exit to prevent deallocation of
+  // the interceptor within the interceptor's method
   GRPCInterceptor *thisInterceptor = _thisInterceptor;
   [thisInterceptor cancel];
 }
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages {
-  // retain this interceptor until the method exit to prevent deallocation of the interceptor within
-  // the interceptor's method
+  // retain this interceptor until the method exit to prevent deallocation of
+  // the interceptor within the interceptor's method
   GRPCInterceptor *thisInterceptor = _thisInterceptor;
   [thisInterceptor receiveNextMessages:numberOfMessages];
 }
 
 - (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata {
   if ([_thisInterceptor respondsToSelector:@selector(didReceiveInitialMetadata:)]) {
-    // retain this interceptor until the method exit to prevent deallocation of the interceptor
-    // within the interceptor's method
+    // retain this interceptor until the method exit to prevent deallocation of
+    // the interceptor within the interceptor's method
     GRPCInterceptor *thisInterceptor = _thisInterceptor;
     [thisInterceptor didReceiveInitialMetadata:initialMetadata];
   }
@@ -271,8 +272,8 @@
 
 - (void)didReceiveData:(id)data {
   if ([_thisInterceptor respondsToSelector:@selector(didReceiveData:)]) {
-    // retain this interceptor until the method exit to prevent deallocation of the interceptor
-    // within the interceptor's method
+    // retain this interceptor until the method exit to prevent deallocation of
+    // the interceptor within the interceptor's method
     GRPCInterceptor *thisInterceptor = _thisInterceptor;
     [thisInterceptor didReceiveData:data];
   }
@@ -281,8 +282,8 @@
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error {
   if ([_thisInterceptor respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
-    // retain this interceptor until the method exit to prevent deallocation of the interceptor
-    // within the interceptor's method
+    // retain this interceptor until the method exit to prevent deallocation of
+    // the interceptor within the interceptor's method
     GRPCInterceptor *thisInterceptor = _thisInterceptor;
     [thisInterceptor didCloseWithTrailingMetadata:trailingMetadata error:error];
   }
@@ -290,8 +291,8 @@
 
 - (void)didWriteData {
   if ([_thisInterceptor respondsToSelector:@selector(didWriteData)]) {
-    // retain this interceptor until the method exit to prevent deallocation of the interceptor
-    // within the interceptor's method
+    // retain this interceptor until the method exit to prevent deallocation of
+    // the interceptor within the interceptor's method
     GRPCInterceptor *thisInterceptor = _thisInterceptor;
     [thisInterceptor didWriteData];
   }
@@ -340,7 +341,8 @@
                                                                          code:GRPCErrorCodeCancelled
                                                                      userInfo:@{
                                                                        NSLocalizedDescriptionKey :
-                                                                           @"Canceled"
+                                                                           @"Canc"
+                                                                           @"eled"
                                                                      }]];
   [_manager shutDown];
 }
@@ -354,9 +356,10 @@
 }
 
 - (void)didReceiveRawMessage:(id)message {
-  NSAssert(NO,
-           @"The method didReceiveRawMessage is deprecated and cannot be used with interceptor");
-  NSLog(@"The method didReceiveRawMessage is deprecated and cannot be used with interceptor");
+  NSAssert(NO, @"The method didReceiveRawMessage is deprecated and cannot be "
+               @"used with interceptor");
+  NSLog(@"The method didReceiveRawMessage is deprecated and cannot be used "
+        @"with interceptor");
   abort();
 }
 

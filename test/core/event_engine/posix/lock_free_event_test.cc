@@ -20,10 +20,10 @@
 
 #include <benchmark/benchmark.h>
 
+#include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
-#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>

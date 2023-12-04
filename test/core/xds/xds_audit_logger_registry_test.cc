@@ -23,13 +23,13 @@
 
 #include <google/protobuf/any.pb.h>
 
+#include "google/protobuf/struct.pb.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
-#include "google/protobuf/struct.pb.h"
-#include "gtest/gtest.h"
 #include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
 

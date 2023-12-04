@@ -37,7 +37,9 @@ class SslTlsFixture : public SecureFixture {
   explicit SslTlsFixture(grpc_tls_version tls_version)
       : tls_version_(tls_version) {}
 
-  static const char* CaCertPath() { return "src/core/tsi/test_creds/ca.pem"; }
+  static const char* CaCertPath() {
+    return "src/core/tsi/test_creds/ca.pem";
+  }
   static const char* ServerCertPath() {
     return "src/core/tsi/test_creds/server1.pem";
   }

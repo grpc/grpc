@@ -22,10 +22,10 @@
 #include <thread>  // NOLINT
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
 

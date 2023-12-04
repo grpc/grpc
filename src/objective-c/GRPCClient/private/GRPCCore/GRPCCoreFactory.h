@@ -32,12 +32,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-/** The factory for gRPC Core + CFStream + TLS secure channel transport implementation. */
+/** The factory for gRPC Core + CFStream + TLS secure channel transport
+ * implementation. */
 @interface GRPCCoreSecureFactory : NSObject <GRPCCoreTransportFactory>
 
 @end
 
-/** The factory for gRPC Core + CFStream + insecure channel transport implementation. */
+/** The factory for gRPC Core + CFStream + insecure channel transport
+ * implementation. */
 @interface GRPCCoreInsecureFactory : NSObject <GRPCCoreTransportFactory>
 
 @end

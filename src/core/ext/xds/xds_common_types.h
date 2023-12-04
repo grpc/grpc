@@ -22,12 +22,12 @@
 #include <string>
 #include <vector>
 
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
-#include "google/protobuf/any.upb.h"
-#include "google/protobuf/duration.upb.h"
 
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/gprpp/time.h"

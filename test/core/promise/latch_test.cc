@@ -17,9 +17,9 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"

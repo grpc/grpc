@@ -16,10 +16,10 @@
  *
  */
 
-#import <GRPCClient/GRPCCall.h>
-#import <ProtoRPC/ProtoMethod.h>
 #import <XCTest/XCTest.h>
 #import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
+#import <GRPCClient/GRPCCall.h>
+#import <ProtoRPC/ProtoMethod.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
@@ -97,53 +97,59 @@ static const NSTimeInterval kInvertedTimeout = 2;
   options.initialMetadata = headers;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:request
-             responseHandler:
-                 [[GRPCBlockCallbackResponseHandler alloc]
-                     initWithInitialMetadataCallback:^(NSDictionary *initialMetadata) {
-                       NSString *userAgent = initialMetadata[@"x-grpc-test-echo-useragent"];
-                       // Test the regex is correct
-                       NSString *expectedUserAgent = @"Foo grpc-objc-cfstream/";
-                       expectedUserAgent =
-                           [expectedUserAgent stringByAppendingString:GRPC_OBJC_VERSION_STRING];
-                       expectedUserAgent = [expectedUserAgent stringByAppendingString:@" grpc-c/"];
-                       expectedUserAgent =
-                           [expectedUserAgent stringByAppendingString:GRPC_C_VERSION_STRING];
-                       expectedUserAgent = [expectedUserAgent stringByAppendingString:@" ("];
-                       expectedUserAgent =
-                           [expectedUserAgent stringByAppendingString:@GPR_PLATFORM_STRING];
-                       expectedUserAgent = [expectedUserAgent stringByAppendingString:@"; chttp2)"];
-                       XCTAssertEqualObjects(userAgent, expectedUserAgent);
+             responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
+                                 initWithInitialMetadataCallback:^(NSDictionary *initialMetadata) {
+                                   NSString *userAgent =
+                                       initialMetadata[@"x-grpc-test-echo-useragent"];
+                                   // Test the regex is correct
+                                   NSString *expectedUserAgent = @"Foo grpc-objc-cfstream/";
+                                   expectedUserAgent = [expectedUserAgent
+                                       stringByAppendingString:GRPC_OBJC_VERSION_STRING];
+                                   expectedUserAgent =
+                                       [expectedUserAgent stringByAppendingString:@" grpc-c/"];
+                                   expectedUserAgent = [expectedUserAgent
+                                       stringByAppendingString:GRPC_C_VERSION_STRING];
+                                   expectedUserAgent =
+                                       [expectedUserAgent stringByAppendingString:@" ("];
+                                   expectedUserAgent = [expectedUserAgent
+                                       stringByAppendingString:@GPR_PLATFORM_STRING];
+                                   expectedUserAgent =
+                                       [expectedUserAgent stringByAppendingString:@"; chttp2)"];
+                                   XCTAssertEqualObjects(userAgent, expectedUserAgent);
 
-                       NSError *error = nil;
-                       // Change in format of user-agent field in a direction that does not match
-                       // the regex will likely cause problem for certain gRPC users. For details,
-                       // refer to internal doc https://goo.gl/c2diBc
-                       NSRegularExpression *regex = [NSRegularExpression
-                           regularExpressionWithPattern:
-                               @" grpc-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)?/[^ ,]+( \\([^)]*\\))?"
-                                                options:0
-                                                  error:&error];
+                                   NSError *error = nil;
+                                   // Change in format of user-agent field in a direction
+                                   // that does not match the regex will likely cause
+                                   // problem for certain gRPC users. For details, refer to
+                                   // internal doc https://goo.gl/c2diBc
+                                   NSRegularExpression *regex = [NSRegularExpression
+                                       regularExpressionWithPattern:
+                                           @" grpc-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)?/[^ ,]+( "
+                                           @"\\([^)]*\\))?"
+                                                            options:0
+                                                              error:&error];
 
-                       NSString *customUserAgent = [regex
-                           stringByReplacingMatchesInString:userAgent
-                                                    options:0
-                                                      range:NSMakeRange(0, [userAgent length])
-                                               withTemplate:@""];
-                       XCTAssertEqualObjects(customUserAgent, @"Foo");
-                       [recvInitialMd fulfill];
-                     }
-                     messageCallback:^(id message) {
-                       XCTAssertNotNil(message);
-                       XCTAssertEqual([message length], 0, @"Non-empty response received: %@",
-                                      message);
-                     }
-                     closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                       if (error) {
-                         XCTFail(@"Finished with unexpected error: %@", error);
-                       } else {
-                         [completion fulfill];
-                       }
-                     }]
+                                   NSString *customUserAgent = [regex
+                                       stringByReplacingMatchesInString:userAgent
+                                                                options:0
+                                                                  range:NSMakeRange(
+                                                                            0, [userAgent length])
+                                                           withTemplate:@""];
+                                   XCTAssertEqualObjects(customUserAgent, @"Foo");
+                                   [recvInitialMd fulfill];
+                                 }
+                                 messageCallback:^(id message) {
+                                   XCTAssertNotNil(message);
+                                   XCTAssertEqual([message length], 0,
+                                                  @"Non-empty response received: %@", message);
+                                 }
+                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                   if (error) {
+                                     XCTFail(@"Finished with unexpected error: %@", error);
+                                   } else {
+                                     [completion fulfill];
+                                   }
+                                 }]
                  callOptions:options];
   [call writeData:[NSData data]];
   [call start];
@@ -234,20 +240,22 @@ static const NSTimeInterval kInvertedTimeout = 2;
 
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:requestOptions
-             responseHandler:
-                 [[GRPCBlockCallbackResponseHandler alloc] initWithInitialMetadataCallback:nil
-                     messageCallback:^(NSData *data) {
-                       XCTFail(@"Failure: response received; Expect: no response received.");
-                     }
-                     closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                       XCTAssertNotNil(error, @"Failure: no error received; Expect: receive "
-                                              @"deadline exceeded.");
-                       if (error.code != GRPCErrorCodeDeadlineExceeded) {
-                         NSLog(@"Unexpected error: %@", error);
-                       }
-                       XCTAssertEqual(error.code, GRPCErrorCodeDeadlineExceeded);
-                       [completion fulfill];
-                     }]
+             responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
+                                 initWithInitialMetadataCallback:nil
+                                 messageCallback:^(NSData *data) {
+                                   XCTFail(@"Failure: response received; Expect: no "
+                                           @"response received.");
+                                 }
+                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                   XCTAssertNotNil(error,
+                                                   @"Failure: no error received; Expect: receive "
+                                                   @"deadline exceeded.");
+                                   if (error.code != GRPCErrorCodeDeadlineExceeded) {
+                                     NSLog(@"Unexpected error: %@", error);
+                                   }
+                                   XCTAssertEqual(error.code, GRPCErrorCodeDeadlineExceeded);
+                                   [completion fulfill];
+                                 }]
                  callOptions:options];
 
   [call start];

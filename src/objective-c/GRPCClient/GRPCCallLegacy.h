@@ -16,36 +16,39 @@
  *
  */
 
-#import <RxLibrary/GRXWriter.h>
 #import "GRPCTypes.h"
+#import <RxLibrary/GRXWriter.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"
 
 /**
- * This is the legacy interface of this gRPC library. This API is deprecated and users should use
- * GRPCCall2 in GRPCCall.h. This API exists solely for the purpose of backwards compatibility.
- * Represents a single gRPC remote call.
+ * This is the legacy interface of this gRPC library. This API is deprecated and
+ * users should use GRPCCall2 in GRPCCall.h. This API exists solely for the
+ * purpose of backwards compatibility. Represents a single gRPC remote call.
  */
 @interface GRPCCall : GRXWriter
 
 - (instancetype)init NS_UNAVAILABLE;
 
 /**
- * The container of the request headers of an RPC conforms to this protocol, which is a subset of
- * NSMutableDictionary's interface. It will become a NSMutableDictionary later on.
- * The keys of this container are the header names, which per the HTTP standard are case-
- * insensitive. They are stored in lowercase (which is how HTTP/2 mandates them on the wire), and
- * can only consist of ASCII characters.
- * A header value is a NSString object (with only ASCII characters), unless the header name has the
- * suffix "-bin", in which case the value has to be a NSData object.
+ * The container of the request headers of an RPC conforms to this protocol,
+ * which is a subset of NSMutableDictionary's interface. It will become a
+ * NSMutableDictionary later on. The keys of this container are the header
+ * names, which per the HTTP standard are case- insensitive. They are stored in
+ * lowercase (which is how HTTP/2 mandates them on the wire), and can only
+ * consist of ASCII characters. A header value is a NSString object (with only
+ * ASCII characters), unless the header name has the suffix "-bin", in which
+ * case the value has to be a NSData object.
  */
 /**
- * These HTTP headers will be passed to the server as part of this call. Each HTTP header is a
- * name-value pair with string names and either string or binary values.
+ * These HTTP headers will be passed to the server as part of this call. Each
+ * HTTP header is a name-value pair with string names and either string or
+ * binary values.
  *
- * The passed dictionary has to use NSString keys, corresponding to the header names. The value
- * associated to each can be a NSString object or a NSData object. E.g.:
+ * The passed dictionary has to use NSString keys, corresponding to the header
+ * names. The value associated to each can be a NSString object or a NSData
+ * object. E.g.:
  *
  * call.requestHeaders = @{@"authorization": @"Bearer ..."};
  *
@@ -58,34 +61,36 @@
 @property(atomic, readonly) NSMutableDictionary *requestHeaders;
 
 /**
- * This dictionary is populated with the HTTP headers received from the server. This happens before
- * any response message is received from the server. It has the same structure as the request
- * headers dictionary: Keys are NSString header names; names ending with the suffix "-bin" have a
- * NSData value; the others have a NSString value.
+ * This dictionary is populated with the HTTP headers received from the server.
+ * This happens before any response message is received from the server. It has
+ * the same structure as the request headers dictionary: Keys are NSString
+ * header names; names ending with the suffix "-bin" have a NSData value; the
+ * others have a NSString value.
  *
- * The value of this property is nil until all response headers are received, and will change before
- * any of -writeValue: or -writesFinishedWithError: are sent to the writeable.
+ * The value of this property is nil until all response headers are received,
+ * and will change before any of -writeValue: or -writesFinishedWithError: are
+ * sent to the writeable.
  */
 @property(atomic, copy, readonly) NSDictionary *responseHeaders;
 
 /**
- * Same as responseHeaders, but populated with the HTTP trailers received from the server before the
- * call finishes.
+ * Same as responseHeaders, but populated with the HTTP trailers received from
+ * the server before the call finishes.
  *
- * The value of this property is nil until all response trailers are received, and will change
- * before -writesFinishedWithError: is sent to the writeable.
+ * The value of this property is nil until all response trailers are received,
+ * and will change before -writesFinishedWithError: is sent to the writeable.
  */
 @property(atomic, copy, readonly) NSDictionary *responseTrailers;
 
 /**
- * The request writer has to write NSData objects into the provided Writeable. The server will
- * receive each of those separately and in order as distinct messages.
- * A gRPC call might not complete until the request writer finishes. On the other hand, the request
- * finishing doesn't necessarily make the call to finish, as the server might continue sending
- * messages to the response side of the call indefinitely (depending on the semantics of the
- * specific remote method called).
- * To finish a call right away, invoke cancel.
- * host parameter should not contain the scheme (http:// or https://), only the name or IP addr
+ * The request writer has to write NSData objects into the provided Writeable.
+ * The server will receive each of those separately and in order as distinct
+ * messages. A gRPC call might not complete until the request writer finishes.
+ * On the other hand, the request finishing doesn't necessarily make the call to
+ * finish, as the server might continue sending messages to the response side of
+ * the call indefinitely (depending on the semantics of the specific remote
+ * method called). To finish a call right away, invoke cancel. host parameter
+ * should not contain the scheme (http:// or https://), only the name or IP addr
  * and the port number, for example @"localhost:5050".
  */
 - (instancetype)initWithHost:(NSString *)host
@@ -93,8 +98,9 @@
               requestsWriter:(GRXWriter *)requestWriter;
 
 /**
- * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and
- * finishes the response side of the call with an error of code CANCELED.
+ * Finishes the request side of this call, notifies the server that the RPC
+ * should be cancelled, and finishes the response side of the call with an error
+ * of code CANCELED.
  */
 - (void)cancel;
 

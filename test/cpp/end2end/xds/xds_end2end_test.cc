@@ -141,10 +141,14 @@ using ::grpc_core::experimental::AuditLoggerRegistry;
 using ::grpc_core::testing::ScopedExperimentalEnvVar;
 using ::grpc_core::testing::TestAuditLoggerFactory;
 
-constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
-constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
-constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
-constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
+constexpr char kClientCertPath[] =
+    "src/core/tsi/test_creds/client.pem";
+constexpr char kClientKeyPath[] =
+    "src/core/tsi/test_creds/client.key";
+constexpr char kBadClientCertPath[] =
+    "src/core/tsi/test_creds/badclient.pem";
+constexpr char kBadClientKeyPath[] =
+    "src/core/tsi/test_creds/badclient.key";
 
 // Based on StaticDataCertificateProvider, but provides alternate certificates
 // if the certificate name is not empty.

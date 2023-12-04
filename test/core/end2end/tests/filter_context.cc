@@ -19,8 +19,8 @@
 #include <initializer_list>
 #include <memory>
 
-#include "absl/status/status.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>

@@ -23,8 +23,8 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

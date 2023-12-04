@@ -24,7 +24,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface GRPCPooledChannel (Test)
 
 /**
- * Initialize a pooled channel with non-default destroy delay for testing purpose.
+ * Initialize a pooled channel with non-default destroy delay for testing
+ * purpose.
  */
 - (nullable instancetype)initWithChannelConfiguration:
                              (GRPCChannelConfiguration *)channelConfiguration
@@ -41,8 +42,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface GRPCChannelPool (Test)
 
 /**
- * Get an instance of pool isolated from the global shared pool with channels' destroy delay being
- * \a destroyDelay.
+ * Get an instance of pool isolated from the global shared pool with channels'
+ * destroy delay being \a destroyDelay.
  */
 - (nullable instancetype)initTestPool;
 

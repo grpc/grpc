@@ -92,7 +92,7 @@ using std::chrono::system_clock;
   [self startServer];
 }
 
-- (void)sendRPCWithStub:(EchoTestService::Stub*)stub
+- (void)sendRPCWithStub:(EchoTestService::Stub *)stub
                 numRPCs:(int)num_rpcs
      withBinaryMetadata:(BOOL)with_binary_metadata {
   EchoRequest request;
@@ -113,7 +113,7 @@ using std::chrono::system_clock;
 }
 
 - (std::shared_ptr<::grpc::Channel>)getChannel {
-  stream_engine* cronetEngine = [Cronet getGlobalEngine];
+  stream_engine *cronetEngine = [Cronet getGlobalEngine];
   auto cronetChannelCredentials = grpc::CronetChannelCredentials(cronetEngine);
   grpc::ChannelArguments args;
   args.SetSslTargetNameOverride("foo.test.google.fr");
@@ -125,7 +125,7 @@ using std::chrono::system_clock;
 
 - (std::shared_ptr<::grpc::Channel>)getChannelWithInterceptors:
     (std::vector<std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>)creators {
-  stream_engine* cronetEngine = [Cronet getGlobalEngine];
+  stream_engine *cronetEngine = [Cronet getGlobalEngine];
   auto cronetChannelCredentials = grpc::CronetChannelCredentials(cronetEngine);
   grpc::ChannelArguments args;
   args.SetSslTargetNameOverride("foo.test.google.fr");
@@ -151,7 +151,7 @@ using std::chrono::system_clock;
   auto stub = [self getStub];
   Status s = stub->Echo(&context, request, &response);
   XCTAssertTrue(s.ok());
-  const auto& trailing_metadata = context.GetServerTrailingMetadata();
+  const auto &trailing_metadata = context.GetServerTrailingMetadata();
   auto iter = trailing_metadata.find("user-agent");
   XCTAssert(iter->second.starts_with("custom_prefix grpc-c++"));
 }
@@ -431,7 +431,7 @@ using std::chrono::system_clock;
   ClientContext context;
 
   request.mutable_param()->set_echo_metadata(true);
-  DebugInfo* info = request.mutable_param()->mutable_debug_info();
+  DebugInfo *info = request.mutable_param()->mutable_debug_info();
   info->add_stack_entries("stack_entry_1");
   info->add_stack_entries("stack_entry_2");
   info->add_stack_entries("stack_entry_3");
@@ -472,7 +472,7 @@ using std::chrono::system_clock;
     EchoResponse response;
     ClientContext context;
     request.set_message("Hello");
-    auto* error = request.mutable_param()->mutable_expected_error();
+    auto *error = request.mutable_param()->mutable_expected_error();
     error->set_code(iter->code());
     error->set_error_message(iter->error_message());
     error->set_binary_error_details(iter->binary_error_details());

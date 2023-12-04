@@ -19,11 +19,10 @@
 #import "GRXWriter.h"
 
 /**
- * A "proxy" class that simply forwards values, completion, and errors from its input writer to its
- * writeable.
- * It is useful as a superclass for pipes that act as a transformation of their
- * input writer, and for classes that represent objects with input and
- * output sequences of values, like an RPC.
+ * A "proxy" class that simply forwards values, completion, and errors from its
+ * input writer to its writeable. It is useful as a superclass for pipes that
+ * act as a transformation of their input writer, and for classes that represent
+ * objects with input and output sequences of values, like an RPC.
  *
  * Thread-safety: the methods of this class are thread safe.
  */

@@ -17,8 +17,8 @@
 #include <memory>
 #include <optional>
 
-#include "absl/status/status.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"

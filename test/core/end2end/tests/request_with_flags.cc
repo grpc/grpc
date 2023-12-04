@@ -22,8 +22,8 @@
 #include <map>
 #include <utility>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
+#include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>

@@ -25,8 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Transport ID
 
 /**
- * The default transport implementations available in gRPC. These implementations will be provided
- * by gRPC by default unless explicitly excluded by the build system.
+ * The default transport implementations available in gRPC. These
+ * implementations will be provided by gRPC by default unless explicitly
+ * excluded by the build system.
  */
 extern const struct GRPCDefaultTransportImplList {
   const GRPCTransportID core_secure;
@@ -65,10 +66,11 @@ NSUInteger TransportIDHash(GRPCTransportID);
 + (instancetype)sharedInstance;
 
 /**
- * Register a transport implementation with the registry. All transport implementations to be used
- * in a process must register with the registry on process start-up in its +load: class method.
- * Parameter \p transportID is the identifier of the implementation, and \p factory is the factory
- * object to create the corresponding transport instance.
+ * Register a transport implementation with the registry. All transport
+ * implementations to be used in a process must register with the registry on
+ * process start-up in its +load: class method. Parameter \p transportID is the
+ * identifier of the implementation, and \p factory is the factory object to
+ * create the corresponding transport instance.
  */
 - (void)registerTransportWithID:(GRPCTransportID)transportID
                         factory:(id<GRPCTransportFactory>)factory;
@@ -76,8 +78,8 @@ NSUInteger TransportIDHash(GRPCTransportID);
 @end
 
 /**
- * Base class for transport implementations. All transport implementation should inherit from this
- * class.
+ * Base class for transport implementations. All transport implementation should
+ * inherit from this class.
  */
 @interface GRPCTransport : NSObject <GRPCInterceptorInterface>
 

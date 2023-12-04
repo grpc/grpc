@@ -62,9 +62,10 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
 
 @implementation GRPCRequestHeaders {
   __weak GRPCCall *_call;
-  // The NSMutableDictionary superclass doesn't hold any storage (so that people can implement their
-  // own in subclasses). As that's not the reason we're subclassing, we just delegate storage to the
-  // default NSMutableDictionary subclass returned by the cluster (e.g. __NSDictionaryM on iOS 9).
+  // The NSMutableDictionary superclass doesn't hold any storage (so that people
+  // can implement their own in subclasses). As that's not the reason we're
+  // subclassing, we just delegate storage to the default NSMutableDictionary
+  // subclass returned by the cluster (e.g. __NSDictionaryM on iOS 9).
   NSMutableDictionary *_delegate;
 }
 

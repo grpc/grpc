@@ -136,8 +136,9 @@ typedef NS_ENUM(NSUInteger, GRPCCallSafety) {
 /**
  * Compression algorithm to be used by a gRPC call.
  *
- * <b>This enumeration and corresponding call option GRPCCallOptions.transportType are deprecated by
- * the call option GRPCCallOptions.transport. </b>
+ * <b>This enumeration and corresponding call option
+ * GRPCCallOptions.transportType are deprecated by the call option
+ * GRPCCallOptions.transport. </b>
  */
 typedef NS_ENUM(NSUInteger, GRPCCompressionAlgorithm) {
   GRPCCompressNone = 0,
@@ -161,17 +162,17 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 };
 
 /** Domain of NSError objects produced by gRPC. */
-extern NSString* _Nonnull const kGRPCErrorDomain;
+extern NSString *_Nonnull const kGRPCErrorDomain;
 
 /**
  * Keys used in |NSError|'s |userInfo| dictionary to store the response headers
  * and trailers sent by the server.
  */
-extern NSString* _Nonnull const kGRPCHeadersKey;
-extern NSString* _Nonnull const kGRPCTrailersKey;
+extern NSString *_Nonnull const kGRPCHeadersKey;
+extern NSString *_Nonnull const kGRPCTrailersKey;
 
 /** The id of a transport implementation. */
-typedef char* _Nonnull GRPCTransportID;
+typedef char *_Nonnull GRPCTransportID;
 
 /**
  * Implement this protocol to provide a token to gRPC when a call is initiated.
@@ -179,12 +180,13 @@ typedef char* _Nonnull GRPCTransportID;
 @protocol GRPCAuthorizationProtocol
 
 /**
- * This method is called when gRPC is about to start the call. When OAuth token is acquired,
- * \a handler is expected to be called with \a token being the new token to be used for this call.
+ * This method is called when gRPC is about to start the call. When OAuth token
+ * is acquired, \a handler is expected to be called with \a token being the new
+ * token to be used for this call.
  */
-- (void)getTokenWithHandler:(void (^_Nonnull)(NSString* _Nullable token))handler;
+- (void)getTokenWithHandler:(void (^_Nonnull)(NSString *_Nullable token))handler;
 
 @end
 
 /** gRPC metadata dictionary typedef */
-typedef NSDictionary<NSString*, id> GRPCMetadataDictionary;
+typedef NSDictionary<NSString *, id> GRPCMetadataDictionary;

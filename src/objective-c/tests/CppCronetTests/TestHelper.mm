@@ -31,7 +31,7 @@ using std::chrono::system_clock;
 std::atomic<int> PhonyInterceptor::num_times_run_;
 std::atomic<int> PhonyInterceptor::num_times_run_reverse_;
 
-std::string ToString(const grpc::string_ref& r) { return std::string(r.data(), r.size()); }
+std::string ToString(const grpc::string_ref &r) { return std::string(r.data(), r.size()); }
 
 void configureCronet(void) {
   static dispatch_once_t configureCronet;
@@ -39,14 +39,14 @@ void configureCronet(void) {
     [Cronet setHttp2Enabled:YES];
     [Cronet setSslKeyLogFileName:@"Documents/key"];
     [Cronet enableTestCertVerifierForTesting];
-    NSURL* url = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
+    NSURL *url = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
                                                          inDomains:NSUserDomainMask] lastObject];
     [Cronet start];
     [Cronet startNetLogToFile:@"cronet_netlog.json" logBytes:YES];
   });
 }
 
-bool CheckIsLocalhost(const std::string& addr) {
+bool CheckIsLocalhost(const std::string &addr) {
   const std::string kIpv6("[::1]:");
   const std::string kIpv4MappedIpv6("[::ffff:127.0.0.1]:");
   const std::string kIpv4("127.0.0.1:");
@@ -55,8 +55,8 @@ bool CheckIsLocalhost(const std::string& addr) {
          addr.substr(0, kIpv6.size()) == kIpv6;
 }
 
-int GetIntValueFromMetadataHelper(const char* key,
-                                  const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+int GetIntValueFromMetadataHelper(const char *key,
+                                  const std::multimap<grpc::string_ref, grpc::string_ref> &metadata,
                                   int default_value) {
   if (metadata.find(key) != metadata.end()) {
     std::istringstream iss(ToString(metadata.find(key)->second));
@@ -66,15 +66,15 @@ int GetIntValueFromMetadataHelper(const char* key,
   return default_value;
 }
 
-int GetIntValueFromMetadata(const char* key,
-                            const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+int GetIntValueFromMetadata(const char *key,
+                            const std::multimap<grpc::string_ref, grpc::string_ref> &metadata,
                             int default_value) {
   return GetIntValueFromMetadataHelper(key, metadata, default_value);
 }
 
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
 // the response in seconds.
-void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request, EchoResponse* response) {
+void MaybeEchoDeadline(ServerContext *context, const EchoRequest *request, EchoResponse *response) {
   if (request->has_param() && request->param().echo_deadline()) {
     gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     if (context->deadline() != system_clock::time_point::max()) {
@@ -84,8 +84,8 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request, EchoR
   }
 }
 
-Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
-                             EchoResponse* response) {
+Status TestServiceImpl::Echo(ServerContext *context, const EchoRequest *request,
+                             EchoResponse *response) {
   // A bit of sleep to make sure that short deadline tests fail
   if (request->has_param() && request->param().server_sleep_us() > 0) {
     gpr_sleep_until(
@@ -94,13 +94,13 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   }
 
   if (request->has_param() && request->param().has_expected_error()) {
-    const auto& error = request->param().expected_error();
+    const auto &error = request->param().expected_error();
     return Status(static_cast<grpc::StatusCode>(error.code()), error.error_message(),
                   error.binary_error_details());
   }
 
   if (request->has_param() && request->param().echo_metadata()) {
-    const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
+    const std::multimap<grpc::string_ref, grpc::string_ref> &client_metadata =
         context->client_metadata();
     for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
              client_metadata.begin();
@@ -121,9 +121,9 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   return Status::OK;
 }
 
-Status TestServiceImpl::RequestStream(ServerContext* context,
-                                      grpc::ServerReader<EchoRequest>* reader,
-                                      EchoResponse* response) {
+Status TestServiceImpl::RequestStream(ServerContext *context,
+                                      grpc::ServerReader<EchoRequest> *reader,
+                                      EchoResponse *response) {
   EchoRequest request;
   response->set_message("");
   int num_msgs_read = 0;
@@ -134,8 +134,8 @@ Status TestServiceImpl::RequestStream(ServerContext* context,
   return Status::OK;
 }
 
-Status TestServiceImpl::ResponseStream(ServerContext* context, const EchoRequest* request,
-                                       grpc::ServerWriter<EchoResponse>* writer) {
+Status TestServiceImpl::ResponseStream(ServerContext *context, const EchoRequest *request,
+                                       grpc::ServerWriter<EchoResponse> *writer) {
   EchoResponse response;
   int server_responses_to_send =
       GetIntValueFromMetadata(kServerResponseStreamsToSend, context->client_metadata(),
@@ -151,8 +151,8 @@ Status TestServiceImpl::ResponseStream(ServerContext* context, const EchoRequest
   return Status::OK;
 }
 
-Status TestServiceImpl::BidiStream(ServerContext* context,
-                                   grpc::ServerReaderWriter<EchoResponse, EchoRequest>* stream) {
+Status TestServiceImpl::BidiStream(ServerContext *context,
+                                   grpc::ServerReaderWriter<EchoResponse, EchoRequest> *stream) {
   EchoRequest request;
   EchoResponse response;
 
@@ -175,7 +175,7 @@ Status TestServiceImpl::BidiStream(ServerContext* context,
   return Status::OK;
 }
 
-void PhonyInterceptor::Intercept(grpc::experimental::InterceptorBatchMethods* methods) {
+void PhonyInterceptor::Intercept(grpc::experimental::InterceptorBatchMethods *methods) {
   if (methods->QueryInterceptionHookPoint(
           grpc::experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
     num_times_run_++;

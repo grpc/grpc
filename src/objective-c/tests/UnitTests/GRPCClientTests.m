@@ -20,6 +20,7 @@
 #import <grpc/grpc.h>
 #import <grpc/support/port_platform.h>
 
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+OAuth2.h>
 #import <GRPCClient/GRPCCall+Tests.h>
@@ -29,7 +30,6 @@
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
-#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 
 #include <netinet/in.h>
 
@@ -92,10 +92,12 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 #pragma mark Tests
 
 /**
- * A few tests similar to InteropTests, but which use the generic gRPC client (GRPCCall) rather than
- * a generated proto library on top of it. Its RPCs are sent to a local cleartext server.
+ * A few tests similar to InteropTests, but which use the generic gRPC client
+ * (GRPCCall) rather than a generated proto library on top of it. Its RPCs are
+ * sent to a local cleartext server.
  *
- * TODO(jcanizales): Run them also against a local SSL server and against a remote server.
+ * TODO(jcanizales): Run them also against a local SSL server and against a
+ * remote server.
  */
 @interface GRPCClientTests : XCTestCase
 @end
@@ -252,8 +254,8 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   GRPCCall *call = [[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                              path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
-  // Setting this special key in the header will cause the interop server to echo back the
-  // user-agent value, which we confirm.
+  // Setting this special key in the header will cause the interop server to
+  // echo back the user-agent value, which we confirm.
   call.requestHeaders[@"x-grpc-test-echo-useragent"] = @"";
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
@@ -275,9 +277,9 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
         expectedUserAgent = [expectedUserAgent stringByAppendingString:@"; chttp2)"];
         XCTAssertEqualObjects(userAgent, expectedUserAgent);
 
-        // Change in format of user-agent field in a direction that does not match the regex will
-        // likely cause problem for certain gRPC users. For details, refer to internal doc
-        // https://goo.gl/c2diBc
+        // Change in format of user-agent field in a direction that does not
+        // match the regex will likely cause problem for certain gRPC users. For
+        // details, refer to internal doc https://goo.gl/c2diBc
         NSRegularExpression *regex = [NSRegularExpression
             regularExpressionWithPattern:@" grpc-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)?/[^ ,]+( \\([^)]*\\))?"
                                  options:0
@@ -312,8 +314,8 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   GRPCCall *call = [[GRPCCall alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                              path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
-  // Setting this special key in the header will cause the interop server to echo back the
-  // trailer data.
+  // Setting this special key in the header will cause the interop server to
+  // echo back the trailer data.
   const unsigned char raw_bytes[] = {1, 2, 3, 4};
   NSData *trailer_data = [NSData dataWithBytes:raw_bytes length:sizeof(raw_bytes)];
   call.requestHeaders[@"x-grpc-test-echo-trailing-bin"] = trailer_data;
@@ -508,9 +510,10 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
       }
       completionHandler:^(NSError *errorOrNil) {
         XCTAssertNotNil(errorOrNil, @"Finished with no error");
-        // The call must fail before maxConnectTime. However there is no lower bound on the time
-        // taken for connection. A shorter time happens when connection is actively refused
-        // by 8.8.8.8:1 before maxConnectTime elapsed.
+        // The call must fail before maxConnectTime. However there is no lower
+        // bound on the time taken for connection. A shorter time happens when
+        // connection is actively refused by 8.8.8.8:1 before maxConnectTime
+        // elapsed.
         XCTAssertLessThan([[NSDate date] timeIntervalSinceDate:startTime],
                           maxConnectTime + kMargin);
         [completion fulfill];
@@ -521,9 +524,10 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-// The numbers of the following three tests are selected to be smaller than the default values of
-// initial backoff (1s) and min_connect_timeout (20s), so that if they fail we know the default
-// values fail to be overridden by the channel args.
+// The numbers of the following three tests are selected to be smaller than the
+// default values of initial backoff (1s) and min_connect_timeout (20s), so that
+// if they fail we know the default values fail to be overridden by the channel
+// args.
 - (void)testTimeoutBackoff1 {
   [self testTimeoutBackoffWithTimeout:0.7 Backoff:0.3];
 }

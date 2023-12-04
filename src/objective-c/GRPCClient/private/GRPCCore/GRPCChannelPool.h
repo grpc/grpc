@@ -28,10 +28,11 @@ NS_ASSUME_NONNULL_BEGIN
 @class GRPCWrappedCall;
 
 /**
- * A proxied channel object that can be retained and used to create GRPCWrappedCall object
- * regardless of the current connection status. If a connection is not established when a
- * GRPCWrappedCall object is requested, it issues a connection/reconnection. This behavior is to
- * follow that of gRPC core's channel object.
+ * A proxied channel object that can be retained and used to create
+ * GRPCWrappedCall object regardless of the current connection status. If a
+ * connection is not established when a GRPCWrappedCall object is requested, it
+ * issues a connection/reconnection. This behavior is to follow that of gRPC
+ * core's channel object.
  */
 @interface GRPCPooledChannel : NSObject
 
@@ -40,37 +41,39 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)new NS_UNAVAILABLE;
 
 /**
- * Initialize with an actual channel object \a channel and a reference to the channel pool.
+ * Initialize with an actual channel object \a channel and a reference to the
+ * channel pool.
  */
 - (nullable instancetype)initWithChannelConfiguration:
     (GRPCChannelConfiguration *)channelConfiguration;
 
 /**
- * Create a GRPCWrappedCall object (grpc_call) from this channel. If channel is disconnected, get a
- * new channel object from the channel pool.
+ * Create a GRPCWrappedCall object (grpc_call) from this channel. If channel is
+ * disconnected, get a new channel object from the channel pool.
  */
 - (nullable GRPCWrappedCall *)wrappedCallWithPath:(NSString *)path
                                   completionQueue:(GRPCCompletionQueue *)queue
                                       callOptions:(GRPCCallOptions *)callOptions;
 
 /**
- * Notify the pooled channel that a wrapped call object is no longer referenced and will be
- * dealloc'ed.
+ * Notify the pooled channel that a wrapped call object is no longer referenced
+ * and will be dealloc'ed.
  */
 - (void)notifyWrappedCallDealloc:(GRPCWrappedCall *)wrappedCall;
 
 /**
- * Force the channel to disconnect immediately. GRPCWrappedCall objects previously created with
- * \a wrappedCallWithPath are failed if not already finished. Subsequent calls to
- * unmanagedCallWithPath: will attempt to reconnect to the remote channel.
+ * Force the channel to disconnect immediately. GRPCWrappedCall objects
+ * previously created with \a wrappedCallWithPath are failed if not already
+ * finished. Subsequent calls to unmanagedCallWithPath: will attempt to
+ * reconnect to the remote channel.
  */
 - (void)disconnect;
 
 @end
 
 /**
- * Manage the pool of connected channels. When a channel is no longer referenced by any call,
- * destroy the channel after a certain period of time elapsed.
+ * Manage the pool of connected channels. When a channel is no longer referenced
+ * by any call, destroy the channel after a certain period of time elapsed.
  */
 @interface GRPCChannelPool : NSObject
 
@@ -84,7 +87,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)sharedInstance;
 
 /**
- * Return a channel with a particular configuration. The channel may be a cached channel.
+ * Return a channel with a particular configuration. The channel may be a cached
+ * channel.
  */
 - (nullable GRPCPooledChannel *)channelWithHost:(NSString *)host
                                     callOptions:(GRPCCallOptions *)callOptions;

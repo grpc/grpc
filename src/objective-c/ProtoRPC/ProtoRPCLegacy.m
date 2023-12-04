@@ -53,7 +53,8 @@
               requestsWriter:(GRXWriter *)requestsWriter
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable {
-  // Because we can't tell the type system to constrain the class, we need to check at runtime:
+  // Because we can't tell the type system to constrain the class, we need to
+  // check at runtime:
   if (![responseClass respondsToSelector:@selector(parseFromData:error:)]) {
     [NSException raise:NSInvalidArgumentException
                 format:@"A protobuf class to parse the responses must be provided."];
@@ -72,8 +73,8 @@
     // A writeable that parses the proto messages received.
     _responseWriteable = [[GRXWriteable alloc]
         initWithValueHandler:^(NSData *value) {
-          // TODO(jcanizales): This is done in the main thread, and needs to happen in another
-          // thread.
+          // TODO(jcanizales): This is done in the main thread, and needs to
+          // happen in another thread.
           NSError *error = nil;
           id parsed = [responseClass parseFromData:value error:&error];
           if (parsed) {

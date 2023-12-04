@@ -43,9 +43,12 @@ namespace {
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
 
-constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
-constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
-constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
+constexpr char kCaCertPath[] =
+    "src/core/tsi/test_creds/ca.pem";
+constexpr char kServerCertPath[] =
+    "src/core/tsi/test_creds/server1.pem";
+constexpr char kServerKeyPath[] =
+    "src/core/tsi/test_creds/server1.key";
 constexpr char kMessage[] = "Hello";
 
 std::string ReadFile(const std::string& file_path) {

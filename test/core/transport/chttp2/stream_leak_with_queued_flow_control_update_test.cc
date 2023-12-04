@@ -19,9 +19,9 @@
 
 #include <string>
 
+#include "gtest/gtest.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>

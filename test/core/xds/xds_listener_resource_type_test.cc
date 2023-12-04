@@ -24,6 +24,8 @@
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -31,8 +33,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
 

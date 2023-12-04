@@ -26,6 +26,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
+#include "src/proto/grpc/lookup/v1/rls_config.upb.h"
+#include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 #include "upb/base/status.h"
 #include "upb/json/encode.h"
 #include "upb/upb.hpp"
@@ -35,8 +37,6 @@
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
-#include "src/proto/grpc/lookup/v1/rls_config.upb.h"
-#include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 
 namespace grpc_core {
 

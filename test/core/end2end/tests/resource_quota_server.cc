@@ -21,8 +21,8 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>

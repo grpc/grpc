@@ -18,10 +18,10 @@
 
 #include "src/core/lib/gprpp/examine_stack.h"
 
-#include "absl/debugging/stacktrace.h"
-#include "absl/debugging/symbolize.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
 
 #include <grpc/support/log.h>
 

@@ -21,7 +21,7 @@
 #include <grpc/impl/grpc_types.h>
 
 /** Free resources in the grpc core struct grpc_channel_args */
-void GRPCFreeChannelArgs(grpc_channel_args* channel_args);
+void GRPCFreeChannelArgs(grpc_channel_args *channel_args);
 
 /**
  * Allocates a @c grpc_channel_args and populates it with the options specified
@@ -35,4 +35,4 @@ void GRPCFreeChannelArgs(grpc_channel_args* channel_args);
  * function is responsible for calling
  * @c GRPCFreeChannelArgs to free the @c grpc_channel_args struct.
  */
-grpc_channel_args* GRPCBuildChannelArgs(NSDictionary* dictionary);
+grpc_channel_args *GRPCBuildChannelArgs(NSDictionary *dictionary);

@@ -31,6 +31,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "src/proto/grpc/health/v1/health.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/upb.hpp"
 
@@ -62,7 +63,6 @@
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/proto/grpc/health/v1/health.upb.h"
 
 namespace grpc_core {
 

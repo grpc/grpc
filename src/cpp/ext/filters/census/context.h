@@ -24,10 +24,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>

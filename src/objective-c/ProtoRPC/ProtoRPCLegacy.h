@@ -34,8 +34,8 @@ __attribute__((deprecated("Please use GRPCProtoCall.")))
 @interface ProtoRPC : GRPCCall
 
 /**
- * host parameter should not contain the scheme (http:// or https://), only the name or IP
- * addr and the port number, for example @"localhost:5050".
+ * host parameter should not contain the scheme (http:// or https://), only the
+ * name or IP addr and the port number, for example @"localhost:5050".
  */
 - (instancetype)initWithHost:(NSString *)host
                       method:(GRPCProtoMethod *)method
@@ -59,7 +59,7 @@ __attribute__((deprecated("Please use GRPCProtoCall.")))
 @end
 
 /**
- * Generate an NSError object that represents a failure in parsing a proto class. For gRPC
- * internal use only.
+ * Generate an NSError object that represents a failure in parsing a proto
+ * class. For gRPC internal use only.
  */
 NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsingError);

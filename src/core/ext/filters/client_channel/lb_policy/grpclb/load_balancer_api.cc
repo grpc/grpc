@@ -26,13 +26,13 @@
 
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
+#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
 #include "upb/base/string_view.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/memory.h"
-#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
 
 namespace grpc_core {
 

@@ -23,9 +23,9 @@
 #include <string>
 #include <vector>
 
+#include "google/api/expr/v1alpha1/syntax.upb.h"
 #include "absl/container/flat_hash_set.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
-#include "google/api/expr/v1alpha1/syntax.upb.h"
 #include "upb/upb.hpp"
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
@@ -69,10 +69,8 @@ class CelAuthorizationEngine {
   std::unique_ptr<mock_cel::Activation> CreateActivation(
       const EvaluateArgs& args);
 
-  std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
-      deny_if_matched_;
-  std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
-      allow_if_matched_;
+  std::map<const std::string, const google_api_expr_v1alpha1_Expr*> deny_if_matched_;
+  std::map<const std::string, const google_api_expr_v1alpha1_Expr*> allow_if_matched_;
   upb::Arena arena_;
   absl::flat_hash_set<std::string> envoy_attributes_;
   absl::flat_hash_set<std::string> header_keys_;

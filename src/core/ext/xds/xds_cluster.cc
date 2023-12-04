@@ -24,6 +24,9 @@
 #include <memory>
 #include <utility>
 
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
+#include "google/protobuf/wrappers.upb.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -43,9 +46,6 @@
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
-#include "google/protobuf/any.upb.h"
-#include "google/protobuf/duration.upb.h"
-#include "google/protobuf/wrappers.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/text/encode.h"
 

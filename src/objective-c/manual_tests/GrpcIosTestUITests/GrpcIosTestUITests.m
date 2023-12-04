@@ -162,7 +162,8 @@ int const kNumIterations = 1;
   NSLog(@"Sleeping for %d seconds", sleepTime);
   [NSThread sleepForTimeInterval:sleepTime];
 
-  // Bring test app to foreground and make a streaming call. Call should succeed.
+  // Bring test app to foreground and make a streaming call. Call should
+  // succeed.
   [testApp activate];
   [self pressButton:@"Send Message"];
   [self pressButton:@"Stop streaming call"];
@@ -171,7 +172,8 @@ int const kNumIterations = 1;
 
 - (void)testCallAfterNetworkFlap {
   NSLog(@"%s", __func__);
-  // Open test app and make a unary call. Channel to server should be open after this.
+  // Open test app and make a unary call. Channel to server should be open after
+  // this.
   [self doUnaryCall];
   [self expectCallSuccess];
 
@@ -186,7 +188,8 @@ int const kNumIterations = 1;
 
 - (void)testCallWhileNetworkDown {
   NSLog(@"%s", __func__);
-  // Open test app and make a unary call. Channel to server should be open after this.
+  // Open test app and make a unary call. Channel to server should be open after
+  // this.
   [self doUnaryCall];
   [self expectCallSuccess];
 
@@ -211,7 +214,8 @@ int const kNumIterations = 1;
 
 - (void)testSwitchApp {
   NSLog(@"%s", __func__);
-  // Open test app and make a unary call. Channel to server should be open after this.
+  // Open test app and make a unary call. Channel to server should be open after
+  // this.
   [self doUnaryCall];
   [self expectCallSuccess];
 
@@ -237,7 +241,8 @@ int const kNumIterations = 1;
 
 - (void)testNetworkFlapDuringStreamingCall {
   NSLog(@"%s", __func__);
-  // Open test app and make a unary call. Channel to server should be open after this.
+  // Open test app and make a unary call. Channel to server should be open after
+  // this.
   [self doUnaryCall];
   [self expectCallSuccess];
   // Start streaming call and send a message
@@ -252,7 +257,8 @@ int const kNumIterations = 1;
 
   [testApp activate];
   [self pressButton:@"Stop streaming call"];
-  // The call will fail if the stream gets a read error, else the call will succeed.
+  // The call will fail if the stream gets a read error, else the call will
+  // succeed.
   [self expectCallSuccessOrFailed];
 
   // Make another unary call, it should succeed
@@ -283,7 +289,8 @@ int const kNumIterations = 1;
 
 - (void)testUnaryCallTurnOffWifi {
   NSLog(@"%s", __func__);
-  // Open test app and make a unary call. Channel to server should be open after this.
+  // Open test app and make a unary call. Channel to server should be open after
+  // this.
   [self doUnaryCall];
   [self expectCallSuccess];
 
@@ -304,7 +311,8 @@ int const kNumIterations = 1;
 
 - (void)testStreamingCallTurnOffWifi {
   NSLog(@"%s", __func__);
-  // Open test app and make a unary call. Channel to server should be open after this.
+  // Open test app and make a unary call. Channel to server should be open after
+  // this.
   [self doUnaryCall];
   [self expectCallSuccess];
 
@@ -315,7 +323,8 @@ int const kNumIterations = 1;
   // Turn off wifi
   [self setWifi:NO];
 
-  // Phone should switch to cellular connection, this results in the call failing
+  // Phone should switch to cellular connection, this results in the call
+  // failing
   [testApp activate];
   [self pressButton:@"Stop streaming call"];
   [self expectCallFailed];

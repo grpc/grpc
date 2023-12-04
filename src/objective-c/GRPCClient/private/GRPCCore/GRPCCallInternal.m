@@ -55,7 +55,8 @@
 
 - (instancetype)initWithTransportManager:(GRPCTransportManager *)transportManager {
   dispatch_queue_t dispatchQueue;
-  // Set queue QoS only when iOS version is 8.0 or above and Xcode version is 9.0 or above
+  // Set queue QoS only when iOS version is 8.0 or above and Xcode version
+  // is 9.0 or above
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED >= 101300
   if (@available(iOS 8.0, macOS 10.10, *)) {
     dispatchQueue = dispatch_queue_create(
@@ -153,11 +154,11 @@
         }
         [self issueCloseWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
       }
-      // Clearing _call must happen *after* dispatching close in order to get trailing
-      // metadata from _call.
+      // Clearing _call must happen *after* dispatching close in order to get
+      // trailing metadata from _call.
       if (self->_call) {
-        // Clean up the request writers. This should have no effect to _call since its
-        // response writeable is already nullified.
+        // Clean up the request writers. This should have no effect to _call
+        // since its response writeable is already nullified.
         [self->_pipe writesFinishedWithError:nil];
         self->_call = nil;
         self->_pipe = nil;
@@ -246,7 +247,8 @@
 
 - (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
   if (initialMetadata != nil) {
-    // cannot directly call callback because this may not be running on manager's dispatch queue
+    // cannot directly call callback because this may not be running on
+    // manager's dispatch queue
     GRPCTransportManager *copiedManager = _transportManager;
     dispatch_async(copiedManager.dispatchQueue, ^{
       [copiedManager forwardPreviousInterceptorWithInitialMetadata:initialMetadata];
@@ -256,7 +258,8 @@
 
 - (void)issueMessage:(id)message {
   if (message != nil) {
-    // cannot directly call callback because this may not be running on manager's dispatch queue
+    // cannot directly call callback because this may not be running on
+    // manager's dispatch queue
     GRPCTransportManager *copiedManager = _transportManager;
     dispatch_async(copiedManager.dispatchQueue, ^{
       [copiedManager forwardPreviousInterceptorWithData:message];
@@ -265,7 +268,8 @@
 }
 
 - (void)issueCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  // cannot directly call callback because this may not be running on manager's dispatch queue
+  // cannot directly call callback because this may not be running on manager's
+  // dispatch queue
   GRPCTransportManager *copiedManager = _transportManager;
   dispatch_async(copiedManager.dispatchQueue, ^{
     [copiedManager forwardPreviousInterceptorCloseWithTrailingMetadata:trailingMetadata
@@ -275,7 +279,8 @@
 }
 
 - (void)issueDidWriteData {
-  // cannot directly call callback because this may not be running on manager's dispatch queue
+  // cannot directly call callback because this may not be running on manager's
+  // dispatch queue
   GRPCTransportManager *copiedManager = _transportManager;
   dispatch_async(copiedManager.dispatchQueue, ^{
     [copiedManager forwardPreviousInterceptorDidWriteData];

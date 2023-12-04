@@ -30,8 +30,9 @@ struct grpc_channel_credentials;
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- * Signature for the channel. If two channel's signatures are the same and connect to the same
- * remote, they share the same underlying \a GRPCChannel object.
+ * Signature for the channel. If two channel's signatures are the same and
+ * connect to the same remote, they share the same underlying \a GRPCChannel
+ * object.
  */
 @interface GRPCChannelConfiguration : NSObject <NSCopying>
 
@@ -43,12 +44,13 @@ NS_ASSUME_NONNULL_BEGIN
 @property(copy, readonly) NSString *host;
 
 /**
- * Options of the corresponding call. Note that only the channel-related options are of interest to
- * this class.
+ * Options of the corresponding call. Note that only the channel-related options
+ * are of interest to this class.
  */
 @property(readonly) GRPCCallOptions *callOptions;
 
-/** Acquire the factory to generate a new channel with current configurations. */
+/** Acquire the factory to generate a new channel with current configurations.
+ */
 @property(readonly) id<GRPCChannelFactory> channelFactory;
 
 /** Acquire the dictionary of channel args with current configurations. */
@@ -60,7 +62,8 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- * Each separate instance of this class represents at least one TCP connection to the provided host.
+ * Each separate instance of this class represents at least one TCP connection
+ * to the provided host.
  */
 @interface GRPCChannel : NSObject
 
@@ -75,8 +78,8 @@ NS_ASSUME_NONNULL_BEGIN
     (GRPCChannelConfiguration *)channelConfiguration NS_DESIGNATED_INITIALIZER;
 
 /**
- * Create a grpc core call object (grpc_call) from this channel. If no call is created, NULL is
- * returned.
+ * Create a grpc core call object (grpc_call) from this channel. If no call is
+ * created, NULL is returned.
  */
 - (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
                               completionQueue:(GRPCCompletionQueue *)queue

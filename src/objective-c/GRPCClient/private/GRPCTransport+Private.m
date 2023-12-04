@@ -63,36 +63,36 @@
                 format:@"Interceptors cannot change the call option 'transport'"];
     return;
   }
-  // retain the transport instance until the method exit to prevent deallocation of the transport
-  // instance within the method
+  // retain the transport instance until the method exit to prevent deallocation
+  // of the transport instance within the method
   GRPCTransport *transport = _transport;
   [transport startWithRequestOptions:requestOptions callOptions:callOptions];
 }
 
 - (void)writeData:(id)data {
-  // retain the transport instance until the method exit to prevent deallocation of the transport
-  // instance within the method
+  // retain the transport instance until the method exit to prevent deallocation
+  // of the transport instance within the method
   GRPCTransport *transport = _transport;
   [transport writeData:data];
 }
 
 - (void)finish {
-  // retain the transport instance until the method exit to prevent deallocation of the transport
-  // instance within the method
+  // retain the transport instance until the method exit to prevent deallocation
+  // of the transport instance within the method
   GRPCTransport *transport = _transport;
   [transport finish];
 }
 
 - (void)cancel {
-  // retain the transport instance until the method exit to prevent deallocation of the transport
-  // instance within the method
+  // retain the transport instance until the method exit to prevent deallocation
+  // of the transport instance within the method
   GRPCTransport *transport = _transport;
   [transport cancel];
 }
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages {
-  // retain the transport instance until the method exit to prevent deallocation of the transport
-  // instance within the method
+  // retain the transport instance until the method exit to prevent deallocation
+  // of the transport instance within the method
   GRPCTransport *transport = _transport;
   [transport receiveNextMessages:numberOfMessages];
 }
@@ -119,7 +119,8 @@
   });
 }
 
-/** Forward call close and trailing metadata to the previous interceptor in the chain */
+/** Forward call close and trailing metadata to the previous interceptor in the
+ * chain */
 - (void)forwardPreviousInterceptorCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata
                                                       error:(NSError *)error {
   if (_previousInterceptor == nil) {

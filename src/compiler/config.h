@@ -45,7 +45,7 @@ static inline int PluginMain(int argc, char* argv[],
   return GRPC_CUSTOM_PLUGINMAIN(argc, argv, generator);
 }
 static inline void ParseGeneratorParameter(
-    const string& parameter, std::vector<std::pair<string, string> >* options) {
+    const string& parameter, std::vector<std::pair<string, string>>* options) {
   GRPC_CUSTOM_PARSEGENERATORPARAMETER(parameter, options);
 }
 

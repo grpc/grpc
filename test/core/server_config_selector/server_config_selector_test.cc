@@ -18,8 +18,8 @@
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
 
-#include "absl/status/status.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 #include <grpc/grpc.h>
 

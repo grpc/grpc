@@ -25,12 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "google/api/monitored_resource.pb.h"
 #include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
 #include "google/monitoring/v3/metric_service.grpc.pb.h"
@@ -39,6 +33,12 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>

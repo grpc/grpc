@@ -24,6 +24,7 @@
 #include <string>
 #include <utility>
 
+#include "google/protobuf/wrappers.upb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -32,7 +33,6 @@
 #include "envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h"
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
-#include "google/protobuf/wrappers.upb.h"
 
 #include <grpc/support/json.h>
 

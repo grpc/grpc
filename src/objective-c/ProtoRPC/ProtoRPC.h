@@ -18,7 +18,8 @@
 
 #import <Foundation/Foundation.h>
 
-// import legacy header for compatibility with users using the ProtoRPC interface
+// import legacy header for compatibility with users using the ProtoRPC
+// interface
 #import "ProtoRPCLegacy.h"
 
 #import "ProtoMethod.h"
@@ -29,14 +30,16 @@ NS_ASSUME_NONNULL_BEGIN
 @class GRPCCallOptions;
 @class GPBMessage;
 
-/** An object can implement this protocol to receive responses from server from a call. */
+/** An object can implement this protocol to receive responses from server from
+ * a call. */
 @protocol GRPCProtoResponseHandler <NSObject>
 
 @required
 
 /**
- * All the responses must be issued to a user-provided dispatch queue. This property specifies the
- * dispatch queue to be used for issuing the notifications.
+ * All the responses must be issued to a user-provided dispatch queue. This
+ * property specifies the dispatch queue to be used for issuing the
+ * notifications.
  */
 @property(atomic, readonly) dispatch_queue_t dispatchQueue;
 
@@ -48,23 +51,24 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata;
 
 /**
- * Issued when a message is received from the server. The message is the deserialized proto object.
+ * Issued when a message is received from the server. The message is the
+ * deserialized proto object.
  */
 - (void)didReceiveProtoMessage:(nullable GPBMessage *)message;
 
 /**
- * Issued when a call finished. If the call finished successfully, \p error is nil and \p
- * trailingMetadata consists any trailing metadata received from the server. Otherwise, \p error
- * is non-nil and contains the corresponding error information, including gRPC error codes and
- * error descriptions.
+ * Issued when a call finished. If the call finished successfully, \p error is
+ * nil and \p trailingMetadata consists any trailing metadata received from the
+ * server. Otherwise, \p error is non-nil and contains the corresponding error
+ * information, including gRPC error codes and error descriptions.
  */
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error;
 
 /**
- * Issued when flow control is enabled for the call and a message (written with writeMessage: method
- * of GRPCStreamingProtoCall or the initializer of GRPCUnaryProtoCall) is passed to gRPC core with
- * SEND_MESSAGE operation.
+ * Issued when flow control is enabled for the call and a message (written with
+ * writeMessage: method of GRPCStreamingProtoCall or the initializer of
+ * GRPCUnaryProtoCall) is passed to gRPC core with SEND_MESSAGE operation.
  */
 - (void)didWriteMessage;
 
@@ -74,8 +78,9 @@ NS_ASSUME_NONNULL_BEGIN
  * A convenience class of objects that act as response handlers of calls. Issues
  * response to a single handler when the response is completed.
  *
- * The object is stateful and should not be reused for multiple calls. If multiple calls share the
- * same response handling logic, create separate GRPCUnaryResponseHandler objects for each call.
+ * The object is stateful and should not be reused for multiple calls. If
+ * multiple calls share the same response handling logic, create separate
+ * GRPCUnaryResponseHandler objects for each call.
  */
 @interface GRPCUnaryResponseHandler<ResponseType> : NSObject <GRPCProtoResponseHandler>
 
@@ -105,8 +110,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)new NS_UNAVAILABLE;
 
 /**
- * Users should not use this initializer directly. Call objects will be created, initialized, and
- * returned to users by methods of the generated service.
+ * Users should not use this initializer directly. Call objects will be created,
+ * initialized, and returned to users by methods of the generated service.
  */
 - (nullable instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                                         message:(GPBMessage *)message
@@ -120,9 +125,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)start;
 
 /**
- * Cancel the request of this call at best effort. It attempts to notify the server that the RPC
- * should be cancelled, and issue didCloseWithTrailingMetadata:error: callback with error code
- * CANCELED if no other error code has already been issued.
+ * Cancel the request of this call at best effort. It attempts to notify the
+ * server that the RPC should be cancelled, and issue
+ * didCloseWithTrailingMetadata:error: callback with error code CANCELED if no
+ * other error code has already been issued.
  */
 - (void)cancel;
 
@@ -136,8 +142,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)new NS_UNAVAILABLE;
 
 /**
- * Users should not use this initializer directly. Call objects will be created, initialized, and
- * returned to users by methods of the generated service.
+ * Users should not use this initializer directly. Call objects will be created,
+ * initialized, and returned to users by methods of the generated service.
  */
 - (nullable instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                                 responseHandler:(id<GRPCProtoResponseHandler>)handler
@@ -150,41 +156,43 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)start;
 
 /**
- * Cancel the request of this call at best effort. It attempts to notify the server that the RPC
- * should be cancelled, and issue didCloseWithTrailingMetadata:error: callback with error code
- * CANCELED if no other error code has already been issued.
+ * Cancel the request of this call at best effort. It attempts to notify the
+ * server that the RPC should be cancelled, and issue
+ * didCloseWithTrailingMetadata:error: callback with error code CANCELED if no
+ * other error code has already been issued.
  */
 - (void)cancel;
 
 /**
- * Send a message to the server. The message should be a Protobuf message which will be serialized
- * internally.
+ * Send a message to the server. The message should be a Protobuf message which
+ * will be serialized internally.
  */
 - (void)writeMessage:(GPBMessage *)message;
 
 /**
- * Finish the RPC request and half-close the call. The server may still send messages and/or
- * trailers to the client.
+ * Finish the RPC request and half-close the call. The server may still send
+ * messages and/or trailers to the client.
  */
 - (void)finish;
 
 /**
  * Tell gRPC to receive another message.
  *
- * This method should only be used when flow control is enabled. If flow control is enabled, gRPC
- * will only receive additional messages after the user indicates so by using either
- * receiveNextMessage: or receiveNextMessages: methods. If flow control is not enabled, messages
- * will be automatically received after the previous one is delivered.
+ * This method should only be used when flow control is enabled. If flow control
+ * is enabled, gRPC will only receive additional messages after the user
+ * indicates so by using either receiveNextMessage: or receiveNextMessages:
+ * methods. If flow control is not enabled, messages will be automatically
+ * received after the previous one is delivered.
  */
 - (void)receiveNextMessage;
 
 /**
  * Tell gRPC to receive another N message.
  *
- * This method should only be used when flow control is enabled. If flow control is enabled, the
- * messages received from the server are buffered in gRPC until the user want to receive the next
- * message. If flow control is not enabled, messages will be automatically received after the
- * previous one is delivered.
+ * This method should only be used when flow control is enabled. If flow control
+ * is enabled, the messages received from the server are buffered in gRPC until
+ * the user want to receive the next message. If flow control is not enabled,
+ * messages will be automatically received after the previous one is delivered.
  */
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 

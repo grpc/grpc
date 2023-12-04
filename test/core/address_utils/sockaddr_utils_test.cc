@@ -22,10 +22,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"

@@ -39,12 +39,12 @@
 using std::chrono::system_clock;
 using namespace grpc;
 
-void* tag(int i) { return (void*)(intptr_t)i; }
+void *tag(int i) { return (void *)(intptr_t)i; }
 
-static grpc_slice merge_slices(grpc_slice* slices, size_t nslices) {
+static grpc_slice merge_slices(grpc_slice *slices, size_t nslices) {
   size_t i;
   size_t len = 0;
-  uint8_t* cursor;
+  uint8_t *cursor;
   grpc_slice out;
 
   for (i = 0; i < nslices; i++) {
@@ -62,12 +62,12 @@ static grpc_slice merge_slices(grpc_slice* slices, size_t nslices) {
   return out;
 }
 
-int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
+int byte_buffer_eq_string(ByteBuffer *bb, const char *str) {
   int res;
 
   std::vector<Slice> slices;
   bb->Dump(&slices);
-  grpc_slice* c_slices = new grpc_slice[slices.size()];
+  grpc_slice *c_slices = new grpc_slice[slices.size()];
   for (int i = 0; i < slices.size(); i++) {
     c_slices[i] = slices[i].c_slice();
   }
@@ -99,9 +99,9 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
   std::ostringstream server_address_;
 }
 
-- (void)verify_ok:(grpc::CompletionQueue*)cq i:(int)i expect_ok:(bool)expect_ok {
+- (void)verify_ok:(grpc::CompletionQueue *)cq i:(int)i expect_ok:(bool)expect_ok {
   bool ok;
-  void* got_tag;
+  void *got_tag;
   XCTAssertTrue(cq->Next(&got_tag, &ok));
   XCTAssertEqual(expect_ok, ok);
   XCTAssertEqual(tag(i), got_tag);
@@ -139,10 +139,10 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
 }
 
 - (void)tearDown {
-  // Put teardown code here. This method is called after the invocation of each test method in the
-  // class.
+  // Put teardown code here. This method is called after the invocation of each
+  // test method in the class.
   server_->Shutdown();
-  void* ignored_tag;
+  void *ignored_tag;
   bool ignored_ok;
   cli_cq_.Shutdown();
   srv_cq_->Shutdown();
