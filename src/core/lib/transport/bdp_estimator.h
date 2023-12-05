@@ -81,13 +81,13 @@ class BdpEstimator {
  private:
   enum class PingState { UNSCHEDULED, SCHEDULED, STARTED };
 
-  PingState ping_state_;
   int64_t accumulator_;
   int64_t estimate_;
   // when was the current ping started?
   gpr_timespec ping_start_time_;
   Duration inter_ping_delay_;
   int stable_estimate_count_;
+  PingState ping_state_;
   double bw_est_;
   absl::string_view name_;
 };

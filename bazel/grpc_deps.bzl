@@ -22,42 +22,57 @@ def grpc_deps():
 
     native.bind(
         name = "upb_lib",
-        actual = "@upb//:upb",
+        actual = "@com_google_protobuf//upb",
+    )
+
+    native.bind(
+        name = "upb_amalgamation_lib",
+        actual = "@com_google_protobuf//upb:amalgamation",
+    )
+
+    native.bind(
+        name = "upb_base_lib",
+        actual = "@com_google_protobuf//upb/base",
     )
 
     native.bind(
         name = "upb_collections_lib",
-        actual = "@upb//:collections",
+        actual = "@com_google_protobuf//upb/collections",
+    )
+
+    native.bind(
+        name = "upb_mem_lib",
+        actual = "@com_google_protobuf//upb/mem",
     )
 
     native.bind(
         name = "upb_reflection",
-        actual = "@upb//:reflection",
+        actual = "@com_google_protobuf//upb:reflection",
     )
 
     native.bind(
         name = "upb_lib_descriptor",
-        actual = "@upb//:descriptor_upb_proto",
+        actual = "@com_google_protobuf//upb:descriptor_upb_proto",
     )
 
     native.bind(
         name = "upb_lib_descriptor_reflection",
-        actual = "@upb//:descriptor_upb_proto_reflection",
+        actual = "@com_google_protobuf//upb:descriptor_upb_proto_reflection",
     )
 
     native.bind(
         name = "upb_textformat_lib",
-        actual = "@upb//:textformat",
+        actual = "@com_google_protobuf//upb/text",
     )
 
     native.bind(
         name = "upb_json_lib",
-        actual = "@upb//:json",
+        actual = "@com_google_protobuf//upb/json",
     )
 
     native.bind(
         name = "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-        actual = "@upb//:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+        actual = "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     )
 
     native.bind(
@@ -243,12 +258,12 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "660ce016f987550bc1ccec4a6ee4199afb871799b696227098e3641476a7d566",
-            strip_prefix = "protobuf-b2b7a51158418f41cff0520894836c15b1738721",
+            sha256 = "7ed5fc41fe1614e551025f8e14b79b026a015b3ed337d38920c586f3ea35d818",
+            strip_prefix = "protobuf-6b5d8db01fe47478e8d400f550e797e6230d464e",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v24.3
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b2b7a51158418f41cff0520894836c15b1738721.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/b2b7a51158418f41cff0520894836c15b1738721.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v25.0
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/6b5d8db01fe47478e8d400f550e797e6230d464e.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/6b5d8db01fe47478e8d400f550e797e6230d464e.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -380,18 +395,6 @@ def grpc_deps():
             ],
         )
 
-    if "upb" not in native.existing_rules():
-        http_archive(
-            name = "upb",
-            sha256 = "5147e0ab6a28421d1e49004f4a205d84f06b924585e15eaa884cfe13289165b7",
-            strip_prefix = "upb-42cd08932e364a4cde35033b73f15c30250d7c2e",
-            urls = [
-                # https://github.com/protocolbuffers/upb/commits/24.x
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/42cd08932e364a4cde35033b73f15c30250d7c2e.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/42cd08932e364a4cde35033b73f15c30250d7c2e.tar.gz",
-            ],
-        )
-
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
@@ -509,11 +512,11 @@ def grpc_deps():
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",
-            sha256 = "f30cd88bf898a5726d245eba882b8e81012021eb00df34109f4dfb203f005cea",
-            strip_prefix = "opentelemetry-cpp-1.11.0",
+            sha256 = "149f076cc7a79bbd3a3c34fb3ab61d3a3e8dcfe2b9596f79153e17123c32f897",
+            strip_prefix = "opentelemetry-cpp-064fef0d871c57ffac6739d3311659a5770a9db4",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.11.0.tar.gz",
-                "https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.11.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/064fef0d871c57ffac6739d3311659a5770a9db4.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/064fef0d871c57ffac6739d3311659a5770a9db4.tar.gz",
             ],
         )
 

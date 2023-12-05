@@ -1,44 +1,25 @@
-/*
- * Copyright (c) 2009-2022, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #include "upb/io/tokenizer.h"
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_format.h"
 #include "upb/io/chunked_input_stream.h"
 #include "upb/io/string.h"
 #include "upb/lex/unicode.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 // Must be last.
 #include "upb/port/def.inc"
 
-namespace proto2 {
+namespace google {
+namespace protobuf {
 namespace io {
 namespace {
 
@@ -53,11 +34,11 @@ static bool StringEquals(const char* a, const char* b) {
 // ===================================================================
 // Data-Driven Test Infrastructure
 
-// TODO(kenton):  This is copied from coded_stream_unittest.  This is
-//   temporary until these features are integrated into gUnit itself.
+// TODO:  This is copied from coded_stream_unittest.  This is
+//   temporary until these features are integrated into gTest itself.
 
 // TEST_1D and TEST_2D are macros I'd eventually like to see added to
-// gUnit.  These macros can be used to declare tests which should be
+// gTest.  These macros can be used to declare tests which should be
 // run multiple times, once for each item in some input array.  TEST_1D
 // tests all cases in a single input array.  TEST_2D tests all
 // combinations of cases from two arrays.  The arrays must be statically
@@ -209,7 +190,7 @@ TEST_2D(TokenizerTest, SimpleTokens, kSimpleTokenCases, kBlockSizes) {
   auto input = TestInputStream(kSimpleTokenCases_case.input.data(),
                                kSimpleTokenCases_case.input.size(),
                                kBlockSizes_case, arena.ptr());
-  auto t = upb_Tokenizer_New(NULL, 0, input, 0, arena.ptr());
+  auto t = upb_Tokenizer_New(nullptr, 0, input, 0, arena.ptr());
 
   // Before Next() is called, the initial token should always be TYPE_START.
   EXPECT_EQ(upb_Tokenizer_Type(t), kUpb_TokenType_Start);
@@ -219,7 +200,7 @@ TEST_2D(TokenizerTest, SimpleTokens, kSimpleTokenCases, kBlockSizes) {
   EXPECT_TRUE(StringEquals(upb_Tokenizer_TextData(t), ""));
 
   // Parse the token.
-  EXPECT_TRUE(upb_Tokenizer_Next(t, NULL));
+  EXPECT_TRUE(upb_Tokenizer_Next(t, nullptr));
   // Check that it has the right type.
   EXPECT_EQ(upb_Tokenizer_Type(t), kSimpleTokenCases_case.type);
   // Check that it contains the complete input text.
@@ -255,23 +236,23 @@ TEST_1D(TokenizerTest, FloatSuffix, kBlockSizes) {
   auto input =
       TestInputStream(text, strlen(text), kBlockSizes_case, arena.ptr());
   const int options = kUpb_TokenizerOption_AllowFAfterFloat;
-  auto t = upb_Tokenizer_New(NULL, 0, input, options, arena.ptr());
+  auto t = upb_Tokenizer_New(nullptr, 0, input, options, arena.ptr());
 
   // Advance through tokens and check that they are parsed as expected.
 
-  EXPECT_TRUE(upb_Tokenizer_Next(t, NULL));
+  EXPECT_TRUE(upb_Tokenizer_Next(t, nullptr));
   EXPECT_EQ(upb_Tokenizer_Type(t), kUpb_TokenType_Float);
   EXPECT_TRUE(StringEquals(upb_Tokenizer_TextData(t), "1f"));
 
-  EXPECT_TRUE(upb_Tokenizer_Next(t, NULL));
+  EXPECT_TRUE(upb_Tokenizer_Next(t, nullptr));
   EXPECT_EQ(upb_Tokenizer_Type(t), kUpb_TokenType_Float);
   EXPECT_TRUE(StringEquals(upb_Tokenizer_TextData(t), "2.5f"));
 
-  EXPECT_TRUE(upb_Tokenizer_Next(t, NULL));
+  EXPECT_TRUE(upb_Tokenizer_Next(t, nullptr));
   EXPECT_EQ(upb_Tokenizer_Type(t), kUpb_TokenType_Float);
   EXPECT_TRUE(StringEquals(upb_Tokenizer_TextData(t), "6e3f"));
 
-  EXPECT_TRUE(upb_Tokenizer_Next(t, NULL));
+  EXPECT_TRUE(upb_Tokenizer_Next(t, nullptr));
   EXPECT_EQ(upb_Tokenizer_Type(t), kUpb_TokenType_Float);
   EXPECT_TRUE(StringEquals(upb_Tokenizer_TextData(t), "7F"));
 
@@ -301,23 +282,23 @@ TEST_2D(TokenizerTest, Whitespace, kWhitespaceTokenCases, kBlockSizes) {
     auto input = TestInputStream(kWhitespaceTokenCases_case.input.data(),
                                  kWhitespaceTokenCases_case.input.size(),
                                  kBlockSizes_case, arena.ptr());
-    auto t = upb_Tokenizer_New(NULL, 0, input, 0, arena.ptr());
+    auto t = upb_Tokenizer_New(nullptr, 0, input, 0, arena.ptr());
 
-    EXPECT_FALSE(upb_Tokenizer_Next(t, NULL));
+    EXPECT_FALSE(upb_Tokenizer_Next(t, nullptr));
   }
   {
     auto input = TestInputStream(kWhitespaceTokenCases_case.input.data(),
                                  kWhitespaceTokenCases_case.input.size(),
                                  kBlockSizes_case, arena.ptr());
     const int options = kUpb_TokenizerOption_ReportNewlines;
-    auto t = upb_Tokenizer_New(NULL, 0, input, options, arena.ptr());
+    auto t = upb_Tokenizer_New(nullptr, 0, input, options, arena.ptr());
 
-    EXPECT_TRUE(upb_Tokenizer_Next(t, NULL));
+    EXPECT_TRUE(upb_Tokenizer_Next(t, nullptr));
 
     EXPECT_EQ(upb_Tokenizer_Type(t), kWhitespaceTokenCases_case.type);
     EXPECT_TRUE(StringEquals(upb_Tokenizer_TextData(t),
                              kWhitespaceTokenCases_case.input.data()));
-    EXPECT_FALSE(upb_Tokenizer_Next(t, NULL));
+    EXPECT_FALSE(upb_Tokenizer_Next(t, nullptr));
   }
 }
 
@@ -442,7 +423,7 @@ TEST_2D(TokenizerTest, MultipleTokens, kMultiTokenCases, kBlockSizes) {
   auto input = TestInputStream(kMultiTokenCases_case.input.data(),
                                kMultiTokenCases_case.input.size(),
                                kBlockSizes_case, arena.ptr());
-  auto t = upb_Tokenizer_New(NULL, 0, input, 0, arena.ptr());
+  auto t = upb_Tokenizer_New(nullptr, 0, input, 0, arena.ptr());
 
   // Before Next() is called, the initial token should always be TYPE_START.
   EXPECT_EQ(upb_Tokenizer_Type(t), kUpb_TokenType_Start);
@@ -467,7 +448,7 @@ TEST_2D(TokenizerTest, MultipleTokens, kMultiTokenCases, kBlockSizes) {
       EXPECT_FALSE(upb_Tokenizer_Next(t, &status));
       EXPECT_TRUE(upb_Status_IsOk(&status));
     } else {
-      EXPECT_TRUE(upb_Tokenizer_Next(t, NULL));
+      EXPECT_TRUE(upb_Tokenizer_Next(t, nullptr));
     }
 
     // Check that the token matches the expected one.
@@ -509,7 +490,7 @@ TEST_2D(TokenizerTest, MultipleWhitespaceTokens, kMultiWhitespaceTokenCases,
                                kMultiWhitespaceTokenCases_case.input.size(),
                                kBlockSizes_case, arena.ptr());
   const int options = kUpb_TokenizerOption_ReportNewlines;
-  auto t = upb_Tokenizer_New(NULL, 0, input, options, arena.ptr());
+  auto t = upb_Tokenizer_New(nullptr, 0, input, options, arena.ptr());
 
   // Before Next() is called, the initial token should always be TYPE_START.
   EXPECT_EQ(upb_Tokenizer_Type(t), kUpb_TokenType_Start);
@@ -534,7 +515,7 @@ TEST_2D(TokenizerTest, MultipleWhitespaceTokens, kMultiWhitespaceTokenCases,
       EXPECT_FALSE(upb_Tokenizer_Next(t, &status));
       EXPECT_TRUE(upb_Status_IsOk(&status));
     } else {
-      EXPECT_TRUE(upb_Tokenizer_Next(t, NULL));
+      EXPECT_TRUE(upb_Tokenizer_Next(t, nullptr));
     }
 
     // Check that the token matches the expected one.
@@ -568,11 +549,11 @@ TEST_1D(TokenizerTest, ShCommentStyle, kBlockSizes) {
   auto input =
       TestInputStream(text, strlen(text), kBlockSizes_case, arena.ptr());
   const int options = kUpb_TokenizerOption_CommentStyleShell;
-  auto t = upb_Tokenizer_New(NULL, 0, input, options, arena.ptr());
+  auto t = upb_Tokenizer_New(nullptr, 0, input, options, arena.ptr());
 
   // Advance through tokens and check that they are parsed as expected.
   for (size_t i = 0; i < arraysize(kTokens); i++) {
-    EXPECT_TRUE(upb_Tokenizer_Next(t, NULL));
+    EXPECT_TRUE(upb_Tokenizer_Next(t, nullptr));
     EXPECT_TRUE(StringEquals(upb_Tokenizer_TextData(t), kTokens[i]));
   }
 
@@ -587,7 +568,7 @@ TEST_1D(TokenizerTest, ShCommentStyle, kBlockSizes) {
 
 // -------------------------------------------------------------------
 
-#if 0  // TODO(salo): Extended comments are currently unimplemented.
+#if 0  // TODO: Extended comments are currently unimplemented.
 
 // In each case, the input is expected to have two tokens named "prev" and
 // "next" with comments in between.
@@ -748,7 +729,7 @@ TEST_2D(TokenizerTest, DocComments, kDocCommentCases, kBlockSizes) {
   std::string next_leading_comments;
   tokenizer.NextWithComments(&prev_trailing_comments, &detached_comments,
                              &next_leading_comments);
-  tokenizer2.NextWithComments(NULL, NULL, NULL);
+  tokenizer2.NextWithComments(nullptr, nullptr, nullptr);
   EXPECT_EQ("next", tokenizer.current().text);
   EXPECT_EQ("next", tokenizer2.current().text);
 
@@ -757,12 +738,12 @@ TEST_2D(TokenizerTest, DocComments, kDocCommentCases, kBlockSizes) {
 
   for (int i = 0; i < detached_comments.size(); i++) {
     EXPECT_LT(i, arraysize(kDocCommentCases));
-    EXPECT_TRUE(kDocCommentCases_case.detached_comments[i] != NULL);
+    EXPECT_TRUE(kDocCommentCases_case.detached_comments[i] != nullptr);
     EXPECT_EQ(kDocCommentCases_case.detached_comments[i], detached_comments[i]);
   }
 
   // Verify that we matched all the detached comments.
-  EXPECT_EQ(NULL,
+  EXPECT_EQ(nullptr,
             kDocCommentCases_case.detached_comments[detached_comments.size()]);
 
   EXPECT_EQ(kDocCommentCases_case.next_leading_comments, next_leading_comments);
@@ -773,7 +754,7 @@ TEST_2D(TokenizerTest, DocComments, kDocCommentCases, kBlockSizes) {
 // -------------------------------------------------------------------
 
 // Test parse helpers.
-// TODO(b/225783758): Add a fuzz test for this.
+// TODO: Add a fuzz test for this.
 TEST_F(TokenizerTest, ParseInteger) {
   EXPECT_EQ(0, ParseInteger("0"));
   EXPECT_EQ(123, ParseInteger("123"));
@@ -1103,7 +1084,7 @@ TEST_2D(TokenizerTest, Errors, kErrorCases, kBlockSizes) {
   auto input = TestInputStream(kErrorCases_case.input.data(),
                                kErrorCases_case.input.size(), kBlockSizes_case,
                                arena.ptr());
-  auto t = upb_Tokenizer_New(NULL, 0, input, 0, arena.ptr());
+  auto t = upb_Tokenizer_New(nullptr, 0, input, 0, arena.ptr());
 
   upb_Status status;
   upb_Status_Clear(&status);
@@ -1123,8 +1104,8 @@ TEST_1D(TokenizerTest, BackUpOnDestruction, kBlockSizes) {
       TestInputStream(text.data(), text.size(), kBlockSizes_case, arena.ptr());
 
   // Create a tokenizer, read one token, then destroy it.
-  auto t = upb_Tokenizer_New(NULL, 0, input, 0, arena.ptr());
-  upb_Tokenizer_Next(t, NULL);
+  auto t = upb_Tokenizer_New(nullptr, 0, input, 0, arena.ptr());
+  upb_Tokenizer_Next(t, nullptr);
   upb_Tokenizer_Fini(t);
 
   // Only "foo" should have been read.
@@ -1250,4 +1231,5 @@ TEST(TokenizerHandlesUnicode, NonBMPCodes) {
 
 }  // namespace
 }  // namespace io
-}  // namespace proto2
+}  // namespace protobuf
+}  // namespace google

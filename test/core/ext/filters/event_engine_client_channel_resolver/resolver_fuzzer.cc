@@ -71,7 +71,8 @@ absl::Status ErrorToAbslStatus(
 }
 
 class FuzzingResolverEventEngine
-    : public grpc_event_engine::experimental::AbortingEventEngine {
+    : public grpc_event_engine::experimental::AbortingEventEngine,
+      public std::enable_shared_from_this<FuzzingResolverEventEngine> {
  public:
   explicit FuzzingResolverEventEngine(
       const event_engine_client_channel_resolver::Msg& msg,

@@ -1752,7 +1752,10 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
   if (is_client) {
     int ssl_result;
     SSL_set_connect_state(ssl);
-    if (server_name_indication != nullptr) {
+    // Skip if the SNI looks like an IP address because IP addressed are not
+    // allowed as host names.
+    if (server_name_indication != nullptr &&
+        !looks_like_ip_address(server_name_indication)) {
       if (!SSL_set_tlsext_host_name(ssl, server_name_indication)) {
         gpr_log(GPR_ERROR, "Invalid server name indication %s.",
                 server_name_indication);
@@ -2061,7 +2064,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
-  if (options->pem_root_certs == nullptr && options->root_store == nullptr) {
+  if (options->pem_root_certs == nullptr && options->root_store == nullptr &&
+      !options->skip_server_certificate_verification) {
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -2123,7 +2127,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       SSL_CTX_set_cert_store(ssl_context, options->root_store->store);
     }
 #endif
-    if (OPENSSL_VERSION_NUMBER < 0x10100000 || options->root_store == nullptr) {
+    if (OPENSSL_VERSION_NUMBER < 0x10100000 ||
+        (options->root_store == nullptr &&
+         options->pem_root_certs != nullptr)) {
       result = ssl_ctx_load_verification_certs(
           ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
           nullptr);

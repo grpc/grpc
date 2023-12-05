@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -e
 
 # directories to run against
 DIRS="examples/cpp examples/android/binder src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/ruby src/objective-c tools/distrib/python src/python/grpcio_observability"
@@ -35,9 +35,10 @@ do
     files="$files `find ${CLANG_FORMAT_ROOT}/$dir -name $glob \
     -and -not -name '*.generated.*' \
     -and -not -name '*.upb.h' \
-    -and -not -name '*.upb.c' \
     -and -not -name '*.upbdefs.h' \
     -and -not -name '*.upbdefs.c' \
+    -and -not -name '*.upb_minitable.h' \
+    -and -not -name '*.upb_minitable.c' \
     -and -not -name '*.pb.h' \
     -and -not -name '*.pb.c' \
     -and -not -name '*.pb.cc' \
@@ -60,11 +61,13 @@ if [ -n "$CHANGED_FILES" ]; then
   files=$(comm -12 <(echo $files | tr ' ' '\n' | sort -u) <(echo $CHANGED_FILES | tr ' ' '\n' | sort -u))
 fi
 
+files=`echo $files | sort -R`
+
 FILES_PER_PROCESS="$(expr $(echo "$files" | grep -o '\n' | wc -l) / $CPU_COUNT + 1)"
 
 if [ "$TEST" == "" ]
 then
-  echo $files | xargs -P $CPU_COUNT -n $FILES_PER_PROCESS $CLANG_FORMAT -i --verbose
+  echo $files | xargs -P $CPU_COUNT -n $FILES_PER_PROCESS $CLANG_FORMAT -i
 else
   ok=yes
   for file in $files

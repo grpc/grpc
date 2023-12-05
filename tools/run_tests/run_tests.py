@@ -1304,7 +1304,6 @@ _LANGUAGES = {
     "objc": ObjCLanguage(),
     "sanity": Sanity("sanity_tests.yaml"),
     "clang-tidy": Sanity("clang_tidy_tests.yaml"),
-    "iwyu": Sanity("iwyu_tests.yaml"),
 }
 
 _MSBUILD_CONFIG = {

@@ -32,7 +32,6 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -96,7 +95,6 @@ static void do_basic_init(void) {
   gpr_time_init();
   grpc_core::PrintExperimentsList();
   grpc_core::Fork::GlobalInit();
-  grpc_event_engine::experimental::RegisterForkHandlers();
   grpc_fork_handlers_auto_register();
   grpc_tracer_init();
   grpc_client_channel_global_init_backup_polling();

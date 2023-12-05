@@ -79,6 +79,10 @@ _INTERESTING = {
         rb"xds server channel memory usage: ([0-9\.]+) bytes per channel",
         float,
     ),
+    "channel_multi_address/xds_client": (
+        rb"xds multi_address client channel memory usage: ([0-9\.]+) bytes per channel",
+        float,
+    ),
 }
 
 _SCENARIOS = {
@@ -89,6 +93,10 @@ _SCENARIOS = {
 _BENCHMARKS = {
     "call": ["--benchmark_names=call", "--size=50000"],
     "channel": ["--benchmark_names=channel", "--size=10000"],
+    "channel_multi_address": [
+        "--benchmark_names=channel_multi_address",
+        "--size=10000",
+    ],
 }
 
 
@@ -109,6 +117,8 @@ def _run():
             for scenario, extra_args in _SCENARIOS.items():
                 # TODO(chenancy) Remove when minstack is implemented for channel
                 if name == "channel" and scenario == "minstack":
+                    continue
+                if name == "channel_multi_address" and not use_xds:
                     continue
                 argv = (
                     ["bazel-bin/test/core/memory_usage/memory_usage_test"]
