@@ -48,7 +48,6 @@ TEST(StatsTest, IncSpecificCounter) {
 
   ExecCtx exec_ctx;
   global_stats().IncrementClientCallsCreated();
-
   EXPECT_EQ(snapshot->delta()->client_calls_created, 1);
 }
 
