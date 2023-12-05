@@ -1,0 +1,24 @@
+package(default_visibility = ["//src/python/grpcio_csds:__subpackages__"])
+
+_XDS_PROTO_DIRECTORIES = [
+    "contrib",
+    "envoy",
+    "google",
+    "opencensus",
+    "opentelemetry",
+    "udpa",
+    "validate",
+    "xds",
+]
+
+py_library(
+    name = "xds_protos",
+    srcs = (["__init__.py"] +
+            glob([d + "/**/*.py" for d in _XDS_PROTO_DIRECTORIES])),
+    imports = ["."],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "@com_google_protobuf//:protobuf_python",
+    ],
+)
+
