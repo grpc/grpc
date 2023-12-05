@@ -268,8 +268,7 @@ class Server : public InternallyRefCounted<Server>,
 
     static void AcceptStream(void* arg, Transport* /*transport*/,
                              const void* transport_server_data);
-    static void SetRegisteredMethodOnMetadata(void* arg,
-                                              ServerMetadata* metadata);
+    void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
 
     void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
