@@ -256,6 +256,7 @@ class CallSpineInterface {
   GRPC_MUST_USE_RESULT virtual absl::nullopt_t Cancel(
       ServerMetadataHandle metadata) = 0;
   virtual Party& party() = 0;
+<<<<<<< HEAD
 
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
@@ -298,6 +299,8 @@ class CallSpineInterface {
       }
     });
   }
+=======
+>>>>>>> master
 };
 
 class CallSpine final : public CallSpineInterface {
