@@ -494,7 +494,13 @@ def stream_unary(
       The response to the RPC.
     """
     channel, method_handle = ChannelCache.get().get_channel(
-        target, options, channel_credentials, insecure, compression
+        target,
+        options,
+        channel_credentials,
+        insecure,
+        compression,
+        method,
+        _registered_method,
     )
     multicallable = channel.stream_unary(
         method, request_serializer, response_deserializer, method_handle
@@ -581,7 +587,13 @@ def stream_stream(
       An iterator of responses.
     """
     channel, method_handle = ChannelCache.get().get_channel(
-        target, options, channel_credentials, insecure, compression
+        target,
+        options,
+        channel_credentials,
+        insecure,
+        compression,
+        method,
+        _registered_method,
     )
     multicallable = channel.stream_stream(
         method, request_serializer, response_deserializer, method_handle

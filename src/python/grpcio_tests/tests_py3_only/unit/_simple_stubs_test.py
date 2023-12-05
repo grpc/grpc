@@ -365,8 +365,17 @@ class SimpleStubsTest(unittest.TestCase):
         addr, port, sock = get_socket()
         sock.close()
         target = f"{addr}:{port}"
-        channel = grpc._simple_stubs.ChannelCache.get().get_channel(
-            target, (), None, True, None
+        (
+            channel,
+            unused_method_handle,
+        ) = grpc._simple_stubs.ChannelCache.get().get_channel(
+            target=target,
+            options=(),
+            channel_credentials=None,
+            insecure=True,
+            compression=None,
+            method=_UNARY_UNARY,
+            _registered_method=True,
         )
         rpc_finished_event = threading.Event()
         rpc_failed_event = threading.Event()
