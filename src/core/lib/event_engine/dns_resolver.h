@@ -1,4 +1,4 @@
-// Copyright 2015 The gRPC authors.
+// Copyright 2023 The gRPC Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,11 +28,13 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class DNSResolver : public grpc_core::InternallyRefCounted<DNSResolver> {
+class RefCountedDNSResolverInterface
+    : public grpc_core::InternallyRefCounted<RefCountedDNSResolverInterface> {
  public:
-  explicit DNSResolver(const char* trace = nullptr,
-                       intptr_t initial_refcount = 1)
-      : grpc_core::InternallyRefCounted<DNSResolver>(trace, initial_refcount) {}
+  explicit RefCountedDNSResolverInterface(const char* trace = nullptr,
+                                          intptr_t initial_refcount = 1)
+      : grpc_core::InternallyRefCounted<RefCountedDNSResolverInterface>(
+            trace, initial_refcount) {}
 
   virtual void LookupHostname(
       EventEngine::DNSResolver::LookupHostnameCallback on_resolved,

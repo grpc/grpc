@@ -18,6 +18,8 @@
 #include <string>
 #include <vector>
 
+#include "dns_resolver.h"
+
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <ares_version.h>
@@ -193,9 +195,9 @@ AresResolver::CreateAresResolver(
 AresResolver::AresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     std::shared_ptr<EventEngine> event_engine, ares_channel channel)
-    : DNSResolver(GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)
-                      ? "AresResolver"
-                      : nullptr),
+    : RefCountedDNSResolverInterface(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
+                                                            : nullptr),
       channel_(channel),
       polled_fd_factory_(std::move(polled_fd_factory)),
       event_engine_(std::move(event_engine)) {

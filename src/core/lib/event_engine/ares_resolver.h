@@ -55,7 +55,7 @@ extern grpc_core::TraceFlag grpc_trace_ares_resolver;
     }                                                                          \
   } while (0)
 
-class AresResolver : public DNSResolver {
+class AresResolver : public RefCountedDNSResolverInterface {
  public:
   static absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>>
   CreateAresResolver(absl::string_view dns_server,

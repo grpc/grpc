@@ -23,6 +23,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
+#include "test/core/event_engine/test_suite/tests/dns_test.h"
 #include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {
@@ -39,9 +40,7 @@ int main(int argc, char** argv) {
       });
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
-  grpc_core::ConfigVars::Overrides overrides;
-  overrides.dns_resolver = "native";
-  grpc_core::ConfigVars::SetOverrides(overrides);
+  grpc_event_engine::experimental::InitDNSTests(/*use_native_dns=*/true);
   grpc_init();
   int r = RUN_ALL_TESTS();
   grpc_shutdown();

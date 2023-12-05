@@ -34,7 +34,7 @@ namespace experimental {
 
 // An asynchronous DNS resolver which uses the native platform's getaddrinfo
 // API. Only supports A/AAAA records.
-class NativeDNSResolver : public DNSResolver {
+class NativeDNSResolver : public RefCountedDNSResolverInterface {
  public:
   explicit NativeDNSResolver(std::shared_ptr<EventEngine> event_engine);
 
