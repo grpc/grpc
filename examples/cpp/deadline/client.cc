@@ -41,7 +41,7 @@ using helloworld::Greeter;
 using helloworld::HelloReply;
 using helloworld::HelloRequest;
 
-void unaryCall(std::shared_ptr<Channel> channel, int request_id,
+void unaryCall(std::shared_ptr<Channel> channel, std::string label,
                std::string message, grpc::StatusCode expected_code) {
   std::unique_ptr<Greeter::Stub> stub = Greeter::NewStub(channel);
 
@@ -79,7 +79,7 @@ void unaryCall(std::shared_ptr<Channel> channel, int request_id,
   }
 
   // Act upon its status.
-  std::cout << "[" << request_id << "] wanted = " << expected_code
+  std::cout << "[" << label << "] wanted = " << expected_code
             << ", got = " << status.error_code() << std::endl;
 }
 
@@ -93,14 +93,14 @@ int main(int argc, char** argv) {
   // InsecureChannelCredentials()).
   std::shared_ptr<Channel> channel =
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
-  // A successful request
-  unaryCall(channel, 1, "world", grpc::StatusCode::OK);
-  // Exceeds deadline
-  unaryCall(channel, 2, "delay", grpc::StatusCode::DEADLINE_EXCEEDED);
-  // A successful request with propagated deadline
-  unaryCall(channel, 3, "[propagate me]world", grpc::StatusCode::OK);
-  // Exceeds propagated deadline
-  unaryCall(channel, 4, "[propagate me][propagate me]world",
+  // Making test calls
+  unaryCall(channel, "Successful request", "world", grpc::StatusCode::OK);
+  unaryCall(channel, "Exceeds deadline", "delay",
+            grpc::StatusCode::DEADLINE_EXCEEDED);
+  unaryCall(channel, "Successful request with propagated deadline",
+            "[propagate me]world", grpc::StatusCode::OK);
+  unaryCall(channel, "Exceeds propagated deadline",
+            "[propagate me][propagate me]world",
             grpc::StatusCode::DEADLINE_EXCEEDED);
   return 0;
 }
