@@ -274,7 +274,7 @@ class CallSpineInterface {
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
       if (!IsStatusOk(r)) {
-        Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
       }
       return Empty{};
     });
@@ -301,7 +301,7 @@ class CallSpineInterface {
         "SpawnGuarded promise must return a status-like object");
     party().Spawn(name, std::move(promise_factory), [this](ResultType r) {
       if (!IsStatusOk(r)) {
-        Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
       }
     });
   }
