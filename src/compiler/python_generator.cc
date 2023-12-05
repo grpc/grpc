@@ -470,7 +470,7 @@ bool PrivateGenerator::PrintStub(
           out->Print("_registered_call_handle=channel._create_registered_call_handle(\n");
           {
             IndentScope registered_call_handle_method_name_indent(out);
-            out->Print(method_dict, "'/$PackageQualifiedService$/$Method$')),\n");
+            out->Print(method_dict, "'/$PackageQualifiedService$/$Method$'))\n");
           }
         }
       }

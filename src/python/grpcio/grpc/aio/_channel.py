@@ -478,6 +478,11 @@ class Channel(_base_channel.Channel):
             await self.wait_for_state_change(state)
             state = self.get_state(try_to_connect=True)
 
+    # TODO(xuanwn): Implement this method after we have
+    # observability for Asyncio.
+    def _create_registered_call_handle(self, method: str) -> int:
+        pass
+
     # TODO(xuanwn): Implement _registered_call_handle after we have
     # observability for Asyncio.
     # pylint: disable=arguments-differ,unused-argument

@@ -99,7 +99,7 @@ class ChannelCache:
     _eviction_ready: threading.Event = threading.Event()
 
     _mapping: Dict[
-        CacheKey, Tuple[grpc.Channel, datetime.datetime, dict[str, int]]
+        CacheKey, Tuple[grpc.Channel, datetime.datetime, Dict[str, int]]
     ]
     _eviction_thread: threading.Thread
 
@@ -400,7 +400,7 @@ def unary_stream(
     Returns:
       An iterator of responses.
     """
-    channel = ChannelCache.get().get_channel(
+    channel, method_handle = ChannelCache.get().get_channel(
         target,
         options,
         channel_credentials,
@@ -410,7 +410,7 @@ def unary_stream(
         _registered_method,
     )
     multicallable = channel.unary_stream(
-        method, request_serializer, response_deserializer, _registered_method
+        method, request_serializer, response_deserializer, method_handle
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
@@ -493,11 +493,11 @@ def stream_unary(
     Returns:
       The response to the RPC.
     """
-    channel = ChannelCache.get().get_channel(
+    channel, method_handle = ChannelCache.get().get_channel(
         target, options, channel_credentials, insecure, compression
     )
     multicallable = channel.stream_unary(
-        method, request_serializer, response_deserializer, _registered_method
+        method, request_serializer, response_deserializer, method_handle
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
@@ -580,11 +580,11 @@ def stream_stream(
     Returns:
       An iterator of responses.
     """
-    channel = ChannelCache.get().get_channel(
+    channel, method_handle = ChannelCache.get().get_channel(
         target, options, channel_credentials, insecure, compression
     )
     multicallable = channel.stream_stream(
-        method, request_serializer, response_deserializer, _registered_method
+        method, request_serializer, response_deserializer, method_handle
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
