@@ -118,7 +118,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
             with grpc.secure_channel(target, composite_credentials) as channel:
                 stub = channel.unary_unary(
                     _UNARY_UNARY,
-                    _registered_call_handle=channel._create_registered_call_handle(
+                    _registered_call_handle=channel._get_registered_call_handle(
                         _UNARY_UNARY
                     ),
                 )
@@ -149,7 +149,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
                     ) as channel:
                         stub = channel.unary_unary(
                             _UNARY_UNARY,
-                            _registered_call_handle=channel._create_registered_call_handle(
+                            _registered_call_handle=channel._get_registered_call_handle(
                                 _UNARY_UNARY
                             ),
                         )

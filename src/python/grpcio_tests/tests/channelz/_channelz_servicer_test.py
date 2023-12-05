@@ -103,9 +103,7 @@ class ChannelzServicerTest(unittest.TestCase):
                 _SUCCESSFUL_UNARY_UNARY,
                 _registered_call_handle=self._pairs[
                     idx
-                ].channel._create_registered_call_handle(
-                    _SUCCESSFUL_UNARY_UNARY
-                ),
+                ].channel._get_registered_call_handle(_SUCCESSFUL_UNARY_UNARY),
             )
             .with_call(_REQUEST)
         )
@@ -117,7 +115,7 @@ class ChannelzServicerTest(unittest.TestCase):
                 _FAILED_UNARY_UNARY,
                 _registered_call_handle=self._pairs[
                     idx
-                ].channel._create_registered_call_handle(_FAILED_UNARY_UNARY),
+                ].channel._get_registered_call_handle(_FAILED_UNARY_UNARY),
             ).with_call(_REQUEST)
         except grpc.RpcError:
             return
@@ -131,7 +129,7 @@ class ChannelzServicerTest(unittest.TestCase):
                 _SUCCESSFUL_STREAM_STREAM,
                 _registered_call_handle=self._pairs[
                     idx
-                ].channel._create_registered_call_handle(
+                ].channel._get_registered_call_handle(
                     _SUCCESSFUL_STREAM_STREAM
                 ),
             )

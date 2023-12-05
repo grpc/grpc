@@ -279,7 +279,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 def unary_unary_multi_callable(channel):
     return channel.unary_unary(
         _UNARY_UNARY,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _UNARY_UNARY
         ),
     )
@@ -290,7 +290,7 @@ def unary_stream_multi_callable(channel):
         _UNARY_STREAM,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _UNARY_STREAM
         ),
     )
@@ -301,7 +301,7 @@ def unary_stream_non_blocking_multi_callable(channel):
         _UNARY_STREAM_NON_BLOCKING,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _UNARY_STREAM_NON_BLOCKING
         ),
     )
@@ -312,7 +312,7 @@ def stream_unary_multi_callable(channel):
         _STREAM_UNARY,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _STREAM_UNARY
         ),
     )
@@ -321,7 +321,7 @@ def stream_unary_multi_callable(channel):
 def stream_stream_multi_callable(channel):
     return channel.stream_stream(
         _STREAM_STREAM,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _STREAM_STREAM
         ),
     )
@@ -330,7 +330,7 @@ def stream_stream_multi_callable(channel):
 def stream_stream_non_blocking_multi_callable(channel):
     return channel.stream_stream(
         _STREAM_STREAM_NON_BLOCKING,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _STREAM_STREAM_NON_BLOCKING
         ),
     )

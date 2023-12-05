@@ -212,7 +212,7 @@ if __name__ == "__main__":
         if args.scenario == IN_FLIGHT_UNARY_UNARY_CALL:
             multi_callable = channel.unary_unary(
                 method,
-                _registered_call_handle=channel._create_registered_call_handle(
+                _registered_call_handle=channel._get_registered_call_handle(
                     method
                 ),
             )
@@ -224,7 +224,7 @@ if __name__ == "__main__":
         ):
             multi_callable = channel.unary_stream(
                 method,
-                _registered_call_handle=channel._create_registered_call_handle(
+                _registered_call_handle=channel._get_registered_call_handle(
                     method
                 ),
             )
@@ -237,7 +237,7 @@ if __name__ == "__main__":
         ):
             multi_callable = channel.stream_unary(
                 method,
-                _registered_call_handle=channel._create_registered_call_handle(
+                _registered_call_handle=channel._get_registered_call_handle(
                     method
                 ),
             )
@@ -251,7 +251,7 @@ if __name__ == "__main__":
         ):
             multi_callable = channel.stream_stream(
                 method,
-                _registered_call_handle=channel._create_registered_call_handle(
+                _registered_call_handle=channel._get_registered_call_handle(
                     method
                 ),
             )

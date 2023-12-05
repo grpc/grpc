@@ -140,7 +140,7 @@ class StatusTest(unittest.TestCase):
     def test_status_ok(self):
         _, call = self._channel.unary_unary(
             _STATUS_OK,
-            _registered_call_handle=self._channel._create_registered_call_handle(
+            _registered_call_handle=self._channel._get_registered_call_handle(
                 _STATUS_OK
             ),
         ).with_call(_REQUEST)
@@ -153,7 +153,7 @@ class StatusTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _STATUS_NOT_OK,
-                _registered_call_handle=self._channel._create_registered_call_handle(
+                _registered_call_handle=self._channel._get_registered_call_handle(
                     _STATUS_NOT_OK
                 ),
             ).with_call(_REQUEST)
@@ -168,7 +168,7 @@ class StatusTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _ERROR_DETAILS,
-                _registered_call_handle=self._channel._create_registered_call_handle(
+                _registered_call_handle=self._channel._get_registered_call_handle(
                     _ERROR_DETAILS
                 ),
             ).with_call(_REQUEST)
@@ -190,7 +190,7 @@ class StatusTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _INCONSISTENT,
-                _registered_call_handle=self._channel._create_registered_call_handle(
+                _registered_call_handle=self._channel._get_registered_call_handle(
                     _INCONSISTENT
                 ),
             ).with_call(_REQUEST)
@@ -204,7 +204,7 @@ class StatusTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _INVALID_CODE,
-                _registered_call_handle=self._channel._create_registered_call_handle(
+                _registered_call_handle=self._channel._get_registered_call_handle(
                     _INVALID_CODE
                 ),
             ).with_call(_REQUEST)

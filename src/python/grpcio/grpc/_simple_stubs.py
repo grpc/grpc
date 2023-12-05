@@ -199,7 +199,7 @@ class ChannelCache:
                     _registered_method
                     and method not in registered_method_handles.keys()
                 ):
-                    call_handle = channel._create_registered_call_handle(method)
+                    call_handle = channel._get_registered_call_handle(method)
                     registered_method_handles[method] = call_handle
                 self._mapping.pop(key)
                 self._mapping[key] = (
@@ -215,7 +215,7 @@ class ChannelCache:
                 )
                 registered_method_handles = {}
                 if _registered_method:
-                    call_handle = channel._create_registered_call_handle(method)
+                    call_handle = channel._get_registered_call_handle(method)
                     registered_method_handles[method] = call_handle
                 self._mapping[key] = (
                     channel,

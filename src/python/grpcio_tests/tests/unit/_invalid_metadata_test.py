@@ -34,7 +34,7 @@ _STREAM_STREAM = "/test/StreamStream"
 def _unary_unary_multi_callable(channel):
     return channel.unary_unary(
         _UNARY_UNARY,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _UNARY_UNARY
         ),
     )
@@ -45,7 +45,7 @@ def _unary_stream_multi_callable(channel):
         _UNARY_STREAM,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _UNARY_STREAM
         ),
     )
@@ -56,7 +56,7 @@ def _stream_unary_multi_callable(channel):
         _STREAM_UNARY,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _STREAM_UNARY
         ),
     )
@@ -65,7 +65,7 @@ def _stream_unary_multi_callable(channel):
 def _stream_stream_multi_callable(channel):
     return channel.stream_stream(
         _STREAM_STREAM,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _STREAM_STREAM
         ),
     )

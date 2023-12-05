@@ -151,7 +151,7 @@ class ResourceExhaustedTest(unittest.TestCase):
     def testUnaryUnary(self):
         multi_callable = self._channel.unary_unary(
             _UNARY_UNARY,
-            _registered_call_handle=self._channel._create_registered_call_handle(
+            _registered_call_handle=self._channel._get_registered_call_handle(
                 _UNARY_UNARY
             ),
         )
@@ -185,7 +185,7 @@ class ResourceExhaustedTest(unittest.TestCase):
     def testUnaryStream(self):
         multi_callable = self._channel.unary_stream(
             _UNARY_STREAM,
-            _registered_call_handle=self._channel._create_registered_call_handle(
+            _registered_call_handle=self._channel._get_registered_call_handle(
                 _UNARY_STREAM
             ),
         )
@@ -217,7 +217,7 @@ class ResourceExhaustedTest(unittest.TestCase):
     def testStreamUnary(self):
         multi_callable = self._channel.stream_unary(
             _STREAM_UNARY,
-            _registered_call_handle=self._channel._create_registered_call_handle(
+            _registered_call_handle=self._channel._get_registered_call_handle(
                 _STREAM_UNARY
             ),
         )
@@ -253,7 +253,7 @@ class ResourceExhaustedTest(unittest.TestCase):
     def testStreamStream(self):
         multi_callable = self._channel.stream_stream(
             _STREAM_STREAM,
-            _registered_call_handle=self._channel._create_registered_call_handle(
+            _registered_call_handle=self._channel._get_registered_call_handle(
                 _STREAM_STREAM
             ),
         )

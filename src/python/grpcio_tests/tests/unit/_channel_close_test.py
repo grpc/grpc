@@ -125,7 +125,7 @@ class ChannelCloseTest(unittest.TestCase):
         channel = grpc.insecure_channel("localhost:{}".format(self._port))
         multi_callable = channel.stream_stream(
             _STREAM_URI,
-            _registered_call_handle=channel._create_registered_call_handle(
+            _registered_call_handle=channel._get_registered_call_handle(
                 _STREAM_URI
             ),
         )
@@ -140,7 +140,7 @@ class ChannelCloseTest(unittest.TestCase):
         channel = grpc.insecure_channel("localhost:{}".format(self._port))
         multi_callable = channel.stream_stream(
             _STREAM_URI,
-            _registered_call_handle=channel._create_registered_call_handle(
+            _registered_call_handle=channel._get_registered_call_handle(
                 _STREAM_URI
             ),
         )
@@ -158,7 +158,7 @@ class ChannelCloseTest(unittest.TestCase):
         ) as channel:  # pylint: disable=bad-continuation
             multi_callable = channel.stream_stream(
                 _STREAM_URI,
-                _registered_call_handle=channel._create_registered_call_handle(
+                _registered_call_handle=channel._get_registered_call_handle(
                     _STREAM_URI
                 ),
             )
@@ -175,7 +175,7 @@ class ChannelCloseTest(unittest.TestCase):
         ) as channel:  # pylint: disable=bad-continuation
             multi_callable = channel.stream_stream(
                 _STREAM_URI,
-                _registered_call_handle=channel._create_registered_call_handle(
+                _registered_call_handle=channel._get_registered_call_handle(
                     _STREAM_URI
                 ),
             )
@@ -198,7 +198,7 @@ class ChannelCloseTest(unittest.TestCase):
         channel = grpc.insecure_channel("localhost:{}".format(self._port))
         multi_callable = channel.stream_stream(
             _STREAM_URI,
-            _registered_call_handle=channel._create_registered_call_handle(
+            _registered_call_handle=channel._get_registered_call_handle(
                 _STREAM_URI
             ),
         )
@@ -230,7 +230,7 @@ class ChannelCloseTest(unittest.TestCase):
         ) as channel:
             stream_multi_callable = channel.stream_stream(
                 _STREAM_URI,
-                _registered_call_handle=channel._create_registered_call_handle(
+                _registered_call_handle=channel._get_registered_call_handle(
                     _STREAM_URI
                 ),
             )
@@ -238,7 +238,7 @@ class ChannelCloseTest(unittest.TestCase):
             stream_response_iterator = stream_multi_callable(endless_iterator)
             future = channel.unary_unary(
                 _UNARY_URI,
-                _registered_call_handle=channel._create_registered_call_handle(
+                _registered_call_handle=channel._get_registered_call_handle(
                     _UNARY_URI
                 ),
             ).future(b"abc")

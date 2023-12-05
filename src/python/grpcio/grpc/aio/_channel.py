@@ -480,7 +480,7 @@ class Channel(_base_channel.Channel):
 
     # TODO(xuanwn): Implement this method after we have
     # observability for Asyncio.
-    def _create_registered_call_handle(self, method: str) -> int:
+    def _get_registered_call_handle(self, method: str) -> int:
         pass
 
     # TODO(xuanwn): Implement _registered_call_handle after we have

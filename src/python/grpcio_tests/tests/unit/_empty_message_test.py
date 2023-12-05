@@ -98,7 +98,7 @@ class EmptyMessageTest(unittest.TestCase):
     def testUnaryUnary(self):
         response = self._channel.unary_unary(
             _UNARY_UNARY,
-            _registered_call_handle=self._channel._create_registered_call_handle(
+            _registered_call_handle=self._channel._get_registered_call_handle(
                 _UNARY_UNARY
             ),
         )(_REQUEST)
@@ -107,7 +107,7 @@ class EmptyMessageTest(unittest.TestCase):
     def testUnaryStream(self):
         response_iterator = self._channel.unary_stream(
             _UNARY_STREAM,
-            _registered_call_handle=self._channel._create_registered_call_handle(
+            _registered_call_handle=self._channel._get_registered_call_handle(
                 _UNARY_STREAM
             ),
         )(_REQUEST)
@@ -118,7 +118,7 @@ class EmptyMessageTest(unittest.TestCase):
     def testStreamUnary(self):
         response = self._channel.stream_unary(
             _STREAM_UNARY,
-            _registered_call_handle=self._channel._create_registered_call_handle(
+            _registered_call_handle=self._channel._get_registered_call_handle(
                 _STREAM_UNARY
             ),
         )(iter([_REQUEST] * test_constants.STREAM_LENGTH))
@@ -127,7 +127,7 @@ class EmptyMessageTest(unittest.TestCase):
     def testStreamStream(self):
         response_iterator = self._channel.stream_stream(
             _STREAM_STREAM,
-            _registered_call_handle=self._channel._create_registered_call_handle(
+            _registered_call_handle=self._channel._get_registered_call_handle(
                 _STREAM_STREAM
             ),
         )(iter([_REQUEST] * test_constants.STREAM_LENGTH))

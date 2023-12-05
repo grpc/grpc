@@ -195,7 +195,7 @@ class MetadataTest(unittest.TestCase):
         self._channel.close()
 
     def testUnaryUnary(self):
-        call_handle = self._channel._create_registered_call_handle(_UNARY_UNARY)
+        call_handle = self._channel._get_registered_call_handle(_UNARY_UNARY)
         print(f"handle: {type(call_handle)}, value: {call_handle}")
         multi_callable = self._channel.unary_unary(
             _UNARY_UNARY, _registered_call_handle=call_handle
@@ -215,9 +215,7 @@ class MetadataTest(unittest.TestCase):
         )
 
     def a_testUnaryStream(self):
-        call_handle = self._channel._create_registered_call_handle(
-            _UNARY_STREAM
-        )
+        call_handle = self._channel._get_registered_call_handle(_UNARY_STREAM)
         multi_callable = self._channel.unary_stream(
             _UNARY_STREAM, _registered_call_handle=call_handle
         )
@@ -236,9 +234,7 @@ class MetadataTest(unittest.TestCase):
         )
 
     def a_testStreamUnary(self):
-        call_handle = self._channel._create_registered_call_handle(
-            _STREAM_UNARY
-        )
+        call_handle = self._channel._get_registered_call_handle(_STREAM_UNARY)
         multi_callable = self._channel.stream_unary(
             _STREAM_UNARY, _registered_call_handle=call_handle
         )
@@ -258,9 +254,7 @@ class MetadataTest(unittest.TestCase):
         )
 
     def a_testStreamStream(self):
-        call_handle = self._channel._create_registered_call_handle(
-            _STREAM_STREAM
-        )
+        call_handle = self._channel._get_registered_call_handle(_STREAM_STREAM)
         multi_callable = self._channel.stream_stream(
             _STREAM_STREAM, _registered_call_handle=call_handle
         )

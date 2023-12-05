@@ -57,7 +57,7 @@ class DNSResolverTest(unittest.TestCase):
             self.assertEqual(
                 channel.unary_unary(
                     _METHOD,
-                    _registered_call_handle=channel._create_registered_call_handle(
+                    _registered_call_handle=channel._get_registered_call_handle(
                         _METHOD
                     ),
                 )(

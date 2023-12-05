@@ -94,7 +94,7 @@ class TestCsds(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as rpc_error:
             dummy_channel.unary_unary(
                 "",
-                _registered_call_handle=dummy_channel._create_registered_call_handle(
+                _registered_call_handle=dummy_channel._get_registered_call_handle(
                     ""
                 ),
             )(b"", wait_for_ready=False, timeout=1)

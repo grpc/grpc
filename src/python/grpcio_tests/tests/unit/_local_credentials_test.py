@@ -55,7 +55,7 @@ class LocalCredentialsTest(unittest.TestCase):
                 b"abc",
                 channel.unary_unary(
                     "/test/method",
-                    _registered_call_handle=channel._create_registered_call_handle(
+                    _registered_call_handle=channel._get_registered_call_handle(
                         "/test/method"
                     ),
                 )(b"abc", wait_for_ready=True),
@@ -82,7 +82,7 @@ class LocalCredentialsTest(unittest.TestCase):
                 b"abc",
                 channel.unary_unary(
                     "/test/method",
-                    _registered_call_handle=channel._create_registered_call_handle(
+                    _registered_call_handle=channel._get_registered_call_handle(
                         "/test/method"
                     ),
                 )(b"abc", wait_for_ready=True),

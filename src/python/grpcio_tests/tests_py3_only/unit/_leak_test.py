@@ -70,7 +70,7 @@ def _perform_an_rpc(address):
     channel = grpc.insecure_channel(address)
     multicallable = channel.unary_unary(
         _TEST_METHOD,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _TEST_METHOD
         ),
     )

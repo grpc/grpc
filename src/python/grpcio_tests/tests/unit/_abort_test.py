@@ -109,7 +109,7 @@ class AbortTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _ABORT,
-                _registered_call_handle=self._channel._create_registered_call_handle(
+                _registered_call_handle=self._channel._get_registered_call_handle(
                     _ABORT
                 ),
             )(_REQUEST)
@@ -131,7 +131,7 @@ class AbortTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError):
             self._channel.unary_unary(
                 _ABORT,
-                _registered_call_handle=self._channel._create_registered_call_handle(
+                _registered_call_handle=self._channel._get_registered_call_handle(
                     _ABORT
                 ),
             )(_REQUEST)
@@ -146,7 +146,7 @@ class AbortTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _ABORT_WITH_STATUS,
-                _registered_call_handle=self._channel._create_registered_call_handle(
+                _registered_call_handle=self._channel._get_registered_call_handle(
                     _ABORT_WITH_STATUS
                 ),
             )(_REQUEST)
@@ -160,7 +160,7 @@ class AbortTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _INVALID_CODE,
-                _registered_call_handle=self._channel._create_registered_call_handle(
+                _registered_call_handle=self._channel._get_registered_call_handle(
                     _INVALID_CODE
                 ),
             )(_REQUEST)

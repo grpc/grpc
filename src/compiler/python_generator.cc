@@ -468,7 +468,7 @@ bool PrivateGenerator::PrintStub(
               method_dict,
               "response_deserializer=$ResponseModuleAndClass$.FromString,\n");
           out->Print(
-              "_registered_call_handle=channel._create_registered_call_handle("
+              "_registered_call_handle=channel._get_registered_call_handle("
               "\n");
           {
             IndentScope registered_call_handle_method_name_indent(out);

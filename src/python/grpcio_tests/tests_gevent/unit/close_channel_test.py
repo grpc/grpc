@@ -65,7 +65,7 @@ class CloseChannelTest(unittest.TestCase):
             _UNARY_CALL_METHOD_WITH_SLEEP,
             request_serializer=messages_pb2.SimpleRequest.SerializeToString,
             response_deserializer=messages_pb2.SimpleResponse.FromString,
-            _registered_call_handle=self._channel._create_registered_call_handle(
+            _registered_call_handle=self._channel._get_registered_call_handle(
                 _UNARY_CALL_METHOD_WITH_SLEEP
             ),
         )
@@ -81,7 +81,7 @@ class CloseChannelTest(unittest.TestCase):
             _UNARY_CALL_METHOD_WITH_SLEEP,
             request_serializer=messages_pb2.SimpleRequest.SerializeToString,
             response_deserializer=messages_pb2.SimpleResponse.FromString,
-            _registered_call_handle=self._channel._create_registered_call_handle(
+            _registered_call_handle=self._channel._get_registered_call_handle(
                 _UNARY_CALL_METHOD_WITH_SLEEP
             ),
         )

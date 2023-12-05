@@ -239,7 +239,7 @@ def _get_compression_ratios(
 def _unary_unary_client(channel, multicallable_kwargs, message):
     multi_callable = channel.unary_unary(
         _UNARY_UNARY,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _UNARY_UNARY
         ),
     )
@@ -253,7 +253,7 @@ def _unary_unary_client(channel, multicallable_kwargs, message):
 def _unary_stream_client(channel, multicallable_kwargs, message):
     multi_callable = channel.unary_stream(
         _UNARY_STREAM,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _UNARY_STREAM
         ),
     )
@@ -268,7 +268,7 @@ def _unary_stream_client(channel, multicallable_kwargs, message):
 def _stream_unary_client(channel, multicallable_kwargs, message):
     multi_callable = channel.stream_unary(
         _STREAM_UNARY,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _STREAM_UNARY
         ),
     )
@@ -283,7 +283,7 @@ def _stream_unary_client(channel, multicallable_kwargs, message):
 def _stream_stream_client(channel, multicallable_kwargs, message):
     multi_callable = channel.stream_stream(
         _STREAM_STREAM,
-        _registered_call_handle=channel._create_registered_call_handle(
+        _registered_call_handle=channel._get_registered_call_handle(
             _STREAM_STREAM
         ),
     )

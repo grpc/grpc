@@ -73,7 +73,7 @@ class XdsCredentialsTest(unittest.TestCase):
                 request = b"abc"
                 response = channel.unary_unary(
                     "/test/method",
-                    _registered_call_handle=channel._create_registered_call_handle(
+                    _registered_call_handle=channel._get_registered_call_handle(
                         "/test/method"
                     ),
                 )(request, wait_for_ready=True)
@@ -94,7 +94,7 @@ class XdsCredentialsTest(unittest.TestCase):
                 request = b"abc"
                 response = channel.unary_unary(
                     "/test/method",
-                    _registered_call_handle=channel._create_registered_call_handle(
+                    _registered_call_handle=channel._get_registered_call_handle(
                         "/test/method"
                     ),
                 )(request, wait_for_ready=True)

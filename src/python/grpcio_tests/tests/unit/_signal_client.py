@@ -55,7 +55,7 @@ def main_unary(server_target):
     with grpc.insecure_channel(server_target) as channel:
         multicallable = channel.unary_unary(
             UNARY_UNARY,
-            _registered_call_handle=channel._create_registered_call_handle(
+            _registered_call_handle=channel._get_registered_call_handle(
                 UNARY_UNARY
             ),
         )
@@ -74,7 +74,7 @@ def main_streaming(server_target):
         signal.signal(signal.SIGINT, handle_sigint)
         per_process_rpc_future = channel.unary_stream(
             UNARY_STREAM,
-            _registered_call_handle=channel._create_registered_call_handle(
+            _registered_call_handle=channel._get_registered_call_handle(
                 UNARY_STREAM
             ),
         )(_MESSAGE, wait_for_ready=True)
@@ -89,7 +89,7 @@ def main_unary_with_exception(server_target):
     try:
         channel.unary_unary(
             UNARY_UNARY,
-            _registered_call_handle=channel._create_registered_call_handle(
+            _registered_call_handle=channel._get_registered_call_handle(
                 UNARY_UNARY
             ),
         )(_MESSAGE, wait_for_ready=True)
@@ -107,7 +107,7 @@ def main_streaming_with_exception(server_target):
     try:
         for _ in channel.unary_stream(
             UNARY_STREAM,
-            _registered_call_handle=channel._create_registered_call_handle(
+            _registered_call_handle=channel._get_registered_call_handle(
                 UNARY_STREAM
             ),
         )(_MESSAGE, wait_for_ready=True):

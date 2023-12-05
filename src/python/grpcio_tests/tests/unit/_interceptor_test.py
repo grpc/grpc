@@ -481,17 +481,17 @@ class InterceptorTest(unittest.TestCase):
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:%d" % port)
-        self._unary_unary_handle = self._channel._create_registered_call_handle(
+        self._unary_unary_handle = self._channel._get_registered_call_handle(
             _UNARY_UNARY
         )
-        self._unary_stream_handle = (
-            self._channel._create_registered_call_handle(_UNARY_STREAM)
+        self._unary_stream_handle = self._channel._get_registered_call_handle(
+            _UNARY_STREAM
         )
-        self._stream_unary_handle = (
-            self._channel._create_registered_call_handle(_STREAM_UNARY)
+        self._stream_unary_handle = self._channel._get_registered_call_handle(
+            _STREAM_UNARY
         )
-        self._stream_stream_handle = (
-            self._channel._create_registered_call_handle(_STREAM_STREAM)
+        self._stream_stream_handle = self._channel._get_registered_call_handle(
+            _STREAM_STREAM
         )
 
     def tearDown(self):
