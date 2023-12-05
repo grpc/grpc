@@ -857,6 +857,7 @@ grpc_channel_filter MakeConnectedFilter() {
   return {
       connected_channel_start_transport_stream_op_batch,
       make_call_promise != nullptr ? make_call_wrapper : nullptr,
+      /* init_call: */ nullptr,
       connected_channel_start_transport_op,
       sizeof(call_data),
       connected_channel_init_call_elem,
