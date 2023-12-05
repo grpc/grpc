@@ -256,6 +256,48 @@ class CallSpineInterface {
   GRPC_MUST_USE_RESULT virtual absl::nullopt_t Cancel(
       ServerMetadataHandle metadata) = 0;
   virtual Party& party() = 0;
+
+  // Wrap a promise so that if it returns failure it automatically cancels
+  // the rest of the call.
+  // The resulting (returned) promise will resolve to Empty.
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    GPR_DEBUG_ASSERT(Activity::current() == &party());
+    using P = promise_detail::PromiseLike<Promise>;
+    using ResultType = typename P::Result;
+    return Map(std::move(promise), [this](ResultType r) {
+      if (!IsStatusOk(r)) {
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+      }
+      return Empty{};
+    });
+  }
+
+  // Spawn a promise that returns Empty{} and save some boilerplate handling
+  // that detail.
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    party().Spawn(name, std::move(promise_factory), [](Empty) {});
+  }
+
+  // Spawn a promise that returns some status-like type; if the status
+  // represents failure automatically cancel the rest of the call.
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    using FactoryType =
+        promise_detail::OncePromiseFactory<void, PromiseFactory>;
+    using PromiseType = typename FactoryType::Promise;
+    using ResultType = typename PromiseType::Result;
+    static_assert(
+        std::is_same<bool,
+                     decltype(IsStatusOk(std::declval<ResultType>()))>::value,
+        "SpawnGuarded promise must return a status-like object");
+    party().Spawn(name, std::move(promise_factory), [this](ResultType r) {
+      if (!IsStatusOk(r)) {
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+      }
+    });
+  }
 };
 
 class CallSpine final : public CallSpineInterface {
