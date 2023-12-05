@@ -31,6 +31,9 @@ class TestingChannel(grpc_testing.Channel):
     def unsubscribe(self, callback):
         raise NotImplementedError()
 
+    def _create_registered_call_handle(self, method: str) -> int:
+        pass
+
     def unary_unary(
         self,
         method,
