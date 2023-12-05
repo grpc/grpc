@@ -34,6 +34,7 @@ grpc_cc_library(
         "absl/time",
         "absl/types:variant",
     ],
+    tags = [ "no_test_ios", ],
     deps = [
         "//:gpr",
         "//:grpc++_binder",
@@ -51,6 +52,7 @@ grpc_cc_test(
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = [ "no_test_ios", ],
     deps = [
         ":fake_binder",
         "//test/core/util:grpc_test_util",
@@ -106,6 +108,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = [ "no_test_ios", ],
     deps = [
         "//:grpc++",
         "//:grpc++_binder",
