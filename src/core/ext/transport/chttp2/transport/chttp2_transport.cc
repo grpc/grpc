@@ -503,10 +503,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
   if (max_requests_per_read.has_value()) {
     t->max_requests_per_read =
         grpc_core::Clamp(*max_requests_per_read, 1, 10000);
-  } else if (grpc_core::IsChttp2BatchRequestsEnabled()) {
-    t->max_requests_per_read = 32;
   } else {
-    t->max_requests_per_read = std::numeric_limits<size_t>::max();
+    t->max_requests_per_read = 32;
   }
 
   if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
@@ -523,8 +521,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
 
   t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
 
-  t->allow_tarpit = channel_args.GetBool(GRPC_ARG_HTTP_ALLOW_TARPIT)
-                        .value_or(grpc_core::IsTarpitEnabled());
+  t->allow_tarpit =
+      channel_args.GetBool(GRPC_ARG_HTTP_ALLOW_TARPIT).value_or(true);
   t->min_tarpit_duration_ms =
       channel_args
           .GetDurationFromIntMillis(GRPC_ARG_HTTP_TARPIT_MIN_DURATION_MS)

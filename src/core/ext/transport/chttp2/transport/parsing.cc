@@ -395,8 +395,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         }
         cur += t->incoming_frame_size;
         t->incoming_stream = nullptr;
-        if (t->incoming_frame_type == GRPC_CHTTP2_FRAME_RST_STREAM &&
-            grpc_core::IsChttp2OffloadOnRstStreamEnabled()) {
+        if (t->incoming_frame_type == GRPC_CHTTP2_FRAME_RST_STREAM) {
           requests_started = std::numeric_limits<size_t>::max();
         }
         goto dts_fh_0;  // loop
@@ -702,8 +701,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           t, std::string(t->peer_string.as_string_view()).c_str(),
           t->incoming_stream_id, t->last_new_stream_id));
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
-    } else if (grpc_core::IsBlockExcessiveRequestsBeforeSettingsAckEnabled() &&
-               t->num_incoming_streams_before_settings_ack == 0) {
+    } else if (t->num_incoming_streams_before_settings_ack == 0) {
       GRPC_CHTTP2_IF_TRACING(gpr_log(
           GPR_ERROR,
           "transport:%p SERVER peer:%s rejecting grpc_chttp2_stream id=%d, "
