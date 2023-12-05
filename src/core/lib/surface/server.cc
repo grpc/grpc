@@ -1331,7 +1331,10 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   op->set_accept_stream = true;
   op->set_accept_stream_fn = AcceptStream;
   if (IsRegisteredMethodLookupInTransportEnabled()) {
-    op->set_registered_method_matcher_fn = SetRegisteredMethodOnMetadata;
+    op->set_registered_method_matcher_fn = [](void* arg,
+                                              ClientMetadata* metadata) {
+      static_cast<ChannelData*>(arg)->SetRegisteredMethodOnMetadata(*metadata);
+    };
   }
   // op->set_registered_method_matcher_fn = Registered
   op->set_accept_stream_user_data = this;
@@ -1387,30 +1390,29 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
 }
 
 void Server::ChannelData::SetRegisteredMethodOnMetadata(
-    void* arg, ServerMetadata* metadata) {
-  auto* chand = static_cast<Server::ChannelData*>(arg);
-  auto* authority = metadata->get_pointer(HttpAuthorityMetadata());
+    ClientMetadata& metadata) {
+  auto* authority = metadata.get_pointer(HttpAuthorityMetadata());
   if (authority == nullptr) {
-    authority = metadata->get_pointer(HostMetadata());
+    authority = metadata.get_pointer(HostMetadata());
     if (authority == nullptr) {
       // Authority not being set is an RPC error.
       return;
     }
   }
-  auto* path = metadata->get_pointer(HttpPathMetadata());
+  auto* path = metadata.get_pointer(HttpPathMetadata());
   if (path == nullptr) {
     // Path not being set would result in an RPC error.
     return;
   }
   ChannelRegisteredMethod* method;
   if (!IsRegisteredMethodsMapEnabled()) {
-    method = chand->GetRegisteredMethod(authority->c_slice(), path->c_slice());
+    method = GetRegisteredMethod(authority->c_slice(), path->c_slice());
   } else {
-    method = chand->GetRegisteredMethod(authority->as_string_view(),
-                                        path->as_string_view());
+    method = GetRegisteredMethod(authority->as_string_view(),
+                                 path->as_string_view());
   }
   // insert in metadata
-  metadata->Set(GrpcRegisteredMethod(), method);
+  metadata.Set(GrpcRegisteredMethod(), method);
 }
 
 void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
