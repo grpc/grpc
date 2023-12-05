@@ -148,7 +148,7 @@ class XdsApi {
                 "");
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
-         upb::SymbolTable* symtab, std::string user_agent_name,
+         upb::DefPool* def_pool, std::string user_agent_name,
          std::string user_agent_version);
 
   // Creates an ADS request.
@@ -184,7 +184,7 @@ class XdsApi {
   XdsClient* client_;
   TraceFlag* tracer_;
   const XdsBootstrap::Node* node_;  // Do not own.
-  upb::SymbolTable* symtab_;        // Do not own.
+  upb::DefPool* def_pool_;          // Do not own.
   const std::string user_agent_name_;
   const std::string user_agent_version_;
 };

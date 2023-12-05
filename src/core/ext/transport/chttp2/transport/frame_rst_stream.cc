@@ -126,7 +126,7 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
           grpc_core::StatusIntProperty::kHttp2Error,
           static_cast<intptr_t>(reason));
     }
-    if (grpc_core::IsPingOnRstStreamEnabled() && !t->is_client &&
+    if (!t->is_client &&
         absl::Bernoulli(t->bitgen, t->ping_on_rst_stream_percent / 100.0)) {
       ++t->num_pending_induced_frames;
       t->ping_callbacks.RequestPing();
