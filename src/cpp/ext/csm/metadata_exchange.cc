@@ -318,6 +318,28 @@ class MeshLabelsIterable : public LabelsIterable {
 constexpr std::array<MeshLabelsIterable::GkeAttribute, 6>
     MeshLabelsIterable::kGkeAttributeList;
 
+class OptionalLabelsIterable : public LabelsIterable {
+ public:
+  explicit OptionalLabelsIterable(
+      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+          optional_labels)
+      : optional_labels_(optional_labels.begin(), optional_labels.end()) {}
+
+  // Returns the key-value label at the current position or absl::nullopt if the
+  // iterator has reached the end.
+  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
+      override {}
+
+  size_t Size() override {}
+
+  // Resets position of iterator to the start.
+  void ResetIteratorPosition() override {}
+
+ private:
+  const std::vector<std::shared_ptr<std::map<std::string, std::string>>>
+      optional_labels_;
+};
+
 }  // namespace
 
 // Returns the mesh ID by reading and parsing the bootstrap file. Returns
@@ -425,6 +447,13 @@ void ServiceMeshLabelsInjector::AddLabels(
   }
   outgoing_initial_metadata->Set(grpc_core::XEnvoyPeerMetadata(),
                                  serialized_labels_to_send_.Ref());
+}
+
+std::unique_ptr<LabelsIterable>
+ServiceMeshLabelsInjector::GetLabelsFromOptionalLabels(
+    absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+        optional_labels) {
+  return std::make_unique<OptionalLabelsIterable>(optional_labels);
 }
 
 }  // namespace internal

@@ -50,6 +50,7 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
  public:
   explicit KeyValueIterable(
       LabelsIterable* injected_labels_iterable,
+      LabelsIterable* optional_labels_iterable,
       absl::Span<const std::pair<absl::string_view, absl::string_view>>
           additional_labels)
       : injected_labels_iterable_(injected_labels_iterable),

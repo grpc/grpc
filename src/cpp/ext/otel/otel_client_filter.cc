@@ -115,8 +115,7 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
                                    bool arena_allocated)
     : parent_(parent),
       arena_allocated_(arena_allocated),
-      start_time_(absl::Now()),
-      optional_labels_(parent->arena_) {
+      start_time_(absl::Now()) {
   if (OTelPluginState().client.attempt.started != nullptr) {
     std::array<std::pair<absl::string_view, absl::string_view>, 2>
         additional_labels = {{{OTelMethodKey(), parent_->MethodForStats()},
@@ -181,7 +180,13 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
                             {OTelStatusKey(), grpc_status_code_to_string(
                                                   static_cast<grpc_status_code>(
                                                       status.code()))}}};
-  KeyValueIterable labels(injected_labels_.get(), additional_labels);
+  std::unique_ptr<LabelsIterable> optional_labels;
+  if (OTelPluginState().labels_injector != nullptr) {
+    OTelPluginState().labels_injector->GetLabelsFromOptionalLabels(
+        optional_labels_vector_);
+  }
+  KeyValueIterable labels(injected_labels_.get(), optional_labels.get(),
+                          additional_labels);
   if (OTelPluginState().client.attempt.duration != nullptr) {
     OTelPluginState().client.attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,
@@ -235,19 +240,9 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::StartNewTcpTrace() {
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::AddOptionalLabels(
     OptionalLabelComponent component,
-    std::shared_ptr<std::map<std::string, std::string>> optional_label) {
-  using ValueType = std::shared_ptr<std::map<std::string, std::string>>;
-  ValueType* v = nullptr;
-  auto iter = optional_labels_.begin();
-  for (int i = 0; i <= static_cast<int>(component); i++) {
-    if (iter == optional_labels_.end()) {
-      // expand
-      v = optional_labels_.EmplaceBack();
-    } else {
-      v = &*iter++;
-    }
-  }
-  *v = std::move(optional_label);
+    std::shared_ptr<std::map<std::string, std::string>> optional_labels) {
+  optional_labels_vector_[static_cast<std::size_t>(component)] =
+      std::move(optional_labels);
 }
 
 //
