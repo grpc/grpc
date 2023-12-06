@@ -192,6 +192,7 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   // If the resource is available, adds an entry to cluster_list.
   // Adds each cluster to clusters_seen.
   // For each EDS cluster, adds the EDS resource to eds_resources_seen.
+  // For each Logical DNS cluster, adds the DNS hostname to dns_names_seen.
   // For aggregate clusters, calls itself recursively.
   // Returns an error if max depth is exceeded or if any of the clusters
   // in the graph report an error.
@@ -200,7 +201,8 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
       absl::string_view name,
       std::vector<XdsConfig::ClusterConfig>* cluster_list, int depth,
       std::set<absl::string_view>* clusters_seen,
-      std::set<absl::string_view>* eds_resources_seen);
+      std::set<absl::string_view>* eds_resources_seen,
+      std::set<absl::string_view>* dns_names_seen);
 
   // Called when an external cluster subscription is unreffed.
   void OnClusterSubscriptionUnref(absl::string_view cluster_name,

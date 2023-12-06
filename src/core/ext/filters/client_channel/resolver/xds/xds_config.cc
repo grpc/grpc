@@ -677,7 +677,8 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
 absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
     absl::string_view name, std::vector<XdsConfig::ClusterConfig>* cluster_list,
     int depth, std::set<absl::string_view>* clusters_seen,
-    std::set<absl::string_view>* eds_resources_seen) {
+    std::set<absl::string_view>* eds_resources_seen,
+    std::set<absl::string_view>* dns_names_seen) {
   if (depth == kMaxXdsAggregateClusterRecursionDepth) {
     return absl::UnavailableError("aggregate cluster graph exceeds max depth");
   }
@@ -742,6 +743,7 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
       // LOGICAL_DNS cluster.
       [&](const XdsClusterResource::LogicalDns& logical_dns)
           -> absl::StatusOr<bool> {
+        dns_names_seen->insert(logical_dns.hostname);
         // Start DNS resolver if needed.
         auto& dns_state = dns_resolvers_[logical_dns.hostname];
         if (dns_state.resolver == nullptr) {
@@ -805,9 +807,9 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
         bool missing_cluster = false;
         for (const std::string& child_name :
              aggregate.prioritized_cluster_names) {
-          auto result =
-              PopulateClusterConfigList(child_name, cluster_list, depth + 1,
-                                        clusters_seen, eds_resources_seen);
+          auto result = PopulateClusterConfigList(
+              child_name, cluster_list, depth + 1, clusters_seen,
+              eds_resources_seen, dns_names_seen);
           if (!result.ok()) return result;
           if (!*result) missing_cluster = true;
         }
@@ -869,12 +871,14 @@ void XdsDependencyManager::MaybeReportUpdate() {
   // resources we need to ensure that the right set of watches are active.
   std::set<absl::string_view> clusters_seen;
   std::set<absl::string_view> eds_resources_seen;
+  std::set<absl::string_view> dns_names_seen;
   bool missing_data = false;
   for (const absl::string_view& cluster : clusters_to_watch) {
     auto& cluster_list = config->clusters[cluster];
     cluster_list.emplace();
-    auto result = PopulateClusterConfigList(
-        cluster, &*cluster_list, 0, &clusters_seen, &eds_resources_seen);
+    auto result =
+        PopulateClusterConfigList(cluster, &*cluster_list, 0, &clusters_seen,
+                                  &eds_resources_seen, &dns_names_seen);
     if (!result.ok()) {
       cluster_list = result.status();
     } else if (!*result) {
@@ -923,6 +927,21 @@ void XdsDependencyManager::MaybeReportUpdate() {
                                          it->second.watcher,
                                          /*delay_unsubscription=*/false);
     endpoint_watchers_.erase(it++);
+  }
+  // Remove entries in dns_resolvers_ for any DNS name not in
+  // eds_resources_seen.
+  for (auto it = dns_resolvers_.begin(); it != dns_resolvers_.end();) {
+    const std::string& dns_name = it->first;
+    if (dns_names_seen.find(dns_name) != dns_names_seen.end()) {
+      ++it;
+      continue;
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+      gpr_log(GPR_INFO,
+              "[XdsDependencyManager %p] shutting down DNS resolver for %s",
+              this, dns_name.c_str());
+    }
+    dns_resolvers_.erase(it++);
   }
   // If we have all the data we need, then send an update.
   if (missing_data) {
