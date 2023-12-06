@@ -127,10 +127,3 @@ message ServiceResponse {
   // is <package>.<service>
   string name = 1;
 }
-
-// The error code and error message sent by the server when an error occurs.
-message ErrorResponse {
-  // This field uses the error codes defined in grpc::StatusCode.
-  int32 error_code = 1;
-  string error_message = 2;
-}
