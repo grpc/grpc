@@ -58,7 +58,7 @@ class TestCertProvider : public grpc_tls_certificate_provider {
   TestCertProvider()
       : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {}
 
-  grpc_core::UniqueTypeName type() const override {
+  UniqueTypeName type() const override {
     static UniqueTypeName::Factory kFactory("Xds");
     return kFactory.Create();
   }
