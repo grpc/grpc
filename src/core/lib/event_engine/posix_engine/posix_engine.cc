@@ -555,10 +555,11 @@ PosixEventEngine::GetDNSResolver(
     const EventEngine::DNSResolver::ResolverOptions& options) {
 #ifndef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
   grpc_core::Crash("Unable to get DNS resolver for this platform.");
-#else   // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
+#else  // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
   // If c-ares is supported on the platform, build according to user's
   // configuration.
   if (ShouldUseAresDnsResolver()) {
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
     GRPC_EVENT_ENGINE_DNS_TRACE("PosixEventEngine:%p creating AresResolver",
                                 this);
     auto ares_resolver = AresResolver::CreateAresResolver(
@@ -570,6 +571,7 @@ PosixEventEngine::GetDNSResolver(
     }
     return std::make_unique<PosixEventEngine::PosixDNSResolver>(
         std::move(*ares_resolver));
+#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   }
   GRPC_EVENT_ENGINE_DNS_TRACE("PosixEventEngine:%p creating NativeDNSResolver",
                               this);
