@@ -356,6 +356,7 @@ def _create_portability_test_jobs(
     for compiler in [
         "gcc8",
         # 'gcc10.2_openssl102', // TODO(b/283304471): Enable this later
+        'gcc10.2_openssl111', 
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
