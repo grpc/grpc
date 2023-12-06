@@ -273,10 +273,6 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   // The xds client.
   RefCountedPtr<GrpcXdsClient> xds_client_;
 
-  RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
-  RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
-  RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
-
   // The stats for client-side load reporting.
   RefCountedPtr<XdsClusterDropStats> drop_stats_;
 
@@ -440,12 +436,6 @@ XdsClusterImplLb::XdsClusterImplLb(RefCountedPtr<XdsClient> xds_client,
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] created -- using xds client %p",
             this, xds_client_.get());
   }
-  // If the channel is using XdsCreds, create the XdsCertificateProvider.
-  auto channel_credentials = channel_control_helper()->GetChannelCredentials();
-  if (channel_credentials != nullptr &&
-      channel_credentials->type() == XdsCredentials::Type()) {
-    xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>();
-  }
 }
 
 XdsClusterImplLb::~XdsClusterImplLb() {
@@ -473,10 +463,6 @@ void XdsClusterImplLb::ResetState() {
                                      interested_parties());
     child_policy_.reset();
   }
-  // Clean up cert provider state.
-  root_certificate_provider_.reset();
-  identity_certificate_provider_.reset();
-  xds_certificate_provider_.reset();
   // Drop our ref to the child's picker, in case it's holding a ref to
   // the child.
   picker_.reset();
@@ -584,7 +570,12 @@ absl::StatusOr<const XdsClusterResource*> FindClusterConfig(
 
 absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
     ChannelArgs* args) {
-  if (xds_certificate_provider_ == nullptr) return absl::OkStatus();
+  // If the channel is not using XdsCreds, do nothing.
+  auto channel_credentials = channel_control_helper()->GetChannelCredentials();
+  if (channel_credentials == nullptr ||
+      channel_credentials->type() != XdsCredentials::Type()) {
+    return absl::OkStatus();
+  }
   // Get CDS resource.
   auto xds_config = args->GetObjectRef<XdsDependencyManager::XdsConfig>();
   if (xds_config == nullptr) {
@@ -599,61 +590,50 @@ absl::Status XdsClusterImplLb::MaybeConfigureCertificateProviderLocked(
       (*cluster_resource)
           ->common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.instance_name;
-  absl::string_view root_provider_cert_name =
+  absl::string_view root_cert_name =
       (*cluster_resource)
           ->common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.certificate_name;
-  RefCountedPtr<XdsCertificateProvider> new_root_provider;
+  RefCountedPtr<XdsCertificateProvider> root_cert_provider;
   if (!root_provider_instance_name.empty()) {
-    new_root_provider =
+    root_cert_provider =
         xds_client_->certificate_provider_store()
             .CreateOrGetCertificateProvider(root_provider_instance_name);
-    if (new_root_provider == nullptr) {
+    if (root_cert_provider == nullptr) {
       return absl::InternalError(
           absl::StrCat("Certificate provider instance name: \"",
                        root_provider_instance_name, "\" not recognized."));
     }
   }
-  root_certificate_provider_ = std::move(new_root_provider);
-  xds_certificate_provider_->UpdateRootCertNameAndDistributor(
-      config_->cluster_name(), root_provider_cert_name,
-      root_certificate_provider_ == nullptr
-          ? nullptr
-          : root_certificate_provider_->distributor());
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
       (*cluster_resource)
           ->common_tls_context.tls_certificate_provider_instance.instance_name;
-  absl::string_view identity_provider_cert_name =
+  absl::string_view identity_cert_name =
       (*cluster_resource)
           ->common_tls_context.tls_certificate_provider_instance
           .certificate_name;
-  RefCountedPtr<XdsCertificateProvider> new_identity_provider;
+  RefCountedPtr<XdsCertificateProvider> identity_cert_provider;
   if (!identity_provider_instance_name.empty()) {
-    new_identity_provider =
+    identity_cert_provider =
         xds_client_->certificate_provider_store()
             .CreateOrGetCertificateProvider(identity_provider_instance_name);
-    if (new_identity_provider == nullptr) {
+    if (identity_cert_provider == nullptr) {
       return absl::InternalError(
           absl::StrCat("Certificate provider instance name: \"",
                        identity_provider_instance_name, "\" not recognized."));
     }
   }
-  identity_certificate_provider_ = std::move(new_identity_provider);
-  xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
-      config_->cluster_name(), identity_provider_cert_name,
-      identity_certificate_provider_ == nullptr
-          ? nullptr
-          : identity_certificate_provider_->distributor());
   // Configure SAN matchers.
-  const std::vector<StringMatcher>& match_subject_alt_names =
+  const std::vector<StringMatcher>& san_matchers =
       (*cluster_resource)
           ->common_tls_context.certificate_validation_context
           .match_subject_alt_names;
-  xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
-      config_->cluster_name(), match_subject_alt_names);
-  // Add cert provider to channel args.
-  *args = args->SetObject(xds_certificate_provider_);
+  // Create xds cert provider and add to channel args.
+  auto xds_cert_provider = MakeRefCounted<XdsCertificateProvider>(
+      root_cert_provider, root_cert_name, identity_cert_provider,
+      identity_cert_name, san_matchers);
+  *args = args->SetObject(std::move(xds_cert_provider));
   return absl::OkStatus();
 }
 
