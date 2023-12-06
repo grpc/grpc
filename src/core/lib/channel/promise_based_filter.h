@@ -254,6 +254,8 @@ struct RaceAsyncCompletion<true> {
   }
 };
 
+// Zero-member wrapper to make sure that Call always has a constructor
+// that takes a channel pointer (even if it's thrown away)
 template <typename Derived, typename SfinaeVoid = void>
 class CallWrapper;
 
