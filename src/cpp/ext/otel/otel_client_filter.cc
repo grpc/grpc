@@ -124,6 +124,7 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     // avoid recording a subset of injected labels here.
     OTelPluginState().client.attempt.started->Add(
         1, KeyValueIterable(/*injected_labels_iterable=*/nullptr,
+                            /*optional_labels_iterable=*/nullptr,
                             additional_labels));
   }
 }

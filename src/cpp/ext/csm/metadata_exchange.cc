@@ -322,22 +322,37 @@ class OptionalLabelsIterable : public LabelsIterable {
  public:
   explicit OptionalLabelsIterable(
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels)
-      : optional_labels_(optional_labels.begin(), optional_labels.end()) {}
+          optional_labels_span) {
+    for (const auto& optional_labels : optional_labels_span) {
+      if (optional_labels->find("service_name") != optional_labels->end()) {
+        optional_labels_[0].second = (*optional_labels)["service_name"];
+      }
+      if (optional_labels->find("service_namespace") !=
+          optional_labels->end()) {
+        optional_labels_[1].second = (*optional_labels)["service_namespace"];
+      }
+    }
+  }
 
   // Returns the key-value label at the current position or absl::nullopt if the
   // iterator has reached the end.
   absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
-      override {}
+      override {
+    if (pos_ == Size()) {
+      return absl::nullopt;
+    }
+    return optional_labels_[pos_++];
+  }
 
-  size_t Size() override {}
+  size_t Size() const override { return optional_labels_.size(); }
 
   // Resets position of iterator to the start.
-  void ResetIteratorPosition() override {}
+  void ResetIteratorPosition() override { pos_ = 0; }
 
  private:
-  const std::vector<std::shared_ptr<std::map<std::string, std::string>>>
-      optional_labels_;
+  absl::InlinedVector<std::pair<std::string, std::string>, 2> optional_labels_ =
+      {{"service_name", "unknown"}, {"service_namespace", "unknown"}};
+  uint32_t pos_ = 0;
 };
 
 }  // namespace

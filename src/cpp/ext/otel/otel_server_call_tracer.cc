@@ -167,6 +167,7 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     // avoid recording a subset of injected labels here.
     OTelPluginState().server.call.started->Add(
         1, KeyValueIterable(/*injected_labels_iterable=*/nullptr,
+                            /*optional_labels_iterable=*/nullptr,
                             additional_labels));
   }
 }
@@ -184,7 +185,7 @@ void OpenTelemetryServerCallTracer::RecordEnd(
       additional_labels = {{{OTelMethodKey(), MethodForStats()},
                             {OTelStatusKey(), grpc_status_code_to_string(
                                                   final_info->final_status)}}};
-  KeyValueIterable labels(injected_labels_.get(), additional_labels);
+  KeyValueIterable labels(injected_labels_.get(), nullptr, additional_labels);
   if (OTelPluginState().server.call.duration != nullptr) {
     OTelPluginState().server.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,
