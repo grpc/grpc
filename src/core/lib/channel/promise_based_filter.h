@@ -277,7 +277,7 @@ template <typename Derived>
 class CallWrapper<Derived, absl::void_t<decltype(typename Derived::Call())>>
     : public Derived::Call {
  public:
-  explicit CallWrapper(Derived* channel) : Derived::Call() {}
+  explicit CallWrapper(Derived*) : Derived::Call() {}
 };
 
 // For the original promise scheme polyfill: data associated with once call.
@@ -444,8 +444,7 @@ inline void InterceptClientToServerMessage(const NoInterceptor*, void*, void*,
 template <typename Derived>
 inline void InterceptClientToServerMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&),
-    typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -654,8 +653,7 @@ inline void InterceptServerToClientMessage(const NoInterceptor*, void*, void*,
 template <typename Derived>
 inline void InterceptServerToClientMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&),
-    typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
