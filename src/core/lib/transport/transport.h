@@ -57,6 +57,8 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -244,18 +246,23 @@ class CallSpineInterface {
   virtual Pipe<MessageHandle>& client_to_server_messages() = 0;
   virtual Pipe<MessageHandle>& server_to_client_messages() = 0;
   virtual Pipe<ServerMetadataHandle>& server_trailing_metadata() = 0;
-  // Cancel the call with the given metadata.
-  // Regarding the `MUST_USE_RESULT absl::nullopt_t`:
-  // Most cancellation calls right now happen in pipe interceptors;
-  // there `nullopt` indicates terminate processing of this pipe and close with
-  // error.
-  // It's convenient then to have the Cancel operation (setting the latch to
-  // terminate the call) be the last thing that occurs in a pipe interceptor,
-  // and this construction supports that (and has helped the author not write
-  // some bugs).
-  GRPC_MUST_USE_RESULT virtual absl::nullopt_t Cancel(
-      ServerMetadataHandle metadata) = 0;
+  virtual Latch<ServerMetadataHandle>& cancel_latch() = 0;
   virtual Party& party() = 0;
+  virtual void IncrementRefCount() = 0;
+  virtual void Unref() = 0;
+
+  GRPC_MUST_USE_RESULT absl::nullopt_t Cancel(ServerMetadataHandle metadata) {
+    GPR_DEBUG_ASSERT(Activity::current() == &party());
+    auto& c = cancel_latch();
+    if (c.is_set()) return absl::nullopt;
+    c.Set(std::move(metadata));
+    return absl::nullopt;
+  }
+
+  auto WaitForCancel() {
+    GPR_DEBUG_ASSERT(Activity::current() == &party());
+    return cancel_latch().Wait();
+  }
 
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
@@ -317,13 +324,10 @@ class CallSpine final : public CallSpineInterface {
   Pipe<ServerMetadataHandle>& server_trailing_metadata() override {
     return server_trailing_metadata_;
   }
-  absl::nullopt_t Cancel(ServerMetadataHandle metadata) override {
-    GPR_DEBUG_ASSERT(Activity::current() == &party());
-    if (cancel_latch_.is_set()) return absl::nullopt;
-    cancel_latch_.Set(std::move(metadata));
-    return absl::nullopt;
-  }
+  Latch<ServerMetadataHandle>& cancel_latch() override { return cancel_latch_; }
   Party& party() override { Crash("unimplemented"); }
+  void IncrementRefCount() override { Crash("unimplemented"); }
+  void Unref() override { Crash("unimplemented"); }
 
  private:
   // Initial metadata from client to server
@@ -339,6 +343,132 @@ class CallSpine final : public CallSpineInterface {
   // Latch that can be set to terminate the call
   Latch<ServerMetadataHandle> cancel_latch_;
 };
+
+class CallInitiator {
+ public:
+  explicit CallInitiator(RefCountedPtr<CallSpine> spine)
+      : spine_(std::move(spine)) {}
+
+  auto PushClientInitialMetadata(ClientMetadataHandle md) {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Map(spine_->client_initial_metadata().sender.Push(std::move(md)),
+               [](bool ok) { return StatusFlag(ok); });
+  }
+
+  auto PullServerInitialMetadata() {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Map(spine_->server_initial_metadata().receiver.Next(),
+               [](NextResult<ClientMetadataHandle> md)
+                   -> ValueOrFailure<ClientMetadataHandle> {
+                 if (!md.has_value()) return Failure{};
+                 return std::move(*md);
+               });
+  }
+
+  auto PullServerTrailingMetadata() {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Race(spine_->WaitForCancel(),
+                Map(spine_->server_trailing_metadata().receiver.Next(),
+                    [spine = spine_](NextResult<ServerMetadataHandle> md)
+                        -> ServerMetadataHandle {
+                      GPR_ASSERT(md.has_value());
+                      return std::move(*md);
+                    }));
+  }
+
+  auto PullMessage() {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return spine_->server_to_client_messages().receiver.Next();
+  }
+
+  auto PushMessage(MessageHandle message) {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return spine_->client_to_server_messages().sender.Push(std::move(message));
+  }
+
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    return spine_->CancelIfFails(std::move(promise));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnGuarded(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnInfallible(name, std::move(promise_factory));
+  }
+
+ private:
+  const RefCountedPtr<CallSpine> spine_;
+};
+
+class CallHandler {
+ public:
+  explicit CallHandler(RefCountedPtr<CallSpine> spine)
+      : spine_(std::move(spine)) {}
+
+  auto PullClientInitialMetadata() {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Map(spine_->client_initial_metadata().receiver.Next(),
+               [](NextResult<ClientMetadataHandle> md)
+                   -> ValueOrFailure<ClientMetadataHandle> {
+                 if (!md.has_value()) return Failure{};
+                 return std::move(*md);
+               });
+  }
+
+  auto PushServerInitialMetadata(ClientMetadataHandle md) {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Map(spine_->server_initial_metadata().sender.Push(std::move(md)),
+               [](bool ok) { return StatusFlag(ok); });
+  }
+
+  auto PushServerTrailingMetadata(ClientMetadataHandle md) {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Map(spine_->server_initial_metadata().sender.Push(std::move(md)),
+               [](bool ok) { return StatusFlag(ok); });
+  }
+
+  auto PullMessage() {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return spine_->client_to_server_messages().receiver.Next();
+  }
+
+  auto PushMessage(MessageHandle message) {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return spine_->server_to_client_messages().sender.Push(std::move(message));
+  }
+
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    return spine_->CancelIfFails(std::move(promise));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnGuarded(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnInfallible(name, std::move(promise_factory));
+  }
+
+ private:
+  const RefCountedPtr<CallSpine> spine_;
+};
+
+template <typename CallHalf>
+auto OutgoingMessages(CallHalf& h) {
+  struct Wrapper {
+    CallHalf& h;
+    auto Next() { return h.PullMessage(); }
+  };
+  return Wrapper{h};
+}
 
 }  // namespace grpc_core
 
@@ -745,9 +875,7 @@ class FilterStackTransport {
 
 class ClientTransport {
  public:
-  // Create a promise to execute one client call.
-  virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args) = 0;
+  virtual void StartCall(CallHandler call_handler) = 0;
 
  protected:
   ~ClientTransport() = default;
@@ -755,10 +883,14 @@ class ClientTransport {
 
 class ServerTransport {
  public:
-  // Register the factory function for the filter stack part of a call
-  // promise.
-  void SetCallPromiseFactory(
-      absl::AnyInvocable<ArenaPromise<ServerMetadataHandle>(CallArgs) const>);
+  // AcceptFunction takes initial metadata for a new call and returns a
+  // CallInitiator object for it, for the transport to use to communicate with
+  // the CallHandler object passed to the application.
+  using AcceptFunction =
+      absl::AnyInvocable<absl::StatusOr<CallInitiator>(ClientMetadata&) const>;
+
+  // Called once slightly after transport setup to register the accept function.
+  virtual void SetAcceptFunction(AcceptFunction accept_function) = 0;
 
  protected:
   ~ServerTransport() = default;
