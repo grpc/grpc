@@ -106,6 +106,11 @@ void XdsCertificateVerifier::Cancel(
 int XdsCertificateVerifier::CompareImpl(
     const grpc_tls_certificate_verifier* other) const {
   auto* o = static_cast<const XdsCertificateVerifier*>(other);
+  if (xds_certificate_provider_ == nullptr ||
+      o->xds_certificate_provider_ == nullptr) {
+    return QsortCompare(xds_certificate_provider_,
+                        o->xds_certificate_provider_);
+  }
   return xds_certificate_provider_->Compare(o->xds_certificate_provider_.get());
 }
 

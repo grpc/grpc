@@ -83,6 +83,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   }
   static int ChannelArgsCompare(const XdsCertificateProvider* a,
                                 const XdsCertificateProvider* b) {
+    if (a == nullptr || b == nullptr) return QsortCompare(a, b);
     return a->Compare(b);
   }
 
