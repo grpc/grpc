@@ -77,7 +77,8 @@ const grpc_channel_filter* PromiseTracingFilterFor(
                   return r;
                 };
               },
-              grpc_channel_next_op, /* sizeof_call_data: */ 0,
+              /* init_call: */ nullptr, grpc_channel_next_op,
+              /* sizeof_call_data: */ 0,
               // init_call_elem:
               [](grpc_call_element*, const grpc_call_element_args*) {
                 return absl::OkStatus();
