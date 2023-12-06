@@ -55,6 +55,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -227,6 +228,117 @@ struct CallArgs {
 
 using NextPromiseFactory =
     std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
+
+// The common middle part of a call - a reference is held by each of
+// CallInitiator and CallHandler - which provide interfaces that are appropriate
+// for each side of a call.
+// The spine will ultimately host the pipes, filters, and context for one part
+// of a call: ie top-half client channel, sub channel call, server call.
+// TODO(ctiller): eventually drop this when we don't need to reference into
+// legacy promise calls anymore
+class CallSpineInterface {
+ public:
+  virtual ~CallSpineInterface() = default;
+  virtual Pipe<ClientMetadataHandle>& client_initial_metadata() = 0;
+  virtual Pipe<ServerMetadataHandle>& server_initial_metadata() = 0;
+  virtual Pipe<MessageHandle>& client_to_server_messages() = 0;
+  virtual Pipe<MessageHandle>& server_to_client_messages() = 0;
+  virtual Pipe<ServerMetadataHandle>& server_trailing_metadata() = 0;
+  // Cancel the call with the given metadata.
+  // Regarding the `MUST_USE_RESULT absl::nullopt_t`:
+  // Most cancellation calls right now happen in pipe interceptors;
+  // there `nullopt` indicates terminate processing of this pipe and close with
+  // error.
+  // It's convenient then to have the Cancel operation (setting the latch to
+  // terminate the call) be the last thing that occurs in a pipe interceptor,
+  // and this construction supports that (and has helped the author not write
+  // some bugs).
+  GRPC_MUST_USE_RESULT virtual absl::nullopt_t Cancel(
+      ServerMetadataHandle metadata) = 0;
+  virtual Party& party() = 0;
+
+  // Wrap a promise so that if it returns failure it automatically cancels
+  // the rest of the call.
+  // The resulting (returned) promise will resolve to Empty.
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    GPR_DEBUG_ASSERT(Activity::current() == &party());
+    using P = promise_detail::PromiseLike<Promise>;
+    using ResultType = typename P::Result;
+    return Map(std::move(promise), [this](ResultType r) {
+      if (!IsStatusOk(r)) {
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+      }
+      return Empty{};
+    });
+  }
+
+  // Spawn a promise that returns Empty{} and save some boilerplate handling
+  // that detail.
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    party().Spawn(name, std::move(promise_factory), [](Empty) {});
+  }
+
+  // Spawn a promise that returns some status-like type; if the status
+  // represents failure automatically cancel the rest of the call.
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    using FactoryType =
+        promise_detail::OncePromiseFactory<void, PromiseFactory>;
+    using PromiseType = typename FactoryType::Promise;
+    using ResultType = typename PromiseType::Result;
+    static_assert(
+        std::is_same<bool,
+                     decltype(IsStatusOk(std::declval<ResultType>()))>::value,
+        "SpawnGuarded promise must return a status-like object");
+    party().Spawn(name, std::move(promise_factory), [this](ResultType r) {
+      if (!IsStatusOk(r)) {
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+      }
+    });
+  }
+};
+
+class CallSpine final : public CallSpineInterface {
+ public:
+  Pipe<ClientMetadataHandle>& client_initial_metadata() override {
+    return client_initial_metadata_;
+  }
+  Pipe<ServerMetadataHandle>& server_initial_metadata() override {
+    return server_initial_metadata_;
+  }
+  Pipe<MessageHandle>& client_to_server_messages() override {
+    return client_to_server_messages_;
+  }
+  Pipe<MessageHandle>& server_to_client_messages() override {
+    return server_to_client_messages_;
+  }
+  Pipe<ServerMetadataHandle>& server_trailing_metadata() override {
+    return server_trailing_metadata_;
+  }
+  absl::nullopt_t Cancel(ServerMetadataHandle metadata) override {
+    GPR_DEBUG_ASSERT(Activity::current() == &party());
+    if (cancel_latch_.is_set()) return absl::nullopt;
+    cancel_latch_.Set(std::move(metadata));
+    return absl::nullopt;
+  }
+  Party& party() override { Crash("unimplemented"); }
+
+ private:
+  // Initial metadata from client to server
+  Pipe<ClientMetadataHandle> client_initial_metadata_;
+  // Initial metadata from server to client
+  Pipe<ServerMetadataHandle> server_initial_metadata_;
+  // Messages travelling from the application to the transport.
+  Pipe<MessageHandle> client_to_server_messages_;
+  // Messages travelling from the transport to the application.
+  Pipe<MessageHandle> server_to_client_messages_;
+  // Trailing metadata from server to client
+  Pipe<ServerMetadataHandle> server_trailing_metadata_;
+  // Latch that can be set to terminate the call
+  Latch<ServerMetadataHandle> cancel_latch_;
+};
 
 }  // namespace grpc_core
 

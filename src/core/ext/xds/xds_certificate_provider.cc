@@ -374,43 +374,4 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
   if (it->second->IsSafeToRemove()) certificate_state_map_.erase(it);
 }
 
-namespace {
-
-void* XdsCertificateProviderArgCopy(void* p) {
-  XdsCertificateProvider* xds_certificate_provider =
-      static_cast<XdsCertificateProvider*>(p);
-  return xds_certificate_provider->Ref().release();
-}
-
-void XdsCertificateProviderArgDestroy(void* p) {
-  XdsCertificateProvider* xds_certificate_provider =
-      static_cast<XdsCertificateProvider*>(p);
-  xds_certificate_provider->Unref();
-}
-
-int XdsCertificateProviderArgCmp(void* p, void* q) {
-  return QsortCompare(p, q);
-}
-
-const grpc_arg_pointer_vtable kChannelArgVtable = {
-    XdsCertificateProviderArgCopy, XdsCertificateProviderArgDestroy,
-    XdsCertificateProviderArgCmp};
-
-}  // namespace
-
-grpc_arg XdsCertificateProvider::MakeChannelArg() const {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_XDS_CERTIFICATE_PROVIDER),
-      const_cast<XdsCertificateProvider*>(this), &kChannelArgVtable);
-}
-
-RefCountedPtr<XdsCertificateProvider>
-XdsCertificateProvider::GetFromChannelArgs(const grpc_channel_args* args) {
-  XdsCertificateProvider* xds_certificate_provider =
-      grpc_channel_args_find_pointer<XdsCertificateProvider>(
-          args, GRPC_ARG_XDS_CERTIFICATE_PROVIDER);
-  return xds_certificate_provider != nullptr ? xds_certificate_provider->Ref()
-                                             : nullptr;
-}
-
 }  // namespace grpc_core
