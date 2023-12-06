@@ -34,7 +34,6 @@ grpc_cc_library(
         "absl/time",
         "absl/types:variant",
     ],
-    tags = ["no_test_ios"],
     deps = [
         "//:gpr",
         "//:grpc++_binder",
