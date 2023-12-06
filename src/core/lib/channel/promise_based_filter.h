@@ -339,11 +339,11 @@ inline auto RunCall(
 }
 
 template <typename Derived>
-inline auto RunCall(ServerMetadataHandle (Derived::Call::*fn)(
-                        ClientMetadata& md, Derived* channel),
-                    CallArgs call_args, NextPromiseFactory next_promise_factory,
-                    FilterCallData<Derived>* call_data)
-    -> ArenaPromise<ServerMetadataHandle> {
+inline auto RunCall(
+    ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md,
+                                              Derived* channel),
+    CallArgs call_args, NextPromiseFactory next_promise_factory,
+    FilterCallData<Derived>* call_data) -> ArenaPromise<ServerMetadataHandle> {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   auto return_md = call_data->call.OnClientInitialMetadata(
       *call_args.client_initial_metadata, call_data->channel);
@@ -373,7 +373,7 @@ inline void InterceptClientToServerMessage(
   call_args.client_to_server_messages->InterceptAndMap(
       [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call_data->call.OnClientToServerMessage(*msg);
-        if (return_md == nullptr) return msg;
+        if (return_md == nullptr) return std::move(msg);
         if (call_data->error_latch.is_set()) return absl::nullopt;
         call_data->error_latch.Set(std::move(return_md));
         return absl::nullopt;
@@ -389,7 +389,7 @@ inline void InterceptClientToServerMessage(
       [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md =
             call_data->call.OnClientToServerMessage(*msg, call_data->channel);
-        if (return_md == nullptr) return msg;
+        if (return_md == nullptr) return std::move(msg);
         if (call_data->error_latch.is_set()) return absl::nullopt;
         call_data->error_latch.Set(std::move(return_md));
         return absl::nullopt;
@@ -408,7 +408,7 @@ inline void InterceptClientToServerMessage(
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call->OnClientToServerMessage(*msg);
-        if (return_md == nullptr) return msg;
+        if (return_md == nullptr) return std::move(msg);
         return call_spine->Cancel(std::move(return_md));
       });
 }
@@ -423,7 +423,7 @@ inline void InterceptClientToServerMessage(
       [call, call_spine,
        channel](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call->OnClientToServerMessage(*msg, channel);
-        if (return_md == nullptr) return msg;
+        if (return_md == nullptr) return std::move(msg);
         return call_spine->Cancel(std::move(return_md));
       });
 }
@@ -559,7 +559,7 @@ inline void InterceptServerToClientMessage(
   call_args.server_to_client_messages->InterceptAndMap(
       [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call_data->call.OnServerToClientMessage(*msg);
-        if (return_md == nullptr) return msg;
+        if (return_md == nullptr) return std::move(msg);
         if (call_data->error_latch.is_set()) return absl::nullopt;
         call_data->error_latch.Set(std::move(return_md));
         return absl::nullopt;
@@ -575,7 +575,7 @@ inline void InterceptServerToClientMessage(
       [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md =
             call_data->call.OnServerToClientMessage(*msg, call_data->channel);
-        if (return_md == nullptr) return msg;
+        if (return_md == nullptr) return std::move(msg);
         if (call_data->error_latch.is_set()) return absl::nullopt;
         call_data->error_latch.Set(std::move(return_md));
         return absl::nullopt;
@@ -594,7 +594,7 @@ inline void InterceptServerToClientMessage(
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call->OnServerToClientMessage(*msg);
-        if (return_md == nullptr) return msg;
+        if (return_md == nullptr) return std::move(msg);
         return call_spine->Cancel(std::move(return_md));
       });
 }
@@ -609,7 +609,7 @@ inline void InterceptServerToClientMessage(
       [call, call_spine,
        channel](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call->OnServerToClientMessage(*msg, channel);
-        if (return_md == nullptr) return msg;
+        if (return_md == nullptr) return std::move(msg);
         return call_spine->Cancel(std::move(return_md));
       });
 }
