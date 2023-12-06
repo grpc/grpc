@@ -27,7 +27,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/dns_resolver.h"
+#include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 
 namespace grpc_event_engine {
 namespace experimental {

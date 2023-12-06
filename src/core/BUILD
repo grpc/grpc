@@ -2120,7 +2120,6 @@ grpc_cc_library(
     ],
     deps = [
         "ares_resolver",
-        "dns_resolver",
         "event_engine_common",
         "event_engine_poller",
         "event_engine_tcp_socket_utils",
@@ -2464,8 +2463,8 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "dns_resolver",
-    hdrs = ["lib/event_engine/dns_resolver.h"],
+    name = "ref_counted_dns_resolver_interface",
+    hdrs = ["lib/event_engine/ref_counted_dns_resolver_interface.h"],
     external_deps = ["absl/strings"],
     deps = [
         "//:event_engine_base_hdrs",
@@ -2490,7 +2489,7 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
-        "dns_resolver",
+        "ref_counted_dns_resolver_interface",
         "iomgr_port",
         "useful",
         "//:event_engine_base_hdrs",
@@ -2526,7 +2525,7 @@ grpc_cc_library(
     ],
     deps = [
         "common_event_engine_closures",
-        "dns_resolver",
+        "ref_counted_dns_resolver_interface",
         "error",
         "event_engine_time_util",
         "grpc_sockaddr",

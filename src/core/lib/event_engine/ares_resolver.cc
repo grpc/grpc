@@ -18,8 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "dns_resolver.h"
-
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <ares_version.h>

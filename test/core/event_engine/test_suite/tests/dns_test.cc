@@ -53,13 +53,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-void InitDNSTests(bool use_native_dns) {
-  if (use_native_dns) {
-    grpc_core::ConfigVars::Overrides overrides;
-    overrides.dns_resolver = "native";
-    grpc_core::ConfigVars::SetOverrides(overrides);
-  }
-}
+void InitDNSTests() {}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -40,7 +40,10 @@ int main(int argc, char** argv) {
       });
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
-  grpc_event_engine::experimental::InitDNSTests(/*use_native_dns=*/true);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.dns_resolver = "native";
+  grpc_core::ConfigVars::SetOverrides(overrides);
+  grpc_event_engine::experimental::InitDNSTests();
   grpc_init();
   int r = RUN_ALL_TESTS();
   grpc_shutdown();
