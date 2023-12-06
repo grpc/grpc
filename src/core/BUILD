@@ -2140,6 +2140,7 @@ grpc_cc_library(
         "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
+        "ref_counted_dns_resolver_interface",
         "useful",
         "//:config_vars",
         "//:event_engine_base_hdrs",
@@ -2489,8 +2490,8 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
-        "ref_counted_dns_resolver_interface",
         "iomgr_port",
+        "ref_counted_dns_resolver_interface",
         "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -2525,7 +2526,6 @@ grpc_cc_library(
     ],
     deps = [
         "common_event_engine_closures",
-        "ref_counted_dns_resolver_interface",
         "error",
         "event_engine_time_util",
         "grpc_sockaddr",
@@ -2533,6 +2533,7 @@ grpc_cc_library(
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
         "posix_event_engine_tcp_socket_utils",
+        "ref_counted_dns_resolver_interface",
         "resolved_address",
         "slice",
         "windows_iocp",

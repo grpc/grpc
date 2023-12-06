@@ -863,7 +863,6 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
-  - src/core/lib/event_engine/dns_resolver.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
@@ -893,6 +892,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/ref_counted_dns_resolver_interface.h
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
@@ -2319,7 +2319,6 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
-  - src/core/lib/event_engine/dns_resolver.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
@@ -2349,6 +2348,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/ref_counted_dns_resolver_interface.h
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
@@ -4455,7 +4455,6 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
-  - src/core/lib/event_engine/dns_resolver.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
@@ -4485,6 +4484,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/ref_counted_dns_resolver_interface.h
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
@@ -16801,7 +16801,6 @@ targets:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
-  - src/core/lib/event_engine/dns_resolver.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
@@ -16831,6 +16830,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/ref_counted_dns_resolver_interface.h
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
