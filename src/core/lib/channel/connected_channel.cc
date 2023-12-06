@@ -883,7 +883,7 @@ grpc_channel_filter MakeConnectedFilter() {
 }
 
 ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
-    Transport* transport, CallArgs call_args, NextPromiseFactory) {
+    Transport*, CallArgs, NextPromiseFactory) {
   Crash("unimplemented");
 }
 
