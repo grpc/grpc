@@ -51,11 +51,6 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: client_idleness
-  description: If enabled, client channel idleness is enabled by default.
-  expiry: 2023/12/15
-  owner: roth@google.com
-  test_tags: []
 - name: client_privacy
   description:
     If set, client privacy
