@@ -369,7 +369,7 @@ const grpc_channel_filter grpc_server_deadline_filter = {
       }
       return next_promise_factory(std::move(call_args));
     },
-    [](grpc_channel_element* elem, grpc_core::CallSpineInterface* spine) {
+    [](grpc_channel_element*, grpc_core::CallSpineInterface* spine) {
       spine->client_initial_metadata().receiver.InterceptAndMap(
           [](grpc_core::ClientMetadataHandle md) {
             auto deadline = md->get(grpc_core::GrpcTimeoutMetadata());
