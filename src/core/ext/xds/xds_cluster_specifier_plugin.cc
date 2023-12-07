@@ -70,7 +70,7 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
     errors->AddError("could not parse plugin config");
     return {};
   }
-  const auto* plugin_config =
+  const upb_Message* plugin_config = (upb_Message*)
       grpc_lookup_v1_RouteLookupClusterSpecifier_route_lookup_config(specifier);
   if (plugin_config == nullptr) {
     ValidationErrors::ScopedField field(errors, ".route_lookup_config");

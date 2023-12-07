@@ -658,7 +658,8 @@ void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
     const upb_MessageDef* msg_type =
         envoy_config_cluster_v3_Cluster_getmsgdef(context.symtab);
     char buf[10240];
-    upb_TextEncode(cluster, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode((upb_Message*)cluster, msg_type, nullptr, 0, buf,
+                   sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] Cluster: %s", context.client, buf);
   }
 }

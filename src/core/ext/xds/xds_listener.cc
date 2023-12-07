@@ -291,8 +291,8 @@ void MaybeLogHttpConnectionManager(
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
             context.symtab);
     char buf[10240];
-    upb_TextEncode(http_connection_manager_config, msg_type, nullptr, 0, buf,
-                   sizeof(buf));
+    upb_TextEncode((upb_Message*)http_connection_manager_config, msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] HttpConnectionManager: %s",
             context.client, buf);
   }
@@ -1091,7 +1091,8 @@ void MaybeLogListener(const XdsResourceType::DecodeContext& context,
     const upb_MessageDef* msg_type =
         envoy_config_listener_v3_Listener_getmsgdef(context.symtab);
     char buf[10240];
-    upb_TextEncode(listener, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode((upb_Message*)listener, msg_type, nullptr, 0, buf,
+                   sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] Listener: %s", context.client, buf);
   }
 }
