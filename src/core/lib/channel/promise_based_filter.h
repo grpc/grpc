@@ -186,6 +186,11 @@ inline constexpr bool HasChannelAccess(R (T::*)(A)) {
   return false;
 }
 
+template <typename T, typename R, typename A>
+inline constexpr bool HasChannelAccess(R (T::*)()) {
+  return false;
+}
+
 template <typename T, typename R, typename A, typename C>
 inline constexpr bool HasChannelAccess(R (T::*)(A, C)) {
   return true;
@@ -208,7 +213,8 @@ inline constexpr bool CallHasChannelAccess() {
                           &Derived::Call::OnClientToServerMessage,
                           &Derived::Call::OnServerInitialMetadata,
                           &Derived::Call::OnServerToClientMessage,
-                          &Derived::Call::OnServerTrailingMetadata);
+                          &Derived::Call::OnServerTrailingMetadata,
+                          &Derived::Call::OnFinalize);
 }
 
 // Given a boolean X export a type:
@@ -642,6 +648,18 @@ inline void InterceptServerTrailingMetadata(
       });
 }
 
+inline void InterceptFinalize(const NoInterceptor*, void*) {}
+
+template <class Call>
+inline void InterceptFinalize(void (Call::*fn)(const grpc_call_final_info*),
+                              Call* call) {
+  GPR_DEBUG_ASSERT(fn == &Call::OnFinalize);
+  GetContext<CallFinalization>()->Add(
+      [call](const grpc_call_final_info* final_info) {
+        call->OnFinalize(final_info);
+      });
+}
+
 template <typename Derived>
 absl::enable_if_t<std::is_empty<FilterCallData<Derived>>::value,
                   FilterCallData<Derived>*>
@@ -674,6 +692,7 @@ MakeFilterCall(Derived* derived) {
 // - OnServerToClientMessage  - $VALUE_TYPE = Message
 // - OnClientToServerMessage  - $VALUE_TYPE = Message
 // - OnServerTrailingMetadata - $VALUE_TYPE = ServerMetadata
+// - OnFinalize               - special, see below
 // These members define an interception point for a particular event in
 // the call lifecycle.
 // The type of these members matters, and is selectable by the class
@@ -706,6 +725,12 @@ MakeFilterCall(Derived* derived) {
 //   the filter can return nullptr for success, or a metadata handle for
 //   failure (in which case the call will be aborted).
 //   useful for cases where the exact metadata returned needs to be customized.
+// Finally, OnFinalize can be added to intecept call finalization.
+// It must have one of the signatures:
+// - static const NoInterceptor OnFinalize:
+//   the filter does not intercept call finalization.
+// - void OnFinalize(const grpc_call_final_info*):
+//   the filter intercepts call finalization.
 template <typename Derived>
 class ImplementChannelFilter : public ChannelFilter {
  public:
@@ -730,6 +755,7 @@ class ImplementChannelFilter : public ChannelFilter {
     promise_filter_detail::InterceptServerTrailingMetadata(
         &Derived::Call::OnServerTrailingMetadata, call,
         static_cast<Derived*>(this), call_spine);
+    promise_filter_detail::InterceptFinalize(&Derived::Call::OnFinalize, call);
   }
 
   // Polyfill for the original promise scheme.
@@ -745,6 +771,9 @@ class ImplementChannelFilter : public ChannelFilter {
         &Derived::Call::OnServerInitialMetadata, call, call_args);
     promise_filter_detail::InterceptServerToClientMessage(
         &Derived::Call::OnServerToClientMessage, call, call_args);
+    promise_filter_detail::InterceptFinalize(
+        &Derived::Call::OnFinalize,
+        static_cast<typename Derived::Call*>(&call->call));
     return promise_filter_detail::MapResult(
         &Derived::Call::OnServerTrailingMetadata,
         promise_filter_detail::RaceAsyncCompletion<
