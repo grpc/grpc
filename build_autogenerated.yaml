@@ -10221,6 +10221,16 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+- name: grpc_tls_directory_reloader_crl_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/grpc_tls_directory_reloader_crl_provider_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: grpc_tool_test
   gtest: true
   build: test
