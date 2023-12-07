@@ -39,6 +39,12 @@ using ::grpc_core::experimental::CrlProvider;
 namespace grpc_core {
 namespace testing {
 
+// This test is needed separately from the tests in grpc_tls_crl_provider_test
+// because the DirectoryReloaderCrlProvider gets the default event engine on
+// construction. To get the default event engine, grpc_init must have been
+// called, otherwise a segfault occurs. This test checks that grpc_init gets
+// called before getting the default event engine during the construction of a
+// DirectoryReloaderCrlProvider.
 TEST(DirectoryReloaderCrlProviderTestNoFixture, Construction) {
   auto provider = experimental::CreateDirectoryReloaderCrlProvider(
       kCrlDirectory, std::chrono::seconds(60), nullptr);
