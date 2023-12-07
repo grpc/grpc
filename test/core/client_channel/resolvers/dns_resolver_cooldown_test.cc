@@ -412,9 +412,9 @@ static void test_cooldown() {
 TEST(DnsResolverCooldownTest, MainTest) {
   // TODO(yijiem): This test tests the cooldown behavior of the PollingResolver
   // interface. To do that, it overrides the grpc_dns_lookup_hostname_ares
-  // function and iomgr's g_dns_resolver system. We would need to rewrite this
-  // test for EventEngine using a custom EE DNSResolver or adding to the
-  // resolver_fuzzer.
+  // function and overrides the iomgr's g_dns_resolver system. We would need to
+  // rewrite this test for EventEngine using a custom EE DNSResolver or adding
+  // to the resolver_fuzzer.
   if (grpc_core::IsEventEngineDnsEnabled()) {
     GTEST_SKIP() << "Not with event engine dns";
   }
