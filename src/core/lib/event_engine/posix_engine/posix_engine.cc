@@ -555,6 +555,7 @@ PosixEventEngine::GetDNSResolver(
     const EventEngine::DNSResolver::ResolverOptions& options) {
 #ifndef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
   grpc_core::Crash("Unable to get DNS resolver for this platform.");
+  (void)options;
 #else  // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
   // If c-ares is supported on the platform, build according to user's
   // configuration.
