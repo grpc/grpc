@@ -61,7 +61,7 @@ class ServerCallTracerFilter
     void OnServerInitialMetadata(ServerMetadata& server_initial_metadata) {
       auto* call_tracer = CallTracer();
       if (call_tracer == nullptr) return;
-      call_tracer->RecordReceivedInitialMetadata(&server_initial_metadata);
+      call_tracer->RecordSendInitialMetadata(&server_initial_metadata);
     }
 
     void OnFinalize(const grpc_call_final_info* final_info) {
