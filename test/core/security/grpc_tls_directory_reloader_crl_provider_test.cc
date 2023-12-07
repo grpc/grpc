@@ -32,10 +32,6 @@
 static constexpr absl::string_view kCrlDirectory =
     "test/core/tsi/test_creds/crl_data/crls";
 
-using ::grpc_core::experimental::CertificateInfoImpl;
-using ::grpc_core::experimental::Crl;
-using ::grpc_core::experimental::CrlProvider;
-
 namespace grpc_core {
 namespace testing {
 
