@@ -600,15 +600,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        # "//:gpr",
-        # "//:grpc",
-        # "//:iomgr_timer",
-        # "//src/core:default_event_engine",
         "//src/core:grpc_crl_provider",
-        # "//test/core/event_engine:event_engine_test_utils",
-        # "//test/core/event_engine/fuzzing_event_engine",
-        # "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-        # "//test/core/util:fuzz_config_vars_proto",
         "//test/core/util:grpc_test_util",
     ],
 )

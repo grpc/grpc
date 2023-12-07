@@ -147,8 +147,6 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
   if (refresh_duration < std::chrono::seconds(60)) {
     return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
   }
-  // Must be called before `GetDefaultEventEngine`
-  // grpc_init();
   auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
       refresh_duration, reload_error_callback, nullptr,
       MakeDirectoryReader(directory));
@@ -165,6 +163,7 @@ DirectoryReloaderCrlProvider::DirectoryReloaderCrlProvider(
     : refresh_duration_(Duration::FromSecondsAsDouble(duration.count())),
       reload_error_callback_(std::move(callback)),
       crl_directory_(std::move(directory_impl)) {
+  // Must be called before `GetDefaultEventEngine`
   grpc_init();
   if (event_engine_ == nullptr) {
     event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();

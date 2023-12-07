@@ -250,9 +250,6 @@ TEST_F(CrlProviderTest, CrlProviderValidReloader) {
   options.set_identity_cert_name("identity");
   std::string root_crl = grpc_core::testing::GetFileContents(kRootCrlPath);
 
-  // absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
-  //     provider =
-  //     grpc_core::experimental::CreateStaticCrlProvider({root_crl});
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
       provider = grpc_core::experimental::CreateDirectoryReloaderCrlProvider(
           kCrlDirectoryPath, std::chrono::seconds(60), nullptr);
