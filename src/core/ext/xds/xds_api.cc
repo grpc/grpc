@@ -185,7 +185,8 @@ void MaybeLogDiscoveryRequest(
     const upb_MessageDef* msg_type =
         envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(context.def_pool);
     char buf[10240];
-    upb_TextEncode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<upb_Message*>(request), msg_type, nullptr,
+                   0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed ADS request: %s",
             context.client, buf);
   }
@@ -274,7 +275,8 @@ void MaybeLogDiscoveryResponse(
         envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(
             context.def_pool);
     char buf[10240];
-    upb_TextEncode(response, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<upb_Message*>(response), msg_type, nullptr,
+                   0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", context.client,
             buf);
   }
@@ -362,7 +364,8 @@ void MaybeLogLrsRequest(
         envoy_service_load_stats_v3_LoadStatsRequest_getmsgdef(
             context.def_pool);
     char buf[10240];
-    upb_TextEncode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<upb_Message*>(request), msg_type, nullptr,
+                   0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed LRS request: %s",
             context.client, buf);
   }
@@ -523,7 +526,8 @@ void MaybeLogLrsResponse(
         envoy_service_load_stats_v3_LoadStatsResponse_getmsgdef(
             context.def_pool);
     char buf[10240];
-    upb_TextEncode(response, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<upb_Message*>(response), msg_type, nullptr,
+                   0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] received LRS response: %s",
             context.client, buf);
   }
