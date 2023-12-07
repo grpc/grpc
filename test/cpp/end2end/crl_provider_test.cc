@@ -138,7 +138,7 @@ void DoRpc(const std::string& server_addr,
   }
 }
 
-TEST_F(CrlProviderTest, CrlProviderValid) {
+TEST_F(CrlProviderTest, CrlProviderValidStaticProvider) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
@@ -221,7 +221,7 @@ TEST_F(CrlProviderTest, CrlProviderRevokedServer) {
   DoRpc(server_addr_, options, false);
 }
 
-TEST_F(CrlProviderTest, CrlProviderValidReloader) {
+TEST_F(CrlProviderTest, CrlProviderValidReloaderProvider) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
@@ -248,7 +248,6 @@ TEST_F(CrlProviderTest, CrlProviderValidReloader) {
   options.set_root_cert_name("root");
   options.watch_identity_key_cert_pairs();
   options.set_identity_cert_name("identity");
-  std::string root_crl = grpc_core::testing::GetFileContents(kRootCrlPath);
 
   absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
       provider = grpc_core::experimental::CreateDirectoryReloaderCrlProvider(

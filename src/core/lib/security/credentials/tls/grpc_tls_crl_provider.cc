@@ -148,7 +148,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
   }
   auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
-      refresh_duration, reload_error_callback, nullptr,
+      refresh_duration, reload_error_callback, /*event_engine=*/nullptr,
       MakeDirectoryReader(directory));
   // This could be slow to do at startup, but we want to
   // make sure it's done before the provider is used.
