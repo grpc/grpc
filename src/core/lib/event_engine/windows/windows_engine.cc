@@ -204,17 +204,17 @@ WindowsEventEngine::WindowsDNSResolver::WindowsDNSResolver(
 void WindowsEventEngine::WindowsDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port) {
-  ares_resolver_->LookupHostname(name, default_port, std::move(on_resolve));
+  ares_resolver_->LookupHostname(std::move(on_resolve), name, default_port);
 }
 
 void WindowsEventEngine::WindowsDNSResolver::LookupSRV(
     LookupSRVCallback on_resolve, absl::string_view name) {
-  ares_resolver_->LookupSRV(name, std::move(on_resolve));
+  ares_resolver_->LookupSRV(std::move(on_resolve), name);
 }
 
 void WindowsEventEngine::WindowsDNSResolver::LookupTXT(
     LookupTXTCallback on_resolve, absl::string_view name) {
-  ares_resolver_->LookupTXT(name, std::move(on_resolve));
+  ares_resolver_->LookupTXT(std::move(on_resolve), name);
 }
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
