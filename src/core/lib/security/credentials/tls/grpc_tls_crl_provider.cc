@@ -164,11 +164,12 @@ DirectoryReloaderCrlProvider::DirectoryReloaderCrlProvider(
     std::shared_ptr<DirectoryReader> directory_impl)
     : refresh_duration_(Duration::FromSecondsAsDouble(duration.count())),
       reload_error_callback_(std::move(callback)),
-      event_engine_(std::move(event_engine)),
       crl_directory_(std::move(directory_impl)) {
   grpc_init();
   if (event_engine_ == nullptr) {
     event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
+  } else {
+    event_engine_ = std::move(event_engine);
   }
 }
 
