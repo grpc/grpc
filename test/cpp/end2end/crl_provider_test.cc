@@ -59,6 +59,7 @@ const char* kRevokedCertPath = "test/core/tsi/test_creds/crl_data/revoked.pem";
 const char* kValidKeyPath = "test/core/tsi/test_creds/crl_data/valid.key";
 const char* kValidCertPath = "test/core/tsi/test_creds/crl_data/valid.pem";
 const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
+const char* kCrlDirectoryPath = "test/core/tsi/test_creds/crl_data/crls/";
 constexpr char kMessage[] = "Hello";
 
 class CrlProviderTest : public ::testing::Test {
@@ -218,6 +219,51 @@ TEST_F(CrlProviderTest, CrlProviderRevokedServer) {
   options.set_certificate_verifier(verifier);
 
   DoRpc(server_addr_, options, false);
+}
+
+TEST_F(CrlProviderTest, CrlProviderValidReloader) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  std::string server_key = grpc_core::testing::GetFileContents(kValidKeyPath);
+  std::string server_cert = grpc_core::testing::GetFileContents(kValidCertPath);
+  server_thread_ = new std::thread(
+      [&]() { RunServer(&notification, server_key, server_cert); });
+  notification.WaitForNotification();
+
+  std::string root_cert = grpc_core::testing::GetFileContents(kRootPath);
+  std::string client_key = grpc_core::testing::GetFileContents(kValidKeyPath);
+  std::string client_cert = grpc_core::testing::GetFileContents(kValidCertPath);
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = client_key;
+  key_cert_pair.certificate_chain = client_cert;
+  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
+  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  auto certificate_provider =
+      std::make_shared<experimental::StaticDataCertificateProvider>(
+          root_cert, identity_key_cert_pairs);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+  std::string root_crl = grpc_core::testing::GetFileContents(kRootCrlPath);
+
+  // absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
+  //     provider =
+  //     grpc_core::experimental::CreateStaticCrlProvider({root_crl});
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
+      provider = grpc_core::experimental::CreateDirectoryReloaderCrlProvider(
+          kCrlDirectoryPath, std::chrono::seconds(60), nullptr);
+  ASSERT_TRUE(provider.ok());
+
+  options.set_crl_provider(*provider);
+  options.set_check_call_host(false);
+  auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
+  options.set_certificate_verifier(verifier);
+
+  DoRpc(server_addr_, options, true);
 }
 
 }  // namespace
