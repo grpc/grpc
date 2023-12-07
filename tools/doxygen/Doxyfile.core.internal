@@ -2058,6 +2058,8 @@ src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
 src/core/lib/event_engine/posix_engine/internal_errqueue.h \
 src/core/lib/event_engine/posix_engine/lockfree_event.cc \
 src/core/lib/event_engine/posix_engine/lockfree_event.h \
+src/core/lib/event_engine/posix_engine/native_dns_resolver.cc \
+src/core/lib/event_engine/posix_engine/native_dns_resolver.h \
 src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
 src/core/lib/event_engine/posix_engine/posix_endpoint.h \
 src/core/lib/event_engine/posix_engine/posix_engine.cc \
@@ -2084,6 +2086,7 @@ src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h \
+src/core/lib/event_engine/ref_counted_dns_resolver_interface.h \
 src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/resolved_address_internal.h \
 src/core/lib/event_engine/shim.cc \

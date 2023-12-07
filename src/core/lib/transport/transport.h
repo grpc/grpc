@@ -262,6 +262,15 @@ class CallSpineInterface {
   virtual void IncrementRefCount() = 0;
   virtual void Unref() = 0;
 
+  // Cancel the call with the given metadata.
+  // Regarding the `MUST_USE_RESULT absl::nullopt_t`:
+  // Most cancellation calls right now happen in pipe interceptors;
+  // there `nullopt` indicates terminate processing of this pipe and close with
+  // error.
+  // It's convenient then to have the Cancel operation (setting the latch to
+  // terminate the call) be the last thing that occurs in a pipe interceptor,
+  // and this construction supports that (and has helped the author not write
+  // some bugs).
   GRPC_MUST_USE_RESULT absl::nullopt_t Cancel(ServerMetadataHandle metadata) {
     GPR_DEBUG_ASSERT(Activity::current() == &party());
     auto& c = cancel_latch();
