@@ -42,6 +42,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -409,6 +410,14 @@ static void test_cooldown() {
 }
 
 TEST(DnsResolverCooldownTest, MainTest) {
+  // TODO(yijiem): This test tests the cooldown behavior of the PollingResolver
+  // interface. To do that, it overrides the grpc_dns_lookup_hostname_ares
+  // function and iomgr's g_dns_resolver system. We would need to rewrite this
+  // test for EventEngine using a custom EE DNSResolver or adding to the
+  // resolver_fuzzer.
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    GTEST_SKIP() << "Not with event engine dns";
+  }
   grpc_init();
 
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>(
