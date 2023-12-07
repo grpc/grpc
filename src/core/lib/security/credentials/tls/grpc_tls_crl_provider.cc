@@ -165,7 +165,7 @@ DirectoryReloaderCrlProvider::DirectoryReloaderCrlProvider(
       crl_directory_(std::move(directory_impl)) {
   // Must be called before `GetDefaultEventEngine`
   grpc_init();
-  if (event_engine_ == nullptr) {
+  if (event_engine == nullptr) {
     event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
   } else {
     event_engine_ = std::move(event_engine);

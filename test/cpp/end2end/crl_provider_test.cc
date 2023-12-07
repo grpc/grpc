@@ -62,6 +62,20 @@ const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const char* kCrlDirectoryPath = "test/core/tsi/test_creds/crl_data/crls/";
 constexpr char kMessage[] = "Hello";
 
+// This test must be at the top of the file because the
+// DirectoryReloaderCrlProvider gets the default event engine on construction.
+// To get the default event engine, grpc_init must have been called, otherwise a
+// segfault occurs. This test checks that no segfault occurs while getting the
+// default event engine during the construction of a
+// DirectoryReloaderCrlProvider. `grpc_init` is global state, so if another test
+// runs first, then this test could pass because of another test modifying the
+// global state
+TEST(DirectoryReloaderCrlProviderTestNoFixture, Construction) {
+  auto provider = grpc_core::experimental::CreateDirectoryReloaderCrlProvider(
+      kCrlDirectoryPath, std::chrono::seconds(60), nullptr);
+  ASSERT_TRUE(provider.ok()) << provider.status();
+}
+
 class CrlProviderTest : public ::testing::Test {
  protected:
   void RunServer(absl::Notification* notification, absl::string_view server_key,
