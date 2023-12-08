@@ -175,7 +175,7 @@ _generate_cc = rule(
         "plugin": attr.label(
             executable = True,
             providers = ["files_to_run"],
-            cfg = "host",
+            cfg = "exec",
         ),
         "flags": attr.string_list(
             mandatory = False,
@@ -189,7 +189,7 @@ _generate_cc = rule(
         "_protoc": attr.label(
             default = Label("//external:protocol_compiler"),
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
     },
     # We generate .h files, so we need to output to genfiles.
