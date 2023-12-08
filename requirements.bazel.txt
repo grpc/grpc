@@ -16,3 +16,4 @@ xds-protos==0.0.11
 opencensus==0.10.0
 opencensus-ext-stackdriver==0.8.0
 absl-py==1.4.0
+googleapis-common-protos==1.61.0
