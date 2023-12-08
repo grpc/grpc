@@ -26,20 +26,11 @@ GRPC_GCP_OBSERVABILITY_CONFIG_ENV = "GRPC_GCP_OBSERVABILITY_CONFIG"
 
 @dataclass
 class GcpObservabilityConfig:
-    _singleton = None
-    _lock: threading.RLock = threading.RLock()
     project_id: str = ""
     stats_enabled: bool = False
     tracing_enabled: bool = False
     labels: Optional[Mapping[str, str]] = field(default_factory=dict)
     sampling_rate: Optional[float] = 0.0
-
-    @staticmethod
-    def get():
-        with GcpObservabilityConfig._lock:
-            if GcpObservabilityConfig._singleton is None:
-                GcpObservabilityConfig._singleton = GcpObservabilityConfig()
-        return GcpObservabilityConfig._singleton
 
     def load_from_string_content(self, config_contents: str) -> None:
         """Loads the configuration from a string.
@@ -76,7 +67,7 @@ def read_config() -> GcpObservabilityConfig:
         ValueError: If the configuration is invalid.
     """
     config_contents = _get_gcp_observability_config_contents()
-    config = GcpObservabilityConfig.get()
+    config = GcpObservabilityConfig()
     config.load_from_string_content(config_contents)
 
     if not config.project_id:
@@ -89,7 +80,7 @@ def read_config() -> GcpObservabilityConfig:
     return config
 
 
-def _get_gcp_project_id_from_env_var() -> str:
+def _get_gcp_project_id_from_env_var() -> Optional[str]:
     """Gets the project ID from the GCP environment variables.
 
     Returns:
@@ -109,15 +100,17 @@ def _get_gcp_project_id_from_env_var() -> str:
     if project_id:
         return project_id
 
-    return project_id  # pytype: disable=bad-return-type
+    return project_id
 
 
 def _get_gcp_observability_config_contents() -> str:
     """Get the contents of the observability config from environment variable or file.
 
     Returns:
-        The content from environment variable, or an empty string if the environment
-    variable does not exist.
+        The content from environment variable.
+
+    Raises:
+        ValueError: If no configuration content was found.
     """
 
     contents_str = ""
@@ -131,4 +124,7 @@ def _get_gcp_observability_config_contents() -> str:
     if not contents_str:
         contents_str = os.getenv(GRPC_GCP_OBSERVABILITY_CONFIG_ENV)
 
-    return contents_str  # pytype: disable=bad-return-type
+    if not contents_str:
+        raise ValueError("Configuration content not found.")
+
+    return contents_str

@@ -25,6 +25,7 @@
 
 namespace grpc_observability {
 
+// TODO(xuanwn): Reuse c++ rpc_encoding file.
 // RpcServerStatsEncoding encapsulates the logic for encoding and decoding of
 // rpc server stats messages. Rpc server stats consists of a uint64_t time
 // value (server latency in nanoseconds).

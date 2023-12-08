@@ -101,7 +101,7 @@ def _start_exporting_thread(object exporter) -> None:
   GLOBAL_EXPORT_THREAD.start()
 
 def activate_config(object py_config) -> None:
-  py_config: _gcp_observability.GcpObservabilityConfig
+  py_config: "_observability_config.GcpObservabilityConfig"
 
   if (py_config.tracing_enabled):
     EnablePythonCensusTracing(True);

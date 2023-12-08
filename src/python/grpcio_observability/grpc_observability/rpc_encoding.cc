@@ -16,6 +16,7 @@
 
 #include "rpc_encoding.h"
 
+// TODO(xuanwn): Reuse c++ rpc_encoding file.
 namespace grpc_observability {
 
 constexpr size_t RpcServerStatsEncoding::kRpcServerStatsSize;

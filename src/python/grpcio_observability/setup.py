@@ -47,6 +47,15 @@ CLASSIFIERS = [
     "License :: OSI Approved :: Apache Software License",
 ]
 
+O11Y_CC_SRCS = [
+    "server_call_tracer.cc",
+    "client_call_tracer.cc",
+    "observability_util.cc",
+    "python_census_context.cc",
+    "sampler.cc",
+    "rpc_encoding.cc",
+]
+
 
 def _env_bool_value(env_name, default):
     """Parses a bool option from an environment variable"""
@@ -231,14 +240,13 @@ def extension_modules():
     ] + CC_INCLUDES
 
     plugin_sources = CC_FILES
-    plugin_sources += [
-        os.path.join("grpc_observability", "client_call_tracer.cc"),
-        os.path.join("grpc_observability", "server_call_tracer.cc"),
-        os.path.join("grpc_observability", "observability_util.cc"),
-        os.path.join("grpc_observability", "python_census_context.cc"),
-        os.path.join("grpc_observability", "sampler.cc"),
-        os.path.join("grpc_observability", "rpc_encoding.cc"),
-    ] + cython_module_files
+
+    O11Y_CC_PATHS = (
+        os.path.join("grpc_observability", f) for f in O11Y_CC_SRCS
+    )
+    plugin_sources += O11Y_CC_PATHS
+
+    plugin_sources += cython_module_files
 
     plugin_ext = Extension(
         name="grpc_observability._cyobservability",

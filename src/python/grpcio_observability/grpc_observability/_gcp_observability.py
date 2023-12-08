@@ -72,7 +72,7 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
 
     def __init__(self, exporter: "grpc_observability.Exporter" = None):
         self.exporter = None
-        self.config = _observability_config.GcpObservabilityConfig.get()
+        self.config = None
         try:
             self.config = _observability_config.read_config()
             _cyobservability.activate_config(self.config)
@@ -81,6 +81,8 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
 
         if exporter:
             self.exporter = exporter
+        else:
+            raise ValueError(f"Please provide an exporter!")
 
         if self.config.tracing_enabled:
             self.set_tracing(True)
