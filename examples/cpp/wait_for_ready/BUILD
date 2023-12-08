@@ -26,16 +26,3 @@ cc_binary(
     ],
 )
 
-cc_binary(
-    name = "greeter_callback_server",
-    srcs = ["greeter_callback_server.cc"],
-    defines = ["BAZEL_BUILD"],
-    deps = [
-        "//:grpc++",
-        "//:grpc++_reflection",
-        "//examples/protos:helloworld_cc_grpc",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/flags:parse",
-        "@com_google_absl//absl/strings:str_format",
-    ],
-)

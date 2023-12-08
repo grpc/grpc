@@ -25,7 +25,7 @@ channel to be ready before progressing.
 Now, on a separate terminal, run the server -
 
 ```
-$ tools/bazel run examples/cpp/wait_for_ready:greeter_callback_server
+$ tools/bazel run examples/cpp/helloworld:greeter_callback_server
 ```
 
 The client channel should now be able to connect to the server, and the RPCs
