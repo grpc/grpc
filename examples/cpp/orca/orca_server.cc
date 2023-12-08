@@ -48,6 +48,8 @@ class GreeterServiceImpl final : public Greeter::CallbackService {
                                const HelloRequest* request,
                                HelloReply* reply) override {
     ServerUnaryReactor* reactor = context->DefaultReactor();
+    // Obtain the call metric recorder and use it to report the number of
+    // DB queries (custom cost metric) and CPU utilization.
     auto recorder = context->ExperimentalGetCallMetricRecorder();
     if (recorder == nullptr) {
       reactor->Finish({grpc::StatusCode::INTERNAL,
@@ -68,7 +70,8 @@ void RunServer(uint16_t port) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
   ServerBuilder builder;
   GreeterServiceImpl service;
-  // Setup custom metrics recording
+  // Setup custom metrics recording. Note that this recorder may be use to send
+  // the out-of-band metrics to the client.
   auto server_metric_recorder =
       grpc::experimental::ServerMetricRecorder::Create();
   grpc::experimental::OrcaService orca_service(
@@ -88,9 +91,6 @@ void RunServer(uint16_t port) {
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
-
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
   server->Wait();
 }
 
