@@ -22,6 +22,10 @@
 # allow_in_fuzzing_config: optional boolean (true if not specified)
 #              if false, this experiment will not be included in fuzzers that
 #              explore the config space
+# requires:    A list of names of experiments that this experiment depends on.
+#              Defaults to the empty list.
+#              If any of the experiments in the required list is determined to
+#              be disabled at runtime, this experiment is disabled at runtime.
 #
 # Well known test tags:
 #   core_end2end_test:   all tests, fixtures in the core end2end suite
@@ -33,12 +37,6 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
-- name: block_excessive_requests_before_settings_ack
-  description:
-    If set, block excessive requests before receiving SETTINGS ACK.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [bad_client_test]
 - name: call_status_override_on_cancellation
   description:
     Avoid overriding call status of successfully finished calls if it races with
@@ -53,21 +51,9 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: chttp2_batch_requests
-  description:
-    Cap the number of requests received by one transport read prior to offload.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: ["cpp_end2end_test", "flow_control_test"]
-- name: chttp2_offload_on_rst_stream
-  description:
-    Offload work on RST_STREAM.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: ["cpp_end2end_test", "flow_control_test"]
 - name: client_idleness
   description: If enabled, client channel idleness is enabled by default.
-  expiry: 2023/12/15
+  expiry: 2024/03/15
   owner: roth@google.com
   test_tags: []
 - name: client_privacy
@@ -77,12 +63,6 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: combiner_offload_to_event_engine
-  description:
-    Offload Combiner work onto the EventEngine instead of the Executor.
-  expiry: 2024/01/15
-  owner: hork@google.com
-  test_tags: []
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
   expiry: 2024/01/21
@@ -127,13 +107,6 @@
   owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: lazier_stream_updates
-  description:
-    Allow streams to consume up to 50% of the incoming window before we
-    force send a flow control update.
-  expiry: 2024/01/23
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]
 - name: memory_pressure_controller
   description: New memory pressure controller
   expiry: 2024/05/05
@@ -179,16 +152,9 @@
 - name: pick_first_happy_eyeballs
   description:
     Use Happy Eyeballs in pick_first.
-  expiry: 2023/12/15
+  expiry: 2024/03/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
-- name: ping_on_rst_stream
-  description:
-    Send a ping on receiving some RST_STREAM frames on the server
-    (proportion configurable via grpc.http2.ping_on_rst_stream_percent channel arg).
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: []
 - name: promise_based_client_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
@@ -241,7 +207,7 @@
   description:
     Change round_robin code to delegate to pick_first as per dualstack
     backend design.
-  expiry: 2023/12/15
+  expiry: 2024/03/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: rstpit
@@ -255,15 +221,6 @@
   expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: []
-- name: separate_ping_from_keepalive
-  description:
-    Keep a different keepalive timeout (resolution is seeing data after sending a ping)
-    from a ping timeout (resolution is getting a ping ack after sending a ping)
-    The first can be short and determines liveness.
-    The second can be longer and determines protocol correctness.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: []
 - name: server_privacy
   description:
     If set, server privacy
@@ -271,18 +228,6 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: settings_timeout
-  description:
-    If set, use the settings timeout to send settings frame to the peer.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: []
-- name: tarpit
-  description:
-    If set, tarpit invalid requests for some amount of time
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [bad_client_test]
 - name: tcp_frame_size_tuning
   description:
     If set, enables TCP to use RPC size estimation made by higher layers.
@@ -327,6 +272,7 @@
   expiry: 2024/03/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+  requires: [write_size_policy]
 - name: write_size_policy
   description:
     Try to size writes such that they don't create too large of a backlog
@@ -337,6 +283,6 @@
   description:
     Change WRR code to delegate to pick_first as per dualstack
     backend design.
-  expiry: 2023/12/15
+  expiry: 2024/03/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]

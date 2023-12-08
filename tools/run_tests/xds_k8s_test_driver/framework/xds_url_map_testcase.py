@@ -479,6 +479,9 @@ class XdsUrlMapTestCase(
             super().run(result)
 
     def test_client_config(self):
+        self.test_client.wait_for_active_xds_channel(
+            xds_server_uri=GcpResourceManager().xds_server_uri,
+        )
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(
                 seconds=_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC

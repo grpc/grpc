@@ -912,7 +912,10 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
 GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type);
-/**
+
+/** Deprecated in favor of grpc_tls_credentials_options_set_crl_provider. The
+ * crl provider interface provides a significantly more flexible approach to
+ * using CRLs. See gRFC A69 for details.
  * EXPERIMENTAL API - Subject to change
  *
  * If set, gRPC will read all hashed x.509 CRL files in the directory and

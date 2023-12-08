@@ -172,7 +172,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
               too_soon.next_allowed_ping_interval.ToString().c_str(),
               too_soon.wait.ToString().c_str());
         }
-        if (!t->delayed_ping_timer_handle.has_value()) {
+        if (t->delayed_ping_timer_handle ==
+            grpc_event_engine::experimental::EventEngine::TaskHandle::
+                kInvalid) {
           t->delayed_ping_timer_handle = t->event_engine->RunAfter(
               too_soon.wait, [t = t->Ref()]() mutable {
                 grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -278,8 +280,7 @@ class WriteContext {
                                       t_->settings[GRPC_LOCAL_SETTINGS],
                                       t_->force_send_settings,
                                       GRPC_CHTTP2_NUM_SETTINGS));
-      if (grpc_core::IsSettingsTimeoutEnabled() &&
-          t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
+      if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
         GPR_ASSERT(
             t_->settings_ack_watchdog ==
             grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);
@@ -732,9 +733,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
       t->keepalive_timeout != grpc_core::Duration::Infinity()) {
     // Set ping timeout after finishing write so we don't measure our own send
     // time.
-    const auto timeout = grpc_core::IsSeparatePingFromKeepaliveEnabled()
-                             ? t->ping_timeout
-                             : t->keepalive_timeout;
+    const auto timeout = t->ping_timeout;
     auto id = t->ping_callbacks.OnPingTimeout(
         timeout, t->event_engine.get(), [t = t->Ref()] {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -748,8 +747,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
               id.value());
     }
 
-    if (grpc_core::IsSeparatePingFromKeepaliveEnabled() &&
-        t->keepalive_incoming_data_wanted &&
+    if (t->keepalive_incoming_data_wanted &&
         t->keepalive_timeout < t->ping_timeout &&
         t->keepalive_ping_timeout_handle !=
             grpc_event_engine::experimental::EventEngine::TaskHandle::

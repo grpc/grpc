@@ -467,22 +467,17 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
   // response generator to switch between the two.
   auto response_generator =
       grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  grpc_arg client_args[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 1 * 1000),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
-      grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-          response_generator.get())};
-  grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
-                                           client_args};
+  auto client_channel_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0)
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 1 * 1000)
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0)
+          .SetObject(response_generator)
+          .ToC();
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel =
-      grpc_channel_create("fake:///", creds, &client_channel_args);
+      grpc_channel_create("fake:///", creds, client_channel_args.get());
   grpc_channel_credentials_release(creds);
   // For a single subchannel 3 GOAWAYs would be sufficient to increase the
   // keepalive time from 1 second to beyond 5 seconds. Even though we are
@@ -539,22 +534,17 @@ TEST_F(KeepaliveThrottlingTest,
   // create a single channel with round robin load balancing policy.
   auto response_generator =
       grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  grpc_arg client_args[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 1 * 1000),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
-      grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-          response_generator.get())};
-  grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
-                                           client_args};
+  auto client_channel_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0)
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 1 * 1000)
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0)
+          .SetObject(response_generator)
+          .ToC();
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel =
-      grpc_channel_create("fake:///", creds, &client_channel_args);
+      grpc_channel_create("fake:///", creds, client_channel_args.get());
   grpc_channel_credentials_release(creds);
   response_generator->SetResponseSynchronously(
       BuildResolverResult({absl::StrCat("ipv4:", server_address1),

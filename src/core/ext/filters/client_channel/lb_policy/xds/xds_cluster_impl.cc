@@ -250,7 +250,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
   absl::Status UpdateChildPolicyLocked(
-      absl::StatusOr<EndpointAddressesList> addresses,
+      absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses,
       std::string resolution_note, const ChannelArgs& args);
 
   void MaybeUpdatePickerLocked();
@@ -569,7 +569,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
 }
 
 absl::Status XdsClusterImplLb::UpdateChildPolicyLocked(
-    absl::StatusOr<EndpointAddressesList> addresses,
+    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses,
     std::string resolution_note, const ChannelArgs& args) {
   // Create policy if needed.
   if (child_policy_ == nullptr) {

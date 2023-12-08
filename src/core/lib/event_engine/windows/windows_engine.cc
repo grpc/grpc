@@ -35,6 +35,7 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/event_engine/windows/grpc_polled_fd_windows.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
@@ -99,7 +100,7 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
 
 WindowsEventEngine::WindowsEventEngine()
     : thread_pool_(
-          MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+          MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       iocp_(thread_pool_.get()),
       timer_manager_(thread_pool_),
       iocp_worker_(thread_pool_.get(), &iocp_) {
@@ -194,10 +195,49 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
   return handle;
 }
 
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+
+WindowsEventEngine::WindowsDNSResolver::WindowsDNSResolver(
+    grpc_core::OrphanablePtr<AresResolver> ares_resolver)
+    : ares_resolver_(std::move(ares_resolver)) {}
+
+void WindowsEventEngine::WindowsDNSResolver::LookupHostname(
+    LookupHostnameCallback on_resolve, absl::string_view name,
+    absl::string_view default_port) {
+  ares_resolver_->LookupHostname(std::move(on_resolve), name, default_port);
+}
+
+void WindowsEventEngine::WindowsDNSResolver::LookupSRV(
+    LookupSRVCallback on_resolve, absl::string_view name) {
+  ares_resolver_->LookupSRV(std::move(on_resolve), name);
+}
+
+void WindowsEventEngine::WindowsDNSResolver::LookupTXT(
+    LookupTXTCallback on_resolve, absl::string_view name) {
+  ares_resolver_->LookupTXT(std::move(on_resolve), name);
+}
+
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 WindowsEventEngine::GetDNSResolver(
-    EventEngine::DNSResolver::ResolverOptions const& /*options*/) {
+    EventEngine::DNSResolver::ResolverOptions const& options) {
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  auto ares_resolver = AresResolver::CreateAresResolver(
+      options.dns_server,
+      std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
+      shared_from_this());
+  if (!ares_resolver.ok()) {
+    return ares_resolver.status();
+  }
+  return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
+      std::move(*ares_resolver));
+#else   // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  // TODO(yijiem): Implement a basic A/AAAA-only native resolver in
+  // WindowsEventEngine.
+  (void)options;
   grpc_core::Crash("unimplemented");
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 }
 
 bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }

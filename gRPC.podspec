@@ -20,7 +20,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '1.60.0-dev'
+  version = '1.61.0-dev'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'https://grpc.io'
@@ -31,6 +31,8 @@ Pod::Spec.new do |s|
     :git => 'https://github.com/grpc/grpc.git',
     :tag => "v#{version}",
   }
+
+  s.resource = 'src/objective-c/PrivacyInfo.xcprivacy'
 
   name = 'GRPCClient'
   s.module_name = name

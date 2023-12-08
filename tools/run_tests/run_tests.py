@@ -26,10 +26,10 @@ import logging
 import multiprocessing
 import os
 import os.path
-import pipes
 import platform
 import random
 import re
+import shlex
 import socket
 import subprocess
 import sys
@@ -479,7 +479,7 @@ class CLanguage(object):
                         cmdline = [binary] + target["args"]
                         shortname = target.get(
                             "shortname",
-                            " ".join(pipes.quote(arg) for arg in cmdline),
+                            " ".join(shlex.quote(arg) for arg in cmdline),
                         )
                         shortname += shortname_ext
                         out.append(
@@ -1304,7 +1304,6 @@ _LANGUAGES = {
     "objc": ObjCLanguage(),
     "sanity": Sanity("sanity_tests.yaml"),
     "clang-tidy": Sanity("clang_tidy_tests.yaml"),
-    "iwyu": Sanity("iwyu_tests.yaml"),
 }
 
 _MSBUILD_CONFIG = {

@@ -1,33 +1,17 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #include "upb/mini_descriptor/internal/encode.h"
 
-#include "upb/base/log2.h"
+#include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include "upb/base/internal/log2.h"
 #include "upb/mini_descriptor/internal/base92.h"
 #include "upb/mini_descriptor/internal/modifiers.h"
 #include "upb/mini_descriptor/internal/wire_constants.h"
@@ -225,6 +209,19 @@ static char* _upb_MtDataEncoder_MaybePutModifiers(upb_MtDataEncoder* e,
     }
   }
 
+  if (type == kUpb_FieldType_String) {
+    bool field_validates_utf8 = field_mod & kUpb_FieldModifier_ValidateUtf8;
+    bool message_validates_utf8 =
+        in->state.msg_state.msg_modifiers & kUpb_MessageModifier_ValidateUtf8;
+    if (field_validates_utf8 != message_validates_utf8) {
+      // Old binaries do not recognize the field modifier.  We need the failure
+      // mode to be too lax rather than too strict.  Our caller should have
+      // handled this (see _upb_MessageDef_ValidateUtf8()).
+      assert(!message_validates_utf8);
+      encoded_modifiers |= kUpb_EncodedFieldModifier_FlipValidateUtf8;
+    }
+  }
+
   if (field_mod & kUpb_FieldModifier_IsProto3Singular) {
     encoded_modifiers |= kUpb_EncodedFieldModifier_IsProto3Singular;
   }
@@ -295,7 +292,7 @@ static char* upb_MtDataEncoder_FlushDenseEnumMask(upb_MtDataEncoder* e,
 
 char* upb_MtDataEncoder_PutEnumValue(upb_MtDataEncoder* e, char* ptr,
                                      uint32_t val) {
-  // TODO(b/229641772): optimize this encoding.
+  // TODO: optimize this encoding.
   upb_MtDataEncoderInternal* in = upb_MtDataEncoder_GetInternal(e, ptr);
   UPB_ASSERT(val >= in->state.enum_state.last_written_value);
   uint32_t delta = val - in->state.enum_state.last_written_value;

@@ -199,8 +199,21 @@ class CdsLb : public LoadBalancingPolicy {
   // The root of the tree is config_->cluster().
   std::map<std::string, WatcherState> watchers_;
 
+  // TODO(roth, yashkt): These are here because XdsCertificateProvider
+  // does not store the actual underlying cert providers, it stores only
+  // their distributors, so we need to hold a ref to the cert providers
+  // here.  However, in the aggregate cluster case, there may be multiple
+  // clusters in the same cert provider, and we're only tracking the cert
+  // providers for the most recent underlying cluster here.  This is
+  // clearly a bug, and I think it will cause us to stop getting updates
+  // for all but one of the cert providers in the aggregate cluster
+  // case.  Need to figure out the right way to fix this -- I don't
+  // think we want to store another map here, so ideally, we should just
+  // have XdsCertificateProvider actually hold the refs to the cert
+  // providers instead of just the distributors.
   RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
   RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
+
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
 
   // Child LB policy.
@@ -594,20 +607,7 @@ absl::Status CdsLb::UpdateXdsCertificateProvider(
                        root_provider_instance_name, "\" not recognized."));
     }
   }
-  if (root_certificate_provider_ != new_root_provider) {
-    if (root_certificate_provider_ != nullptr &&
-        root_certificate_provider_->interested_parties() != nullptr) {
-      grpc_pollset_set_del_pollset_set(
-          interested_parties(),
-          root_certificate_provider_->interested_parties());
-    }
-    if (new_root_provider != nullptr &&
-        new_root_provider->interested_parties() != nullptr) {
-      grpc_pollset_set_add_pollset_set(interested_parties(),
-                                       new_root_provider->interested_parties());
-    }
-    root_certificate_provider_ = std::move(new_root_provider);
-  }
+  root_certificate_provider_ = std::move(new_root_provider);
   xds_certificate_provider_->UpdateRootCertNameAndDistributor(
       cluster_name, root_provider_cert_name,
       root_certificate_provider_ == nullptr
@@ -631,20 +631,7 @@ absl::Status CdsLb::UpdateXdsCertificateProvider(
                        identity_provider_instance_name, "\" not recognized."));
     }
   }
-  if (identity_certificate_provider_ != new_identity_provider) {
-    if (identity_certificate_provider_ != nullptr &&
-        identity_certificate_provider_->interested_parties() != nullptr) {
-      grpc_pollset_set_del_pollset_set(
-          interested_parties(),
-          identity_certificate_provider_->interested_parties());
-    }
-    if (new_identity_provider != nullptr &&
-        new_identity_provider->interested_parties() != nullptr) {
-      grpc_pollset_set_add_pollset_set(
-          interested_parties(), new_identity_provider->interested_parties());
-    }
-    identity_certificate_provider_ = std::move(new_identity_provider);
-  }
+  identity_certificate_provider_ = std::move(new_identity_provider);
   xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
       cluster_name, identity_provider_cert_name,
       identity_certificate_provider_ == nullptr
