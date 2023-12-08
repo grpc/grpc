@@ -294,9 +294,9 @@ class CallSpineInterface {
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
       if (!IsStatusOk(r)) {
-        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(r));
       }
-      return Empty{};
+      return r;
     });
   }
 
@@ -421,6 +421,11 @@ class CallInitiator {
     spine_->SpawnInfallible(name, std::move(promise_factory));
   }
 
+  template <typename PromiseFactory>
+  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+    return spine_->party().SpawnWaitable(name, std::move(promise_factory));
+  }
+
  private:
   const RefCountedPtr<CallSpine> spine_;
 };
@@ -475,6 +480,11 @@ class CallHandler {
   template <typename PromiseFactory>
   void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnInfallible(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+    return spine_->party().SpawnWaitable(name, std::move(promise_factory));
   }
 
  private:
