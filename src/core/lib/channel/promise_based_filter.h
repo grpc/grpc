@@ -186,6 +186,11 @@ inline constexpr bool HasChannelAccess(R (T::*)(A)) {
   return false;
 }
 
+template <typename T, typename R, typename A>
+inline constexpr bool HasChannelAccess(R (T::*)()) {
+  return false;
+}
+
 template <typename T, typename R, typename A, typename C>
 inline constexpr bool HasChannelAccess(R (T::*)(A, C)) {
   return true;
@@ -208,7 +213,8 @@ inline constexpr bool CallHasChannelAccess() {
                           &Derived::Call::OnClientToServerMessage,
                           &Derived::Call::OnServerInitialMetadata,
                           &Derived::Call::OnServerToClientMessage,
-                          &Derived::Call::OnServerTrailingMetadata);
+                          &Derived::Call::OnServerTrailingMetadata,
+                          &Derived::Call::OnFinalize);
 }
 
 // Given a boolean X export a type:
@@ -254,11 +260,31 @@ struct RaceAsyncCompletion<true> {
   }
 };
 
+// Zero-member wrapper to make sure that Call always has a constructor
+// that takes a channel pointer (even if it's thrown away)
+template <typename Derived, typename SfinaeVoid = void>
+class CallWrapper;
+
+template <typename Derived>
+class CallWrapper<Derived, absl::void_t<decltype(typename Derived::Call(
+                               std::declval<Derived*>()))>>
+    : public Derived::Call {
+ public:
+  explicit CallWrapper(Derived* channel) : Derived::Call(channel) {}
+};
+
+template <typename Derived>
+class CallWrapper<Derived, absl::void_t<decltype(typename Derived::Call())>>
+    : public Derived::Call {
+ public:
+  explicit CallWrapper(Derived*) : Derived::Call() {}
+};
+
 // For the original promise scheme polyfill: data associated with once call.
 template <typename Derived>
 struct FilterCallData {
-  explicit FilterCallData(Derived* channel) : channel(channel) {}
-  GPR_NO_UNIQUE_ADDRESS typename Derived::Call call;
+  explicit FilterCallData(Derived* channel) : call(channel), channel(channel) {}
+  GPR_NO_UNIQUE_ADDRESS CallWrapper<Derived> call;
   GPR_NO_UNIQUE_ADDRESS
   typename TypeIfNeeded<Latch<ServerMetadataHandle>,
                         CallHasAsyncErrorInterceptor<Derived>()>::Type
@@ -347,8 +373,67 @@ inline auto RunCall(void (Derived::Call::*fn)(ClientMetadata& md,
 inline void InterceptClientToServerMessage(const NoInterceptor*, void*,
                                            const CallArgs&) {}
 
+template <typename Derived>
+inline void InterceptClientToServerMessage(
+    ServerMetadataHandle (Derived::Call::*fn)(const Message&),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
+  call_args.client_to_server_messages->InterceptAndMap(
+      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto return_md = call_data->call.OnClientToServerMessage(*msg);
+        if (return_md == nullptr) return std::move(msg);
+        if (call_data->error_latch.is_set()) return absl::nullopt;
+        call_data->error_latch.Set(std::move(return_md));
+        return absl::nullopt;
+      });
+}
+
+template <typename Derived>
+inline void InterceptClientToServerMessage(
+    ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
+  call_args.client_to_server_messages->InterceptAndMap(
+      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto return_md =
+            call_data->call.OnClientToServerMessage(*msg, call_data->channel);
+        if (return_md == nullptr) return std::move(msg);
+        if (call_data->error_latch.is_set()) return absl::nullopt;
+        call_data->error_latch.Set(std::move(return_md));
+        return absl::nullopt;
+      });
+}
+
 inline void InterceptClientToServerMessage(const NoInterceptor*, void*, void*,
                                            CallSpineInterface*) {}
+
+template <typename Derived>
+inline void InterceptClientToServerMessage(
+    ServerMetadataHandle (Derived::Call::*fn)(const Message&),
+    typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
+  call_spine->server_to_client_messages().sender.InterceptAndMap(
+      [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto return_md = call->OnClientToServerMessage(*msg);
+        if (return_md == nullptr) return std::move(msg);
+        return call_spine->Cancel(std::move(return_md));
+      });
+}
+
+template <typename Derived>
+inline void InterceptClientToServerMessage(
+    ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
+  call_spine->server_to_client_messages().sender.InterceptAndMap(
+      [call, call_spine,
+       channel](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto return_md = call->OnClientToServerMessage(*msg, channel);
+        if (return_md == nullptr) return std::move(msg);
+        return call_spine->Cancel(std::move(return_md));
+      });
+}
 
 inline void InterceptClientInitialMetadata(const NoInterceptor*, void*, void*,
                                            CallSpineInterface*) {}
@@ -441,7 +526,6 @@ inline void InterceptServerInitialMetadata(
       });
 }
 
-template <typename CallArgs>
 inline void InterceptServerInitialMetadata(const NoInterceptor*, void*, void*,
                                            CallSpineInterface*) {}
 
@@ -474,8 +558,67 @@ inline void InterceptServerInitialMetadata(
 inline void InterceptServerToClientMessage(const NoInterceptor*, void*,
                                            const CallArgs&) {}
 
+template <typename Derived>
+inline void InterceptServerToClientMessage(
+    ServerMetadataHandle (Derived::Call::*fn)(const Message&),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
+  call_args.server_to_client_messages->InterceptAndMap(
+      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto return_md = call_data->call.OnServerToClientMessage(*msg);
+        if (return_md == nullptr) return std::move(msg);
+        if (call_data->error_latch.is_set()) return absl::nullopt;
+        call_data->error_latch.Set(std::move(return_md));
+        return absl::nullopt;
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerToClientMessage(
+    ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
+  call_args.server_to_client_messages->InterceptAndMap(
+      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto return_md =
+            call_data->call.OnServerToClientMessage(*msg, call_data->channel);
+        if (return_md == nullptr) return std::move(msg);
+        if (call_data->error_latch.is_set()) return absl::nullopt;
+        call_data->error_latch.Set(std::move(return_md));
+        return absl::nullopt;
+      });
+}
+
 inline void InterceptServerToClientMessage(const NoInterceptor*, void*, void*,
                                            CallSpineInterface*) {}
+
+template <typename Derived>
+inline void InterceptServerToClientMessage(
+    ServerMetadataHandle (Derived::Call::*fn)(const Message&),
+    typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
+  call_spine->server_to_client_messages().sender.InterceptAndMap(
+      [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto return_md = call->OnServerToClientMessage(*msg);
+        if (return_md == nullptr) return std::move(msg);
+        return call_spine->Cancel(std::move(return_md));
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerToClientMessage(
+    ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
+  call_spine->server_to_client_messages().sender.InterceptAndMap(
+      [call, call_spine,
+       channel](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto return_md = call->OnServerToClientMessage(*msg, channel);
+        if (return_md == nullptr) return std::move(msg);
+        return call_spine->Cancel(std::move(return_md));
+      });
+}
 
 inline void InterceptServerTrailingMetadata(const NoInterceptor*, void*, void*,
                                             CallSpineInterface*) {}
@@ -502,6 +645,18 @@ inline void InterceptServerTrailingMetadata(
         auto status = call->OnServerTrailingMetadata(*md);
         if (status.ok()) return std::move(md);
         return ServerMetadataFromStatus(status);
+      });
+}
+
+inline void InterceptFinalize(const NoInterceptor*, void*) {}
+
+template <class Call>
+inline void InterceptFinalize(void (Call::*fn)(const grpc_call_final_info*),
+                              Call* call) {
+  GPR_DEBUG_ASSERT(fn == &Call::OnFinalize);
+  GetContext<CallFinalization>()->Add(
+      [call](const grpc_call_final_info* final_info) {
+        call->OnFinalize(final_info);
       });
 }
 
@@ -537,6 +692,7 @@ MakeFilterCall(Derived* derived) {
 // - OnServerToClientMessage  - $VALUE_TYPE = Message
 // - OnClientToServerMessage  - $VALUE_TYPE = Message
 // - OnServerTrailingMetadata - $VALUE_TYPE = ServerMetadata
+// - OnFinalize               - special, see below
 // These members define an interception point for a particular event in
 // the call lifecycle.
 // The type of these members matters, and is selectable by the class
@@ -569,12 +725,21 @@ MakeFilterCall(Derived* derived) {
 //   the filter can return nullptr for success, or a metadata handle for
 //   failure (in which case the call will be aborted).
 //   useful for cases where the exact metadata returned needs to be customized.
+// Finally, OnFinalize can be added to intecept call finalization.
+// It must have one of the signatures:
+// - static const NoInterceptor OnFinalize:
+//   the filter does not intercept call finalization.
+// - void OnFinalize(const grpc_call_final_info*):
+//   the filter intercepts call finalization.
 template <typename Derived>
 class ImplementChannelFilter : public ChannelFilter {
  public:
   // Natively construct a v3 call.
   void InitCall(CallSpineInterface* call_spine) {
-    auto* call = GetContext<Arena>()->ManagedNew<typename Derived::Call>();
+    typename Derived::Call* call =
+        GetContext<Arena>()
+            ->ManagedNew<promise_filter_detail::CallWrapper<Derived>>(
+                static_cast<Derived*>(this));
     promise_filter_detail::InterceptClientInitialMetadata(
         &Derived::Call::OnClientInitialMetadata, call,
         static_cast<Derived*>(this), call_spine);
@@ -590,6 +755,7 @@ class ImplementChannelFilter : public ChannelFilter {
     promise_filter_detail::InterceptServerTrailingMetadata(
         &Derived::Call::OnServerTrailingMetadata, call,
         static_cast<Derived*>(this), call_spine);
+    promise_filter_detail::InterceptFinalize(&Derived::Call::OnFinalize, call);
   }
 
   // Polyfill for the original promise scheme.
@@ -605,6 +771,9 @@ class ImplementChannelFilter : public ChannelFilter {
         &Derived::Call::OnServerInitialMetadata, call, call_args);
     promise_filter_detail::InterceptServerToClientMessage(
         &Derived::Call::OnServerToClientMessage, call, call_args);
+    promise_filter_detail::InterceptFinalize(
+        &Derived::Call::OnFinalize,
+        static_cast<typename Derived::Call*>(&call->call));
     return promise_filter_detail::MapResult(
         &Derived::Call::OnServerTrailingMetadata,
         promise_filter_detail::RaceAsyncCompletion<
