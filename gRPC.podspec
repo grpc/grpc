@@ -32,6 +32,8 @@ Pod::Spec.new do |s|
     :tag => "v#{version}",
   }
 
+  s.resource = 'src/objective-c/PrivacyInfo.xcprivacy'
+
   name = 'GRPCClient'
   s.module_name = name
   s.header_dir = name

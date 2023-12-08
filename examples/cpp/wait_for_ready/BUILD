@@ -1,4 +1,4 @@
-# Copyright 2021 gRPC authors.
+# Copyright 2023 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Docker file for running IWYU.
-# Updated: 2022-11-03
+licenses(["notice"])
 
-FROM silkeh/clang:16-bullseye
-
-# Install prerequisites for the iwyu script
-RUN apt-get update && apt-get install -y python3 jq git cmake python zlib1g-dev libtinfo-dev libclang-16-dev && apt-get clean
-ADD iwyu.sh /
-
-# When running locally, we'll be impersonating the current user, so we need
-# to make the script runnable by everyone.
-RUN chmod a+rx /iwyu.sh
-
-CMD ["echo 'Run with tools/distrib/iwyu.sh'"]
+cc_binary(
+    name = "greeter_callback_client",
+    srcs = ["greeter_callback_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//examples/protos:helloworld_cc_grpc",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+    ],
+)

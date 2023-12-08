@@ -40,24 +40,12 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
-#define GRPC_ARG_XDS_CERTIFICATE_PROVIDER \
-  "grpc.internal.xds_certificate_provider"
-
 namespace grpc_core {
 
 class XdsCertificateProvider : public grpc_tls_certificate_provider {
  public:
   XdsCertificateProvider();
   ~XdsCertificateProvider() override;
-
-  static absl::string_view ChannelArgName() {
-    return GRPC_ARG_XDS_CERTIFICATE_PROVIDER;
-  }
-
-  static int ChannelArgsCompare(const XdsCertificateProvider* a,
-                                const XdsCertificateProvider* b) {
-    return QsortCompare(a, b);
-  }
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
@@ -86,10 +74,13 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   void UpdateSubjectAlternativeNameMatchers(
       const std::string& cluster, std::vector<StringMatcher> matchers);
 
-  grpc_arg MakeChannelArg() const;
-
-  static RefCountedPtr<XdsCertificateProvider> GetFromChannelArgs(
-      const grpc_channel_args* args);
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.xds_certificate_provider";
+  }
+  static int ChannelArgsCompare(const XdsCertificateProvider* a,
+                                const XdsCertificateProvider* b) {
+    return a->Compare(b);
+  }
 
  private:
   class ClusterCertificateState {

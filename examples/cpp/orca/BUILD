@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2023 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+licenses(["notice"])
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_run_tests_matrix.sh"
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
-
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f basictests linux iwyu --inner_jobs 16 -j 1 --internal_ci --bq_result_table aggregate_results"
-}
+cc_binary(
+    name = "orca_server",
+    srcs = ["orca_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//:grpcpp_orca_service",
+        "//examples/protos:helloworld_cc_grpc",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings:str_format",
+    ],
+)
