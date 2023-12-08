@@ -31,9 +31,10 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/support/status.h>
 
+using grpc::CallbackServerContext;
 using grpc::Server;
 using grpc::ServerBuilder;
-using grpc::ServerContext;
+using grpc::ServerUnaryReactor;
 using grpc::Status;
 using helloworld::Greeter;
 using helloworld::HelloReply;
@@ -42,20 +43,24 @@ using helloworld::HelloRequest;
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
 // Logic and data behind the server's behavior.
-class GreeterServiceImpl final : public Greeter::Service {
-  Status SayHello(ServerContext* context, const HelloRequest* request,
-                  HelloReply* reply) override {
+class GreeterServiceImpl final : public Greeter::CallbackService {
+  ServerUnaryReactor* SayHello(CallbackServerContext* context,
+                               const HelloRequest* request,
+                               HelloReply* reply) override {
+    ServerUnaryReactor* reactor = context->DefaultReactor();
     auto recorder = context->ExperimentalGetCallMetricRecorder();
     if (recorder == nullptr) {
-      return Status(grpc::StatusCode::INTERNAL,
-                    "Unable to access metrics recorder. Make sure "
-                    "EnableCallMetricRecording had been called.");
+      reactor->Finish({grpc::StatusCode::INTERNAL,
+                       "Unable to access metrics recorder. Make sure "
+                       "EnableCallMetricRecording had been called."});
+      return reactor;
     }
     recorder->RecordRequestCostMetric("db_queries", 10);
     recorder->RecordCpuUtilizationMetric(0.5);
     std::string prefix("Hello ");
     reply->set_message(prefix + request->name());
-    return Status::OK;
+    reactor->Finish(Status::OK);
+    return reactor;
   }
 };
 
