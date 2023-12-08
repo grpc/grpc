@@ -17,7 +17,6 @@ from dataclasses import dataclass
 from dataclasses import field
 import json
 import os
-import threading
 from typing import Mapping, Optional
 
 GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV = "GRPC_GCP_OBSERVABILITY_CONFIG_FILE"
