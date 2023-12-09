@@ -117,6 +117,7 @@ Pod::Spec.new do |s|
   # making the linter happy.
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'src/include/openssl'
+    ss.private_header_files = 'src/include/openssl/time.h'
     ss.source_files = 'src/include/openssl/*.h'
   end
   s.subspec 'Implementation' do |ss|

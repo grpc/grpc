@@ -140,9 +140,9 @@
     _op.data.recv_initial_metadata.recv_initial_metadata = &_headers;
     if (handler) {
       // Prevent reference cycle with _handler
-      __weak typeof(self) weakSelf = self;
+      __weak auto weakSelf = self;
       _handler = ^{
-        __strong typeof(self) strongSelf = weakSelf;
+        __strong auto strongSelf = weakSelf;
         if (strongSelf) {
           NSDictionary *metadata =
               [NSDictionary grpc_dictionaryFromMetadataArray:strongSelf->_headers];
@@ -174,9 +174,9 @@
     _op.data.recv_message.recv_message = &_receivedMessage;
     if (handler) {
       // Prevent reference cycle with _handler
-      __weak typeof(self) weakSelf = self;
+      __weak auto weakSelf = self;
       _handler = ^{
-        __strong typeof(self) strongSelf = weakSelf;
+        __strong auto strongSelf = weakSelf;
         if (strongSelf) {
           handler(strongSelf->_receivedMessage);
         }
@@ -210,9 +210,9 @@
     _op.data.recv_status_on_client.error_string = &_errorString;
     if (handler) {
       // Prevent reference cycle with _handler
-      __weak typeof(self) weakSelf = self;
+      __weak auto weakSelf = self;
       _handler = ^{
-        __strong typeof(self) strongSelf = weakSelf;
+        __strong auto strongSelf = weakSelf;
         if (strongSelf) {
           char *details = grpc_slice_to_c_string(strongSelf->_details);
           NSError *error = [NSError grpc_errorFromStatusCode:strongSelf->_statusCode
