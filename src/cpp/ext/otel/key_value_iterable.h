@@ -54,6 +54,7 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
       absl::Span<const std::pair<absl::string_view, absl::string_view>>
           additional_labels)
       : injected_labels_iterable_(injected_labels_iterable),
+        optional_labels_iterable_(optional_labels_iterable),
         additional_labels_(additional_labels) {}
 
   bool ForEachKeyValue(opentelemetry::nostd::function_ref<
@@ -63,6 +64,15 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
     if (injected_labels_iterable_ != nullptr) {
       injected_labels_iterable_->ResetIteratorPosition();
       while (const auto& pair = injected_labels_iterable_->Next()) {
+        if (!callback(AbslStrViewToOTelStrView(pair->first),
+                      AbslStrViewToOTelStrView(pair->second))) {
+          return false;
+        }
+      }
+    }
+    if (optional_labels_iterable_ != nullptr) {
+      optional_labels_iterable_->ResetIteratorPosition();
+      while (const auto& pair = optional_labels_iterable_->Next()) {
         if (!callback(AbslStrViewToOTelStrView(pair->first),
                       AbslStrViewToOTelStrView(pair->second))) {
           return false;
@@ -82,11 +92,15 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
     return (injected_labels_iterable_ != nullptr
                 ? injected_labels_iterable_->Size()
                 : 0) +
+           (optional_labels_iterable_ != nullptr
+                ? optional_labels_iterable_->Size()
+                : 0) +
            additional_labels_.size();
   }
 
  private:
   LabelsIterable* injected_labels_iterable_;
+  LabelsIterable* optional_labels_iterable_;
   absl::Span<const std::pair<absl::string_view, absl::string_view>>
       additional_labels_;
 };
