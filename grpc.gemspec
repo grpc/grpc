@@ -1266,7 +1266,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/forkable.h )
   s.files += %w( src/core/lib/event_engine/grpc_polled_fd.h )
   s.files += %w( src/core/lib/event_engine/handle_containers.h )
-  s.files += %w( src/core/lib/event_engine/memory_allocator.cc )
   s.files += %w( src/core/lib/event_engine/memory_allocator_factory.h )
   s.files += %w( src/core/lib/event_engine/nameser.h )
   s.files += %w( src/core/lib/event_engine/poller.h )
