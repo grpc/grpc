@@ -1363,7 +1363,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/forkable.h',
                       'src/core/lib/event_engine/grpc_polled_fd.h',
                       'src/core/lib/event_engine/handle_containers.h',
-                      'src/core/lib/event_engine/memory_allocator.cc',
                       'src/core/lib/event_engine/memory_allocator_factory.h',
                       'src/core/lib/event_engine/nameser.h',
                       'src/core/lib/event_engine/poller.h',
