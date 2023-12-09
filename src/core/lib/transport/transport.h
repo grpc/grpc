@@ -150,6 +150,17 @@ struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
   }
 };
 
+// Anything that can be first cast to absl::Status can then be cast to
+// ServerMetadataHandle.
+template <typename T>
+struct StatusCastImpl<
+    ServerMetadataHandle, T,
+    absl::void_t<decltype(StatusCast<absl::Status>(std::declval<T>()))>> {
+  static ServerMetadataHandle Cast(const T& m) {
+    return ServerMetadataFromStatus(StatusCast<absl::Status>(m));
+  }
+};
+
 // Move only type that tracks call startup.
 // Allows observation of when client_initial_metadata has been processed by the
 // end of the local call stack.
@@ -283,9 +294,9 @@ class CallSpineInterface {
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
       if (!IsStatusOk(r)) {
-        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(r));
       }
-      return Empty{};
+      return r;
     });
   }
 
@@ -410,6 +421,11 @@ class CallInitiator {
     spine_->SpawnInfallible(name, std::move(promise_factory));
   }
 
+  template <typename PromiseFactory>
+  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+    return spine_->party().SpawnWaitable(name, std::move(promise_factory));
+  }
+
  private:
   const RefCountedPtr<CallSpine> spine_;
 };
@@ -466,6 +482,11 @@ class CallHandler {
     spine_->SpawnInfallible(name, std::move(promise_factory));
   }
 
+  template <typename PromiseFactory>
+  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+    return spine_->party().SpawnWaitable(name, std::move(promise_factory));
+  }
+
  private:
   const RefCountedPtr<CallSpine> spine_;
 };
@@ -478,6 +499,11 @@ auto OutgoingMessages(CallHalf& h) {
   };
   return Wrapper{h};
 }
+
+// Forward a call from `call_handler` to `call_initiator` (with initial metadata
+// `client_initial_metadata`)
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
+                 ClientMetadataHandle client_initial_metadata);
 
 }  // namespace grpc_core
 

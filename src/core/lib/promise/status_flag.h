@@ -67,6 +67,13 @@ struct StatusCastImpl<absl::Status, StatusFlag> {
 };
 
 template <>
+struct StatusCastImpl<absl::Status, StatusFlag&> {
+  static absl::Status Cast(StatusFlag flag) {
+    return flag.ok() ? absl::OkStatus() : absl::CancelledError();
+  }
+};
+
+template <>
 struct StatusCastImpl<absl::Status, const StatusFlag&> {
   static absl::Status Cast(StatusFlag flag) {
     return flag.ok() ? absl::OkStatus() : absl::CancelledError();

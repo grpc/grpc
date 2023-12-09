@@ -9393,6 +9393,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
@@ -11561,6 +11562,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
