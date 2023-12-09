@@ -50,6 +50,12 @@ class MemoryAllocatorImpl
   /// request.max() inclusively.
   virtual size_t Reserve(MemoryRequest request) = 0;
 
+  /// Allocate a slice, using MemoryRequest to size the number of returned
+  /// bytes. For a variable length request, check the returned slice length to
+  /// verify how much memory was allocated. Takes care of reserving memory for
+  /// any relevant control structures also.
+  virtual grpc_slice MakeSlice(MemoryRequest request) = 0;
+
   /// Release some bytes that were previously reserved.
   /// If more bytes are released than were reserved, we will have undefined
   /// behavior.

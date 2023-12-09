@@ -198,7 +198,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
   absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
-      const DNSResolver::ResolverOptions& options) override;
+      GRPC_UNUSED const DNSResolver::ResolverOptions& options) override;
   void Run(Closure* closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;
   // Caution!! The timer implementation cannot create any fds. See #20418.
