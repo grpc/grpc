@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.58.0</span>
+   &#160;<span id="projectnumber">1.60.0</span>
    </div>
   </td>
  </tr>
@@ -90,7 +90,7 @@ Server</h1>
 <li>If the value matches <code>sleep-&lt;int&gt;</code>, the server should wait the specified number of seconds before resuming behavior matching and RPC processing.</li>
 <li>If the value matches <code>keep-open</code>, the server should never respond to the request and behavior matching ends.</li>
 <li>If the value matches <code>error-code-&lt;int&gt;</code>, the server should respond with the specified status code and behavior matching ends.</li>
-<li>If the value matches <code>success-on-retry-attempt-&lt;int&gt;</code>, and the value of the <code>grpc-previous-rpc-attempts</code> metadata field is equal to the specified number, the normal RPC processing should resume and behavior matching ends.</li>
+<li>If the value matches <code>succeed-on-retry-attempt-&lt;int&gt;</code>, and the value of the <code>grpc-previous-rpc-attempts</code> metadata field is equal to the specified number, the normal RPC processing should resume and behavior matching ends.</li>
 <li>A value can have a prefix <code>hostname=&lt;string&gt;</code> followed by a space. In that case, the rest of the value should only be applied if the specified hostname matches the server's hostname.</li>
 </ul>
 <p>The <code>rpc-behavior</code> header value can have multiple options separated by commas. In that case, the value should be split by commas and the options should be applied in the order specified. If a request has multiple <code>rpc-behavior</code> metadata values, each one should be processed that way in order.</p>
@@ -901,7 +901,7 @@ custom_lb</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Sep 6 2023 16:09:47 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Dec 9 2023 01:04:10 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

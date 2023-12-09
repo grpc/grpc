@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._call &#8212; gRPC Python 1.58.0 documentation</title>
+    <title>grpc.aio._call &#8212; gRPC Python 1.60.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=1651ac8f"></script>
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=1953b6eb"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.58.0</p>
+<p class="blurb">1.60.0</p>
 
 
 
@@ -579,7 +579,8 @@
         <span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">send_serialized_message</span><span class="p">(</span><span class="n">serialized_request</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">InternalError</span><span class="p">:</span>
+        <span class="k">except</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">InternalError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">set_internal_error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raise_for_status</span><span class="p">()</span>
         <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>
@@ -649,6 +650,7 @@
             <span class="n">loop</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_request</span> <span class="o">=</span> <span class="n">request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="o">=</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">build_census_context</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_invocation_task</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invoke</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_unary_response_mixin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invocation_task</span><span class="p">)</span>
 
@@ -662,7 +664,7 @@
         <span class="c1"># https://github.com/python/cpython/blob/edad4d89e357c92f70c0324b937845d652b20afd/Lib/asyncio/tasks.py#L785</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">serialized_response</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">unary_unary</span><span class="p">(</span>
-                <span class="n">serialized_request</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span>
+                <span class="n">serialized_request</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_context</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>
@@ -712,6 +714,7 @@
             <span class="n">loop</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_request</span> <span class="o">=</span> <span class="n">request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="o">=</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">build_census_context</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_send_unary_request_task</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_send_unary_request</span><span class="p">()</span>
         <span class="p">)</span>
@@ -723,7 +726,7 @@
         <span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">initiate_unary_stream</span><span class="p">(</span>
-                <span class="n">serialized_request</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span>
+                <span class="n">serialized_request</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_context</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>
@@ -767,13 +770,14 @@
             <span class="n">loop</span><span class="p">,</span>
         <span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="o">=</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">build_census_context</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_stream_request_mixin</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_unary_response_mixin</span><span class="p">(</span><span class="n">loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_conduct_rpc</span><span class="p">()))</span>
 
     <span class="k">async</span> <span class="k">def</span> <span class="nf">_conduct_rpc</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResponseType</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">serialized_response</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">stream_unary</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata_sent_observer</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata_sent_observer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_context</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>
@@ -819,6 +823,7 @@
             <span class="n">response_deserializer</span><span class="p">,</span>
             <span class="n">loop</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_context</span> <span class="o">=</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">build_census_context</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initializer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prepare_rpc</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_stream_request_mixin</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_stream_response_mixin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_initializer</span><span class="p">)</span>
@@ -831,7 +836,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">initiate_stream_stream</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata_sent_observer</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata_sent_observer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_context</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>

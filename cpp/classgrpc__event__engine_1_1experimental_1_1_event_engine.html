@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.58.0</span>
+   &#160;<span id="projectnumber">1.60.0</span>
    </div>
   </td>
  </tr>
@@ -258,8 +258,7 @@ Blocking EventEngine Callbacks</h2>
 
 <p>Request cancellation of a task. </p>
 <p>If the associated closure has already been scheduled to run, it will not be cancelled, and this function will return false.</p>
-<p>If the associated closure has not been scheduled to run, it will be cancelled, and the associated absl::AnyInvocable or <em>Closure*</em> will not be executed. In this case, Cancel will return true.</p>
-<p>Implementation note: closures should be destroyed in a timely manner after execution or cancellation (milliseconds), since any state bound to the closure may need to be destroyed for things to progress (e.g., if a closure holds a ref to some ref-counted object). </p>
+<p>If the associated closure has not been scheduled to run, it will be cancelled, and this method will return true. The associated absl::AnyInvocable or <em>Closure*</em> will not be called. If the closure type was an absl::AnyInvocable, it will be destroyed before the method returns. </p>
 
 </div>
 </div>
@@ -289,7 +288,7 @@ Blocking EventEngine Callbacks</h2>
 
 <p>Request cancellation of a connection attempt. </p>
 <p>If the associated connection has already been completed, it will not be cancelled, and this method will return false.</p>
-<p>If the associated connection has not been completed, it will be cancelled, and this method will return true. The <em>OnConnectCallback</em> will not be called. </p>
+<p>If the associated connection has not been completed, it will be cancelled, and this method will return true. The <em>OnConnectCallback</em> will not be called, and <em>on_connect</em> will be destroyed before this method returns. </p>
 
 </div>
 </div>
@@ -606,7 +605,7 @@ Blocking EventEngine Callbacks</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Sep 6 2023 16:09:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Dec 9 2023 01:03:05 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

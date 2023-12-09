@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.58.0</span>
+   &#160;<span id="projectnumber">1.60.0</span>
    </div>
   </td>
  </tr>
@@ -198,62 +198,69 @@ $(function() {
 <div class="line"><a name="l00152"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_writer.html#af93269371a674dd4feac4ed90a3171f5">  152</a></span>&#160;  int64_t <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#af93269371a674dd4feac4ed90a3171f5">ByteCount</a>()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> byte_count_; }</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160; </div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;<span class="preprocessor">#ifdef GRPC_PROTOBUF_CORD_SUPPORT_ENABLED</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;  <span class="comment">// (override is intentionally omitted here to support old Protobuf which</span></div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;  <span class="comment">// (override is conditionally omitted here to support old Protobuf which</span></div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;  <span class="comment">//  doesn&#39;t have ReadCord method)</span></div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;  <span class="comment">// NOLINTNEXTLINE(modernize-use-override)</span></div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span> WriteCord(<span class="keyword">const</span> absl::Cord&amp; cord) {</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;    <a class="code" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a>* buffer = <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">slice_buffer</a>();</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    <span class="keywordtype">size_t</span> cur = 0;</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;    <span class="keywordflow">for</span> (absl::string_view chunk : cord.Chunks()) {</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;      <span class="comment">// TODO(veblush): Revisit this 512 threadhold which could be smaller.</span></div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;      <span class="keywordflow">if</span> (chunk.size() &lt; 512) {</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        <span class="comment">// If chunk is small enough, just copy it.</span></div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        <a class="code" href="structgrpc__slice.html">grpc_slice</a> slice =</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;            <a class="code" href="grpc_2slice_8h.html#a696e371c99b269438dc229c4e7de074b">grpc_slice_from_copied_buffer</a>(chunk.data(), chunk.size());</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;        <a class="code" href="slice__buffer_8h.html#ab26ac15839a7837066d0ebabc30313a9">grpc_slice_buffer_add</a>(buffer, slice);</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;      } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        <span class="comment">// If chunk is large, just use the pointer instead of copying.</span></div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        <span class="comment">// To make sure it&#39;s alive while being used, a subcord for chunk is</span></div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <span class="comment">// created and attached to a grpc_slice instance.</span></div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        absl::Cord* subcord = <span class="keyword">new</span> absl::Cord(cord.Subcord(cur, chunk.size()));</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;        <a class="code" href="structgrpc__slice.html">grpc_slice</a> slice = <a class="code" href="grpc_2slice_8h.html#a2b8d182acadc3f04ebdb97e31b8aace9">grpc_slice_new_with_user_data</a>(</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            <span class="keyword">const_cast&lt;</span>uint8_t*<span class="keyword">&gt;</span>(</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;                <span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span>uint8_t*<span class="keyword">&gt;</span>(chunk.data())),</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;            chunk.size(), [](<span class="keywordtype">void</span>* p) { delete static_cast&lt;absl::Cord*&gt;(p); },</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;            subcord);</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        <a class="code" href="slice__buffer_8h.html#ab26ac15839a7837066d0ebabc30313a9">grpc_slice_buffer_add</a>(buffer, slice);</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;      }</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;      cur += chunk.size();</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    }</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#a656f1f4835a8f4e2944cb6ce92454c8b">set_byte_count</a>(<a class="code" href="classgrpc_1_1_proto_buffer_writer.html#af93269371a674dd4feac4ed90a3171f5">ByteCount</a>() + cur);</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;  }</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;<span class="preprocessor">#endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED</span></div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160; </div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;  <span class="comment">// These protected members are needed to support internal optimizations.</span></div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;  <span class="comment">// they expose internal bits of grpc core that are NOT stable. If you have</span></div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;  <span class="comment">// a use case needs to use one of these functions, please send an email to</span></div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;  <span class="comment">// https://groups.google.com/forum/#!forum/grpc-io.</span></div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160; <span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00194"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">  194</a></span>&#160;  <a class="code" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a>* <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">slice_buffer</a>() { <span class="keywordflow">return</span> slice_buffer_; }</div>
-<div class="line"><a name="l00195"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_writer.html#a656f1f4835a8f4e2944cb6ce92454c8b">  195</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#a656f1f4835a8f4e2944cb6ce92454c8b">set_byte_count</a>(int64_t byte_count) { byte_count_ = byte_count; }</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160; </div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;  <span class="comment">// friend for testing purposes only</span></div>
-<div class="line"><a name="l00199"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4">  199</a></span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4">internal::ProtoBufferWriterPeer</a>;</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">int</span> block_size_;  </div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">int</span> total_size_;  </div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;  int64_t byte_count_;    </div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;  <a class="code" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a>*</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;      slice_buffer_;  </div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;  <span class="keywordtype">bool</span> have_backup_;  </div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;  <a class="code" href="structgrpc__slice.html">grpc_slice</a> backup_slice_;  </div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;  <a class="code" href="structgrpc__slice.html">grpc_slice</a> slice_;         </div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;};</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160; </div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160; </div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;<span class="preprocessor">#endif  // GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H</span></div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;  <span class="comment">// NOLINTBEGIN(modernize-use-override,</span></div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;  <span class="comment">// clang-diagnostic-inconsistent-missing-override)</span></div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span> WriteCord(<span class="keyword">const</span> absl::Cord&amp; cord)</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="preprocessor">#if GOOGLE_PROTOBUF_VERSION &gt;= 4022000</span></div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;      <span class="keyword">override</span></div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;  <span class="comment">// NOLINTEND(modernize-use-override,</span></div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;  <span class="comment">// clang-diagnostic-inconsistent-missing-override)</span></div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;  {</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    <a class="code" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a>* buffer = <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">slice_buffer</a>();</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    <span class="keywordtype">size_t</span> cur = 0;</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;    <span class="keywordflow">for</span> (absl::string_view chunk : cord.Chunks()) {</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;      <span class="comment">// TODO(veblush): Revisit this 512 threadhold which could be smaller.</span></div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;      <span class="keywordflow">if</span> (chunk.size() &lt; 512) {</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <span class="comment">// If chunk is small enough, just copy it.</span></div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        <a class="code" href="structgrpc__slice.html">grpc_slice</a> slice =</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            <a class="code" href="grpc_2slice_8h.html#a696e371c99b269438dc229c4e7de074b">grpc_slice_from_copied_buffer</a>(chunk.data(), chunk.size());</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;        <a class="code" href="slice__buffer_8h.html#ab26ac15839a7837066d0ebabc30313a9">grpc_slice_buffer_add</a>(buffer, slice);</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;      } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;        <span class="comment">// If chunk is large, just use the pointer instead of copying.</span></div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;        <span class="comment">// To make sure it&#39;s alive while being used, a subcord for chunk is</span></div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        <span class="comment">// created and attached to a grpc_slice instance.</span></div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;        absl::Cord* subcord = <span class="keyword">new</span> absl::Cord(cord.Subcord(cur, chunk.size()));</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;        <a class="code" href="structgrpc__slice.html">grpc_slice</a> slice = <a class="code" href="grpc_2slice_8h.html#a2b8d182acadc3f04ebdb97e31b8aace9">grpc_slice_new_with_user_data</a>(</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;            <span class="keyword">const_cast&lt;</span>uint8_t*<span class="keyword">&gt;</span>(</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                <span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span>uint8_t*<span class="keyword">&gt;</span>(chunk.data())),</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;            chunk.size(), [](<span class="keywordtype">void</span>* p) { delete static_cast&lt;absl::Cord*&gt;(p); },</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;            subcord);</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;        <a class="code" href="slice__buffer_8h.html#ab26ac15839a7837066d0ebabc30313a9">grpc_slice_buffer_add</a>(buffer, slice);</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;      }</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;      cur += chunk.size();</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    }</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#a656f1f4835a8f4e2944cb6ce92454c8b">set_byte_count</a>(<a class="code" href="classgrpc_1_1_proto_buffer_writer.html#af93269371a674dd4feac4ed90a3171f5">ByteCount</a>() + cur);</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;  }</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;<span class="preprocessor">#endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED</span></div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160; </div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;  <span class="comment">// These protected members are needed to support internal optimizations.</span></div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;  <span class="comment">// they expose internal bits of grpc core that are NOT stable. If you have</span></div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;  <span class="comment">// a use case needs to use one of these functions, please send an email to</span></div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;  <span class="comment">// https://groups.google.com/forum/#!forum/grpc-io.</span></div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160; <span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00201"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">  201</a></span>&#160;  <a class="code" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a>* <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">slice_buffer</a>() { <span class="keywordflow">return</span> slice_buffer_; }</div>
+<div class="line"><a name="l00202"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_writer.html#a656f1f4835a8f4e2944cb6ce92454c8b">  202</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#a656f1f4835a8f4e2944cb6ce92454c8b">set_byte_count</a>(int64_t byte_count) { byte_count_ = byte_count; }</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160; </div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;  <span class="comment">// friend for testing purposes only</span></div>
+<div class="line"><a name="l00206"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4">  206</a></span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4">internal::ProtoBufferWriterPeer</a>;</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">int</span> block_size_;  </div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">int</span> total_size_;  </div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;  int64_t byte_count_;    </div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;  <a class="code" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a>*</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;      slice_buffer_;  </div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;  <span class="keywordtype">bool</span> have_backup_;  </div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;  <a class="code" href="structgrpc__slice.html">grpc_slice</a> backup_slice_;  </div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;  <a class="code" href="structgrpc__slice.html">grpc_slice</a> slice_;         </div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;};</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160; </div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160; </div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;<span class="preprocessor">#endif  // GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="agrpc_2slice_8h_html_a2b8d182acadc3f04ebdb97e31b8aace9"><div class="ttname"><a href="grpc_2slice_8h.html#a2b8d182acadc3f04ebdb97e31b8aace9">grpc_slice_new_with_user_data</a></div><div class="ttdeci">GPRAPI grpc_slice grpc_slice_new_with_user_data(void *p, size_t len, void(*destroy)(void *), void *user_data)</div><div class="ttdoc">Equivalent to grpc_slice_new, but with a separate pointer that is passed to the destroy function.</div></div>
 <div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html">grpc::ProtoBufferWriter</a></div><div class="ttdoc">This is a specialization of the protobuf class ZeroCopyOutputStream.</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:55</div></div>
@@ -278,7 +285,7 @@ $(function() {
 <div class="ttc" id="aslice__buffer_8h_html_ab26ac15839a7837066d0ebabc30313a9"><div class="ttname"><a href="slice__buffer_8h.html#ab26ac15839a7837066d0ebabc30313a9">grpc_slice_buffer_add</a></div><div class="ttdeci">GPRAPI void grpc_slice_buffer_add(grpc_slice_buffer *sb, grpc_slice slice)</div><div class="ttdoc">Add an element to a slice buffer - takes ownership of the slice.</div></div>
 <div class="ttc" id="anamespacegrpc_html_a9e62f19b6ee525513cb6259988c319a6"><div class="ttname"><a href="namespacegrpc.html#a9e62f19b6ee525513cb6259988c319a6">grpc::kProtoBufferWriterMaxBufferLength</a></div><div class="ttdeci">const int kProtoBufferWriterMaxBufferLength</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:46</div></div>
 <div class="ttc" id="aslice__buffer_8h_html"><div class="ttname"><a href="slice__buffer_8h.html">slice_buffer.h</a></div></div>
-<div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html_a2735ca72a039d465dd538c6f3fa06e20"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">grpc::ProtoBufferWriter::slice_buffer</a></div><div class="ttdeci">grpc_slice_buffer * slice_buffer()</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:194</div></div>
+<div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html_a2735ca72a039d465dd538c6f3fa06e20"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">grpc::ProtoBufferWriter::slice_buffer</a></div><div class="ttdeci">grpc_slice_buffer * slice_buffer()</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:201</div></div>
 <div class="ttc" id="astructgrpc__byte__buffer_html_a3bf95e73510f5a401cd97c26144c1628"><div class="ttname"><a href="structgrpc__byte__buffer.html#a3bf95e73510f5a401cd97c26144c1628">grpc_byte_buffer::data</a></div><div class="ttdeci">union grpc_byte_buffer::grpc_byte_buffer_data data</div></div>
 <div class="ttc" id="agrpc_2byte__buffer_8h_html"><div class="ttname"><a href="grpc_2byte__buffer_8h.html">byte_buffer.h</a></div></div>
 <div class="ttc" id="agrpcpp_2impl_2serialization__traits_8h_html"><div class="ttname"><a href="grpcpp_2impl_2serialization__traits_8h.html">serialization_traits.h</a></div></div>
@@ -295,13 +302,13 @@ $(function() {
 <div class="ttc" id="aslice__type_8h_html_ae965fb2ee1a646253cdbd49d82b0b6c5"><div class="ttname"><a href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a></div><div class="ttdeci">#define GRPC_SLICE_LENGTH(slice)</div><div class="ttdef"><b>Definition:</b> slice_type.h:102</div></div>
 <div class="ttc" id="astructgrpc__slice__buffer_html"><div class="ttname"><a href="structgrpc__slice__buffer.html">grpc_slice_buffer</a></div><div class="ttdoc">Represents an expandable array of slices, to be interpreted as a single item.</div><div class="ttdef"><b>Definition:</b> slice_type.h:81</div></div>
 <div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html_afebe85844c62f4aa47cc4e6e19af8400"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html#afebe85844c62f4aa47cc4e6e19af8400">grpc::ProtoBufferWriter::BackUp</a></div><div class="ttdeci">void BackUp(int count) override</div><div class="ttdoc">Backup by count bytes because Next returned more bytes than needed (only used in the last buffer).</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:122</div></div>
-<div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html_a656f1f4835a8f4e2944cb6ce92454c8b"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html#a656f1f4835a8f4e2944cb6ce92454c8b">grpc::ProtoBufferWriter::set_byte_count</a></div><div class="ttdeci">void set_byte_count(int64_t byte_count)</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:195</div></div>
-<div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html_a7bb6d66e5a6bcf0eee76cb156ab598d4"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4">grpc::ProtoBufferWriter::ProtoBufferWriterPeer</a></div><div class="ttdeci">friend class internal::ProtoBufferWriterPeer</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:199</div></div>
+<div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html_a656f1f4835a8f4e2944cb6ce92454c8b"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html#a656f1f4835a8f4e2944cb6ce92454c8b">grpc::ProtoBufferWriter::set_byte_count</a></div><div class="ttdeci">void set_byte_count(int64_t byte_count)</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:202</div></div>
+<div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html_a7bb6d66e5a6bcf0eee76cb156ab598d4"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4">grpc::ProtoBufferWriter::ProtoBufferWriterPeer</a></div><div class="ttdeci">friend class internal::ProtoBufferWriterPeer</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:206</div></div>
 <div class="ttc" id="aslice__type_8h_html_ae65fc74cb3afbcd3299a1c93f90bae20"><div class="ttname"><a href="slice__type_8h.html#ae65fc74cb3afbcd3299a1c93f90bae20">GRPC_SLICE_INLINED_SIZE</a></div><div class="ttdeci">#define GRPC_SLICE_INLINED_SIZE</div><div class="ttdef"><b>Definition:</b> slice_type.h:47</div></div>
 <div class="ttc" id="agrpc_2byte__buffer_8h_html_a5ab72d6615ee89c975c46ad4e50c1387"><div class="ttname"><a href="grpc_2byte__buffer_8h.html#a5ab72d6615ee89c975c46ad4e50c1387">grpc_raw_byte_buffer_create</a></div><div class="ttdeci">GRPCAPI grpc_byte_buffer * grpc_raw_byte_buffer_create(grpc_slice *slices, size_t nslices)</div><div class="ttdoc">Returns a RAW byte buffer instance over the given slices (up to nslices).</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Sep 6 2023 16:09:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Dec 9 2023 01:03:03 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
