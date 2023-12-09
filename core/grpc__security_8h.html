@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">35.0.0</span>
+   &#160;<span id="projectnumber">37.0.0</span>
    </div>
   </td>
  </tr>
@@ -359,6 +359,12 @@ Functions</h2></td></tr>
 <tr class="memitem:acf9de635e67ef9b6b41a3b72ebdbdcfc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#acf9de635e67ef9b6b41a3b72ebdbdcfc">grpc_tls_credentials_options_create</a> (void)</td></tr>
 <tr class="memdesc:acf9de635e67ef9b6b41a3b72ebdbdcfc"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#acf9de635e67ef9b6b41a3b72ebdbdcfc">More...</a><br /></td></tr>
 <tr class="separator:acf9de635e67ef9b6b41a3b72ebdbdcfc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a769736ae0921fefb70a8df3f97f5e1f0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a769736ae0921fefb70a8df3f97f5e1f0">grpc_tls_credentials_options_copy</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options)</td></tr>
+<tr class="memdesc:a769736ae0921fefb70a8df3f97f5e1f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a769736ae0921fefb70a8df3f97f5e1f0">More...</a><br /></td></tr>
+<tr class="separator:a769736ae0921fefb70a8df3f97f5e1f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a401259078f0d14f7ffa1eb16d1155f90"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a401259078f0d14f7ffa1eb16d1155f90">grpc_tls_credentials_options_destroy</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options)</td></tr>
+<tr class="memdesc:a401259078f0d14f7ffa1eb16d1155f90"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a401259078f0d14f7ffa1eb16d1155f90">More...</a><br /></td></tr>
+<tr class="separator:a401259078f0d14f7ffa1eb16d1155f90"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad90140b3fe36a84b96a6a47ad7da77a7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ad90140b3fe36a84b96a6a47ad7da77a7">grpc_tls_credentials_options_set_certificate_provider</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, <a class="el" href="grpc__security_8h.html#ab7eb1d297905525b6c1f0508de55c028">grpc_tls_certificate_provider</a> *provider)</td></tr>
 <tr class="memdesc:ad90140b3fe36a84b96a6a47ad7da77a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#ad90140b3fe36a84b96a6a47ad7da77a7">More...</a><br /></td></tr>
 <tr class="separator:ad90140b3fe36a84b96a6a47ad7da77a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1067,7 +1073,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>&ndash; The following auth context methods should only be called by a server metadata </p>
-<h2><a class="anchor" id="autotoc_md319"></a>
+<h2><a class="anchor" id="autotoc_md320"></a>
 processor to set properties extracted from auth metadata.</h2>
 <p>Add a property. </p>
 
@@ -2695,6 +2701,27 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
+<a id="a769736ae0921fefb70a8df3f97f5e1f0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a769736ae0921fefb70a8df3f97f5e1f0">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_copy()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a>* grpc_tls_credentials_options_copy </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL API - Subject to change. </p>
+<p>Copies a grpc_tls_credentials_options. </p>
+
+</div>
+</div>
 <a id="acf9de635e67ef9b6b41a3b72ebdbdcfc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#acf9de635e67ef9b6b41a3b72ebdbdcfc">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_create()</h2>
 
@@ -2713,6 +2740,27 @@ processor to set properties extracted from auth metadata.</h2>
 
 <p>EXPERIMENTAL API - Subject to change. </p>
 <p>Creates an grpc_tls_credentials_options. </p>
+
+</div>
+</div>
+<a id="a401259078f0d14f7ffa1eb16d1155f90"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a401259078f0d14f7ffa1eb16d1155f90">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_destroy()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_tls_credentials_options_destroy </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL API - Subject to change. </p>
+<p>Destroys a grpc_tls_credentials_options. </p>
 
 </div>
 </div>
@@ -3220,7 +3268,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Sep 6 2023 16:09:15 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Dec 9 2023 01:02:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

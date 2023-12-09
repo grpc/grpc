@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">35.0.0</span>
+   &#160;<span id="projectnumber">37.0.0</span>
    </div>
   </td>
  </tr>
@@ -67,12 +67,12 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p><a href="https://github.com/grpc/proposal/blob/master/A1-http-connect-proxy-support.md">A1-http-connect-proxy-support.md</a> proposed how gRPC supports TCP-level proxies via the HTTP CONNECT request, defined in <a href="https://www.rfc-editor.org/rfc/rfc2817">RFC-2817</a>.</p>
-<p><b>Case 1</b> in the proposal documents a use-case where all outbound traffic from an environment must go through a proxy. Configurations for such environments are usually performed using environment variables such as <code>http_proxy</code>. gRPC supports this by providing a default proxy mapper implementation that allows for overriding the server name (provided in the channel creation hostname) to resolve based on such configurations.</p>
 <p>This guide documents gRPC C-Core's default proxy mapper implementation.</p>
 <h1><a class="anchor" id="autotoc_md87"></a>
-Working</h1>
+HTTP Proxy</h1>
+<p><b>Case 1</b> in the proposal documents a use-case where all outbound traffic from an environment must go through a proxy. Configurations for such environments are usually performed using environment variables such as <code>http_proxy</code>. gRPC supports this by providing a default proxy mapper implementation that allows for overriding the server name (provided in the channel creation hostname) to resolve based on such configurations.</p>
 <h2><a class="anchor" id="autotoc_md88"></a>
-Enabling HTTP Proxy</h2>
+Enabling the HTTP Proxy</h2>
 <p>C-Core checks the following places to determine the HTTP proxy to use, stopping at the first one that is set:</p>
 <ol type="1">
 <li><code>GRPC_ARG_HTTP_PROXY</code> channel arg</li>
@@ -94,12 +94,22 @@ Disabling HTTP Proxy</h2>
 <p>As of <a href="https://github.com/grpc/grpc/pull/31119">PR#31119</a>, CIDR blocks are also supported in the list of names. For example, a <code>no_proxy</code> setting of <code>10.10.0.0/24</code> would not use the proxy for channel targets that mention IP addresses as the host between the range <code>10.10.0.0</code> to <code>10.10.0.255</code>.</p>
 <h2><a class="anchor" id="autotoc_md90"></a>
 Disabling HTTP Proxy Channel-wide</h2>
-<p>The lookup and subsequent usage of an HTTP proxy for a specific channel can also be disabled by setting the channel arg <code>GRPC_ARG_ENABLE_HTTP_PROXY</code> to 0. </p>
+<p>The lookup and subsequent usage of an HTTP proxy for a specific channel can also be disabled by setting the channel arg <code>GRPC_ARG_ENABLE_HTTP_PROXY</code> to 0.</p>
+<h1><a class="anchor" id="autotoc_md91"></a>
+Address Proxy</h1>
+<p><b>Case 2</b> in the proposal documents a partially protected environment, where access to certain addresses must go through a proxy. Name resolution of protected servers works normally, and the proxy allows the CONNECT request to use an IP address instead of a hostname.</p>
+<p>Only requests for certain hosts must go through the proxy. Requests to other servers work without the proxy. Custom logic is used to determine which hosts the proxy will be used for.</p>
+<p>To use the address proxy, both of the following parameters need to be specified:</p><ol type="1">
+<li>Address of the proxy can be specified using <code>GRPC_ARG_ADDRESS_HTTP_PROXY</code> channel argument or <code>GRPC_ADDRESS_HTTP_PROXY</code> environment variable. Value of the channel argument is preferred if both values are specified.</li>
+</ol>
+<ol type="1">
+<li>Comma-separated list of IP addresses and/or CIDR blocks that should be accessed through the proxy. This can be specified using the <code>GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES</code> channel argument or <code>GRPC_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES</code> environment variable. Value of the channel argument is preferred if both values are specified. </li>
+</ol>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Sep 6 2023 16:09:15 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Dec 9 2023 01:02:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

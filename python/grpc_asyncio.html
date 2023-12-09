@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.58.0 documentation</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.60.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=1651ac8f"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=1953b6eb"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.58.0</p>
+<p class="blurb">1.60.0</p>
 
 
 
@@ -1896,6 +1896,12 @@ for the RPC.</p></li>
 <dt class="sig sig-object py" id="grpc.aio.ServerInterceptor.intercept_service">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">intercept_service</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">continuation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">handler_call_details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#ServerInterceptor.intercept_service"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServerInterceptor.intercept_service" title="Permalink to this definition">¶</a></dt>
 <dd><p>Intercepts incoming RPCs before handing them over to a handler.</p>
+<p>State can be passed from an interceptor to downstream interceptors
+via contextvars. The first interceptor is called from an empty
+contextvars.Context, and the same Context is used for downstream
+interceptors and for the final handler call. Note that there are no
+guarantees that interceptors and handlers will be called from the
+same thread.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
