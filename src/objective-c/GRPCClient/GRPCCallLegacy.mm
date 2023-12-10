@@ -598,9 +598,9 @@ static NSString *const kBearerPrefix = @"Bearer ";
   }
 
   if (tokenProvider != nil) {
-    __weak typeof(self) weakSelf = self;
+    __weak auto weakSelf = self;
     [tokenProvider getTokenWithHandler:^(NSString *token) {
-      __strong typeof(self) strongSelf = weakSelf;
+      __strong auto strongSelf = weakSelf;
       if (strongSelf) {
         BOOL startCall = NO;
         @synchronized(strongSelf) {
