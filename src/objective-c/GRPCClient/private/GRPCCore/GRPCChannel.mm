@@ -127,7 +127,7 @@
         [NSNumber numberWithUnsignedInteger:_callOptions.responseSizeLimit];
   }
 
-  if (_callOptions.compressionAlgorithm != GRPC_COMPRESS_NONE) {
+  if (_callOptions.compressionAlgorithm != GRPCCompressNone) {
     args[@GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM] =
         [NSNumber numberWithInteger:_callOptions.compressionAlgorithm];
   }
