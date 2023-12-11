@@ -61,14 +61,14 @@ namespace grpc_core {
 /// the aforementioned 'grpc-encoding' metadata value, data will pass through
 /// uncompressed.
 
-class CompressionFilter : public ChannelFilter {
+class LegacyCompressionFilter : public ChannelFilter {
  protected:
   struct DecompressArgs {
     grpc_compression_algorithm algorithm;
     absl::optional<uint32_t> max_recv_message_length;
   };
 
-  explicit CompressionFilter(const ChannelArgs& args);
+  explicit LegacyCompressionFilter(const ChannelArgs& args);
 
   grpc_compression_algorithm default_compression_algorithm() const {
     return default_compression_algorithm_;
@@ -104,11 +104,11 @@ class CompressionFilter : public ChannelFilter {
   bool enable_decompression_;
 };
 
-class ClientCompressionFilter final : public CompressionFilter {
+class LegacyClientCompressionFilter final : public LegacyCompressionFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ClientCompressionFilter> Create(
+  static absl::StatusOr<LegacyClientCompressionFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
@@ -116,14 +116,14 @@ class ClientCompressionFilter final : public CompressionFilter {
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  using CompressionFilter::CompressionFilter;
+  using LegacyCompressionFilter::LegacyCompressionFilter;
 };
 
-class ServerCompressionFilter final : public CompressionFilter {
+class LegacyServerCompressionFilter final : public LegacyCompressionFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServerCompressionFilter> Create(
+  static absl::StatusOr<LegacyServerCompressionFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
@@ -131,7 +131,7 @@ class ServerCompressionFilter final : public CompressionFilter {
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  using CompressionFilter::CompressionFilter;
+  using LegacyCompressionFilter::LegacyCompressionFilter;
 };
 
 }  // namespace grpc_core
