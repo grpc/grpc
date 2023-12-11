@@ -77,7 +77,47 @@ const grpc_channel_filter* PromiseTracingFilterFor(
                   return r;
                 };
               },
-              /* init_call: */ nullptr, grpc_channel_next_op,
+              /* init_call: */
+              [](grpc_channel_element* elem, CallSpineInterface* call) {
+                auto* source_filter =
+                    static_cast<const DerivedFilter*>(elem->filter)->filter;
+                call->client_initial_metadata().receiver.InterceptAndMap(
+                    [source_filter](ClientMetadataHandle md) {
+                      gpr_log(GPR_DEBUG, "%s[%s] OnClientInitialMetadata: %s",
+                              Activity::current()->DebugTag().c_str(),
+                              source_filter->name, md->DebugString().c_str());
+                      return md;
+                    });
+                call->client_to_server_messages().receiver.InterceptAndMap(
+                    [source_filter](MessageHandle msg) {
+                      gpr_log(GPR_DEBUG, "%s[%s] OnClientToServerMessage: %s",
+                              Activity::current()->DebugTag().c_str(),
+                              source_filter->name, msg->DebugString().c_str());
+                      return msg;
+                    });
+                call->server_initial_metadata().sender.InterceptAndMap(
+                    [source_filter](ServerMetadataHandle md) {
+                      gpr_log(GPR_DEBUG, "%s[%s] OnServerInitialMetadata: %s",
+                              Activity::current()->DebugTag().c_str(),
+                              source_filter->name, md->DebugString().c_str());
+                      return md;
+                    });
+                call->server_to_client_messages().sender.InterceptAndMap(
+                    [source_filter](MessageHandle msg) {
+                      gpr_log(GPR_DEBUG, "%s[%s] OnServerToClientMessage: %s",
+                              Activity::current()->DebugTag().c_str(),
+                              source_filter->name, msg->DebugString().c_str());
+                      return msg;
+                    });
+                call->server_trailing_metadata().sender.InterceptAndMap(
+                    [source_filter](ServerMetadataHandle md) {
+                      gpr_log(GPR_DEBUG, "%s[%s] OnServerTrailingMetadata: %s",
+                              Activity::current()->DebugTag().c_str(),
+                              source_filter->name, md->DebugString().c_str());
+                      return md;
+                    });
+              },
+              grpc_channel_next_op,
               /* sizeof_call_data: */ 0,
               // init_call_elem:
               [](grpc_call_element*, const grpc_call_element_args*) {

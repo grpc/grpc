@@ -1020,7 +1020,9 @@ grpc_cc_library(
         "construct_destruct",
         "poll",
         "promise_factory",
+        "promise_status",
         "promise_trace",
+        "status_flag",
         "//:gpr",
         "//:gpr_platform",
     ],
@@ -1163,9 +1165,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "event_engine_memory_allocator",
-    srcs = [
-        "lib/event_engine/memory_allocator.cc",
-    ],
     hdrs = [
         "//:include/grpc/event_engine/internal/memory_allocator_impl.h",
         "//:include/grpc/event_engine/memory_allocator.h",
@@ -1175,7 +1174,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "slice",
-        "slice_refcount",
         "//:gpr_platform",
     ],
 )
@@ -1221,6 +1219,7 @@ grpc_cc_library(
         "race",
         "resource_quota_trace",
         "seq",
+        "slice_refcount",
         "time",
         "useful",
         "//:gpr",

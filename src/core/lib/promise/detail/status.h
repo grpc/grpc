@@ -45,7 +45,7 @@ inline absl::Status IntoStatus(absl::Status* status) {
 // can participate in TrySeq as result types that affect control flow.
 inline bool IsStatusOk(const absl::Status& status) { return status.ok(); }
 
-template <typename To, typename From>
+template <typename To, typename From, typename SfinaeVoid = void>
 struct StatusCastImpl;
 
 template <typename To>

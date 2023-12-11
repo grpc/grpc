@@ -99,6 +99,7 @@ class ServerMessageSizeFilter final
     static const NoInterceptor OnClientInitialMetadata;
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnFinalize;
     ServerMetadataHandle OnClientToServerMessage(
         const Message& message, ServerMessageSizeFilter* filter);
     ServerMetadataHandle OnServerToClientMessage(
@@ -126,6 +127,7 @@ class ClientMessageSizeFilter final
     static const NoInterceptor OnClientInitialMetadata;
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnFinalize;
     ServerMetadataHandle OnClientToServerMessage(const Message& message);
     ServerMetadataHandle OnServerToClientMessage(const Message& message);
 
