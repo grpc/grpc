@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
+
 #include "src/core/lib/debug/trace.h"
 
 #if GRPC_ARES == 1
@@ -37,6 +39,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
+#include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -52,7 +55,7 @@ extern grpc_core::TraceFlag grpc_trace_ares_resolver;
     }                                                                          \
   } while (0)
 
-class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
+class AresResolver : public RefCountedDNSResolverInterface {
  public:
   static absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>>
   CreateAresResolver(absl::string_view dns_server,
@@ -65,15 +68,13 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
   ~AresResolver() override;
   void Orphan() override ABSL_LOCKS_EXCLUDED(mutex_);
 
-  void LookupHostname(absl::string_view name, absl::string_view default_port,
-                      EventEngine::DNSResolver::LookupHostnameCallback callback)
-      ABSL_LOCKS_EXCLUDED(mutex_);
-  void LookupSRV(absl::string_view name,
-                 EventEngine::DNSResolver::LookupSRVCallback callback)
-      ABSL_LOCKS_EXCLUDED(mutex_);
-  void LookupTXT(absl::string_view name,
-                 EventEngine::DNSResolver::LookupTXTCallback callback)
-      ABSL_LOCKS_EXCLUDED(mutex_);
+  void LookupHostname(EventEngine::DNSResolver::LookupHostnameCallback callback,
+                      absl::string_view name, absl::string_view default_port)
+      ABSL_LOCKS_EXCLUDED(mutex_) override;
+  void LookupSRV(EventEngine::DNSResolver::LookupSRVCallback callback,
+                 absl::string_view name) ABSL_LOCKS_EXCLUDED(mutex_) override;
+  void LookupTXT(EventEngine::DNSResolver::LookupTXTCallback callback,
+                 absl::string_view name) ABSL_LOCKS_EXCLUDED(mutex_) override;
 
  private:
   // A FdNode saves (not owns) a live socket/fd which c-ares creates, and owns a
@@ -87,8 +88,8 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
   // close the socket (possibly through ares_destroy).
   struct FdNode {
     FdNode() = default;
-    FdNode(ares_socket_t as, GrpcPolledFd* polled_fd)
-        : as(as), polled_fd(polled_fd) {}
+    FdNode(ares_socket_t as, std::unique_ptr<GrpcPolledFd> pf)
+        : as(as), polled_fd(std::move(pf)) {}
     ares_socket_t as;
     std::unique_ptr<GrpcPolledFd> polled_fd;
     // true if the readable closure has been registered

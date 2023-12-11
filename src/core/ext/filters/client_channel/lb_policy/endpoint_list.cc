@@ -118,7 +118,7 @@ void EndpointList::Endpoint::Init(
   GPR_ASSERT(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
-  update_args.addresses.emplace().emplace_back(addresses);
+  update_args.addresses = std::make_shared<SingleEndpointIterator>(addresses);
   update_args.args = child_args;
   update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,
@@ -163,15 +163,16 @@ RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
 //
 
 void EndpointList::Init(
-    const EndpointAddressesList& endpoints, const ChannelArgs& args,
-    absl::AnyInvocable<OrphanablePtr<Endpoint>(RefCountedPtr<EndpointList>,
-                                               const EndpointAddresses&,
-                                               const ChannelArgs&)>
+    EndpointAddressesIterator* endpoints, const ChannelArgs& args,
+    absl::FunctionRef<OrphanablePtr<Endpoint>(RefCountedPtr<EndpointList>,
+                                              const EndpointAddresses&,
+                                              const ChannelArgs&)>
         create_endpoint) {
-  for (const EndpointAddresses& addresses : endpoints) {
+  if (endpoints == nullptr) return;
+  endpoints->ForEach([&](const EndpointAddresses& endpoint) {
     endpoints_.push_back(
-        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), addresses, args));
-  }
+        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args));
+  });
 }
 
 void EndpointList::ResetBackoffLocked() {

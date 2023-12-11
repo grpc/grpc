@@ -684,7 +684,8 @@ absl::Status PriorityLb::ChildPriority::UpdateLocked(
   if (priority_policy_->addresses_.ok()) {
     auto it = priority_policy_->addresses_->find(name_);
     if (it == priority_policy_->addresses_->end()) {
-      update_args.addresses.emplace();
+      update_args.addresses = std::make_shared<EndpointAddressesListIterator>(
+          EndpointAddressesList());
     } else {
       update_args.addresses = it->second;
     }

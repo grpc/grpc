@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <map>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -105,12 +106,12 @@ class HierarchicalPathArg : public RefCounted<HierarchicalPathArg> {
 // A map from the next path element to the endpoint addresses that fall
 // under that path element.
 using HierarchicalAddressMap =
-    std::map<RefCountedStringValue, EndpointAddressesList,
+    std::map<RefCountedStringValue, std::shared_ptr<EndpointAddressesIterator>,
              RefCountedStringValueLessThan>;
 
 // Splits up the addresses into a separate list for each child.
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
-    const absl::StatusOr<EndpointAddressesList>& addresses);
+    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses);
 
 }  // namespace grpc_core
 

@@ -108,6 +108,17 @@ class InternallyRefCounted : public Orphanable {
     }
   }
 
+  GRPC_MUST_USE_RESULT RefCountedPtr<Child> RefIfNonZero() {
+    return RefCountedPtr<Child>(refs_.RefIfNonZero() ? static_cast<Child*>(this)
+                                                     : nullptr);
+  }
+  GRPC_MUST_USE_RESULT RefCountedPtr<Child> RefIfNonZero(
+      const DebugLocation& location, const char* reason) {
+    return RefCountedPtr<Child>(refs_.RefIfNonZero(location, reason)
+                                    ? static_cast<Child*>(this)
+                                    : nullptr);
+  }
+
  private:
   void IncrementRefCount() { refs_.Ref(); }
   void IncrementRefCount(const DebugLocation& location, const char* reason) {

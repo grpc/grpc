@@ -119,7 +119,6 @@ for filename in filename_list:
     # Skip check for upb generated code and ignored files.
     if (
         filename.endswith(".upb.h")
-        or filename.endswith(".upb.c")
         or filename.endswith(".upbdefs.h")
         or filename.endswith(".upbdefs.c")
         or filename in IGNORED_FILES

@@ -53,6 +53,17 @@ TEST(RefCounted, ExtraRef) {
   foo->Unref();
 }
 
+TEST(RefCounted, Const) {
+  const Foo* foo = new Foo();
+  RefCountedPtr<const Foo> foop = foo->Ref();
+  foop.release();
+  foop = foo->RefIfNonZero();
+  foop.release();
+  foo->Unref();
+  foo->Unref();
+  foo->Unref();
+}
+
 class Value : public RefCounted<Value, PolymorphicRefCount, UnrefNoDelete> {
  public:
   Value(int value, std::set<std::unique_ptr<Value>>* registry) : value_(value) {

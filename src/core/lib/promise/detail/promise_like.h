@@ -68,6 +68,10 @@ class PromiseLike {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
 
+  static_assert(!std::is_void<typename std::result_of<F()>::type>::value,
+                "PromiseLike cannot be used with a function that returns void "
+                "- return Empty{} instead");
+
  public:
   // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.
   PromiseLike(F&& f) : f_(std::forward<F>(f)) {}

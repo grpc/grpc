@@ -315,6 +315,14 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
  public:
   explicit PromiseBasedCallData(ClientChannel* chand) : chand_(chand) {}
 
+  ~PromiseBasedCallData() override {
+    if (was_queued_ && client_initial_metadata_ != nullptr) {
+      MutexLock lock(&chand_->resolution_mu_);
+      RemoveCallFromResolverQueuedCallsLocked();
+      chand_->resolver_queued_calls_.erase(this);
+    }
+  }
+
   ArenaPromise<absl::StatusOr<CallArgs>> MakeNameResolutionPromise(
       CallArgs call_args) {
     pollent_ = NowOrNever(call_args.polling_entity->WaitAndCopy()).value();
@@ -399,6 +407,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
 const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
     ClientChannel::MakeCallPromise,
+    /* init_call: */ nullptr,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -415,6 +424,7 @@ const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
 const grpc_channel_filter ClientChannel::kFilterVtableWithoutPromises = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
     nullptr,
+    /* init_call: */ nullptr,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -562,6 +572,7 @@ class DynamicTerminationFilter::CallData {
 const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     DynamicTerminationFilter::CallData::StartTransportStreamOpBatch,
     DynamicTerminationFilter::MakeCallPromise,
+    /* init_call: */ nullptr,
     DynamicTerminationFilter::StartTransportOp,
     sizeof(DynamicTerminationFilter::CallData),
     DynamicTerminationFilter::CallData::Init,
@@ -1599,7 +1610,12 @@ absl::Status ClientChannel::CreateOrUpdateLbPolicyLocked(
     Resolver::Result result) {
   // Construct update.
   LoadBalancingPolicy::UpdateArgs update_args;
-  update_args.addresses = std::move(result.addresses);
+  if (!result.addresses.ok()) {
+    update_args.addresses = result.addresses.status();
+  } else {
+    update_args.addresses = std::make_shared<EndpointAddressesListIterator>(
+        std::move(*result.addresses));
+  }
   update_args.config = std::move(lb_policy_config);
   update_args.resolution_note = std::move(result.resolution_note);
   // Remove the config selector from channel args so that we're not holding

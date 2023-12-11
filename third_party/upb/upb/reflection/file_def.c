@@ -1,37 +1,19 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
-#include "upb/reflection/def_builder_internal.h"
+#include "upb/reflection/internal/file_def.h"
+
 #include "upb/reflection/def_pool.h"
-#include "upb/reflection/enum_def_internal.h"
-#include "upb/reflection/field_def_internal.h"
-#include "upb/reflection/file_def_internal.h"
-#include "upb/reflection/message_def_internal.h"
-#include "upb/reflection/service_def_internal.h"
+#include "upb/reflection/internal/def_builder.h"
+#include "upb/reflection/internal/enum_def.h"
+#include "upb/reflection/internal/field_def.h"
+#include "upb/reflection/internal/message_def.h"
+#include "upb/reflection/internal/service_def.h"
+#include "upb/reflection/internal/strdup2.h"
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -40,7 +22,7 @@ struct upb_FileDef {
   const UPB_DESC(FileOptions) * opts;
   const char* name;
   const char* package;
-  const char* edition;
+  UPB_DESC(Edition) edition;
 
   const upb_FileDef** deps;
   const int32_t* public_deps;
@@ -77,8 +59,8 @@ const char* upb_FileDef_Package(const upb_FileDef* f) {
   return f->package ? f->package : "";
 }
 
-const char* upb_FileDef_Edition(const upb_FileDef* f) {
-  return f->edition ? f->edition : "";
+UPB_DESC(Edition) upb_FileDef_Edition(const upb_FileDef* f) {
+  return f->edition;
 }
 
 const char* _upb_FileDef_RawPackage(const upb_FileDef* f) { return f->package; }
@@ -204,7 +186,7 @@ void _upb_FileDef_Create(upb_DefBuilder* ctx,
   UPB_DESC(FileDescriptorProto_extension)(file_proto, &n);
   int ext_count = n;
   msgs = UPB_DESC(FileDescriptorProto_message_type)(file_proto, &n);
-  for (int i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     ext_count += count_exts_in_msg(msgs[i]);
   }
   file->ext_count = ext_count;
@@ -243,17 +225,8 @@ void _upb_FileDef_Create(upb_DefBuilder* ctx,
     file->package = NULL;
   }
 
-  upb_StringView edition = UPB_DESC(FileDescriptorProto_edition)(file_proto);
-
-  if (edition.size == 0) {
-    file->edition = NULL;
-  } else {
-    // TODO(b/267770604): How should we validate this?
-    file->edition = strviewdup(ctx, edition);
-    if (strlen(file->edition) != edition.size) {
-      _upb_DefBuilder_Errf(ctx, "Edition name contained embedded NULL");
-    }
-  }
+  // TODO: How should we validate this?
+  file->edition = UPB_DESC(FileDescriptorProto_edition)(file_proto);
 
   if (UPB_DESC(FileDescriptorProto_has_syntax)(file_proto)) {
     upb_StringView syntax = UPB_DESC(FileDescriptorProto_syntax)(file_proto);
@@ -262,6 +235,8 @@ void _upb_FileDef_Create(upb_DefBuilder* ctx,
       file->syntax = kUpb_Syntax_Proto2;
     } else if (streql_view(syntax, "proto3")) {
       file->syntax = kUpb_Syntax_Proto3;
+    } else if (streql_view(syntax, "editions")) {
+      file->syntax = kUpb_Syntax_Editions;
     } else {
       _upb_DefBuilder_Errf(ctx, "Invalid syntax '" UPB_STRINGVIEW_FORMAT "'",
                            UPB_STRINGVIEW_ARGS(syntax));
