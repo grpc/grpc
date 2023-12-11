@@ -299,7 +299,7 @@ const grpc_channel_filter LegacyMaxAgeFilter::kFilter =
     MakePromiseBasedFilter<LegacyMaxAgeFilter, FilterEndpoint::kServer>(
         "max_age");
 
-void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
+void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
   if (IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_CHANNEL, &LegacyClientIdleFilter::kFilter)

@@ -56,6 +56,13 @@
 
 namespace grpc_core {
 
+const NoInterceptor ChannelIdleFilter::Call::OnClientInitialMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnServerInitialMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnClientToServerMessage;
+const NoInterceptor ChannelIdleFilter::Call::OnServerToClientMessage;
+const NoInterceptor ChannelIdleFilter::Call::OnFinalize;
+
 namespace {
 
 // TODO(roth): This can go back to being a constant when the experiment
