@@ -50,7 +50,8 @@ const NoDestruct<Slice> kZeroSlice{[] {
 
 class FrameSerializer {
  public:
-  explicit FrameSerializer(FrameType frame_type, uint32_t stream_id) {
+  explicit FrameSerializer(FrameType frame_type, uint32_t stream_id,
+                           uint32_t message_padding) {
     output_.AppendIndexed(kZeroSlice->Copy());
     header_.type = frame_type;
     header_.stream_id = stream_id;
@@ -172,9 +173,11 @@ absl::Status SettingsFrame::Deserialize(HPackParser*, const FrameHeader& header,
 }
 
 SliceBuffer SettingsFrame::Serialize(HPackCompressor*) const {
-  FrameSerializer serializer(FrameType::kSettings, 0);
+  FrameSerializer serializer(FrameType::kSettings, 0, 0);
   return serializer.Finish();
 }
+
+std::string SettingsFrame::ToString() const { return "SettingsFrame{}"; }
 
 absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
                                               const FrameHeader& header,
@@ -184,6 +187,7 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
     return absl::InvalidArgumentError("Expected non-zero stream id");
   }
   stream_id = header.stream_id;
+  message_padding = header.message_padding;
   if (header.type != FrameType::kFragment) {
     return absl::InvalidArgumentError("Expected fragment frame");
   }
@@ -195,6 +199,9 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
     if (r.value() != nullptr) {
       headers = std::move(r.value());
     }
+  } else if (header.header_length != 0) {
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Unexpected non-zero header length", header.header_length));
   }
   if (header.flags.is_set(1)) {
     if (header.trailer_length != 0) {
@@ -209,7 +216,7 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
 
 SliceBuffer ClientFragmentFrame::Serialize(HPackCompressor* encoder) const {
   GPR_ASSERT(stream_id != 0);
-  FrameSerializer serializer(FrameType::kFragment, stream_id);
+  FrameSerializer serializer(FrameType::kFragment, stream_id, message_padding);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
   }
@@ -217,6 +224,16 @@ SliceBuffer ClientFragmentFrame::Serialize(HPackCompressor* encoder) const {
     serializer.AddTrailers();
   }
   return serializer.Finish();
+}
+
+std::string ClientFragmentFrame::ToString() const {
+  return absl::StrCat(
+      "ClientFragmentFrame{stream_id=", stream_id, ", headers=",
+      headers.get() != nullptr ? headers->DebugString().c_str() : "nullptr",
+      ", message=",
+      message.get() != nullptr ? message->DebugString().c_str() : "nullptr",
+      ", message_padding=", message_padding, ", end_of_stream=", end_of_stream,
+      "}");
 }
 
 absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
@@ -227,6 +244,7 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
     return absl::InvalidArgumentError("Expected non-zero stream id");
   }
   stream_id = header.stream_id;
+  message_padding = header.message_padding;
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
     auto r =
@@ -236,6 +254,9 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
     if (r.value() != nullptr) {
       headers = std::move(r.value());
     }
+  } else if (header.header_length != 0) {
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Unexpected non-zero header length", header.header_length));
   }
   if (header.flags.is_set(1)) {
     auto r =
@@ -245,13 +266,16 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
     if (r.value() != nullptr) {
       trailers = std::move(r.value());
     }
+  } else if (header.trailer_length != 0) {
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Unexpected non-zero trailer length", header.trailer_length));
   }
   return deserializer.Finish();
 }
 
 SliceBuffer ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
   GPR_ASSERT(stream_id != 0);
-  FrameSerializer serializer(FrameType::kFragment, stream_id);
+  FrameSerializer serializer(FrameType::kFragment, stream_id, message_padding);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
   }
@@ -259,6 +283,17 @@ SliceBuffer ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
     encoder->EncodeRawHeaders(*trailers.get(), serializer.AddTrailers());
   }
   return serializer.Finish();
+}
+
+std::string ServerFragmentFrame::ToString() const {
+  return absl::StrCat(
+      "ServerFragmentFrame{stream_id=", stream_id, ", headers=",
+      headers.get() != nullptr ? headers->DebugString().c_str() : "nullptr",
+      ", message=",
+      message.get() != nullptr ? message->DebugString().c_str() : "nullptr",
+      ", message_padding=", message_padding, ", trailers=",
+      trailers.get() != nullptr ? trailers->DebugString().c_str() : "nullptr",
+      "}");
 }
 
 absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
@@ -280,8 +315,12 @@ absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
 
 SliceBuffer CancelFrame::Serialize(HPackCompressor*) const {
   GPR_ASSERT(stream_id != 0);
-  FrameSerializer serializer(FrameType::kCancel, stream_id);
+  FrameSerializer serializer(FrameType::kCancel, stream_id, 0);
   return serializer.Finish();
+}
+
+std::string CancelFrame::ToString() const {
+  return absl::StrCat("CancelFrame{stream_id=", stream_id, "}");
 }
 
 }  // namespace chaotic_good

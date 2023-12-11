@@ -77,8 +77,7 @@ ClientTransport::ClientTransport(
                 control_endpoint_write_buffer_.Append(
                     frame->Serialize(hpack_compressor_.get()));
                 if (frame->message != nullptr) {
-                  std::string message_padding(
-                      frame->frame_header.message_padding, '0');
+                  std::string message_padding(frame->message_padding, '0');
                   Slice slice(grpc_slice_from_cpp_string(message_padding));
                   // Append message padding to data_endpoint_buffer.
                   data_endpoint_write_buffer_.Append(std::move(slice));
@@ -157,11 +156,9 @@ ClientTransport::ClientTransport(
           // Move message into frame.
           frame.message = arena_->MakePooled<Message>(
               std::move(data_endpoint_read_buffer_), 0);
-          auto stream_id = frame.frame_header.stream_id;
-          {
-            MutexLock lock(&mu_);
-            return stream_map_[stream_id]->Push(ServerFrame(std::move(frame)));
-          }
+          MutexLock lock(&mu_);
+          return stream_map_[frame.stream_id]->Push(
+              ServerFrame(std::move(frame)));
         },
         // Check if send frame to corresponding stream successfully.
         [](bool ret) -> LoopCtl<absl::Status> {

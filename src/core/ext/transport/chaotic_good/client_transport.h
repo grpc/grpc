@@ -107,40 +107,37 @@ class ClientTransport {
     return TrySeq(
         TryJoin(
             // Continuously send client frame with client to server messages.
-            ForEach(
-                std::move(*call_args.client_to_server_messages),
-                [stream_id, initial_frame = true,
-                 client_initial_metadata =
-                     std::move(call_args.client_initial_metadata),
-                 outgoing_frames = outgoing_frames_.MakeSender(),
-                 this](MessageHandle result) mutable {
-                  ClientFragmentFrame frame;
-                  // Construct frame header (flags, header_length and
-                  // trailer_length will be added in serialization).
-                  uint32_t message_length = result->payload()->Length();
-                  uint32_t message_padding = message_length % aligned_bytes;
-                  frame.frame_header = FrameHeader{
-                      FrameType::kFragment, {}, stream_id, 0, message_length,
-                      message_padding,      0};
-                  frame.message = std::move(result);
-                  if (initial_frame) {
-                    // Send initial frame with client intial metadata.
-                    frame.headers = std::move(client_initial_metadata);
-                    initial_frame = false;
-                  }
-                  return TrySeq(
-                      outgoing_frames.Send(ClientFrame(std::move(frame))),
-                      [](bool success) -> absl::Status {
-                        if (!success) {
-                          // TODO(ladynana): propagate the actual error message
-                          // from EventEngine.
-                          return absl::UnavailableError(
-                              "Transport closed due to endpoint write/read "
-                              "failed.");
-                        }
-                        return absl::OkStatus();
-                      });
-                }),
+            ForEach(std::move(*call_args.client_to_server_messages),
+                    [stream_id, initial_frame = true,
+                     client_initial_metadata =
+                         std::move(call_args.client_initial_metadata),
+                     outgoing_frames = outgoing_frames_.MakeSender(),
+                     this](MessageHandle result) mutable {
+                      ClientFragmentFrame frame;
+                      // Construct frame header (flags, header_length and
+                      // trailer_length will be added in serialization).
+                      uint32_t message_length = result->payload()->Length();
+                      frame.stream_id = stream_id;
+                      frame.message_padding = message_length % aligned_bytes;
+                      frame.message = std::move(result);
+                      if (initial_frame) {
+                        // Send initial frame with client intial metadata.
+                        frame.headers = std::move(client_initial_metadata);
+                        initial_frame = false;
+                      }
+                      return TrySeq(
+                          outgoing_frames.Send(ClientFrame(std::move(frame))),
+                          [](bool success) -> absl::Status {
+                            if (!success) {
+                              // TODO(ladynana): propagate the actual error
+                              // message from EventEngine.
+                              return absl::UnavailableError(
+                                  "Transport closed due to endpoint write/read "
+                                  "failed.");
+                            }
+                            return absl::OkStatus();
+                          });
+                    }),
             // Continuously receive server frames from endpoints and save
             // results to call_args.
             Loop([server_initial_metadata = call_args.server_initial_metadata,
@@ -217,9 +214,10 @@ class ClientTransport {
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
-  std::map<uint32_t, std::shared_ptr<InterActivityPipe<
-                         ServerFrame, server_frame_queue_size_>::Sender>>
-      stream_map_ ABSL_GUARDED_BY(mu_);
+  std::map<uint32_t,
+           std::shared_ptr<InterActivityPipe<
+               ServerFrame, server_frame_queue_size_>::Sender>> stream_map_
+      ABSL_GUARDED_BY(mu_);
   ActivityPtr writer_;
   ActivityPtr reader_;
   std::unique_ptr<PromiseEndpoint> control_endpoint_;

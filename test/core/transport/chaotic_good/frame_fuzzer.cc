@@ -85,6 +85,7 @@ void FinishParseAndChecks(const FrameHeader& header, const uint8_t* data,
   auto deser = parsed.Deserialize(&hpack_parser, header,
                                   absl::BitGenRef(bitgen), serialized);
   if (!deser.ok()) return;
+  gpr_log(GPR_INFO, "Read frame: %s", parsed.ToString().c_str());
   AssertRoundTrips(parsed, header.type);
 }
 
