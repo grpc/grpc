@@ -9606,15 +9606,14 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/bitset.h
   src:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - test/core/transport/chaotic_good/frame_header_test.cc
   deps:
   - gtest
-  - absl/status:status
   - absl/status:statusor
+  - gpr
 - name: fuzzing_event_engine_test
   gtest: true
   build: test
