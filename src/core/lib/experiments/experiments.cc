@@ -93,9 +93,6 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
-const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
-const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -108,6 +105,14 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const uint8_t required_experiments_promise_based_inproc_transport[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
@@ -222,10 +227,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call, nullptr, 0, false, true},
-    {"promise_based_inproc_transport",
-     description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
-     false},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
     {"red_max_concurrent_streams", description_red_max_concurrent_streams,
@@ -235,6 +236,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
      true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport,
+     required_experiments_promise_based_inproc_transport, 3, false, false},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
@@ -352,9 +357,6 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
-const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
-const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -367,6 +369,14 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const uint8_t required_experiments_promise_based_inproc_transport[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
@@ -481,10 +491,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call, nullptr, 0, false, true},
-    {"promise_based_inproc_transport",
-     description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
-     false},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
     {"red_max_concurrent_streams", description_red_max_concurrent_streams,
@@ -494,6 +500,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
      true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport,
+     required_experiments_promise_based_inproc_transport, 3, false, false},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
@@ -611,9 +621,6 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
-const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
-const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -626,6 +633,14 @@ const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const uint8_t required_experiments_promise_based_inproc_transport[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
@@ -740,10 +755,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call, nullptr, 0, false, true},
-    {"promise_based_inproc_transport",
-     description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
-     false},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
     {"red_max_concurrent_streams", description_red_max_concurrent_streams,
@@ -753,6 +764,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
      true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport,
+     required_experiments_promise_based_inproc_transport, 3, false, false},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,

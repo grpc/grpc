@@ -169,6 +169,7 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
+  requires: [promise_based_client_call, promise_based_server_call, registered_method_lookup_in_transport]
 - name: promise_based_server_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
