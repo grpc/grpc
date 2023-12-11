@@ -18,6 +18,8 @@
 
 #include "test/cpp/util/proto_file_parser.h"
 
+#include <grpcpp/support/config.h>
+
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -25,8 +27,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_split.h"
-
-#include <grpcpp/support/config.h>
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {
@@ -48,16 +49,16 @@ class ErrorPrinter : public protobuf::compiler::MultiFileErrorCollector {
  public:
   explicit ErrorPrinter(ProtoFileParser* parser) : parser_(parser) {}
 
-  void AddError(const std::string& filename, int line, int column,
-                const std::string& message) override {
+  void RecordError(absl::string_view filename, int line, int column,
+                   absl::string_view message) override {
     std::ostringstream oss;
     oss << "error " << filename << " " << line << " " << column << " "
         << message << "\n";
     parser_->LogError(oss.str());
   }
 
-  void AddWarning(const std::string& filename, int line, int column,
-                  const std::string& message) override {
+  void RecordWarning(absl::string_view filename, int line, int column,
+                     absl::string_view message) override {
     std::cerr << "warning " << filename << " " << line << " " << column << " "
               << message << std::endl;
   }
