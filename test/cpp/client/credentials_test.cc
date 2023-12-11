@@ -397,6 +397,22 @@ TEST(CredentialsTest, TlsChannelCredentialsWithCrlDirectory) {
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
+TEST(CredentialsTest, TlsChannelCredentialsWithGoodMinAndMaxTlsVersions) {
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_min_tls_version(grpc_tls_version::TLS1_2);
+  options.set_max_tls_version(grpc_tls_version::TLS1_3);
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  EXPECT_NE(channel_credentials, nullptr);
+}
+
+TEST(CredentialsTest, TlsChannelCredentialsWithBadMinAndMaxTlsVersions) {
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_min_tls_version(grpc_tls_version::TLS1_3);
+  options.set_max_tls_version(grpc_tls_version::TLS1_2);
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  EXPECT_EQ(channel_credentials, nullptr);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

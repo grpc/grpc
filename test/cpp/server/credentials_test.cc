@@ -176,6 +176,24 @@ TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
   GPR_ASSERT(server_credentials.get() != nullptr);
 }
 
+TEST(CredentialsTest, TlsServerCredentialsWithGoodMinMaxTlsVersions) {
+  grpc::experimental::TlsServerCredentialsOptions options(
+      /*certificate_provider=*/nullptr);
+  options.set_min_tls_version(grpc_tls_version::TLS1_2);
+  options.set_max_tls_version(grpc_tls_version::TLS1_3);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  EXPECT_NE(server_credentials, nullptr);
+}
+
+TEST(CredentialsTest, TlsServerCredentialsWithBadMinMaxTlsVersions) {
+  grpc::experimental::TlsServerCredentialsOptions options(
+      /*certificate_provider=*/nullptr);
+  options.set_min_tls_version(grpc_tls_version::TLS1_3);
+  options.set_max_tls_version(grpc_tls_version::TLS1_2);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  EXPECT_EQ(server_credentials, nullptr);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
