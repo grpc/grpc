@@ -214,10 +214,9 @@ class ClientTransport {
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
-  std::map<uint32_t,
-           std::shared_ptr<InterActivityPipe<
-               ServerFrame, server_frame_queue_size_>::Sender>> stream_map_
-      ABSL_GUARDED_BY(mu_);
+  std::map<uint32_t, std::shared_ptr<InterActivityPipe<
+                         ServerFrame, server_frame_queue_size_>::Sender>>
+      stream_map_ ABSL_GUARDED_BY(mu_);
   ActivityPtr writer_;
   ActivityPtr reader_;
   std::unique_ptr<PromiseEndpoint> control_endpoint_;
