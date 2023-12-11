@@ -20,4 +20,4 @@
   # instead. This file can be regenerated from the template by running
   # `tools/buildgen/generate_projects.sh`.
 
-  <%include file="../../../../src/python/_parallel_compile_patch.include" />
+  <%include file="../../../../src/python/_parallel_compile_patch.py.include" />
