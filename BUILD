@@ -3590,11 +3590,13 @@ grpc_cc_library(
         "//src/core:ext/filters/http/client/http_client_filter.cc",
         "//src/core:ext/filters/http/http_filters_plugin.cc",
         "//src/core:ext/filters/http/message_compress/legacy_compression_filter.cc",
+        "//src/core:ext/filters/http/message_compress/compression_filter.cc",
         "//src/core:ext/filters/http/server/http_server_filter.cc",
     ],
     hdrs = [
         "//src/core:ext/filters/http/client/http_client_filter.h",
         "//src/core:ext/filters/http/message_compress/legacy_compression_filter.h",
+        "//src/core:ext/filters/http/message_compress/compression_filter.h",
         "//src/core:ext/filters/http/server/http_server_filter.h",
     ],
     external_deps = [
@@ -3610,6 +3612,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "config",
+        "//src/core:experiments",
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",

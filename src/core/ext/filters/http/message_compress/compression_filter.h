@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_LEGACY_COMPRESSION_FILTER_H
-#define GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_LEGACY_COMPRESSION_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -61,14 +61,14 @@ namespace grpc_core {
 /// the aforementioned 'grpc-encoding' metadata value, data will pass through
 /// uncompressed.
 
-class LegacyCompressionFilter : public ChannelFilter {
+class CompressionFilter : public ChannelFilter {
  protected:
   struct DecompressArgs {
     grpc_compression_algorithm algorithm;
     absl::optional<uint32_t> max_recv_message_length;
   };
 
-  explicit LegacyCompressionFilter(const ChannelArgs& args);
+  explicit CompressionFilter(const ChannelArgs& args);
 
   grpc_compression_algorithm default_compression_algorithm() const {
     return default_compression_algorithm_;
@@ -104,11 +104,11 @@ class LegacyCompressionFilter : public ChannelFilter {
   bool enable_decompression_;
 };
 
-class LegacyClientCompressionFilter final : public LegacyCompressionFilter {
+class ClientCompressionFilter final : public CompressionFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<LegacyClientCompressionFilter> Create(
+  static absl::StatusOr<ClientCompressionFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
@@ -116,14 +116,14 @@ class LegacyClientCompressionFilter final : public LegacyCompressionFilter {
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  using LegacyCompressionFilter::LegacyCompressionFilter;
+  using CompressionFilter::CompressionFilter;
 };
 
-class LegacyServerCompressionFilter final : public LegacyCompressionFilter {
+class ServerCompressionFilter final : public CompressionFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<LegacyServerCompressionFilter> Create(
+  static absl::StatusOr<ServerCompressionFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
@@ -131,9 +131,9 @@ class LegacyServerCompressionFilter final : public LegacyCompressionFilter {
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  using LegacyCompressionFilter::LegacyCompressionFilter;
+  using CompressionFilter::CompressionFilter;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_LEGACY_COMPRESSION_FILTER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
