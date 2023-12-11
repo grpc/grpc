@@ -16,6 +16,7 @@
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -157,8 +158,8 @@ ClientTransport::ClientTransport(
           frame.message = arena_->MakePooled<Message>(
               std::move(data_endpoint_read_buffer_), 0);
           MutexLock lock(&mu_);
-          return stream_map_[frame.stream_id]->Push(
-              ServerFrame(std::move(frame)));
+          const uint32_t stream_id = frame_header_->stream_id;
+          return stream_map_[stream_id]->Push(ServerFrame(std::move(frame)));
         },
         // Check if send frame to corresponding stream successfully.
         [](bool ret) -> LoopCtl<absl::Status> {
