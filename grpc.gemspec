@@ -127,6 +127,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/channel_idle/channel_idle_filter.h )
   s.files += %w( src/core/ext/filters/channel_idle/idle_filter_state.cc )
   s.files += %w( src/core/ext/filters/channel_idle/idle_filter_state.h )
+  s.files += %w( src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc )
+  s.files += %w( src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h )
   s.files += %w( src/core/ext/filters/client_channel/backend_metric.cc )
   s.files += %w( src/core/ext/filters/client_channel/backend_metric.h )
   s.files += %w( src/core/ext/filters/client_channel/backup_poller.cc )

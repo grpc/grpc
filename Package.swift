@@ -121,6 +121,8 @@ let package = Package(
         "src/core/ext/filters/channel_idle/channel_idle_filter.h",
         "src/core/ext/filters/channel_idle/idle_filter_state.cc",
         "src/core/ext/filters/channel_idle/idle_filter_state.h",
+        "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc",
+        "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h",
         "src/core/ext/filters/client_channel/backend_metric.cc",
         "src/core/ext/filters/client_channel/backend_metric.h",
         "src/core/ext/filters/client_channel/backup_poller.cc",

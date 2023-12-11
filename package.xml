@@ -109,6 +109,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/channel_idle_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/idle_filter_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/idle_filter_state.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backend_metric.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backend_metric.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backup_poller.cc" role="src" />

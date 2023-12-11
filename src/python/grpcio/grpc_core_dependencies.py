@@ -19,6 +19,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/census/grpc_context.cc',
     'src/core/ext/filters/channel_idle/channel_idle_filter.cc',
     'src/core/ext/filters/channel_idle/idle_filter_state.cc',
+    'src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc',
     'src/core/ext/filters/client_channel/backend_metric.cc',
     'src/core/ext/filters/client_channel/backup_poller.cc',
     'src/core/ext/filters/client_channel/channel_connectivity.cc',
