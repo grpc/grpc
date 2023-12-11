@@ -85,6 +85,23 @@ void TlsCredentialsOptions::set_certificate_verifier(
   }
 }
 
+void TlsCredentialsOptions::set_min_tls_version(grpc_tls_version tls_version) {
+  grpc_tls_credentials_options* options = mutable_c_credentials_options();
+  GPR_ASSERT(options != nullptr);
+  grpc_tls_credentials_options_set_min_tls_version(options, tls_version);
+}
+
+void TlsCredentialsOptions::set_max_tls_version(grpc_tls_version tls_version) {
+  grpc_tls_credentials_options* options = mutable_c_credentials_options();
+  GPR_ASSERT(options != nullptr);
+  grpc_tls_credentials_options_set_max_tls_version(options, tls_version);
+}
+
+grpc_tls_credentials_options* TlsCredentialsOptions::c_credentials_options()
+    const {
+  return grpc_tls_credentials_options_copy(c_credentials_options_);
+}
+
 void TlsCredentialsOptions::set_check_call_host(bool check_call_host) {
   grpc_tls_credentials_options* options = c_credentials_options();
   GPR_ASSERT(options != nullptr);
