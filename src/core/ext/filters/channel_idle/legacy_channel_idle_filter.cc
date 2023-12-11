@@ -17,7 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
+#include "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h"
 
 #include <functional>
 #include <utility>
@@ -91,7 +91,7 @@ Duration GetClientIdleTimeout(const ChannelArgs& args) {
 
 }  // namespace
 
-struct MaxAgeFilter::Config {
+struct LegacyMaxAgeFilter::Config {
   Duration max_connection_age;
   Duration max_connection_idle;
   Duration max_connection_age_grace;
@@ -133,29 +133,29 @@ struct MaxAgeFilter::Config {
   }
 };
 
-absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
+absl::StatusOr<LegacyClientIdleFilter> LegacyClientIdleFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  ClientIdleFilter filter(filter_args.channel_stack(),
-                          GetClientIdleTimeout(args));
-  return absl::StatusOr<ClientIdleFilter>(std::move(filter));
+  LegacyClientIdleFilter filter(filter_args.channel_stack(),
+                                GetClientIdleTimeout(args));
+  return absl::StatusOr<LegacyClientIdleFilter>(std::move(filter));
 }
 
-absl::StatusOr<MaxAgeFilter> MaxAgeFilter::Create(
+absl::StatusOr<LegacyMaxAgeFilter> LegacyMaxAgeFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  MaxAgeFilter filter(filter_args.channel_stack(),
-                      Config::FromChannelArgs(args));
-  return absl::StatusOr<MaxAgeFilter>(std::move(filter));
+  LegacyMaxAgeFilter filter(filter_args.channel_stack(),
+                            Config::FromChannelArgs(args));
+  return absl::StatusOr<LegacyMaxAgeFilter>(std::move(filter));
 }
 
-void MaxAgeFilter::Shutdown() {
+void LegacyMaxAgeFilter::Shutdown() {
   max_age_activity_.Reset();
-  ChannelIdleFilter::Shutdown();
+  LegacyChannelIdleFilter::Shutdown();
 }
 
-void MaxAgeFilter::PostInit() {
+void LegacyMaxAgeFilter::PostInit() {
   struct StartupClosure {
     RefCountedPtr<grpc_channel_stack> channel_stack;
-    MaxAgeFilter* filter;
+    LegacyMaxAgeFilter* filter;
     grpc_closure closure;
   };
   auto run_startup = [](void* p, grpc_error_handle) {
@@ -222,9 +222,10 @@ void MaxAgeFilter::PostInit() {
 }
 
 // Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
+ArenaPromise<ServerMetadataHandle> LegacyChannelIdleFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
+  using Decrementer =
+      std::unique_ptr<LegacyChannelIdleFilter, CallCountDecreaser>;
   IncreaseCallCount();
   return ArenaPromise<ServerMetadataHandle>(
       [decrementer = Decrementer(this),
@@ -232,32 +233,32 @@ ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
       -> Poll<ServerMetadataHandle> { return next(); });
 }
 
-bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
+bool LegacyChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
   if (!op->disconnect_with_error.ok()) Shutdown();
   // Pass the op to the next filter.
   return false;
 }
 
-void ChannelIdleFilter::Shutdown() {
+void LegacyChannelIdleFilter::Shutdown() {
   // IncreaseCallCount() introduces a phony call and prevent the timer from
   // being reset by other threads.
   IncreaseCallCount();
   activity_.Reset();
 }
 
-void ChannelIdleFilter::IncreaseCallCount() {
+void LegacyChannelIdleFilter::IncreaseCallCount() {
   idle_filter_state_->IncreaseCallCount();
 }
 
-void ChannelIdleFilter::DecreaseCallCount() {
+void LegacyChannelIdleFilter::DecreaseCallCount() {
   if (idle_filter_state_->DecreaseCallCount()) {
     // If there are no more calls in progress, start the idle timer.
     StartIdleTimer();
   }
 }
 
-void ChannelIdleFilter::StartIdleTimer() {
+void LegacyChannelIdleFilter::StartIdleTimer() {
   GRPC_IDLE_FILTER_LOG("timer has started");
   auto idle_filter_state = idle_filter_state_;
   // Hold a ref to the channel stack for the timer callback.
@@ -281,7 +282,7 @@ void ChannelIdleFilter::StartIdleTimer() {
       channel_stack->EventEngine()));
 }
 
-void ChannelIdleFilter::CloseChannel() {
+void LegacyChannelIdleFilter::CloseChannel() {
   auto* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = grpc_error_set_int(
       GRPC_ERROR_CREATE("enter idle"),
@@ -291,31 +292,34 @@ void ChannelIdleFilter::CloseChannel() {
   elem->filter->start_transport_op(elem, op);
 }
 
-const grpc_channel_filter ClientIdleFilter::kFilter =
-    MakePromiseBasedFilter<ClientIdleFilter, FilterEndpoint::kClient>(
+const grpc_channel_filter LegacyClientIdleFilter::kFilter =
+    MakePromiseBasedFilter<LegacyClientIdleFilter, FilterEndpoint::kClient>(
         "client_idle");
-const grpc_channel_filter MaxAgeFilter::kFilter =
-    MakePromiseBasedFilter<MaxAgeFilter, FilterEndpoint::kServer>("max_age");
+const grpc_channel_filter LegacyMaxAgeFilter::kFilter =
+    MakePromiseBasedFilter<LegacyMaxAgeFilter, FilterEndpoint::kServer>(
+        "max_age");
 
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
-  if (!IsV3ChannelIdleFiltersEnabled()) return;
+  if (IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_CHANNEL, &ClientIdleFilter::kFilter)
+      ->RegisterFilter(GRPC_CLIENT_CHANNEL, &LegacyClientIdleFilter::kFilter)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &MaxAgeFilter::kFilter)
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &LegacyMaxAgeFilter::kFilter)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
-        return MaxAgeFilter::Config::FromChannelArgs(channel_args).enable();
+        return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
+            .enable();
       });
 }
 
-MaxAgeFilter::MaxAgeFilter(grpc_channel_stack* channel_stack,
-                           const Config& max_age_config)
-    : ChannelIdleFilter(channel_stack, max_age_config.max_connection_idle),
+LegacyMaxAgeFilter::LegacyMaxAgeFilter(grpc_channel_stack* channel_stack,
+                                       const Config& max_age_config)
+    : LegacyChannelIdleFilter(channel_stack,
+                              max_age_config.max_connection_idle),
       max_connection_age_(max_age_config.max_connection_age),
       max_connection_age_grace_(max_age_config.max_connection_age_grace) {}
 
