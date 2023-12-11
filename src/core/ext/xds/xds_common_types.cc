@@ -385,13 +385,16 @@ CommonTlsContext CommonTlsContext::Parse(
           CertificateProviderInstanceParse(
               context, tls_certificate_certificate_provider_instance, errors);
     } else {
-      if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_certificates(
-              common_tls_context_proto)) {
+      size_t size;
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificates(
+          common_tls_context_proto, &size);
+      if (size != 0) {
         ValidationErrors::ScopedField field(errors, ".tls_certificates");
         errors->AddError("feature unsupported");
       }
-      if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_certificate_sds_secret_configs(
-              common_tls_context_proto)) {
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_sds_secret_configs(
+          common_tls_context_proto, &size);
+      if (size != 0) {
         ValidationErrors::ScopedField field(
             errors, ".tls_certificate_sds_secret_configs");
         errors->AddError("feature unsupported");
