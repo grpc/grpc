@@ -1027,6 +1027,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/compression_filter.cc \
+    src/core/ext/filters/http/message_compress/legacy_compression_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
@@ -1932,6 +1933,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/compression_filter.cc \
+    src/core/ext/filters/http/message_compress/legacy_compression_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \

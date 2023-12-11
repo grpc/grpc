@@ -247,6 +247,8 @@ let package = Package(
         "src/core/ext/filters/http/http_filters_plugin.cc",
         "src/core/ext/filters/http/message_compress/compression_filter.cc",
         "src/core/ext/filters/http/message_compress/compression_filter.h",
+        "src/core/ext/filters/http/message_compress/legacy_compression_filter.cc",
+        "src/core/ext/filters/http/message_compress/legacy_compression_filter.h",
         "src/core/ext/filters/http/server/http_server_filter.cc",
         "src/core/ext/filters/http/server/http_server_filter.h",
         "src/core/ext/filters/message_size/message_size_filter.cc",
