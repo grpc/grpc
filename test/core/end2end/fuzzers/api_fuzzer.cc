@@ -369,6 +369,18 @@ static grpc_channel_credentials* ReadChannelCreds(
   }
 }
 
+static grpc_server_credentials* ReadServerCreds(
+    const api_fuzzer::ServerCreds& creds) {
+  switch (creds.type_case()) {
+    case api_fuzzer::ServerCreds::TYPE_NOT_SET:
+      return nullptr;
+    case api_fuzzer::ServerCreds::kInsecureCreds:
+      return grpc_insecure_server_credentials_create();
+    case api_fuzzer::ServerCreds::kNull:
+      return nullptr;
+  }
+}
+
 namespace grpc_core {
 namespace testing {
 
@@ -428,6 +440,12 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
     server_ = grpc_server_create(args.ToC().get(), nullptr);
     GPR_ASSERT(server_ != nullptr);
     grpc_server_register_completion_queue(server_, cq(), nullptr);
+    for (const auto& http2_port : create_server.http2_ports()) {
+      auto* creds = ReadServerCreds(http2_port.server_creds());
+      auto addr = absl::StrCat("localhost:", http2_port.port());
+      grpc_server_add_http2_port(server_, addr.c_str(), creds);
+      grpc_server_credentials_release(creds);
+    }
     grpc_server_start(server_);
     ResetServerState();
   } else {
