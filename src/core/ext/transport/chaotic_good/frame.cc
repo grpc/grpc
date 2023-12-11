@@ -183,7 +183,7 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
   if (header.stream_id == 0) {
     return absl::InvalidArgumentError("Expected non-zero stream id");
   }
-  frame_header = header;
+  stream_id = header.stream_id;
   if (header.type != FrameType::kFragment) {
     return absl::InvalidArgumentError("Expected fragment frame");
   }
@@ -208,8 +208,8 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
 }
 
 SliceBuffer ClientFragmentFrame::Serialize(HPackCompressor* encoder) const {
-  GPR_ASSERT(frame_header.stream_id != 0);
-  FrameSerializer serializer(frame_header);
+  GPR_ASSERT(stream_id != 0);
+  FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
   }
@@ -226,7 +226,7 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
   if (header.stream_id == 0) {
     return absl::InvalidArgumentError("Expected non-zero stream id");
   }
-  frame_header = header;
+  stream_id = header.stream_id;
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
     auto r =
@@ -250,8 +250,8 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
 }
 
 SliceBuffer ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
-  GPR_ASSERT(frame_header.stream_id != 0);
-  FrameSerializer serializer(frame_header);
+  GPR_ASSERT(stream_id != 0);
+  FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
   }
@@ -280,8 +280,7 @@ absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
 
 SliceBuffer CancelFrame::Serialize(HPackCompressor*) const {
   GPR_ASSERT(stream_id != 0);
-  FrameSerializer serializer(
-      FrameHeader{FrameType::kCancel, {}, stream_id, 0, 0, 0, 0});
+  FrameSerializer serializer(FrameType::kCancel, stream_id);
   return serializer.Finish();
 }
 
