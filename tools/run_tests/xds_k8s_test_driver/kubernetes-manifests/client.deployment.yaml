@@ -42,6 +42,9 @@ spec:
           - "--rpc=${rpc}"
           - "--metadata=${metadata}"
           - "--print_response=${print_response}"
+          % if enable_csm_observability:
+          - "--enable_csm_observability"
+          % endif
         ports:
           - containerPort: ${stats_port}
         env:
