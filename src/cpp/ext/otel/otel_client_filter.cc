@@ -183,8 +183,9 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
                                                       status.code()))}}};
   std::unique_ptr<LabelsIterable> optional_labels;
   if (OTelPluginState().labels_injector != nullptr) {
-    OTelPluginState().labels_injector->GetLabelsFromOptionalLabels(
-        optional_labels_vector_);
+    optional_labels =
+        OTelPluginState().labels_injector->GetLabelsFromOptionalLabels(
+            optional_labels_vector_);
   }
   KeyValueIterable labels(injected_labels_.get(), optional_labels.get(),
                           additional_labels);

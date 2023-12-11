@@ -323,13 +323,15 @@ class OptionalLabelsIterable : public LabelsIterable {
   explicit OptionalLabelsIterable(
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
           optional_labels_span) {
+    // Performs JSON label name format to Service Labels spec format conversion.
     for (const auto& optional_labels : optional_labels_span) {
-      if (optional_labels->find("service_name") != optional_labels->end()) {
-        optional_labels_[0].second = (*optional_labels)["service_name"];
+      if (optional_labels->find("serviceName") != optional_labels->end()) {
+        optional_labels_[0] = {"csm.service_name",
+                               optional_labels->at("serviceName")};
       }
-      if (optional_labels->find("service_namespace") !=
-          optional_labels->end()) {
-        optional_labels_[1].second = (*optional_labels)["service_namespace"];
+      if (optional_labels->find("serviceNamespace") != optional_labels->end()) {
+        optional_labels_[1] = {"csm.service_namespace_name",
+                               optional_labels->at("serviceNamespace")};
       }
     }
   }
@@ -350,8 +352,7 @@ class OptionalLabelsIterable : public LabelsIterable {
   void ResetIteratorPosition() override { pos_ = 0; }
 
  private:
-  absl::InlinedVector<std::pair<std::string, std::string>, 2> optional_labels_ =
-      {{"service_name", "unknown"}, {"service_namespace", "unknown"}};
+  absl::InlinedVector<std::pair<std::string, std::string>, 2> optional_labels_;
   uint32_t pos_ = 0;
 };
 

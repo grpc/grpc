@@ -361,10 +361,18 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
        Json::FromNumber(state.update->max_concurrent_requests)},
       {"serviceLabels",
        Json::FromObject({
-           {"serviceName", Json::FromString(state.update->telemetry_labels.at(
-                               "service_name"))},
-           {"serviceNamespace", Json::FromString(state.update->telemetry_labels
-                                                     .at("service_namespace"))},
+           {"serviceName",
+            Json::FromString(
+                state.update->telemetry_labels.find("service_name") !=
+                        state.update->telemetry_labels.end()
+                    ? state.update->telemetry_labels.at("service_name")
+                    : "unknown")},
+           {"serviceNamespace",
+            Json::FromString(
+                state.update->telemetry_labels.find("service_namespace") !=
+                        state.update->telemetry_labels.end()
+                    ? state.update->telemetry_labels.at("service_namespace")
+                    : "unknown")},
        })},
   };
   if (state.update->outlier_detection.has_value()) {

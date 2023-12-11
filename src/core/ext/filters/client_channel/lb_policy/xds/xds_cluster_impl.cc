@@ -382,8 +382,10 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   using OptionalLabelComponent =
       ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
-  call_state->GetCallAttemptTracer()->AddOptionalLabels(
-      OptionalLabelComponent::kXdsServiceLabels, service_labels_);
+  if (call_state->GetCallAttemptTracer() != nullptr) {
+    call_state->GetCallAttemptTracer()->AddOptionalLabels(
+        OptionalLabelComponent::kXdsServiceLabels, service_labels_);
+  }
   // Handle EDS drops.
   const std::string* drop_category;
   if (drop_config_->ShouldDrop(&drop_category)) {
