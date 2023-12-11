@@ -537,11 +537,11 @@ def update_test_metadata_with_transitive_metadata(
 
         bazel_rule = bazel_rules[_get_bazel_label(lib_name)]
 
-        if "//external:benchmark" in bazel_rule["_TRANSITIVE_DEPS"]:
+        if "//third_party:benchmark" in bazel_rule["_TRANSITIVE_DEPS"]:
             lib_dict["benchmark"] = True
             lib_dict["defaults"] = "benchmark"
 
-        if "//external:gtest" in bazel_rule["_TRANSITIVE_DEPS"]:
+        if "//third_party:gtest" in bazel_rule["_TRANSITIVE_DEPS"]:
             # run_tests.py checks the "gtest" property to see if test should be run via gtest.
             lib_dict["gtest"] = True
             # TODO: this might be incorrect categorization of the test...
@@ -597,9 +597,9 @@ def _expand_upb_proto_library_rules(bazel_rules):
             # deps is not properly fetched from bazel query for upb_c_proto_library target
             # so add the upb dependency manually
             bazel_rule["deps"] = [
-                "//external:upb_lib",
-                "//external:upb_lib_descriptor",
-                "//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+                "//third_party:upb_lib",
+                "//third_party:upb_lib_descriptor",
+                "//third_party:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
             ]
             # populate the upb_c_proto_library rule with pre-generated upb headers
             # and sources using proto_rule
@@ -666,7 +666,7 @@ def _patch_grpc_proto_library_rules(bazel_rules):
             and generator_func == "grpc_proto_library"
         ):
             # Add explicit protobuf dependency for internal c++ proto targets.
-            bazel_rule["deps"].append("//external:protobuf")
+            bazel_rule["deps"].append("//third_party:protobuf")
 
 
 def _patch_descriptor_upb_proto_library(bazel_rules):
@@ -1045,7 +1045,7 @@ def _parse_http_archives(xml_tree: ET.Element) -> "List[ExternalProtoLibrary]":
 
 def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
     """Generates the build metadata for external proto libraries"""
-    xml_tree = _bazel_query_xml_tree("kind(http_archive, //external:*)")
+    xml_tree = _bazel_query_xml_tree("kind(http_archive, //third_party:*)")
     libraries = _parse_http_archives(xml_tree)
     libraries.sort(key=lambda x: x.destination)
     return list(map(lambda x: x.__dict__, libraries))
@@ -1314,13 +1314,13 @@ _BAZEL_DEPS_QUERIES = [
     'deps("//test/...")',
     'deps("//:all")',
     'deps("//src/compiler/...")',
-    # allow resolving bind() workspace rules to the actual targets they point to
-    'kind(bind, "//external:*")',
+    # allow resolving alias() targets to the actual targets they point to
+    'kind(alias, "//third_party:*")',
     # The ^ is needed to differentiate proto_library from go_proto_library
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
     # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds
     # as upb_c_proto_library dependencies.
-    'deps("//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
+    'deps("//third_party:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
 ]
 
 # Step 1: run a bunch of "bazel query --output xml" queries to collect

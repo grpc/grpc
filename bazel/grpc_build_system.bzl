@@ -65,7 +65,7 @@ def _get_external_deps(external_deps):
         elif dep == "cares":
             ret += select({
                 "//:grpc_no_ares": [],
-                "//conditions:default": ["//external:cares"],
+                "//conditions:default": ["//third_party:cares"],
             })
         elif dep == "cronet_c_for_grpc":
             ret.append("//third_party/objective_c/Cronet:cronet_c_for_grpc")
@@ -78,7 +78,7 @@ def _get_external_deps(external_deps):
         elif dep.startswith("google_cloud_cpp"):
             ret.append(dep.replace("google_cloud_cpp", "@google_cloud_cpp//"))
         else:
-            ret.append("//external:" + dep)
+            ret.append("//third_party:" + dep)
     return ret
 
 def _update_visibility(visibility):

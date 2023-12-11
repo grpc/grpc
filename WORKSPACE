@@ -113,6 +113,12 @@ load("@com_github_google_benchmark//:bazel/benchmark_deps.bzl", "benchmark_deps"
 
 benchmark_deps()
 
+# This is a transitive dependency from com_github_google_benchmark
+bind(
+    name = "cares",
+    actual = "@com_github_cares_cares//:ares",
+)
+
 load("@io_opentelemetry_cpp//bazel:repository.bzl", "opentelemetry_cpp_deps")
 
 opentelemetry_cpp_deps()
@@ -120,6 +126,12 @@ opentelemetry_cpp_deps()
 load("@io_opentelemetry_cpp//bazel:extra_deps.bzl", "opentelemetry_extra_deps")
 
 opentelemetry_extra_deps()
+
+# Transitive dependency of opentelemetry_extra_deps()
+bind(
+    name = "madler_zlib",
+    actual = "@zlib//:zlib",
+)
 
 # TODO: Enable below once https://github.com/bazel-xcode/PodToBUILD/issues/232 is resolved
 #
