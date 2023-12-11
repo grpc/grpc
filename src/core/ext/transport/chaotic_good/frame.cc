@@ -50,12 +50,11 @@ const NoDestruct<Slice> kZeroSlice{[] {
 
 class FrameSerializer {
  public:
-  explicit FrameSerializer(FrameHeader header) : header_(header) {
+  explicit FrameSerializer(FrameType frame_type, uint32_t stream_id) {
     output_.AppendIndexed(kZeroSlice->Copy());
-    // Initialize header flags, header_length, trailer_length to 0.
+    header_.type = frame_type;
+    header_.stream_id = stream_id;
     header_.flags.SetAll(false);
-    header_.header_length = 0;
-    header_.trailer_length = 0;
   }
   // If called, must be called before AddTrailers, Finish.
   SliceBuffer& AddHeaders() {
@@ -173,8 +172,7 @@ absl::Status SettingsFrame::Deserialize(HPackParser*, const FrameHeader& header,
 }
 
 SliceBuffer SettingsFrame::Serialize(HPackCompressor*) const {
-  FrameSerializer serializer(
-      FrameHeader{FrameType::kSettings, {}, 0, 0, 0, 0, 0});
+  FrameSerializer serializer(FrameType::kSettings, 0);
   return serializer.Finish();
 }
 

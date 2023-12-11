@@ -77,14 +77,13 @@ struct ClientFragmentFrame final : public FrameInterface {
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
 
-  FrameHeader frame_header;
+  uint32_t stream_id;
   ClientMetadataHandle headers;
   MessageHandle message;
   bool end_of_stream = false;
 
   bool operator==(const ClientFragmentFrame& other) const {
-    return frame_header.stream_id == other.frame_header.stream_id &&
-           EqHdl(headers, other.headers) &&
+    return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
            end_of_stream == other.end_of_stream;
   }
 };
@@ -95,14 +94,14 @@ struct ServerFragmentFrame final : public FrameInterface {
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
 
-  FrameHeader frame_header;
+  uint32_t stream_id;
   ServerMetadataHandle headers;
   MessageHandle message;
   ServerMetadataHandle trailers;
 
   bool operator==(const ServerFragmentFrame& other) const {
-    return frame_header.stream_id == other.frame_header.stream_id &&
-           EqHdl(headers, other.headers) && EqHdl(trailers, other.trailers);
+    return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
+           EqHdl(trailers, other.trailers);
   }
 };
 
