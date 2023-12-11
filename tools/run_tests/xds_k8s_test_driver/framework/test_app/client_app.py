@@ -17,6 +17,7 @@ Provides an interface to xDS Test Client running remotely.
 import datetime
 import functools
 import logging
+import time
 from typing import Iterable, List, Optional
 
 import framework.errors
@@ -314,9 +315,35 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             )
 
             try:
-                channel = self.check_channel_successful_calls(
+                channel_first_attempt = self.check_channel_successful_calls(
                     channel, **rpc_params
                 )
+                time.sleep(2)
+                channel_second_attempt = self.check_channel_successful_calls(
+                    channel, **rpc_params
+                )
+                # With channels to the xDS control plane, the channel can be
+                # READY but the calls could be failing due to failure to fetch
+                # OAUTH2 token. To increase the confidence that we have a valid
+                # channel with working OAUTH2 tokens, we check whether the
+                # channel is in a READY state with active calls twice with an
+                # interval of 2 seconds between the two attempts. If the OAUTH2
+                # token is not valid, the call would fail and be caught in
+                # either the first attempt, or the second attempt. It is
+                # possible that between the two attempts, a call fails and a new
+                # call is started, so we also test for equality between the
+                # started calls of the two channelz results.
+                # There still exists a possibility that a call fails on fetching
+                # OAUTH2 token after 2 seconds (maybe because there is a
+                # slowdown in the system.) If such a case is observed, consider
+                # increasing the interval from 2 seconds to 5 seconds.
+                if (
+                    channel_first_attempt.data.calls_started
+                    != channel_second_attempt.data.calls_started
+                ):
+                    raise self.NotFound(
+                        f"[{self.hostname}] Not found successful calls over the channel."
+                    )
                 logger.info(
                     "[%s] Detected successful calls to xDS control plane %s,"
                     " channel: %s",
