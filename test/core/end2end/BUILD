@@ -286,7 +286,10 @@ grpc_core_end2end_test(name = "channelz")
 
 grpc_core_end2end_test(name = "client_streaming")
 
-grpc_core_end2end_test(name = "compressed_payload", tags=["compression_test"])
+grpc_core_end2end_test(
+    name = "compressed_payload",
+    tags = ["compression_test"],
+)
 
 grpc_core_end2end_test(name = "connectivity")
 

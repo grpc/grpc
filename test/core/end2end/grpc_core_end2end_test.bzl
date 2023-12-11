@@ -25,7 +25,7 @@ END2END_TEST_DATA = [
     "//src/core/tsi/test_creds:server1.pem",
 ]
 
-def grpc_core_end2end_test(name, shard_count = 10, tags=[]):
+def grpc_core_end2end_test(name, shard_count = 10, tags = []):
     if len(name) > 60:
         fail("test name %s too long" % name)
 

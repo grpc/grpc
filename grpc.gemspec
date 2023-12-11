@@ -253,6 +253,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/http/http_filters_plugin.cc )
   s.files += %w( src/core/ext/filters/http/message_compress/compression_filter.cc )
   s.files += %w( src/core/ext/filters/http/message_compress/compression_filter.h )
+  s.files += %w( src/core/ext/filters/http/message_compress/legacy_compression_filter.cc )
+  s.files += %w( src/core/ext/filters/http/message_compress/legacy_compression_filter.h )
   s.files += %w( src/core/ext/filters/http/server/http_server_filter.cc )
   s.files += %w( src/core/ext/filters/http/server/http_server_filter.h )
   s.files += %w( src/core/ext/filters/message_size/message_size_filter.cc )
