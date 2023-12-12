@@ -139,8 +139,18 @@ inline constexpr bool HasAsyncErrorInterceptor(const NoInterceptor*) {
   return false;
 }
 
+template <typename T, typename A0, typename... As>
+inline constexpr bool HasAsyncErrorInterceptor(A0 (T::*)(A0, As...)) {
+  return false;
+}
+
 template <typename T, typename... A>
 inline constexpr bool HasAsyncErrorInterceptor(absl::Status (T::*)(A...)) {
+  return true;
+}
+
+template <typename R, typename T, typename... A>
+inline constexpr bool HasAsyncErrorInterceptor(absl::StatusOr<R> (T::*)(A...)) {
   return true;
 }
 
@@ -438,6 +448,34 @@ inline void InterceptClientToServerMessage(
       });
 }
 
+template <typename Derived>
+inline void InterceptClientToServerMessage(
+    MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
+  call_args.client_to_server_messages->InterceptAndMap(
+      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+        return call_data->call.OnClientToServerMessage(std::move(msg),
+                                                       call_data->channel);
+      });
+}
+
+template <typename Derived>
+inline void InterceptClientToServerMessage(
+    absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
+  call_args.client_to_server_messages->InterceptAndMap(
+      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto r = call_data->call.OnClientToServerMessage(std::move(msg),
+                                                         call_data->channel);
+        if (r.ok()) return std::move(*r);
+        if (call_data->error_latch.is_set()) return absl::nullopt;
+        call_data->error_latch.Set(ServerMetadataFromStatus(r.status()));
+        return absl::nullopt;
+      });
+}
+
 inline void InterceptClientToServerMessage(const NoInterceptor*, void*, void*,
                                            CallSpineInterface*) {}
 
@@ -446,7 +484,7 @@ inline void InterceptClientToServerMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&),
     typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
-  call_spine->server_to_client_messages().sender.InterceptAndMap(
+  call_spine->client_to_server_messages().receiver.InterceptAndMap(
       [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call->OnClientToServerMessage(*msg);
         if (return_md == nullptr) return std::move(msg);
@@ -460,12 +498,39 @@ inline void InterceptClientToServerMessage(
     typename Derived::Call* call, Derived* channel,
     CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
-  call_spine->server_to_client_messages().sender.InterceptAndMap(
+  call_spine->client_to_server_messages().receiver.InterceptAndMap(
       [call, call_spine,
        channel](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call->OnClientToServerMessage(*msg, channel);
         if (return_md == nullptr) return std::move(msg);
         return call_spine->Cancel(std::move(return_md));
+      });
+}
+
+template <typename Derived>
+inline void InterceptClientToServerMessage(
+    MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
+  call_spine->client_to_server_messages().receiver.InterceptAndMap(
+      [call, channel](MessageHandle msg) {
+        return call->OnClientToServerMessage(std::move(msg), channel);
+      });
+}
+
+template <typename Derived>
+inline void InterceptClientToServerMessage(
+    absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
+  call_spine->client_to_server_messages().receiver.InterceptAndMap(
+      [call, call_spine,
+       channel](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto r = call->OnClientToServerMessage(std::move(msg), channel);
+        if (r.ok()) return std::move(*r);
+        return call_spine->Cancel(ServerMetadataFromStatus(r.status()));
       });
 }
 
@@ -584,6 +649,36 @@ inline void InterceptServerInitialMetadata(
       });
 }
 
+template <typename Derived>
+inline void InterceptServerInitialMetadata(
+    void (Derived::Call::*fn)(ServerMetadata&, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
+  call_args.server_initial_metadata->InterceptAndMap(
+      [call_data](ServerMetadataHandle md) {
+        call_data->call.OnServerInitialMetadata(*md, call_data->channel);
+        return md;
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerInitialMetadata(
+    absl::Status (Derived::Call::*fn)(ServerMetadata&, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
+  call_args.server_initial_metadata->InterceptAndMap(
+      [call_data](
+          ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
+        auto status =
+            call_data->call.OnServerInitialMetadata(*md, call_data->channel);
+        if (!status.ok() && !call_data->error_latch.is_set()) {
+          call_data->error_latch.Set(ServerMetadataFromStatus(status));
+          return absl::nullopt;
+        }
+        return std::move(md);
+      });
+}
+
 inline void InterceptServerInitialMetadata(const NoInterceptor*, void*, void*,
                                            CallSpineInterface*) {}
 
@@ -608,6 +703,34 @@ inline void InterceptServerInitialMetadata(
       [call, call_spine](
           ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
         auto status = call->OnServerInitialMetadata(*md);
+        if (status.ok()) return std::move(md);
+        return call_spine->Cancel(ServerMetadataFromStatus(status));
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerInitialMetadata(
+    void (Derived::Call::*fn)(ServerMetadata&, Derived*),
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
+  call_spine->server_initial_metadata().sender.InterceptAndMap(
+      [call, channel](ServerMetadataHandle md) {
+        call->OnServerInitialMetadata(*md, channel);
+        return md;
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerInitialMetadata(
+    absl::Status (Derived::Call::*fn)(ServerMetadata&, Derived*),
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
+  call_spine->server_initial_metadata().sender.InterceptAndMap(
+      [call, call_spine, channel](
+          ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
+        auto status = call->OnServerInitialMetadata(*md, channel);
         if (status.ok()) return std::move(md);
         return call_spine->Cancel(ServerMetadataFromStatus(status));
       });
@@ -647,6 +770,34 @@ inline void InterceptServerToClientMessage(
       });
 }
 
+template <typename Derived>
+inline void InterceptServerToClientMessage(
+    MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
+  call_args.server_to_client_messages->InterceptAndMap(
+      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+        return call_data->call.OnServerToClientMessage(std::move(msg),
+                                                       call_data->channel);
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerToClientMessage(
+    absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
+  call_args.server_to_client_messages->InterceptAndMap(
+      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto r = call_data->call.OnServerToClientMessage(std::move(msg),
+                                                         call_data->channel);
+        if (r.ok()) return std::move(*r);
+        if (call_data->error_latch.is_set()) return absl::nullopt;
+        call_data->error_latch.Set(ServerMetadataFromStatus(r.status()));
+        return absl::nullopt;
+      });
+}
+
 inline void InterceptServerToClientMessage(const NoInterceptor*, void*, void*,
                                            CallSpineInterface*) {}
 
@@ -675,6 +826,33 @@ inline void InterceptServerToClientMessage(
         auto return_md = call->OnServerToClientMessage(*msg, channel);
         if (return_md == nullptr) return std::move(msg);
         return call_spine->Cancel(std::move(return_md));
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerToClientMessage(
+    MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
+  call_spine->server_to_client_messages().sender.InterceptAndMap(
+      [call, channel](MessageHandle msg) {
+        return call->OnServerToClientMessage(std::move(msg), channel);
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerToClientMessage(
+    absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
+  call_spine->server_to_client_messages().sender.InterceptAndMap(
+      [call, call_spine,
+       channel](MessageHandle msg) -> absl::optional<MessageHandle> {
+        auto r = call->OnServerToClientMessage(std::move(msg), channel);
+        if (r.ok()) return std::move(*r);
+        return call_spine->Cancel(ServerMetadataFromStatus(r.status()));
       });
 }
 

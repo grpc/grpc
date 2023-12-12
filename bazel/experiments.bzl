@@ -51,6 +51,7 @@ EXPERIMENT_ENABLES = {
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "v3_channel_idle_filters": "v3_channel_idle_filters",
+    "v3_compression_filter": "v3_compression_filter",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
     "work_serializer_dispatch": "work_serializer_dispatch",
     "write_size_policy": "write_size_policy",
@@ -65,6 +66,9 @@ EXPERIMENTS = {
         "off": {
             "bad_client_test": [
                 "rfc_max_concurrent_streams",
+            ],
+            "compression_test": [
+                "v3_compression_filter",
             ],
             "core_end2end_test": [
                 "promise_based_client_call",
@@ -145,6 +149,9 @@ EXPERIMENTS = {
             "bad_client_test": [
                 "rfc_max_concurrent_streams",
             ],
+            "compression_test": [
+                "v3_compression_filter",
+            ],
             "core_end2end_test": [
                 "promise_based_client_call",
                 "promise_based_server_call",
@@ -220,6 +227,9 @@ EXPERIMENTS = {
             ],
             "cancel_ares_query_test": [
                 "event_engine_dns",
+            ],
+            "compression_test": [
+                "v3_compression_filter",
             ],
             "core_end2end_test": [
                 "event_engine_client",
