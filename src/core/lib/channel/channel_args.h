@@ -345,7 +345,7 @@ class ChannelArgs {
       return &rep_;
     }
 
-    std::string ToString() const;
+    absl::string_view ToString(std::list<std::string>& backing) const;
 
     grpc_arg MakeCArg(const char* name) const;
 

@@ -26,10 +26,10 @@ import logging
 import multiprocessing
 import os
 import os.path
-import pipes
 import platform
 import random
 import re
+import shlex
 import socket
 import subprocess
 import sys
@@ -479,7 +479,7 @@ class CLanguage(object):
                         cmdline = [binary] + target["args"]
                         shortname = target.get(
                             "shortname",
-                            " ".join(pipes.quote(arg) for arg in cmdline),
+                            " ".join(shlex.quote(arg) for arg in cmdline),
                         )
                         shortname += shortname_ext
                         out.append(
@@ -1187,6 +1187,19 @@ class ObjCLanguage(object):
                 },
             )
         )
+        out.append(
+            self.config.job_spec(
+                ["src/objective-c/tests/build_one_example.sh"],
+                timeout_seconds=20 * 60,
+                shortname="ios-buildtest-example-switft-use-frameworks",
+                cpu_cost=1e6,
+                environ={
+                    "SCHEME": "SwiftUseFrameworks",
+                    "EXAMPLE_PATH": "src/objective-c/examples/SwiftUseFrameworks",
+                },
+            )
+        )
+
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
         # out.append(

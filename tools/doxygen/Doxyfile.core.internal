@@ -891,6 +891,8 @@ src/core/ext/filters/channel_idle/channel_idle_filter.cc \
 src/core/ext/filters/channel_idle/channel_idle_filter.h \
 src/core/ext/filters/channel_idle/idle_filter_state.cc \
 src/core/ext/filters/channel_idle/idle_filter_state.h \
+src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
+src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h \
 src/core/ext/filters/client_channel/README.md \
 src/core/ext/filters/client_channel/backend_metric.cc \
 src/core/ext/filters/client_channel/backend_metric.h \
@@ -1025,6 +1027,8 @@ src/core/ext/filters/http/client_authority_filter.h \
 src/core/ext/filters/http/http_filters_plugin.cc \
 src/core/ext/filters/http/message_compress/compression_filter.cc \
 src/core/ext/filters/http/message_compress/compression_filter.h \
+src/core/ext/filters/http/message_compress/legacy_compression_filter.cc \
+src/core/ext/filters/http/message_compress/legacy_compression_filter.h \
 src/core/ext/filters/http/server/http_server_filter.cc \
 src/core/ext/filters/http/server/http_server_filter.h \
 src/core/ext/filters/message_size/message_size_filter.cc \
@@ -2044,7 +2048,6 @@ src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/grpc_polled_fd.h \
 src/core/lib/event_engine/handle_containers.h \
-src/core/lib/event_engine/memory_allocator.cc \
 src/core/lib/event_engine/memory_allocator_factory.h \
 src/core/lib/event_engine/nameser.h \
 src/core/lib/event_engine/poller.h \
@@ -2061,6 +2064,8 @@ src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
 src/core/lib/event_engine/posix_engine/internal_errqueue.h \
 src/core/lib/event_engine/posix_engine/lockfree_event.cc \
 src/core/lib/event_engine/posix_engine/lockfree_event.h \
+src/core/lib/event_engine/posix_engine/native_dns_resolver.cc \
+src/core/lib/event_engine/posix_engine/native_dns_resolver.h \
 src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
 src/core/lib/event_engine/posix_engine/posix_endpoint.h \
 src/core/lib/event_engine/posix_engine/posix_engine.cc \
@@ -2087,6 +2092,7 @@ src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h \
+src/core/lib/event_engine/ref_counted_dns_resolver_interface.h \
 src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/resolved_address_internal.h \
 src/core/lib/event_engine/shim.cc \
@@ -2439,6 +2445,7 @@ src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
 src/core/lib/promise/sleep.cc \
 src/core/lib/promise/sleep.h \
+src/core/lib/promise/status_flag.h \
 src/core/lib/promise/trace.cc \
 src/core/lib/promise/trace.h \
 src/core/lib/promise/try_seq.h \

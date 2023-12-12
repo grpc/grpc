@@ -1020,7 +1020,9 @@ grpc_cc_library(
         "construct_destruct",
         "poll",
         "promise_factory",
+        "promise_status",
         "promise_trace",
+        "status_flag",
         "//:gpr",
         "//:gpr_platform",
     ],
@@ -1163,9 +1165,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "event_engine_memory_allocator",
-    srcs = [
-        "lib/event_engine/memory_allocator.cc",
-    ],
     hdrs = [
         "//:include/grpc/event_engine/internal/memory_allocator_impl.h",
         "//:include/grpc/event_engine/memory_allocator.h",
@@ -1175,7 +1174,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "slice",
-        "slice_refcount",
         "//:gpr_platform",
     ],
 )
@@ -1221,6 +1219,7 @@ grpc_cc_library(
         "race",
         "resource_quota_trace",
         "seq",
+        "slice_refcount",
         "time",
         "useful",
         "//:gpr",
@@ -2141,6 +2140,7 @@ grpc_cc_library(
         "forkable",
         "init_internally",
         "iomgr_port",
+        "native_dns_resolver",
         "no_destruct",
         "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
@@ -2151,7 +2151,9 @@ grpc_cc_library(
         "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
+        "ref_counted_dns_resolver_interface",
         "useful",
+        "//:config_vars",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
@@ -2473,6 +2475,41 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ref_counted_dns_resolver_interface",
+    hdrs = ["lib/event_engine/ref_counted_dns_resolver_interface.h"],
+    external_deps = ["absl/strings"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+        "//:orphanable",
+    ],
+)
+
+grpc_cc_library(
+    name = "native_dns_resolver",
+    srcs = [
+        "lib/event_engine/posix_engine/native_dns_resolver.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/posix_engine/native_dns_resolver.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "iomgr_port",
+        "ref_counted_dns_resolver_interface",
+        "useful",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "ares_resolver",
     srcs = [
         "lib/event_engine/ares_resolver.cc",
@@ -2507,6 +2544,7 @@ grpc_cc_library(
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
         "posix_event_engine_tcp_socket_utils",
+        "ref_counted_dns_resolver_interface",
         "resolved_address",
         "slice",
         "windows_iocp",
@@ -3854,9 +3892,11 @@ grpc_cc_library(
     name = "grpc_channel_idle_filter",
     srcs = [
         "ext/filters/channel_idle/channel_idle_filter.cc",
+        "ext/filters/channel_idle/legacy_channel_idle_filter.cc",
     ],
     hdrs = [
         "ext/filters/channel_idle/channel_idle_filter.h",
+        "ext/filters/channel_idle/legacy_channel_idle_filter.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -6171,6 +6211,7 @@ grpc_cc_library(
     ],
     deps = [
         "bitset",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
