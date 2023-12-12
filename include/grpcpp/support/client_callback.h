@@ -123,15 +123,6 @@ class ClientReactor {
   /// \param[in] s The status outcome of this RPC
   virtual void OnDone(const grpc::Status& /*s*/) = 0;
 
-  /// InternalScheduleOnDone is not part of the API and is not meant to be
-  /// overridden. It is virtual to allow successful builds for certain bazel
-  /// build users that only want to depend on gRPC codegen headers and not the
-  /// full library (although this is not a generally-supported option). Although
-  /// the virtual call is slower than a direct call, this function is
-  /// heavyweight and the cost of the virtual call is not much in comparison.
-  /// This function may be removed or devirtualized in the future.
-  virtual void InternalScheduleOnDone(grpc::Status s);
-
   /// InternalTrailersOnly is not part of the API and is not meant to be
   /// overridden. It is virtual to allow successful builds for certain bazel
   /// build users that only want to depend on gRPC codegen headers and not the
@@ -649,11 +640,12 @@ class ClientCallbackReaderWriterImpl
       auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackReaderWriterImpl();
+      auto* engine = call->event_engine();
       grpc_call_unref(call);
       if (GPR_LIKELY(from_reaction)) {
         reactor->OnDone(s);
       } else {
-        reactor->InternalScheduleOnDone(std::move(s));
+        engine->Run([reactor, s = std::move(s)]() { reactor->OnDone(s); });
       }
     }
   }
@@ -821,12 +813,13 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
       grpc::Status s = std::move(finish_status_);
       auto* reactor = reactor_;
       auto* call = call_.call();
+      auto* engine = call->event_engine();
       this->~ClientCallbackReaderImpl();
       grpc_call_unref(call);
       if (GPR_LIKELY(from_reaction)) {
         reactor->OnDone(s);
       } else {
-        reactor->InternalScheduleOnDone(std::move(s));
+        engine->Run([reactor, s = std::move(s)]() { reactor->OnDone(s); });
       }
     }
   }
@@ -1039,12 +1032,13 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
       grpc::Status s = std::move(finish_status_);
       auto* reactor = reactor_;
       auto* call = call_.call();
+      auto* engine = call->event_engine();
       this->~ClientCallbackWriterImpl();
       grpc_call_unref(call);
       if (GPR_LIKELY(from_reaction)) {
         reactor->OnDone(s);
       } else {
-        reactor->InternalScheduleOnDone(std::move(s));
+        engine->Run([reactor, s = std::move(s)]() { reactor->OnDone(s); });
       }
     }
   }
