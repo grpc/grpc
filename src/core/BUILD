@@ -3892,9 +3892,11 @@ grpc_cc_library(
     name = "grpc_channel_idle_filter",
     srcs = [
         "ext/filters/channel_idle/channel_idle_filter.cc",
+        "ext/filters/channel_idle/legacy_channel_idle_filter.cc",
     ],
     hdrs = [
         "ext/filters/channel_idle/channel_idle_filter.h",
+        "ext/filters/channel_idle/legacy_channel_idle_filter.h",
     ],
     external_deps = [
         "absl/base:core_headers",
