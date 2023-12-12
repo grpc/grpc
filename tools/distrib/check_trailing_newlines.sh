@@ -17,7 +17,7 @@
 cd $(dirname $0)/../..
 
 function find_without_newline() {
-  find . -type f -not -path './third_party/*' -and \(  \
+  find . -type f -not -path './third_party/*' -not -path './python_pylint_venv/*' -and \(  \
                              -name '*.c'               \
                          -or -name '*.cc'              \
                          -or -name '*.proto'           \
