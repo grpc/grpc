@@ -53,9 +53,8 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
   ClientTransport* client_transport() override { return nullptr; }
   ServerTransport* server_transport() override { return this; }
   absl::string_view GetTransportName() const override { return "inproc"; }
-  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
-  void SetPollsetSet(grpc_stream* stream,
-                     grpc_pollset_set* pollset_set) override {}
+  void SetPollset(grpc_stream*, grpc_pollset*) override {}
+  void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override {
     gpr_log(GPR_INFO, "inproc server op: %s",
             grpc_transport_op_string(op).c_str());
@@ -136,10 +135,9 @@ class InprocClientTransport final : public Transport, public ClientTransport {
   ClientTransport* client_transport() override { return this; }
   ServerTransport* server_transport() override { return nullptr; }
   absl::string_view GetTransportName() const override { return "inproc"; }
-  void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
-  void SetPollsetSet(grpc_stream* stream,
-                     grpc_pollset_set* pollset_set) override {}
-  void PerformOp(grpc_transport_op* op) override { Crash("unimplemented"); }
+  void SetPollset(grpc_stream*, grpc_pollset*) override {}
+  void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
+  void PerformOp(grpc_transport_op*) override { Crash("unimplemented"); }
   grpc_endpoint* GetEndpoint() override { return nullptr; }
 
  private:
