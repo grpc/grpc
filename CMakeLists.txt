@@ -12503,8 +12503,8 @@ target_include_directories(frame_header_test
 target_link_libraries(frame_header_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::status
   absl::statusor
+  gpr
 )
 
 
