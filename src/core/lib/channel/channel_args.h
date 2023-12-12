@@ -345,7 +345,7 @@ class ChannelArgs {
       return &rep_;
     }
 
-    std::string ToString() const;
+    absl::string_view ToString(std::list<std::string>& backing) const;
 
     grpc_arg MakeCArg(const char* name) const;
 
@@ -391,8 +391,8 @@ class ChannelArgs {
 
   // Only used in union_with_test.cc, reference version of UnionWith for
   // differential fuzzing.
-  GRPC_MUST_USE_RESULT ChannelArgs
-  FuzzingReferenceUnionWith(ChannelArgs other) const;
+  GRPC_MUST_USE_RESULT ChannelArgs FuzzingReferenceUnionWith(
+      ChannelArgs other) const;
 
   const Value* Get(absl::string_view name) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
@@ -466,8 +466,8 @@ class ChannelArgs {
   GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
   bool Contains(absl::string_view name) const;
 
-  GRPC_MUST_USE_RESULT ChannelArgs
-  RemoveAllKeysWithPrefix(absl::string_view prefix) const;
+  GRPC_MUST_USE_RESULT ChannelArgs RemoveAllKeysWithPrefix(
+      absl::string_view prefix) const;
 
   template <typename T>
   bool ContainsObject() const {
