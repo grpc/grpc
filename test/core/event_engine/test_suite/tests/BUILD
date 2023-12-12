@@ -76,6 +76,7 @@ grpc_cc_library(
         "//test/core/util:grpc_test_util_base",
         "//test/cpp/util:get_grpc_test_runfile_dir",
         "//test/cpp/util:test_util",
+        "//test/cpp/util/windows:manifest_file",
     ],
     alwayslink = 1,
 )

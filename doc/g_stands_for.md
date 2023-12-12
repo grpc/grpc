@@ -58,4 +58,6 @@
 - 1.56 'g' stands for ['galvanized'](https://github.com/grpc/grpc/tree/v1.56.x)
 - 1.57 'g' stands for ['grounded'](https://github.com/grpc/grpc/tree/v1.57.x)
 - 1.58 'g' stands for ['goku'](https://github.com/grpc/grpc/tree/v1.58.x)
-- 1.59 'g' stands for ['generative'](https://github.com/grpc/grpc/tree/master)
+- 1.59 'g' stands for ['generative'](https://github.com/grpc/grpc/tree/v1.59.x)
+- 1.60 'g' stands for ['gjallarhorn'](https://github.com/grpc/grpc/tree/v1.60.x)
+- 1.61 'g' stands for ['grand'](https://github.com/grpc/grpc/tree/master)

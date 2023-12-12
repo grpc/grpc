@@ -40,6 +40,8 @@ extern void SecurityRegisterHandshakerFactories(
     CoreConfiguration::Builder* builder);
 extern void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder);
 extern void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder);
+extern void RegisterLegacyChannelIdleFilters(
+    CoreConfiguration::Builder* builder);
 extern void RegisterDeadlineFilter(CoreConfiguration::Builder* builder);
 extern void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterHttpFilters(CoreConfiguration::Builder* builder);
@@ -63,6 +65,7 @@ extern void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterWeightedRoundRobinLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder);
+extern void RegisterConnectedChannel(CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #endif  // !GRPC_NO_RLS
@@ -88,6 +91,8 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
   RegisterChannelIdleFilters(builder);
+  RegisterLegacyChannelIdleFilters(builder);
+  RegisterConnectedChannel(builder);
   RegisterGrpcLbPolicy(builder);
   RegisterHttpFilters(builder);
   RegisterDeadlineFilter(builder);

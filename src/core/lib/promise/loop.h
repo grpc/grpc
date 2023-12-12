@@ -17,7 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <type_traits>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -87,7 +87,10 @@ class Loop {
     if (started_) Destruct(&promise_);
   }
 
-  Loop(Loop&& loop) noexcept : factory_(std::move(loop.factory_)) {}
+  Loop(Loop&& loop) noexcept
+      : factory_(std::move(loop.factory_)), started_(loop.started_) {
+    if (started_) Construct(&promise_, std::move(loop.promise_));
+  }
 
   Loop(const Loop& loop) = delete;
   Loop& operator=(const Loop& loop) = delete;

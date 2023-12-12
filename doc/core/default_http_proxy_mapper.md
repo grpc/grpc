@@ -4,6 +4,10 @@
 proposed how gRPC supports TCP-level proxies via the HTTP CONNECT request,
 defined in [RFC-2817](https://www.rfc-editor.org/rfc/rfc2817).
 
+This guide documents gRPC C-Core's default proxy mapper implementation.
+
+## HTTP Proxy
+
 **Case 1** in the proposal documents a use-case where all outbound traffic from
 an environment must go through a proxy. Configurations for such environments are
 usually performed using environment variables such as `http_proxy`. gRPC
@@ -11,11 +15,7 @@ supports this by providing a default proxy mapper implementation that allows for
 overriding the server name (provided in the channel creation hostname) to
 resolve based on such configurations.
 
-This guide documents gRPC C-Core's default proxy mapper implementation.
-
-## Working
-
-### Enabling HTTP Proxy
+### Enabling the HTTP Proxy
 
 C-Core checks the following places to determine the HTTP proxy to use, stopping
 at the first one that is set:
@@ -65,3 +65,24 @@ addresses as the host between the range `10.10.0.0` to `10.10.0.255`.
 
 The lookup and subsequent usage of an HTTP proxy for a specific channel can also
 be disabled by setting the channel arg `GRPC_ARG_ENABLE_HTTP_PROXY` to 0.
+
+## Address Proxy
+
+**Case 2** in the proposal documents a partially protected environment, where
+access to certain addresses must go through a proxy. Name resolution
+of protected servers works normally, and the proxy allows the CONNECT request
+to use an IP address instead of a hostname.
+
+Only requests for certain hosts must go through the proxy. Requests to other
+servers work without the proxy. Custom logic is used to determine which hosts
+the proxy will be used for.
+
+To use the address proxy, both of the following parameters need to be specified:
+1. Address of the proxy can be specified using `GRPC_ARG_ADDRESS_HTTP_PROXY`
+channel argument or `GRPC_ADDRESS_HTTP_PROXY` environment variable. Value of
+the channel argument is preferred if both values are specified.
+1. Comma-separated list of IP addresses and/or CIDR blocks that should be
+accessed through the proxy. This can be specified using
+the `GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES` channel argument
+or `GRPC_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES` environment variable. Value of
+the channel argument is preferred if both values are specified.

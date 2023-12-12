@@ -22,42 +22,57 @@ def grpc_deps():
 
     native.bind(
         name = "upb_lib",
-        actual = "@upb//:upb",
+        actual = "@com_google_protobuf//upb",
+    )
+
+    native.bind(
+        name = "upb_amalgamation_lib",
+        actual = "@com_google_protobuf//upb:amalgamation",
+    )
+
+    native.bind(
+        name = "upb_base_lib",
+        actual = "@com_google_protobuf//upb/base",
     )
 
     native.bind(
         name = "upb_collections_lib",
-        actual = "@upb//:collections",
+        actual = "@com_google_protobuf//upb/collections",
+    )
+
+    native.bind(
+        name = "upb_mem_lib",
+        actual = "@com_google_protobuf//upb/mem",
     )
 
     native.bind(
         name = "upb_reflection",
-        actual = "@upb//:reflection",
+        actual = "@com_google_protobuf//upb:reflection",
     )
 
     native.bind(
         name = "upb_lib_descriptor",
-        actual = "@upb//:descriptor_upb_proto",
+        actual = "@com_google_protobuf//upb:descriptor_upb_proto",
     )
 
     native.bind(
         name = "upb_lib_descriptor_reflection",
-        actual = "@upb//:descriptor_upb_proto_reflection",
+        actual = "@com_google_protobuf//upb:descriptor_upb_proto_reflection",
     )
 
     native.bind(
         name = "upb_textformat_lib",
-        actual = "@upb//:textformat",
+        actual = "@com_google_protobuf//upb/text",
     )
 
     native.bind(
         name = "upb_json_lib",
-        actual = "@upb//:json",
+        actual = "@com_google_protobuf//upb/json",
     )
 
     native.bind(
         name = "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-        actual = "@upb//:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+        actual = "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     )
 
     native.bind(
@@ -243,12 +258,12 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "76a33e2136f23971ce46c72fd697cd94dc9f73d56ab23b753c3e16854c90ddfd",
-            strip_prefix = "protobuf-2c5fa078d8e86e5f4bd34e6f4c9ea9e8d7d4d44a",
+            sha256 = "7ed5fc41fe1614e551025f8e14b79b026a015b3ed337d38920c586f3ea35d818",
+            strip_prefix = "protobuf-6b5d8db01fe47478e8d400f550e797e6230d464e",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v23.4
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/2c5fa078d8e86e5f4bd34e6f4c9ea9e8d7d4d44a.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/2c5fa078d8e86e5f4bd34e6f4c9ea9e8d7d4d44a.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v25.0
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/6b5d8db01fe47478e8d400f550e797e6230d464e.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/6b5d8db01fe47478e8d400f550e797e6230d464e.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -259,11 +274,11 @@ def grpc_deps():
     if "com_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_google_googletest",
-            sha256 = "c8de6c60e12ad014a28225c5247ee735861d85cf906df617f6a29954ca05f547",
-            strip_prefix = "googletest-0e402173c97aea7a00749e825b194bfede4f2e45",
+            sha256 = "31bf78bd91b96dd5e24fab3bb1d7f3f7453ccbaceec9afb86d6e4816a15ab109",
+            strip_prefix = "googletest-2dd1c131950043a8ad5ab0d2dda0e0970596586a",
             urls = [
-                # 2022-02-09
-                "https://github.com/google/googletest/archive/0e402173c97aea7a00749e825b194bfede4f2e45.tar.gz",
+                # 2023-10-09
+                "https://github.com/google/googletest/archive/2dd1c131950043a8ad5ab0d2dda0e0970596586a.tar.gz",
             ],
         )
 
@@ -380,26 +395,14 @@ def grpc_deps():
             ],
         )
 
-    if "upb" not in native.existing_rules():
-        http_archive(
-            name = "upb",
-            sha256 = "c29fbd26eb19f388a1894099fae5ae599210be22926e1e1694c0ed1284f1c151",
-            strip_prefix = "upb-455cfdb8ae60a1763e6d924e36851c6897a781bb",
-            urls = [
-                # https://github.com/protocolbuffers/upb/commits/23.x
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/455cfdb8ae60a1763e6d924e36851c6897a781bb.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/455cfdb8ae60a1763e6d924e36851c6897a781bb.tar.gz",
-            ],
-        )
-
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "6fd3496c82919a433219733819a93b56699519a193126959e9c4fedc25e70663",
-            strip_prefix = "data-plane-api-e53e7bbd012f81965f2e79848ad9a58ceb67201f",
+            sha256 = "fff067a5d6d776fc88549b5dd4773a6f8f0187b26a859de8b29bd4226a28ee63",
+            strip_prefix = "data-plane-api-9d6ffa70677c4dbf23f6ed569676206c4e2edff4",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/9d6ffa70677c4dbf23f6ed569676206c4e2edff4.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/9d6ffa70677c4dbf23f6ed569676206c4e2edff4.tar.gz",
             ],
         )
 
@@ -489,25 +492,42 @@ def grpc_deps():
             ],
         )
 
+    # TODO(stanleycheung): remove this when prometheus-cpp AND
+    #   opentelemetry-cpp cut a new release
+    # This override is needed because this fix
+    #   https://github.com/jupp0r/prometheus-cpp/pull/626
+    #   has not been included in the latest prometheus-cpp release yet.
+    # We also need opentelemetry-cpp to update their dependency on
+    #   prometheus-cpp after that fix is released.
+    # Without the fix, we cannot build the prometheus exporter with bazel 6
+    if "com_github_jupp0r_prometheus_cpp" not in native.existing_rules():
+        http_archive(
+            name = "com_github_jupp0r_prometheus_cpp",
+            strip_prefix = "prometheus-cpp-b1234816facfdda29845c46696a02998a4af115a",
+            urls = [
+                "https://github.com/jupp0r/prometheus-cpp/archive/b123481.zip",
+            ],
+        )
+
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",
-            sha256 = "668de24f81c8d36d75092ad9dcb02a97cd41473adbe72485ece05e336db48249",
-            strip_prefix = "opentelemetry-cpp-1.9.1",
+            sha256 = "149f076cc7a79bbd3a3c34fb3ab61d3a3e8dcfe2b9596f79153e17123c32f897",
+            strip_prefix = "opentelemetry-cpp-064fef0d871c57ffac6739d3311659a5770a9db4",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.9.1.tar.gz",
-                "https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.9.1.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/064fef0d871c57ffac6739d3311659a5770a9db4.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/064fef0d871c57ffac6739d3311659a5770a9db4.tar.gz",
             ],
         )
 
     if "google_cloud_cpp" not in native.existing_rules():
         http_archive(
             name = "google_cloud_cpp",
-            sha256 = "371d01b03c7e2604d671b8fa1c86710abe3b524a78bc2705a6bb4de715696755",
-            strip_prefix = "google-cloud-cpp-2.14.0",
+            sha256 = "7ca7f583b60d2aa1274411fed3b9fb3887119b2e84244bb3fc69ea1db819e4e5",
+            strip_prefix = "google-cloud-cpp-2.16.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.14.0.tar.gz",
-                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.14.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.16.0.tar.gz",
+                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.16.0.tar.gz",
             ],
         )
 

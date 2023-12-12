@@ -71,7 +71,8 @@ absl::Status ErrorToAbslStatus(
 }
 
 class FuzzingResolverEventEngine
-    : public grpc_event_engine::experimental::AbortingEventEngine {
+    : public grpc_event_engine::experimental::AbortingEventEngine,
+      public std::enable_shared_from_this<FuzzingResolverEventEngine> {
  public:
   explicit FuzzingResolverEventEngine(
       const event_engine_client_channel_resolver::Msg& msg,
@@ -142,6 +143,12 @@ class FuzzingResolverEventEngine
     return TaskHandle::kInvalid;
   }
   bool Cancel(TaskHandle /* handle */) override { return true; }
+
+  void Run(absl::AnyInvocable<void()> fn) override {
+    runner_.Run(std::move(fn));
+  }
+
+  void Run(Closure* fn) override { runner_.Run(fn); }
 
   void Tick() { runner_.Tick(); }
 
@@ -259,7 +266,7 @@ DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
       grpc_event_engine::experimental::GetDefaultEventEngine());
   {
     // scoped to ensure the resolver is orphaned when done resolving.
-    auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
+    auto work_serializer = std::make_shared<grpc_core::WorkSerializer>(engine);
     EventEngineClientChannelDNSResolverFactory resolver_factory;
     auto resolver_args = ConstructResolverArgs(
         grpc_core::testing::CreateChannelArgsFromFuzzingConfiguration(

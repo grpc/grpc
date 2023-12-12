@@ -19,7 +19,6 @@
 
 #include <string.h>
 
-#include <initializer_list>
 #include <memory>
 #include <utility>
 
@@ -174,8 +173,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   } else {
-    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
-        CreateHttpRequestSSLCredentials());
+    http_request_creds = CreateHttpRequestSSLCredentials();
   }
   http_request_ =
       HttpRequest::Get(std::move(*url_for_request), nullptr /* channel args */,
@@ -240,6 +238,10 @@ void UrlExternalAccountCredentials::FinishRetrieveSubjectToken(
   } else {
     cb(subject_token, absl::OkStatus());
   }
+}
+
+absl::string_view UrlExternalAccountCredentials::CredentialSourceType() {
+  return "url";
 }
 
 }  // namespace grpc_core

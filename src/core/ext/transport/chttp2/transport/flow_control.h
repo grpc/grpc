@@ -179,7 +179,17 @@ class TransportFlowControl final {
   // else returns zero; writing_anyway indicates if a write would happen
   // regardless of the send - if it is false and this function returns non-zero,
   // this announce will cause a write to occur
-  uint32_t MaybeSendUpdate(bool writing_anyway);
+  uint32_t DesiredAnnounceSize(bool writing_anyway) const;
+  // notify that we've actually sent a stream window update
+  // (should be DesiredAnnounceSize())
+  void SentUpdate(uint32_t announce);
+
+  // Older API: combines getting the DesiredAnnounceSize() with SentUpdate()
+  uint32_t MaybeSendUpdate(bool writing_anyway) {
+    uint32_t n = DesiredAnnounceSize(writing_anyway);
+    SentUpdate(n);
+    return n;
+  }
 
   // Track an update to the incoming flow control counters - that is how many
   // tokens we report to our peer that we're willing to accept.
@@ -260,7 +270,10 @@ class TransportFlowControl final {
   BdpEstimator* bdp_estimator() { return &bdp_estimator_; }
 
   uint32_t acked_init_window() const { return acked_init_window_; }
-  uint32_t sent_init_window() const { return target_initial_window_size_; }
+  uint32_t queued_init_window() const { return target_initial_window_size_; }
+  uint32_t sent_init_window() const { return sent_init_window_; }
+
+  void FlushedSettings() { sent_init_window_ = queued_init_window(); }
 
   FlowControlAction SetAckedInitialWindow(uint32_t value);
 
@@ -276,6 +289,44 @@ class TransportFlowControl final {
     if (delta > 0) {
       announced_stream_total_over_incoming_window_ -= delta;
     }
+  }
+
+  // A snapshot of the flow control stats to export.
+  struct Stats {
+    int64_t target_window;
+    int64_t target_frame_size;
+    int64_t target_preferred_rx_crypto_frame_size;
+    uint32_t acked_init_window;
+    uint32_t queued_init_window;
+    uint32_t sent_init_window;
+    int64_t remote_window;
+    int64_t announced_window;
+    int64_t announced_stream_total_over_incoming_window;
+    // BDP estimator stats.
+    int64_t bdp_accumulator;
+    int64_t bdp_estimate;
+    double bdp_bw_est;
+
+    std::string ToString() const;
+  };
+
+  Stats stats() const {
+    Stats stats;
+    stats.target_window = target_window();
+    stats.target_frame_size = target_frame_size();
+    stats.target_preferred_rx_crypto_frame_size =
+        target_preferred_rx_crypto_frame_size();
+    stats.acked_init_window = acked_init_window();
+    stats.queued_init_window = queued_init_window();
+    stats.sent_init_window = sent_init_window();
+    stats.remote_window = remote_window();
+    stats.announced_window = announced_window();
+    stats.announced_stream_total_over_incoming_window =
+        announced_stream_total_over_incoming_window();
+    stats.bdp_accumulator = bdp_estimator_.accumulator();
+    stats.bdp_estimate = bdp_estimator_.EstimateBdp();
+    stats.bdp_bw_est = bdp_estimator_.EstimateBandwidth();
+    return stats;
   }
 
  private:
@@ -319,6 +370,7 @@ class TransportFlowControl final {
       kDefaultPreferredRxCryptoFrameSize;
   int64_t announced_window_ = kDefaultWindow;
   uint32_t acked_init_window_ = kDefaultWindow;
+  uint32_t sent_init_window_ = kDefaultWindow;
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts
@@ -379,11 +431,40 @@ class StreamFlowControl final {
 
   // returns an announce if we should send a stream update to our peer, else
   // returns zero
-  uint32_t MaybeSendUpdate();
+  uint32_t DesiredAnnounceSize() const;
+  // notify that we've actually sent a stream window update
+  // (should be DesiredAnnounceSize())
+  void SentUpdate(uint32_t announce);
+
+  // Older API: combines getting the DesiredAnnounceSize() with SentUpdate()
+  uint32_t MaybeSendUpdate() {
+    uint32_t n = DesiredAnnounceSize();
+    SentUpdate(n);
+    return n;
+  }
 
   int64_t remote_window_delta() const { return remote_window_delta_; }
   int64_t announced_window_delta() const { return announced_window_delta_; }
   int64_t min_progress_size() const { return min_progress_size_; }
+
+  // A snapshot of the flow control stats to export.
+  struct Stats {
+    int64_t min_progress_size;
+    int64_t remote_window_delta;
+    int64_t announced_window_delta;
+    absl::optional<int64_t> pending_size;
+
+    std::string ToString() const;
+  };
+
+  Stats stats() const {
+    Stats stats;
+    stats.min_progress_size = min_progress_size();
+    stats.remote_window_delta = remote_window_delta();
+    stats.announced_window_delta = announced_window_delta();
+    stats.pending_size = pending_size_;
+    return stats;
+  }
 
  private:
   TransportFlowControl* const tfc_;
@@ -393,7 +474,6 @@ class StreamFlowControl final {
   absl::optional<int64_t> pending_size_;
 
   FlowControlAction UpdateAction(FlowControlAction action);
-  int64_t DesiredAnnounceSize() const;
 };
 
 class TestOnlyTransportTargetWindowEstimatesMocker {

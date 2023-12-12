@@ -63,6 +63,26 @@ _INTERESTING = {
         rb"server channel memory usage: ([0-9\.]+) bytes per channel",
         float,
     ),
+    "call/xds_client": (
+        rb"xds client call memory usage: ([0-9\.]+) bytes per call",
+        float,
+    ),
+    "call/xds_server": (
+        rb"xds server call memory usage: ([0-9\.]+) bytes per call",
+        float,
+    ),
+    "channel/xds_client": (
+        rb"xds client channel memory usage: ([0-9\.]+) bytes per channel",
+        float,
+    ),
+    "channel/xds_server": (
+        rb"xds server channel memory usage: ([0-9\.]+) bytes per channel",
+        float,
+    ),
+    "channel_multi_address/xds_client": (
+        rb"xds multi_address client channel memory usage: ([0-9\.]+) bytes per channel",
+        float,
+    ),
 }
 
 _SCENARIOS = {
@@ -73,6 +93,10 @@ _SCENARIOS = {
 _BENCHMARKS = {
     "call": ["--benchmark_names=call", "--size=50000"],
     "channel": ["--benchmark_names=channel", "--size=10000"],
+    "channel_multi_address": [
+        "--benchmark_names=channel_multi_address",
+        "--size=10000",
+    ],
 }
 
 
@@ -89,26 +113,30 @@ def _run():
     )
     ret = {}
     for name, benchmark_args in _BENCHMARKS.items():
-        for scenario, extra_args in _SCENARIOS.items():
-            # TODO(chenancy) Remove when minstack is implemented for channel
-            if name == "channel" and scenario == "minstack":
-                continue
-            try:
-                output = subprocess.check_output(
-                    [
-                        "bazel-bin/test/core/memory_usage/memory_usage_test",
-                    ]
+        for use_xds in (False, True):
+            for scenario, extra_args in _SCENARIOS.items():
+                # TODO(chenancy) Remove when minstack is implemented for channel
+                if name == "channel" and scenario == "minstack":
+                    continue
+                if name == "channel_multi_address" and not use_xds:
+                    continue
+                argv = (
+                    ["bazel-bin/test/core/memory_usage/memory_usage_test"]
                     + benchmark_args
                     + extra_args
                 )
-            except subprocess.CalledProcessError as e:
-                print("Error running benchmark:", e)
-                continue
-            for line in output.splitlines():
-                for key, (pattern, conversion) in _INTERESTING.items():
-                    m = re.match(pattern, line)
-                    if m:
-                        ret[scenario + ": " + key] = conversion(m.group(1))
+                if use_xds:
+                    argv.append("--use_xds")
+                try:
+                    output = subprocess.check_output(argv)
+                except subprocess.CalledProcessError as e:
+                    print("Error running benchmark:", e)
+                    continue
+                for line in output.splitlines():
+                    for key, (pattern, conversion) in _INTERESTING.items():
+                        m = re.match(pattern, line)
+                        if m:
+                            ret[scenario + ": " + key] = conversion(m.group(1))
     return ret
 
 

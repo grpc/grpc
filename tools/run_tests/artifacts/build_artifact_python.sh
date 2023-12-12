@@ -26,7 +26,7 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 # Needed for building binary distribution wheels -- bdist_wheel
-"${PYTHON}" -m pip install --upgrade wheel
+"${PYTHON}" -m pip install --upgrade pip wheel setuptools
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
@@ -155,7 +155,7 @@ then
   "${PYTHON}" -m pip install virtualenv
   "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
   # Ensure the generated artifacts are valid using "twine check"
-  venv/bin/python -m pip install "twine<=2.0"
+  venv/bin/python -m pip install "twine<=2.0" "readme_renderer<40.0"
   venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
   rm -rf venv/
 fi
@@ -182,7 +182,7 @@ fix_faulty_universal2_wheel() {
 }
 
 # This is necessary due to https://github.com/pypa/wheel/issues/406.
-# distutils incorrectly generates a universal2 artifact that only contains
+# wheel incorrectly generates a universal2 artifact that only contains
 # x86_64 libraries.
 if [ "$GRPC_UNIVERSAL2_REPAIR" != "" ]; then
   for WHEEL in dist/*.whl tools/distrib/python/grpcio_tools/dist/*.whl; do
@@ -234,7 +234,7 @@ then
   # through setup.py, but we can optimize it with "bdist_wheel" command, which
   # skips the wheel building step.
 
-  # Build grpcio_reflection source distribution
+  # Build xds_protos source distribution
   ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/build.py
   ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/setup.py \
       sdist bdist_wheel install

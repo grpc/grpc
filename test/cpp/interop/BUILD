@@ -268,6 +268,8 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "otel/exporters/prometheus:prometheus_exporter",
+        "otel/sdk/src/metrics",
     ],
     deps = [
         ":rpc_behavior_lb_policy",
@@ -275,6 +277,7 @@ grpc_cc_binary(
         "//:grpc++",
         "//:grpc++_reflection",
         "//:grpcpp_admin",
+        "//:grpcpp_csm_observability",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -313,10 +316,13 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "otel/exporters/prometheus:prometheus_exporter",
+        "otel/sdk/src/metrics",
     ],
     deps = [
         ":xds_interop_server_lib",
         "//:grpc++",
+        "//:grpcpp_csm_observability",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:test_health_check_service_impl",
         "//test/cpp/util:test_config",
@@ -460,12 +466,15 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "otel/exporters/prometheus:prometheus_exporter",
+        "otel/sdk/src/metrics",
     ],
     language = "C++",
     tags = ["nobuilder"],
     deps = [
         ":client_helper_lib",
         "//:grpcpp_gcp_observability",
+        "//src/cpp/ext/otel:otel_plugin",
     ],
 )
 

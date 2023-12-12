@@ -48,8 +48,9 @@ jobs:
         with:
           script: |
             // If you'd like not to run this code on your commits, add your github user id here:
-            NO_AUTOFIX_USERS = []
+            NO_AUTOFIX_USERS = ["copybara-service[bot]"]
             const { owner, repo } = context.repo
+            console.log("Actor: " + context.actor);
             if (NO_AUTOFIX_USERS.includes(context.actor)) {
               console.log('Cancelling');
               const run_id = "${{ github.run_id }}";

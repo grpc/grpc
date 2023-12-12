@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <memory>
 #include <new>
-#include <string>
 #include <utility>
 
 #include "absl/status/statusor.h"
@@ -59,12 +58,15 @@
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/cancel_callback.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/transport.h"
 
 // Backoff parameters.
 #define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -131,6 +133,36 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
 size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
   return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
          channel_stack_->call_stack_size;
+}
+
+ArenaPromise<ServerMetadataHandle> ConnectedSubchannel::MakeCallPromise(
+    CallArgs call_args) {
+  // If not using channelz, we just need to call the channel stack.
+  if (channelz_subchannel() == nullptr) {
+    return channel_stack_->MakeClientCallPromise(std::move(call_args));
+  }
+  // Otherwise, we need to wrap the channel stack promise with code that
+  // handles the channelz updates.
+  return OnCancel(
+      Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
+          [self = Ref()](ServerMetadataHandle metadata) {
+            channelz::SubchannelNode* channelz_subchannel =
+                self->channelz_subchannel();
+            GPR_ASSERT(channelz_subchannel != nullptr);
+            if (metadata->get(GrpcStatusMetadata())
+                    .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
+              channelz_subchannel->RecordCallFailed();
+            } else {
+              channelz_subchannel->RecordCallSucceeded();
+            }
+            return metadata;
+          }),
+      [self = Ref()]() {
+        channelz::SubchannelNode* channelz_subchannel =
+            self->channelz_subchannel();
+        GPR_ASSERT(channelz_subchannel != nullptr);
+        channelz_subchannel->RecordCallFailed();
+      });
 }
 
 //
@@ -431,6 +463,7 @@ Subchannel::Subchannel(SubchannelKey key,
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
       watcher_list_(this),
+      work_serializer_(args_.GetObjectRef<EventEngine>()),
       backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
       event_engine_(args_.GetObjectRef<EventEngine>()) {
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
@@ -736,10 +769,11 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL,
-                                  connecting_result_.channel_args);
   // Builder takes ownership of transport.
-  builder.SetTransport(std::exchange(connecting_result_.transport, nullptr));
+  ChannelStackBuilderImpl builder(
+      "subchannel", GRPC_CLIENT_SUBCHANNEL,
+      connecting_result_.channel_args.SetObject(
+          std::exchange(connecting_result_.transport, nullptr)));
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return false;
   }

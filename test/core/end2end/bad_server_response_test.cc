@@ -36,8 +36,10 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -95,6 +97,7 @@ struct rpc_state {
   const char* response_payload;
   size_t response_payload_length;
   bool connection_attempt_made;
+  std::unique_ptr<grpc_core::Notification> on_connect_done;
 };
 
 static int server_port;
@@ -185,6 +188,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
     grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
                        /*urgent=*/false, /*min_progress_size=*/1);
   }
+  state.on_connect_done->Notify();
 }
 
 static gpr_timespec n_sec_deadline(int seconds) {
@@ -297,7 +301,11 @@ static void actually_poll_server(void* arg) {
     if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
       break;
     }
-    test_tcp_server_poll(pa->server, 1000);
+    int milliseconds = 1000;
+    if (grpc_event_engine::experimental::UseEventEngineListener()) {
+      milliseconds = 10;
+    }
+    test_tcp_server_poll(pa->server, milliseconds);
   }
   gpr_event_set(pa->signal_when_done, reinterpret_cast<void*>(1));
   gpr_free(pa);
@@ -330,6 +338,7 @@ static void run_test(bool http2_response, bool send_settings,
   server_port = grpc_pick_unused_port_or_die();
   test_tcp_server_init(&test_server, on_connect, &test_server);
   test_tcp_server_start(&test_server, server_port);
+  state.on_connect_done = std::make_unique<grpc_core::Notification>();
   state.http2_response = http2_response;
   state.send_settings = send_settings;
   state.response_payload = response_payload;
@@ -341,6 +350,7 @@ static void run_test(bool http2_response, bool send_settings,
   start_rpc(server_port, expected_status, expected_detail);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   thdptr->Join();
+  state.on_connect_done->WaitForNotification();
   // Proof that the server accepted the TCP connection.
   GPR_ASSERT(state.connection_attempt_made == true);
   // clean up

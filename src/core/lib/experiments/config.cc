@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <map>
 #include <string>
 #include <utility>
 
@@ -134,6 +135,19 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
               std::string(experiment).c_str());
     }
   }
+  for (size_t i = 0; i < kNumExperiments; i++) {
+    // If required experiments are not enabled, disable this one too.
+    for (size_t j = 0; j < g_experiment_metadata[i].num_required_experiments;
+         j++) {
+      // Require that we can check dependent requirements with a linear sweep
+      // (implies the experiments generator must DAG sort the experiments)
+      GPR_ASSERT(g_experiment_metadata[i].required_experiments[j] < i);
+      if (!experiments
+               .enabled[g_experiment_metadata[i].required_experiments[j]]) {
+        experiments.enabled[i] = false;
+      }
+    }
+  }
   return experiments;
 }
 
@@ -166,11 +180,18 @@ bool IsTestExperimentEnabled(size_t experiment_id) {
 
 void PrintExperimentsList() {
   size_t max_experiment_length = 0;
+  // Populate visitation order into a std::map so that iteration results in a
+  // lexical ordering of experiment names.
+  // The lexical ordering makes it nice and easy to find the experiment you're
+  // looking for in the output spam that we generate.
+  std::map<absl::string_view, size_t> visitation_order;
   for (size_t i = 0; i < kNumExperiments; i++) {
     max_experiment_length =
         std::max(max_experiment_length, strlen(g_experiment_metadata[i].name));
+    visitation_order[g_experiment_metadata[i].name] = i;
   }
-  for (size_t i = 0; i < kNumExperiments; i++) {
+  for (auto name_index : visitation_order) {
+    const size_t i = name_index.second;
     gpr_log(
         GPR_DEBUG, "%s",
         absl::StrCat(

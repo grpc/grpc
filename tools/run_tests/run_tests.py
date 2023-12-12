@@ -26,10 +26,10 @@ import logging
 import multiprocessing
 import os
 import os.path
-import pipes
 import platform
 import random
 import re
+import shlex
 import socket
 import subprocess
 import sys
@@ -479,7 +479,7 @@ class CLanguage(object):
                         cmdline = [binary] + target["args"]
                         shortname = target.get(
                             "shortname",
-                            " ".join(pipes.quote(arg) for arg in cmdline),
+                            " ".join(shlex.quote(arg) for arg in cmdline),
                         )
                         shortname += shortname_ext
                         out.append(
@@ -560,8 +560,8 @@ class CLanguage(object):
 
         if compiler == "default" or compiler == "cmake":
             return ("debian11", [])
-        elif compiler == "gcc7":
-            return ("gcc_7", [])
+        elif compiler == "gcc8":
+            return ("gcc_8", [])
         elif compiler == "gcc10.2":
             return ("debian11", [])
         elif compiler == "gcc10.2_openssl102":
@@ -584,8 +584,8 @@ class CLanguage(object):
             return ("alpine", [])
         elif compiler == "clang6":
             return ("clang_6", self._clang_cmake_configure_extra_args())
-        elif compiler == "clang15":
-            return ("clang_15", self._clang_cmake_configure_extra_args())
+        elif compiler == "clang16":
+            return ("clang_16", self._clang_cmake_configure_extra_args())
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
@@ -721,16 +721,11 @@ class PythonConfig(
 class PythonLanguage(object):
     _TEST_SPECS_FILE = {
         "native": ["src/python/grpcio_tests/tests/tests.json"],
-        "gevent": [
-            "src/python/grpcio_tests/tests/tests.json",
-            "src/python/grpcio_tests/tests_gevent/tests.json",
-        ],
         "asyncio": ["src/python/grpcio_tests/tests_aio/tests.json"],
     }
 
     _TEST_COMMAND = {
         "native": "test_lite",
-        "gevent": "test_gevent",
         "asyncio": "test_aio",
     }
 
@@ -755,7 +750,7 @@ class PythonLanguage(object):
                         ],
                         timeout_seconds=60,
                         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                        shortname="f{python_config.name}.xds_protos",
+                        shortname=f"{python_config.name}.xds_protos",
                     )
                 )
 
@@ -772,23 +767,21 @@ class PythonLanguage(object):
                 # overrides threading settings in C-Core.
                 if io_platform != "native":
                     environment["GRPC_ENABLE_FORK_SUPPORT"] = "0"
-                    jobs.extend(
-                        [
-                            self.config.job_spec(
-                                python_config.run
-                                + [self._TEST_COMMAND[io_platform]],
-                                timeout_seconds=8 * 60,
-                                environ=dict(
-                                    GRPC_PYTHON_TESTRUNNER_FILTER=str(
-                                        test_case
-                                    ),
-                                    **environment,
-                                ),
-                                shortname=f"{python_config.name}.{io_platform}.{test_case}",
-                            )
-                            for test_case in test_cases
-                        ]
-                    )
+                jobs.extend(
+                    [
+                        self.config.job_spec(
+                            python_config.run
+                            + [self._TEST_COMMAND[io_platform]],
+                            timeout_seconds=8 * 60,
+                            environ=dict(
+                                GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
+                                **environment,
+                            ),
+                            shortname=f"{python_config.name}.{io_platform}.{test_case}",
+                        )
+                        for test_case in test_cases
+                    ]
+                )
         return jobs
 
     def pre_build_steps(self):
@@ -1017,15 +1010,12 @@ class RubyLanguage(object):
                 "src/ruby/end2end/prefork_without_using_grpc_test.rb",
                 "src/ruby/end2end/prefork_postfork_loop_test.rb",
             ]:
-                if platform_string() == "mac":
-                    # Skip fork tests on mac, it's only supported on linux.
-                    continue
-                if self.config.build_config == "dbg":
-                    # There's a known issue with dbg builds that breaks fork
-                    # support: https://github.com/grpc/grpc/issues/31885.
-                    # TODO(apolcyn): unskip these tests on dbg builds after we
-                    # migrate to event engine and hence fix that issue.
-                    continue
+                # Skip fork tests in general until https://github.com/grpc/grpc/issues/34442
+                # is fixed. Otherwise we see too many flakes.
+                # After that's fixed, we should continue to skip on mac
+                # indefinitely, and on "dbg" builds until the Event Engine
+                # migration completes.
+                continue
             tests.append(
                 self.config.job_spec(
                     ["ruby", test],
@@ -1197,6 +1187,19 @@ class ObjCLanguage(object):
                 },
             )
         )
+        out.append(
+            self.config.job_spec(
+                ["src/objective-c/tests/build_one_example.sh"],
+                timeout_seconds=20 * 60,
+                shortname="ios-buildtest-example-switft-use-frameworks",
+                cpu_cost=1e6,
+                environ={
+                    "SCHEME": "SwiftUseFrameworks",
+                    "EXAMPLE_PATH": "src/objective-c/examples/SwiftUseFrameworks",
+                },
+            )
+        )
+
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
         # out.append(
@@ -1314,7 +1317,6 @@ _LANGUAGES = {
     "objc": ObjCLanguage(),
     "sanity": Sanity("sanity_tests.yaml"),
     "clang-tidy": Sanity("clang_tidy_tests.yaml"),
-    "iwyu": Sanity("iwyu_tests.yaml"),
 }
 
 _MSBUILD_CONFIG = {
@@ -1716,14 +1718,14 @@ argp.add_argument(
     "--compiler",
     choices=[
         "default",
-        "gcc7",
+        "gcc8",
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
         "clang6",
-        "clang15",
+        "clang16",
         # TODO: Automatically populate from supported version
         "python2.7",
         "python3.5",
@@ -1852,10 +1854,6 @@ jobset.measure_cpu_costs = args.measure_cpu_costs
 # grab config
 run_config = _CONFIGS[args.config]
 build_config = run_config.build_config
-
-# TODO(jtattermusch): is this setting applied/being used?
-if args.travis:
-    _FORCE_ENVIRON_FOR_WRAPPERS = {"GRPC_TRACE": "api"}
 
 languages = set(_LANGUAGES[l] for l in args.language)
 for l in languages:

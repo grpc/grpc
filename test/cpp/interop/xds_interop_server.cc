@@ -19,8 +19,12 @@
 #include <iostream>
 
 #include "absl/flags/flag.h"
+#include "opentelemetry/exporters/prometheus/exporter_factory.h"
+#include "opentelemetry/exporters/prometheus/exporter_options.h"
+#include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include <grpc/grpc.h>
+#include <grpcpp/ext/csm_observability.h>
 #include <grpcpp/health_check_service_interface.h>
 
 #include "src/core/lib/iomgr/gethostname.h"
@@ -36,6 +40,24 @@ ABSL_FLAG(std::string, server_id, "cpp_server",
 ABSL_FLAG(bool, secure_mode, false,
           "If true, XdsServerCredentials are used, InsecureServerCredentials "
           "otherwise");
+ABSL_FLAG(bool, enable_csm_observability, false,
+          "Whether to enable CSM Observability");
+
+void EnableCsmObservability() {
+  gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
+  opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
+  // default was "localhost:9464" which causes connection issue across GKE
+  // pods
+  opts.url = "0.0.0.0:9464";
+  auto prometheus_exporter =
+      opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
+  auto meter_provider =
+      std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+  meter_provider->AddMetricReader(std::move(prometheus_exporter));
+  auto observability = grpc::experimental::CsmObservabilityBuilder();
+  observability.SetMeterProvider(std::move(meter_provider));
+  auto status = observability.BuildAndRegister();
+}
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
@@ -56,9 +78,12 @@ int main(int argc, char** argv) {
     return 1;
   }
   grpc::EnableDefaultHealthCheckService(false);
-  grpc::testing::RunServer(absl::GetFlag(FLAGS_secure_mode), port,
-                           maintenance_port, hostname,
-                           absl::GetFlag(FLAGS_server_id));
+  if (absl::GetFlag(FLAGS_enable_csm_observability)) {
+    EnableCsmObservability();
+  }
+  grpc::testing::RunServer(
+      absl::GetFlag(FLAGS_secure_mode), port, maintenance_port, hostname,
+      absl::GetFlag(FLAGS_server_id), [](grpc::Server* /* unused */) {});
 
   return 0;
 }

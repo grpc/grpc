@@ -20,7 +20,6 @@
 #include <stdint.h>
 
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -28,11 +27,12 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
@@ -48,6 +48,16 @@ struct Done;
 template <>
 struct Done<absl::Status> {
   static absl::Status Make() { return absl::OkStatus(); }
+};
+
+template <>
+struct Done<StatusFlag> {
+  static StatusFlag Make() { return StatusFlag(true); }
+};
+
+template <>
+struct Done<Success> {
+  static Success Make() { return Success{}; }
 };
 
 template <typename Reader, typename Action>
@@ -141,7 +151,7 @@ class ForEach {
     }
     auto r = in_action_.promise();
     if (auto* p = r.value_if_ready()) {
-      if (p->ok()) {
+      if (IsStatusOk(*p)) {
         Destruct(&in_action_);
         Construct(&reader_next_, reader_.Next());
         reading_next_ = true;

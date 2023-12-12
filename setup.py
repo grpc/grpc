@@ -24,9 +24,6 @@ from distutils.unixccompiler import UnixCCompiler
 UnixCCompiler.src_extensions.append(".S")
 del UnixCCompiler
 
-from distutils import cygwinccompiler
-from distutils import extension as _extension
-from distutils import util
 import os
 import os.path
 import pathlib
@@ -41,6 +38,7 @@ import sysconfig
 
 import _metadata
 import pkg_resources
+from setuptools import Extension
 from setuptools.command import egg_info
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
@@ -74,11 +72,9 @@ SSL_INCLUDE = (
     os.path.join("third_party", "boringssl-with-bazel", "src", "include"),
 )
 UPB_INCLUDE = (os.path.join("third_party", "upb"),)
-UPB_GRPC_GENERATED_INCLUDE = (
-    os.path.join("src", "core", "ext", "upb-generated"),
-)
+UPB_GRPC_GENERATED_INCLUDE = (os.path.join("src", "core", "ext", "upb-gen"),)
 UPBDEFS_GRPC_GENERATED_INCLUDE = (
-    os.path.join("src", "core", "ext", "upbdefs-generated"),
+    os.path.join("src", "core", "ext", "upbdefs-gen"),
 )
 UTF8_RANGE_INCLUDE = (os.path.join("third_party", "utf8_range"),)
 XXHASH_INCLUDE = (os.path.join("third_party", "xxhash"),)
@@ -111,6 +107,7 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: Apache Software License",
 ]
 
@@ -126,7 +123,7 @@ BUILD_WITH_BORING_SSL_ASM = _env_bool_value(
 
 # Export this environment variable to override the platform variant that will
 # be chosen for boringssl assembly optimizations. This option is useful when
-# crosscompiling and the host platform as obtained by distutils.utils.get_platform()
+# crosscompiling and the host platform as obtained by sysconfig.get_platform()
 # doesn't match the platform we are targetting.
 # Example value: "linux-aarch64"
 BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM = os.environ.get(
@@ -291,14 +288,13 @@ if EXTRA_ENV_LINK_ARGS is None:
         EXTRA_ENV_LINK_ARGS += " -lpthread"
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += " -latomic"
-    elif "win32" in sys.platform and sys.version_info < (3, 5):
-        msvcr = cygwinccompiler.get_msvcr()[0]
-        EXTRA_ENV_LINK_ARGS += (
-            " -static-libgcc -static-libstdc++ -mcrtdll={msvcr}"
-            " -static -lshlwapi".format(msvcr=msvcr)
-        )
     if "linux" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " -static-libgcc"
+
+# Explicitly link Core Foundation framework for MacOS to ensure no symbol is
+# missing when compiled using package managers like Conda.
+if "darwin" in sys.platform:
+    EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -411,7 +407,7 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
     boringssl_asm_platform = (
         BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
         if BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
-        else util.get_platform()
+        else sysconfig.get_platform()
     )
     # BoringSSL's gas-compatible assembly files are all internally conditioned
     # by the preprocessor. Provided the platform has a gas-compatible assembler
@@ -490,7 +486,7 @@ if "darwin" in sys.platform:
             os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
                 r"macosx-[0-9]+\.[0-9]+-(.+)",
                 r"macosx-10.10-\1",
-                util.get_platform(),
+                sysconfig.get_platform(),
             )
 
 
@@ -513,7 +509,7 @@ def cython_extensions_and_necessity():
         core_c_files = list(CORE_C_FILES)
         extra_objects = []
     extensions = [
-        _extension.Extension(
+        Extension(
             name=module_name,
             sources=(
                 [module_file]

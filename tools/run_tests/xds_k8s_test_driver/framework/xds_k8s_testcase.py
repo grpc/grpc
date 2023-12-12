@@ -74,6 +74,8 @@ _LoadBalancerAccumulatedStatsResponse = (
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
 ClientConfig = grpc_csds.ClientConfig
+RpcMetadata = grpc_testing.LoadBalancerStatsResponse.RpcMetadata
+MetadataByPeer: list[str, RpcMetadata]
 # pylint complains about signal.Signals for some reason.
 _SignalNum = Union[int, signal.Signals]  # pylint: disable=no-member
 _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
@@ -288,7 +290,10 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
         if server_runner is None:
             server_runner = self.server_runner
         # Load Backends
-        neg_name, neg_zones = server_runner.k8s_namespace.get_service_neg(
+        (
+            neg_name,
+            neg_zones,
+        ) = server_runner.k8s_namespace.parse_service_neg_status(
             server_runner.service_name, self.server_port
         )
 
@@ -303,7 +308,10 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
         if server_runner is None:
             server_runner = self.server_runner
         # Load Backends
-        neg_name, neg_zones = server_runner.k8s_namespace.get_service_neg(
+        (
+            neg_name,
+            neg_zones,
+        ) = server_runner.k8s_namespace.parse_service_neg_status(
             server_runner.service_name, self.server_port
         )
 
@@ -312,7 +320,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
 
     def assertSuccessfulRpcs(
         self, test_client: XdsTestClient, num_rpcs: int = 100
-    ):
+    ) -> _LoadBalancerStatsResponse:
         lb_stats = self.getClientRpcStats(test_client, num_rpcs)
         self.assertAllBackendsReceivedRpcs(lb_stats)
         failed = int(lb_stats.num_failures)
@@ -321,6 +329,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
             0,
             msg=f"Expected all RPCs to succeed: {failed} of {num_rpcs} failed",
         )
+        return lb_stats
 
     @staticmethod
     def diffAccumulatedStatsPerMethod(
@@ -578,15 +587,21 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
             msg=f"Expected all RPCs to fail: {failed} of {num_rpcs} failed",
         )
 
-    @classmethod
     def getClientRpcStats(
-        cls, test_client: XdsTestClient, num_rpcs: int
+        self,
+        test_client: XdsTestClient,
+        num_rpcs: int,
+        *,
+        metadata_keys: Optional[tuple[str, ...]] = None,
     ) -> _LoadBalancerStatsResponse:
-        lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
+        lb_stats = test_client.get_load_balancer_stats(
+            num_rpcs=num_rpcs,
+            metadata_keys=metadata_keys,
+        )
         logger.info(
             "[%s] << Received LoadBalancerStatsResponse:\n%s",
             test_client.hostname,
-            cls._pretty_lb_stats(lb_stats),
+            self._pretty_lb_stats(lb_stats),
         )
         return lb_stats
 
@@ -724,6 +739,30 @@ class IsolatedXdsKubernetesTestCase(
             force=self.force_cleanup, force_namespace=self.force_cleanup
         )
 
+    def _start_test_client(
+        self,
+        server_target: str,
+        *,
+        wait_for_active_ads: bool = True,
+        wait_for_server_channel_ready: bool = True,
+        wait_for_active_ads_timeout: Optional[_timedelta] = None,
+        wait_for_server_channel_ready_timeout: Optional[_timedelta] = None,
+        **kwargs,
+    ) -> XdsTestClient:
+        test_client = self.client_runner.run(
+            server_target=server_target, **kwargs
+        )
+        if wait_for_active_ads:
+            test_client.wait_for_active_xds_channel(
+                xds_server_uri=self.xds_server_uri,
+                timeout=wait_for_active_ads_timeout,
+            )
+        if wait_for_server_channel_ready:
+            test_client.wait_for_server_channel_ready(
+                timeout=wait_for_server_channel_ready_timeout,
+            )
+        return test_client
+
 
 class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
     """Regular test case base class for testing PSM features in isolation."""
@@ -805,11 +844,7 @@ class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
     def startTestClient(
         self, test_server: XdsTestServer, **kwargs
     ) -> XdsTestClient:
-        test_client = self.client_runner.run(
-            server_target=test_server.xds_uri, **kwargs
-        )
-        test_client.wait_for_active_server_channel()
-        return test_client
+        return self._start_test_client(test_server.xds_uri, **kwargs)
 
 
 class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
@@ -930,15 +965,15 @@ class SecurityXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
         self,
         test_server: XdsTestServer,
         *,
-        wait_for_active_server_channel=True,
+        wait_for_server_channel_ready=True,
         **kwargs,
     ) -> XdsTestClient:
-        test_client = self.client_runner.run(
-            server_target=test_server.xds_uri, secure_mode=True, **kwargs
+        return self._start_test_client(
+            server_target=test_server.xds_uri,
+            wait_for_server_channel_ready=wait_for_server_channel_ready,
+            secure_mode=True,
+            **kwargs,
         )
-        if wait_for_active_server_channel:
-            test_client.wait_for_active_server_channel()
-        return test_client
 
     def assertTestAppSecurity(
         self,

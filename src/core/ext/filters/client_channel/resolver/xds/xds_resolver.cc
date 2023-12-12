@@ -16,12 +16,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
+
 #include <stdint.h>
 #include <string.h>
 
 #include <algorithm>
 #include <functional>
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -45,12 +46,6 @@
 #include "re2/re2.h"
 
 #include <grpc/impl/channel_arg_names.h>
-
-#include "src/core/lib/slice/slice.h"
-
-#define XXH_INLINE_ALL
-#include "xxhash.h"
-
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -58,7 +53,6 @@
 #include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -74,6 +68,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/match.h"
@@ -82,16 +77,18 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/gprpp/xxhash_inline.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -696,7 +693,15 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
             resolver_.get(), this);
   }
   route_config_data_.reset();
-  resolver_->MaybeRemoveUnusedClusters();
+  if (!IsWorkSerializerDispatchEnabled()) {
+    resolver_->MaybeRemoveUnusedClusters();
+    return;
+  }
+  resolver_->work_serializer_->Run(
+      [resolver = std::move(resolver_)]() {
+        resolver->MaybeRemoveUnusedClusters();
+      },
+      DEBUG_LOCATION);
 }
 
 absl::optional<uint64_t> HeaderHashHelper(
@@ -803,8 +808,8 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
       // Rotating the old value prevents duplicate hash rules from cancelling
       // each other out and preserves all of the entropy
       const uint64_t old_value =
-          hash.has_value() ? ((hash.value() << 1) | (hash.value() >> 63)) : 0;
-      hash = old_value ^ new_hash.value();
+          hash.has_value() ? ((*hash << 1) | (*hash >> 63)) : 0;
+      hash = old_value ^ *new_hash;
     }
     // If the policy is a terminal policy and a hash has been generated,
     // ignore the rest of the hash policies.
@@ -824,13 +829,8 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
   }
   args.service_config_call_data->SetCallAttribute(
       args.arena->New<XdsClusterAttribute>(cluster->cluster_name()));
-  std::string hash_string = absl::StrCat(hash.value());
-  char* hash_value =
-      static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
-  memcpy(hash_value, hash_string.c_str(), hash_string.size());
-  hash_value[hash_string.size()] = '\0';
   args.service_config_call_data->SetCallAttribute(
-      args.arena->New<RequestHashAttribute>(hash_value));
+      args.arena->New<RequestHashAttribute>(*hash));
   args.service_config_call_data->SetCallAttribute(
       args.arena->ManagedNew<XdsRouteStateAttributeImpl>(route_config_data_,
                                                          entry));

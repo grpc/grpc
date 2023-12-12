@@ -16,6 +16,7 @@
 
 #include <cstdint>
 
+#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
@@ -27,6 +28,7 @@ namespace {
 template <typename T>
 void AssertRoundTrips(const T input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
+  absl::BitGen bitgen;
   auto serialized = input.Serialize(&hpack_compressor);
   EXPECT_GE(serialized.Length(), 24);
   uint8_t header_bytes[24];
@@ -36,7 +38,8 @@ void AssertRoundTrips(const T input, FrameType expected_frame_type) {
   EXPECT_EQ(header->type, expected_frame_type);
   T output;
   HPackParser hpack_parser;
-  auto deser = output.Deserialize(&hpack_parser, header.value(), serialized);
+  auto deser = output.Deserialize(&hpack_parser, header.value(),
+                                  absl::BitGenRef(bitgen), serialized);
   EXPECT_TRUE(deser.ok()) << deser;
   EXPECT_EQ(output, input);
 }

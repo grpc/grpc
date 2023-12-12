@@ -91,10 +91,26 @@ class Center : public RefCounted<Center<T>> {
     return Pending{};
   }
 
+  bool ImmediateSend(T t) {
+    ReleasableMutexLock lock(&mu_);
+    if (receiver_closed_) return false;
+    queue_.push_back(std::move(t));
+    auto receive_waker = std::move(receive_waker_);
+    lock.Release();
+    receive_waker.Wakeup();
+    return true;
+  }
+
   // Mark that the receiver is closed.
   void ReceiverClosed() {
     MutexLock lock(&mu_);
     receiver_closed_ = true;
+  }
+
+  // Return whether the receiver is closed.
+  bool IsClosed() {
+    MutexLock lock(&mu_);
+    return receiver_closed_;
   }
 
  private:
@@ -127,6 +143,10 @@ class MpscSender {
     return [this, t = std::move(t)]() mutable { return center_->PollSend(t); };
   }
 
+  bool UnbufferedImmediateSend(T t) {
+    return center_->ImmediateSend(std::move(t));
+  }
+
  private:
   friend class MpscReceiver<T>;
   explicit MpscSender(RefCountedPtr<mpscpipe_detail::Center<T>> center)
@@ -148,6 +168,10 @@ class MpscReceiver {
       : center_(MakeRefCounted<mpscpipe_detail::Center<T>>(
             std::max(static_cast<size_t>(1), max_buffer_hint / 2))) {}
   ~MpscReceiver() {
+    if (center_ != nullptr) center_->ReceiverClosed();
+  }
+  bool IsClosed() { return center_->IsClosed(); }
+  void MarkClosed() {
     if (center_ != nullptr) center_->ReceiverClosed();
   }
   MpscReceiver(const MpscReceiver&) = delete;

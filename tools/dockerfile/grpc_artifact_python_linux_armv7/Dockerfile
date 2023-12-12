@@ -28,6 +28,7 @@ RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.8.8" "3.8.8" /opt/p
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.9.2" "3.9.2" /opt/python/cp39-cp39
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.0" "3.10.0rc1" /opt/python/cp310-cp310
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.11.0" "3.11.0rc1" /opt/python/cp311-cp311
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.12.0" "3.12.0rc2" /opt/python/cp312-cp312
 
 ENV AUDITWHEEL_ARCH armv7l
 ENV AUDITWHEEL_PLAT linux_armv7l
@@ -62,3 +63,4 @@ ENV CXX ${CROSS_TRIPLE}-g++
 RUN echo "# file contents removed to avoid resetting PATH set by the docker image" >/etc/profile
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always

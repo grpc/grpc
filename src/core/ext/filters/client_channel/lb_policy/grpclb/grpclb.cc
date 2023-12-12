@@ -64,7 +64,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -73,6 +72,7 @@
 #include <vector>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -103,10 +103,10 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -133,14 +133,13 @@
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -318,10 +317,22 @@ class GrpcLb : public LoadBalancingPolicy {
           lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
-    ~SubchannelWrapper() override {
-      if (!lb_policy_->shutting_down_) {
-        lb_policy_->CacheDeletedSubchannelLocked(wrapped_subchannel());
+    void Orphan() override {
+      if (!IsWorkSerializerDispatchEnabled()) {
+        if (!lb_policy_->shutting_down_) {
+          lb_policy_->CacheDeletedSubchannelLocked(wrapped_subchannel());
+        }
+        return;
       }
+      WeakRefCountedPtr<SubchannelWrapper> self = WeakRef();
+      lb_policy_->work_serializer()->Run(
+          [self = std::move(self)]() {
+            if (!self->lb_policy_->shutting_down_) {
+              self->lb_policy_->CacheDeletedSubchannelLocked(
+                  self->wrapped_subchannel());
+            }
+          },
+          DEBUG_LOCATION);
     }
 
     const std::string& lb_token() const { return lb_token_; }
@@ -374,9 +385,9 @@ class GrpcLb : public LoadBalancingPolicy {
     // Returns a text representation suitable for logging.
     std::string AsText() const;
 
-    // Extracts all non-drop entries into a ServerAddressList.
-    ServerAddressList GetServerAddressList(
-        GrpcLbClientStats* client_stats) const;
+    // Extracts all non-drop entries into an EndpointAddressesIterator.
+    std::shared_ptr<EndpointAddressesIterator> GetServerAddressList(
+        GrpcLbClientStats* client_stats);
 
     // Returns true if the serverlist contains at least one drop entry and
     // no backend address entries.
@@ -390,6 +401,8 @@ class GrpcLb : public LoadBalancingPolicy {
     const char* ShouldDrop();
 
    private:
+    class AddressIterator;
+
     std::vector<GrpcLbServer> serverlist_;
 
     // Accessed from the picker, so needs synchronization.
@@ -454,7 +467,8 @@ class GrpcLb : public LoadBalancingPolicy {
         : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override;
+        const grpc_resolved_address& address,
+        const ChannelArgs& per_address_args, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -492,6 +506,8 @@ class GrpcLb : public LoadBalancingPolicy {
 
     RefCountedPtr<GrpcLb> parent_;
   };
+
+  class NullLbTokenEndpointIterator;
 
   void ShutdownLocked() override;
 
@@ -558,7 +574,8 @@ class GrpcLb : public LoadBalancingPolicy {
   // Whether we're in fallback mode.
   bool fallback_mode_ = false;
   // The backend addresses from the resolver.
-  absl::StatusOr<ServerAddressList> fallback_backend_addresses_;
+  absl::StatusOr<std::shared_ptr<NullLbTokenEndpointIterator>>
+      fallback_backend_addresses_;
   // The last resolution note from our parent.
   // To be passed to child policy when fallback_backend_addresses_ is empty.
   std::string resolution_note_;
@@ -583,53 +600,8 @@ class GrpcLb : public LoadBalancingPolicy {
 };
 
 //
-// GrpcLb::Serverlist
+// GrpcLb::Serverlist::AddressIterator
 //
-
-bool GrpcLb::Serverlist::operator==(const Serverlist& other) const {
-  return serverlist_ == other.serverlist_;
-}
-
-void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
-  memset(addr, 0, sizeof(*addr));
-  if (server.drop) return;
-  const uint16_t netorder_port = grpc_htons(static_cast<uint16_t>(server.port));
-  // the addresses are given in binary format (a in(6)_addr struct) in
-  // server->ip_address.bytes.
-  if (server.ip_size == 4) {
-    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
-    grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
-    addr4->sin_family = GRPC_AF_INET;
-    memcpy(&addr4->sin_addr, server.ip_addr, server.ip_size);
-    addr4->sin_port = netorder_port;
-  } else if (server.ip_size == 16) {
-    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
-    grpc_sockaddr_in6* addr6 =
-        reinterpret_cast<grpc_sockaddr_in6*>(&addr->addr);
-    addr6->sin6_family = GRPC_AF_INET6;
-    memcpy(&addr6->sin6_addr, server.ip_addr, server.ip_size);
-    addr6->sin6_port = netorder_port;
-  }
-}
-
-std::string GrpcLb::Serverlist::AsText() const {
-  std::vector<std::string> entries;
-  for (size_t i = 0; i < serverlist_.size(); ++i) {
-    const GrpcLbServer& server = serverlist_[i];
-    std::string ipport;
-    if (server.drop) {
-      ipport = "(drop)";
-    } else {
-      grpc_resolved_address addr;
-      ParseServer(server, &addr);
-      auto addr_str = grpc_sockaddr_to_string(&addr, false);
-      ipport = addr_str.ok() ? *addr_str : addr_str.status().ToString();
-    }
-    entries.push_back(absl::StrFormat("  %" PRIuPTR ": %s token=%s\n", i,
-                                      ipport, server.load_balance_token));
-  }
-  return absl::StrJoin(entries, "");
-}
 
 bool IsServerValid(const GrpcLbServer& server, size_t idx, bool log) {
   if (server.drop) return false;
@@ -654,36 +626,100 @@ bool IsServerValid(const GrpcLbServer& server, size_t idx, bool log) {
   return true;
 }
 
-// Returns addresses extracted from the serverlist.
-ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
-    GrpcLbClientStats* client_stats) const {
-  RefCountedPtr<GrpcLbClientStats> stats;
-  if (client_stats != nullptr) stats = client_stats->Ref();
-  ServerAddressList addresses;
+void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
+  memset(addr, 0, sizeof(*addr));
+  if (server.drop) return;
+  const uint16_t netorder_port = grpc_htons(static_cast<uint16_t>(server.port));
+  // the addresses are given in binary format (a in(6)_addr struct) in
+  // server->ip_address.bytes.
+  if (server.ip_size == 4) {
+    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
+    grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
+    addr4->sin_family = GRPC_AF_INET;
+    memcpy(&addr4->sin_addr, server.ip_addr, server.ip_size);
+    addr4->sin_port = netorder_port;
+  } else if (server.ip_size == 16) {
+    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
+    grpc_sockaddr_in6* addr6 =
+        reinterpret_cast<grpc_sockaddr_in6*>(&addr->addr);
+    addr6->sin6_family = GRPC_AF_INET6;
+    memcpy(&addr6->sin6_addr, server.ip_addr, server.ip_size);
+    addr6->sin6_port = netorder_port;
+  }
+}
+
+class GrpcLb::Serverlist::AddressIterator : public EndpointAddressesIterator {
+ public:
+  AddressIterator(RefCountedPtr<Serverlist> serverlist,
+                  RefCountedPtr<GrpcLbClientStats> client_stats)
+      : serverlist_(std::move(serverlist)),
+        client_stats_(std::move(client_stats)) {}
+
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+      const override {
+    for (size_t i = 0; i < serverlist_->serverlist_.size(); ++i) {
+      const GrpcLbServer& server = serverlist_->serverlist_[i];
+      if (!IsServerValid(server, i, false)) continue;
+      // Address processing.
+      grpc_resolved_address addr;
+      ParseServer(server, &addr);
+      // LB token processing.
+      const size_t lb_token_length = strnlen(
+          server.load_balance_token, GPR_ARRAY_SIZE(server.load_balance_token));
+      std::string lb_token(server.load_balance_token, lb_token_length);
+      if (lb_token.empty()) {
+        auto addr_uri = grpc_sockaddr_to_uri(&addr);
+        gpr_log(GPR_INFO,
+                "Missing LB token for backend address '%s'. The empty token "
+                "will be used instead",
+                addr_uri.ok() ? addr_uri->c_str()
+                              : addr_uri.status().ToString().c_str());
+      }
+      // Return address with a channel arg containing LB token and stats object.
+      callback(EndpointAddresses(
+          addr, ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
+                    std::move(lb_token), client_stats_))));
+    }
+  }
+
+ private:
+  RefCountedPtr<Serverlist> serverlist_;
+  RefCountedPtr<GrpcLbClientStats> client_stats_;
+};
+
+//
+// GrpcLb::Serverlist
+//
+
+bool GrpcLb::Serverlist::operator==(const Serverlist& other) const {
+  return serverlist_ == other.serverlist_;
+}
+
+std::string GrpcLb::Serverlist::AsText() const {
+  std::vector<std::string> entries;
   for (size_t i = 0; i < serverlist_.size(); ++i) {
     const GrpcLbServer& server = serverlist_[i];
-    if (!IsServerValid(server, i, false)) continue;
-    // Address processing.
-    grpc_resolved_address addr;
-    ParseServer(server, &addr);
-    // LB token processing.
-    const size_t lb_token_length = strnlen(
-        server.load_balance_token, GPR_ARRAY_SIZE(server.load_balance_token));
-    std::string lb_token(server.load_balance_token, lb_token_length);
-    if (lb_token.empty()) {
-      auto addr_uri = grpc_sockaddr_to_uri(&addr);
-      gpr_log(GPR_INFO,
-              "Missing LB token for backend address '%s'. The empty token will "
-              "be used instead",
-              addr_uri.ok() ? addr_uri->c_str()
-                            : addr_uri.status().ToString().c_str());
+    std::string ipport;
+    if (server.drop) {
+      ipport = "(drop)";
+    } else {
+      grpc_resolved_address addr;
+      ParseServer(server, &addr);
+      auto addr_str = grpc_sockaddr_to_string(&addr, false);
+      ipport = addr_str.ok() ? *addr_str : addr_str.status().ToString();
     }
-    // Add address with a channel arg containing LB token and stats object.
-    addresses.emplace_back(
-        addr, ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
-                  std::move(lb_token), stats)));
+    entries.push_back(absl::StrFormat("  %" PRIuPTR ": %s token=%s\n", i,
+                                      ipport, server.load_balance_token));
   }
-  return addresses;
+  return absl::StrJoin(entries, "");
+}
+
+// Returns addresses extracted from the serverlist.
+std::shared_ptr<EndpointAddressesIterator>
+GrpcLb::Serverlist::GetServerAddressList(GrpcLbClientStats* client_stats) {
+  RefCountedPtr<GrpcLbClientStats> stats;
+  if (client_stats != nullptr) stats = client_stats->Ref();
+  return std::make_shared<AddressIterator>(Ref(), std::move(stats));
 }
 
 bool GrpcLb::Serverlist::ContainsAllDropEntries() const {
@@ -739,9 +775,11 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // The metadata value is a hack: we pretend the pointer points to
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.
+      // NOLINTBEGIN(bugprone-string-constructor)
       args.initial_metadata->Add(
           GrpcLbClientStatsMetadata::key(),
           absl::string_view(reinterpret_cast<const char*>(client_stats), 0));
+      // NOLINTEND(bugprone-string-constructor)
       // Update calls-started.
       client_stats->AddCallStarted();
     }
@@ -766,19 +804,21 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
 //
 
 RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
+    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
-  const auto* arg = address.args().GetObject<TokenAndClientStatsArg>();
+  const auto* arg = per_address_args.GetObject<TokenAndClientStatsArg>();
   if (arg == nullptr) {
+    auto addr_str = grpc_sockaddr_to_string(&address, false);
     Crash(
-        absl::StrFormat("[grpclb %p] no TokenAndClientStatsArg for address %p",
-                        parent(), address.ToString().c_str()));
+        absl::StrFormat("[grpclb %p] no TokenAndClientStatsArg for address %s",
+                        parent(), addr_str.value_or("N/A").c_str()));
   }
   std::string lb_token = arg->lb_token();
   RefCountedPtr<GrpcLbClientStats> client_stats = arg->client_stats();
   return MakeRefCounted<SubchannelWrapper>(
-      parent()->channel_control_helper()->CreateSubchannel(std::move(address),
-                                                           args),
+      parent()->channel_control_helper()->CreateSubchannel(
+          address, per_address_args, args),
       parent()->Ref(DEBUG_LOCATION, "SubchannelWrapper"), std::move(lb_token),
       std::move(client_stats));
 }
@@ -826,14 +866,10 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
 
 void GrpcLb::Helper::RequestReresolution() {
   if (parent()->shutting_down_) return;
-  // If we are talking to a balancer, we expect to get updated addresses
-  // from the balancer, so we can ignore the re-resolution request from
-  // the child policy. Otherwise, pass the re-resolution request up to the
-  // channel.
-  if (parent()->lb_calld_ == nullptr ||
-      !parent()->lb_calld_->seen_initial_response()) {
-    parent()->channel_control_helper()->RequestReresolution();
-  }
+  // Ignore if we're not in fallback mode, because if we got the backend
+  // addresses from the balancer, re-resolving is not going to fix it.
+  if (!parent()->fallback_mode_) return;
+  parent()->channel_control_helper()->RequestReresolution();
 }
 
 //
@@ -1334,11 +1370,11 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 // helper code for creating balancer channel
 //
 
-ServerAddressList ExtractBalancerAddresses(const ChannelArgs& args) {
-  const ServerAddressList* addresses =
+EndpointAddressesList ExtractBalancerAddresses(const ChannelArgs& args) {
+  const EndpointAddressesList* endpoints =
       FindGrpclbBalancerAddressesInChannelArgs(args);
-  if (addresses != nullptr) return *addresses;
-  return ServerAddressList();
+  if (endpoints != nullptr) return *endpoints;
+  return EndpointAddressesList();
 }
 
 // Returns the channel args for the LB channel, used to create a bidirectional
@@ -1492,21 +1528,45 @@ void GrpcLb::ResetBackoffLocked() {
   }
 }
 
+// Endpoint iterator wrapper to add null LB token attribute.
+class GrpcLb::NullLbTokenEndpointIterator : public EndpointAddressesIterator {
+ public:
+  explicit NullLbTokenEndpointIterator(
+      std::shared_ptr<EndpointAddressesIterator> parent_it)
+      : parent_it_(std::move(parent_it)) {}
+
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+      const override {
+    parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+        gpr_log(GPR_INFO, "[grpclb %p] fallback address: %s", this,
+                endpoint.ToString().c_str());
+      }
+      callback(EndpointAddresses(endpoint.addresses(),
+                                 endpoint.args().SetObject(empty_token_)));
+    });
+  }
+
+ private:
+  std::shared_ptr<EndpointAddressesIterator> parent_it_;
+  RefCountedPtr<TokenAndClientStatsArg> empty_token_ =
+      MakeRefCounted<TokenAndClientStatsArg>("", nullptr);
+};
+
 absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+    gpr_log(GPR_INFO, "[grpclb %p] received update", this);
+  }
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config;
   GPR_ASSERT(config_ != nullptr);
   args_ = std::move(args.args);
   // Update fallback address list.
-  fallback_backend_addresses_ = std::move(args.addresses);
-  if (fallback_backend_addresses_.ok()) {
-    // Add null LB token attributes.
-    for (ServerAddress& address : *fallback_backend_addresses_) {
-      address = ServerAddress(
-          address.address(),
-          address.args().SetObject(
-              MakeRefCounted<TokenAndClientStatsArg>("", nullptr)));
-    }
+  if (!args.addresses.ok()) {
+    fallback_backend_addresses_ = args.addresses.status();
+  } else {
+    fallback_backend_addresses_ = std::make_shared<NullLbTokenEndpointIterator>(
+        std::move(*args.addresses));
   }
   resolution_note_ = std::move(args.resolution_note);
   // Update balancer channel.
@@ -1553,7 +1613,13 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
 
 absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   // Get balancer addresses.
-  ServerAddressList balancer_addresses = ExtractBalancerAddresses(args_);
+  EndpointAddressesList balancer_addresses = ExtractBalancerAddresses(args_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+    for (const auto& endpoint : balancer_addresses) {
+      gpr_log(GPR_INFO, "[grpclb %p] balancer address: %s", this,
+              endpoint.ToString().c_str());
+    }
+  }
   absl::Status status;
   if (balancer_addresses.empty()) {
     status = absl::UnavailableError("balancer address list must be non-empty");
@@ -1588,7 +1654,7 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   // Pass channel creds via channel args, since the fake resolver won't
   // do this automatically.
   result.args = lb_channel_args.SetObject(std::move(channel_credentials));
-  response_generator_->SetResponse(std::move(result));
+  response_generator_->SetResponseAsync(std::move(result));
   // Return status.
   return status;
 }
@@ -1732,6 +1798,12 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
+bool EndpointIteratorIsEmpty(const EndpointAddressesIterator& endpoints) {
+  bool empty = true;
+  endpoints.ForEach([&](const EndpointAddresses&) { empty = false; });
+  return empty;
+}
+
 void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   if (shutting_down_) return;
   // Construct update args.
@@ -1745,15 +1817,19 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     // picks.
     update_args.addresses = fallback_backend_addresses_;
     if (fallback_backend_addresses_.ok() &&
-        fallback_backend_addresses_->empty()) {
+        EndpointIteratorIsEmpty(**fallback_backend_addresses_)) {
       update_args.resolution_note = absl::StrCat(
-          "grpclb in fallback mode without any balancer addresses: ",
+          "grpclb in fallback mode without any fallback addresses: ",
           resolution_note_);
     }
   } else {
     update_args.addresses = serverlist_->GetServerAddressList(
         lb_calld_ == nullptr ? nullptr : lb_calld_->client_stats());
     is_backend_from_grpclb_load_balancer = true;
+    if (update_args.addresses.ok() &&
+        EndpointIteratorIsEmpty(**update_args.addresses)) {
+      update_args.resolution_note = "empty serverlist from grpclb balancer";
+    }
   }
   update_args.args =
       CreateChildPolicyArgsLocked(is_backend_from_grpclb_load_balancer);
@@ -1852,16 +1928,10 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<GrpcLbFactory>());
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto enable = builder->channel_args().GetBool(
-            GRPC_ARG_GRPCLB_ENABLE_LOAD_REPORTING_FILTER);
-        if (enable.has_value() && *enable) {
-          builder->PrependFilter(&ClientLoadReportingFilter::kFilter);
-        }
-        return true;
-      });
+  builder->channel_init()
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                       &ClientLoadReportingFilter::kFilter)
+      .IfChannelArg(GRPC_ARG_GRPCLB_ENABLE_LOAD_REPORTING_FILTER, false);
 }
 
 }  // namespace grpc_core

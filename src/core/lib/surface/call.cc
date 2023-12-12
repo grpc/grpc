@@ -27,7 +27,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <memory>
 #include <new>
 #include <string>
@@ -36,7 +35,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -55,11 +53,9 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
@@ -836,6 +832,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
       call->send_initial_metadata_.Set(HttpAuthorityMetadata(),
                                        std::move(*args->authority));
     }
+    call->send_initial_metadata_.Set(
+        GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
+                                    args->registered_method)));
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -844,11 +843,11 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     // collecting from when the call is created at the transport. The idea is
     // that the transport would create the call tracer and pass it in as part of
     // the metadata.
-    auto* server_call_tracer_factory = ServerCallTracerFactory::Get(
-        args->server != nullptr ? args->server->channel_args() : ChannelArgs());
-    if (server_call_tracer_factory != nullptr) {
+    if (args->server != nullptr &&
+        args->server->server_call_tracer_factory() != nullptr) {
       auto* server_call_tracer =
-          server_call_tracer_factory->CreateNewServerCallTracer(arena);
+          args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
+              arena);
       if (server_call_tracer != nullptr) {
         // Note that we are setting both
         // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
@@ -1306,6 +1305,18 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
 void FilterStackCall::BatchControl::PostCompletion() {
   FilterStackCall* call = call_;
   grpc_error_handle error = batch_error_.get();
+
+  if (IsCallStatusOverrideOnCancellationEnabled()) {
+    // On the client side, if final call status is already known (i.e if this op
+    // includes recv_trailing_metadata) and if the call status is known to be
+    // OK, then disregard the batch error to ensure call->receiving_buffer_ is
+    // not cleared.
+    if (op_.recv_trailing_metadata && call->is_client() &&
+        call->status_error_.ok()) {
+      error = absl::OkStatus();
+    }
+  }
+
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "tag:%p batch_error=%s op:%s",
             completion_data_.notify_tag.tag, error.ToString().c_str(),
@@ -1327,6 +1338,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
   if (op_.send_trailing_metadata) {
     call->send_trailing_metadata_.Clear();
   }
+
   if (!error.ok() && op_.recv_message && *call->receiving_buffer_ != nullptr) {
     grpc_byte_buffer_destroy(*call->receiving_buffer_);
     *call->receiving_buffer_ = nullptr;
@@ -1980,10 +1992,21 @@ class PromiseBasedCall : public Call,
   void SetCompletionQueue(grpc_completion_queue* cq) override;
   bool Completed() final { return finished_.IsSet(); }
 
+  virtual void OrphanCall() = 0;
+
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
-  void ExternalRef() final { InternalRef("external"); }
-  void ExternalUnref() final { InternalUnref("external"); }
+  void ExternalRef() final {
+    if (external_refs_.fetch_add(1, std::memory_order_relaxed) == 0) {
+      InternalRef("external");
+    }
+  }
+  void ExternalUnref() final {
+    if (external_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+      OrphanCall();
+      InternalUnref("external");
+    }
+  }
   void InternalRef(const char* reason) final {
     if (grpc_call_refcount_trace.enabled()) {
       gpr_log(GPR_DEBUG, "INTERNAL_REF:%p:%s", this, reason);
@@ -2346,14 +2369,16 @@ class PromiseBasedCall : public Call,
   }
 
   CallContext call_context_{this};
-
+  // Double refcounted for now: party owns the internal refcount, we track the
+  // external refcount. Figure out a better scheme post-promise conversion.
+  std::atomic<size_t> external_refs_;
   // Contexts for various subsystems (security, tracing, ...).
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   grpc_completion_queue* cq_;
   CompletionInfo completion_info_[6];
   grpc_call_stats final_stats_{};
   Slice final_message_;
-  grpc_status_code final_status_;
+  grpc_status_code final_status_ = GRPC_STATUS_UNKNOWN;
   CallFinalization finalization_;
   // Current deadline.
   Mutex deadline_mu_;
@@ -2391,7 +2416,8 @@ PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                                    const grpc_call_create_args& args)
     : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
            args.channel->Ref()),
-      Party(arena, initial_external_refs),
+      Party(arena, initial_external_refs != 0 ? 1 : 0),
+      external_refs_(initial_external_refs),
       cq_(args.cq) {
   if (args.cq != nullptr) {
     GRPC_CQ_INTERNAL_REF(args.cq, "bind");
@@ -2684,18 +2710,20 @@ void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array,
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
   ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
-      : PromiseBasedCall(arena, 1, *args) {
+      : PromiseBasedCall(arena, 1, *args),
+        polling_entity_(
+            args->cq != nullptr
+                ? grpc_polling_entity_create_from_pollset(
+                      grpc_cq_pollset(args->cq))
+                : (args->pollset_set_alternative != nullptr
+                       ? grpc_polling_entity_create_from_pollset_set(
+                             args->pollset_set_alternative)
+                       : grpc_polling_entity{})) {
     global_stats().IncrementClientCallsCreated();
     if (args->cq != nullptr) {
       GPR_ASSERT(args->pollset_set_alternative == nullptr &&
                  "Only one of 'cq' and 'pollset_set_alternative' should be "
                  "non-nullptr.");
-      polling_entity_.Set(
-          grpc_polling_entity_create_from_pollset(grpc_cq_pollset(args->cq)));
-    }
-    if (args->pollset_set_alternative != nullptr) {
-      polling_entity_.Set(grpc_polling_entity_create_from_pollset_set(
-          args->pollset_set_alternative));
     }
     ScopedContext context(this);
     send_initial_metadata_ =
@@ -2705,13 +2733,26 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),
                                   std::move(*args->authority));
     }
+    send_initial_metadata_->Set(GrpcRegisteredMethod(),
+                                reinterpret_cast<void*>(static_cast<uintptr_t>(
+                                    args->registered_method)));
     if (auto* channelz_channel = channel()->channelz_node()) {
       channelz_channel->RecordCallStarted();
     }
     if (args->send_deadline != Timestamp::InfFuture()) {
       UpdateDeadline(args->send_deadline);
     }
+    Call* parent = Call::FromC(args->parent);
+    if (parent != nullptr) {
+      auto parent_status = InitParent(parent, args->propagation_mask);
+      if (!parent_status.ok()) {
+        CancelWithError(std::move(parent_status));
+      }
+      PublishToParent(parent);
+    }
   }
+
+  void OrphanCall() override { MaybeUnpublishFromParent(); }
 
   ~ClientPromiseBasedCall() override {
     ScopedContext context(this);
@@ -2725,13 +2766,18 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   }
 
   void CancelWithError(absl::Status error) override {
+    if (cancel_with_error_called_.exchange(true, std::memory_order_relaxed)) {
+      return;
+    }
     if (!started_.exchange(true, std::memory_order_relaxed)) {
       // Initial metadata not sent yet, so we can just fail the call.
       Spawn(
           "cancel_before_initial_metadata",
           [error = std::move(error), this]() {
             server_to_client_messages_.sender.Close();
-            Finish(ServerMetadataFromStatus(error));
+            auto md = ServerMetadataFromStatus(error);
+            md->Set(GrpcCallWasCancelled(), true);
+            Finish(std::move(md));
             return Empty{};
           },
           [](Empty) {});
@@ -2740,7 +2786,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
           "cancel_with_error",
           [error = std::move(error), this]() {
             if (!cancel_error_.is_set()) {
-              cancel_error_.Set(ServerMetadataFromStatus(error));
+              auto md = ServerMetadataFromStatus(error);
+              md->Set(GrpcCallWasCancelled(), true);
+              cancel_error_.Set(std::move(md));
             }
             return Empty{};
           },
@@ -2790,13 +2838,18 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   Latch<grpc_polling_entity> polling_entity_;
   Pipe<MessageHandle> client_to_server_messages_{arena()};
   Pipe<MessageHandle> server_to_client_messages_{arena()};
-  bool is_trailers_only_;
+  bool is_trailers_only_ = false;
+  bool scheduled_receive_status_ = false;
+  bool scheduled_send_close_ = false;
   // True once the promise for the call is started.
   // This corresponds to sending initial metadata, or cancelling before doing
   // so.
   // In the latter case real world code sometimes does not sent the initial
   // metadata, and so gating based upon that does not work out.
   std::atomic<bool> started_{false};
+  // True after the first CancelWithError call - prevents spamming cancels from
+  // overflowing the party.
+  std::atomic<bool> cancel_with_error_called_{false};
   // TODO(ctiller): delete when we remove the filter based API (may require some
   // cleanup in wrapped languages: they depend on this to hold slice refs)
   ServerMetadataHandle recv_initial_metadata_;
@@ -2860,15 +2913,25 @@ grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
       case GRPC_OP_RECV_MESSAGE:
+        if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        if (scheduled_send_close_) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
         if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (scheduled_receive_status_) {
+          return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        }
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
         return GRPC_CALL_ERROR_NOT_ON_CLIENT;
     }
-    if (got_ops.is_set(op.op)) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+    if (got_ops.is_set(op.op)) {
+      return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+    }
     got_ops.set(op.op);
   }
   return GRPC_CALL_OK;
@@ -2903,6 +2966,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             spawner);
       } break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
+        scheduled_receive_status_ = true;
         StartRecvStatusOnClient(completion, op.data.recv_status_on_client,
                                 spawner);
       } break;
@@ -2914,11 +2978,13 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         StartRecvMessage(
             op, completion,
             [this]() {
-              return server_initial_metadata_.receiver.AwaitClosed();
+              return Race(server_initial_metadata_.receiver.AwaitClosed(),
+                          server_to_client_messages_.receiver.AwaitClosed());
             },
             &server_to_client_messages_.receiver, false, spawner);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        scheduled_send_close_ = true;
         spawner.Spawn(
             "send_close_from_client",
             [this]() {
@@ -2963,18 +3029,28 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
     Party::BulkSpawner& spawner) {
   spawner.Spawn(
       "recv_initial_metadata",
-      Race(server_initial_metadata_.receiver.Next(),
-           Map(finished(),
-               [](Empty) { return NextResult<ServerMetadataHandle>(true); })),
+      [this]() {
+        return Race(server_initial_metadata_.receiver.Next(),
+                    Map(finished(), [](Empty) {
+                      return NextResult<ServerMetadataHandle>(true);
+                    }));
+      },
       [this, array,
        completion =
            AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata)](
           NextResult<ServerMetadataHandle> next_metadata) mutable {
         server_initial_metadata_.sender.Close();
         ServerMetadataHandle metadata;
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%s[call] RecvTrailingMetadata: %s",
+                  DebugTag().c_str(),
+                  next_metadata.has_value()
+                      ? next_metadata.value()->DebugString().c_str()
+                      : "null");
+        }
         if (next_metadata.has_value()) {
-          is_trailers_only_ = false;
           metadata = std::move(next_metadata.value());
+          is_trailers_only_ = metadata->get(GrpcTrailersOnly()).value_or(false);
         } else {
           is_trailers_only_ = true;
           metadata = arena()->MakePooled<ServerMetadata>(arena());
@@ -2993,7 +3069,12 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
   }
   ResetDeadline();
   set_completed();
-  client_to_server_messages_.sender.Close();
+  client_to_server_messages_.sender.CloseWithError();
+  client_to_server_messages_.receiver.CloseWithError();
+  if (trailing_metadata->get(GrpcCallWasCancelled()).value_or(false)) {
+    server_to_client_messages_.receiver.CloseWithError();
+    server_initial_metadata_.receiver.CloseWithError();
+  }
   if (auto* channelz_channel = channel()->channelz_node()) {
     if (trailing_metadata->get(GrpcStatusMetadata())
             .value_or(GRPC_STATUS_UNKNOWN) == GRPC_STATUS_OK) {
@@ -3071,6 +3152,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  public:
   ServerPromiseBasedCall(Arena* arena, grpc_call_create_args* args);
 
+  void OrphanCall() override {}
   void CancelWithError(grpc_error_handle) override;
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
@@ -3224,11 +3306,10 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   // collecting from when the call is created at the transport. The idea is that
   // the transport would create the call tracer and pass it in as part of the
   // metadata.
-  auto* server_call_tracer_factory =
-      ServerCallTracerFactory::Get(args->server->channel_args());
-  if (server_call_tracer_factory != nullptr) {
+  if (args->server->server_call_tracer_factory() != nullptr) {
     auto* server_call_tracer =
-        server_call_tracer_factory->CreateNewServerCallTracer(arena);
+        args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
+            arena);
     if (server_call_tracer != nullptr) {
       // Note that we are setting both
       // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and

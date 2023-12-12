@@ -79,7 +79,8 @@ def get_client_rpc_stats(
 
 
 def run_ping_pong(test_client: _XdsTestClient, num_rpcs: int):
-    test_client.wait_for_active_server_channel()
+    test_client.wait_for_active_xds_channel()
+    test_client.wait_for_server_channel_ready()
     lb_stats = get_client_rpc_stats(test_client, num_rpcs)
     for backend, rpcs_count in lb_stats.rpcs_by_peer.items():
         if int(rpcs_count) < 1:
@@ -103,6 +104,9 @@ def main(argv):
 
     # Flags.
     should_port_forward: bool = xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
+    enable_workload_identity: bool = (
+        xds_k8s_flags.ENABLE_WORKLOAD_IDENTITY.value
+    )
 
     # Setup.
     gcp_api_manager = gcp.api.GcpApiManager()
@@ -114,6 +118,7 @@ def main(argv):
         server_namespace,
         gcp_api_manager,
         port_forwarding=should_port_forward,
+        enable_workload_identity=enable_workload_identity,
         mode=_MODE.value,
     )
     # Find server pod.
@@ -127,6 +132,7 @@ def main(argv):
         client_namespace,
         gcp_api_manager,
         port_forwarding=should_port_forward,
+        enable_workload_identity=enable_workload_identity,
         mode=_MODE.value,
     )
     # Find client pod.

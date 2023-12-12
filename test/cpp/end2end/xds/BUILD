@@ -23,12 +23,8 @@ grpc_package(
 
 grpc_cc_library(
     name = "xds_server",
-    testonly = True,
     srcs = ["xds_server.cc"],
     hdrs = ["xds_server.h"],
-    external_deps = [
-        "gtest",
-    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -46,6 +42,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_utils",
+    srcs = ["xds_utils.cc"],
+    hdrs = ["xds_utils.h"],
+    deps = [
+        ":xds_server",
+        "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:discovery_proto",
+        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
+        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
+        "//src/proto/grpc/testing/xds/v3:listener_proto",
+        "//src/proto/grpc/testing/xds/v3:route_proto",
+        "//src/proto/grpc/testing/xds/v3:router_proto",
+        "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_end2end_test_lib",
     testonly = True,
     srcs = ["xds_end2end_test_lib.cc"],
@@ -55,6 +68,7 @@ grpc_cc_library(
     ],
     deps = [
         ":xds_server",
+        ":xds_utils",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -156,6 +170,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/end2end:connection_attempt_injector",
     ],
 )
@@ -440,8 +455,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:stateful_session_cookie_proto",
         "//src/proto/grpc/testing/xds/v3:stateful_session_proto",
         "//test/core/util:grpc_test_util",

@@ -33,8 +33,12 @@
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
+#include "opentelemetry/exporters/prometheus/exporter_factory.h"
+#include "opentelemetry/exporters/prometheus/exporter_options.h"
+#include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include <grpcpp/ext/admin_services.h>
+#include <grpcpp/ext/csm_observability.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server.h>
@@ -69,6 +73,8 @@ ABSL_FLAG(std::string, expect_status, "OK",
 ABSL_FLAG(
     bool, secure_mode, false,
     "If true, XdsCredentials are used, InsecureChannelCredentials otherwise");
+ABSL_FLAG(bool, enable_csm_observability, false,
+          "Whether to enable CSM Observability");
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -386,6 +392,22 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
   GPR_UNREACHABLE_CODE(thread.join());
 }
 
+void EnableCsmObservability() {
+  gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
+  opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
+  // default was "localhost:9464" which causes connection issue across GKE
+  // pods
+  opts.url = "0.0.0.0:9464";
+  auto prometheus_exporter =
+      opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
+  auto meter_provider =
+      std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+  meter_provider->AddMetricReader(std::move(prometheus_exporter));
+  auto observability = grpc::experimental::CsmObservabilityBuilder();
+  observability.SetMeterProvider(std::move(meter_provider));
+  auto status = observability.BuildAndRegister();
+}
+
 void RunServer(const int port, StatsWatchers* stats_watchers,
                RpcConfigurationsQueue* rpc_configs_queue) {
   GPR_ASSERT(port != 0);
@@ -474,6 +496,9 @@ int main(int argc, char** argv) {
   }
 
   BuildRpcConfigsFromFlags(&rpc_config_queue);
+  if (absl::GetFlag(FLAGS_enable_csm_observability)) {
+    EnableCsmObservability();
+  }
 
   std::chrono::duration<double> duration_per_query =
       std::chrono::nanoseconds(std::chrono::seconds(1)) /

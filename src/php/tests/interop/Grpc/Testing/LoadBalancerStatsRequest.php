@@ -25,6 +25,14 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>int32 timeout_sec = 2;</code>
      */
     protected $timeout_sec = 0;
+    /**
+     * Response header + trailer metadata entries we want the values of.
+     * Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
+     * * (asterisk) is a special value that will return all metadata entries
+     *
+     * Generated from protobuf field <code>repeated string metadata_keys = 3;</code>
+     */
+    private $metadata_keys;
 
     /**
      * Constructor.
@@ -36,6 +44,10 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
      *           Request stats for the next num_rpcs sent by client.
      *     @type int $timeout_sec
      *           If num_rpcs have not completed within timeout_sec, return partial results.
+     *     @type array<string>|\Google\Protobuf\Internal\RepeatedField $metadata_keys
+     *           Response header + trailer metadata entries we want the values of.
+     *           Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
+     *           * (asterisk) is a special value that will return all metadata entries
      * }
      */
     public function __construct($data = NULL) {
@@ -91,6 +103,36 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkInt32($var);
         $this->timeout_sec = $var;
+
+        return $this;
+    }
+
+    /**
+     * Response header + trailer metadata entries we want the values of.
+     * Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
+     * * (asterisk) is a special value that will return all metadata entries
+     *
+     * Generated from protobuf field <code>repeated string metadata_keys = 3;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getMetadataKeys()
+    {
+        return $this->metadata_keys;
+    }
+
+    /**
+     * Response header + trailer metadata entries we want the values of.
+     * Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
+     * * (asterisk) is a special value that will return all metadata entries
+     *
+     * Generated from protobuf field <code>repeated string metadata_keys = 3;</code>
+     * @param array<string>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setMetadataKeys($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::STRING);
+        $this->metadata_keys = $arr;
 
         return $this;
     }

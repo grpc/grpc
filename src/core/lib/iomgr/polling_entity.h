@@ -66,6 +66,8 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
 void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
                                               grpc_pollset_set* pss_dst);
 
+std::string grpc_polling_entity_string(grpc_polling_entity* pollent);
+
 namespace grpc_core {
 template <>
 struct ContextType<grpc_polling_entity> {};

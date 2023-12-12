@@ -15,8 +15,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <limits>
 #include <memory>
 
+#include "absl/random/bit_gen_ref.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/memory_allocator.h>
@@ -40,6 +42,11 @@ bool squelch = false;
 namespace grpc_core {
 namespace chaotic_good {
 
+struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
+  using result_type = uint64_t;
+  uint64_t operator()() { return 42; }
+};
+
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
@@ -49,11 +56,19 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   uint8_t header_bytes[24];
   serialized.MoveFirstNBytesIntoBuffer(24, header_bytes);
   auto header = FrameHeader::Parse(header_bytes);
-  GPR_ASSERT(header.ok());
+  if (!header.ok()) {
+    if (!squelch) {
+      gpr_log(GPR_ERROR, "Failed to parse header: %s",
+              header.status().ToString().c_str());
+    }
+    Crash("Failed to parse header");
+  }
   GPR_ASSERT(header->type == expected_frame_type);
   T output;
   HPackParser hpack_parser;
-  auto deser = output.Deserialize(&hpack_parser, header.value(), serialized);
+  DeterministicBitGen bitgen;
+  auto deser = output.Deserialize(&hpack_parser, header.value(),
+                                  absl::BitGenRef(bitgen), serialized);
   GPR_ASSERT(deser.ok());
   GPR_ASSERT(output == input);
 }
@@ -66,8 +81,11 @@ void FinishParseAndChecks(const FrameHeader& header, const uint8_t* data,
   HPackParser hpack_parser;
   SliceBuffer serialized;
   serialized.Append(Slice::FromCopiedBuffer(data, size));
-  auto deser = parsed.Deserialize(&hpack_parser, header, serialized);
+  DeterministicBitGen bitgen;
+  auto deser = parsed.Deserialize(&hpack_parser, header,
+                                  absl::BitGenRef(bitgen), serialized);
   if (!deser.ok()) return;
+  gpr_log(GPR_INFO, "Read frame: %s", parsed.ToString().c_str());
   AssertRoundTrips(parsed, header.type);
 }
 
@@ -79,6 +97,7 @@ int Run(const uint8_t* data, size_t size) {
   if (size < 24) return 0;
   auto r = FrameHeader::Parse(data);
   if (!r.ok()) return 0;
+  gpr_log(GPR_INFO, "Read frame header: %s", r->ToString().c_str());
   size -= 24;
   data += 24;
   MemoryAllocator memory_allocator = MemoryAllocator(

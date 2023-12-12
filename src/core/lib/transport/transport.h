@@ -27,9 +27,9 @@
 
 #include <functional>
 #include <string>
-#include <type_traits>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -55,7 +55,10 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -147,6 +150,17 @@ struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
   }
 };
 
+// Anything that can be first cast to absl::Status can then be cast to
+// ServerMetadataHandle.
+template <typename T>
+struct StatusCastImpl<
+    ServerMetadataHandle, T,
+    absl::void_t<decltype(StatusCast<absl::Status>(std::declval<T>()))>> {
+  static ServerMetadataHandle Cast(const T& m) {
+    return ServerMetadataFromStatus(StatusCast<absl::Status>(m));
+  }
+};
+
 // Move only type that tracks call startup.
 // Allows observation of when client_initial_metadata has been processed by the
 // end of the local call stack.
@@ -227,6 +241,269 @@ struct CallArgs {
 
 using NextPromiseFactory =
     std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
+
+// The common middle part of a call - a reference is held by each of
+// CallInitiator and CallHandler - which provide interfaces that are appropriate
+// for each side of a call.
+// The spine will ultimately host the pipes, filters, and context for one part
+// of a call: ie top-half client channel, sub channel call, server call.
+// TODO(ctiller): eventually drop this when we don't need to reference into
+// legacy promise calls anymore
+class CallSpineInterface {
+ public:
+  virtual ~CallSpineInterface() = default;
+  virtual Pipe<ClientMetadataHandle>& client_initial_metadata() = 0;
+  virtual Pipe<ServerMetadataHandle>& server_initial_metadata() = 0;
+  virtual Pipe<MessageHandle>& client_to_server_messages() = 0;
+  virtual Pipe<MessageHandle>& server_to_client_messages() = 0;
+  virtual Pipe<ServerMetadataHandle>& server_trailing_metadata() = 0;
+  virtual Latch<ServerMetadataHandle>& cancel_latch() = 0;
+  virtual Party& party() = 0;
+  virtual void IncrementRefCount() = 0;
+  virtual void Unref() = 0;
+
+  // Cancel the call with the given metadata.
+  // Regarding the `MUST_USE_RESULT absl::nullopt_t`:
+  // Most cancellation calls right now happen in pipe interceptors;
+  // there `nullopt` indicates terminate processing of this pipe and close with
+  // error.
+  // It's convenient then to have the Cancel operation (setting the latch to
+  // terminate the call) be the last thing that occurs in a pipe interceptor,
+  // and this construction supports that (and has helped the author not write
+  // some bugs).
+  GRPC_MUST_USE_RESULT absl::nullopt_t Cancel(ServerMetadataHandle metadata) {
+    GPR_DEBUG_ASSERT(Activity::current() == &party());
+    auto& c = cancel_latch();
+    if (c.is_set()) return absl::nullopt;
+    c.Set(std::move(metadata));
+    return absl::nullopt;
+  }
+
+  auto WaitForCancel() {
+    GPR_DEBUG_ASSERT(Activity::current() == &party());
+    return cancel_latch().Wait();
+  }
+
+  // Wrap a promise so that if it returns failure it automatically cancels
+  // the rest of the call.
+  // The resulting (returned) promise will resolve to Empty.
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    GPR_DEBUG_ASSERT(Activity::current() == &party());
+    using P = promise_detail::PromiseLike<Promise>;
+    using ResultType = typename P::Result;
+    return Map(std::move(promise), [this](ResultType r) {
+      if (!IsStatusOk(r)) {
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(r));
+      }
+      return r;
+    });
+  }
+
+  // Spawn a promise that returns Empty{} and save some boilerplate handling
+  // that detail.
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    party().Spawn(name, std::move(promise_factory), [](Empty) {});
+  }
+
+  // Spawn a promise that returns some status-like type; if the status
+  // represents failure automatically cancel the rest of the call.
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    using FactoryType =
+        promise_detail::OncePromiseFactory<void, PromiseFactory>;
+    using PromiseType = typename FactoryType::Promise;
+    using ResultType = typename PromiseType::Result;
+    static_assert(
+        std::is_same<bool,
+                     decltype(IsStatusOk(std::declval<ResultType>()))>::value,
+        "SpawnGuarded promise must return a status-like object");
+    party().Spawn(name, std::move(promise_factory), [this](ResultType r) {
+      if (!IsStatusOk(r)) {
+        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+      }
+    });
+  }
+};
+
+class CallSpine final : public CallSpineInterface {
+ public:
+  Pipe<ClientMetadataHandle>& client_initial_metadata() override {
+    return client_initial_metadata_;
+  }
+  Pipe<ServerMetadataHandle>& server_initial_metadata() override {
+    return server_initial_metadata_;
+  }
+  Pipe<MessageHandle>& client_to_server_messages() override {
+    return client_to_server_messages_;
+  }
+  Pipe<MessageHandle>& server_to_client_messages() override {
+    return server_to_client_messages_;
+  }
+  Pipe<ServerMetadataHandle>& server_trailing_metadata() override {
+    return server_trailing_metadata_;
+  }
+  Latch<ServerMetadataHandle>& cancel_latch() override { return cancel_latch_; }
+  Party& party() override { Crash("unimplemented"); }
+  void IncrementRefCount() override { Crash("unimplemented"); }
+  void Unref() override { Crash("unimplemented"); }
+
+ private:
+  // Initial metadata from client to server
+  Pipe<ClientMetadataHandle> client_initial_metadata_;
+  // Initial metadata from server to client
+  Pipe<ServerMetadataHandle> server_initial_metadata_;
+  // Messages travelling from the application to the transport.
+  Pipe<MessageHandle> client_to_server_messages_;
+  // Messages travelling from the transport to the application.
+  Pipe<MessageHandle> server_to_client_messages_;
+  // Trailing metadata from server to client
+  Pipe<ServerMetadataHandle> server_trailing_metadata_;
+  // Latch that can be set to terminate the call
+  Latch<ServerMetadataHandle> cancel_latch_;
+};
+
+class CallInitiator {
+ public:
+  explicit CallInitiator(RefCountedPtr<CallSpine> spine)
+      : spine_(std::move(spine)) {}
+
+  auto PushClientInitialMetadata(ClientMetadataHandle md) {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Map(spine_->client_initial_metadata().sender.Push(std::move(md)),
+               [](bool ok) { return StatusFlag(ok); });
+  }
+
+  auto PullServerInitialMetadata() {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Map(spine_->server_initial_metadata().receiver.Next(),
+               [](NextResult<ClientMetadataHandle> md)
+                   -> ValueOrFailure<ClientMetadataHandle> {
+                 if (!md.has_value()) return Failure{};
+                 return std::move(*md);
+               });
+  }
+
+  auto PullServerTrailingMetadata() {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Race(spine_->WaitForCancel(),
+                Map(spine_->server_trailing_metadata().receiver.Next(),
+                    [spine = spine_](NextResult<ServerMetadataHandle> md)
+                        -> ServerMetadataHandle {
+                      GPR_ASSERT(md.has_value());
+                      return std::move(*md);
+                    }));
+  }
+
+  auto PullMessage() {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return spine_->server_to_client_messages().receiver.Next();
+  }
+
+  auto PushMessage(MessageHandle message) {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return spine_->client_to_server_messages().sender.Push(std::move(message));
+  }
+
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    return spine_->CancelIfFails(std::move(promise));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnGuarded(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnInfallible(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+    return spine_->party().SpawnWaitable(name, std::move(promise_factory));
+  }
+
+ private:
+  const RefCountedPtr<CallSpine> spine_;
+};
+
+class CallHandler {
+ public:
+  explicit CallHandler(RefCountedPtr<CallSpine> spine)
+      : spine_(std::move(spine)) {}
+
+  auto PullClientInitialMetadata() {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Map(spine_->client_initial_metadata().receiver.Next(),
+               [](NextResult<ClientMetadataHandle> md)
+                   -> ValueOrFailure<ClientMetadataHandle> {
+                 if (!md.has_value()) return Failure{};
+                 return std::move(*md);
+               });
+  }
+
+  auto PushServerInitialMetadata(ClientMetadataHandle md) {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Map(spine_->server_initial_metadata().sender.Push(std::move(md)),
+               [](bool ok) { return StatusFlag(ok); });
+  }
+
+  auto PushServerTrailingMetadata(ClientMetadataHandle md) {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return Map(spine_->server_initial_metadata().sender.Push(std::move(md)),
+               [](bool ok) { return StatusFlag(ok); });
+  }
+
+  auto PullMessage() {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return spine_->client_to_server_messages().receiver.Next();
+  }
+
+  auto PushMessage(MessageHandle message) {
+    GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
+    return spine_->server_to_client_messages().sender.Push(std::move(message));
+  }
+
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    return spine_->CancelIfFails(std::move(promise));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnGuarded(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnInfallible(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+    return spine_->party().SpawnWaitable(name, std::move(promise_factory));
+  }
+
+ private:
+  const RefCountedPtr<CallSpine> spine_;
+};
+
+template <typename CallHalf>
+auto OutgoingMessages(CallHalf& h) {
+  struct Wrapper {
+    CallHalf& h;
+    auto Next() { return h.PullMessage(); }
+  };
+  return Wrapper{h};
+}
+
+// Forward a call from `call_handler` to `call_initiator` (with initial metadata
+// `client_initial_metadata`)
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
+                 ClientMetadataHandle client_initial_metadata);
 
 }  // namespace grpc_core
 
@@ -495,6 +772,12 @@ struct grpc_transport_stream_op_batch_payload {
     // Error contract: the transport that gets this op must cause cancel_error
     //                 to be unref'ed after processing it
     grpc_error_handle cancel_error;
+    // If true the transport should endeavor to delay sending the cancellation
+    // notification for some small amount of time, in order to foil certain
+    // exploits.
+    // This should be set for cancellations that result from malformed client
+    // initial metadata.
+    bool tarpit = false;
   } cancel_stream;
 
   // Indexes correspond to grpc_context_index enum values
@@ -508,7 +791,6 @@ typedef struct grpc_transport_op {
   /// connectivity monitoring - set connectivity_state to NULL to unsubscribe
   grpc_core::OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface>
       start_connectivity_watch;
-  grpc_connectivity_state start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
   grpc_core::ConnectivityStateWatcherInterface* stop_connectivity_watch =
       nullptr;
   /// should the transport be disconnected
@@ -519,20 +801,12 @@ typedef struct grpc_transport_op {
   /// Error contract: the transport that gets this op must cause
   ///                goaway_error to be unref'ed after processing it
   grpc_error_handle goaway_error;
-  /// set the callback for accepting new streams;
-  /// this is a permanent callback, unlike the other one-shot closures.
-  /// If true, the callback is set to set_accept_stream_fn, with its
-  /// user_data argument set to set_accept_stream_user_data
-  bool set_accept_stream = false;
-  void (*set_accept_stream_fn)(void* user_data, grpc_transport* transport,
+  void (*set_accept_stream_fn)(void* user_data, grpc_core::Transport* transport,
                                const void* server_data) = nullptr;
+  void (*set_registered_method_matcher_fn)(
+      void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* set_accept_stream_user_data = nullptr;
-  /// set the callback for accepting new streams based upon promises;
-  /// this is a permanent callback, unlike the other one-shot closures.
-  /// If true, the callback is set to set_make_promise_fn, with its
-  /// user_data argument set to set_make_promise_data
-  bool set_make_promise = false;
-  void (*set_make_promise_fn)(void* user_data, grpc_transport* transport,
+  void (*set_make_promise_fn)(void* user_data, grpc_core::Transport* transport,
                               const void* server_data) = nullptr;
   void* set_make_promise_user_data = nullptr;
   /// add this transport to a pollset
@@ -547,8 +821,27 @@ typedef struct grpc_transport_op {
     /// Called when the ping ack is received
     grpc_closure* on_ack = nullptr;
   } send_ping;
+  grpc_connectivity_state start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
   // If true, will reset the channel's connection backoff.
   bool reset_connect_backoff = false;
+
+  /// set the callback for accepting new streams;
+  /// this is a permanent callback, unlike the other one-shot closures.
+  /// If true, the callback is set to set_accept_stream_fn, with its
+  /// user_data argument set to set_accept_stream_user_data.
+  /// `set_registered_method_matcher_fn` is also set with its user_data argument
+  /// set to set_accept_stream_user_data. The transport should invoke
+  /// `set_registered_method_matcher_fn` after initial metadata is received but
+  /// before recv_initial_metadata_ready callback is invoked. If the transport
+  /// detects an error in the stream, invoking
+  /// `set_registered_method_matcher_fn` can be skipped.
+  bool set_accept_stream = false;
+
+  /// set the callback for accepting new streams based upon promises;
+  /// this is a permanent callback, unlike the other one-shot closures.
+  /// If true, the callback is set to set_make_promise_fn, with its
+  /// user_data argument set to set_make_promise_data
+  bool set_make_promise = false;
 
   //**************************************************************************
   // remaining fields are initialized and used at the discretion of the
@@ -556,42 +849,6 @@ typedef struct grpc_transport_op {
 
   grpc_handler_private_op_data handler_private;
 } grpc_transport_op;
-
-// Returns the amount of memory required to store a grpc_stream for this
-// transport
-size_t grpc_transport_stream_size(grpc_transport* transport);
-
-// Initialize transport data for a stream.
-
-// Returns 0 on success, any other (transport-defined) value for failure.
-// May assume that stream contains all-zeros.
-
-// Arguments:
-//   transport   - the transport on which to create this stream
-//   stream      - a pointer to uninitialized memory to initialize
-//   server_data - either NULL for a client initiated stream, or a pointer
-//                 supplied from the accept_stream callback function
-int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
-                               grpc_stream_refcount* refcount,
-                               const void* server_data,
-                               grpc_core::Arena* arena);
-
-void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
-                             grpc_polling_entity* pollent);
-
-// Destroy transport data for a stream.
-
-// Requires: a recv_batch with final_state == GRPC_STREAM_CLOSED has been
-// received by the up-layer. Must not be called in the same call stack as
-// recv_frame.
-
-// Arguments:
-//   transport - the transport on which to create this stream
-//   stream    - the grpc_stream to destroy (memory is still owned by the
-//               caller, but any child memory must be cleaned up)
-void grpc_transport_destroy_stream(grpc_transport* transport,
-                                   grpc_stream* stream,
-                                   grpc_closure* then_schedule_closure);
 
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
@@ -608,37 +865,102 @@ std::string grpc_transport_stream_op_batch_string(
     grpc_transport_stream_op_batch* op, bool truncate);
 std::string grpc_transport_op_string(grpc_transport_op* op);
 
-// Send a batch of operations on a transport
+namespace grpc_core {
 
-// Takes ownership of any objects contained in ops.
+class FilterStackTransport {
+ public:
+  // Memory required for a single stream element - this is allocated by upper
+  // layers and initialized by the transport
+  virtual size_t SizeOfStream() const = 0;
 
-// Arguments:
-//   transport - the transport on which to initiate the stream
-//   stream    - the stream on which to send the operations. This must be
-//               non-NULL and previously initialized by the same transport.
-//   op        - a grpc_transport_stream_op_batch specifying the op to perform
-//
-void grpc_transport_perform_stream_op(grpc_transport* transport,
-                                      grpc_stream* stream,
-                                      grpc_transport_stream_op_batch* op);
+  // Initialize transport data for a stream.
+  // Returns 0 on success, any other (transport-defined) value for failure.
+  // May assume that stream contains all-zeros.
+  // Arguments:
+  //   stream      - a pointer to uninitialized memory to initialize
+  //   server_data - either NULL for a client initiated stream, or a pointer
+  //                 supplied from the accept_stream callback function
+  virtual void InitStream(grpc_stream* stream, grpc_stream_refcount* refcount,
+                          const void* server_data, Arena* arena) = 0;
 
-void grpc_transport_perform_op(grpc_transport* transport,
-                               grpc_transport_op* op);
+  // HACK: inproc does not handle stream op batch callbacks correctly (receive
+  // ops are required to complete prior to on_complete triggering).
+  // This flag is used to disable coalescing of batches in connected_channel for
+  // that specific transport.
+  // TODO(ctiller): This ought not be necessary once we have promises complete.
+  virtual bool HackyDisableStreamOpBatchCoalescingInConnectedChannel()
+      const = 0;
 
-// Send a ping on a transport
+  virtual void PerformStreamOp(grpc_stream* stream,
+                               grpc_transport_stream_op_batch* op) = 0;
 
-// Calls cb with user data when a response is received.
-void grpc_transport_ping(grpc_transport* transport, grpc_closure* cb);
+  // Destroy transport data for a stream.
+  // Requires: a recv_batch with final_state == GRPC_STREAM_CLOSED has been
+  // received by the up-layer. Must not be called in the same call stack as
+  // recv_frame.
+  // Arguments:
+  //   stream    - the grpc_stream to destroy (memory is still owned by the
+  //               caller, but any child memory must be cleaned up)
+  virtual void DestroyStream(grpc_stream* stream,
+                             grpc_closure* then_schedule_closure) = 0;
 
-// Advise peer of pending connection termination.
-void grpc_transport_goaway(grpc_transport* transport, grpc_status_code status,
-                           grpc_slice debug_data);
+ protected:
+  ~FilterStackTransport() = default;
+};
 
-// Destroy the transport
-void grpc_transport_destroy(grpc_transport* transport);
+class ClientTransport {
+ public:
+  virtual void StartCall(CallHandler call_handler) = 0;
 
-// Get the endpoint used by \a transport
-grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport);
+ protected:
+  ~ClientTransport() = default;
+};
+
+class ServerTransport {
+ public:
+  // AcceptFunction takes initial metadata for a new call and returns a
+  // CallInitiator object for it, for the transport to use to communicate with
+  // the CallHandler object passed to the application.
+  using AcceptFunction =
+      absl::AnyInvocable<absl::StatusOr<CallInitiator>(ClientMetadata&) const>;
+
+  // Called once slightly after transport setup to register the accept function.
+  virtual void SetAcceptFunction(AcceptFunction accept_function) = 0;
+
+ protected:
+  ~ServerTransport() = default;
+};
+
+class Transport : public Orphanable {
+ public:
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
+
+  virtual FilterStackTransport* filter_stack_transport() = 0;
+  virtual ClientTransport* client_transport() = 0;
+  virtual ServerTransport* server_transport() = 0;
+
+  // name of this transport implementation
+  virtual absl::string_view GetTransportName() const = 0;
+
+  // implementation of grpc_transport_set_pollset
+  virtual void SetPollset(grpc_stream* stream, grpc_pollset* pollset) = 0;
+
+  // implementation of grpc_transport_set_pollset
+  virtual void SetPollsetSet(grpc_stream* stream,
+                             grpc_pollset_set* pollset_set) = 0;
+
+  void SetPollingEntity(grpc_stream* stream,
+                        grpc_polling_entity* pollset_or_pollset_set);
+
+  // implementation of grpc_transport_perform_op
+  virtual void PerformOp(grpc_transport_op* op) = 0;
+
+  // implementation of grpc_transport_get_endpoint
+  virtual grpc_endpoint* GetEndpoint() = 0;
+};
+
+}  // namespace grpc_core
 
 // Allocate a grpc_transport_op, and preconfigure the on_complete closure to
 // \a on_complete and then delete the returned transport op

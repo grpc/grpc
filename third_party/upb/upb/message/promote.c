@@ -1,42 +1,34 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #include "upb/message/promote.h"
 
-#include "upb/collections/array.h"
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
+#include "upb/base/descriptor_constants.h"
+#include "upb/mem/arena.h"
 #include "upb/message/accessors.h"
+#include "upb/message/array.h"
+#include "upb/message/internal/accessors.h"
+#include "upb/message/internal/array.h"
+#include "upb/message/internal/extension.h"
+#include "upb/message/internal/message.h"
+#include "upb/message/map.h"
 #include "upb/message/message.h"
-#include "upb/mini_table/field_internal.h"
-#include "upb/wire/common.h"
+#include "upb/message/tagged_ptr.h"
+#include "upb/mini_table/extension.h"
+#include "upb/mini_table/field.h"
+#include "upb/mini_table/internal/field.h"
+#include "upb/mini_table/message.h"
 #include "upb/wire/decode.h"
-#include "upb/wire/encode.h"
 #include "upb/wire/eps_copy_input_stream.h"
+#include "upb/wire/internal/constants.h"
 #include "upb/wire/reader.h"
 
 // Must be last.
@@ -85,8 +77,7 @@ upb_GetExtension_Status upb_MiniTable_GetOrPromoteExtension(
 
   // Check unknown fields, if available promote.
   int field_number = ext_table->field.number;
-  upb_FindUnknownRet result = upb_MiniTable_FindUnknown(
-      msg, field_number, kUpb_WireFormat_DefaultDepthLimit);
+  upb_FindUnknownRet result = upb_MiniTable_FindUnknown(msg, field_number, 0);
   if (result.status != kUpb_FindUnknown_Ok) {
     return kUpb_GetExtension_NotPresent;
   }
@@ -121,37 +112,6 @@ upb_GetExtension_Status upb_MiniTable_GetOrPromoteExtension(
   return kUpb_GetExtension_Ok;
 }
 
-upb_GetExtensionAsBytes_Status upb_MiniTable_GetExtensionAsBytes(
-    const upb_Message* msg, const upb_MiniTableExtension* ext_table,
-    int encode_options, upb_Arena* arena, const char** extension_data,
-    size_t* len) {
-  const upb_Message_Extension* msg_ext = _upb_Message_Getext(msg, ext_table);
-  UPB_ASSERT(upb_MiniTableField_CType(&ext_table->field) == kUpb_CType_Message);
-  if (msg_ext) {
-    upb_EncodeStatus status =
-        upb_Encode(msg_ext->data.ptr, msg_ext->ext->sub.submsg, encode_options,
-                   arena, (char**)extension_data, len);
-    if (status != kUpb_EncodeStatus_Ok) {
-      return kUpb_GetExtensionAsBytes_EncodeError;
-    }
-    return kUpb_GetExtensionAsBytes_Ok;
-  }
-  int field_number = ext_table->field.number;
-  upb_FindUnknownRet result = upb_MiniTable_FindUnknown(
-      msg, field_number, upb_DecodeOptions_GetMaxDepth(encode_options));
-  if (result.status != kUpb_FindUnknown_Ok) {
-    return kUpb_GetExtensionAsBytes_NotPresent;
-  }
-  const char* data = result.ptr;
-  uint32_t tag;
-  uint64_t message_len = 0;
-  data = upb_WireReader_ReadTag(data, &tag);
-  data = upb_WireReader_ReadVarint(data, &message_len);
-  *extension_data = data;
-  *len = message_len;
-  return kUpb_GetExtensionAsBytes_Ok;
-}
-
 static upb_FindUnknownRet upb_FindUnknownRet_ParseError(void) {
   return (upb_FindUnknownRet){.status = kUpb_FindUnknown_ParseError};
 }
@@ -159,6 +119,8 @@ static upb_FindUnknownRet upb_FindUnknownRet_ParseError(void) {
 upb_FindUnknownRet upb_MiniTable_FindUnknown(const upb_Message* msg,
                                              uint32_t field_number,
                                              int depth_limit) {
+  depth_limit = depth_limit ? depth_limit : kUpb_WireFormat_DefaultDepthLimit;
+
   size_t size;
   upb_FindUnknownRet ret;
 
@@ -190,7 +152,81 @@ upb_FindUnknownRet upb_MiniTable_FindUnknown(const upb_Message* msg,
   return ret;
 }
 
-// Warning: See TODO(b/267655898)
+static upb_DecodeStatus upb_Message_PromoteOne(upb_TaggedMessagePtr* tagged,
+                                               const upb_MiniTable* mini_table,
+                                               int decode_options,
+                                               upb_Arena* arena) {
+  upb_Message* empty = _upb_TaggedMessagePtr_GetEmptyMessage(*tagged);
+  size_t unknown_size;
+  const char* unknown_data = upb_Message_GetUnknown(empty, &unknown_size);
+  upb_Message* promoted = upb_Message_New(mini_table, arena);
+  if (!promoted) return kUpb_DecodeStatus_OutOfMemory;
+  upb_DecodeStatus status = upb_Decode(unknown_data, unknown_size, promoted,
+                                       mini_table, NULL, decode_options, arena);
+  if (status == kUpb_DecodeStatus_Ok) {
+    *tagged = _upb_TaggedMessagePtr_Pack(promoted, false);
+  }
+  return status;
+}
+
+upb_DecodeStatus upb_Message_PromoteMessage(upb_Message* parent,
+                                            const upb_MiniTable* mini_table,
+                                            const upb_MiniTableField* field,
+                                            int decode_options,
+                                            upb_Arena* arena,
+                                            upb_Message** promoted) {
+  const upb_MiniTable* sub_table =
+      upb_MiniTable_GetSubMessageTable(mini_table, field);
+  UPB_ASSERT(sub_table);
+  upb_TaggedMessagePtr tagged =
+      upb_Message_GetTaggedMessagePtr(parent, field, NULL);
+  upb_DecodeStatus ret =
+      upb_Message_PromoteOne(&tagged, sub_table, decode_options, arena);
+  if (ret == kUpb_DecodeStatus_Ok) {
+    *promoted = upb_TaggedMessagePtr_GetNonEmptyMessage(tagged);
+    upb_Message_SetMessage(parent, mini_table, field, *promoted);
+  }
+  return ret;
+}
+
+upb_DecodeStatus upb_Array_PromoteMessages(upb_Array* arr,
+                                           const upb_MiniTable* mini_table,
+                                           int decode_options,
+                                           upb_Arena* arena) {
+  void** data = _upb_array_ptr(arr);
+  size_t size = arr->size;
+  for (size_t i = 0; i < size; i++) {
+    upb_TaggedMessagePtr tagged;
+    memcpy(&tagged, &data[i], sizeof(tagged));
+    if (!upb_TaggedMessagePtr_IsEmpty(tagged)) continue;
+    upb_DecodeStatus status =
+        upb_Message_PromoteOne(&tagged, mini_table, decode_options, arena);
+    if (status != kUpb_DecodeStatus_Ok) return status;
+    memcpy(&data[i], &tagged, sizeof(tagged));
+  }
+  return kUpb_DecodeStatus_Ok;
+}
+
+upb_DecodeStatus upb_Map_PromoteMessages(upb_Map* map,
+                                         const upb_MiniTable* mini_table,
+                                         int decode_options, upb_Arena* arena) {
+  size_t iter = kUpb_Map_Begin;
+  upb_MessageValue key, val;
+  while (upb_Map_Next(map, &key, &val, &iter)) {
+    if (!upb_TaggedMessagePtr_IsEmpty(val.tagged_msg_val)) continue;
+    upb_DecodeStatus status = upb_Message_PromoteOne(
+        &val.tagged_msg_val, mini_table, decode_options, arena);
+    if (status != kUpb_DecodeStatus_Ok) return status;
+    upb_Map_SetEntryValue(map, iter, val);
+  }
+  return kUpb_DecodeStatus_Ok;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// OLD promotion functions, will be removed!
+////////////////////////////////////////////////////////////////////////////////
+
+// Warning: See TODO
 upb_UnknownToMessageRet upb_MiniTable_PromoteUnknownToMessage(
     upb_Message* msg, const upb_MiniTable* mini_table,
     const upb_MiniTableField* field, const upb_MiniTable* sub_mini_table,
@@ -247,7 +283,7 @@ upb_UnknownToMessageRet upb_MiniTable_PromoteUnknownToMessage(
 //
 // Since the repeated field is not a scalar type we don't check for
 // kUpb_LabelFlags_IsPacked.
-// TODO(b/251007554): Optimize. Instead of converting messages one at a time,
+// TODO: Optimize. Instead of converting messages one at a time,
 // scan all unknown data once and compact.
 upb_UnknownToMessage_Status upb_MiniTable_PromoteUnknownToMessageArray(
     upb_Message* msg, const upb_MiniTableField* field,
@@ -267,7 +303,7 @@ upb_UnknownToMessage_Status upb_MiniTable_PromoteUnknownToMessageArray(
         value.msg_val = ret.message;
         // Allocate array on demand before append.
         if (!repeated_messages) {
-          upb_Message_ResizeArray(msg, field, 0, arena);
+          upb_Message_ResizeArrayUninitialized(msg, field, 0, arena);
           repeated_messages = upb_Message_GetMutableArray(msg, field);
         }
         if (!upb_Array_Append(repeated_messages, value, arena)) {

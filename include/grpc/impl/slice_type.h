@@ -74,7 +74,7 @@ struct grpc_slice {
   } data;
 };
 
-#define GRPC_SLICE_BUFFER_INLINE_ELEMENTS 8
+#define GRPC_SLICE_BUFFER_INLINE_ELEMENTS 7
 
 /** Represents an expandable array of slices, to be interpreted as a
    single item. */

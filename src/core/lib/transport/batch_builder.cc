@@ -23,7 +23,6 @@
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 namespace grpc_core {
 
@@ -35,11 +34,9 @@ void BatchBuilder::PendingCompletion::CompletionCallback(
   auto* pc = static_cast<PendingCompletion*>(self);
   auto* party = pc->batch->party.get();
   if (grpc_call_trace.enabled()) {
-    gpr_log(
-        GPR_DEBUG, "%sFinish batch-component %s for %s: status=%s",
-        pc->batch->DebugPrefix(party).c_str(), std::string(pc->name()).c_str(),
-        grpc_transport_stream_op_batch_string(&pc->batch->batch, false).c_str(),
-        error.ToString().c_str());
+    gpr_log(GPR_DEBUG, "%sFinish batch-component %s: status=%s",
+            pc->batch->DebugPrefix(party).c_str(),
+            std::string(pc->name()).c_str(), error.ToString().c_str());
   }
   party->Spawn(
       "batch-completion",
@@ -100,8 +97,8 @@ BatchBuilder::Batch::~Batch() {
 BatchBuilder::Batch* BatchBuilder::GetBatch(Target target) {
   if (target_.has_value() &&
       (target_->stream != target.stream ||
-       target.transport->vtable
-           ->hacky_disable_stream_op_batch_coalescing_in_connected_channel)) {
+       target.transport->filter_stack_transport()
+           ->HackyDisableStreamOpBatchCoalescingInConnectedChannel())) {
     FlushBatch();
   }
   if (!target_.has_value()) {
@@ -127,7 +124,8 @@ void BatchBuilder::FlushBatch() {
 }
 
 void BatchBuilder::Batch::PerformWith(Target target) {
-  grpc_transport_perform_stream_op(target.transport, target.stream, &batch);
+  target.transport->filter_stack_transport()->PerformStreamOp(target.stream,
+                                                              &batch);
 }
 
 ServerMetadataHandle BatchBuilder::CompleteSendServerTrailingMetadata(

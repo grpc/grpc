@@ -23,6 +23,7 @@
 #include <inttypes.h>
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <utility>
 
@@ -40,6 +41,8 @@
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
+
+// IWYU pragma: no_include <ratio>
 
 // ## Thread Pool Fork-handling
 //
@@ -86,10 +89,15 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
+// TODO(ctiller): grpc_core::Timestamp, Duration have very specific contracts
+// around time caching and around when the underlying gpr_now call can be
+// substituted out.
+// We should probably move all usage here to std::chrono to avoid weird bugs in
+// the future.
+
 // Maximum amount of time an extra thread is allowed to idle before being
 // reclaimed.
-constexpr grpc_core::Duration kIdleThreadLimit =
-    grpc_core::Duration::Seconds(20);
+constexpr auto kIdleThreadLimit = std::chrono::seconds(20);
 // Rate at which "Waiting for ..." logs should be printed while quiescing.
 constexpr size_t kBlockingQuiesceLogRateSeconds = 3;
 // Minumum time between thread creations.
@@ -166,7 +174,7 @@ void WorkStealingThreadPool::PostforkChild() { pool_->Postfork(); }
 
 WorkStealingThreadPool::WorkStealingThreadPoolImpl::WorkStealingThreadPoolImpl(
     size_t reserve_threads)
-    : reserve_threads_(reserve_threads), lifeguard_(this) {}
+    : reserve_threads_(reserve_threads), queue_(this), lifeguard_(this) {}
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
   for (size_t i = 0; i < reserve_threads_; i++) {
@@ -178,7 +186,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
     EventEngine::Closure* closure) {
   GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
-  if (g_local_queue != nullptr) {
+  if (g_local_queue != nullptr && g_local_queue->owner() == this) {
     g_local_queue->Add(closure);
   } else {
     queue_.Add(closure);
@@ -205,6 +213,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
+  gpr_log(GPR_INFO, "WorkStealingThreadPoolImpl::Quiesce");
   SetShutdown(true);
   // Wait until all threads have exited.
   // Note that if this is a threadpool thread then we won't exit this thread
@@ -250,6 +259,7 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsQuiesced() {
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
+  gpr_log(GPR_INFO, "WorkStealingThreadPoolImpl::PrepareFork");
   SetForking(true);
   work_signal_.SignalAll();
   living_thread_count_.BlockUntilThreadCount(0, "forking");
@@ -378,7 +388,7 @@ WorkStealingThreadPool::ThreadState::ThreadState(
       busy_count_idx_(pool_->busy_thread_count()->NextIndex()) {}
 
 void WorkStealingThreadPool::ThreadState::ThreadBody() {
-  g_local_queue = new BasicWorkQueue();
+  g_local_queue = new BasicWorkQueue(pool_.get());
   pool_->theft_registry()->Enroll(g_local_queue);
   ThreadLocal::SetIsEventEngineThread(true);
   while (Step()) {
@@ -424,7 +434,7 @@ bool WorkStealingThreadPool::ThreadState::Step() {
   // * the global queue is empty
   // * the steal pool returns nullptr
   bool should_run_again = false;
-  grpc_core::Timestamp start_time{grpc_core::Timestamp::Now()};
+  auto start_time = std::chrono::steady_clock::now();
   // Wait until work is available or until shut down.
   while (!pool_->IsForking()) {
     // Pull from the global queue next
@@ -452,7 +462,7 @@ bool WorkStealingThreadPool::ThreadState::Step() {
     // has been idle long enough.
     if (timed_out &&
         pool_->living_thread_count()->count() > pool_->reserve_threads() &&
-        grpc_core::Timestamp::Now() - start_time > kIdleThreadLimit) {
+        std::chrono::steady_clock::now() - start_time > kIdleThreadLimit) {
       return false;
     }
   }

@@ -43,9 +43,9 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
@@ -168,9 +168,9 @@ void OverrideAddressSortingSourceAddrFactory(
   address_sorting_override_source_addr_factory_for_testing(factory);
 }
 
-grpc_core::ServerAddressList BuildLbAddrInputs(
+grpc_core::EndpointAddressesList BuildLbAddrInputs(
     const std::vector<TestAddress>& test_addrs) {
-  grpc_core::ServerAddressList addresses;
+  grpc_core::EndpointAddressesList addresses;
   for (const auto& addr : test_addrs) {
     addresses.emplace_back(TestAddressToGrpcResolvedAddress(addr),
                            grpc_core::ChannelArgs());
@@ -178,7 +178,7 @@ grpc_core::ServerAddressList BuildLbAddrInputs(
   return addresses;
 }
 
-void VerifyLbAddrOutputs(const grpc_core::ServerAddressList& addresses,
+void VerifyLbAddrOutputs(const grpc_core::EndpointAddressesList& addresses,
                          std::vector<std::string> expected_addrs) {
   EXPECT_EQ(addresses.size(), expected_addrs.size());
   for (size_t i = 0; i < addresses.size(); ++i) {

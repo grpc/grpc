@@ -19,7 +19,6 @@
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 
 #include <algorithm>
-#include <initializer_list>
 #include <map>
 #include <string>
 #include <utility>

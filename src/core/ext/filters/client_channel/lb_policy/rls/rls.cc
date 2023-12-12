@@ -28,7 +28,6 @@
 
 #include <algorithm>
 #include <deque>
-#include <initializer_list>
 #include <list>
 #include <map>
 #include <memory>
@@ -92,9 +91,8 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
@@ -709,7 +707,7 @@ class RlsLb : public LoadBalancingPolicy {
   OrphanablePtr<RlsChannel> rls_channel_ ABSL_GUARDED_BY(mu_);
 
   // Accessed only from within WorkSerializer.
-  absl::StatusOr<ServerAddressList> addresses_;
+  absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses_;
   ChannelArgs channel_args_;
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
@@ -902,7 +900,7 @@ std::map<std::string, std::string> BuildKeyMap(
   auto it = key_builder_map.find(std::string(path));
   if (it == key_builder_map.end()) {
     // Didn't find exact match, try method wildcard.
-    last_slash_pos = path.rfind("/");
+    last_slash_pos = path.rfind('/');
     GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
     if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     std::string service(path.substr(0, last_slash_pos + 1));
@@ -936,7 +934,7 @@ std::map<std::string, std::string> BuildKeyMap(
   // Add service key.
   if (!key_builder->service_key.empty()) {
     if (last_slash_pos == path.npos) {
-      last_slash_pos = path.rfind("/");
+      last_slash_pos = path.rfind('/');
       GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
@@ -946,7 +944,7 @@ std::map<std::string, std::string> BuildKeyMap(
   // Add method key.
   if (!key_builder->method_key.empty()) {
     if (last_slash_pos == path.npos) {
-      last_slash_pos = path.rfind("/");
+      last_slash_pos = path.rfind('/');
       GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
@@ -1860,6 +1858,27 @@ RlsLb::RlsLb(Args args) : LoadBalancingPolicy(std::move(args)), cache_(this) {
   }
 }
 
+bool EndpointsEqual(
+    const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> endpoints1,
+    const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>>
+        endpoints2) {
+  if (endpoints1.status() != endpoints2.status()) return false;
+  if (endpoints1.ok()) {
+    std::vector<EndpointAddresses> e1_list;
+    (*endpoints1)->ForEach([&](const EndpointAddresses& endpoint) {
+      e1_list.push_back(endpoint);
+    });
+    size_t i = 0;
+    bool different = false;
+    (*endpoints2)->ForEach([&](const EndpointAddresses& endpoint) {
+      if (endpoint != e1_list[i++]) different = true;
+    });
+    if (different) return false;
+    if (i != e1_list.size()) return false;
+  }
+  return true;
+}
+
 absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
@@ -1877,7 +1896,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   // Swap out addresses.
   // If the new address list is an error and we have an existing address list,
   // stick with the existing addresses.
-  absl::StatusOr<ServerAddressList> old_addresses;
+  absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> old_addresses;
   if (args.addresses.ok()) {
     old_addresses = std::move(addresses_);
     addresses_ = std::move(args.addresses);
@@ -1890,7 +1909,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   bool update_child_policies =
       old_config == nullptr ||
       old_config->child_policy_config() != config_->child_policy_config() ||
-      old_addresses != addresses_ || args.args != channel_args_;
+      !EndpointsEqual(old_addresses, addresses_) || args.args != channel_args_;
   // If default target changes, swap out child policy.
   bool created_default_child = false;
   if (old_config == nullptr ||

@@ -121,7 +121,6 @@ In addition, please perform the following two steps to generate the Python `xds-
 ### Updating third_party/upb
 
 Since upb is vendored in the gRPC repo, you cannot use submodule to update it. Please follow the steps below;
-
 1. Update third_party/upb directory by running
    - `export GRPC_ROOT=~/git/grpc`
    - `wget https://github.com/protocolbuffers/upb/archive/refs/heads/main.zip`

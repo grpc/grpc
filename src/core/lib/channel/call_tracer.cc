@@ -20,12 +20,13 @@
 
 #include "src/core/lib/channel/call_tracer.h"
 
-#include <algorithm>
+#include <memory>
 #include <utility>
 #include <vector>
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/promise/context.h"
 
 namespace grpc_core {
@@ -46,7 +47,13 @@ ServerCallTracerFactory* ServerCallTracerFactory::Get(
     const ChannelArgs& channel_args) {
   ServerCallTracerFactory* factory =
       channel_args.GetObject<ServerCallTracerFactory>();
-  return factory != nullptr ? factory : g_server_call_tracer_factory_;
+  if (factory == nullptr) {
+    factory = g_server_call_tracer_factory_;
+  }
+  if (factory && factory->IsServerTraced(channel_args)) {
+    return factory;
+  }
+  return nullptr;
 }
 
 void ServerCallTracerFactory::RegisterGlobal(ServerCallTracerFactory* factory) {
@@ -135,6 +142,9 @@ class DelegatingClientCallTracer : public ClientCallTracer {
       for (auto* tracer : tracers_) {
         tracer->RecordAnnotation(annotation);
       }
+    }
+    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+      return nullptr;
     }
     std::string TraceId() override { return tracers_[0]->TraceId(); }
     std::string SpanId() override { return tracers_[0]->SpanId(); }
@@ -258,6 +268,9 @@ class DelegatingServerCallTracer : public ServerCallTracer {
     for (auto* tracer : tracers_) {
       tracer->RecordAnnotation(annotation);
     }
+  }
+  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+    return nullptr;
   }
   std::string TraceId() override { return tracers_[0]->TraceId(); }
   std::string SpanId() override { return tracers_[0]->SpanId(); }

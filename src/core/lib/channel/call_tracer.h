@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
 #include <string>
 
 #include "absl/status/status.h"
@@ -31,6 +32,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -53,6 +55,7 @@ class CallTracerAnnotationInterface {
   // Enum associated with types of Annotations.
   enum class AnnotationType {
     kMetadataSizes,
+    kHttpTransport,
     kDoNotUse_MustBeLast,
   };
 
@@ -108,6 +111,10 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
   virtual void RecordReceivedDecompressedMessage(
       const SliceBuffer& recv_decompressed_message) = 0;
   virtual void RecordCancel(grpc_error_handle cancel_error) = 0;
+  // Traces a new TCP transport attempt for this call attempt. Note the TCP
+  // transport may finish tracing and unref the TCP tracer before or after the
+  // call completion in gRPC core. No TCP tracing when null is returned.
+  virtual std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() = 0;
 };
 
 // Interface for a tracer that records activities on a call. Actual attempts for
@@ -139,7 +146,7 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
 
   // Records a new attempt for the associated call. \a transparent denotes
   // whether the attempt is being made as a transparent retry or as a
-  // non-transparent retry/heding attempt. (There will be at least one attempt
+  // non-transparent retry/hedging attempt. (There will be at least one attempt
   // even if the call is not being retried.) The `ClientCallTracer` object
   // retains ownership to the newly created `CallAttemptTracer` object.
   // RecordEnd() serves as an indication that the call stack is done with all
@@ -169,6 +176,9 @@ class ServerCallTracerFactory {
   virtual ~ServerCallTracerFactory() {}
 
   virtual ServerCallTracer* CreateNewServerCallTracer(Arena* arena) = 0;
+
+  // Returns true if a server is to be traced, false otherwise.
+  virtual bool IsServerTraced(const ChannelArgs& /*args*/) { return true; }
 
   // Use this method to get the server call tracer factory from channel args,
   // instead of directly fetching it with `GetObject`.

@@ -20,7 +20,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <tuple>
-#include <type_traits>
 #include <utility>
 
 #include <grpc/support/log.h>
@@ -29,6 +28,7 @@
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 namespace promise_detail {
@@ -91,7 +91,16 @@ struct JoinState<Traits, P0, P1> {
       typename Traits::template ResultType<std::tuple<Result0, Result1>>;
   Poll<Result> PollOnce() {
     if (!ready.is_set(0)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 1/2", this);
+      }
       auto poll = promise0();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 1/2 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(0);
@@ -101,9 +110,20 @@ struct JoinState<Traits, P0, P1> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 1/2 already ready", this);
     }
     if (!ready.is_set(1)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 2/2", this);
+      }
       auto poll = promise1();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 2/2 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(1);
@@ -113,6 +133,8 @@ struct JoinState<Traits, P0, P1> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 2/2 already ready", this);
     }
     if (ready.all()) {
       return Result{std::make_tuple(std::move(result0), std::move(result1))};
@@ -195,7 +217,16 @@ struct JoinState<Traits, P0, P1, P2> {
       std::tuple<Result0, Result1, Result2>>;
   Poll<Result> PollOnce() {
     if (!ready.is_set(0)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 1/3", this);
+      }
       auto poll = promise0();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 1/3 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(0);
@@ -205,9 +236,20 @@ struct JoinState<Traits, P0, P1, P2> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 1/3 already ready", this);
     }
     if (!ready.is_set(1)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 2/3", this);
+      }
       auto poll = promise1();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 2/3 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(1);
@@ -217,9 +259,20 @@ struct JoinState<Traits, P0, P1, P2> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 2/3 already ready", this);
     }
     if (!ready.is_set(2)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 3/3", this);
+      }
       auto poll = promise2();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 3/3 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(2);
@@ -229,6 +282,8 @@ struct JoinState<Traits, P0, P1, P2> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 3/3 already ready", this);
     }
     if (ready.all()) {
       return Result{std::make_tuple(std::move(result0), std::move(result1),
@@ -330,7 +385,16 @@ struct JoinState<Traits, P0, P1, P2, P3> {
       std::tuple<Result0, Result1, Result2, Result3>>;
   Poll<Result> PollOnce() {
     if (!ready.is_set(0)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 1/4", this);
+      }
       auto poll = promise0();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 1/4 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(0);
@@ -340,9 +404,20 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 1/4 already ready", this);
     }
     if (!ready.is_set(1)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 2/4", this);
+      }
       auto poll = promise1();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 2/4 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(1);
@@ -352,9 +427,20 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 2/4 already ready", this);
     }
     if (!ready.is_set(2)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 3/4", this);
+      }
       auto poll = promise2();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 3/4 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(2);
@@ -364,9 +450,20 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 3/4 already ready", this);
     }
     if (!ready.is_set(3)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 4/4", this);
+      }
       auto poll = promise3();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 4/4 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(3);
@@ -376,6 +473,8 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 4/4 already ready", this);
     }
     if (ready.all()) {
       return Result{std::make_tuple(std::move(result0), std::move(result1),
@@ -496,7 +595,16 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
       std::tuple<Result0, Result1, Result2, Result3, Result4>>;
   Poll<Result> PollOnce() {
     if (!ready.is_set(0)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 1/5", this);
+      }
       auto poll = promise0();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 1/5 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(0);
@@ -506,9 +614,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 1/5 already ready", this);
     }
     if (!ready.is_set(1)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 2/5", this);
+      }
       auto poll = promise1();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 2/5 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(1);
@@ -518,9 +637,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 2/5 already ready", this);
     }
     if (!ready.is_set(2)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 3/5", this);
+      }
       auto poll = promise2();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 3/5 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(2);
@@ -530,9 +660,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 3/5 already ready", this);
     }
     if (!ready.is_set(3)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 4/5", this);
+      }
       auto poll = promise3();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 4/5 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(3);
@@ -542,9 +683,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 4/5 already ready", this);
     }
     if (!ready.is_set(4)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 5/5", this);
+      }
       auto poll = promise4();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 5/5 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(4);
@@ -554,6 +706,8 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 5/5 already ready", this);
     }
     if (ready.all()) {
       return Result{std::make_tuple(std::move(result0), std::move(result1),
@@ -693,7 +847,16 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
       std::tuple<Result0, Result1, Result2, Result3, Result4, Result5>>;
   Poll<Result> PollOnce() {
     if (!ready.is_set(0)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 1/6", this);
+      }
       auto poll = promise0();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 1/6 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(0);
@@ -703,9 +866,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 1/6 already ready", this);
     }
     if (!ready.is_set(1)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 2/6", this);
+      }
       auto poll = promise1();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 2/6 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(1);
@@ -715,9 +889,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 2/6 already ready", this);
     }
     if (!ready.is_set(2)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 3/6", this);
+      }
       auto poll = promise2();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 3/6 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(2);
@@ -727,9 +912,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 3/6 already ready", this);
     }
     if (!ready.is_set(3)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 4/6", this);
+      }
       auto poll = promise3();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 4/6 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(3);
@@ -739,9 +935,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 4/6 already ready", this);
     }
     if (!ready.is_set(4)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 5/6", this);
+      }
       auto poll = promise4();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 5/6 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(4);
@@ -751,9 +958,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 5/6 already ready", this);
     }
     if (!ready.is_set(5)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 6/6", this);
+      }
       auto poll = promise5();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 6/6 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(5);
@@ -763,6 +981,8 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 6/6 already ready", this);
     }
     if (ready.all()) {
       return Result{std::make_tuple(std::move(result0), std::move(result1),
@@ -920,7 +1140,16 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
       Result0, Result1, Result2, Result3, Result4, Result5, Result6>>;
   Poll<Result> PollOnce() {
     if (!ready.is_set(0)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 1/7", this);
+      }
       auto poll = promise0();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 1/7 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(0);
@@ -930,9 +1159,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 1/7 already ready", this);
     }
     if (!ready.is_set(1)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 2/7", this);
+      }
       auto poll = promise1();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 2/7 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(1);
@@ -942,9 +1182,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 2/7 already ready", this);
     }
     if (!ready.is_set(2)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 3/7", this);
+      }
       auto poll = promise2();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 3/7 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(2);
@@ -954,9 +1205,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 3/7 already ready", this);
     }
     if (!ready.is_set(3)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 4/7", this);
+      }
       auto poll = promise3();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 4/7 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(3);
@@ -966,9 +1228,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 4/7 already ready", this);
     }
     if (!ready.is_set(4)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 5/7", this);
+      }
       auto poll = promise4();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 5/7 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(4);
@@ -978,9 +1251,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 5/7 already ready", this);
     }
     if (!ready.is_set(5)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 6/7", this);
+      }
       auto poll = promise5();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 6/7 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(5);
@@ -990,9 +1274,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 6/7 already ready", this);
     }
     if (!ready.is_set(6)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 7/7", this);
+      }
       auto poll = promise6();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 7/7 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(6);
@@ -1002,6 +1297,8 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 7/7 already ready", this);
     }
     if (ready.all()) {
       return Result{std::make_tuple(std::move(result0), std::move(result1),
@@ -1179,7 +1476,16 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
       Result0, Result1, Result2, Result3, Result4, Result5, Result6, Result7>>;
   Poll<Result> PollOnce() {
     if (!ready.is_set(0)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 1/8", this);
+      }
       auto poll = promise0();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 1/8 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(0);
@@ -1189,9 +1495,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 1/8 already ready", this);
     }
     if (!ready.is_set(1)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 2/8", this);
+      }
       auto poll = promise1();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 2/8 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(1);
@@ -1201,9 +1518,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 2/8 already ready", this);
     }
     if (!ready.is_set(2)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 3/8", this);
+      }
       auto poll = promise2();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 3/8 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(2);
@@ -1213,9 +1541,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 3/8 already ready", this);
     }
     if (!ready.is_set(3)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 4/8", this);
+      }
       auto poll = promise3();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 4/8 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(3);
@@ -1225,9 +1564,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 4/8 already ready", this);
     }
     if (!ready.is_set(4)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 5/8", this);
+      }
       auto poll = promise4();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 5/8 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(4);
@@ -1237,9 +1587,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 5/8 already ready", this);
     }
     if (!ready.is_set(5)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 6/8", this);
+      }
       auto poll = promise5();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 6/8 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(5);
@@ -1249,9 +1610,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 6/8 already ready", this);
     }
     if (!ready.is_set(6)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 7/8", this);
+      }
       auto poll = promise6();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 7/8 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(6);
@@ -1261,9 +1633,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 7/8 already ready", this);
     }
     if (!ready.is_set(7)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 8/8", this);
+      }
       auto poll = promise7();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 8/8 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(7);
@@ -1273,6 +1656,8 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 8/8 already ready", this);
     }
     if (ready.all()) {
       return Result{std::make_tuple(std::move(result0), std::move(result1),
@@ -1469,7 +1854,16 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
                  Result7, Result8>>;
   Poll<Result> PollOnce() {
     if (!ready.is_set(0)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 1/9", this);
+      }
       auto poll = promise0();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 1/9 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(0);
@@ -1479,9 +1873,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 1/9 already ready", this);
     }
     if (!ready.is_set(1)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 2/9", this);
+      }
       auto poll = promise1();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 2/9 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(1);
@@ -1491,9 +1896,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 2/9 already ready", this);
     }
     if (!ready.is_set(2)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 3/9", this);
+      }
       auto poll = promise2();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 3/9 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(2);
@@ -1503,9 +1919,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 3/9 already ready", this);
     }
     if (!ready.is_set(3)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 4/9", this);
+      }
       auto poll = promise3();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 4/9 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(3);
@@ -1515,9 +1942,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 4/9 already ready", this);
     }
     if (!ready.is_set(4)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 5/9", this);
+      }
       auto poll = promise4();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 5/9 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(4);
@@ -1527,9 +1965,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 5/9 already ready", this);
     }
     if (!ready.is_set(5)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 6/9", this);
+      }
       auto poll = promise5();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 6/9 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(5);
@@ -1539,9 +1988,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 6/9 already ready", this);
     }
     if (!ready.is_set(6)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 7/9", this);
+      }
       auto poll = promise6();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 7/9 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(6);
@@ -1551,9 +2011,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 7/9 already ready", this);
     }
     if (!ready.is_set(7)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 8/9", this);
+      }
       auto poll = promise7();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 8/9 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(7);
@@ -1563,9 +2034,20 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 8/9 already ready", this);
     }
     if (!ready.is_set(8)) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "join[%p]: begin poll joint 9/9", this);
+      }
       auto poll = promise8();
+      if (grpc_trace_promise_primitives.enabled()) {
+        auto* p = poll.value_if_ready();
+        gpr_log(GPR_DEBUG, "join[%p]: joint 9/9 %s", this,
+                p != nullptr ? (Traits::IsOk(*p) ? "ready" : "early-error")
+                             : "pending");
+      }
       if (auto* p = poll.value_if_ready()) {
         if (Traits::IsOk(*p)) {
           ready.set(8);
@@ -1575,6 +2057,8 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
+    } else if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_DEBUG, "join[%p]: joint 9/9 already ready", this);
     }
     if (ready.all()) {
       return Result{std::make_tuple(
