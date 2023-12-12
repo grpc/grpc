@@ -149,7 +149,8 @@ class Call : public CppImplOf<Call, grpc_call> {
   virtual grpc_call_stack* call_stack() = 0;
 
   // Return the EventEngine used for this call's async execution.
-  virtual grpc_event_engine::experimental::EventEngine* event_engine() = 0;
+  virtual grpc_event_engine::experimental::EventEngine* event_engine()
+      const = 0;
 
  protected:
   // The maximum number of concurrent batches possible.
@@ -532,9 +533,8 @@ class FilterStackCall final : public Call {
         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(*this)));
   }
 
-  grpc_event_engine::experimental::EventEngine* event_engine() override {
-    // DO NOT SUBMIT(hork): return an engine. Does it need to be a shared_ptr?
-    grpc_core::Crash("not implemented");
+  grpc_event_engine::experimental::EventEngine* event_engine() const override {
+    return channel()->event_engine();
   }
 
   grpc_call_element* call_elem(size_t idx) {
@@ -2042,11 +2042,6 @@ class PromiseBasedCall : public Call,
   // for that functionality be invented)
   grpc_call_stack* call_stack() override { return nullptr; }
 
-  grpc_event_engine::experimental::EventEngine* event_engine() override {
-    // DO NOT SUBMIT(hork): return an engine. Does it need to be a shared_ptr?
-    grpc_core::Crash("not implemented");
-  }
-
   void UpdateDeadline(Timestamp deadline) ABSL_LOCKS_EXCLUDED(deadline_mu_);
   void ResetDeadline() ABSL_LOCKS_EXCLUDED(deadline_mu_);
   Timestamp deadline() {
@@ -2062,7 +2057,7 @@ class PromiseBasedCall : public Call,
     return failed_before_recv_message_.load(std::memory_order_relaxed);
   }
 
-  grpc_event_engine::experimental::EventEngine* event_engine() const final {
+  grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return channel()->event_engine();
   }
 
