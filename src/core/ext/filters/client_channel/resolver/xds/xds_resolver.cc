@@ -51,7 +51,7 @@
 #include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_config.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.h"
 #include "src/core/ext/xds/xds_bootstrap.h"

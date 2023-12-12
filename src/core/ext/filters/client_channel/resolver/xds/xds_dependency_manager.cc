@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_config.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.h"
 
 #include "absl/strings/str_join.h"
 

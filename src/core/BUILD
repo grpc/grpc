@@ -4678,7 +4678,6 @@ grpc_cc_library(
         "grpc_lb_address_filtering",
         "grpc_lb_xds_channel_args",
         "grpc_outlier_detection_header",
-        "grpc_resolver_xds_config",
         "grpc_xds_client",
         "json",
         "json_args",
@@ -4691,6 +4690,7 @@ grpc_cc_library(
         "pollset_set",
         "time",
         "unique_type_name",
+        "xds_dependency_manager",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4734,7 +4734,6 @@ grpc_cc_library(
         "delegating_helper",
         "grpc_backend_metric_data",
         "grpc_lb_xds_channel_args",
-        "grpc_resolver_xds_config",
         "grpc_xds_client",
         "json",
         "json_args",
@@ -4747,6 +4746,7 @@ grpc_cc_library(
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
+        "xds_dependency_manager",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
@@ -5705,12 +5705,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_xds_config",
+    name = "xds_dependency_manager",
     srcs = [
-        "ext/filters/client_channel/resolver/xds/xds_config.cc",
+        "ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/resolver/xds/xds_config.h",
+        "ext/filters/client_channel/resolver/xds/xds_dependency_manager.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
@@ -5757,7 +5757,6 @@ grpc_cc_library(
         "experiments",
         "grpc_lb_policy_ring_hash",
         "grpc_resolver_xds_attributes",
-        "grpc_resolver_xds_config",
         "grpc_resolver_xds_trace",
         "grpc_service_config",
         "grpc_xds_client",
@@ -5767,6 +5766,7 @@ grpc_cc_library(
         "ref_counted",
         "slice",
         "time",
+        "xds_dependency_manager",
         "xxhash_inline",
         "//:channel_arg_names",
         "//:config",

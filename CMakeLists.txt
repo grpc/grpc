@@ -1809,7 +1809,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
   src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-  src/core/ext/filters/client_channel/resolver/xds/xds_config.cc
+  src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc
   src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
   src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc
   src/core/ext/filters/client_channel/retry_filter.cc
