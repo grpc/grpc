@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_CHANNEL_IDLE_CHANNEL_IDLE_FILTER_H
-#define GRPC_SRC_CORE_EXT_FILTERS_CHANNEL_IDLE_CHANNEL_IDLE_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CHANNEL_IDLE_LEGACY_CHANNEL_IDLE_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CHANNEL_IDLE_LEGACY_CHANNEL_IDLE_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -40,32 +40,18 @@
 
 namespace grpc_core {
 
-class ChannelIdleFilter : public ImplementChannelFilter<ChannelIdleFilter> {
+class LegacyChannelIdleFilter : public ChannelFilter {
  public:
-  ~ChannelIdleFilter() override = default;
+  ~LegacyChannelIdleFilter() override = default;
 
-  ChannelIdleFilter(const ChannelIdleFilter&) = delete;
-  ChannelIdleFilter& operator=(const ChannelIdleFilter&) = delete;
-  ChannelIdleFilter(ChannelIdleFilter&&) = default;
-  ChannelIdleFilter& operator=(ChannelIdleFilter&&) = default;
+  LegacyChannelIdleFilter(const LegacyChannelIdleFilter&) = delete;
+  LegacyChannelIdleFilter& operator=(const LegacyChannelIdleFilter&) = delete;
+  LegacyChannelIdleFilter(LegacyChannelIdleFilter&&) = default;
+  LegacyChannelIdleFilter& operator=(LegacyChannelIdleFilter&&) = default;
 
-  class Call {
-   public:
-    explicit Call(ChannelIdleFilter* filter) : filter_(filter) {
-      filter_->IncreaseCallCount();
-    }
-    ~Call() { filter_->DecreaseCallCount(); }
-
-    static const NoInterceptor OnClientInitialMetadata;
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
-
-   private:
-    ChannelIdleFilter* filter_;
-  };
+  // Construct a promise for one call.
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
   bool StartTransportOp(grpc_transport_op* op) override;
 
@@ -73,8 +59,8 @@ class ChannelIdleFilter : public ImplementChannelFilter<ChannelIdleFilter> {
   using SingleSetActivityPtr =
       SingleSetPtr<Activity, typename ActivityPtr::deleter_type>;
 
-  ChannelIdleFilter(grpc_channel_stack* channel_stack,
-                    Duration client_idle_timeout)
+  LegacyChannelIdleFilter(grpc_channel_stack* channel_stack,
+                          Duration client_idle_timeout)
       : channel_stack_(channel_stack),
         client_idle_timeout_(client_idle_timeout) {}
 
@@ -89,6 +75,12 @@ class ChannelIdleFilter : public ImplementChannelFilter<ChannelIdleFilter> {
  private:
   void StartIdleTimer();
 
+  struct CallCountDecreaser {
+    void operator()(LegacyChannelIdleFilter* filter) const {
+      filter->DecreaseCallCount();
+    }
+  };
+
   // The channel stack to which we take refs for pending callbacks.
   grpc_channel_stack* channel_stack_;
   Duration client_idle_timeout_;
@@ -98,31 +90,31 @@ class ChannelIdleFilter : public ImplementChannelFilter<ChannelIdleFilter> {
   SingleSetActivityPtr activity_;
 };
 
-class ClientIdleFilter final : public ChannelIdleFilter {
+class LegacyClientIdleFilter final : public LegacyChannelIdleFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ClientIdleFilter> Create(
+  static absl::StatusOr<LegacyClientIdleFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
  private:
-  using ChannelIdleFilter::ChannelIdleFilter;
+  using LegacyChannelIdleFilter::LegacyChannelIdleFilter;
 };
 
-class MaxAgeFilter final : public ChannelIdleFilter {
+class LegacyMaxAgeFilter final : public LegacyChannelIdleFilter {
  public:
   static const grpc_channel_filter kFilter;
   struct Config;
 
-  static absl::StatusOr<MaxAgeFilter> Create(const ChannelArgs& args,
-                                             ChannelFilter::Args filter_args);
+  static absl::StatusOr<LegacyMaxAgeFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   void PostInit() override;
 
  private:
   class ConnectivityWatcher : public AsyncConnectivityStateWatcherInterface {
    public:
-    explicit ConnectivityWatcher(MaxAgeFilter* filter)
+    explicit ConnectivityWatcher(LegacyMaxAgeFilter* filter)
         : channel_stack_(filter->channel_stack()->Ref()), filter_(filter) {}
     ~ConnectivityWatcher() override = default;
 
@@ -133,10 +125,11 @@ class MaxAgeFilter final : public ChannelIdleFilter {
 
    private:
     RefCountedPtr<grpc_channel_stack> channel_stack_;
-    MaxAgeFilter* filter_;
+    LegacyMaxAgeFilter* filter_;
   };
 
-  MaxAgeFilter(grpc_channel_stack* channel_stack, const Config& max_age_config);
+  LegacyMaxAgeFilter(grpc_channel_stack* channel_stack,
+                     const Config& max_age_config);
 
   void Shutdown() override;
 
@@ -147,4 +140,4 @@ class MaxAgeFilter final : public ChannelIdleFilter {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_CHANNEL_IDLE_CHANNEL_IDLE_FILTER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CHANNEL_IDLE_LEGACY_CHANNEL_IDLE_FILTER_H
