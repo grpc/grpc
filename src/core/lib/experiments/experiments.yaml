@@ -169,6 +169,7 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
+  requires: [promise_based_client_call, promise_based_server_call, registered_method_lookup_in_transport]
 - name: promise_based_server_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
@@ -258,6 +259,12 @@
   expiry: 2024/04/04
   owner: ctiller@google.com
   test_tags: []
+- name: v3_compression_filter
+  description:
+    Use the compression filter utilizing the v3 filter api
+  expiry: 2024/04/04
+  owner: ctiller@google.com
+  test_tags: ["compression_test"]
 - name: work_serializer_clears_time_cache
   description:
     Have the work serializer clear the time cache when it dispatches work.
