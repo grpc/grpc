@@ -185,7 +185,7 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
   if (!error.ok()) {
     return MakeLameChannel("Failed to create server channel", std::move(error));
   }
-  server_transport.release();
+  std::ignore = server_transport.release();  // consumed by SetupTransport
   auto channel = Channel::Create(
       "inproc",
       client_channel_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority"),
