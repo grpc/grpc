@@ -54,9 +54,7 @@ class ReconnectTest(unittest.TestCase):
         channel = grpc.insecure_channel(addr)
         multi_callable = channel.unary_unary(
             _UNARY_UNARY,
-            _registered_call_handle=channel._get_registered_call_handle(
-                _UNARY_UNARY
-            ),
+            _registered_method=True,
         )
         self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
         server.stop(None)

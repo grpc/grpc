@@ -79,9 +79,7 @@ class SSLSessionCacheTest(unittest.TestCase):
         )
         response = channel.unary_unary(
             _UNARY_UNARY,
-            _registered_call_handle=channel._get_registered_call_handle(
-                _UNARY_UNARY
-            ),
+            _registered_method=True,
         )(_REQUEST)
         auth_data = pickle.loads(response)
         self.assertEqual(

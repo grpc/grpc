@@ -118,9 +118,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
             with grpc.secure_channel(target, composite_credentials) as channel:
                 stub = channel.unary_unary(
                     _UNARY_UNARY,
-                    _registered_call_handle=channel._get_registered_call_handle(
-                        _UNARY_UNARY
-                    ),
+                    _registered_method=True,
                 )
                 response = stub(_REQUEST, wait_for_ready=True)
                 self.assertEqual(_REQUEST, response)
@@ -149,9 +147,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
                     ) as channel:
                         stub = channel.unary_unary(
                             _UNARY_UNARY,
-                            _registered_call_handle=channel._get_registered_call_handle(
-                                _UNARY_UNARY
-                            ),
+                            _registered_method=True,
                         )
                         wait_group.done()
                         wait_group.wait()

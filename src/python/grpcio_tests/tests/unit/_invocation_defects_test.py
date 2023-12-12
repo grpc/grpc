@@ -221,9 +221,7 @@ class FailAfterFewIterationsCounter(object):
 def _unary_unary_multi_callable(channel):
     return channel.unary_unary(
         _UNARY_UNARY,
-        _registered_call_handle=channel._get_registered_call_handle(
-            _UNARY_UNARY
-        ),
+        _registered_method=True,
     )
 
 
@@ -232,9 +230,7 @@ def _unary_stream_multi_callable(channel):
         _UNARY_STREAM,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
-        _registered_call_handle=channel._get_registered_call_handle(
-            _UNARY_STREAM
-        ),
+        _registered_method=True,
     )
 
 
@@ -243,36 +239,28 @@ def _stream_unary_multi_callable(channel):
         _STREAM_UNARY,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
-        _registered_call_handle=channel._get_registered_call_handle(
-            _STREAM_UNARY
-        ),
+        _registered_method=True,
     )
 
 
 def _stream_stream_multi_callable(channel):
     return channel.stream_stream(
         _STREAM_STREAM,
-        _registered_call_handle=channel._get_registered_call_handle(
-            _STREAM_STREAM
-        ),
+        _registered_method=True,
     )
 
 
 def _defective_handler_multi_callable(channel):
     return channel.unary_unary(
         _DEFECTIVE_GENERIC_RPC_HANDLER,
-        _registered_call_handle=channel._get_registered_call_handle(
-            _DEFECTIVE_GENERIC_RPC_HANDLER
-        ),
+        _registered_method=True,
     )
 
 
 def _defective_nested_exception_handler_multi_callable(channel):
     return channel.unary_unary(
         _UNARY_UNARY_NESTED_EXCEPTION,
-        _registered_call_handle=channel._get_registered_call_handle(
-            _UNARY_UNARY_NESTED_EXCEPTION
-        ),
+        _registered_method=True,
     )
 
 

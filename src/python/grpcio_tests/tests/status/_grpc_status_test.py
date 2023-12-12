@@ -140,9 +140,7 @@ class StatusTest(unittest.TestCase):
     def test_status_ok(self):
         _, call = self._channel.unary_unary(
             _STATUS_OK,
-            _registered_call_handle=self._channel._get_registered_call_handle(
-                _STATUS_OK
-            ),
+            _registered_method=True,
         ).with_call(_REQUEST)
 
         # Succeed RPC doesn't have status
@@ -153,9 +151,7 @@ class StatusTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _STATUS_NOT_OK,
-                _registered_call_handle=self._channel._get_registered_call_handle(
-                    _STATUS_NOT_OK
-                ),
+                _registered_method=True,
             ).with_call(_REQUEST)
         rpc_error = exception_context.exception
 
@@ -168,9 +164,7 @@ class StatusTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _ERROR_DETAILS,
-                _registered_call_handle=self._channel._get_registered_call_handle(
-                    _ERROR_DETAILS
-                ),
+                _registered_method=True,
             ).with_call(_REQUEST)
         rpc_error = exception_context.exception
 
@@ -190,9 +184,7 @@ class StatusTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _INCONSISTENT,
-                _registered_call_handle=self._channel._get_registered_call_handle(
-                    _INCONSISTENT
-                ),
+                _registered_method=True,
             ).with_call(_REQUEST)
         rpc_error = exception_context.exception
         self.assertEqual(rpc_error.code(), grpc.StatusCode.NOT_FOUND)
@@ -204,9 +196,7 @@ class StatusTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _INVALID_CODE,
-                _registered_call_handle=self._channel._get_registered_call_handle(
-                    _INVALID_CODE
-                ),
+                _registered_method=True,
             ).with_call(_REQUEST)
         rpc_error = exception_context.exception
         self.assertEqual(rpc_error.code(), grpc.StatusCode.UNKNOWN)

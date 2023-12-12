@@ -98,9 +98,7 @@ class ChannelCache:
     _condition: threading.Condition = threading.Condition(lock=_lock)
     _eviction_ready: threading.Event = threading.Event()
 
-    _mapping: Dict[
-        CacheKey, Tuple[grpc.Channel, datetime.datetime, Dict[str, int]]
-    ]
+    _mapping: Dict[CacheKey, Tuple[grpc.Channel, datetime.datetime]]
     _eviction_thread: threading.Thread
 
     def __init__(self):
@@ -119,7 +117,7 @@ class ChannelCache:
         return ChannelCache._singleton
 
     def _evict_locked(self, key: CacheKey):
-        channel, _, _ = self._mapping.pop(key)
+        channel, _ = self._mapping.pop(key)
         _LOGGER.debug(
             "Evicting channel %s with configuration %s.", channel, key
         )
@@ -138,7 +136,7 @@ class ChannelCache:
                     ChannelCache._singleton._evict_locked(key)
                     # And immediately reevaluate.
                 else:
-                    key, (_, eviction_time, _) = next(
+                    key, (_, eviction_time) = next(
                         iter(ChannelCache._singleton._mapping.items())
                     )
                     now = datetime.datetime.now()
@@ -166,7 +164,7 @@ class ChannelCache:
     ) -> Tuple[grpc.Channel, Optional[int]]:
         """Get a channel from cache or creates a new channel.
 
-        This method also takes care of recording registered method for channel,
+        This method also takes care of register method for channel,
           which means we'll register a new call handle if we're calling a
           non-registered method for an existing channel.
 
@@ -190,45 +188,35 @@ class ChannelCache:
         key = (target, options, channel_credentials, compression)
         with self._lock:
             channel_data = self._mapping.get(key, None)
+            call_handle = None
             if channel_data is not None:
                 channel = channel_data[0]
-                registered_method_handles = channel_data[2]
                 # Register a new call handle if we're calling a registered method for an
                 # existing channel and this method is not registered.
-                if (
-                    _registered_method
-                    and method not in registered_method_handles.keys()
-                ):
+                if _registered_method:
                     call_handle = channel._get_registered_call_handle(method)
-                    registered_method_handles[method] = call_handle
                 self._mapping.pop(key)
                 self._mapping[key] = (
                     channel,
-                    datetime.datetime.now() + _EVICTION_PERIOD,
-                    registered_method_handles,
+                    datetime.datetime.now() + _EVICTION_PERIOD
                 )
-                method_handle = registered_method_handles.get(method, None)
-                return channel, method_handle
+                return channel, call_handle
             else:
                 channel = _create_channel(
                     target, options, channel_credentials, compression
                 )
-                registered_method_handles = {}
                 if _registered_method:
                     call_handle = channel._get_registered_call_handle(method)
-                    registered_method_handles[method] = call_handle
                 self._mapping[key] = (
                     channel,
-                    datetime.datetime.now() + _EVICTION_PERIOD,
-                    registered_method_handles,
+                    datetime.datetime.now() + _EVICTION_PERIOD
                 )
                 if (
                     len(self._mapping) == 1
                     or len(self._mapping) >= _MAXIMUM_CHANNELS
                 ):
                     self._condition.notify()
-                method_handle = registered_method_handles.get(method, None)
-                return channel, method_handle
+                return channel, call_handle
 
     def _test_only_channel_count(self) -> int:
         with self._lock:
@@ -301,8 +289,6 @@ def unary_unary(
         unset, defaults to 60 seconds. Supply a value of None to indicate that
         no timeout should be enforced.
       metadata: Optional metadata to send to the server.
-      _registered_method: INTERNAL USE ONLY. Whether this RPC is made for a
-        registered method.
 
     Returns:
       The response to the RPC.
@@ -394,8 +380,6 @@ def unary_stream(
         unset, defaults to 60 seconds. Supply a value of None to indicate that
         no timeout should be enforced.
       metadata: Optional metadata to send to the server.
-      _registered_method: INTERNAL USE ONLY. Whether this RPC is made for a
-        registered method.
 
     Returns:
       An iterator of responses.
@@ -487,8 +471,6 @@ def stream_unary(
         unset, defaults to 60 seconds. Supply a value of None to indicate that
         no timeout should be enforced.
       metadata: Optional metadata to send to the server.
-      _registered_method: INTERNAL USE ONLY. Whether this RPC is made for a
-        registered method.
 
     Returns:
       The response to the RPC.
@@ -580,8 +562,6 @@ def stream_stream(
         unset, defaults to 60 seconds. Supply a value of None to indicate that
         no timeout should be enforced.
       metadata: Optional metadata to send to the server.
-      _registered_method: INTERNAL USE ONLY. Whether this RPC is made for a
-        registered method.
 
     Returns:
       An iterator of responses.

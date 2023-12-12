@@ -553,12 +553,24 @@ cdef class Channel:
   def close_on_fork(self, code, details):
     _close(self, code, details, True)
 
-  def register_method(self, method, host):
-    cdef const char *host_ptr
-    if host is None:
-      host_ptr = NULL
-    else:
-      host_ptr = <const char *>host
+  def register_method(self, method):
+    """
+    Regists a method to current channel.
+
+    Please note that since we're always passing None for host, we set the second to
+    the last parameter of grpc_channel_register_call to a fixed NULL value.
+
+    Args:
+      method: Required, the method name for the RPC.
+
+    Returns:
+      The registered call handle pointer in the form of a Python Long. 
+    """
+    cpython.Py_INCREF(method)
     registered_call_handle = grpc_channel_register_call(
-      self._state.c_channel, <const char *>method, host_ptr, NULL)
+      self._state.c_channel, <const char *>method, NULL, NULL)
     return cpython.PyLong_FromVoidPtr(registered_call_handle)
+
+  def _unregister_method(self, methods):
+    for method in methods:
+      cpython.Py_DECREF(method)

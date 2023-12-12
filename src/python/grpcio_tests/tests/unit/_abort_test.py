@@ -109,9 +109,7 @@ class AbortTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _ABORT,
-                _registered_call_handle=self._channel._get_registered_call_handle(
-                    _ABORT
-                ),
+                _registered_method=True,
             )(_REQUEST)
         rpc_error = exception_context.exception
 
@@ -131,9 +129,7 @@ class AbortTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError):
             self._channel.unary_unary(
                 _ABORT,
-                _registered_call_handle=self._channel._get_registered_call_handle(
-                    _ABORT
-                ),
+                _registered_method=True,
             )(_REQUEST)
 
         # Server may still have a stack frame reference to the exception even
@@ -146,9 +142,7 @@ class AbortTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _ABORT_WITH_STATUS,
-                _registered_call_handle=self._channel._get_registered_call_handle(
-                    _ABORT_WITH_STATUS
-                ),
+                _registered_method=True,
             )(_REQUEST)
         rpc_error = exception_context.exception
 
@@ -160,9 +154,7 @@ class AbortTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
                 _INVALID_CODE,
-                _registered_call_handle=self._channel._get_registered_call_handle(
-                    _INVALID_CODE
-                ),
+                _registered_method=True,
             )(_REQUEST)
         rpc_error = exception_context.exception
 

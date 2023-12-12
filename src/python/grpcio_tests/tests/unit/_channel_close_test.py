@@ -125,9 +125,7 @@ class ChannelCloseTest(unittest.TestCase):
         channel = grpc.insecure_channel("localhost:{}".format(self._port))
         multi_callable = channel.stream_stream(
             _STREAM_URI,
-            _registered_call_handle=channel._get_registered_call_handle(
-                _STREAM_URI
-            ),
+            _registered_method=True,
         )
         request_iterator = _Pipe(())
         response_iterator = multi_callable(request_iterator)
@@ -140,9 +138,7 @@ class ChannelCloseTest(unittest.TestCase):
         channel = grpc.insecure_channel("localhost:{}".format(self._port))
         multi_callable = channel.stream_stream(
             _STREAM_URI,
-            _registered_call_handle=channel._get_registered_call_handle(
-                _STREAM_URI
-            ),
+            _registered_method=True,
         )
         request_iterator = _Pipe((b"abc",))
         response_iterator = multi_callable(request_iterator)
@@ -158,9 +154,7 @@ class ChannelCloseTest(unittest.TestCase):
         ) as channel:  # pylint: disable=bad-continuation
             multi_callable = channel.stream_stream(
                 _STREAM_URI,
-                _registered_call_handle=channel._get_registered_call_handle(
-                    _STREAM_URI
-                ),
+                _registered_method=True,
             )
             request_iterator = _Pipe((b"abc",))
             response_iterator = multi_callable(request_iterator)
@@ -175,9 +169,7 @@ class ChannelCloseTest(unittest.TestCase):
         ) as channel:  # pylint: disable=bad-continuation
             multi_callable = channel.stream_stream(
                 _STREAM_URI,
-                _registered_call_handle=channel._get_registered_call_handle(
-                    _STREAM_URI
-                ),
+                _registered_method=True,
             )
             request_iterators = tuple(
                 _Pipe((b"abc",))
@@ -198,9 +190,7 @@ class ChannelCloseTest(unittest.TestCase):
         channel = grpc.insecure_channel("localhost:{}".format(self._port))
         multi_callable = channel.stream_stream(
             _STREAM_URI,
-            _registered_call_handle=channel._get_registered_call_handle(
-                _STREAM_URI
-            ),
+            _registered_method=True,
         )
         request_iterator = _Pipe((b"abc",))
         response_iterator = multi_callable(request_iterator)
@@ -230,17 +220,13 @@ class ChannelCloseTest(unittest.TestCase):
         ) as channel:
             stream_multi_callable = channel.stream_stream(
                 _STREAM_URI,
-                _registered_call_handle=channel._get_registered_call_handle(
-                    _STREAM_URI
-                ),
+                _registered_method=True,
             )
             endless_iterator = itertools.repeat(b"abc")
             stream_response_iterator = stream_multi_callable(endless_iterator)
             future = channel.unary_unary(
                 _UNARY_URI,
-                _registered_call_handle=channel._get_registered_call_handle(
-                    _UNARY_URI
-                ),
+                _registered_method=True,
             ).future(b"abc")
 
             def on_done_callback(future):

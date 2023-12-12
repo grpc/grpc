@@ -101,9 +101,7 @@ class ChannelzServicerTest(unittest.TestCase):
             self._pairs[idx]
             .channel.unary_unary(
                 _SUCCESSFUL_UNARY_UNARY,
-                _registered_call_handle=self._pairs[
-                    idx
-                ].channel._get_registered_call_handle(_SUCCESSFUL_UNARY_UNARY),
+                _registered_method=True,
             )
             .with_call(_REQUEST)
         )
@@ -113,9 +111,7 @@ class ChannelzServicerTest(unittest.TestCase):
         try:
             self._pairs[idx].channel.unary_unary(
                 _FAILED_UNARY_UNARY,
-                _registered_call_handle=self._pairs[
-                    idx
-                ].channel._get_registered_call_handle(_FAILED_UNARY_UNARY),
+                _registered_method=True,
             ).with_call(_REQUEST)
         except grpc.RpcError:
             return
@@ -127,11 +123,7 @@ class ChannelzServicerTest(unittest.TestCase):
             self._pairs[idx]
             .channel.stream_stream(
                 _SUCCESSFUL_STREAM_STREAM,
-                _registered_call_handle=self._pairs[
-                    idx
-                ].channel._get_registered_call_handle(
-                    _SUCCESSFUL_STREAM_STREAM
-                ),
+                _registered_method=True,
             )
             .__call__(iter([_REQUEST] * test_constants.STREAM_LENGTH))
         )

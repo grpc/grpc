@@ -83,9 +83,7 @@ def run_test(args):
         channel = grpc.insecure_channel("localhost:%d" % port)
         multi_callable = channel.unary_unary(
             FORK_EXIT,
-            _registered_call_handle=channel._get_registered_call_handle(
-                FORK_EXIT
-            ),
+            _registered_method=True,
         )
         result, call = multi_callable.with_call(REQUEST, wait_for_ready=True)
         os.wait()

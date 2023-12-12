@@ -218,9 +218,7 @@ class MetadataCodeDetailsTest(unittest.TestCase):
             unary_unary_method_name,
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
-            _registered_call_handle=self._channel._get_registered_call_handle(
-                unary_unary_method_name
-            ),
+            _registered_method=True,
         )
         unary_stream_method_name = "/".join(
             (
@@ -231,9 +229,7 @@ class MetadataCodeDetailsTest(unittest.TestCase):
         )
         self._unary_stream = self._channel.unary_stream(
             unary_stream_method_name,
-            _registered_call_handle=self._channel._get_registered_call_handle(
-                unary_stream_method_name
-            ),
+            _registered_method=True,
         )
         stream_unary_method_name = "/".join(
             (
@@ -244,9 +240,7 @@ class MetadataCodeDetailsTest(unittest.TestCase):
         )
         self._stream_unary = self._channel.stream_unary(
             stream_unary_method_name,
-            _registered_call_handle=self._channel._get_registered_call_handle(
-                stream_unary_method_name
-            ),
+            _registered_method=True,
         )
         stream_stream_method_name = "/".join(
             (
@@ -259,9 +253,7 @@ class MetadataCodeDetailsTest(unittest.TestCase):
             stream_stream_method_name,
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
-            _registered_call_handle=self._channel._get_registered_call_handle(
-                stream_stream_method_name
-            ),
+            _registered_method=True,
         )
 
     def tearDown(self):
@@ -855,9 +847,7 @@ class InspectContextTest(unittest.TestCase):
             unary_unary_method_name,
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
-            _registered_call_handle=self._channel._get_registered_call_handle(
-                unary_unary_method_name
-            ),
+            _registered_method=True,
         )
 
     def tearDown(self):

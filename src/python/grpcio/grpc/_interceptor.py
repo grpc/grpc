@@ -690,14 +690,14 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_call_handle: Optional[int] = None,
+        _registered_method: Optional[bool] = False,
     ) -> grpc.UnaryUnaryMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.unary_unary(
             m,
             request_serializer,
             response_deserializer,
-            _registered_call_handle,
+            _registered_method,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryUnaryClientInterceptor):
@@ -711,14 +711,14 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_call_handle: Optional[int] = None,
+        _registered_method: Optional[bool] = False,
     ) -> grpc.UnaryStreamMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.unary_stream(
             m,
             request_serializer,
             response_deserializer,
-            _registered_call_handle,
+            _registered_method,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryStreamClientInterceptor):
@@ -732,14 +732,14 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_call_handle: Optional[int] = None,
+        _registered_method: Optional[bool] = False,
     ) -> grpc.StreamUnaryMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.stream_unary(
             m,
             request_serializer,
             response_deserializer,
-            _registered_call_handle,
+            _registered_method,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamUnaryClientInterceptor):
@@ -753,14 +753,14 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_call_handle: Optional[int] = None,
+        _registered_method: Optional[bool] = False,
     ) -> grpc.StreamStreamMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.stream_stream(
             m,
             request_serializer,
             response_deserializer,
-            _registered_call_handle,
+            _registered_method,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamStreamClientInterceptor):

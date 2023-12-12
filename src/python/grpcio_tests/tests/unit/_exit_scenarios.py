@@ -212,9 +212,7 @@ if __name__ == "__main__":
         if args.scenario == IN_FLIGHT_UNARY_UNARY_CALL:
             multi_callable = channel.unary_unary(
                 method,
-                _registered_call_handle=channel._get_registered_call_handle(
-                    method
-                ),
+                _registered_method=True,
             )
             future = multi_callable.future(REQUEST)
             result, call = multi_callable.with_call(REQUEST)
@@ -224,9 +222,7 @@ if __name__ == "__main__":
         ):
             multi_callable = channel.unary_stream(
                 method,
-                _registered_call_handle=channel._get_registered_call_handle(
-                    method
-                ),
+                _registered_method=True,
             )
             response_iterator = multi_callable(REQUEST)
             for response in response_iterator:
@@ -237,9 +233,7 @@ if __name__ == "__main__":
         ):
             multi_callable = channel.stream_unary(
                 method,
-                _registered_call_handle=channel._get_registered_call_handle(
-                    method
-                ),
+                _registered_method=True,
             )
             future = multi_callable.future(infinite_request_iterator())
             result, call = multi_callable.with_call(
@@ -251,9 +245,7 @@ if __name__ == "__main__":
         ):
             multi_callable = channel.stream_stream(
                 method,
-                _registered_call_handle=channel._get_registered_call_handle(
-                    method
-                ),
+                _registered_method=True,
             )
             response_iterator = multi_callable(infinite_request_iterator())
             for response in response_iterator:

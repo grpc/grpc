@@ -239,9 +239,7 @@ def _get_compression_ratios(
 def _unary_unary_client(channel, multicallable_kwargs, message):
     multi_callable = channel.unary_unary(
         _UNARY_UNARY,
-        _registered_call_handle=channel._get_registered_call_handle(
-            _UNARY_UNARY
-        ),
+        _registered_method=True,
     )
     response = multi_callable(message, **multicallable_kwargs)
     if response != message:
@@ -253,9 +251,7 @@ def _unary_unary_client(channel, multicallable_kwargs, message):
 def _unary_stream_client(channel, multicallable_kwargs, message):
     multi_callable = channel.unary_stream(
         _UNARY_STREAM,
-        _registered_call_handle=channel._get_registered_call_handle(
-            _UNARY_STREAM
-        ),
+        _registered_method=True,
     )
     response_iterator = multi_callable(message, **multicallable_kwargs)
     for response in response_iterator:
@@ -268,9 +264,7 @@ def _unary_stream_client(channel, multicallable_kwargs, message):
 def _stream_unary_client(channel, multicallable_kwargs, message):
     multi_callable = channel.stream_unary(
         _STREAM_UNARY,
-        _registered_call_handle=channel._get_registered_call_handle(
-            _STREAM_UNARY
-        ),
+        _registered_method=True,
     )
     requests = (_REQUEST for _ in range(_STREAM_LENGTH))
     response = multi_callable(requests, **multicallable_kwargs)
@@ -283,9 +277,7 @@ def _stream_unary_client(channel, multicallable_kwargs, message):
 def _stream_stream_client(channel, multicallable_kwargs, message):
     multi_callable = channel.stream_stream(
         _STREAM_STREAM,
-        _registered_call_handle=channel._get_registered_call_handle(
-            _STREAM_STREAM
-        ),
+        _registered_method=True,
     )
     request_prefix = str(0).encode("ascii") * 100
     requests = (

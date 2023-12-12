@@ -33,21 +33,15 @@ class GenericStub(object):
     def __init__(self, channel):
         self.UnaryCall = channel.unary_unary(
             "/grpc.testing.BenchmarkService/UnaryCall",
-            _registered_call_handle=channel._get_registered_call_handle(
-                "/grpc.testing.BenchmarkService/UnaryCall"
-            ),
+            _registered_method=True,
         )
         self.StreamingFromServer = channel.unary_stream(
             "/grpc.testing.BenchmarkService/StreamingFromServer",
-            _registered_call_handle=channel._get_registered_call_handle(
-                "/grpc.testing.BenchmarkService/StreamingFromServer"
-            ),
+            _registered_method=True,
         )
         self.StreamingCall = channel.stream_stream(
             "/grpc.testing.BenchmarkService/StreamingCall",
-            _registered_call_handle=channel._get_registered_call_handle(
-                "/grpc.testing.BenchmarkService/StreamingCall"
-            ),
+            _registered_method=True,
         )
 
 

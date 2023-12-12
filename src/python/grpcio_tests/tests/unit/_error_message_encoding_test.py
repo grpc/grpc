@@ -75,9 +75,7 @@ class ErrorMessageEncodingTest(unittest.TestCase):
         for message in _UNICODE_ERROR_MESSAGES:
             multi_callable = self._channel.unary_unary(
                 _UNARY_UNARY,
-                _registered_call_handle=self._channel._get_registered_call_handle(
-                    _UNARY_UNARY
-                ),
+                _registered_method=True,
             )
             with self.assertRaises(grpc.RpcError) as cm:
                 multi_callable(message.encode("utf-8"))

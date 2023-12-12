@@ -19,20 +19,17 @@ class GreeterStub(object):
                 '/helloworld.Greeter/SayHello',
                 request_serializer=helloworld__pb2.HelloRequest.SerializeToString,
                 response_deserializer=helloworld__pb2.HelloReply.FromString,
-                _registered_call_handle=channel._get_registered_call_handle(
-                    '/helloworld.Greeter/SayHello'))
+                _registered_method=True)
         self.SayHelloStreamReply = channel.unary_stream(
                 '/helloworld.Greeter/SayHelloStreamReply',
                 request_serializer=helloworld__pb2.HelloRequest.SerializeToString,
                 response_deserializer=helloworld__pb2.HelloReply.FromString,
-                _registered_call_handle=channel._get_registered_call_handle(
-                    '/helloworld.Greeter/SayHelloStreamReply'))
+                _registered_method=True)
         self.SayHelloBidiStream = channel.stream_stream(
                 '/helloworld.Greeter/SayHelloBidiStream',
                 request_serializer=helloworld__pb2.HelloRequest.SerializeToString,
                 response_deserializer=helloworld__pb2.HelloReply.FromString,
-                _registered_call_handle=channel._get_registered_call_handle(
-                    '/helloworld.Greeter/SayHelloBidiStream'))
+                _registered_method=True)
 
 
 class GreeterServicer(object):

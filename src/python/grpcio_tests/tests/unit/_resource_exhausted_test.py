@@ -151,9 +151,7 @@ class ResourceExhaustedTest(unittest.TestCase):
     def testUnaryUnary(self):
         multi_callable = self._channel.unary_unary(
             _UNARY_UNARY,
-            _registered_call_handle=self._channel._get_registered_call_handle(
-                _UNARY_UNARY
-            ),
+            _registered_method=True,
         )
         futures = []
         for _ in range(test_constants.THREAD_CONCURRENCY):
@@ -185,9 +183,7 @@ class ResourceExhaustedTest(unittest.TestCase):
     def testUnaryStream(self):
         multi_callable = self._channel.unary_stream(
             _UNARY_STREAM,
-            _registered_call_handle=self._channel._get_registered_call_handle(
-                _UNARY_STREAM
-            ),
+            _registered_method=True,
         )
         calls = []
         for _ in range(test_constants.THREAD_CONCURRENCY):
@@ -217,9 +213,7 @@ class ResourceExhaustedTest(unittest.TestCase):
     def testStreamUnary(self):
         multi_callable = self._channel.stream_unary(
             _STREAM_UNARY,
-            _registered_call_handle=self._channel._get_registered_call_handle(
-                _STREAM_UNARY
-            ),
+            _registered_method=True,
         )
         futures = []
         request = iter([_REQUEST] * test_constants.STREAM_LENGTH)
@@ -253,9 +247,7 @@ class ResourceExhaustedTest(unittest.TestCase):
     def testStreamStream(self):
         multi_callable = self._channel.stream_stream(
             _STREAM_STREAM,
-            _registered_call_handle=self._channel._get_registered_call_handle(
-                _STREAM_STREAM
-            ),
+            _registered_method=True,
         )
         calls = []
         request = iter([_REQUEST] * test_constants.STREAM_LENGTH)
