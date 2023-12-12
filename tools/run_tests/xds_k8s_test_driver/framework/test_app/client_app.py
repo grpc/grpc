@@ -318,10 +318,9 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                 channel_first_attempt = self.check_channel_successful_calls(
                     channel, **rpc_params
                 )
-                time.sleep(2)
-                channel_second_attempt = self.check_channel_successful_calls(
-                    channel, **rpc_params
-                )
+                # Address race where a call to the xDS control plane server has
+                # just started and a channelz request comes in before the call
+                # has had a chance to fail.
                 # With channels to the xDS control plane, the channel can be
                 # READY but the calls could be failing due to failure to fetch
                 # OAUTH2 token. To increase the confidence that we have a valid
@@ -337,6 +336,10 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                 # OAUTH2 token after 2 seconds (maybe because there is a
                 # slowdown in the system.) If such a case is observed, consider
                 # increasing the interval from 2 seconds to 5 seconds.
+                time.sleep(2)
+                channel_second_attempt = self.check_channel_successful_calls(
+                    channel, **rpc_params
+                )
                 if (
                     channel_first_attempt.data.calls_started
                     != channel_second_attempt.data.calls_started
