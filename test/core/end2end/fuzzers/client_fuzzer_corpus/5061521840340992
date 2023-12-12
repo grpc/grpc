@@ -1,0 +1,51 @@
+api_actions {
+  create_call {
+    propagation_mask: 6
+    method {
+      value: "~"
+    }
+    timeout: 34816
+  }
+}
+api_actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      send_message {
+      }
+    }
+    operations {
+      receive_message {
+      }
+    }
+  }
+}
+api_actions {
+  create_server {
+  }
+}
+api_actions {
+  disable_tracer: "("
+}
+api_actions {
+  destroy_call {
+  }
+}
+api_actions {
+  poll_cq {
+  }
+}
+api_actions {
+}
+api_actions {
+  shutdown_server {
+  }
+}
+config_vars {
+  verbosity: "\364\204\204\204\364\204\204\204\364\204\204\204\364\204\204\204\364\204\204\204\364\204\204\204\364\204\204\204\364\204\204\204\004"
+  stacktrace_minloglevel: "yyyyyyyyyyyyy&yyyyyyy\177\014"
+  experiments: 1099511626496
+}

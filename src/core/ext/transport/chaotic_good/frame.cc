@@ -55,6 +55,7 @@ class FrameSerializer {
     output_.AppendIndexed(kZeroSlice->Copy());
     header_.type = frame_type;
     header_.stream_id = stream_id;
+    header_.message_padding = message_padding;
     header_.flags.SetAll(false);
   }
   // If called, must be called before AddTrailers, Finish.
