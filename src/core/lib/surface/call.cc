@@ -45,13 +45,13 @@
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/call.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/call.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 

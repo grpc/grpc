@@ -878,6 +878,7 @@ LIBGPR_SRC = \
     src/core/lib/gprpp/windows/thd.cc \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/call.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -897,7 +898,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/call.h \
     include/grpc/support/cpu.h \
     include/grpc/support/json.h \
     include/grpc/support/log.h \
@@ -1763,6 +1763,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/call.h \
     include/grpc/impl/channel_arg_names.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -1799,7 +1800,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/call.h \
     include/grpc/support/cpu.h \
     include/grpc/support/json.h \
     include/grpc/support/log.h \
@@ -2292,6 +2292,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/call.h \
     include/grpc/impl/channel_arg_names.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -2328,7 +2329,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/call.h \
     include/grpc/support/cpu.h \
     include/grpc/support/json.h \
     include/grpc/support/log.h \

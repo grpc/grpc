@@ -23,7 +23,7 @@
 #include <functional>
 
 #include <grpc/grpc.h>
-#include <grpc/support/call.h>
+#include <grpc/impl/call.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SUPPORT_CALL_H
-#define GRPC_SUPPORT_CALL_H
+#ifndef GRPC_IMPL_CALL_H
+#define GRPC_IMPL_CALL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,4 +26,4 @@
 void grpc_call_run_in_event_engine(const grpc_call* call,
                                    absl::AnyInvocable<void()> cb);
 
-#endif /* GRPC_SUPPORT_CALL_H */
+#endif /* GRPC_IMPL_CALL_H */
