@@ -5403,6 +5403,32 @@ targets:
   - linux
   - posix
   - mac
+- name: all_ok_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/bitset.h
+  - src/core/lib/promise/all_ok.h
+  - src/core/lib/promise/detail/join_state.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/status_flag.h
+  - src/core/lib/promise/trace.h
+  src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/promise/trace.cc
+  - test/core/promise/all_ok_test.cc
+  deps:
+  - gtest
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/utility:utility
+  - gpr
+  uses_polling: false
 - name: alloc_test
   gtest: true
   build: test
