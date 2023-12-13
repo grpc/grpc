@@ -641,16 +641,13 @@ class ClientCallbackReaderWriterImpl
       auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackReaderWriterImpl();
-      grpc_call_unref(call);
       if (GPR_LIKELY(from_reaction)) {
-        reactor->OnDone(s);
         grpc_call_unref(call);
+        reactor->OnDone(s);
       } else {
-        grpc_call_run_in_event_engine(call,
-                                      [reactor, call, s = std::move(s)]() {
-                                        reactor->OnDone(s);
-                                        grpc_call_unref(call);
-                                      });
+        grpc_call_run_in_event_engine(
+            call, [reactor, s = std::move(s)]() { reactor->OnDone(s); });
+        grpc_call_unref(call);
       }
     }
   }
@@ -820,14 +817,12 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
       auto* call = call_.call();
       this->~ClientCallbackReaderImpl();
       if (GPR_LIKELY(from_reaction)) {
-        reactor->OnDone(s);
         grpc_call_unref(call);
+        reactor->OnDone(s);
       } else {
-        grpc_call_run_in_event_engine(call,
-                                      [reactor, call, s = std::move(s)]() {
-                                        reactor->OnDone(s);
-                                        grpc_call_unref(call);
-                                      });
+        grpc_call_run_in_event_engine(
+            call, [reactor, s = std::move(s)]() { reactor->OnDone(s); });
+        grpc_call_unref(call);
       }
     }
   }
@@ -1042,14 +1037,12 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
       auto* call = call_.call();
       this->~ClientCallbackWriterImpl();
       if (GPR_LIKELY(from_reaction)) {
-        reactor->OnDone(s);
         grpc_call_unref(call);
+        reactor->OnDone(s);
       } else {
-        grpc_call_run_in_event_engine(call,
-                                      [reactor, call, s = std::move(s)]() {
-                                        reactor->OnDone(s);
-                                        grpc_call_unref(call);
-                                      });
+        grpc_call_run_in_event_engine(
+            call, [reactor, s = std::move(s)]() { reactor->OnDone(s); });
+        grpc_call_unref(call);
       }
     }
   }
