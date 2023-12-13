@@ -6157,6 +6157,7 @@ grpc_cc_library(
         "slice_buffer",
         "status_helper",
         "time",
+        "try_seq",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
@@ -6165,6 +6166,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
+        "//:promise",
         "//:ref_counted_ptr",
     ],
 )
