@@ -94,6 +94,7 @@ message CreateChannel {
     string target = 1;
     grpc.testing.FuzzingChannelArgs channel_args = 2;
     ChannelCreds channel_creds = 3;
+    bool inproc = 4;
 }
 
 message Http2ServerPort {
