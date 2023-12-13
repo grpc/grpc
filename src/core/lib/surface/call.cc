@@ -51,6 +51,7 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/call.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
@@ -3802,4 +3803,9 @@ const char* grpc_call_error_to_string(grpc_call_error error) {
       return "GRPC_CALL_OK";
   }
   GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOW");
+}
+
+void grpc_call_run_in_event_engine(const grpc_call* call,
+                                   absl::AnyInvocable<void()> cb) {
+  grpc_core::Call::FromC(call)->event_engine()->Run(std::move(cb));
 }
