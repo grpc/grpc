@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import annotations
 
 import logging
 import time
@@ -24,8 +23,7 @@ from grpc_observability import _cyobservability
 from grpc_observability._open_telemetry_exporter import (
     _OpenTelemetryExporterDelegator,
 )
-from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
-from grpc_observability._open_telemetry_plugin import _OpenTelemetryPlugin
+from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin, _OpenTelemetryPlugin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,7 +86,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             _cyobservability.activate_stats()
             self.set_stats(True)
         except Exception as e:  # pylint: disable=broad-except
-            raise ValueError(f"Activate stats failed with: {e}")
+            raise ValueError(f"Activate observability metrics failed with: {e}")
 
     def __enter__(self):
         try:

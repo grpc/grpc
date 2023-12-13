@@ -119,7 +119,6 @@ class _OpenTelemetryPlugin:
 
     def __init__(self, plugin: OpenTelemetryPlugin):
         self._plugin = plugin
-
         self._metric_to_recorder = dict()
 
         if self._plugin.get_meter_provider():
@@ -148,14 +147,12 @@ class _OpenTelemetryPlugin:
             # Filter method name.
             stats_data.labels[GRPC_METHOD_LABEL] = GRPC_OTHER_LABEL_VALUE
         recorder = self._metric_to_recorder[stats_data.name]
+
         value = 0
         if stats_data.measure_double:
             value = stats_data.value_float
         else:
             value = stats_data.value_int
-        print(
-            f"record {stats_data.name} with value: {value} and labels: {stats_data.labels}"
-        )
         if isinstance(recorder, Counter):
             recorder.add(value, attributes=stats_data.labels)
         elif isinstance(recorder, Histogram):
