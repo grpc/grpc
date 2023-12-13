@@ -1900,6 +1900,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/tls/tls_security_connector.h',
                       'src/core/lib/security/transport/auth_filters.h',
                       'src/core/lib/security/transport/client_auth_filter.cc',
+                      'src/core/lib/security/transport/legacy_server_auth_filter.cc',
                       'src/core/lib/security/transport/secure_endpoint.cc',
                       'src/core/lib/security/transport/secure_endpoint.h',
                       'src/core/lib/security/transport/security_handshaker.cc',

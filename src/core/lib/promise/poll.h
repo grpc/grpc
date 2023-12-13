@@ -205,6 +205,7 @@ Poll<T> poll_cast(Poll<U> poll) {
 // lambda, for example (via enable_if).
 template <typename T>
 struct PollTraits {
+  using Type = T;
   static constexpr bool is_poll() { return false; }
 };
 
