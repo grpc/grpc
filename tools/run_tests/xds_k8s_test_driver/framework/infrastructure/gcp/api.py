@@ -501,7 +501,7 @@ class GcpStandardCloudApiResource(GcpProjectApiResource, metaclass=abc.ABCMeta):
             return True
         except _HttpError as error:
             if error.resp and error.resp.status == 404:
-                logger.info("%s not deleted since it does not exist", full_name)
+                logger.debug("%s not deleted since it doesn't exist", full_name)
             else:
                 logger.warning("Failed to delete %s, %r", full_name, error)
         return False

@@ -384,6 +384,11 @@
  *  Defaults to 250ms. */
 #define GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS \
   "grpc.happy_eyeballs_connection_attempt_delay_ms"
+/** It accepts a MemoryAllocatorFactory as input and If specified, it forces
+ * the default event engine to use memory allocators created using the provided
+ * factory. */
+#define GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY \
+  "grpc.event_engine_use_memory_allocator_factory"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

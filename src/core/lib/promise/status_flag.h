@@ -25,11 +25,31 @@
 
 namespace grpc_core {
 
+struct Failure {};
+struct Success {};
+
+inline bool IsStatusOk(Failure) { return false; }
+inline bool IsStatusOk(Success) { return true; }
+
+template <>
+struct StatusCastImpl<absl::Status, Success> {
+  static absl::Status Cast(Success) { return absl::OkStatus(); }
+};
+
+template <>
+struct StatusCastImpl<absl::Status, const Success&> {
+  static absl::Status Cast(Success) { return absl::OkStatus(); }
+};
+
 // A boolean representing whether an operation succeeded (true) or failed
 // (false).
 class StatusFlag {
  public:
   explicit StatusFlag(bool value) : value_(value) {}
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  StatusFlag(Failure) : value_(false) {}
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  StatusFlag(Success) : value_(true) {}
 
   bool ok() const { return value_; }
 
@@ -46,14 +66,28 @@ struct StatusCastImpl<absl::Status, StatusFlag> {
   }
 };
 
-struct Failure {};
+template <>
+struct StatusCastImpl<absl::Status, StatusFlag&> {
+  static absl::Status Cast(StatusFlag flag) {
+    return flag.ok() ? absl::OkStatus() : absl::CancelledError();
+  }
+};
+
+template <>
+struct StatusCastImpl<absl::Status, const StatusFlag&> {
+  static absl::Status Cast(StatusFlag flag) {
+    return flag.ok() ? absl::OkStatus() : absl::CancelledError();
+  }
+};
 
 // A value if an operation was successful, or a failure flag if not.
 template <typename T>
 class ValueOrFailure {
  public:
-  explicit ValueOrFailure(T value) : value_(std::move(value)) {}
-  explicit ValueOrFailure(Failure) {}
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  ValueOrFailure(T value) : value_(std::move(value)) {}
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  ValueOrFailure(Failure) {}
 
   static ValueOrFailure FromOptional(absl::optional<T> value) {
     return ValueOrFailure{std::move(value)};
@@ -73,6 +107,11 @@ class ValueOrFailure {
 template <typename T>
 inline bool IsStatusOk(const ValueOrFailure<T>& value) {
   return value.ok();
+}
+
+template <typename T>
+inline T TakeValue(ValueOrFailure<T>&& value) {
+  return std::move(value.value());
 }
 
 template <typename T>

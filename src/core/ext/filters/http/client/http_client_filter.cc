@@ -51,6 +51,10 @@
 
 namespace grpc_core {
 
+const NoInterceptor HttpClientFilter::Call::OnServerToClientMessage;
+const NoInterceptor HttpClientFilter::Call::OnClientToServerMessage;
+const NoInterceptor HttpClientFilter::Call::OnFinalize;
+
 const grpc_channel_filter HttpClientFilter::kFilter =
     MakePromiseBasedFilter<HttpClientFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata>("http-client");
@@ -105,40 +109,27 @@ Slice UserAgentFromArgs(const ChannelArgs& args,
 }
 }  // namespace
 
-ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  auto& md = call_args.client_initial_metadata;
-  if (test_only_use_put_requests_) {
-    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPut);
+void HttpClientFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
+                                                     HttpClientFilter* filter) {
+  if (filter->test_only_use_put_requests_) {
+    md.Set(HttpMethodMetadata(), HttpMethodMetadata::kPut);
   } else {
-    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
+    md.Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
   }
-  md->Set(HttpSchemeMetadata(), scheme_);
-  md->Set(TeMetadata(), TeMetadata::kTrailers);
-  md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
-  md->Set(UserAgentMetadata(), user_agent_.Ref());
+  md.Set(HttpSchemeMetadata(), filter->scheme_);
+  md.Set(TeMetadata(), TeMetadata::kTrailers);
+  md.Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
+  md.Set(UserAgentMetadata(), filter->user_agent_.Ref());
+}
 
-  auto* initial_metadata_err =
-      GetContext<Arena>()->New<Latch<ServerMetadataHandle>>();
+absl::Status HttpClientFilter::Call::OnServerInitialMetadata(
+    ServerMetadata& md) {
+  return CheckServerMetadata(&md);
+}
 
-  call_args.server_initial_metadata->InterceptAndMap(
-      [initial_metadata_err](
-          ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
-        auto r = CheckServerMetadata(md.get());
-        if (!r.ok()) {
-          initial_metadata_err->Set(ServerMetadataFromStatus(r));
-          return absl::nullopt;
-        }
-        return std::move(md);
-      });
-
-  return Race(initial_metadata_err->Wait(),
-              Map(next_promise_factory(std::move(call_args)),
-                  [](ServerMetadataHandle md) -> ServerMetadataHandle {
-                    auto r = CheckServerMetadata(md.get());
-                    if (!r.ok()) return ServerMetadataFromStatus(r);
-                    return md;
-                  }));
+absl::Status HttpClientFilter::Call::OnServerTrailingMetadata(
+    ServerMetadata& md) {
+  return CheckServerMetadata(&md);
 }
 
 HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,

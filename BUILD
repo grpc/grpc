@@ -1604,6 +1604,7 @@ grpc_cc_library(
         "//src/core:slice_refcount",
         "//src/core:socket_mutator",
         "//src/core:stats_data",
+        "//src/core:status_flag",
         "//src/core:status_helper",
         "//src/core:strerror",
         "//src/core:thread_quota",
@@ -2305,29 +2306,6 @@ grpc_cc_library(
         "grpc++",
         "grpc_base",
     ],
-)
-
-grpc_cc_library(
-    name = "grpc_rpc_encoding",
-    srcs = [
-        "src/cpp/ext/filters/census/rpc_encoding.cc",
-    ],
-    hdrs = [
-        "src/cpp/ext/filters/census/rpc_encoding.h",
-    ],
-    external_deps = [
-        "absl/base",
-        "absl/base:core_headers",
-        "absl/base:endian",
-        "absl/meta:type_traits",
-        "absl/status",
-        "absl/strings",
-        "absl/time",
-    ],
-    language = "c++",
-    tags = ["nofixdeps"],
-    visibility = ["@grpc:grpc_python_observability"],
-    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -3589,11 +3567,13 @@ grpc_cc_library(
         "//src/core:ext/filters/http/client/http_client_filter.cc",
         "//src/core:ext/filters/http/http_filters_plugin.cc",
         "//src/core:ext/filters/http/message_compress/compression_filter.cc",
+        "//src/core:ext/filters/http/message_compress/legacy_compression_filter.cc",
         "//src/core:ext/filters/http/server/http_server_filter.cc",
     ],
     hdrs = [
         "//src/core:ext/filters/http/client/http_client_filter.h",
         "//src/core:ext/filters/http/message_compress/compression_filter.h",
+        "//src/core:ext/filters/http/message_compress/legacy_compression_filter.h",
         "//src/core:ext/filters/http/server/http_server_filter.h",
     ],
     external_deps = [
@@ -3622,6 +3602,7 @@ grpc_cc_library(
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
         "//src/core:context",
+        "//src/core:experiments",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
         "//src/core:map",

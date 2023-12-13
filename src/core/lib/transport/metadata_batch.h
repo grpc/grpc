@@ -649,9 +649,8 @@ class ParseHelper {
     return ParsedMetadata<Container>(
         typename ParsedMetadata<Container>::FromSlicePair{},
         Slice::FromCopiedString(key),
-        IsUniquelyUnownedEnabled() && will_keep_past_request_lifetime_
-            ? value_.TakeUniquelyOwned()
-            : std::move(value_),
+        will_keep_past_request_lifetime_ ? value_.TakeUniquelyOwned()
+                                         : std::move(value_),
         transport_size_);
   }
 
