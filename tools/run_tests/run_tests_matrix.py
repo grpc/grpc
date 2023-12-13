@@ -355,7 +355,9 @@ def _create_portability_test_jobs(
     # portability C and C++ on x64
     for compiler in [
         "gcc8",
-        # 'gcc10.2_openssl102', // TODO(b/283304471): Enable this later
+        # TODO(b/283304471): Tests using OpenSSL's engine APIs were broken and removed
+        "gcc10.2_openssl102",
+        "gcc10.2_openssl111",
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
