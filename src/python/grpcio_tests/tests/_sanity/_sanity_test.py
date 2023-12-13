@@ -53,6 +53,8 @@ class SanityTest(unittest.TestCase):
             for test_case in tests_json:
                 if "observability" not in test_case:
                     final_tests.append(test_case)
+        else:
+            final_tests = tests_json
 
         self.assertSequenceEqual(final_tests, test_suite_names)
         self.assertGreater(len(test_suite_names), 0)

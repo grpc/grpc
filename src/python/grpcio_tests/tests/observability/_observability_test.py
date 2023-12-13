@@ -52,16 +52,17 @@ class TestExporter(_observability.Exporter):
 
 
 class _ClientUnaryUnaryInterceptor(grpc.UnaryUnaryClientInterceptor):
-
-    def intercept_unary_unary(self, continuation, client_call_details, request_or_iterator):
+    def intercept_unary_unary(
+        self, continuation, client_call_details, request_or_iterator
+    ):
         response = continuation(client_call_details, request_or_iterator)
         return response
 
 
 class _ServerInterceptor(grpc.ServerInterceptor):
-
     def intercept_service(self, continuation, handler_call_details):
         return continuation(handler_call_details)
+
 
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
@@ -97,7 +98,9 @@ class ObservabilityTest(unittest.TestCase):
         ):
             server, port = _test_server.start_server()
             self._server = server
-            _test_server.intercepted_unary_unary_call(port=port, interceptors=interceptor)
+            _test_server.intercepted_unary_unary_call(
+                port=port, interceptors=interceptor
+            )
 
         self.assertGreater(len(self.all_metric), 0)
         self._validate_metrics(self.all_metric)
