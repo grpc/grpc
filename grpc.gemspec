@@ -104,6 +104,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/support/atm_gcc_atomic.h )
   s.files += %w( include/grpc/support/atm_gcc_sync.h )
   s.files += %w( include/grpc/support/atm_windows.h )
+  s.files += %w( include/grpc/support/call.h )
   s.files += %w( include/grpc/support/cpu.h )
   s.files += %w( include/grpc/support/json.h )
   s.files += %w( include/grpc/support/log.h )

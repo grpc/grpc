@@ -1717,6 +1717,7 @@ foreach(_hdr
   include/grpc/support/atm_gcc_atomic.h
   include/grpc/support/atm_gcc_sync.h
   include/grpc/support/atm_windows.h
+  include/grpc/support/call.h
   include/grpc/support/cpu.h
   include/grpc/support/json.h
   include/grpc/support/log.h
@@ -2663,6 +2664,7 @@ foreach(_hdr
   include/grpc/support/atm_gcc_atomic.h
   include/grpc/support/atm_gcc_sync.h
   include/grpc/support/atm_windows.h
+  include/grpc/support/call.h
   include/grpc/support/cpu.h
   include/grpc/support/json.h
   include/grpc/support/log.h
@@ -3339,6 +3341,7 @@ foreach(_hdr
   include/grpc/support/atm_gcc_atomic.h
   include/grpc/support/atm_gcc_sync.h
   include/grpc/support/atm_windows.h
+  include/grpc/support/call.h
   include/grpc/support/cpu.h
   include/grpc/support/json.h
   include/grpc/support/log.h
@@ -5313,6 +5316,7 @@ foreach(_hdr
   include/grpc/support/atm_gcc_atomic.h
   include/grpc/support/atm_gcc_sync.h
   include/grpc/support/atm_windows.h
+  include/grpc/support/call.h
   include/grpc/support/cpu.h
   include/grpc/support/json.h
   include/grpc/support/log.h

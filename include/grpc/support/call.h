@@ -26,4 +26,4 @@
 void grpc_call_run_in_event_engine(const grpc_call* call,
                                    absl::AnyInvocable<void()> cb);
 
-#endif  // GRPC_SUPPORT_CALL_H
+#endif /* GRPC_SUPPORT_CALL_H */
