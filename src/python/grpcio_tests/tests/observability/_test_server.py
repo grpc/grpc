@@ -97,8 +97,11 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
-def start_server() -> Tuple[grpc.Server, int]:
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+def start_server(interceptors=None) -> Tuple[grpc.Server, int]:
+    if interceptors:
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10), interceptors=interceptors)
+    else:
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     server.add_generic_rpc_handlers((_GenericHandler(),))
     port = server.add_insecure_port("[::]:0")
     server.start()
@@ -108,6 +111,20 @@ def start_server() -> Tuple[grpc.Server, int]:
 def unary_unary_call(port, metadata=None):
     with grpc.insecure_channel(f"localhost:{port}") as channel:
         multi_callable = channel.unary_unary(_UNARY_UNARY)
+        if metadata:
+            unused_response, call = multi_callable.with_call(
+                _REQUEST, metadata=metadata
+            )
+        else:
+            unused_response, call = multi_callable.with_call(_REQUEST)
+
+
+def intercepted_unary_unary_call(port, interceptors, metadata=None):
+    with grpc.insecure_channel(f"localhost:{port}") as channel:
+        intercept_channel = grpc.intercept_channel(
+            channel, interceptors
+        )
+        multi_callable = intercept_channel.unary_unary(_UNARY_UNARY)
         if metadata:
             unused_response, call = multi_callable.with_call(
                 _REQUEST, metadata=metadata

@@ -23,7 +23,8 @@ from grpc_observability import _cyobservability
 from grpc_observability._open_telemetry_exporter import (
     _OpenTelemetryExporterDelegator,
 )
-from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin, _OpenTelemetryPlugin
+from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
+from grpc_observability._open_telemetry_plugin import _OpenTelemetryPlugin
 
 _LOGGER = logging.getLogger(__name__)
 

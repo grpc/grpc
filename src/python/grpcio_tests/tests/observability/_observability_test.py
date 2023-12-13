@@ -51,6 +51,18 @@ class TestExporter(_observability.Exporter):
         self.span_collecter.extend(tracing_data)
 
 
+class _ClientUnaryUnaryInterceptor(grpc.UnaryUnaryClientInterceptor):
+
+    def intercept_unary_unary(self, continuation, client_call_details, request_or_iterator):
+        response = continuation(client_call_details, request_or_iterator)
+        return response
+
+
+class _ServerInterceptor(grpc.ServerInterceptor):
+
+    def intercept_service(self, continuation, handler_call_details):
+        return continuation(handler_call_details)
+
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
     "Observability is not supported in Windows and MacOS",
@@ -72,6 +84,30 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+
+        self.assertGreater(len(self.all_metric), 0)
+        self._validate_metrics(self.all_metric)
+
+    def testRecordUnaryUnaryWithClientInterceptor(self):
+        interceptor = _ClientUnaryUnaryInterceptor()
+        with grpc_observability.OpenTelemetryObservability(
+            exporter=self.test_exporter
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.intercepted_unary_unary_call(port=port, interceptors=interceptor)
+
+        self.assertGreater(len(self.all_metric), 0)
+        self._validate_metrics(self.all_metric)
+
+    def testRecordUnaryUnaryWithServerInterceptor(self):
+        interceptor = _ServerInterceptor()
+        with grpc_observability.OpenTelemetryObservability(
+            exporter=self.test_exporter
+        ):
+            server, port = _test_server.start_server(interceptors=[interceptor])
             self._server = server
             _test_server.unary_unary_call(port=port)
 
