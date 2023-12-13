@@ -231,7 +231,7 @@ struct PollCastImpl<T, T> {
 
 template <typename T>
 struct PollCastImpl<T, Poll<T>> {
-  static Poll<T> Cast(Poll<T>&& poll) { return poll; }
+  static Poll<T> Cast(Poll<T>&& poll) { return std::move(poll); }
 };
 
 template <typename T, typename U>
