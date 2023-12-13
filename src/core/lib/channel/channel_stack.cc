@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -319,4 +320,20 @@ grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
 grpc_channel_stack::MakeServerCallPromise(grpc_core::CallArgs call_args) {
   return ServerNext(grpc_channel_stack_element(this, this->count - 1))(
       std::move(call_args));
+}
+
+void grpc_channel_stack::InitClientCallSpine(
+    grpc_core::CallSpineInterface* call) {
+  for (size_t i = 0; i < count; i++) {
+    auto* elem = grpc_channel_stack_element(this, i);
+    elem->filter->init_call(elem, call);
+  }
+}
+
+void grpc_channel_stack::InitServerCallSpine(
+    grpc_core::CallSpineInterface* call) {
+  for (size_t i = 0; i < count; i++) {
+    auto* elem = grpc_channel_stack_element(this, count - 1 - i);
+    elem->filter->init_call(elem, call);
+  }
 }
