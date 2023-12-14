@@ -282,7 +282,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         )
 
         logger.info(
-            "[%s] ADS: Waiting for successful calls to xDS control plane to %s",
+            "[%s] ADS: Waiting for active calls to xDS control plane to %s",
             self.hostname,
             xds_server_uri,
         )
@@ -292,7 +292,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             rpc_deadline=rpc_deadline,
         )
         logger.info(
-            "[%s] ADS: Detected successful calls to xDS control plane %s",
+            "[%s] ADS: Detected active calls to xDS control plane %s",
             self.hostname,
             xds_server_uri,
         )
@@ -320,11 +320,11 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                     channel, **rpc_params
                 )
                 logger.info(
-                    "[%s] Detected successful calls to xDS control plane %s,"
+                    "[%s] Detected active calls to xDS control plane %s,"
                     " channel: %s",
                     self.hostname,
                     xds_server_uri,
-                    _ChannelzServiceClient.channel_repr(channel),
+                    _ChannelzServiceClient.channel_repr(channel_upd),
                 )
                 return channel_upd
             except self.NotFound:
@@ -332,9 +332,15 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                 # not found.
                 continue
             except framework.rpc.grpc.RpcError as err:
-                logger.debug(
-                    f"Unexpected error while checking"
-                    f" channel {channel.ref.channel_id}: {err}"
+                # Logged at 'info' and not at 'warning' because this method is
+                # expected to be called in a retryer. If this error eventually
+                # causes the retryer to fail, it will be logged fully at 'error'
+                logger.info(
+                    "[%s] Unexpected error while checking xDS control plane"
+                    " channel %s: %r",
+                    self.hostname,
+                    _ChannelzServiceClient.channel_repr(channel),
+                    err,
                 )
                 raise
 
