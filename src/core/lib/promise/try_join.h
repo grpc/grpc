@@ -65,6 +65,11 @@ struct TryJoinTraits {
   static R EarlyReturn(absl::Status x) {
     return x;
   }
+  template <typename... A>
+  static auto FinalReturn(A&&... a) {
+    return absl::StatusOr<std::tuple<A...>>(
+        std::make_tuple(std::forward<A>(a)...));
+  }
 };
 
 // Implementation of TryJoin combinator.
