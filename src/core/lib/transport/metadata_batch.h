@@ -410,7 +410,8 @@ struct GrpcLbClientStatsMetadata {
   static const char* DisplayMemento(MementoType) {
     return "<internal-lb-stats>";
   }
-  static MementoType ParseMemento(Slice, bool, MetadataParseErrorFn) {
+  static MementoType ParseMemento(Slice, bool, MetadataParseErrorFn error) {
+    error("not a valid value for grpclb_client_stats", Slice());
     return nullptr;
   }
 };
