@@ -169,6 +169,7 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
                 "csm/pod-monitoring.yaml",
                 namespace_name=self.k8s_namespace.name,
                 deployment_id=self.deployment_id,
+                pod_monitoring_name="%s-gmp" % self.deployment_id,
             )
 
         # Load test client pod. We need only one client at the moment

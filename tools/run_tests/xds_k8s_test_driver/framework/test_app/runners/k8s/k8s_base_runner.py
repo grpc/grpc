@@ -308,6 +308,10 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
             raise _RunnerError(
                 "deployment_id required to create PodMonitoring resource"
             )
+        if not kwargs["pod_monitoring_name"]:
+            raise _RunnerError(
+                "pod_monitoring_name required to create PodMonitoring resource"
+            )
         pod_monitoring = self._create_from_template(
             template, custom_object=True, **kwargs
         )
