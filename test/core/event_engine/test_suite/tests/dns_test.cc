@@ -591,4 +591,9 @@ TEST_F(EventEngineDNSTest, UnparseableHostPortsBadLocalhostWithPort) {
   TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
                           &dns_resolver_signal_, "[localhost]:1");
 }
+
+TEST_F(EventEngineDNSTest, UnparseableHostPortsEmptyHostname) {
+  TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
+                          &dns_resolver_signal_, ":443");
+}
 // END
