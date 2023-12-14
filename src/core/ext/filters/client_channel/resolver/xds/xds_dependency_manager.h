@@ -72,14 +72,23 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
       struct AggregateConfig {
         std::vector<absl::string_view> leaf_clusters;
 
-        explicit AggregateConfig(std::vector<absl::string_view> clusters)
-            : leaf_clusters(std::move(clusters)) {}
+        explicit AggregateConfig(std::vector<absl::string_view> leaf_clusters)
+            : leaf_clusters(std::move(leaf_clusters)) {}
         bool operator==(const AggregateConfig& other) const {
           return leaf_clusters == other.leaf_clusters;
         }
       };
-      absl::variant<EndpointConfig, AggregateConfig> children =
-          EndpointConfig(nullptr, "");
+      absl::variant<EndpointConfig, AggregateConfig> children;
+
+      // Ctor for leaf clusters.
+      ClusterConfig(std::string cluster_name,
+                    std::shared_ptr<const XdsClusterResource> cluster,
+                    std::shared_ptr<const XdsEndpointResource> endpoints,
+                    std::string resolution_note);
+      // Ctor for aggregate clusters.
+      ClusterConfig(std::string cluster_name,
+                    std::shared_ptr<const XdsClusterResource> cluster,
+                    std::vector<absl::string_view> leaf_clusters);
 
       bool operator==(const ClusterConfig& other) const {
         return cluster_name == other.cluster_name && cluster == other.cluster &&

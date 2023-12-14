@@ -37,6 +37,29 @@ constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
 }  // namespace
 
 //
+// XdsDependencyManager::XdsConfig::ClusterConfig
+//
+
+XdsDependencyManager::XdsConfig::ClusterConfig::ClusterConfig(
+    std::string cluster_name,
+    std::shared_ptr<const XdsClusterResource> cluster,
+    std::shared_ptr<const XdsEndpointResource> endpoints,
+    std::string resolution_note)
+    : cluster_name(std::move(cluster_name)),
+      cluster(std::move(cluster)),
+      children(absl::in_place_type_t<EndpointConfig>(), std::move(endpoints),
+               std::move(resolution_note)) {}
+
+XdsDependencyManager::XdsConfig::ClusterConfig::ClusterConfig(
+    std::string cluster_name,
+    std::shared_ptr<const XdsClusterResource> cluster,
+    std::vector<absl::string_view> leaf_clusters)
+    : cluster_name(std::move(cluster_name)),
+      cluster(std::move(cluster)),
+      children(absl::in_place_type_t<AggregateConfig>(),
+               std::move(leaf_clusters)) {}
+
+//
 // XdsDependencyManager::XdsConfig
 //
 
@@ -743,12 +766,9 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
           return false;
         }
         // Populate cluster config.
-        auto& cluster_config = (*cluster_config_map)[name].emplace();
-        cluster_config.cluster_name = std::string(name);
-        cluster_config.cluster = *state.update;
-        cluster_config.children
-            .emplace<XdsConfig::ClusterConfig::EndpointConfig>(
-                eds_state.update.endpoints, eds_state.update.resolution_note);
+        (*cluster_config_map)[name].emplace(
+            std::string(name), *state.update, eds_state.update.endpoints,
+            eds_state.update.resolution_note);
         if (leaf_clusters != nullptr) leaf_clusters->push_back(name);
         return true;
       },
@@ -797,12 +817,9 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
           return false;
         }
         // Populate cluster config.
-        auto& cluster_config = (*cluster_config_map)[name].emplace();
-        cluster_config.cluster_name = std::string(name);
-        cluster_config.cluster = *state.update;
-        cluster_config.children
-            .emplace<XdsConfig::ClusterConfig::EndpointConfig>(
-                dns_state.update.endpoints, dns_state.update.resolution_note);
+        (*cluster_config_map)[name].emplace(
+            std::string(name), *state.update, dns_state.update.endpoints,
+            dns_state.update.resolution_note);
         if (leaf_clusters != nullptr) leaf_clusters->push_back(name);
         return true;
       },
@@ -827,12 +844,9 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
         }
         // If this is the root of the tree, populate cluster config.
         if (depth == 0) {
-          auto& cluster_config = (*cluster_config_map)[name].emplace();
-          cluster_config.cluster_name = std::string(name);
-          cluster_config.cluster = std::move(cluster_resource);
-          cluster_config.children
-              .emplace<XdsConfig::ClusterConfig::AggregateConfig>(
-                  std::move(child_leaf_clusters));
+          (*cluster_config_map)[name].emplace(
+              std::string(name), std::move(cluster_resource),
+              std::move(child_leaf_clusters));
         } else if (leaf_clusters != nullptr) {
           // Otherwise, propagate leaf cluster list up the tree.
           leaf_clusters->insert(leaf_clusters->end(),
