@@ -706,6 +706,27 @@ grpc_cc_library(
         "join_state",
         "map",
         "poll",
+        "status_flag",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "all_ok",
+    external_deps = [
+        "absl/meta:type_traits",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/all_ok.h",
+    ],
+    deps = [
+        "join_state",
+        "map",
+        "poll",
+        "status_flag",
         "//:gpr_platform",
     ],
 )
@@ -781,6 +802,7 @@ grpc_cc_library(
         "promise_like",
         "promise_status",
         "seq_state",
+        "status_flag",
         "//:gpr_platform",
     ],
 )

@@ -45,6 +45,7 @@ struct StatusCastImpl<absl::Status, const Success&> {
 // (false).
 class StatusFlag {
  public:
+  StatusFlag() : value_(true) {}
   explicit StatusFlag(bool value) : value_(value) {}
   // NOLINTNEXTLINE(google-explicit-constructor)
   StatusFlag(Failure) : value_(false) {}
@@ -52,6 +53,8 @@ class StatusFlag {
   StatusFlag(Success) : value_(true) {}
 
   bool ok() const { return value_; }
+
+  bool operator==(StatusFlag other) const { return value_ == other.value_; }
 
  private:
   bool value_;
@@ -94,6 +97,7 @@ class ValueOrFailure {
   }
 
   bool ok() const { return value_.has_value(); }
+  StatusFlag status() const { return StatusFlag(ok()); }
 
   const T& value() const { return value_.value(); }
   T& value() { return value_.value(); }
@@ -113,13 +117,6 @@ template <typename T>
 inline T TakeValue(ValueOrFailure<T>&& value) {
   return std::move(value.value());
 }
-
-template <typename T>
-struct StatusCastImpl<absl::Status, ValueOrFailure<T>> {
-  static absl::Status Cast(const ValueOrFailure<T> flag) {
-    return flag.ok() ? absl::OkStatus() : absl::CancelledError();
-  }
-};
 
 template <typename T>
 struct StatusCastImpl<absl::StatusOr<T>, ValueOrFailure<T>> {

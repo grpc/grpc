@@ -1,0 +1,65 @@
+INFO: Running bazel wrapper (see //tools/bazel for details), bazel version 6.4.0 will be used instead of system-wide bazel installation.
+Loading: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //test/core/end2end:simple_request_test (0 packages loaded, 0 targets configured)
+WARNING: /usr/local/google/home/ctiller/grpc/WORKSPACE:5:10: in bind rule //external:upb_lib: target '//external:upb_lib' depends on deprecated target '@com_google_protobuf//upb:upb': use upb:base and/or upb:mem instead
+WARNING: /usr/local/google/home/ctiller/grpc/src/core/BUILD:282:16: in cc_library rule //src/core:status_helper: target '//src/core:status_helper' depends on deprecated target '@com_google_protobuf//upb:upb': use upb:base and/or upb:mem instead
+WARNING: /usr/local/google/home/ctiller/grpc/BUILD:1861:16: in cc_library rule //:alts_util: target '//:alts_util' depends on deprecated target '@com_google_protobuf//upb:upb': use upb:base and/or upb:mem instead
+WARNING: /usr/local/google/home/ctiller/grpc/BUILD:3431:16: in cc_library rule //:tsi_alts_credentials: target '//:tsi_alts_credentials' depends on deprecated target '@com_google_protobuf//upb:upb': use upb:base and/or upb:mem instead
+WARNING: /usr/local/google/home/ctiller/grpc/BUILD:3011:16: in cc_library rule //:grpc_client_channel: target '//:grpc_client_channel' depends on deprecated target '@com_google_protobuf//upb:upb': use upb:base and/or upb:mem instead
+WARNING: /usr/local/google/home/ctiller/grpc/src/core/BUILD:5496:16: in cc_library rule //src/core:grpc_backend_metric_filter: target '//src/core:grpc_backend_metric_filter' depends on deprecated target '@com_google_protobuf//upb:upb': use upb:base and/or upb:mem instead
+WARNING: /usr/local/google/home/ctiller/grpc/src/core/BUILD:4198:16: in cc_library rule //src/core:grpc_lb_policy_grpclb: target '//src/core:grpc_lb_policy_grpclb' depends on deprecated target '@com_google_protobuf//upb:upb': use upb:base and/or upb:mem instead
+WARNING: /usr/local/google/home/ctiller/grpc/src/core/BUILD:4931:16: in cc_library rule //src/core:health_check_client: target '//src/core:health_check_client' depends on deprecated target '@com_google_protobuf//upb:upb': use upb:base and/or upb:mem instead
+WARNING: /usr/local/google/home/ctiller/grpc/src/core/BUILD:4316:16: in cc_library rule //src/core:grpc_lb_policy_rls: target '//src/core:grpc_lb_policy_rls' depends on deprecated target '@com_google_protobuf//upb:upb': use upb:base and/or upb:mem instead
+WARNING: /usr/local/google/home/ctiller/grpc/BUILD:3661:16: in cc_library rule //:xds_client: target '//:xds_client' depends on deprecated target '@com_google_protobuf//upb:upb': use upb:base and/or upb:mem instead
+WARNING: /usr/local/google/home/ctiller/grpc/src/core/BUILD:4395:16: in cc_library rule //src/core:grpc_xds_client: target '//src/core:grpc_xds_client' depends on deprecated target '@com_google_protobuf//upb:upb': use upb:base and/or upb:mem instead
+INFO: Analyzed target //test/core/end2end:simple_request_test (0 packages loaded, 0 targets configured).
+INFO: Found 1 target...
+[0 / 1] [Prepa] BazelWorkspaceStatusAction stable-status.txt
+Target //test/core/end2end:simple_request_test up-to-date:
+  bazel-bin/test/core/end2end/simple_request_test
+INFO: Elapsed time: 0.504s, Critical Path: 0.01s
+INFO: 1 process: 1 internal.
+INFO: Build completed successfully, 1 total action
+INFO: Running command line: external/bazel_tools/tools/test/test-setup.sh test/core/end2end/simple_request_test
+exec ${PAGER:-/usr/bin/less} "$0" || exit 1
+Executing tests from //test/core/end2end:simple_request_test
+-----------------------------------------------------------------------------
+Note: Google Test filter = */Inproc
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from CoreEnd2endTest
+[ RUN      ] CoreEnd2endTest.SimpleRequest/Inproc
+E1208 17:23:37.283783741 3490965 cq_verifier.cc:362]                   Verify tag(101)-✅ for 10000ms
+E1208 17:23:37.285013911 3490965 cq_verifier.cc:362]                   Verify tag(102)-✅ tag(1)-✅ for 10000ms
+E1208 17:23:37.287126039 3490965 cq_verifier.cc:362]                   Verify tag(-1)-🤷 for 10000ms
+[       OK ] CoreEnd2endTest.SimpleRequest/Inproc (31 ms)
+[ RUN      ] CoreEnd2endTest.SimpleRequest10/Inproc
+E1208 17:23:37.310901693 3490965 cq_verifier.cc:362]                   Verify tag(101)-✅ for 10000ms
+E1208 17:23:37.311619383 3490965 cq_verifier.cc:362]                   Verify tag(102)-✅ tag(1)-✅ for 10000ms
+E1208 17:23:37.313132641 3490965 cq_verifier.cc:362]                   Verify tag(101)-✅ for 10000ms
+E1208 17:23:37.313743931 3490965 cq_verifier.cc:362]                   Verify tag(102)-✅ tag(1)-✅ for 10000ms
+E1208 17:23:37.315183240 3490965 cq_verifier.cc:362]                   Verify tag(101)-✅ for 10000ms
+E1208 17:23:37.315774510 3490965 cq_verifier.cc:362]                   Verify tag(102)-✅ tag(1)-✅ for 10000ms
+E1208 17:23:37.317193979 3490965 cq_verifier.cc:362]                   Verify tag(101)-✅ for 10000ms
+E1208 17:23:37.317789718 3490965 cq_verifier.cc:362]                   Verify tag(102)-✅ tag(1)-✅ for 10000ms
+E1208 17:23:37.319290067 3490965 cq_verifier.cc:362]                   Verify tag(101)-✅ for 10000ms
+E1208 17:23:37.319876447 3490965 cq_verifier.cc:362]                   Verify tag(102)-✅ tag(1)-✅ for 10000ms
+E1208 17:23:37.321262776 3490965 cq_verifier.cc:362]                   Verify tag(101)-✅ for 10000ms
+E1208 17:23:37.321873815 3490965 cq_verifier.cc:362]                   Verify tag(102)-✅ tag(1)-✅ for 10000ms
+E1208 17:23:37.323335545 3490965 cq_verifier.cc:362]                   Verify tag(101)-✅ for 10000ms
+E1208 17:23:37.323956364 3490965 cq_verifier.cc:362]                   Verify tag(102)-✅ tag(1)-✅ for 10000ms
+E1208 17:23:37.325415183 3490965 cq_verifier.cc:362]                   Verify tag(101)-✅ for 10000ms
+E1208 17:23:37.326047373 3490965 cq_verifier.cc:362]                   Verify tag(102)-✅ tag(1)-✅ for 10000ms
+E1208 17:23:37.327457592 3490965 cq_verifier.cc:362]                   Verify tag(101)-✅ for 10000ms
+E1208 17:23:37.328078592 3490965 cq_verifier.cc:362]                   Verify tag(102)-✅ tag(1)-✅ for 10000ms
+E1208 17:23:37.329517270 3490965 cq_verifier.cc:362]                   Verify tag(101)-✅ for 10000ms
+E1208 17:23:37.330157520 3490965 cq_verifier.cc:362]                   Verify tag(102)-✅ tag(1)-✅ for 10000ms
+E1208 17:23:37.331540309 3490965 cq_verifier.cc:362]                   Verify tag(-1)-🤷 for 10000ms
+[       OK ] CoreEnd2endTest.SimpleRequest10/Inproc (31 ms)
+[----------] 2 tests from CoreEnd2endTest (63 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (63 ms total)
+[  PASSED  ] 2 tests.
