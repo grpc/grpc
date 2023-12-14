@@ -1488,14 +1488,6 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
   });
 }
 
-#if 0
-              [md = std::move(*md)](
-                  std::tuple<NextResult<MessageHandle>,
-                             RequestMatcherInterface::MatchResult>
-                      r) mutable {
-              }
-#endif
-
 ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
     grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
   auto* chand = static_cast<Server::ChannelData*>(elem->channel_data);
