@@ -34,14 +34,15 @@ class LabelInjector(abc.ABC):
     An interface that allows you to add additional labels on the calls traced.
     """
 
-    labels: List[Dict[str, str]]
+    _labels: List[Dict[str, str]]
 
     def __init__(self):
         # Calls Python OTel API to detect resource and get labels, save
         # those lables to LabelInjector.labels.
         pass
 
-    def add_labels(self):
+    @abc.abstractmethod
+    def get_labels(self):
         # Get additional labels for this LabelInjector.
         raise NotImplementedError()
 
@@ -58,7 +59,7 @@ class OpenTelemetryPluginOption(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def label_injector(self) -> Optional[LabelInjector]:
+    def get_label_injector(self) -> Optional[LabelInjector]:
         # Returns the LabelsInjector used by this plugin option, or none.
         raise NotImplementedError()
 

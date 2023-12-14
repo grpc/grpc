@@ -19,17 +19,17 @@ from grpc_observability._open_telemetry_plugin import _OpenTelemetryPlugin
 
 
 class _OpenTelemetryExporterDelegator(_observability.Exporter):
-    plugins: Iterable[_OpenTelemetryPlugin]
+    _plugins: Iterable[_OpenTelemetryPlugin]
 
     def __init__(self, plugins: Iterable[_OpenTelemetryPlugin]):
-        self.plugins = plugins
+        self._plugins = plugins
 
     def export_stats_data(
         self, stats_data: List[_observability.StatsData]
     ) -> None:
         # Records stats data to MeterProvider.
         for data in stats_data:
-            for plugin in self.plugins:
+            for plugin in self._plugins:
                 plugin.maybe_record_stats_data(data)
 
     def export_tracing_data(
