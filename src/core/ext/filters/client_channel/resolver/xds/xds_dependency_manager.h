@@ -49,25 +49,44 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
     // Cluster map.  A cluster will have a non-OK status if either
     // (a) there was an error and we did not already have a valid
     // resource or (b) the resource does not exist.
-    // For aggregate clusters, the aggregate cluster will be first in
-    // the list, followed by the list of leaf clusters.
     struct ClusterConfig {
       // Cluster name and resource.
       std::string cluster_name;
       std::shared_ptr<const XdsClusterResource> cluster;
       // Endpoint info.  If there was an error, endpoints will be null
-      // and resolution_note will be set.
-      std::shared_ptr<const XdsEndpointResource> endpoints;
-      std::string resolution_note;
+      // and resolution_note will be set.  Not used for aggregate clusters.
+      struct EndpointConfig {
+        std::shared_ptr<const XdsEndpointResource> endpoints;
+        std::string resolution_note;
+
+        EndpointConfig(std::shared_ptr<const XdsEndpointResource> endpoints,
+                       std::string resolution_note)
+            : endpoints(std::move(endpoints)),
+              resolution_note(std::move(resolution_note)) {}
+        bool operator==(const EndpointConfig& other) const {
+          return endpoints == other.endpoints &&
+                 resolution_note == other.resolution_note;
+        }
+      };
+      // The list of leaf clusters for an aggregate cluster.
+      struct AggregateConfig {
+        std::vector<absl::string_view> leaf_clusters;
+
+        explicit AggregateConfig(std::vector<absl::string_view> clusters)
+            : leaf_clusters(std::move(clusters)) {}
+        bool operator==(const AggregateConfig& other) const {
+          return leaf_clusters == other.leaf_clusters;
+        }
+      };
+      absl::variant<EndpointConfig, AggregateConfig> children =
+          EndpointConfig(nullptr, "");
 
       bool operator==(const ClusterConfig& other) const {
         return cluster_name == other.cluster_name && cluster == other.cluster &&
-               endpoints == other.endpoints &&
-               resolution_note == other.resolution_note;
+               children == other.children;
       }
     };
-    absl::flat_hash_map<std::string, absl::StatusOr<std::vector<ClusterConfig>>>
-        clusters;
+    absl::flat_hash_map<std::string, absl::StatusOr<ClusterConfig>> clusters;
 
     std::string ToString() const;
 
@@ -189,20 +208,24 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   void PopulateDnsUpdate(const std::string& dns_name, Resolver::Result result);
 
   // Starts CDS and EDS/DNS watches for the specified cluster if needed.
-  // If the resource is available, adds an entry to cluster_list.
-  // Adds each cluster to clusters_seen.
+  // If the resource is available, adds an entry to cluster_config_map.
+  // Adds each cluster seen to clusters_seen.
   // For each EDS cluster, adds the EDS resource to eds_resources_seen.
   // For each Logical DNS cluster, adds the DNS hostname to dns_names_seen.
-  // For aggregate clusters, calls itself recursively.
+  // For aggregate clusters, calls itself recursively.  If leaf_clusters is
+  // non-null, populates it with a list of leaf clusters.
   // Returns an error if max depth is exceeded or if any of the clusters
   // in the graph report an error.
   // Returns true if all resources have been obtained.
   absl::StatusOr<bool> PopulateClusterConfigList(
       absl::string_view name,
-      std::vector<XdsConfig::ClusterConfig>* cluster_list, int depth,
-      std::set<absl::string_view>* clusters_seen,
+      absl::flat_hash_map<std::string,
+                          absl::StatusOr<XdsConfig::ClusterConfig>>*
+          cluster_config_map,
+      int depth, std::set<absl::string_view>* clusters_seen,
       std::set<absl::string_view>* eds_resources_seen,
-      std::set<absl::string_view>* dns_names_seen);
+      std::set<absl::string_view>* dns_names_seen,
+      std::vector<absl::string_view>* leaf_clusters = nullptr);
 
   // Called when an external cluster subscription is unreffed.
   void OnClusterSubscriptionUnref(absl::string_view cluster_name,

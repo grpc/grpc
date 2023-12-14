@@ -52,25 +52,33 @@ std::string XdsDependencyManager::XdsConfig::ToString() const {
       parts.push_back(p.second.status().ToString());
       parts.push_back("\n");
     } else {
-      parts.push_back("[\n");
-      for (const auto& entry : *p.second) {
-        parts.push_back(absl::StrCat(
-            "      {\n"
-            "        name: \"",
-            entry.cluster_name,
-            "\"\n"
-            "        cluster: {",
-            entry.cluster->ToString(),
-            "}\n"
-            "        endpoints: {",
-            entry.endpoints == nullptr ? "<null>" : entry.endpoints->ToString(),
-            "}\n"
-            "        resolution_note: \"",
-            entry.resolution_note,
-            "\"\n"
-            "      }\n"));
-      }
-      parts.push_back("    ]\n");
+      parts.push_back(
+          absl::StrCat("      {\n"
+                       "        name: \"",
+                       p.second->cluster_name,
+                       "\"\n"
+                       "        cluster: {",
+                       p.second->cluster->ToString(), "}\n"));
+      Match(
+          p.second->children,
+          [&](const ClusterConfig::EndpointConfig& endpoint_config) {
+            parts.push_back(
+                absl::StrCat("        endpoints: {",
+                             endpoint_config.endpoints == nullptr
+                                 ? "<null>"
+                                 : endpoint_config.endpoints->ToString(),
+                             "}\n"
+                             "        resolution_note: \"",
+                             endpoint_config.resolution_note, "\"\n"));
+          },
+          [&](const ClusterConfig::AggregateConfig& aggregate_config) {
+            parts.push_back(absl::StrCat(
+                "        leaf_clusters: [",
+                absl::StrJoin(aggregate_config.leaf_clusters, ", "), "]\n"));
+          });
+      parts.push_back(
+          "      }\n"
+          "    ]\n");
     }
   }
   parts.push_back("  }\n}");
@@ -675,10 +683,13 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
 }
 
 absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
-    absl::string_view name, std::vector<XdsConfig::ClusterConfig>* cluster_list,
+    absl::string_view name,
+    absl::flat_hash_map<std::string, absl::StatusOr<XdsConfig::ClusterConfig>>*
+        cluster_config_map,
     int depth, std::set<absl::string_view>* clusters_seen,
     std::set<absl::string_view>* eds_resources_seen,
-    std::set<absl::string_view>* dns_names_seen) {
+    std::set<absl::string_view>* dns_names_seen,
+    std::vector<absl::string_view>* leaf_clusters) {
   if (depth == kMaxXdsAggregateClusterRecursionDepth) {
     return absl::UnavailableError("aggregate cluster graph exceeds max depth");
   }
@@ -731,13 +742,14 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
             eds_state.update.resolution_note.empty()) {
           return false;
         }
-        // Populate endpoint info.
-        cluster_list->emplace_back();
-        auto& entry = cluster_list->back();
-        entry.cluster_name = std::string(name);
-        entry.cluster = *state.update;
-        entry.endpoints = eds_state.update.endpoints;
-        entry.resolution_note = eds_state.update.resolution_note;
+        // Populate cluster config.
+        auto& cluster_config = (*cluster_config_map)[name].emplace();
+        cluster_config.cluster_name = std::string(name);
+        cluster_config.cluster = *state.update;
+        cluster_config.children
+            .emplace<XdsConfig::ClusterConfig::EndpointConfig>(
+                eds_state.update.endpoints, eds_state.update.resolution_note);
+        if (leaf_clusters != nullptr) leaf_clusters->push_back(name);
         return true;
       },
       // LOGICAL_DNS cluster.
@@ -774,44 +786,58 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
             result.resolution_note = absl::StrCat(
                 "failed to create DNS resolver for ", logical_dns.hostname);
             PopulateDnsUpdate(logical_dns.hostname, std::move(result));
-            return true;
+          } else {
+            dns_state.resolver->StartLocked();
+            return false;
           }
-          dns_state.resolver->StartLocked();
-          return false;
         }
         // Check if result has been returned.
         if (dns_state.update.endpoints == nullptr &&
             dns_state.update.resolution_note.empty()) {
           return false;
         }
-        // Populate endpoint info.
-        cluster_list->emplace_back();
-        auto& entry = cluster_list->back();
-        entry.cluster_name = std::string(name);
-        entry.cluster = *state.update;
-        entry.endpoints = dns_state.update.endpoints;
-        entry.resolution_note = dns_state.update.resolution_note;
+        // Populate cluster config.
+        auto& cluster_config = (*cluster_config_map)[name].emplace();
+        cluster_config.cluster_name = std::string(name);
+        cluster_config.cluster = *state.update;
+        cluster_config.children
+            .emplace<XdsConfig::ClusterConfig::EndpointConfig>(
+                dns_state.update.endpoints, dns_state.update.resolution_note);
+        if (leaf_clusters != nullptr) leaf_clusters->push_back(name);
         return true;
       },
       // Aggregate cluster.  Recursively expand to child clusters.
       [&](const XdsClusterResource::Aggregate& aggregate)
           -> absl::StatusOr<bool> {
-        // If this is the root cluster, add it.
-        if (clusters_seen->size() == 1) {
-          cluster_list->emplace_back();
-          auto& entry = cluster_list->back();
-          entry.cluster_name = std::string(name);
-          entry.cluster = *state.update;
-        }
+        // Grab a ref to the CDS resource for the aggregate cluster here,
+        // since our reference into cluster_config_map will be invalidated
+        // when we recursively call ourselves and add entries to the
+        // map for underlying clusters.
+        auto cluster_resource = *state.update;
         // Recursively expand leaf clusters.
+        std::vector<absl::string_view> child_leaf_clusters;
         bool missing_cluster = false;
         for (const std::string& child_name :
              aggregate.prioritized_cluster_names) {
           auto result = PopulateClusterConfigList(
-              child_name, cluster_list, depth + 1, clusters_seen,
-              eds_resources_seen, dns_names_seen);
+              child_name, cluster_config_map, depth + 1, clusters_seen,
+              eds_resources_seen, dns_names_seen, &child_leaf_clusters);
           if (!result.ok()) return result;
           if (!*result) missing_cluster = true;
+        }
+        // If this is the root of the tree, populate cluster config.
+        if (depth == 0) {
+          auto& cluster_config = (*cluster_config_map)[name].emplace();
+          cluster_config.cluster_name = std::string(name);
+          cluster_config.cluster = std::move(cluster_resource);
+          cluster_config.children
+              .emplace<XdsConfig::ClusterConfig::AggregateConfig>(
+                  std::move(child_leaf_clusters));
+        } else if (leaf_clusters != nullptr) {
+          // Otherwise, propagate leaf cluster list up the tree.
+          leaf_clusters->insert(leaf_clusters->end(),
+                                child_leaf_clusters.begin(),
+                                child_leaf_clusters.end());
         }
         return !missing_cluster;
       });
@@ -874,22 +900,24 @@ void XdsDependencyManager::MaybeReportUpdate() {
   std::set<absl::string_view> dns_names_seen;
   bool missing_data = false;
   for (const absl::string_view& cluster : clusters_to_watch) {
-    auto& cluster_list = config->clusters[cluster];
-    cluster_list.emplace();
     auto result =
-        PopulateClusterConfigList(cluster, &*cluster_list, 0, &clusters_seen,
+        PopulateClusterConfigList(cluster, &config->clusters, 0, &clusters_seen,
                                   &eds_resources_seen, &dns_names_seen);
+    auto& cluster_config = config->clusters[cluster];
     if (!result.ok()) {
-      cluster_list = result.status();
+      cluster_config = result.status();
     } else if (!*result) {
       missing_data = true;
-    } else if (cluster_list->empty() ||
-               (absl::holds_alternative<XdsClusterResource::Aggregate>(
-                    cluster_list->front().cluster->type) &&
-                cluster_list->size() == 1)) {
-      cluster_list = absl::UnavailableError(
-          absl::StrCat("aggregate cluster dependency graph for ", cluster,
-                       " has no leaf clusters"));
+    } else if (cluster_config.ok() && cluster_config->cluster != nullptr) {
+      auto* aggregate_config =
+          absl::get_if<XdsConfig::ClusterConfig::AggregateConfig>(
+              &cluster_config->children);
+      if (aggregate_config != nullptr &&
+          aggregate_config->leaf_clusters.empty()) {
+        cluster_config = absl::UnavailableError(
+            absl::StrCat("aggregate cluster dependency graph for ", cluster,
+                         " has no leaf clusters"));
+      }
     }
   }
   // Remove entries in cluster_watchers_ for any clusters not in clusters_seen.

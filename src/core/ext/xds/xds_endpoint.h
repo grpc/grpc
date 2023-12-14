@@ -62,6 +62,7 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
     std::map<XdsLocalityName*, Locality, XdsLocalityName::Less> localities;
 
     bool operator==(const Priority& other) const;
+    bool operator!=(const Priority& other) const { return !(*this == other); }
     std::string ToString() const;
   };
   using PriorityList = std::vector<Priority>;
@@ -121,7 +122,10 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
   RefCountedPtr<DropConfig> drop_config;
 
   bool operator==(const XdsEndpointResource& other) const {
-    return priorities == other.priorities && *drop_config == *other.drop_config;
+    if (priorities != other.priorities) return false;
+    if (drop_config == nullptr) return other.drop_config == nullptr;
+    if (other.drop_config == nullptr) return false;
+    return *drop_config == *other.drop_config;
   }
   std::string ToString() const;
 };
