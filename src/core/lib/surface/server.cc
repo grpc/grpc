@@ -1319,8 +1319,8 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
         static_cast<ChannelData*>(arg)->SetRegisteredMethodOnMetadata(
             *metadata);
       };
-      op->set_accept_stream_user_data = this;
     }
+    op->set_accept_stream_user_data = this;
   }
   if (transport->server_transport() != nullptr) {
     ++accept_stream_types;
