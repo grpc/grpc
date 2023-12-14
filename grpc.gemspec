@@ -67,6 +67,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/grpc_posix.h )
   s.files += %w( include/grpc/grpc_security.h )
   s.files += %w( include/grpc/grpc_security_constants.h )
+  s.files += %w( include/grpc/impl/call.h )
   s.files += %w( include/grpc/impl/channel_arg_names.h )
   s.files += %w( include/grpc/impl/codegen/atm.h )
   s.files += %w( include/grpc/impl/codegen/atm_gcc_atomic.h )
