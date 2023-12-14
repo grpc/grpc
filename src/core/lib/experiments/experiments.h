@@ -109,6 +109,7 @@ inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
 inline bool IsV3CompressionFilterEnabled() { return false; }
+inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -173,6 +174,7 @@ inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
 inline bool IsV3CompressionFilterEnabled() { return false; }
+inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -237,6 +239,7 @@ inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
 inline bool IsV3CompressionFilterEnabled() { return false; }
+inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -285,6 +288,7 @@ enum ExperimentIds {
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdV3ChannelIdleFilters,
   kExperimentIdV3CompressionFilter,
+  kExperimentIdV3ServerAuthFilter,
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
   kExperimentIdWriteSizePolicy,
@@ -431,6 +435,10 @@ inline bool IsV3ChannelIdleFiltersEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_V3_COMPRESSION_FILTER
 inline bool IsV3CompressionFilterEnabled() {
   return IsExperimentEnabled(kExperimentIdV3CompressionFilter);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_V3_SERVER_AUTH_FILTER
+inline bool IsV3ServerAuthFilterEnabled() {
+  return IsExperimentEnabled(kExperimentIdV3ServerAuthFilter);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() {
