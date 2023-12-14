@@ -1765,7 +1765,6 @@ grpc_cc_library(
         "//src/core:lib/security/transport/secure_endpoint.cc",
         "//src/core:lib/security/transport/security_handshaker.cc",
         "//src/core:lib/security/transport/server_auth_filter.cc",
-        "//src/core:lib/security/transport/legacy_server_auth_filter.cc",
         "//src/core:lib/security/transport/tsi_error.cc",
     ],
     hdrs = [
