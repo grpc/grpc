@@ -23,7 +23,6 @@
 
 #include <atomic>
 #include <cstdint>
-#include <initializer_list>
 #include <map>
 #include <string>
 #include <utility>
@@ -38,7 +37,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 

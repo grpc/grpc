@@ -27,7 +27,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <memory>
 #include <new>
 #include <string>
@@ -36,7 +35,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -47,6 +45,7 @@
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/call.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -55,7 +54,6 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/call_tracer.h"
@@ -150,6 +148,10 @@ class Call : public CppImplOf<Call, grpc_call> {
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
   virtual grpc_call_stack* call_stack() = 0;
+
+  // Return the EventEngine used for this call's async execution.
+  virtual grpc_event_engine::experimental::EventEngine* event_engine()
+      const = 0;
 
  protected:
   // The maximum number of concurrent batches possible.
@@ -530,6 +532,10 @@ class FilterStackCall final : public Call {
     return reinterpret_cast<grpc_call_stack*>(
         reinterpret_cast<char*>(this) +
         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(*this)));
+  }
+
+  grpc_event_engine::experimental::EventEngine* event_engine() const override {
+    return channel()->event_engine();
   }
 
   grpc_call_element* call_elem(size_t idx) {
@@ -1308,6 +1314,18 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
 void FilterStackCall::BatchControl::PostCompletion() {
   FilterStackCall* call = call_;
   grpc_error_handle error = batch_error_.get();
+
+  if (IsCallStatusOverrideOnCancellationEnabled()) {
+    // On the client side, if final call status is already known (i.e if this op
+    // includes recv_trailing_metadata) and if the call status is known to be
+    // OK, then disregard the batch error to ensure call->receiving_buffer_ is
+    // not cleared.
+    if (op_.recv_trailing_metadata && call->is_client() &&
+        call->status_error_.ok()) {
+      error = absl::OkStatus();
+    }
+  }
+
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "tag:%p batch_error=%s op:%s",
             completion_data_.notify_tag.tag, error.ToString().c_str(),
@@ -1329,6 +1347,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
   if (op_.send_trailing_metadata) {
     call->send_trailing_metadata_.Clear();
   }
+
   if (!error.ok() && op_.recv_message && *call->receiving_buffer_ != nullptr) {
     grpc_byte_buffer_destroy(*call->receiving_buffer_);
     *call->receiving_buffer_ = nullptr;
@@ -2039,7 +2058,7 @@ class PromiseBasedCall : public Call,
     return failed_before_recv_message_.load(std::memory_order_relaxed);
   }
 
-  grpc_event_engine::experimental::EventEngine* event_engine() const final {
+  grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return channel()->event_engine();
   }
 
@@ -2756,13 +2775,18 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   }
 
   void CancelWithError(absl::Status error) override {
+    if (cancel_with_error_called_.exchange(true, std::memory_order_relaxed)) {
+      return;
+    }
     if (!started_.exchange(true, std::memory_order_relaxed)) {
       // Initial metadata not sent yet, so we can just fail the call.
       Spawn(
           "cancel_before_initial_metadata",
           [error = std::move(error), this]() {
             server_to_client_messages_.sender.Close();
-            Finish(ServerMetadataFromStatus(error));
+            auto md = ServerMetadataFromStatus(error);
+            md->Set(GrpcCallWasCancelled(), true);
+            Finish(std::move(md));
             return Empty{};
           },
           [](Empty) {});
@@ -2824,12 +2848,17 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   Pipe<MessageHandle> client_to_server_messages_{arena()};
   Pipe<MessageHandle> server_to_client_messages_{arena()};
   bool is_trailers_only_ = false;
+  bool scheduled_receive_status_ = false;
+  bool scheduled_send_close_ = false;
   // True once the promise for the call is started.
   // This corresponds to sending initial metadata, or cancelling before doing
   // so.
   // In the latter case real world code sometimes does not sent the initial
   // metadata, and so gating based upon that does not work out.
   std::atomic<bool> started_{false};
+  // True after the first CancelWithError call - prevents spamming cancels from
+  // overflowing the party.
+  std::atomic<bool> cancel_with_error_called_{false};
   // TODO(ctiller): delete when we remove the filter based API (may require some
   // cleanup in wrapped languages: they depend on this to hold slice refs)
   ServerMetadataHandle recv_initial_metadata_;
@@ -2893,9 +2922,17 @@ grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
       case GRPC_OP_RECV_MESSAGE:
+        if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        if (scheduled_send_close_) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
         if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (scheduled_receive_status_) {
+          return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+        }
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
@@ -2938,6 +2975,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             spawner);
       } break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
+        scheduled_receive_status_ = true;
         StartRecvStatusOnClient(completion, op.data.recv_status_on_client,
                                 spawner);
       } break;
@@ -2949,11 +2987,13 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         StartRecvMessage(
             op, completion,
             [this]() {
-              return server_initial_metadata_.receiver.AwaitClosed();
+              return Race(server_initial_metadata_.receiver.AwaitClosed(),
+                          server_to_client_messages_.receiver.AwaitClosed());
             },
             &server_to_client_messages_.receiver, false, spawner);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        scheduled_send_close_ = true;
         spawner.Spawn(
             "send_close_from_client",
             [this]() {
@@ -2998,9 +3038,12 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
     Party::BulkSpawner& spawner) {
   spawner.Spawn(
       "recv_initial_metadata",
-      Race(server_initial_metadata_.receiver.Next(),
-           Map(finished(),
-               [](Empty) { return NextResult<ServerMetadataHandle>(true); })),
+      [this]() {
+        return Race(server_initial_metadata_.receiver.Next(),
+                    Map(finished(), [](Empty) {
+                      return NextResult<ServerMetadataHandle>(true);
+                    }));
+      },
       [this, array,
        completion =
            AddOpToCompletion(completion, PendingOp::kReceiveInitialMetadata)](
@@ -3039,6 +3082,7 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
   client_to_server_messages_.receiver.CloseWithError();
   if (trailing_metadata->get(GrpcCallWasCancelled()).value_or(false)) {
     server_to_client_messages_.receiver.CloseWithError();
+    server_initial_metadata_.receiver.CloseWithError();
   }
   if (auto* channelz_channel = channel()->channelz_node()) {
     if (trailing_metadata->get(GrpcStatusMetadata())
@@ -3759,4 +3803,9 @@ const char* grpc_call_error_to_string(grpc_call_error error) {
       return "GRPC_CALL_OK";
   }
   GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOW");
+}
+
+void grpc_call_run_in_event_engine(const grpc_call* call,
+                                   absl::AnyInvocable<void()> cb) {
+  grpc_core::Call::FromC(call)->event_engine()->Run(std::move(cb));
 }

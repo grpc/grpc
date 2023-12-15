@@ -21,8 +21,6 @@
 
 #include <stdint.h>
 
-#include "absl/strings/string_view.h"
-
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
@@ -37,15 +35,15 @@ class RequestHashAttribute
  public:
   static UniqueTypeName TypeName();
 
-  explicit RequestHashAttribute(absl::string_view request_hash)
+  explicit RequestHashAttribute(uint64_t request_hash)
       : request_hash_(request_hash) {}
 
-  absl::string_view request_hash() const { return request_hash_; }
+  uint64_t request_hash() const { return request_hash_; }
 
  private:
   UniqueTypeName type() const override { return TypeName(); }
 
-  absl::string_view request_hash_;
+  uint64_t request_hash_;
 };
 
 // Helper Parsing method to parse ring hash policy configs; for example, ring

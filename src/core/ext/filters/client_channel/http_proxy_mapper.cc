@@ -26,7 +26,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -58,15 +57,10 @@
 namespace grpc_core {
 namespace {
 
-bool ServerInCIDRRange(absl::string_view server_host,
-                       absl::string_view no_proxy_entry) {
-  auto server_address = StringToSockaddr(server_host, 0);
-  if (!server_address.ok()) {
-    return false;
-  }
+bool ServerInCIDRRange(const grpc_resolved_address& server_address,
+                       absl::string_view cidr_range) {
   std::pair<absl::string_view, absl::string_view> possible_cidr =
-      absl::StrSplit(no_proxy_entry, absl::MaxSplits('/', 2),
-                     absl::SkipEmpty());
+      absl::StrSplit(cidr_range, absl::MaxSplits('/', 1), absl::SkipEmpty());
   if (possible_cidr.first.empty() || possible_cidr.second.empty()) {
     return false;
   }
@@ -77,8 +71,30 @@ bool ServerInCIDRRange(absl::string_view server_host,
   uint32_t mask_bits = 0;
   if (absl::SimpleAtoi(possible_cidr.second, &mask_bits)) {
     grpc_sockaddr_mask_bits(&*proxy_address, mask_bits);
-    return grpc_sockaddr_match_subnet(&*server_address, &*proxy_address,
+    return grpc_sockaddr_match_subnet(&server_address, &*proxy_address,
                                       mask_bits);
+  }
+  return false;
+}
+
+bool ExactMatchOrSubdomain(absl::string_view host_name,
+                           absl::string_view host_name_or_domain) {
+  return absl::EndsWithIgnoreCase(host_name, host_name_or_domain);
+}
+
+// Parses the list of host names, addresses or subnet masks and returns true if
+// the target address or host matches any value.
+bool AddressIncluded(
+    const absl::optional<grpc_resolved_address>& target_address,
+    absl::string_view host_name, absl::string_view addresses_and_subnets) {
+  for (absl::string_view entry :
+       absl::StrSplit(addresses_and_subnets, ',', absl::SkipEmpty())) {
+    absl::string_view sanitized_entry = absl::StripAsciiWhitespace(entry);
+    if (ExactMatchOrSubdomain(host_name, sanitized_entry) ||
+        (target_address.has_value() &&
+         ServerInCIDRRange(*target_address, sanitized_entry))) {
+      return true;
+    }
   }
   return false;
 }
@@ -157,6 +173,33 @@ std::string MaybeAddDefaultPort(absl::string_view target) {
   return std::string(target);
 }
 
+absl::optional<std::string> GetChannelArgOrEnvVarValue(
+    const ChannelArgs& args, absl::string_view channel_arg,
+    const char* env_var) {
+  auto arg_value = args.GetOwnedString(channel_arg);
+  if (arg_value.has_value()) {
+    return arg_value;
+  }
+  return GetEnv(env_var);
+}
+
+absl::optional<grpc_resolved_address> GetAddressProxyServer(
+    const ChannelArgs& args) {
+  auto address_value = GetChannelArgOrEnvVarValue(
+      args, GRPC_ARG_ADDRESS_HTTP_PROXY, HttpProxyMapper::kAddressProxyEnvVar);
+  if (!address_value.has_value()) {
+    return absl::nullopt;
+  }
+  auto address = StringToSockaddr(*address_value);
+  if (!address.ok()) {
+    gpr_log(GPR_ERROR, "cannot parse value of '%s' env var. Error: %s",
+            HttpProxyMapper::kAddressProxyEnvVar,
+            address.status().ToString().c_str());
+    return absl::nullopt;
+  }
+  return *address;
+}
+
 }  // namespace
 
 absl::optional<std::string> HttpProxyMapper::MapName(
@@ -191,7 +234,6 @@ absl::optional<std::string> HttpProxyMapper::MapName(
     no_proxy_str = GetEnv("no_proxy");
   }
   if (no_proxy_str.has_value()) {
-    bool use_proxy = true;
     std::string server_host;
     std::string server_port;
     if (!SplitHostPort(absl::StripPrefix(uri->path(), "/"), &server_host,
@@ -201,19 +243,15 @@ absl::optional<std::string> HttpProxyMapper::MapName(
               "host '%s'",
               std::string(server_uri).c_str());
     } else {
-      std::vector<absl::string_view> no_proxy_hosts =
-          absl::StrSplit(*no_proxy_str, ',', absl::SkipEmpty());
-      for (const auto& no_proxy_entry : no_proxy_hosts) {
-        auto entry = absl::StripAsciiWhitespace(no_proxy_entry);
-        if (absl::EndsWithIgnoreCase(server_host, entry) ||
-            ServerInCIDRRange(server_host, entry)) {
-          gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
-                  std::string(server_uri).c_str());
-          use_proxy = false;
-          break;
-        }
+      auto address = StringToSockaddr(server_host, 0);
+      if (AddressIncluded(address.ok()
+                              ? absl::optional<grpc_resolved_address>(*address)
+                              : absl::nullopt,
+                          server_host, *no_proxy_str)) {
+        gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
+                std::string(server_uri).c_str());
+        return absl::nullopt;
       }
-      if (!use_proxy) return absl::nullopt;
     }
   }
   *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER,
@@ -227,6 +265,35 @@ absl::optional<std::string> HttpProxyMapper::MapName(
         absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred.get()));
   }
   return name_to_resolve;
+}
+
+absl::optional<grpc_resolved_address> HttpProxyMapper::MapAddress(
+    const grpc_resolved_address& address, ChannelArgs* args) {
+  auto proxy_address = GetAddressProxyServer(*args);
+  if (!proxy_address.has_value()) {
+    return absl::nullopt;
+  }
+  auto address_string = grpc_sockaddr_to_string(&address, true);
+  if (!address_string.ok()) {
+    gpr_log(GPR_ERROR, "Unable to convert address to string: %s",
+            std::string(address_string.status().message()).c_str());
+    return absl::nullopt;
+  }
+  std::string host_name, port;
+  if (!SplitHostPort(*address_string, &host_name, &port)) {
+    gpr_log(GPR_ERROR, "Address %s cannot be split in host and port",
+            address_string->c_str());
+    return absl::nullopt;
+  }
+  auto enabled_addresses = GetChannelArgOrEnvVarValue(
+      *args, GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES,
+      kAddressProxyEnabledAddressesEnvVar);
+  if (!enabled_addresses.has_value() ||
+      !AddressIncluded(address, host_name, *enabled_addresses)) {
+    return absl::nullopt;
+  }
+  *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER, *address_string);
+  return proxy_address;
 }
 
 void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder) {

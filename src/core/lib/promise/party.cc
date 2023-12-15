@@ -17,14 +17,12 @@
 #include "src/core/lib/promise/party.h"
 
 #include <atomic>
-#include <initializer_list>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -249,7 +247,7 @@ bool Party::RunParty() {
     }
     // Poll the participant.
     currently_polling_ = i;
-    bool done = participant->Poll();
+    bool done = participant->PollParticipantPromise();
     currently_polling_ = kNotPolling;
     if (done) {
       if (!name.empty()) {

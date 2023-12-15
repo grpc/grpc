@@ -290,7 +290,10 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
         if server_runner is None:
             server_runner = self.server_runner
         # Load Backends
-        neg_name, neg_zones = server_runner.k8s_namespace.get_service_neg(
+        (
+            neg_name,
+            neg_zones,
+        ) = server_runner.k8s_namespace.parse_service_neg_status(
             server_runner.service_name, self.server_port
         )
 
@@ -305,7 +308,10 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
         if server_runner is None:
             server_runner = self.server_runner
         # Load Backends
-        neg_name, neg_zones = server_runner.k8s_namespace.get_service_neg(
+        (
+            neg_name,
+            neg_zones,
+        ) = server_runner.k8s_namespace.parse_service_neg_status(
             server_runner.service_name, self.server_port
         )
 
@@ -733,6 +739,30 @@ class IsolatedXdsKubernetesTestCase(
             force=self.force_cleanup, force_namespace=self.force_cleanup
         )
 
+    def _start_test_client(
+        self,
+        server_target: str,
+        *,
+        wait_for_active_ads: bool = True,
+        wait_for_server_channel_ready: bool = True,
+        wait_for_active_ads_timeout: Optional[_timedelta] = None,
+        wait_for_server_channel_ready_timeout: Optional[_timedelta] = None,
+        **kwargs,
+    ) -> XdsTestClient:
+        test_client = self.client_runner.run(
+            server_target=server_target, **kwargs
+        )
+        if wait_for_active_ads:
+            test_client.wait_for_active_xds_channel(
+                xds_server_uri=self.xds_server_uri,
+                timeout=wait_for_active_ads_timeout,
+            )
+        if wait_for_server_channel_ready:
+            test_client.wait_for_server_channel_ready(
+                timeout=wait_for_server_channel_ready_timeout,
+            )
+        return test_client
+
 
 class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
     """Regular test case base class for testing PSM features in isolation."""
@@ -815,13 +845,6 @@ class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
         self, test_server: XdsTestServer, **kwargs
     ) -> XdsTestClient:
         return self._start_test_client(test_server.xds_uri, **kwargs)
-
-    def _start_test_client(self, server_target: str, **kwargs) -> XdsTestClient:
-        test_client = self.client_runner.run(
-            server_target=server_target, **kwargs
-        )
-        test_client.wait_for_active_server_channel()
-        return test_client
 
 
 class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
@@ -942,15 +965,15 @@ class SecurityXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
         self,
         test_server: XdsTestServer,
         *,
-        wait_for_active_server_channel=True,
+        wait_for_server_channel_ready=True,
         **kwargs,
     ) -> XdsTestClient:
-        test_client = self.client_runner.run(
-            server_target=test_server.xds_uri, secure_mode=True, **kwargs
+        return self._start_test_client(
+            server_target=test_server.xds_uri,
+            wait_for_server_channel_ready=wait_for_server_channel_ready,
+            secure_mode=True,
+            **kwargs,
         )
-        if wait_for_active_server_channel:
-            test_client.wait_for_active_server_channel()
-        return test_client
 
     def assertTestAppSecurity(
         self,

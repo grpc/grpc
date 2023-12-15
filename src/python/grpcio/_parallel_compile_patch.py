@@ -1,4 +1,4 @@
-# Copyright 2018 The gRPC Authors
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# This file has been automatically generated from a template file.
+# Please make modifications to
+# `$REPO_ROOT/templates/src/python/grpcio/_parallel_compile_patch.py.template`
+# instead. This file can be regenerated from the template by running
+# `tools/buildgen/generate_projects.sh`.
+
 """Patches the compile() to allow enable parallel compilation of C/C++.
 
 build_ext has lots of C/C++ files and normally them one by one.

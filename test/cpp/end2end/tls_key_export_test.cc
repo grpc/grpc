@@ -33,6 +33,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
@@ -196,7 +197,7 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 
     for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       ASSERT_NE(0, ports_[i]);
-      server_addresses_.push_back(absl::StrCat("localhost:", ports_[i]));
+      server_addresses_.push_back(grpc_core::LocalIpAndPort(ports_[i]));
 
       // Configure tls credential options for each stub. Each stub connects to
       // a separate port on the server.

@@ -85,13 +85,23 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
     return run_next(std::move(prior));
   }
 };
+template <typename T, typename AnyType = void>
+struct TakeValueExists {
+  static constexpr bool value = false;
+};
+template <typename T>
+struct TakeValueExists<T,
+                       absl::void_t<decltype(TakeValue(std::declval<T>()))>> {
+  static constexpr bool value = true;
+};
 // If there exists a function 'IsStatusOk(const T&) -> bool' then we assume that
 // T is a status type for the purposes of promise sequences, and a non-OK T
 // should terminate the sequence and return.
 template <typename T>
 struct TrySeqTraitsWithSfinae<
     T, absl::enable_if_t<
-           std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value,
+           std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
+               !TakeValueExists<T>::value,
            void>> {
   using UnwrappedType = void;
   using WrappedType = T;
@@ -102,7 +112,31 @@ struct TrySeqTraitsWithSfinae<
   static bool IsOk(const T& status) { return IsStatusOk(status); }
   template <typename R>
   static R ReturnValue(T&& status) {
-    return R(std::move(status));
+    return StatusCast<R>(std::move(status));
+  }
+  template <typename Result, typename RunNext>
+  static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
+    if (!IsStatusOk(prior)) return Result(std::move(prior));
+    return run_next(std::move(prior));
+  }
+};
+template <typename T>
+struct TrySeqTraitsWithSfinae<
+    T, absl::enable_if_t<
+           std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
+               TakeValueExists<T>::value,
+           void>> {
+  using UnwrappedType = decltype(TakeValue(std::declval<T>()));
+  using WrappedType = T;
+  template <typename Next>
+  static auto CallFactory(Next* next, T&& status) {
+    return next->Make(TakeValue(std::forward<T>(status)));
+  }
+  static bool IsOk(const T& status) { return IsStatusOk(status); }
+  template <typename R>
+  static R ReturnValue(T&& status) {
+    GPR_DEBUG_ASSERT(!IsStatusOk(status));
+    return StatusCast<R>(std::move(status));
   }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {

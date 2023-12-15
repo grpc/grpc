@@ -17,6 +17,7 @@ Provides an interface to xDS Test Client running remotely.
 import datetime
 import functools
 import logging
+import time
 from typing import Iterable, List, Optional
 
 import framework.errors
@@ -36,6 +37,7 @@ _XdsUpdateClientConfigureServiceClient = (
 )
 _ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
 _ChannelzChannel = grpc_channelz.Channel
+_ChannelzChannelData = grpc_channelz.ChannelData
 _ChannelzChannelState = grpc_channelz.ChannelState
 _ChannelzSubchannel = grpc_channelz.Subchannel
 _ChannelzSocket = grpc_channelz.Socket
@@ -43,6 +45,8 @@ _CsdsClient = grpc_csds.CsdsClient
 
 # Use in get_load_balancer_stats request to request all metadata.
 REQ_LB_STATS_METADATA_ALL = ("*",)
+
+DEFAULT_TD_XDS_URI = "trafficdirector.googleapis.com:443"
 
 
 class XdsTestClient(framework.rpc.grpc.GrpcApp):
@@ -129,7 +133,12 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             timeout_sec=timeout_sec
         )
 
-    def wait_for_active_server_channel(self) -> _ChannelzChannel:
+    def wait_for_server_channel_ready(
+        self,
+        *,
+        timeout: Optional[_timedelta] = None,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
         """Wait for the channel to the server to transition to READY.
 
         Raises:
@@ -137,13 +146,42 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         """
         try:
             return self.wait_for_server_channel_state(
-                _ChannelzChannelState.READY
+                _ChannelzChannelState.READY,
+                timeout=timeout,
+                rpc_deadline=rpc_deadline,
             )
         except retryers.RetryError as retry_err:
             if isinstance(retry_err.exception(), self.ChannelNotFound):
                 retry_err.add_note(
                     framework.errors.FrameworkError.note_blanket_error(
                         "The client couldn't connect to the server."
+                    )
+                )
+            raise
+
+    def wait_for_active_xds_channel(
+        self,
+        *,
+        xds_server_uri: Optional[str] = None,
+        timeout: Optional[_timedelta] = None,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
+        """Wait until the xds channel is active or timeout.
+
+        Raises:
+            GrpcApp.NotFound: If the channel to xds never transitioned to active.
+        """
+        try:
+            return self.wait_for_xds_channel_active(
+                xds_server_uri=xds_server_uri,
+                timeout=timeout,
+                rpc_deadline=rpc_deadline,
+            )
+        except retryers.RetryError as retry_err:
+            if isinstance(retry_err.exception(), self.ChannelNotFound):
+                retry_err.add_note(
+                    framework.errors.FrameworkError.note_blanket_error(
+                        "The client couldn't connect to the xDS control plane."
                     )
                 )
             raise
@@ -223,6 +261,96 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         )
         return channel
 
+    def wait_for_xds_channel_active(
+        self,
+        *,
+        xds_server_uri: Optional[str] = None,
+        timeout: Optional[_timedelta] = None,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
+        if not xds_server_uri:
+            xds_server_uri = DEFAULT_TD_XDS_URI
+        # When polling for a state, prefer smaller wait times to avoid
+        # exhausting all allowed time on a single long RPC.
+        if rpc_deadline is None:
+            rpc_deadline = _timedelta(seconds=30)
+
+        retryer = retryers.exponential_retryer_with_timeout(
+            wait_min=_timedelta(seconds=10),
+            wait_max=_timedelta(seconds=25),
+            timeout=_timedelta(minutes=5) if timeout is None else timeout,
+        )
+
+        logger.info(
+            "[%s] ADS: Waiting for active calls to xDS control plane to %s",
+            self.hostname,
+            xds_server_uri,
+        )
+        channel = retryer(
+            self.find_active_xds_channel,
+            xds_server_uri=xds_server_uri,
+            rpc_deadline=rpc_deadline,
+        )
+        logger.info(
+            "[%s] ADS: Detected active calls to xDS control plane %s",
+            self.hostname,
+            xds_server_uri,
+        )
+        return channel
+
+    def find_active_xds_channel(
+        self,
+        xds_server_uri: str,
+        *,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
+        rpc_params = {}
+        if rpc_deadline is not None:
+            rpc_params["deadline_sec"] = rpc_deadline.total_seconds()
+
+        for channel in self.find_channels(xds_server_uri, **rpc_params):
+            logger.info(
+                "[%s] xDS control plane channel: %s",
+                self.hostname,
+                _ChannelzServiceClient.channel_repr(channel),
+            )
+
+            try:
+                channel_upd = self.check_channel_in_flight_calls(
+                    channel, **rpc_params
+                )
+                logger.info(
+                    "[%s] Detected active calls to xDS control plane %s,"
+                    " channel: %s",
+                    self.hostname,
+                    xds_server_uri,
+                    _ChannelzServiceClient.channel_repr(channel_upd),
+                )
+                return channel_upd
+            except self.NotFound:
+                # Continue checking other channels to the same target on
+                # not found.
+                continue
+            except framework.rpc.grpc.RpcError as err:
+                # Logged at 'info' and not at 'warning' because this method is
+                # expected to be called in a retryer. If this error eventually
+                # causes the retryer to fail, it will be logged fully at 'error'
+                logger.info(
+                    "[%s] Unexpected error while checking xDS control plane"
+                    " channel %s: %r",
+                    self.hostname,
+                    _ChannelzServiceClient.channel_repr(channel),
+                    err,
+                )
+                raise
+
+        raise self.ChannelNotActive(
+            f"[{self.hostname}] Client has no"
+            f" active channel with xDS control plane {xds_server_uri}",
+            src=self.hostname,
+            dst=xds_server_uri,
+        )
+
     def find_server_channel_with_state(
         self,
         expected_state: _ChannelzChannelState,
@@ -237,7 +365,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         expected_state_name: str = _ChannelzChannelState.Name(expected_state)
         target: str = self.server_target
 
-        for channel in self.get_server_channels(target, **rpc_params):
+        for channel in self.find_channels(target, **rpc_params):
             channel_state: _ChannelzChannelState = channel.data.state.state
             logger.info(
                 "[%s] Server channel: %s",
@@ -272,10 +400,12 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             expected_state=expected_state,
         )
 
-    def get_server_channels(
-        self, server_target: str, **kwargs
+    def find_channels(
+        self,
+        target: str,
+        **rpc_params,
     ) -> Iterable[_ChannelzChannel]:
-        return self.channelz.find_channels_for_target(server_target, **kwargs)
+        return self.channelz.find_channels_for_target(target, **rpc_params)
 
     def find_subchannel_with_state(
         self, channel: _ChannelzChannel, state: _ChannelzChannelState, **kwargs
@@ -305,6 +435,66 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                     subchannels.append(subchannel)
         return subchannels
 
+    def check_channel_in_flight_calls(
+        self,
+        channel: _ChannelzChannel,
+        *,
+        wait_between_checks: Optional[_timedelta] = None,
+        **rpc_params,
+    ) -> Optional[_ChannelzChannel]:
+        """Checks if the channel has calls that started, but didn't complete.
+
+        We consider the channel is active if channel is in READY state and
+        calls_started is greater than calls_failed.
+
+        This method address race where a call to the xDS control plane server
+        has just started and a channelz request comes in before the call has
+        had a chance to fail.
+
+        With channels to the xDS control plane, the channel can be READY but the
+        calls could be failing to initialize, f.e. due to a failure to fetch
+        OAUTH2 token. To increase the confidence that we have a valid channel
+        with working OAUTH2 tokens, we check whether the channel is in a READY
+        state with active calls twice with an interval of 2 seconds between the
+        two attempts. If the OAUTH2 token is not valid, the call would fail and
+        be caught in either the first attempt, or the second attempt. It is
+        possible that between the two attempts, a call fails and a new call is
+        started, so we also test for equality between the started calls of the
+        two channelz results.
+
+        There still exists a possibility that a call fails on fetching OAUTH2
+        token after 2 seconds (maybe because there is a slowdown in the
+        system.) If such a case is observed, consider increasing the interval
+        from 2 seconds to 5 seconds.
+
+        Returns updated channel on success, or None on failure.
+        """
+        if not self.calc_calls_in_flight(channel):
+            return None
+
+        if not wait_between_checks:
+            wait_between_checks = _timedelta(seconds=2)
+
+        # Load the channel second time after the timeout.
+        time.sleep(wait_between_checks.total_seconds())
+        channel_upd: _ChannelzChannel = self.channelz.get_channel(
+            channel.ref.channel_id, **rpc_params
+        )
+        if (
+            not self.calc_calls_in_flight(channel_upd)
+            or channel.data.calls_started != channel_upd.data.calls_started
+        ):
+            return None
+        return channel_upd
+
+    @classmethod
+    def calc_calls_in_flight(cls, channel: _ChannelzChannel) -> int:
+        cdata: _ChannelzChannelData = channel.data
+        if cdata.state.state is not _ChannelzChannelState.READY:
+            return 0
+
+        return cdata.calls_started - cdata.calls_succeeded - cdata.calls_failed
+
     class ChannelNotFound(framework.rpc.grpc.GrpcApp.NotFound):
         """Channel with expected status not found"""
 
@@ -325,3 +515,21 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             self.dst = dst
             self.expected_state = expected_state
             super().__init__(message, src, dst, expected_state, **kwargs)
+
+    class ChannelNotActive(framework.rpc.grpc.GrpcApp.NotFound):
+        """No active channel was found"""
+
+        src: str
+        dst: str
+
+        def __init__(
+            self,
+            message: str,
+            *,
+            src: str,
+            dst: str,
+            **kwargs,
+        ):
+            self.src = src
+            self.dst = dst
+            super().__init__(message, src, dst, **kwargs)

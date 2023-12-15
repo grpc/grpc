@@ -240,6 +240,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "all_ok_test",
+    srcs = ["all_ok_test.cc"],
+    external_deps = [
+        "absl/utility",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:all_ok"],
+)
+
+grpc_cc_test(
     name = "seq_test",
     srcs = ["seq_test.cc"],
     external_deps = ["gtest"],
@@ -420,6 +434,27 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "inter_activity_latch_test",
+    srcs = ["inter_activity_latch_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_wakeup_scheduler",
+        "//src/core:inter_activity_latch",
+        "//src/core:notification",
+        "//src/core:seq",
+    ],
+)
+
+grpc_cc_test(
     name = "mpsc_test",
     srcs = ["mpsc_test.cc"],
     external_deps = [
@@ -533,12 +568,41 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:orphanable",
         "//src/core:default_event_engine",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:notification",
         "//src/core:race",
         "//src/core:sleep",
         "//test/core/event_engine:mock_event_engine",
+    ],
+)
+
+grpc_cc_test(
+    name = "status_flag_test",
+    srcs = ["status_flag_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:status_flag"],
+)
+
+grpc_cc_test(
+    name = "promise_mutex_test",
+    srcs = ["promise_mutex_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    deps = [
+        "test_wakeup_schedulers",
+        "//:promise",
+        "//src/core:activity",
+        "//src/core:join",
+        "//src/core:promise_mutex",
+        "//src/core:seq",
     ],
 )
 
@@ -562,6 +626,7 @@ grpc_cc_test(
         "//src/core:context",
         "//src/core:default_event_engine",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:inter_activity_latch",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:poll",

@@ -21,7 +21,6 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-#include <string>
 #include <utility>
 
 #include <grpc/status.h>

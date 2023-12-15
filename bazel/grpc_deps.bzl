@@ -22,42 +22,57 @@ def grpc_deps():
 
     native.bind(
         name = "upb_lib",
-        actual = "@upb//:upb",
+        actual = "@com_google_protobuf//upb",
+    )
+
+    native.bind(
+        name = "upb_amalgamation_lib",
+        actual = "@com_google_protobuf//upb:amalgamation",
+    )
+
+    native.bind(
+        name = "upb_base_lib",
+        actual = "@com_google_protobuf//upb/base",
     )
 
     native.bind(
         name = "upb_collections_lib",
-        actual = "@upb//:collections",
+        actual = "@com_google_protobuf//upb/collections",
+    )
+
+    native.bind(
+        name = "upb_mem_lib",
+        actual = "@com_google_protobuf//upb/mem",
     )
 
     native.bind(
         name = "upb_reflection",
-        actual = "@upb//:reflection",
+        actual = "@com_google_protobuf//upb:reflection",
     )
 
     native.bind(
         name = "upb_lib_descriptor",
-        actual = "@upb//:descriptor_upb_proto",
+        actual = "@com_google_protobuf//upb:descriptor_upb_proto",
     )
 
     native.bind(
         name = "upb_lib_descriptor_reflection",
-        actual = "@upb//:descriptor_upb_proto_reflection",
+        actual = "@com_google_protobuf//upb:descriptor_upb_proto_reflection",
     )
 
     native.bind(
         name = "upb_textformat_lib",
-        actual = "@upb//:textformat",
+        actual = "@com_google_protobuf//upb/text",
     )
 
     native.bind(
         name = "upb_json_lib",
-        actual = "@upb//:json",
+        actual = "@com_google_protobuf//upb/json",
     )
 
     native.bind(
         name = "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-        actual = "@upb//:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+        actual = "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     )
 
     native.bind(
@@ -232,23 +247,23 @@ def grpc_deps():
         http_archive(
             name = "zlib",
             build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
-            sha256 = "90f43a9c998740e8a0db24b0af0147033db2aaaa99423129abbd76640757cac9",
-            strip_prefix = "zlib-04f42ceca40f73e2978b50e93806c2a18c1281fc",
+            sha256 = "18337cdb32562003c39d9f7322b9a166ad4abfb2b909566428e11f96d2385586",
+            strip_prefix = "zlib-09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/04f42ceca40f73e2978b50e93806c2a18c1281fc.tar.gz",
-                "https://github.com/madler/zlib/archive/04f42ceca40f73e2978b50e93806c2a18c1281fc.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851.tar.gz",
+                "https://github.com/madler/zlib/archive/09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851.tar.gz",
             ],
         )
 
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "660ce016f987550bc1ccec4a6ee4199afb871799b696227098e3641476a7d566",
-            strip_prefix = "protobuf-b2b7a51158418f41cff0520894836c15b1738721",
+            sha256 = "7ed5fc41fe1614e551025f8e14b79b026a015b3ed337d38920c586f3ea35d818",
+            strip_prefix = "protobuf-6b5d8db01fe47478e8d400f550e797e6230d464e",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v24.3
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b2b7a51158418f41cff0520894836c15b1738721.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/b2b7a51158418f41cff0520894836c15b1738721.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v25.0
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/6b5d8db01fe47478e8d400f550e797e6230d464e.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/6b5d8db01fe47478e8d400f550e797e6230d464e.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -259,11 +274,11 @@ def grpc_deps():
     if "com_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_google_googletest",
-            sha256 = "c8de6c60e12ad014a28225c5247ee735861d85cf906df617f6a29954ca05f547",
-            strip_prefix = "googletest-0e402173c97aea7a00749e825b194bfede4f2e45",
+            sha256 = "31bf78bd91b96dd5e24fab3bb1d7f3f7453ccbaceec9afb86d6e4816a15ab109",
+            strip_prefix = "googletest-2dd1c131950043a8ad5ab0d2dda0e0970596586a",
             urls = [
-                # 2022-02-09
-                "https://github.com/google/googletest/archive/0e402173c97aea7a00749e825b194bfede4f2e45.tar.gz",
+                # 2023-10-09
+                "https://github.com/google/googletest/archive/2dd1c131950043a8ad5ab0d2dda0e0970596586a.tar.gz",
             ],
         )
 
@@ -377,18 +392,6 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-cpp/archive/5501a1a255805e0be83a41348bb5f2630d5ed6b3.tar.gz",
                 "https://github.com/census-instrumentation/opencensus-cpp/archive/5501a1a255805e0be83a41348bb5f2630d5ed6b3.tar.gz",
-            ],
-        )
-
-    if "upb" not in native.existing_rules():
-        http_archive(
-            name = "upb",
-            sha256 = "5147e0ab6a28421d1e49004f4a205d84f06b924585e15eaa884cfe13289165b7",
-            strip_prefix = "upb-42cd08932e364a4cde35033b73f15c30250d7c2e",
-            urls = [
-                # https://github.com/protocolbuffers/upb/commits/24.x
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/42cd08932e364a4cde35033b73f15c30250d7c2e.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/42cd08932e364a4cde35033b73f15c30250d7c2e.tar.gz",
             ],
         )
 
@@ -509,22 +512,22 @@ def grpc_deps():
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",
-            sha256 = "f30cd88bf898a5726d245eba882b8e81012021eb00df34109f4dfb203f005cea",
-            strip_prefix = "opentelemetry-cpp-1.11.0",
+            sha256 = "149f076cc7a79bbd3a3c34fb3ab61d3a3e8dcfe2b9596f79153e17123c32f897",
+            strip_prefix = "opentelemetry-cpp-064fef0d871c57ffac6739d3311659a5770a9db4",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.11.0.tar.gz",
-                "https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.11.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/064fef0d871c57ffac6739d3311659a5770a9db4.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/064fef0d871c57ffac6739d3311659a5770a9db4.tar.gz",
             ],
         )
 
     if "google_cloud_cpp" not in native.existing_rules():
         http_archive(
             name = "google_cloud_cpp",
-            sha256 = "371d01b03c7e2604d671b8fa1c86710abe3b524a78bc2705a6bb4de715696755",
-            strip_prefix = "google-cloud-cpp-2.14.0",
+            sha256 = "7ca7f583b60d2aa1274411fed3b9fb3887119b2e84244bb3fc69ea1db819e4e5",
+            strip_prefix = "google-cloud-cpp-2.16.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.14.0.tar.gz",
-                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.14.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.16.0.tar.gz",
+                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.16.0.tar.gz",
             ],
         )
 

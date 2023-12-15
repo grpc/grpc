@@ -22,17 +22,16 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
@@ -49,21 +48,26 @@
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
+#include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
+#include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -97,6 +101,9 @@ static grpc_core::Duration NextAllowedPingInterval(grpc_chttp2_transport* t) {
     // The gRPC keepalive spec doesn't call for any throttling on the server
     // side, but we are adding some throttling for protection anyway, unless
     // we are doing a graceful GOAWAY in which case we don't want to wait.
+    if (grpc_core::IsMultipingEnabled()) {
+      return grpc_core::Duration::Seconds(1);
+    }
     return t->keepalive_time == grpc_core::Duration::Infinity()
                ? grpc_core::Duration::Seconds(20)
                : t->keepalive_time / 2;
@@ -105,20 +112,8 @@ static grpc_core::Duration NextAllowedPingInterval(grpc_chttp2_transport* t) {
 }
 
 static void maybe_initiate_ping(grpc_chttp2_transport* t) {
-  grpc_chttp2_ping_queue* pq = &t->ping_queue;
-  if (grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
+  if (!t->ping_callbacks.ping_requested()) {
     // no ping needed: wait
-    return;
-  }
-  if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
-    // ping already in-flight: wait
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-      gpr_log(GPR_INFO, "%s: Ping delayed [%s]: already pinging",
-              t->is_client ? "CLIENT" : "SERVER",
-              std::string(t->peer_string.as_string_view()).c_str());
-    }
     return;
   }
   // InvalidateNow to avoid getting stuck re-initializing the ping timer
@@ -126,22 +121,24 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   // https://github.com/grpc/grpc/issues/26079.
   grpc_core::ExecCtx::Get()->InvalidateNow();
   Match(
-      t->ping_rate_policy.RequestSendPing(NextAllowedPingInterval(t)),
-      [pq, t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
-        pq->inflight_id = t->ping_ctr;
-        t->ping_ctr++;
-        grpc_core::ExecCtx::RunList(DEBUG_LOCATION,
-                                    &pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
-        grpc_closure_list_move(&pq->lists[GRPC_CHTTP2_PCL_NEXT],
-                               &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
-        grpc_slice_buffer_add(&t->outbuf,
-                              grpc_chttp2_ping_create(false, pq->inflight_id));
+      t->ping_rate_policy.RequestSendPing(NextAllowedPingInterval(t),
+                                          t->ping_callbacks.pings_inflight()),
+      [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
+        t->ping_rate_policy.SentPing();
+        const uint64_t id = t->ping_callbacks.StartPing(t->bitgen);
+        grpc_slice_buffer_add(t->outbuf.c_slice_buffer(),
+                              grpc_chttp2_ping_create(false, id));
+        t->keepalive_incoming_data_wanted = true;
+        if (t->channelz_socket != nullptr) {
+          t->channelz_socket->RecordKeepaliveSent();
+        }
         grpc_core::global_stats().IncrementHttp2PingsSent();
         if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-          gpr_log(GPR_INFO, "%s: Ping sent [%s]: %s",
-                  t->is_client ? "CLIENT" : "SERVER",
+            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
+            GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
+          gpr_log(GPR_INFO, "%s[%p]: Ping %" PRIx64 " sent [%s]: %s",
+                  t->is_client ? "CLIENT" : "SERVER", t, id,
                   std::string(t->peer_string.as_string_view()).c_str(),
                   t->ping_rate_policy.GetDebugString().c_str());
         }
@@ -150,9 +147,11 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         // need to receive something of substance before sending a ping again
         if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
+            GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
           gpr_log(GPR_INFO,
-                  "CLIENT: Ping delayed [%s]: too many recent pings: %s",
+                  "%s[%p]: Ping delayed [%s]: too many recent pings: %s",
+                  t->is_client ? "CLIENT" : "SERVER", t,
                   std::string(t->peer_string.as_string_view()).c_str(),
                   t->ping_rate_policy.GetDebugString().c_str());
         }
@@ -161,18 +160,21 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         // not enough elapsed time between successive pings
         if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-          gpr_log(GPR_INFO,
-                  "%s: Ping delayed [%s]: not enough time elapsed since last "
-                  "ping. "
-                  " Last ping:%s, minimum wait:%s need to wait:%s",
-                  t->is_client ? "CLIENT" : "SERVER",
-                  std::string(t->peer_string.as_string_view()).c_str(),
-                  too_soon.last_ping.ToString().c_str(),
-                  too_soon.next_allowed_ping_interval.ToString().c_str(),
-                  too_soon.wait.ToString().c_str());
+            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
+            GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
+          gpr_log(
+              GPR_INFO,
+              "%s[%p]: Ping delayed [%s]: not enough time elapsed since last "
+              "ping. Last ping:%s, minimum wait:%s need to wait:%s",
+              t->is_client ? "CLIENT" : "SERVER", t,
+              std::string(t->peer_string.as_string_view()).c_str(),
+              too_soon.last_ping.ToString().c_str(),
+              too_soon.next_allowed_ping_interval.ToString().c_str(),
+              too_soon.wait.ToString().c_str());
         }
-        if (!t->delayed_ping_timer_handle.has_value()) {
+        if (t->delayed_ping_timer_handle ==
+            grpc_event_engine::experimental::EventEngine::TaskHandle::
+                kInvalid) {
           t->delayed_ping_timer_handle = t->event_engine->RunAfter(
               too_soon.wait, [t = t->Ref()]() mutable {
                 grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -228,11 +230,6 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   }
 }
 
-// How many bytes would we like to put on the wire during a single syscall
-static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
-  return 1024 * 1024;
-}
-
 namespace {
 
 class CountDefaultMetadataEncoder {
@@ -268,42 +265,69 @@ class WriteContext {
   }
 
   void FlushSettings() {
-    if (t_->dirtied_local_settings && !t_->sent_local_settings) {
+    const bool dirty =
+        t_->dirtied_local_settings ||
+        t_->settings[GRPC_SENT_SETTINGS]
+                    [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] !=
+            t_->max_concurrent_streams_policy.AdvertiseValue();
+    if (dirty && !t_->sent_local_settings) {
+      t_->settings[GRPC_LOCAL_SETTINGS]
+                  [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] =
+          t_->max_concurrent_streams_policy.AdvertiseValue();
       grpc_slice_buffer_add(
-          &t_->outbuf, grpc_chttp2_settings_create(
-                           t_->settings[GRPC_SENT_SETTINGS],
-                           t_->settings[GRPC_LOCAL_SETTINGS],
-                           t_->force_send_settings, GRPC_CHTTP2_NUM_SETTINGS));
+          t_->outbuf.c_slice_buffer(),
+          grpc_chttp2_settings_create(t_->settings[GRPC_SENT_SETTINGS],
+                                      t_->settings[GRPC_LOCAL_SETTINGS],
+                                      t_->force_send_settings,
+                                      GRPC_CHTTP2_NUM_SETTINGS));
+      if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
+        GPR_ASSERT(
+            t_->settings_ack_watchdog ==
+            grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);
+        // We base settings timeout on keepalive timeout, but double it to allow
+        // for implementations taking some more time about acking a setting.
+        t_->settings_ack_watchdog = t_->event_engine->RunAfter(
+            t_->settings_timeout, [t = t_->Ref()]() mutable {
+              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+              grpc_core::ExecCtx exec_ctx;
+              grpc_chttp2_settings_timeout(std::move(t));
+            });
+      }
       t_->force_send_settings = false;
       t_->dirtied_local_settings = false;
       t_->sent_local_settings = true;
       t_->flow_control.FlushedSettings();
+      t_->max_concurrent_streams_policy.FlushedSettings();
       grpc_core::global_stats().IncrementHttp2SettingsWrites();
     }
   }
 
   void FlushQueuedBuffers() {
     // simple writes are queued to qbuf, and flushed here
-    grpc_slice_buffer_move_into(&t_->qbuf, &t_->outbuf);
+    grpc_slice_buffer_move_into(&t_->qbuf, t_->outbuf.c_slice_buffer());
     t_->num_pending_induced_frames = 0;
     GPR_ASSERT(t_->qbuf.count == 0);
   }
 
   void FlushWindowUpdates() {
-    uint32_t transport_announce =
-        t_->flow_control.MaybeSendUpdate(t_->outbuf.count > 0);
+    uint32_t transport_announce = t_->flow_control.MaybeSendUpdate(
+        t_->outbuf.c_slice_buffer()->count > 0);
     if (transport_announce) {
       grpc_transport_one_way_stats throwaway_stats;
-      grpc_slice_buffer_add(
-          &t_->outbuf, grpc_chttp2_window_update_create(0, transport_announce,
-                                                        &throwaway_stats));
+      grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
+                            grpc_chttp2_window_update_create(
+                                0, transport_announce, &throwaway_stats));
       grpc_chttp2_reset_ping_clock(t_);
     }
   }
 
   void FlushPingAcks() {
+    if (t_->ping_ack_count == 0) return;
+    // Limit the size of writes if we include ping acks - to avoid the ack being
+    // delayed by crypto operations.
+    target_write_size_ = 0;
     for (size_t i = 0; i < t_->ping_ack_count; i++) {
-      grpc_slice_buffer_add(&t_->outbuf,
+      grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
                             grpc_chttp2_ping_create(true, t_->ping_acks[i]));
     }
     t_->ping_ack_count = 0;
@@ -328,7 +352,7 @@ class WriteContext {
   }
 
   grpc_chttp2_stream* NextStream() {
-    if (t_->outbuf.length > target_write_size(t_)) {
+    if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
       result_.partial = true;
       return nullptr;
     }
@@ -351,12 +375,17 @@ class WriteContext {
   grpc_chttp2_transport* transport() const { return t_; }
 
   grpc_chttp2_begin_write_result Result() {
-    result_.writing = t_->outbuf.count > 0;
+    result_.writing = t_->outbuf.c_slice_buffer()->count > 0;
     return result_;
   }
 
+  size_t target_write_size() const { return target_write_size_; }
+
  private:
   grpc_chttp2_transport* const t_;
+  size_t target_write_size_ = grpc_core::IsWriteSizePolicyEnabled()
+                                  ? t_->write_size_policy.WriteTargetSize()
+                                  : 1024 * 1024;
 
   // stats histogram counters: we increment these throughout this function,
   // and at the end publish to the central stats histograms
@@ -386,11 +415,15 @@ class DataSendContext {
   }
 
   uint32_t max_outgoing() const {
-    return static_cast<uint32_t>(std::min(
-        t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-        static_cast<uint32_t>(
-            std::min(static_cast<int64_t>(stream_remote_window()),
-                     t_->flow_control.remote_window()))));
+    return grpc_core::Clamp<uint32_t>(
+        std::min<int64_t>(
+            {t_->settings[GRPC_PEER_SETTINGS]
+                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
+             stream_remote_window(), t_->flow_control.remote_window(),
+             grpc_core::IsWriteSizeCapEnabled()
+                 ? static_cast<int64_t>(write_context_->target_write_size())
+                 : std::numeric_limits<uint32_t>::max()}),
+        0, std::numeric_limits<uint32_t>::max());
   }
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }
@@ -403,7 +436,8 @@ class DataSendContext {
                      s_->send_trailing_metadata != nullptr &&
                      s_->send_trailing_metadata->empty();
     grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
-                            is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
+                            is_last_frame_, &s_->stats.outgoing,
+                            t_->outbuf.c_slice_buffer());
     sfc_upd_.SentData(send_bytes);
     s_->sending_bytes += send_bytes;
   }
@@ -468,7 +502,7 @@ class StreamWriteContext {
                   [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
               &s_->stats.outgoing                         // stats
           },
-          *s_->send_initial_metadata, &t_->outbuf);
+          *s_->send_initial_metadata, t_->outbuf.c_slice_buffer());
       grpc_chttp2_reset_ping_clock(t_);
       write_context_->IncInitialMetadataWrites();
     }
@@ -479,6 +513,12 @@ class StreamWriteContext {
     grpc_chttp2_complete_closure_step(
         t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
+    if (s_->call_tracer) {
+      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
+          grpc_core::HttpAnnotation::Type::kHeadWritten,
+          grpc_core::Timestamp::Now(), s_->t->flow_control.stats(),
+          s_->flow_control.stats()));
+    }
   }
 
   void FlushWindowUpdates() {
@@ -488,9 +528,9 @@ class StreamWriteContext {
     const uint32_t stream_announce = s_->flow_control.MaybeSendUpdate();
     if (stream_announce == 0) return;
 
-    grpc_slice_buffer_add(
-        &t_->outbuf, grpc_chttp2_window_update_create(s_->id, stream_announce,
-                                                      &s_->stats.outgoing));
+    grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
+                          grpc_chttp2_window_update_create(
+                              s_->id, stream_announce, &s_->stats.outgoing));
     grpc_chttp2_reset_ping_clock(t_);
     write_context_->IncWindowUpdateWrites();
   }
@@ -543,7 +583,7 @@ class StreamWriteContext {
     GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
     if (s_->send_trailing_metadata->empty()) {
       grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
-                              &s_->stats.outgoing, &t_->outbuf);
+                              &s_->stats.outgoing, t_->outbuf.c_slice_buffer());
     } else {
       if (send_status_.has_value()) {
         s_->send_trailing_metadata->Set(grpc_core::HttpStatusMetadata(),
@@ -563,7 +603,7 @@ class StreamWriteContext {
               t_->settings[GRPC_PEER_SETTINGS]
                           [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
               &s_->stats.outgoing},
-          *s_->send_trailing_metadata, &t_->outbuf);
+          *s_->send_trailing_metadata, t_->outbuf.c_slice_buffer());
     }
     write_context_->IncTrailingMetadataWrites();
     grpc_chttp2_reset_ping_clock(t_);
@@ -600,11 +640,17 @@ class StreamWriteContext {
 
     if (!t_->is_client && !s_->read_closed) {
       grpc_slice_buffer_add(
-          &t_->outbuf, grpc_chttp2_rst_stream_create(
-                           s_->id, GRPC_HTTP2_NO_ERROR, &s_->stats.outgoing));
+          t_->outbuf.c_slice_buffer(),
+          grpc_chttp2_rst_stream_create(s_->id, GRPC_HTTP2_NO_ERROR,
+                                        &s_->stats.outgoing));
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
+    if (s_->call_tracer) {
+      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
+          grpc_core::HttpAnnotation::Type::kEnd, grpc_core::Timestamp::Now(),
+          s_->t->flow_control.stats(), s_->flow_control.stats()));
+    }
   }
 
   WriteContext* const write_context_;
@@ -634,15 +680,15 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   // (according to available window sizes) and add to the output buffer
   while (grpc_chttp2_stream* s = ctx.NextStream()) {
     StreamWriteContext stream_ctx(&ctx, s);
-    size_t orig_len = t->outbuf.length;
+    size_t orig_len = t->outbuf.c_slice_buffer()->length;
     int64_t num_stream_bytes = 0;
     stream_ctx.FlushInitialMetadata();
     stream_ctx.FlushWindowUpdates();
     stream_ctx.FlushData();
     stream_ctx.FlushTrailingMetadata();
-    if (t->outbuf.length > orig_len) {
+    if (t->outbuf.c_slice_buffer()->length > orig_len) {
       // Add this stream to the list of the contexts to be traced at TCP
-      num_stream_bytes = t->outbuf.length - orig_len;
+      num_stream_bytes = t->outbuf.c_slice_buffer()->length - orig_len;
       s->byte_counter += static_cast<size_t>(num_stream_bytes);
       if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
         grpc_core::CopyContextFn copy_context_fn =
@@ -651,7 +697,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
           t->cl->emplace_back(copy_context_fn(s->context),
                               outbuf_relative_start_pos, num_stream_bytes,
-                              s->byte_counter);
+                              s->byte_counter, s->tcp_tracer);
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;
@@ -683,6 +729,44 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
   }
   t->num_messages_in_next_write = 0;
 
+  if (t->ping_callbacks.started_new_ping_without_setting_timeout() &&
+      t->keepalive_timeout != grpc_core::Duration::Infinity()) {
+    // Set ping timeout after finishing write so we don't measure our own send
+    // time.
+    const auto timeout = t->ping_timeout;
+    auto id = t->ping_callbacks.OnPingTimeout(
+        timeout, t->event_engine.get(), [t = t->Ref()] {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          grpc_chttp2_ping_timeout(t);
+        });
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace) && id.has_value()) {
+      gpr_log(GPR_INFO,
+              "%s[%p]: Set ping timeout timer of %s for ping id %" PRIx64,
+              t->is_client ? "CLIENT" : "SERVER", t, timeout.ToString().c_str(),
+              id.value());
+    }
+
+    if (t->keepalive_incoming_data_wanted &&
+        t->keepalive_timeout < t->ping_timeout &&
+        t->keepalive_ping_timeout_handle !=
+            grpc_event_engine::experimental::EventEngine::TaskHandle::
+                kInvalid) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace) ||
+          GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+        gpr_log(GPR_INFO, "%s[%p]: Set keepalive ping timeout timer of %s",
+                t->is_client ? "CLIENT" : "SERVER", t,
+                t->keepalive_timeout.ToString().c_str());
+      }
+      t->keepalive_ping_timeout_handle =
+          t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            grpc_chttp2_keepalive_timeout(t);
+          });
+    }
+  }
+
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
     if (s->sending_bytes != 0) {
       update_list(t, s, static_cast<int64_t>(s->sending_bytes),
@@ -692,5 +776,5 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
     }
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:end");
   }
-  grpc_slice_buffer_reset_and_unref(&t->outbuf);
+  grpc_slice_buffer_reset_and_unref(t->outbuf.c_slice_buffer());
 }

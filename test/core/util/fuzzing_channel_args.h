@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/resource_quota.h"

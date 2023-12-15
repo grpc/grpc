@@ -21,7 +21,6 @@
 #include <string>
 
 #include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
@@ -144,6 +143,7 @@ const RetryMethodConfig* RetryFilter::GetRetryPolicy(
 const grpc_channel_filter RetryFilter::kVtable = {
     RetryFilter::LegacyCallData::StartTransportStreamOpBatch,
     nullptr,
+    /* init_call: */ nullptr,
     RetryFilter::StartTransportOp,
     sizeof(RetryFilter::LegacyCallData),
     RetryFilter::LegacyCallData::Init,

@@ -16,6 +16,8 @@
 //
 //
 
+#include <memory>
+
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
@@ -50,7 +52,7 @@ CORE_END2END_TEST(RetryTest, RetryStreamingAfterCommit) {
       "  } ]\n"
       "}"));
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Client starts a batch for receiving initial metadata and a message.
   // This will commit retries.

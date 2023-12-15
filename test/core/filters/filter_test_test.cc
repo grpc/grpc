@@ -19,12 +19,13 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
-#include <grpc/grpc.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -246,8 +247,5 @@ TEST_F(NoOpFilterTest, CanProcessServerToClientMessage) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
-  int r = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return r;
+  return RUN_ALL_TESTS();
 }

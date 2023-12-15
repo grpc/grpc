@@ -31,6 +31,11 @@ grpc_endpoint* grpc_event_engine_endpoint_create(
 /// Returns true if the passed endpoint is an event engine shim endpoint.
 bool grpc_is_event_engine_endpoint(grpc_endpoint* ep);
 
+/// Returns the wrapped event engine endpoint if the given grpc_endpoint is an
+/// event engine shim endpoint. Otherwise it returns nullptr.
+EventEngine::Endpoint* grpc_get_wrapped_event_engine_endpoint(
+    grpc_endpoint* ep);
+
 /// Destroys the passed in event engine shim endpoint and schedules the
 /// asynchronous execution of the on_release_fd callback. The int pointer fd is
 /// set to the underlying endpoint's file descriptor.

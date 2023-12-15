@@ -138,10 +138,8 @@ pip_install() {
   /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
 }
 
-# Pin setuptools to < 60.0.0 to restore the distutil installation, see:
-# https://github.com/pypa/setuptools/pull/2896
-pip_install --upgrade pip==21.3.1
-pip_install --upgrade setuptools==59.6.0
+pip_install --upgrade setuptools==61.0.0
+pip_install --upgrade pip
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -175,6 +173,15 @@ pip_install_dir "$ROOT"
 
 $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
 pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"
+
+# Build/install Observability
+# Observability does not support Windows and MacOS.
+if [ "$(is_mingw)" ] || [ "$(is_darwin)" ]; then
+  echo "Skip building grpcio_observability for Windows or MacOS"
+else
+  $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
+  pip_install_dir_and_deps "$ROOT/src/python/grpcio_observability"
+fi
 
 # Build/install Channelz
 $VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" preprocess
@@ -211,7 +218,7 @@ pip_install_dir "$ROOT/src/python/grpcio_admin"
 pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
-pip_install coverage==4.4 oauth2client==4.1.0 \
+pip_install coverage==7.2.0 oauth2client==4.1.0 \
             google-auth>=1.35.0 requests==2.31.0 \
             googleapis-common-protos>=1.5.5 rsa==4.0 absl-py==1.4.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess

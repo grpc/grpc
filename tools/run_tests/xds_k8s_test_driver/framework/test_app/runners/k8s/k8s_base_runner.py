@@ -582,20 +582,32 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         logger.info("Deleting HTTPRoute %s", name)
         try:
             self.k8s_namespace.delete_gamma_route(name)
-        except (retryers.RetryError, k8s.NotFound) as e:
-            logger.info("HTTPRoute %s deletion failed: %s", name, e)
+        except k8s.NotFound:
+            logger.debug(
+                "HTTPRoute %s not deleted since it doesn't exist", name
+            )
+            return
+        except retryers.RetryError as e:
+            logger.warning("HTTPRoute %s deletion failed: %s", name, e)
             return
 
         if wait_for_deletion:
             self.k8s_namespace.wait_for_get_gamma_route_deleted(name)
-        logger.debug("HTTPRoute %s deleted", name)
+        logger.info("HTTPRoute %s deleted", name)
 
     def _delete_session_affinity_policy(self, name, wait_for_deletion=True):
         logger.info("Deleting GCPSessionAffinityPolicy %s", name)
         try:
             self.k8s_namespace.delete_session_affinity_policy(name)
-        except (retryers.RetryError, k8s.NotFound) as e:
-            logger.info(
+        except k8s.NotFound:
+            logger.debug(
+                "GCPSessionAffinityPolicy %s not deleted since it"
+                " doesn't exist",
+                name,
+            )
+            return
+        except retryers.RetryError as e:
+            logger.warning(
                 "GCPSessionAffinityPolicy %s deletion failed: %s", name, e
             )
             return
@@ -604,14 +616,21 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
             self.k8s_namespace.wait_for_get_session_affinity_policy_deleted(
                 name
             )
-        logger.debug("GCPSessionAffinityPolicy %s deleted", name)
+        logger.info("GCPSessionAffinityPolicy %s deleted", name)
 
     def _delete_session_affinity_filter(self, name, wait_for_deletion=True):
         logger.info("Deleting GCPSessionAffinityFilter %s", name)
         try:
             self.k8s_namespace.delete_session_affinity_filter(name)
-        except (retryers.RetryError, k8s.NotFound) as e:
-            logger.info(
+        except k8s.NotFound:
+            logger.debug(
+                "GCPSessionAffinityFilter %s not deleted since it"
+                " doesn't exist",
+                name,
+            )
+            return
+        except retryers.RetryError as e:
+            logger.warning(
                 "GCPSessionAffinityFilter %s deletion failed: %s", name, e
             )
             return
@@ -620,71 +639,95 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
             self.k8s_namespace.wait_for_get_session_affinity_filter_deleted(
                 name
             )
-        logger.debug("GCPSessionAffinityFilter %s deleted", name)
+        logger.info("GCPSessionAffinityFilter %s deleted", name)
 
     def _delete_backend_policy(self, name, wait_for_deletion=True):
         logger.info("Deleting GCPBackendPolicy %s", name)
         try:
             self.k8s_namespace.delete_backend_policy(name)
-        except (retryers.RetryError, k8s.NotFound) as e:
-            logger.info("GGCPBackendPolicy %s deletion failed: %s", name, e)
+        except k8s.NotFound:
+            logger.debug(
+                "GGCPBackendPolicy %s not deleted since it doesn't exist", name
+            )
+            return
+        except retryers.RetryError as e:
+            logger.warning("GGCPBackendPolicy %s deletion failed: %s", name, e)
             return
 
         if wait_for_deletion:
             self.k8s_namespace.wait_for_get_backend_policy_deleted(name)
-        logger.debug("GCPBackendPolicy %s deleted", name)
+        logger.info("GCPBackendPolicy %s deleted", name)
 
     def _delete_deployment(self, name, wait_for_deletion=True):
         logger.info("Deleting deployment %s", name)
         self.stop_pod_dependencies()
         try:
             self.k8s_namespace.delete_deployment(name)
-        except (retryers.RetryError, k8s.NotFound) as e:
-            logger.info("Deployment %s deletion failed: %s", name, e)
+        except k8s.NotFound:
+            logger.debug(
+                "Deployment %s not deleted since it doesn't exist", name
+            )
+            return
+        except retryers.RetryError as e:
+            logger.warning("Deployment %s deletion failed: %s", name, e)
             return
 
         if wait_for_deletion:
             self.k8s_namespace.wait_for_deployment_deleted(name)
-        logger.debug("Deployment %s deleted", name)
+        logger.info("Deployment %s deleted", name)
 
     def _delete_service(self, name, wait_for_deletion=True):
         logger.info("Deleting service %s", name)
         try:
             self.k8s_namespace.delete_service(name)
-        except (retryers.RetryError, k8s.NotFound) as e:
-            logger.info("Service %s deletion failed: %s", name, e)
+        except k8s.NotFound:
+            logger.debug("Service %s not deleted since it doesn't exist", name)
+            return
+        except retryers.RetryError as e:
+            logger.warning("Service %s deletion failed: %s", name, e)
             return
 
         if wait_for_deletion:
             self.k8s_namespace.wait_for_service_deleted(name)
 
-        logger.debug("Service %s deleted", name)
+        logger.info("Service %s deleted", name)
 
     def _delete_service_account(self, name, wait_for_deletion=True):
         logger.info("Deleting service account %s", name)
         try:
             self.k8s_namespace.delete_service_account(name)
-        except (retryers.RetryError, k8s.NotFound) as e:
-            logger.info("Service account %s deletion failed: %s", name, e)
+        except k8s.NotFound:
+            logger.debug(
+                "Service account %s not deleted since it doesn't exist", name
+            )
+            return
+        except retryers.RetryError as e:
+            logger.warning("Service account %s deletion failed: %s", name, e)
             return
 
         if wait_for_deletion:
             self.k8s_namespace.wait_for_service_account_deleted(name)
-        logger.debug("Service account %s deleted", name)
+        logger.info("Service account %s deleted", name)
 
     def delete_namespace(self, wait_for_deletion=True):
         logger.info("Deleting namespace %s", self.k8s_namespace.name)
         try:
             self.k8s_namespace.delete()
-        except (retryers.RetryError, k8s.NotFound) as e:
-            logger.info(
+        except k8s.NotFound:
+            logger.debug(
+                "Namespace %s not deleted since it doesn't exist",
+                self.k8s_namespace.name,
+            )
+            return
+        except retryers.RetryError as e:
+            logger.warning(
                 "Namespace %s deletion failed: %s", self.k8s_namespace.name, e
             )
             return
 
         if wait_for_deletion:
             self.k8s_namespace.wait_for_namespace_deleted()
-        logger.debug("Namespace %s deleted", self.k8s_namespace.name)
+        logger.info("Namespace %s deleted", self.k8s_namespace.name)
 
     def _wait_deployment_with_available_replicas(self, name, count=1, **kwargs):
         logger.info(
@@ -769,14 +812,35 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         self.pod_log_collectors.append(pod_log_collector)
         return pod_log_collector
 
-    def _wait_service_neg(self, name, service_port, **kwargs):
-        logger.info("Waiting for NEG for service %s", name)
-        self.k8s_namespace.wait_for_service_neg(name, **kwargs)
-        neg_name, neg_zones = self.k8s_namespace.get_service_neg(
-            name, service_port
+    def _wait_service_neg_status_annotation(
+        self,
+        service_name: str,
+        service_port: int,
+        **kwargs,
+    ) -> None:
+        logger.info(
+            "Waiting for '%s' annotation for a NEG at port %s to be assigned to"
+            " Kubernetes Service %s in namespace %s",
+            self.k8s_namespace.NEG_STATUS_ANNOTATION,
+            service_port,
+            service_name,
+            self.k8s_namespace.name,
+        )
+        self.k8s_namespace.wait_for_service_neg_status_annotation(
+            service_name, **kwargs
+        )
+        neg_name, neg_zones = self.k8s_namespace.parse_service_neg_status(
+            service_name, service_port
         )
         logger.info(
-            "Service %s: detected NEG=%s in zones=%s", name, neg_name, neg_zones
+            "Detected '%s' annotation for Kubernetes Service %s, namespace %s:"
+            " neg_name=%s, port=%s, zones=%s",
+            self.k8s_namespace.NEG_STATUS_ANNOTATION,
+            service_name,
+            self.k8s_namespace.name,
+            neg_name,
+            service_port,
+            neg_zones,
         )
 
     def logs_explorer_link(self):

@@ -18,7 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <tuple>
-#include <utility>
+#include <variant>
 
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
@@ -64,6 +64,11 @@ struct TryJoinTraits {
   template <typename R>
   static R EarlyReturn(absl::Status x) {
     return x;
+  }
+  template <typename... A>
+  static auto FinalReturn(A&&... a) {
+    return absl::StatusOr<std::tuple<A...>>(
+        std::make_tuple(std::forward<A>(a)...));
   }
 };
 

@@ -15,7 +15,8 @@
 #include "src/core/lib/promise/try_join.h"
 
 #include <functional>
-#include <tuple>
+#include <memory>
+#include <utility>
 
 #include "absl/utility/utility.h"
 #include "gtest/gtest.h"

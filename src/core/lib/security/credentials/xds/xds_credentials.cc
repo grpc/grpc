@@ -20,7 +20,6 @@
 
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security_constants.h>

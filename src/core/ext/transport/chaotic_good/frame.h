@@ -43,6 +43,7 @@ class FrameInterface {
                                    absl::BitGenRef bitsrc,
                                    SliceBuffer& slice_buffer) = 0;
   virtual SliceBuffer Serialize(HPackCompressor* encoder) const = 0;
+  virtual std::string ToString() const = 0;
 
  protected:
   static bool EqVal(const Message& a, const Message& b) {
@@ -67,6 +68,7 @@ struct SettingsFrame final : public FrameInterface {
                            absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
   bool operator==(const SettingsFrame&) const { return true; }
 };
@@ -76,10 +78,12 @@ struct ClientFragmentFrame final : public FrameInterface {
                            absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
   uint32_t stream_id;
   ClientMetadataHandle headers;
   MessageHandle message;
+  uint32_t message_padding;
   bool end_of_stream = false;
 
   bool operator==(const ClientFragmentFrame& other) const {
@@ -93,9 +97,12 @@ struct ServerFragmentFrame final : public FrameInterface {
                            absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
   uint32_t stream_id;
   ServerMetadataHandle headers;
+  MessageHandle message;
+  uint32_t message_padding;
   ServerMetadataHandle trailers;
 
   bool operator==(const ServerFragmentFrame& other) const {
@@ -109,6 +116,7 @@ struct CancelFrame final : public FrameInterface {
                            absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
   uint32_t stream_id;
 

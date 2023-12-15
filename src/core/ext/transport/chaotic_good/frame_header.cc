@@ -20,6 +20,8 @@
 
 #include "absl/status/status.h"
 
+#include <grpc/support/log.h>
+
 namespace grpc_core {
 namespace chaotic_good {
 
@@ -43,6 +45,8 @@ uint32_t ReadLittleEndianUint32(const uint8_t* data) {
 void FrameHeader::Serialize(uint8_t* data) const {
   WriteLittleEndianUint32(
       static_cast<uint32_t>(type) | (flags.ToInt<uint32_t>() << 8), data);
+  if (flags.is_set(0)) GPR_ASSERT(header_length > 0);
+  if (flags.is_set(1)) GPR_ASSERT(trailer_length > 0);
   WriteLittleEndianUint32(stream_id, data + 4);
   WriteLittleEndianUint32(header_length, data + 8);
   WriteLittleEndianUint32(message_length, data + 12);
@@ -60,9 +64,17 @@ absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) {
   header.flags = BitSet<2>::FromInt(flags);
   header.stream_id = ReadLittleEndianUint32(data + 4);
   header.header_length = ReadLittleEndianUint32(data + 8);
+  if (header.flags.is_set(0) && header.header_length <= 0) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Invalid header length: ", header.header_length));
+  }
   header.message_length = ReadLittleEndianUint32(data + 12);
   header.message_padding = ReadLittleEndianUint32(data + 16);
   header.trailer_length = ReadLittleEndianUint32(data + 20);
+  if (header.flags.is_set(1) && header.trailer_length <= 0) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Invalid trailer length", header.trailer_length));
+  }
   return header;
 }
 
@@ -71,6 +83,14 @@ uint32_t FrameHeader::GetFrameLength() const {
   // through different channel. So not included in the frame length calculation.
   uint32_t frame_length = header_length + trailer_length;
   return frame_length;
+}
+
+std::string FrameHeader::ToString() const {
+  return absl::StrFormat(
+      "[type=0x%02x, flags=0x%02x, stream_id=%d, header_length=%d, "
+      "message_length=%d, message_padding=%d, trailer_length=%d]",
+      static_cast<uint8_t>(type), flags.ToInt<uint8_t>(), stream_id,
+      header_length, message_length, message_padding, trailer_length);
 }
 
 }  // namespace chaotic_good

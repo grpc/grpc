@@ -5,7 +5,9 @@
 /bazel/** @jtattermusch @veblush @gnossen
 /cmake/** @jtattermusch @apolcyn
 /src/core/ext/filters/client_channel/** @markdroth
+/src/core/ext/transport/chttp2/transport/** @ctiller
 /src/core/ext/xds/** @markdroth
 /src/core/lib/resolver/** @markdroth
 /src/core/lib/service_config/** @markdroth
 /tools/dockerfile/** @jtattermusch @apolcyn
+/tools/run_tests/xds_k8s_test_driver/** @sergiitk @XuanWang-Amos @gnossen

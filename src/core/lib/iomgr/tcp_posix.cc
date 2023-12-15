@@ -18,6 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
 #include <grpc/impl/grpc_types.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -1938,7 +1944,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
   GPR_ASSERT(options.resource_quota != nullptr);
   tcp->memory_owner =
-      options.resource_quota->memory_quota()->CreateMemoryOwner(peer_string);
+      options.resource_quota->memory_quota()->CreateMemoryOwner();
   tcp->self_reservation = tcp->memory_owner.MakeReservation(sizeof(grpc_tcp));
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));

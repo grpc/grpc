@@ -24,7 +24,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <initializer_list>
 #include <ostream>
 #include <string>
 #include <tuple>
@@ -364,6 +363,23 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
   return UpdateAction(action);
 }
 
+std::string TransportFlowControl::Stats::ToString() const {
+  return absl::StrCat("target_window: ", target_window,
+                      " target_frame_size: ", target_frame_size,
+                      " target_preferred_rx_crypto_frame_size: ",
+                      target_preferred_rx_crypto_frame_size,
+                      " acked_init_window: ", acked_init_window,
+                      " queued_init_window: ", queued_init_window,
+                      " sent_init_window: ", sent_init_window,
+                      " remote_window: ", remote_window,
+                      " announced_window: ", announced_window,
+                      " announced_stream_total_over_incoming_window: ",
+                      announced_stream_total_over_incoming_window,
+                      " bdp_accumulator: ", bdp_accumulator,
+                      " bdp_estimate: ", bdp_estimate,
+                      " bdp_bw_est: ", bdp_bw_est);
+}
+
 void StreamFlowControl::SentUpdate(uint32_t announce) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
   pending_size_ = absl::nullopt;
@@ -406,23 +422,9 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
     }
     // min_progress_size_ > 0 means we have a reader ready to read.
     if (min_progress_size_ > 0) {
-      if (IsLazierStreamUpdatesEnabled()) {
-        if (announced_window_delta_ <=
-            -static_cast<int64_t>(tfc_->sent_init_window()) / 2) {
-          urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
-        }
-      } else {
-        // If we're into initial window to receive that data we should wake up
-        // and send an update.
-        if (announced_window_delta_ < 0) {
-          urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
-        } else if (announced_window_delta_ == 0 &&
-                   tfc_->queued_init_window() == 0) {
-          // Special case when initial window size is zero, meaning that
-          // announced_window_delta cannot become negative (it may already be so
-          // however).
-          urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
-        }
+      if (announced_window_delta_ <=
+          -static_cast<int64_t>(tfc_->sent_init_window()) / 2) {
+        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
       }
     }
     action.set_send_stream_update(urgency);
@@ -434,6 +436,13 @@ void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
     int64_t pending_size) {
   GPR_ASSERT(pending_size >= 0);
   sfc_->pending_size_ = pending_size;
+}
+
+std::string StreamFlowControl::Stats::ToString() const {
+  return absl::StrCat("min_progress_size: ", min_progress_size,
+                      " remote_window_delta: ", remote_window_delta,
+                      " announced_window_delta: ", announced_window_delta,
+                      pending_size.has_value() ? *pending_size : -1);
 }
 
 }  // namespace chttp2

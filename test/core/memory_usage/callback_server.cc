@@ -24,18 +24,22 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/status.h>
+#include <grpcpp/xds_server_builder.h>
 
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/util/test_config.h"
+
+ABSL_FLAG(std::string, bind, "", "Bind host:port");
+ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
+ABSL_FLAG(bool, use_xds, false, "Use xDS");
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
@@ -70,9 +74,6 @@ class ServerCallbackImpl final
 // TODO(chennancy) Add graceful shutdown
 static void sigint_handler(int /*x*/) { _exit(0); }
 
-ABSL_FLAG(std::string, bind, "", "Bind host:port");
-ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
-
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   char* fake_argv[1];
@@ -91,7 +92,11 @@ int main(int argc, char** argv) {
   // Get initial process memory usage before creating server
   long before_server_create = GetMemUsage();
   ServerCallbackImpl callback_server(before_server_create);
-  grpc::ServerBuilder builder;
+
+  grpc::XdsServerBuilder xds_builder;
+  grpc::ServerBuilder normal_builder;
+  grpc::ServerBuilder* builder =
+      absl::GetFlag(FLAGS_use_xds) ? &xds_builder : &normal_builder;
 
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ServerCredentials> creds =
@@ -100,11 +105,11 @@ int main(int argc, char** argv) {
     gpr_log(GPR_INFO, "Supposed to be secure, is not yet");
     // TODO (chennancy) Add in secure credentials
   }
-  builder.AddListeningPort(server_address, creds);
-  builder.RegisterService(&callback_server);
+  builder->AddListeningPort(server_address, creds);
+  builder->RegisterService(&callback_server);
 
   // Set up the server to start accepting requests.
-  std::shared_ptr<grpc::Server> server(builder.BuildAndStart());
+  std::shared_ptr<grpc::Server> server(builder->BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
 
   // Keep the program running until the server shuts down.

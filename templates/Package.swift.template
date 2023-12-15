@@ -55,6 +55,9 @@
             % endfor
           ],
           publicHeadersPath: "spm-core-include",
+          resources: [
+            .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+          ],
           cSettings: [
             .headerSearchPath("./"),
             .headerSearchPath("include/"),
@@ -62,8 +65,8 @@
             .headerSearchPath("third_party/upb/"),
             .headerSearchPath("third_party/utf8_range/"),
             .headerSearchPath("third_party/xxhash/"),
-            .headerSearchPath("src/core/ext/upb-generated/"),
-            .headerSearchPath("src/core/ext/upbdefs-generated/"),
+            .headerSearchPath("src/core/ext/upb-gen/"),
+            .headerSearchPath("src/core/ext/upbdefs-gen/"),
             .define("GRPC_ARES", to: "0"),
           ],
           linkerSettings: [
@@ -101,11 +104,14 @@
             "src/cpp/",
           ],
           publicHeadersPath: "spm-cpp-include",
+          resources: [
+            .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+          ],
           cSettings: [
             .headerSearchPath("./"),
             .headerSearchPath("include/"),
             .headerSearchPath("third_party/upb/"),
-            .headerSearchPath("src/core/ext/upb-generated"),
+            .headerSearchPath("src/core/ext/upb-gen"),
           ]
         ),
         .testTarget(

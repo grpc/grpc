@@ -17,6 +17,5 @@ This file is generated from the supported_bazel_versions.bzl.template
 """
 
 SUPPORTED_BAZEL_VERSIONS = [
-    "6.3.2",
-    "5.4.1",
+    "6.4.0",
 ]

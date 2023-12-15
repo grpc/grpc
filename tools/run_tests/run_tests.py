@@ -26,10 +26,10 @@ import logging
 import multiprocessing
 import os
 import os.path
-import pipes
 import platform
 import random
 import re
+import shlex
 import socket
 import subprocess
 import sys
@@ -479,7 +479,7 @@ class CLanguage(object):
                         cmdline = [binary] + target["args"]
                         shortname = target.get(
                             "shortname",
-                            " ".join(pipes.quote(arg) for arg in cmdline),
+                            " ".join(shlex.quote(arg) for arg in cmdline),
                         )
                         shortname += shortname_ext
                         out.append(
@@ -571,6 +571,13 @@ class CLanguage(object):
                     "-DgRPC_SSL_PROVIDER=package",
                 ],
             )
+        elif compiler == "gcc10.2_openssl111":
+            return (
+                "debian11_openssl111",
+                [
+                    "-DgRPC_SSL_PROVIDER=package",
+                ],
+            )
         elif compiler == "gcc12":
             return ("gcc_12", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc12_openssl309":
@@ -584,8 +591,8 @@ class CLanguage(object):
             return ("alpine", [])
         elif compiler == "clang6":
             return ("clang_6", self._clang_cmake_configure_extra_args())
-        elif compiler == "clang15":
-            return ("clang_15", self._clang_cmake_configure_extra_args())
+        elif compiler == "clang16":
+            return ("clang_16", self._clang_cmake_configure_extra_args())
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
@@ -721,16 +728,11 @@ class PythonConfig(
 class PythonLanguage(object):
     _TEST_SPECS_FILE = {
         "native": ["src/python/grpcio_tests/tests/tests.json"],
-        "gevent": [
-            "src/python/grpcio_tests/tests/tests.json",
-            "src/python/grpcio_tests/tests_gevent/tests.json",
-        ],
         "asyncio": ["src/python/grpcio_tests/tests_aio/tests.json"],
     }
 
     _TEST_COMMAND = {
         "native": "test_lite",
-        "gevent": "test_gevent",
         "asyncio": "test_aio",
     }
 
@@ -755,7 +757,7 @@ class PythonLanguage(object):
                         ],
                         timeout_seconds=60,
                         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                        shortname="f{python_config.name}.xds_protos",
+                        shortname=f"{python_config.name}.xds_protos",
                     )
                 )
 
@@ -1192,6 +1194,19 @@ class ObjCLanguage(object):
                 },
             )
         )
+        out.append(
+            self.config.job_spec(
+                ["src/objective-c/tests/build_one_example.sh"],
+                timeout_seconds=20 * 60,
+                shortname="ios-buildtest-example-switft-use-frameworks",
+                cpu_cost=1e6,
+                environ={
+                    "SCHEME": "SwiftUseFrameworks",
+                    "EXAMPLE_PATH": "src/objective-c/examples/SwiftUseFrameworks",
+                },
+            )
+        )
+
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
         # out.append(
@@ -1309,7 +1324,6 @@ _LANGUAGES = {
     "objc": ObjCLanguage(),
     "sanity": Sanity("sanity_tests.yaml"),
     "clang-tidy": Sanity("clang_tidy_tests.yaml"),
-    "iwyu": Sanity("iwyu_tests.yaml"),
 }
 
 _MSBUILD_CONFIG = {
@@ -1714,11 +1728,12 @@ argp.add_argument(
         "gcc8",
         "gcc10.2",
         "gcc10.2_openssl102",
+        "gcc10.2_openssl111",
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
         "clang6",
-        "clang15",
+        "clang16",
         # TODO: Automatically populate from supported version
         "python2.7",
         "python3.5",

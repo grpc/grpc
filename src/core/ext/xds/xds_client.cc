@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <functional>
 #include <type_traits>
 
 #include "absl/strings/match.h"
@@ -755,7 +756,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   // Parse the resource.
   XdsResourceType::DecodeContext context = {
       xds_client(), ads_call_state_->chand()->server_, &grpc_xds_client_trace,
-      xds_client()->symtab_.ptr(), arena};
+      xds_client()->def_pool_.ptr(), arena};
   XdsResourceType::DecodeResult decode_result =
       result_.type->Decode(context, serialized_resource);
   // If we didn't already have the resource name from the Resource
@@ -1489,7 +1490,7 @@ XdsClient::XdsClient(
       transport_factory_(std::move(transport_factory)),
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
-      api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_,
+      api_(this, &grpc_xds_client_trace, bootstrap_->node(), &def_pool_,
            std::move(user_agent_name), std::move(user_agent_version)),
       work_serializer_(engine),
       engine_(std::move(engine)) {
@@ -1721,7 +1722,7 @@ void XdsClient::MaybeRegisterResourceTypeLocked(
     return;
   }
   resource_types_.emplace(resource_type->type_url(), resource_type);
-  resource_type->InitUpbSymtab(this, symtab_.ptr());
+  resource_type->InitUpbSymtab(this, def_pool_.ptr());
 }
 
 const XdsResourceType* XdsClient::GetResourceTypeLocked(

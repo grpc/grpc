@@ -34,6 +34,7 @@ import yaml
 
 import framework.errors
 from framework.helpers import retryers
+import framework.helpers.datetime
 import framework.helpers.highlighter
 from framework.infrastructure.k8s_internal import k8s_log_collector
 from framework.infrastructure.k8s_internal import k8s_port_forwarder
@@ -41,7 +42,6 @@ from framework.infrastructure.k8s_internal import k8s_port_forwarder
 logger = logging.getLogger(__name__)
 
 # Type aliases
-_HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 PodLogCollector = k8s_log_collector.PodLogCollector
 PortForwarder = k8s_port_forwarder.PortForwarder
 V1Deployment = client.V1Deployment
@@ -50,6 +50,7 @@ V1Pod = client.V1Pod
 V1PodList = client.V1PodList
 V1Service = client.V1Service
 V1Namespace = client.V1Namespace
+V1ObjectMeta = client.V1ObjectMeta
 
 DynResourceInstance = dynamic_res.ResourceInstance
 GammaMesh = DynResourceInstance
@@ -60,6 +61,9 @@ GcpSessionAffinityFilter = DynResourceInstance
 GcpBackendPolicy = DynResourceInstance
 
 _timedelta = datetime.timedelta
+_datetime = datetime.datetime
+_helper_datetime = framework.helpers.datetime
+_HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 _ApiException = client.ApiException
 _FailToCreateError = utils.FailToCreateError
 
@@ -203,6 +207,18 @@ class KubernetesApiManager:
 
         return self._load_dynamic_api(api_name, version, kind)
 
+    @functools.cache  # pylint: disable=no-member
+    def pod_monitoring(self, version: str) -> dynamic_res.Resource:
+        api_name = "monitoring.googleapis.com"
+        kind = "PodMonitoring"
+        supported_versions = ("v1",)
+        if version not in supported_versions:
+            raise NotImplementedError(
+                f"{kind} {api_name}/{version} not implemented."
+            )
+
+        return self._load_dynamic_api(api_name, version, kind)
+
     def close(self):
         # TODO(sergiitk): [GAMMA] what to do with dynamic clients?
         self.client.close()
@@ -255,7 +271,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     _api: KubernetesApiManager
     _name: str
 
-    NEG_STATUS_META = "cloud.google.com/neg-status"
+    NEG_STATUS_ANNOTATION = "cloud.google.com/neg-status"
     DELETE_GRACE_PERIOD_SEC: int = 5
     WAIT_SHORT_TIMEOUT_SEC: int = 60
     WAIT_SHORT_SLEEP_SEC: int = 1
@@ -264,6 +280,10 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     WAIT_LONG_TIMEOUT_SEC: int = 10 * 60
     WAIT_LONG_SLEEP_SEC: int = 30
     WAIT_POD_START_TIMEOUT_SEC: int = 3 * 60
+
+    # TODO(sergiitk): Find a better way. Maybe like in framework.rpc.grpc?
+    wait_for_namespace_deleted_timeout_sec = None
+    wait_for_namespace_deleted_sleep_sec = None
 
     def __init__(self, api: KubernetesApiManager, name: str):
         self._api = api
@@ -351,6 +371,9 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 return self._api.grpc_route(version)
             elif kind == "HTTPRoute":
                 return self._api.http_route(version)
+        elif group == "monitoring.googleapis.com":
+            if kind == "PodMonitoring":
+                return self._api.pod_monitoring(version)
 
         raise NotImplementedError(
             f"{kind} ({group}) {api_version} not implemented."
@@ -761,9 +784,20 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
     def wait_for_namespace_deleted(
         self,
-        timeout_sec: int = WAIT_LONG_TIMEOUT_SEC,
-        wait_sec: int = WAIT_LONG_SLEEP_SEC,
+        timeout_sec: Optional[int] = None,
+        wait_sec: Optional[int] = None,
     ) -> None:
+        if timeout_sec is None:
+            if self.wait_for_namespace_deleted_timeout_sec is not None:
+                timeout_sec = self.wait_for_namespace_deleted_timeout_sec
+            else:
+                timeout_sec = self.WAIT_LONG_TIMEOUT_SEC
+        if wait_sec is None:
+            if self.wait_for_namespace_deleted_sleep_sec is not None:
+                wait_sec = self.wait_for_namespace_deleted_timeout_sec
+            else:
+                wait_sec = self.WAIT_LONG_SLEEP_SEC
+
         retryer = retryers.constant_retryer(
             wait_fixed=_timedelta(seconds=wait_sec),
             timeout=_timedelta(seconds=timeout_sec),
@@ -771,7 +805,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         )
         retryer(self.get)
 
-    def wait_for_service_neg(
+    def wait_for_service_neg_status_annotation(
         self,
         name: str,
         timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
@@ -781,29 +815,36 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         retryer = retryers.constant_retryer(
             wait_fixed=_timedelta(seconds=wait_sec),
             timeout=timeout,
-            check_result=self._check_service_neg_annotation,
+            check_result=self._check_service_neg_status_annotation,
         )
         try:
             retryer(self.get_service, name)
         except retryers.RetryError as retry_err:
             result = retry_err.result()
             note = framework.errors.FrameworkError.note_blanket_error_info_below(
-                "A k8s service wasn't assigned a NEG (Network Endpoint Group).",
+                "A Kubernetes Service wasn't assigned a NEG (Network Endpoint"
+                " Group) status annotation.",
                 info_below=(
-                    f"Timeout {timeout} (h:mm:ss) waiting for service {name}"
-                    f" to report NEG status. Last service status:\n"
-                    f"{self._pretty_format_status(result, highlight=False)}"
+                    f"Timeout {timeout} (h:mm:ss) waiting for Kubernetes"
+                    f" Service {name} in the namespace {self.name} to report"
+                    f" the '{self.NEG_STATUS_ANNOTATION}' metadata annotation."
+                    f"\nThis indicates the NEG wasn't created OR"
+                    f" the NEG creation event hasn't propagated to Kubernetes."
+                    f" Service metadata:\n"
+                    f"{self.pretty_format_metadata(result, highlight=False)}"
+                    f"Service status:\n"
+                    f"{self.pretty_format_status(result, highlight=False)}"
                 ),
             )
             retry_err.add_note(note)
             raise
 
-    def get_service_neg(
+    def parse_service_neg_status(
         self, service_name: str, service_port: int
     ) -> Tuple[str, List[str]]:
         service = self.get_service(service_name)
         neg_info: dict = json.loads(
-            service.metadata.annotations[self.NEG_STATUS_META]
+            service.metadata.annotations[self.NEG_STATUS_ANNOTATION]
         )
         neg_name: str = neg_info["network_endpoint_groups"][str(service_port)]
         neg_zones: List[str] = neg_info["zones"]
@@ -854,7 +895,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 info_below=(
                     f"Timeout {timeout} (h:mm:ss) waiting for deployment {name}"
                     f" to report {count} replicas available. Last status:\n"
-                    f"{self._pretty_format_status(result, highlight=False)}"
+                    f"{self.pretty_format_status(result, highlight=False)}"
                 ),
             )
             retry_err.add_note(note)
@@ -883,7 +924,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 info_below=(
                     f"Timeout {timeout} (h:mm:ss) waiting for pod count"
                     f" {count}, got: {len(result)}. Pod statuses:\n"
-                    f"{self._pretty_format_statuses(result, highlight=False)}"
+                    f"{self.pretty_format_status(result, highlight=False)}"
                 ),
             )
             retry_err.add_note(note)
@@ -937,7 +978,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                     info_below=(
                         f"Timeout {timeout} (h:mm:ss) waiting for pod"
                         f" {pod_name} to start. Pod status:\n"
-                        f"{self._pretty_format_status(result, highlight=False)}"
+                        f"{self.pretty_format_status(result, highlight=False)}"
                     ),
                 )
             )
@@ -982,35 +1023,53 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         pod_log_collector.start()
         return pod_log_collector
 
-    def _pretty_format_statuses(
+    def pretty_format_statuses(
         self,
         k8s_objects: List[Optional[object]],
         *,
         highlight: bool = True,
     ) -> str:
         return "\n".join(
-            self._pretty_format_status(k8s_object, highlight=highlight)
+            self.pretty_format_status(k8s_object, highlight=highlight)
             for k8s_object in k8s_objects
         )
 
-    def _pretty_format_status(
+    def pretty_format_status(
         self,
         k8s_object: Optional[object],
-        *,
         highlight: bool = True,
     ) -> str:
         if k8s_object is None:
             return "No data"
 
-        # Parse the name if present.
-        if hasattr(k8s_object, "metadata") and hasattr(
-            k8s_object.metadata, "name"
-        ):
-            name = k8s_object.metadata.name
-        else:
-            name = "Can't parse resource name"
+        result = []
+        metadata: Optional[V1ObjectMeta] = None
+        if isinstance(getattr(k8s_object, "metadata", None), V1ObjectMeta):
+            # Parse the name if present.
+            metadata: V1ObjectMeta = k8s_object.metadata
+
+        # Parse name if, present, but always indicate unsuccessful parse.
+        name = metadata.name if metadata else "Can't parse resource name"
+        result.append(f"Resource name: {name}")
+
+        # Add kubernetes kind (resource type) if present.
+        if hasattr(k8s_object, "kind"):
+            result.append(f"Resource kind: {k8s_object.kind}")
+
+        # Add the timestamps if present.
+        if metadata and metadata.creation_timestamp:
+            result.append(
+                f"Created: {metadata.creation_timestamp};"
+                f" {_helper_datetime.ago(metadata.creation_timestamp)}"
+            )
+        if metadata and metadata.deletion_timestamp:
+            result.append(
+                f"Deletion requested: {metadata.deletion_timestamp};"
+                f" {_helper_datetime.ago(metadata.deletion_timestamp)}"
+            )
 
         # Pretty-print the status if present.
+        result.append("")
         if hasattr(k8s_object, "status"):
             try:
                 status = self._pretty_format(
@@ -1023,9 +1082,40 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 status = f"Can't parse resource status: {e}"
         else:
             status = "Can't parse resource status"
+        result.append(status)
+
+        return "\n".join(result) + "\n"
+
+    def pretty_format_metadata(
+        self,
+        k8s_object: Optional[object],
+        *,
+        highlight: bool = True,
+        managed_fields: bool = False,
+    ) -> str:
+        if k8s_object is None:
+            return "No data"
+
+        # Parse the name if present.
+        if not hasattr(k8s_object, "metadata"):
+            return "Object metadata missing"
+
+        name = k8s_object.metadata.name or "Can't parse resource name"
+
+        # Pretty-print metadata.
+        try:
+            metadata_dict: dict = k8s_object.metadata.to_dict()
+            # Don't print manged fields by default. Lots of noise with no value.
+            if not managed_fields:
+                metadata_dict.pop("managed_fields", None)
+            metadata = self._pretty_format(metadata_dict, highlight=highlight)
+        except Exception as e:  # pylint: disable=broad-except
+            # Catching all exceptions because not printing the metadata
+            # isn't as important as the system under test.
+            metadata = f"Can't parse resource metadata: {e}"
 
         # Return the name of k8s object, and its pretty-printed status.
-        return f"{name}:\n{status}\n"
+        return f"{name}:\n{metadata}\n"
 
     def _pretty_format(
         self,
@@ -1038,12 +1128,12 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         return self._highlighter.highlight(yaml_out) if highlight else yaml_out
 
     @classmethod
-    def _check_service_neg_annotation(
+    def _check_service_neg_status_annotation(
         cls, service: Optional[V1Service]
     ) -> bool:
         return (
             isinstance(service, V1Service)
-            and cls.NEG_STATUS_META in service.metadata.annotations
+            and cls.NEG_STATUS_ANNOTATION in service.metadata.annotations
         )
 
     @classmethod

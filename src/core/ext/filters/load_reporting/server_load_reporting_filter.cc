@@ -20,17 +20,15 @@
 
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 
-#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 #include <functional>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
@@ -52,7 +50,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -258,10 +255,6 @@ ArenaPromise<ServerMetadataHandle> ServerLoadReportingFilter::MakeCallPromise(
 }
 
 namespace {
-bool MaybeAddServerLoadReportingFilter(const ChannelArgs& args) {
-  return args.GetBool(GRPC_ARG_ENABLE_LOAD_REPORTING).value_or(false);
-}
-
 const grpc_channel_filter kFilter =
     MakePromiseBasedFilter<ServerLoadReportingFilter, FilterEndpoint::kServer>(
         "server_load_reporting");
@@ -282,13 +275,9 @@ struct ServerLoadReportingFilterStaticRegistrar {
       grpc::load_reporter::MeasureEndBytesReceived();
       grpc::load_reporter::MeasureEndLatencyMs();
       grpc::load_reporter::MeasureOtherCallMetric();
-      builder->channel_init()->RegisterStage(
-          GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* cs_builder) {
-            if (MaybeAddServerLoadReportingFilter(cs_builder->channel_args())) {
-              cs_builder->PrependFilter(&kFilter);
-            }
-            return true;
-          });
+      builder->channel_init()
+          ->RegisterFilter(GRPC_SERVER_CHANNEL, &kFilter)
+          .IfChannelArg(GRPC_ARG_ENABLE_LOAD_REPORTING, false);
     });
   }
 } server_load_reporting_filter_static_registrar;

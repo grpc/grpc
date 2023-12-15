@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
-
-// TODO(xuanwn): clean up includes
 #include <grpc/support/port_platform.h>
 
-#include <constants.h>
+#include "server_call_tracer.h"
+
 #include <stdint.h>
 #include <string.h>
 
@@ -33,6 +31,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "constants.h"
+#include "observability_util.h"
+#include "python_census_context.h"
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -41,8 +42,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/python/grpcio_observability/grpc_observability/observability_util.h"
-#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
 
 namespace grpc_observability {
 
@@ -94,15 +93,15 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
 
   std::string TraceId() override {
     return absl::BytesToHexString(
-        absl::string_view(context_.SpanContext().TraceId()));
+        absl::string_view(context_.GetSpanContext().TraceId()));
   }
 
   std::string SpanId() override {
     return absl::BytesToHexString(
-        absl::string_view(context_.SpanContext().SpanId()));
+        absl::string_view(context_.GetSpanContext().SpanId()));
   }
 
-  bool IsSampled() override { return context_.SpanContext().IsSampled(); }
+  bool IsSampled() override { return context_.GetSpanContext().IsSampled(); }
 
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
@@ -150,28 +149,30 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   void RecordEnd(const grpc_call_final_info* final_info) override;
 
   void RecordAnnotation(absl::string_view annotation) override {
-    if (!context_.SpanContext().IsSampled()) {
+    if (!context_.GetSpanContext().IsSampled()) {
       return;
     }
     context_.AddSpanAnnotation(annotation);
   }
 
   void RecordAnnotation(const Annotation& annotation) override {
-    if (!context_.SpanContext().IsSampled()) {
+    if (!context_.GetSpanContext().IsSampled()) {
       return;
     }
 
     switch (annotation.type()) {
-      case AnnotationType::kMetadataSizes:
-        // This annotation is expensive to create. We should only create it if
-        // the call is being sampled, not just recorded.
+      // Annotations are expensive to create. We should only create it if the
+      // call is being sampled by default.
+      default:
         if (IsSampled()) {
           context_.AddSpanAnnotation(annotation.ToString());
         }
         break;
-      default:
-        context_.AddSpanAnnotation(annotation.ToString());
     }
+  }
+
+  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+    return nullptr;
   }
 
  private:
@@ -245,7 +246,7 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
   if (PythonCensusTracingEnabled()) {
     context_.EndSpan();
     if (IsSampled()) {
-      RecordSpan(context_.Span().ToCensusData());
+      RecordSpan(context_.GetSpan().ToCensusData());
     }
   }
 

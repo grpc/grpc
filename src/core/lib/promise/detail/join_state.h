@@ -25,7 +25,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_like.h"
@@ -139,7 +138,7 @@ struct JoinState<Traits, P0, P1> {
       gpr_log(GPR_DEBUG, "join[%p]: joint 2/2 already ready", this);
     }
     if (ready.all()) {
-      return Result{std::make_tuple(std::move(result0), std::move(result1))};
+      return Traits::FinalReturn(std::move(result0), std::move(result1));
     }
     return Pending{};
   }
@@ -288,8 +287,8 @@ struct JoinState<Traits, P0, P1, P2> {
       gpr_log(GPR_DEBUG, "join[%p]: joint 3/3 already ready", this);
     }
     if (ready.all()) {
-      return Result{std::make_tuple(std::move(result0), std::move(result1),
-                                    std::move(result2))};
+      return Traits::FinalReturn(std::move(result0), std::move(result1),
+                                 std::move(result2));
     }
     return Pending{};
   }
@@ -479,8 +478,8 @@ struct JoinState<Traits, P0, P1, P2, P3> {
       gpr_log(GPR_DEBUG, "join[%p]: joint 4/4 already ready", this);
     }
     if (ready.all()) {
-      return Result{std::make_tuple(std::move(result0), std::move(result1),
-                                    std::move(result2), std::move(result3))};
+      return Traits::FinalReturn(std::move(result0), std::move(result1),
+                                 std::move(result2), std::move(result3));
     }
     return Pending{};
   }
@@ -712,9 +711,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
       gpr_log(GPR_DEBUG, "join[%p]: joint 5/5 already ready", this);
     }
     if (ready.all()) {
-      return Result{std::make_tuple(std::move(result0), std::move(result1),
-                                    std::move(result2), std::move(result3),
-                                    std::move(result4))};
+      return Traits::FinalReturn(std::move(result0), std::move(result1),
+                                 std::move(result2), std::move(result3),
+                                 std::move(result4));
     }
     return Pending{};
   }
@@ -987,9 +986,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
       gpr_log(GPR_DEBUG, "join[%p]: joint 6/6 already ready", this);
     }
     if (ready.all()) {
-      return Result{std::make_tuple(std::move(result0), std::move(result1),
-                                    std::move(result2), std::move(result3),
-                                    std::move(result4), std::move(result5))};
+      return Traits::FinalReturn(std::move(result0), std::move(result1),
+                                 std::move(result2), std::move(result3),
+                                 std::move(result4), std::move(result5));
     }
     return Pending{};
   }
@@ -1303,10 +1302,10 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
       gpr_log(GPR_DEBUG, "join[%p]: joint 7/7 already ready", this);
     }
     if (ready.all()) {
-      return Result{std::make_tuple(std::move(result0), std::move(result1),
-                                    std::move(result2), std::move(result3),
-                                    std::move(result4), std::move(result5),
-                                    std::move(result6))};
+      return Traits::FinalReturn(std::move(result0), std::move(result1),
+                                 std::move(result2), std::move(result3),
+                                 std::move(result4), std::move(result5),
+                                 std::move(result6));
     }
     return Pending{};
   }
@@ -1662,10 +1661,10 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
       gpr_log(GPR_DEBUG, "join[%p]: joint 8/8 already ready", this);
     }
     if (ready.all()) {
-      return Result{std::make_tuple(std::move(result0), std::move(result1),
-                                    std::move(result2), std::move(result3),
-                                    std::move(result4), std::move(result5),
-                                    std::move(result6), std::move(result7))};
+      return Traits::FinalReturn(std::move(result0), std::move(result1),
+                                 std::move(result2), std::move(result3),
+                                 std::move(result4), std::move(result5),
+                                 std::move(result6), std::move(result7));
     }
     return Pending{};
   }
@@ -2063,10 +2062,10 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
       gpr_log(GPR_DEBUG, "join[%p]: joint 9/9 already ready", this);
     }
     if (ready.all()) {
-      return Result{std::make_tuple(
+      return Traits::FinalReturn(
           std::move(result0), std::move(result1), std::move(result2),
           std::move(result3), std::move(result4), std::move(result5),
-          std::move(result6), std::move(result7), std::move(result8))};
+          std::move(result6), std::move(result7), std::move(result8));
     }
     return Pending{};
   }

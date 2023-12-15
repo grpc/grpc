@@ -18,7 +18,6 @@
 
 #include "src/core/ext/xds/xds_audit_logger_registry.h"
 
-#include <initializer_list>
 #include <memory>
 #include <string>
 
@@ -66,10 +65,10 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
     const AuditLoggerConfigProto& config) {
   std::string serialized_config = config.SerializeAsString();
   upb::Arena arena;
-  upb::SymbolTable symtab;
-  XdsResourceType::DecodeContext context = {nullptr,
-                                            GrpcXdsBootstrap::GrpcXdsServer(),
-                                            nullptr, symtab.ptr(), arena.ptr()};
+  upb::DefPool def_pool;
+  XdsResourceType::DecodeContext context = {
+      nullptr, GrpcXdsBootstrap::GrpcXdsServer(), nullptr, def_pool.ptr(),
+      arena.ptr()};
   auto* upb_config =
       envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(
           serialized_config.data(), serialized_config.size(), arena.ptr());
