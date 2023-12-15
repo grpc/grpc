@@ -218,7 +218,7 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
 
   // Starts CDS and EDS/DNS watches for the specified cluster if needed.
   // If the resource is available, adds an entry to cluster_config_map.
-  // Adds each cluster seen to clusters_seen.
+  // Adds each cluster to clusters_seen.
   // For each EDS cluster, adds the EDS resource to eds_resources_seen.
   // For each Logical DNS cluster, adds the DNS hostname to dns_names_seen.
   // For aggregate clusters, calls itself recursively.  If leaf_clusters is

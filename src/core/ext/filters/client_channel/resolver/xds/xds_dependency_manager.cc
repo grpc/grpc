@@ -842,17 +842,20 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
           if (!result.ok()) return result;
           if (!*result) missing_cluster = true;
         }
-        // If this is the root of the tree, populate cluster config.
-        if (depth == 0) {
-          (*cluster_config_map)[name].emplace(
-              std::string(name), std::move(cluster_resource),
-              std::move(child_leaf_clusters));
-        } else if (leaf_clusters != nullptr) {
-          // Otherwise, propagate leaf cluster list up the tree.
+        // If needed, propagate leaf cluster list up the tree.
+        if (leaf_clusters != nullptr) {
           leaf_clusters->insert(leaf_clusters->end(),
                                 child_leaf_clusters.begin(),
                                 child_leaf_clusters.end());
         }
+        // Populate cluster config.
+        // Note that we do this even for aggregate clusters that are not
+        // at the root of the tree, because we need to make sure the list
+        // of underlying cluster names stays alive so that the leaf cluster
+        // list of the root aggregate cluster can point to those strings.
+        (*cluster_config_map)[name].emplace(
+            std::string(name), std::move(cluster_resource),
+            std::move(child_leaf_clusters));
         return !missing_cluster;
       });
 }
