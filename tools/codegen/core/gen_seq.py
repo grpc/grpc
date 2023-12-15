@@ -146,7 +146,11 @@ tail${i}:
         PromiseResult${i}* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(GPR_DEBUG, "seq[%p]: poll step ${i+1}/${n} gets %s", this, 
-                  p != nullptr? (PromiseResultTraits${i}::IsOk(*p)? "ready" : "early-error") : "pending");
+                  p != nullptr
+                    ? (PromiseResultTraits${i}::IsOk(*p)
+                      ? "ready" 
+                      : absl::StrCat("early-error:", PromiseResultTraits${i}::ErrorString(*p)).c_str()) 
+                    : "pending");
         }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits${i}::IsOk(*p)) {

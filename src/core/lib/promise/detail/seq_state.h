@@ -147,7 +147,11 @@ struct SeqState<Traits, P, F0> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 1/2 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits0::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits0::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits0::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -278,7 +282,11 @@ struct SeqState<Traits, P, F0, F1> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 1/3 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits0::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits0::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits0::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -304,7 +312,11 @@ struct SeqState<Traits, P, F0, F1> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 2/3 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits1::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits1::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits1::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -462,7 +474,11 @@ struct SeqState<Traits, P, F0, F1, F2> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 1/4 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits0::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits0::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits0::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -488,7 +504,11 @@ struct SeqState<Traits, P, F0, F1, F2> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 2/4 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits1::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits1::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits1::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -514,7 +534,11 @@ struct SeqState<Traits, P, F0, F1, F2> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 3/4 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits2::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits2::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits2::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -699,7 +723,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 1/5 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits0::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits0::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits0::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -725,7 +753,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 2/5 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits1::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits1::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits1::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -751,7 +783,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 3/5 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits2::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits2::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits2::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -777,7 +813,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 4/5 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits3::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits3::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits3::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -999,7 +1039,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 1/6 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits0::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits0::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits0::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1026,7 +1070,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 2/6 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits1::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits1::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits1::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1052,7 +1100,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 3/6 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits2::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits2::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits2::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1078,7 +1130,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 4/6 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits3::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits3::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits3::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1104,7 +1160,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 5/6 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits4::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits4::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits4::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1359,7 +1419,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 1/7 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits0::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits0::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits0::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1386,7 +1450,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 2/7 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits1::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits1::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits1::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1413,7 +1481,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 3/7 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits2::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits2::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits2::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1439,7 +1511,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 4/7 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits3::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits3::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits3::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1465,7 +1541,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 5/7 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits4::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits4::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits4::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1491,7 +1571,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 6/7 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits5::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits5::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits5::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1780,7 +1864,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 1/8 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits0::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits0::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits0::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1808,7 +1896,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 2/8 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits1::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits1::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits1::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1835,7 +1927,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 3/8 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits2::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits2::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits2::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1862,7 +1958,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 4/8 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits3::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits3::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits3::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1888,7 +1988,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 5/8 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits4::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits4::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits4::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1914,7 +2018,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 6/8 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits5::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits5::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits5::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1940,7 +2048,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 7/8 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits6::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits6::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits6::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -2263,7 +2375,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 1/9 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits0::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits0::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits0::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -2293,7 +2409,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 2/9 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits1::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits1::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits1::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -2321,7 +2441,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 3/9 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits2::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits2::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits2::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -2348,7 +2472,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 4/9 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits3::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits3::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits3::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -2375,7 +2503,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 5/9 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits4::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits4::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits4::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -2401,7 +2533,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 6/9 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits5::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits5::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits5::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -2427,7 +2563,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 7/9 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits6::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits6::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits6::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -2453,7 +2593,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
           gpr_log(
               GPR_DEBUG, "seq[%p]: poll step 8/9 gets %s", this,
               p != nullptr
-                  ? (PromiseResultTraits7::IsOk(*p) ? "ready" : "early-error")
+                  ? (PromiseResultTraits7::IsOk(*p)
+                         ? "ready"
+                         : absl::StrCat("early-error:",
+                                        PromiseResultTraits7::ErrorString(*p))
+                               .c_str())
                   : "pending");
         }
         if (p == nullptr) return Pending{};

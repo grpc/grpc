@@ -39,6 +39,7 @@ struct SeqTraits {
     return next->Make(std::forward<T>(value));
   }
   static bool IsOk(const T&) { return true; }
+  static const char* ErrorString(const T&) { abort(); }
   template <typename R>
   static R ReturnValue(T&&) {
     abort();
