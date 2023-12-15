@@ -1804,6 +1804,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/security_connector/tls/tls_security_connector.h )
   s.files += %w( src/core/lib/security/transport/auth_filters.h )
   s.files += %w( src/core/lib/security/transport/client_auth_filter.cc )
+  s.files += %w( src/core/lib/security/transport/legacy_server_auth_filter.cc )
   s.files += %w( src/core/lib/security/transport/secure_endpoint.cc )
   s.files += %w( src/core/lib/security/transport/secure_endpoint.h )
   s.files += %w( src/core/lib/security/transport/security_handshaker.cc )
