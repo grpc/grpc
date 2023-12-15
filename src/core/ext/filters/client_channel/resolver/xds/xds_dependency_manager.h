@@ -218,7 +218,6 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
 
   // Starts CDS and EDS/DNS watches for the specified cluster if needed.
   // If the resource is available, adds an entry to cluster_config_map.
-  // Adds each cluster to clusters_seen.
   // For each EDS cluster, adds the EDS resource to eds_resources_seen.
   // For each Logical DNS cluster, adds the DNS hostname to dns_names_seen.
   // For aggregate clusters, calls itself recursively.  If leaf_clusters is
@@ -227,11 +226,10 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   // in the graph report an error.
   // Returns true if all resources have been obtained.
   absl::StatusOr<bool> PopulateClusterConfigList(
-      absl::string_view name,
+      absl::string_view name, int depth,
       absl::flat_hash_map<std::string,
                           absl::StatusOr<XdsConfig::ClusterConfig>>*
           cluster_config_map,
-      int depth, std::set<absl::string_view>* clusters_seen,
       std::set<absl::string_view>* eds_resources_seen,
       std::set<absl::string_view>* dns_names_seen,
       std::vector<absl::string_view>* leaf_clusters = nullptr);

@@ -706,10 +706,9 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
 }
 
 absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
-    absl::string_view name,
+    absl::string_view name, int depth,
     absl::flat_hash_map<std::string, absl::StatusOr<XdsConfig::ClusterConfig>>*
         cluster_config_map,
-    int depth, std::set<absl::string_view>* clusters_seen,
     std::set<absl::string_view>* eds_resources_seen,
     std::set<absl::string_view>* dns_names_seen,
     std::vector<absl::string_view>* leaf_clusters) {
@@ -717,8 +716,14 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
     return absl::UnavailableError("aggregate cluster graph exceeds max depth");
   }
   // Don't process the cluster again if we've already seen it in some
-  // other branch of the recursion tree.
-  if (!clusters_seen->insert(name).second) return true;
+  // other branch of the recursion tree.  We populate it with a non-OK
+  // status here, since we need an entry in the map to avoid incorrectly
+  // stopping the CDS watch, but we'll overwrite this below if we actually
+  // have the data for the cluster.
+  auto p = cluster_config_map->emplace(
+      name, absl::InternalError("cluster data not yet available"));
+  if (!p.second) return true;
+  auto& cluster_config = p.first->second;
   auto& state = cluster_watchers_[name];
   // Create a new watcher if needed.
   if (state.watcher == nullptr) {
@@ -766,7 +771,7 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
           return false;
         }
         // Populate cluster config.
-        (*cluster_config_map)[name].emplace(
+        cluster_config.emplace(
             std::string(name), *state.update, eds_state.update.endpoints,
             eds_state.update.resolution_note);
         if (leaf_clusters != nullptr) leaf_clusters->push_back(name);
@@ -817,7 +822,7 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
           return false;
         }
         // Populate cluster config.
-        (*cluster_config_map)[name].emplace(
+        cluster_config.emplace(
             std::string(name), *state.update, dns_state.update.endpoints,
             dns_state.update.resolution_note);
         if (leaf_clusters != nullptr) leaf_clusters->push_back(name);
@@ -837,8 +842,8 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
         for (const std::string& child_name :
              aggregate.prioritized_cluster_names) {
           auto result = PopulateClusterConfigList(
-              child_name, cluster_config_map, depth + 1, clusters_seen,
-              eds_resources_seen, dns_names_seen, &child_leaf_clusters);
+              child_name, depth + 1, cluster_config_map, eds_resources_seen,
+              dns_names_seen, &child_leaf_clusters);
           if (!result.ok()) return result;
           if (!*result) missing_cluster = true;
         }
@@ -850,9 +855,16 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
         }
         // Populate cluster config.
         // Note that we do this even for aggregate clusters that are not
-        // at the root of the tree, because we need to make sure the list
-        // of underlying cluster names stays alive so that the leaf cluster
-        // list of the root aggregate cluster can point to those strings.
+        // at the root of the tree, because (a) we need to make sure the
+        // list of underlying cluster names stays alive so that the leaf
+        // cluster list of the root aggregate cluster can point to those
+        // strings, and (b) we need the entry in cluster_config_map to
+        // avoid incorrectly stopping the CDS watch for this resource.
+        //
+        // Also note that we cannot use the cluster_config reference we
+        // created above, because it may have been invalidated by map
+        // insertions when we recursively called ourselves, so we have
+        // to do the lookup in cluster_config_map again.
         (*cluster_config_map)[name].emplace(
             std::string(name), std::move(cluster_resource),
             std::move(child_leaf_clusters));
@@ -912,14 +924,12 @@ void XdsDependencyManager::MaybeReportUpdate() {
   // Populate Cluster map.
   // We traverse the entire graph even if we don't yet have all of the
   // resources we need to ensure that the right set of watches are active.
-  std::set<absl::string_view> clusters_seen;
   std::set<absl::string_view> eds_resources_seen;
   std::set<absl::string_view> dns_names_seen;
   bool missing_data = false;
   for (const absl::string_view& cluster : clusters_to_watch) {
-    auto result =
-        PopulateClusterConfigList(cluster, &config->clusters, 0, &clusters_seen,
-                                  &eds_resources_seen, &dns_names_seen);
+    auto result = PopulateClusterConfigList(
+        cluster, 0, &config->clusters, &eds_resources_seen, &dns_names_seen);
     auto& cluster_config = config->clusters[cluster];
     if (!result.ok()) {
       cluster_config = result.status();
@@ -937,10 +947,11 @@ void XdsDependencyManager::MaybeReportUpdate() {
       }
     }
   }
-  // Remove entries in cluster_watchers_ for any clusters not in clusters_seen.
+  // Remove entries in cluster_watchers_ for any clusters not in
+  // config->clusters.
   for (auto it = cluster_watchers_.begin(); it != cluster_watchers_.end();) {
     const std::string& cluster_name = it->first;
-    if (clusters_seen.find(cluster_name) != clusters_seen.end()) {
+    if (config->clusters.contains(cluster_name)) {
       ++it;
       continue;
     }
