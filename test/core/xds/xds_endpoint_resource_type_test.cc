@@ -167,8 +167,7 @@ TEST_F(XdsEndpointTest, MinimumValidConfig) {
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,
                                      XdsHealthStatus::HealthStatus::kUnknown));
-  ASSERT_NE(resource.drop_config, nullptr);
-  EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
+  EXPECT_EQ(resource.drop_config, nullptr);
 }
 
 TEST_F(XdsEndpointTest, EndpointWeight) {
@@ -214,8 +213,7 @@ TEST_F(XdsEndpointTest, EndpointWeight) {
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 3)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,
                                      XdsHealthStatus::HealthStatus::kUnknown));
-  ASSERT_NE(resource.drop_config, nullptr);
-  EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
+  EXPECT_EQ(resource.drop_config, nullptr);
 }
 
 TEST_F(XdsEndpointTest, IgnoresLocalityWithNoWeight) {
@@ -263,8 +261,7 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithNoWeight) {
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,
                                      XdsHealthStatus::HealthStatus::kUnknown));
-  ASSERT_NE(resource.drop_config, nullptr);
-  EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
+  EXPECT_EQ(resource.drop_config, nullptr);
 }
 
 TEST_F(XdsEndpointTest, IgnoresLocalityWithZeroWeight) {
@@ -313,8 +310,7 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithZeroWeight) {
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,
                                      XdsHealthStatus::HealthStatus::kUnknown));
-  ASSERT_NE(resource.drop_config, nullptr);
-  EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
+  EXPECT_EQ(resource.drop_config, nullptr);
 }
 
 TEST_F(XdsEndpointTest, LocalityWithNoEndpoints) {
@@ -346,8 +342,7 @@ TEST_F(XdsEndpointTest, LocalityWithNoEndpoints) {
   EXPECT_EQ(p.first->sub_zone(), "mysubzone");
   EXPECT_EQ(p.second.lb_weight, 1);
   EXPECT_EQ(p.second.endpoints.size(), 0);
-  ASSERT_NE(resource.drop_config, nullptr);
-  EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
+  EXPECT_EQ(resource.drop_config, nullptr);
 }
 
 TEST_F(XdsEndpointTest, NoLocality) {
@@ -544,8 +539,7 @@ TEST_F(XdsEndpointTest, MultipleAddressesPerEndpoint) {
                                  .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                  .Set(GRPC_ARG_XDS_HEALTH_STATUS,
                                       XdsHealthStatus::HealthStatus::kUnknown));
-  ASSERT_NE(resource.drop_config, nullptr);
-  EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
+  EXPECT_EQ(resource.drop_config, nullptr);
 }
 
 TEST_F(XdsEndpointTest, AdditionalAddressesMissingAddress) {
@@ -735,8 +729,7 @@ TEST_F(XdsEndpointTest, IgnoresMultipleAddressesPerEndpointWhenNotEnabled) {
                                  .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                  .Set(GRPC_ARG_XDS_HEALTH_STATUS,
                                       XdsHealthStatus::HealthStatus::kUnknown));
-  ASSERT_NE(resource.drop_config, nullptr);
-  EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
+  EXPECT_EQ(resource.drop_config, nullptr);
 }
 
 TEST_F(XdsEndpointTest, MissingEndpoint) {
