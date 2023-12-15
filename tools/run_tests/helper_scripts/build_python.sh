@@ -138,7 +138,7 @@ pip_install() {
   /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
 }
 
-pip_install --upgrade setuptools==61.0.0
+pip_install --upgrade setuptools
 pip_install --upgrade pip
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
