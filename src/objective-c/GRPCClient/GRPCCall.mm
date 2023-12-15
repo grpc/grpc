@@ -22,8 +22,8 @@
 #import "GRPCCallOptions.h"
 #import "GRPCInterceptor.h"
 
-#import "GRPCTransport.h"
 #import "private/GRPCTransport+Private.h"
+#import "GRPCTransport.h"
 
 /**
  * The response dispatcher creates its own serial dispatch queue and target the queue to the
