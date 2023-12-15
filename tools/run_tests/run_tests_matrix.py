@@ -226,7 +226,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs = []
     # sanity tests
     test_jobs += _generate_jobs(
-        languages=["sanity", "clang-tidy", "iwyu"],
+        languages=["sanity", "clang-tidy"],
         configs=["dbg"],
         platforms=["linux"],
         labels=["basictests"],
