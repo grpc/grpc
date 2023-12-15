@@ -241,7 +241,13 @@ void AresResolver::LookupHostname(
              "Unparseable name: ", name))]() mutable { callback(status); });
     return;
   }
-  GPR_ASSERT(!host.empty());
+  if (host.empty()) {
+    event_engine_->Run([callback = std::move(callback),
+                        status = absl::InvalidArgumentError(absl::StrCat(
+                            "host must not be empty in name: ",
+                            name))]() mutable { callback(status); });
+    return;
+  }
   if (port_string.empty()) {
     if (default_port.empty()) {
       event_engine_->Run([callback = std::move(callback),
@@ -307,7 +313,13 @@ void AresResolver::LookupSRV(
              "Unparseable name: ", name))]() mutable { callback(status); });
     return;
   }
-  GPR_ASSERT(!host.empty());
+  if (host.empty()) {
+    event_engine_->Run([callback = std::move(callback),
+                        status = absl::InvalidArgumentError(absl::StrCat(
+                            "host must not be empty in name: ",
+                            name))]() mutable { callback(status); });
+    return;
+  }
   // Don't query for SRV records if the target is "localhost"
   if (absl::EqualsIgnoreCase(host, "localhost")) {
     event_engine_->Run([callback = std::move(callback)]() mutable {
@@ -336,7 +348,13 @@ void AresResolver::LookupTXT(
              "Unparseable name: ", name))]() mutable { callback(status); });
     return;
   }
-  GPR_ASSERT(!host.empty());
+  if (host.empty()) {
+    event_engine_->Run([callback = std::move(callback),
+                        status = absl::InvalidArgumentError(absl::StrCat(
+                            "host must not be empty in name: ",
+                            name))]() mutable { callback(status); });
+    return;
+  }
   // Don't query for TXT records if the target is "localhost"
   if (absl::EqualsIgnoreCase(host, "localhost")) {
     event_engine_->Run([callback = std::move(callback)]() mutable {

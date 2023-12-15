@@ -236,6 +236,7 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/sync_windows.h",
     "include/grpc/support/thd_id.h",
     "include/grpc/support/time.h",
+    "include/grpc/impl/call.h",
     "include/grpc/impl/codegen/atm.h",
     "include/grpc/impl/codegen/atm_gcc_atomic.h",
     "include/grpc/impl/codegen/atm_gcc_sync.h",
@@ -1761,6 +1762,7 @@ grpc_cc_library(
         "//src/core:lib/security/credentials/plugin/plugin_credentials.cc",
         "//src/core:lib/security/security_connector/security_connector.cc",
         "//src/core:lib/security/transport/client_auth_filter.cc",
+        "//src/core:lib/security/transport/legacy_server_auth_filter.cc",
         "//src/core:lib/security/transport/secure_endpoint.cc",
         "//src/core:lib/security/transport/security_handshaker.cc",
         "//src/core:lib/security/transport/server_auth_filter.cc",
@@ -2305,29 +2307,6 @@ grpc_cc_library(
         "grpc++",
         "grpc_base",
     ],
-)
-
-grpc_cc_library(
-    name = "grpc_rpc_encoding",
-    srcs = [
-        "src/cpp/ext/filters/census/rpc_encoding.cc",
-    ],
-    hdrs = [
-        "src/cpp/ext/filters/census/rpc_encoding.h",
-    ],
-    external_deps = [
-        "absl/base",
-        "absl/base:core_headers",
-        "absl/base:endian",
-        "absl/meta:type_traits",
-        "absl/status",
-        "absl/strings",
-        "absl/time",
-    ],
-    language = "c++",
-    tags = ["nofixdeps"],
-    visibility = ["@grpc:grpc_python_observability"],
-    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(

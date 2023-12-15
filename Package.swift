@@ -61,6 +61,7 @@ let package = Package(
         "include/grpc/grpc_posix.h",
         "include/grpc/grpc_security.h",
         "include/grpc/grpc_security_constants.h",
+        "include/grpc/impl/call.h",
         "include/grpc/impl/channel_arg_names.h",
         "include/grpc/impl/codegen/atm.h",
         "include/grpc/impl/codegen/atm_gcc_atomic.h",
@@ -1804,6 +1805,7 @@ let package = Package(
         "src/core/lib/security/security_connector/tls/tls_security_connector.h",
         "src/core/lib/security/transport/auth_filters.h",
         "src/core/lib/security/transport/client_auth_filter.cc",
+        "src/core/lib/security/transport/legacy_server_auth_filter.cc",
         "src/core/lib/security/transport/secure_endpoint.cc",
         "src/core/lib/security/transport/secure_endpoint.h",
         "src/core/lib/security/transport/security_handshaker.cc",
@@ -2168,6 +2170,9 @@ let package = Package(
         "third_party/xxhash/xxhash.h",
       ],
       publicHeadersPath: "spm-core-include",
+      resources: [
+        .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+      ],
       cSettings: [
         .headerSearchPath("./"),
         .headerSearchPath("include/"),
@@ -2214,6 +2219,9 @@ let package = Package(
         "src/cpp/",
       ],
       publicHeadersPath: "spm-cpp-include",
+      resources: [
+        .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+      ],
       cSettings: [
         .headerSearchPath("./"),
         .headerSearchPath("include/"),

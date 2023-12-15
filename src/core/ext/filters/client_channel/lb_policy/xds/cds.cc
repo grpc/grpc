@@ -485,9 +485,15 @@ Json CdsLb::CreateChildPolicyConfig(
            Json::FromObject(std::move(xds_override_host_lb_config))},
       })};
       // Wrap it in the xds_cluster_impl policy.
-      Json::Array drop_categories;
+      Json::Object xds_cluster_impl_config = {
+          {"clusterName", Json::FromString(state.cluster_name)},
+          {"childPolicy", Json::FromArray(std::move(xds_override_host_config))},
+          {"maxConcurrentRequests",
+           Json::FromNumber(cluster_resource.max_concurrent_requests)},
+      };
       if (state.endpoints != nullptr &&
           state.endpoints->drop_config != nullptr) {
+        Json::Array drop_categories;
         for (const auto& category :
              state.endpoints->drop_config->drop_category_list()) {
           drop_categories.push_back(Json::FromObject({
@@ -496,14 +502,11 @@ Json CdsLb::CreateChildPolicyConfig(
                Json::FromNumber(category.parts_per_million)},
           }));
         }
+        if (!drop_categories.empty()) {
+          xds_cluster_impl_config["dropCategories"] =
+              Json::FromArray(std::move(drop_categories));
+        }
       }
-      Json::Object xds_cluster_impl_config = {
-          {"clusterName", Json::FromString(state.cluster_name)},
-          {"childPolicy", Json::FromArray(std::move(xds_override_host_config))},
-          {"dropCategories", Json::FromArray(std::move(drop_categories))},
-          {"maxConcurrentRequests",
-           Json::FromNumber(cluster_resource.max_concurrent_requests)},
-      };
       auto* eds = absl::get_if<XdsClusterResource::Eds>(&cluster_resource.type);
       if (eds != nullptr) {
         xds_cluster_impl_config["edsServiceName"] =

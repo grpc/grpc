@@ -16,6 +16,7 @@ libs:
   build: all
   language: c
   public_headers:
+  - include/grpc/impl/call.h
   - include/grpc/impl/codegen/atm.h
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
@@ -162,6 +163,7 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/atm.h
   - include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -1914,6 +1916,7 @@ libs:
   - src/core/lib/security/security_connector/ssl_utils.cc
   - src/core/lib/security/security_connector/tls/tls_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
+  - src/core/lib/security/transport/legacy_server_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
@@ -2105,6 +2108,7 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/atm.h
   - include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -2959,6 +2963,7 @@ libs:
   - src/core/lib/security/security_connector/load_system_roots_supported.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
+  - src/core/lib/security/transport/legacy_server_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
@@ -4363,6 +4368,7 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/atm.h
   - include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -5001,6 +5007,7 @@ libs:
   - src/core/lib/security/security_connector/load_system_roots_supported.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
+  - src/core/lib/security/transport/legacy_server_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
@@ -5406,6 +5413,32 @@ targets:
   - linux
   - posix
   - mac
+- name: all_ok_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/bitset.h
+  - src/core/lib/promise/all_ok.h
+  - src/core/lib/promise/detail/join_state.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/status_flag.h
+  - src/core/lib/promise/trace.h
+  src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/promise/trace.cc
+  - test/core/promise/all_ok_test.cc
+  deps:
+  - gtest
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/utility:utility
+  - gpr
+  uses_polling: false
 - name: alloc_test
   gtest: true
   build: test

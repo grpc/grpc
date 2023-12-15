@@ -377,7 +377,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
   // Handle EDS drops.
   const std::string* drop_category;
-  if (drop_config_->ShouldDrop(&drop_category)) {
+  if (drop_config_ != nullptr && drop_config_->ShouldDrop(&drop_category)) {
     if (drop_stats_ != nullptr) drop_stats_->AddCallDropped(*drop_category);
     return PickResult::Drop(absl::UnavailableError(
         absl::StrCat("EDS-configured drop: ", *drop_category)));
@@ -827,7 +827,7 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
   // Parse "dropCategories" field.
   {
     auto value = LoadJsonObjectField<std::vector<DropCategory>>(
-        json.object(), args, "dropCategories", errors);
+        json.object(), args, "dropCategories", errors, /*required=*/false);
     if (value.has_value()) {
       drop_config_ = MakeRefCounted<XdsEndpointResource::DropConfig>();
       for (size_t i = 0; i < value->size(); ++i) {
