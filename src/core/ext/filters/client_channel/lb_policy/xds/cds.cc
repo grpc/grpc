@@ -499,157 +499,157 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
 Json CdsLb::CreateChildPolicyConfigForLeafCluster(
     const XdsConfig::ClusterConfig& new_cluster,
     const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) {
-  Json::Object priority_children;
-  Json::Array priority_priorities;
   const auto& cluster_resource = *new_cluster.cluster;
   const bool is_logical_dns =
       absl::holds_alternative<XdsClusterResource::LogicalDns>(
           cluster_resource.type);
+  // Determine what xDS LB policy to use.
+  Json xds_lb_policy;
+  if (is_logical_dns) {
+    xds_lb_policy = Json::FromArray({
+        Json::FromObject({
+            {"pick_first", Json::FromObject({})},
+        }),
+    });
+  } else {
+    xds_lb_policy = Json::FromArray(new_cluster.cluster->lb_policy_config);
+  }
+  // Wrap it in the priority policy.
+  Json::Object priority_children;
+  Json::Array priority_priorities;
   const auto& priority_list =
       GetUpdatePriorityList(endpoint_config.endpoints.get());
   for (size_t priority = 0; priority < priority_list.size(); ++priority) {
-    // Determine what xDS LB policy to use.
-    Json child_policy;
-    if (is_logical_dns) {
-      child_policy = Json::FromArray({
-          Json::FromObject({
-              {"pick_first", Json::FromObject({})},
-          }),
-      });
-    } else {
-      child_policy = Json::FromArray(new_cluster.cluster->lb_policy_config);
-    }
-    // Wrap the xDS LB policy in the xds_override_host policy.
-    Json::Object xds_override_host_lb_config = {
-        {"childPolicy", std::move(child_policy)},
-    };
-    if (!cluster_resource.override_host_statuses.empty()) {
-      Json::Array status_list;
-      for (const auto& status : cluster_resource.override_host_statuses) {
-        status_list.emplace_back(Json::FromString(status.ToString()));
-      }
-      xds_override_host_lb_config["overrideHostStatus"] =
-          Json::FromArray(std::move(status_list));
-    }
-    Json::Array xds_override_host_config = {Json::FromObject({
-        {"xds_override_host_experimental",
-         Json::FromObject(std::move(xds_override_host_lb_config))},
-    })};
-    // Wrap it in the xds_cluster_impl policy.
-    Json::Array drop_categories;
-    if (endpoint_config.endpoints != nullptr &&
-        endpoint_config.endpoints->drop_config != nullptr) {
-      for (const auto& category :
-           endpoint_config.endpoints->drop_config->drop_category_list()) {
-        drop_categories.push_back(Json::FromObject({
-            {"category", Json::FromString(category.name)},
-            {"requests_per_million",
-             Json::FromNumber(category.parts_per_million)},
-        }));
-      }
-    }
-    Json::Object xds_cluster_impl_config = {
-        {"clusterName", Json::FromString(new_cluster.cluster_name)},
-        {"childPolicy", Json::FromArray(std::move(xds_override_host_config))},
-        {"maxConcurrentRequests",
-         Json::FromNumber(cluster_resource.max_concurrent_requests)},
-    };
-    if (!drop_categories.empty()) {
-      xds_cluster_impl_config["dropCategories"] =
-          Json::FromArray(std::move(drop_categories));
-    }
-    auto* eds = absl::get_if<XdsClusterResource::Eds>(&cluster_resource.type);
-    if (eds != nullptr) {
-      xds_cluster_impl_config["edsServiceName"] =
-          Json::FromString(eds->eds_service_name);
-    }
-    if (cluster_resource.lrs_load_reporting_server.has_value()) {
-      xds_cluster_impl_config["lrsLoadReportingServer"] =
-          cluster_resource.lrs_load_reporting_server->ToJson();
-    }
-    // Wrap it in the outlier_detection policy.
-    Json::Object outlier_detection_config;
-    if (cluster_resource.outlier_detection.has_value()) {
-      auto& outlier_detection_update = *cluster_resource.outlier_detection;
-      outlier_detection_config["interval"] =
-          Json::FromString(outlier_detection_update.interval.ToJsonString());
-      outlier_detection_config["baseEjectionTime"] = Json::FromString(
-          outlier_detection_update.base_ejection_time.ToJsonString());
-      outlier_detection_config["maxEjectionTime"] = Json::FromString(
-          outlier_detection_update.max_ejection_time.ToJsonString());
-      outlier_detection_config["maxEjectionPercent"] =
-          Json::FromNumber(outlier_detection_update.max_ejection_percent);
-      if (outlier_detection_update.success_rate_ejection.has_value()) {
-        outlier_detection_config["successRateEjection"] = Json::FromObject({
-            {"stdevFactor",
-             Json::FromNumber(
-                 outlier_detection_update.success_rate_ejection->stdev_factor)},
-            {"enforcementPercentage",
-             Json::FromNumber(outlier_detection_update.success_rate_ejection
-                                  ->enforcement_percentage)},
-            {"minimumHosts",
-             Json::FromNumber(outlier_detection_update.success_rate_ejection
-                                  ->minimum_hosts)},
-            {"requestVolume",
-             Json::FromNumber(outlier_detection_update.success_rate_ejection
-                                  ->request_volume)},
-        });
-      }
-      if (outlier_detection_update.failure_percentage_ejection.has_value()) {
-        outlier_detection_config["failurePercentageEjection"] =
-            Json::FromObject({
-                {"threshold",
-                 Json::FromNumber(outlier_detection_update
-                                      .failure_percentage_ejection->threshold)},
-                {"enforcementPercentage",
-                 Json::FromNumber(
-                     outlier_detection_update.failure_percentage_ejection
-                         ->enforcement_percentage)},
-                {"minimumHosts",
-                 Json::FromNumber(
-                     outlier_detection_update.failure_percentage_ejection
-                         ->minimum_hosts)},
-                {"requestVolume",
-                 Json::FromNumber(
-                     outlier_detection_update.failure_percentage_ejection
-                         ->request_volume)},
-            });
-      }
-    }
-    outlier_detection_config["childPolicy"] =
-        Json::FromArray({Json::FromObject({
-            {"xds_cluster_impl_experimental",
-             Json::FromObject(std::move(xds_cluster_impl_config))},
-        })});
-    Json locality_picking_policy = Json::FromArray({Json::FromObject({
-        {"outlier_detection_experimental",
-         Json::FromObject(std::move(outlier_detection_config))},
-    })});
     // Add priority entry, with the appropriate child name.
     std::string child_name =
         MakeChildPolicyName(new_cluster.cluster_name,
                             child_name_state_.priority_child_numbers[priority]);
     priority_priorities.emplace_back(Json::FromString(child_name));
-    Json::Object child_config = {
-        {"config", std::move(locality_picking_policy)},
-    };
+    Json::Object child_config = {{"config", xds_lb_policy}};
     if (!is_logical_dns) {
       child_config["ignore_reresolution_requests"] = Json::FromBool(true);
     }
     priority_children[child_name] = Json::FromObject(std::move(child_config));
   }
-  Json json = Json::FromArray({Json::FromObject({
+  Json priority_policy = Json::FromArray({Json::FromObject({
       {"priority_experimental",
        Json::FromObject({
            {"children", Json::FromObject(std::move(priority_children))},
            {"priorities", Json::FromArray(std::move(priority_priorities))},
        })},
   })});
+  // Wrap the priority policy in the xds_override_host policy.
+  Json::Object xds_override_host_lb_config = {
+      {"childPolicy", std::move(priority_policy)},
+  };
+  if (!cluster_resource.override_host_statuses.empty()) {
+    Json::Array status_list;
+    for (const auto& status : cluster_resource.override_host_statuses) {
+      status_list.emplace_back(Json::FromString(status.ToString()));
+    }
+    xds_override_host_lb_config["overrideHostStatus"] =
+        Json::FromArray(std::move(status_list));
+  }
+  Json xds_override_host_policy = Json::FromArray({Json::FromObject({
+      {"xds_override_host_experimental",
+       Json::FromObject(std::move(xds_override_host_lb_config))},
+  })});
+  // Wrap the xds_override_host policy in the xds_cluster_impl policy.
+  Json::Object xds_cluster_impl_config = {
+      {"clusterName", Json::FromString(new_cluster.cluster_name)},
+      {"childPolicy", std::move(xds_override_host_policy)},
+      {"maxConcurrentRequests",
+       Json::FromNumber(cluster_resource.max_concurrent_requests)},
+  };
+  if (endpoint_config.endpoints != nullptr &&
+      endpoint_config.endpoints->drop_config != nullptr) {
+    Json::Array drop_categories;
+    for (const auto& category :
+         endpoint_config.endpoints->drop_config->drop_category_list()) {
+      drop_categories.push_back(Json::FromObject({
+          {"category", Json::FromString(category.name)},
+          {"requests_per_million",
+           Json::FromNumber(category.parts_per_million)},
+      }));
+    }
+    if (!drop_categories.empty()) {
+      xds_cluster_impl_config["dropCategories"] =
+          Json::FromArray(std::move(drop_categories));
+    }
+  }
+  auto* eds = absl::get_if<XdsClusterResource::Eds>(&cluster_resource.type);
+  if (eds != nullptr) {
+    xds_cluster_impl_config["edsServiceName"] =
+        Json::FromString(eds->eds_service_name);
+  }
+  if (cluster_resource.lrs_load_reporting_server.has_value()) {
+    xds_cluster_impl_config["lrsLoadReportingServer"] =
+        cluster_resource.lrs_load_reporting_server->ToJson();
+  }
+  Json xds_cluster_impl_policy = Json::FromArray({Json::FromObject({
+      {"xds_cluster_impl_experimental",
+       Json::FromObject(std::move(xds_cluster_impl_config))},
+  })});
+  // Wrap the xds_cluster_impl policy in the outlier_detection policy.
+  Json::Object outlier_detection_config = {
+      {"childPolicy", std::move(xds_cluster_impl_policy)},
+  };
+  if (cluster_resource.outlier_detection.has_value()) {
+    auto& outlier_detection_update = *cluster_resource.outlier_detection;
+    outlier_detection_config["interval"] =
+        Json::FromString(outlier_detection_update.interval.ToJsonString());
+    outlier_detection_config["baseEjectionTime"] = Json::FromString(
+        outlier_detection_update.base_ejection_time.ToJsonString());
+    outlier_detection_config["maxEjectionTime"] = Json::FromString(
+        outlier_detection_update.max_ejection_time.ToJsonString());
+    outlier_detection_config["maxEjectionPercent"] =
+        Json::FromNumber(outlier_detection_update.max_ejection_percent);
+    if (outlier_detection_update.success_rate_ejection.has_value()) {
+      outlier_detection_config["successRateEjection"] = Json::FromObject({
+          {"stdevFactor",
+           Json::FromNumber(
+               outlier_detection_update.success_rate_ejection->stdev_factor)},
+          {"enforcementPercentage",
+           Json::FromNumber(outlier_detection_update.success_rate_ejection
+                                ->enforcement_percentage)},
+          {"minimumHosts",
+           Json::FromNumber(outlier_detection_update.success_rate_ejection
+                                ->minimum_hosts)},
+          {"requestVolume",
+           Json::FromNumber(outlier_detection_update.success_rate_ejection
+                                ->request_volume)},
+      });
+    }
+    if (outlier_detection_update.failure_percentage_ejection.has_value()) {
+      outlier_detection_config["failurePercentageEjection"] =
+          Json::FromObject({
+              {"threshold",
+               Json::FromNumber(outlier_detection_update
+                                    .failure_percentage_ejection->threshold)},
+              {"enforcementPercentage",
+               Json::FromNumber(
+                   outlier_detection_update.failure_percentage_ejection
+                       ->enforcement_percentage)},
+              {"minimumHosts",
+               Json::FromNumber(
+                   outlier_detection_update.failure_percentage_ejection
+                       ->minimum_hosts)},
+              {"requestVolume",
+               Json::FromNumber(
+                   outlier_detection_update.failure_percentage_ejection
+                       ->request_volume)},
+          });
+    }
+  }
+  Json outlier_detection_policy = Json::FromArray({Json::FromObject({
+      {"outlier_detection_experimental",
+       Json::FromObject(std::move(outlier_detection_config))},
+  })});
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s", this,
-            JsonDump(json, /*indent=*/1).c_str());
+            JsonDump(outlier_detection_policy, /*indent=*/1).c_str());
   }
-  return json;
+  return outlier_detection_policy;
 }
 
 Json CdsLb::CreateChildPolicyConfigForAggregateCluster(
