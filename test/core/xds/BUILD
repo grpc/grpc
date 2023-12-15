@@ -163,19 +163,6 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "xds_client_test_lib",
-    testonly = True,
-    hdrs = ["xds_client_test_lib.h"],
-    external_deps = ["gtest"],
-    language = "C++",
-    deps = [
-        ":xds_transport_fake",
-        "//:xds_client",
-        "//src/proto/grpc/testing/xds/v3:discovery_proto",
-    ],
-)
-
 grpc_cc_test(
     name = "xds_client_test",
     srcs = ["xds_client_test.cc"],
@@ -185,29 +172,9 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = False,
     deps = [
-        ":xds_client_test_lib",
         ":xds_transport_fake",
         "//:xds_client",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
-    ],
-)
-
-grpc_cc_test(
-    name = "xds_client_ads_stream_wait_test",
-    srcs = ["xds_client_ads_stream_wait_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    # shard_count = 10,
-    # uses_event_engine = True,
-    # uses_polling = False,
-    deps = [
-        ":xds_client_test_lib",
-        "//:grpc++",
-        # ":xds_transport_fake",
-        # "//:xds_client",
-        # "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//test/core/util:grpc_test_util",
         "//test/core/util:scoped_env_var",
     ],

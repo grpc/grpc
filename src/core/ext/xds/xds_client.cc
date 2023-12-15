@@ -700,6 +700,20 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimer() {
 }
 
 //
+// XdsClient::ChannelState::AdsCallState::AdsReadDelayHandle
+//
+
+XdsClient::ChannelState::AdsCallState::AdsReadDelayHandle::
+    ~AdsReadDelayHandle() {
+  XdsClient* client = ads_call_state_->xds_client();
+  MutexLock lock(&client->mu_);
+  auto call = ads_call_state_->call_.get();
+  if (call != nullptr) {
+    call->StartRecvMessage();
+  }
+}
+
+//
 // XdsClient::ChannelState::AdsCallState::AdsResponseParser
 //
 
@@ -2090,19 +2104,6 @@ std::string XdsClient::DumpClientConfigBinary() {
   }
   // Assemble config dump messages
   return api_.AssembleClientConfig(resource_type_metadata_map);
-}
-
-XdsClient::ChannelState::AdsCallState::AdsReadDelayHandle::
-    ~AdsReadDelayHandle() {
-  XdsClient* client = ads_call_state_->xds_client();
-  if (client == nullptr) {
-    return;
-  }
-  MutexLock lock(&client->mu_);
-  auto call = ads_call_state_->call_.get();
-  if (call != nullptr) {
-    call->StartRecvMessage();
-  }
 }
 
 }  // namespace grpc_core

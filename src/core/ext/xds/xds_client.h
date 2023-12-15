@@ -242,19 +242,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     absl::Status status_;
   };
 
- public:
-  //   class ReadDelayHandle : public RefCounted<ReadDelayHandle> {
-  //    public:
-  //     explicit ReadDelayHandle(WeakRefCountedPtr<ChannelState>
-  //     channel_state); ~ReadDelayHandle() override;
-
-  //     static RefCountedPtr<ReadDelayHandle> NoWait() { return nullptr; }
-
-  //    private:
-  //     WeakRefCountedPtr<ChannelState> channel_state_;
-  //   };
-
- private:
   struct ResourceState {
     std::map<ResourceWatcherInterface*, RefCountedPtr<ResourceWatcherInterface>>
         watchers;

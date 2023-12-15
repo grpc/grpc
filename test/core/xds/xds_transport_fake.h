@@ -88,9 +88,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool Orphaned();
 
-    size_t read_count() {
+    size_t reads_started() {
       MutexLock lock(&mu_);
-      return read_count_;
+      return reads_started_;
     }
 
    private:
@@ -116,7 +116,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void CompleteSendMessageFromClientLocked(bool ok)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
-    void DispatchPendingMessageToClient();
+    void MaybeDeliverMessageToClient();
 
     RefCountedPtr<FakeXdsTransport> transport_;
     const char* method_;
@@ -127,7 +127,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
-    size_t read_count_ ABSL_GUARDED_BY(&mu_) = 0;
+    size_t reads_started_ ABSL_GUARDED_BY(&mu_) = 0;
     bool read_pending_ ABSL_GUARDED_BY(&mu_) = false;
     std::deque<std::string> to_client_messages_ ABSL_GUARDED_BY(&mu_);
   };
@@ -143,7 +143,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   // EventHandler::OnRequestSent() upon reading a request from the client.
   // If this is set to false, that behavior will be inhibited, and
   // EventHandler::OnRequestSent() will not be called until the test
-  // expicitly calls FakeStreamingCall::CompleteSendMessageFromClient().
+  // explicitly calls FakeStreamingCall::CompleteSendMessageFromClient().
   //
   // This value affects all transports created after this call is
   // complete.  Any transport that already exists prior to this call

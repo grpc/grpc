@@ -86,41 +86,46 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this, nullptr);
   // Start ops on the call.
   grpc_call_error call_error;
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
+  grpc_op ops[2];
+  memset(ops, 0, sizeof(ops));
   // Send initial metadata.  No callback for this, since we don't really
   // care when it finishes.
-  op.op = GRPC_OP_SEND_INITIAL_METADATA;
-  op.data.send_initial_metadata.count = 0;
-  op.flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
-             GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
-  op.reserved = nullptr;
-  call_error = grpc_call_start_batch_and_execute(call_, &op, 1, nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-  // Start a batch with recv_initial_metadata.
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_RECV_INITIAL_METADATA;
-  op.data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv_;
-  op.flags = 0;
-  op.reserved = nullptr;
-  GRPC_CLOSURE_INIT(&on_recv_initial_metadata_, OnRecvInitialMetadata, this,
-                    nullptr);
-  call_error = grpc_call_start_batch_and_execute(call_, &op, 1,
-                                                 &on_recv_initial_metadata_);
+  grpc_op* op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv_;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  // Ref will be released in the callback
+  GRPC_CLOSURE_INIT(
+      &on_recv_initial_metadata_, OnRecvInitialMetadata,
+      this->Ref(DEBUG_LOCATION, "OnRecvInitialMetadata").release(), nullptr);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_recv_initial_metadata_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Start a batch for recv_trailing_metadata.
-  op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op.data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv_;
-  op.data.recv_status_on_client.status = &status_code_;
-  op.data.recv_status_on_client.status_details = &status_details_;
-  op.flags = 0;
-  op.reserved = nullptr;
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv_;
+  op->data.recv_status_on_client.status = &status_code_;
+  op->data.recv_status_on_client.status_details = &status_details_;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
   // This callback signals the end of the call, so it relies on the initial
   // ref instead of a new ref. When it's invoked, it's the initial ref that is
   // unreffed.
   GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this, nullptr);
-  call_error =
-      grpc_call_start_batch_and_execute(call_, &op, 1, &on_status_received_);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this, nullptr);
 }
@@ -164,6 +169,27 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    StartRecvMessage() {
+  Ref(DEBUG_LOCATION, "StartRecvMessage").release();
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_MESSAGE;
+  op.data.recv_message.recv_message = &recv_message_payload_;
+  GPR_ASSERT(call_ != nullptr);
+  // Reuses the "OnResponseReceived" ref taken in ctor.
+  const grpc_call_error call_error =
+      grpc_call_start_batch_and_execute(call_, &op, 1, &on_response_received_);
+  GPR_ASSERT(GRPC_CALL_OK == call_error);
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/) {
+  auto self = static_cast<GrpcStreamingCall*>(arg);
+  grpc_metadata_array_destroy(&self->initial_metadata_recv_);
+  self->Unref(DEBUG_LOCATION, "OnRecvInitialMetadata");
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     OnRequestSent(void* arg, grpc_error_handle error) {
   auto* self = static_cast<GrpcStreamingCall*>(arg);
   // Clean up the sent message.
@@ -176,18 +202,8 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/) {
-  auto self = static_cast<GrpcStreamingCall*>(arg);
-  grpc_metadata_array_destroy(&self->initial_metadata_recv_);
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     OnResponseReceived(void* arg, grpc_error_handle /*error*/) {
-  auto self = static_cast<GrpcStreamingCall*>(arg);
-  // Create a ref that will leave till the end of this function and reduce the
-  // ref count to account for the ref obtained in StartRecvMessage
-  auto ref = self->Ref();
-  self->Unref(DEBUG_LOCATION, "OnResponseReceived");
+  auto self(static_cast<GrpcStreamingCall*>(arg));
   // If there was no payload, then we received status before we received
   // another message, so we stop reading.
   if (self->recv_message_payload_ == nullptr) {
@@ -202,20 +218,6 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   self->recv_message_payload_ = nullptr;
   self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
   CSliceUnref(response_slice);
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    StartRecvMessage() {
-  Ref(DEBUG_LOCATION, "StartRecvMessage").release();
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_RECV_MESSAGE;
-  op.data.recv_message.recv_message = &recv_message_payload_;
-  GPR_ASSERT(call_ != nullptr);
-  // Reuses the "OnResponseReceived" ref taken in ctor.
-  const grpc_call_error call_error =
-      grpc_call_start_batch_and_execute(call_, &op, 1, &on_response_received_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
