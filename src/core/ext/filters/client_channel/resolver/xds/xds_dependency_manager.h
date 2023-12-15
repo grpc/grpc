@@ -214,7 +214,8 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   void OnEndpointDoesNotExist(const std::string& name);
 
   void OnDnsResult(const std::string& dns_name, Resolver::Result result);
-  void PopulateDnsUpdate(const std::string& dns_name, Resolver::Result result);
+  void PopulateDnsUpdate(const std::string& dns_name, Resolver::Result result,
+                         DnsState* dns_state);
 
   // Starts CDS and EDS/DNS watches for the specified cluster if needed.
   // Adds an entry to cluster_config_map, which will contain the cluster

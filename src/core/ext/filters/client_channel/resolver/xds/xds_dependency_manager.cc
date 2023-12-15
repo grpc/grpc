@@ -678,23 +678,24 @@ void XdsDependencyManager::OnDnsResult(const std::string& dns_name,
             dns_name.c_str());
   }
   if (xds_client_ == nullptr) return;
-  PopulateDnsUpdate(dns_name, std::move(result));
+  auto it = dns_resolvers_.find(dns_name);
+  if (it == dns_resolvers_.end()) return;
+  PopulateDnsUpdate(dns_name, std::move(result), &it->second);
   MaybeReportUpdate();
 }
 
 void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
-                                             Resolver::Result result) {
-  auto it = dns_resolvers_.find(dns_name);
-  if (it == dns_resolvers_.end()) return;
+                                             Resolver::Result result,
+                                             DnsState* dns_state) {
   // Convert resolver result to EDS update.
   XdsEndpointResource::Priority::Locality locality;
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
   locality.lb_weight = 1;
   if (result.addresses.ok()) {
     locality.endpoints = std::move(*result.addresses);
-    it->second.update.resolution_note = std::move(result.resolution_note);
+    dns_state->update.resolution_note = std::move(result.resolution_note);
   } else if (result.resolution_note.empty()) {
-    it->second.update.resolution_note =
+    dns_state->update.resolution_note =
         absl::StrCat("DNS resolution failed for ", dns_name, ": ",
                      result.addresses.status().ToString());
   }
@@ -702,7 +703,7 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
   priority.localities.emplace(locality.name.get(), std::move(locality));
   auto resource = std::make_shared<XdsEndpointResource>();
   resource->priorities.emplace_back(std::move(priority));
-  it->second.update.endpoints = std::move(resource);
+  dns_state->update.endpoints = std::move(resource);
 }
 
 bool XdsDependencyManager::PopulateClusterConfigMap(
@@ -815,7 +816,8 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
             result.addresses.emplace();  // Empty list.
             result.resolution_note = absl::StrCat(
                 "failed to create DNS resolver for ", logical_dns.hostname);
-            PopulateDnsUpdate(logical_dns.hostname, std::move(result));
+            PopulateDnsUpdate(logical_dns.hostname, std::move(result),
+                              &dns_state);
           } else {
             dns_state.resolver->StartLocked();
             return false;
