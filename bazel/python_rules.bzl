@@ -113,7 +113,7 @@ _gen_py_aspect = aspect(
             default = Label("//external:protocol_compiler"),
             providers = ["files_to_run"],
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
         "_protobuf_library": attr.label(
             default = Label("@com_google_protobuf//:protobuf_python"),
@@ -169,7 +169,7 @@ py_proto_library = rule(
             default = Label("//external:protocol_compiler"),
             providers = ["files_to_run"],
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
         "_protobuf_library": attr.label(
             default = Label("@com_google_protobuf//:protobuf_python"),
@@ -252,13 +252,13 @@ _generate_pb2_grpc_src = rule(
         "_grpc_plugin": attr.label(
             executable = True,
             providers = ["files_to_run"],
-            cfg = "host",
+            cfg = "exec",
             default = Label("//src/compiler:grpc_python_plugin"),
         ),
         "_protoc": attr.label(
             executable = True,
             providers = ["files_to_run"],
-            cfg = "host",
+            cfg = "exec",
             default = Label("//external:protocol_compiler"),
         ),
         "_grpc_library": attr.label(
