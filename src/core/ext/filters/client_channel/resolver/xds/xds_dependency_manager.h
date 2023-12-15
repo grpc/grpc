@@ -217,22 +217,22 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   void PopulateDnsUpdate(const std::string& dns_name, Resolver::Result result);
 
   // Starts CDS and EDS/DNS watches for the specified cluster if needed.
-  // If the resource is available, adds an entry to cluster_config_map.
+  // Adds an entry to cluster_config_map, which will contain the cluster
+  // data if the data is available.
   // For each EDS cluster, adds the EDS resource to eds_resources_seen.
   // For each Logical DNS cluster, adds the DNS hostname to dns_names_seen.
   // For aggregate clusters, calls itself recursively.  If leaf_clusters is
-  // non-null, populates it with a list of leaf clusters.
-  // Returns an error if max depth is exceeded or if any of the clusters
-  // in the graph report an error.
+  // non-null, populates it with a list of leaf clusters, or an error if
+  // max depth is exceeded.
   // Returns true if all resources have been obtained.
-  absl::StatusOr<bool> PopulateClusterConfigList(
+  bool PopulateClusterConfigMap(
       absl::string_view name, int depth,
       absl::flat_hash_map<std::string,
                           absl::StatusOr<XdsConfig::ClusterConfig>>*
           cluster_config_map,
       std::set<absl::string_view>* eds_resources_seen,
       std::set<absl::string_view>* dns_names_seen,
-      std::vector<absl::string_view>* leaf_clusters = nullptr);
+      absl::StatusOr<std::vector<absl::string_view>>* leaf_clusters = nullptr);
 
   // Called when an external cluster subscription is unreffed.
   void OnClusterSubscriptionUnref(absl::string_view cluster_name,
