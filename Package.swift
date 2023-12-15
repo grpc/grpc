@@ -2167,6 +2167,9 @@ let package = Package(
         "third_party/xxhash/xxhash.h",
       ],
       publicHeadersPath: "spm-core-include",
+      resources: [
+        .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+      ],
       cSettings: [
         .headerSearchPath("./"),
         .headerSearchPath("include/"),
@@ -2213,6 +2216,9 @@ let package = Package(
         "src/cpp/",
       ],
       publicHeadersPath: "spm-cpp-include",
+      resources: [
+        .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+      ],
       cSettings: [
         .headerSearchPath("./"),
         .headerSearchPath("include/"),
