@@ -33,11 +33,6 @@ P instant_fail() {
   return [] { return Failure{}; };
 }
 
-template <typename T>
-P pending() {
-  return []() -> Poll<StatusFlag> { return Pending(); };
-}
-
 Poll<StatusFlag> succeeded() { return Poll<StatusFlag>(Success{}); }
 
 Poll<StatusFlag> failed() { return Poll<StatusFlag>(Failure{}); }

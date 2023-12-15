@@ -39,7 +39,7 @@ third_party/protobuf 6b5d8db01fe47478e8d400f550e797e6230d464e
 third_party/protoc-gen-validate fab737efbb4b4d03e7c771393708f75594b121e4
 third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
 third_party/xds e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7
-third_party/zlib 04f42ceca40f73e2978b50e93806c2a18c1281fc
+third_party/zlib 09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851
 EOF
 
 diff -u "$submodules" "$want_submodules"
