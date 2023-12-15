@@ -89,10 +89,6 @@ auto WithResult(F f) ->
   return f;
 }
 
-template <typename Promise>
-using PromiseResult = typename PollTraits<
-    typename promise_detail::PromiseLike<Promise>::Result>::Type;
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_PROMISE_PROMISE_H
