@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
 
@@ -98,8 +99,9 @@ struct SeqState<Traits, P, F0> {
   };
   enum class State : uint8_t { kState0, kState1 };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation whence;
 
-  SeqState(P&& p, F0&& f0) noexcept {
+  SeqState(P&& p, F0&& f0, DebugLocation whence) noexcept : whence(whence) {
     Construct(&prior.current_promise, std::forward<P>(p));
     Construct(&prior.next_factory, std::forward<F0>(f0));
   }
@@ -115,13 +117,15 @@ struct SeqState<Traits, P, F0> {
   tail0:
     Destruct(&prior.next_factory);
   }
-  SeqState(const SeqState& other) noexcept : state(other.state) {
+  SeqState(const SeqState& other) noexcept
+      : state(other.state), whence(other.whence) {
     GPR_ASSERT(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.next_factory, other.prior.next_factory);
   }
   SeqState& operator=(const SeqState& other) = delete;
-  SeqState(SeqState&& other) noexcept : state(other.state) {
+  SeqState(SeqState&& other) noexcept
+      : state(other.state), whence(other.whence) {
     switch (state) {
       case State::kState0:
         Construct(&prior.current_promise,
@@ -139,13 +143,15 @@ struct SeqState<Traits, P, F0> {
     switch (state) {
       case State::kState0: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 1/2", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 1/2", this);
         }
         auto result = prior.current_promise();
         PromiseResult0* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 1/2 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 1/2 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits0::IsOk(*p)
                          ? "ready"
@@ -170,11 +176,13 @@ struct SeqState<Traits, P, F0> {
       default:
       case State::kState1: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 2/2", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 2/2", this);
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: poll step 2/2 gets %s", this,
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: poll step 2/2 gets %s", this,
                   result.ready() ? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
@@ -219,8 +227,10 @@ struct SeqState<Traits, P, F0, F1> {
   };
   enum class State : uint8_t { kState0, kState1, kState2 };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation whence;
 
-  SeqState(P&& p, F0&& f0, F1&& f1) noexcept {
+  SeqState(P&& p, F0&& f0, F1&& f1, DebugLocation whence) noexcept
+      : whence(whence) {
     Construct(&prior.prior.current_promise, std::forward<P>(p));
     Construct(&prior.prior.next_factory, std::forward<F0>(f0));
     Construct(&prior.next_factory, std::forward<F1>(f1));
@@ -242,14 +252,16 @@ struct SeqState<Traits, P, F0, F1> {
   tail1:
     Destruct(&prior.next_factory);
   }
-  SeqState(const SeqState& other) noexcept : state(other.state) {
+  SeqState(const SeqState& other) noexcept
+      : state(other.state), whence(other.whence) {
     GPR_ASSERT(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
     Construct(&prior.next_factory, other.prior.next_factory);
   }
   SeqState& operator=(const SeqState& other) = delete;
-  SeqState(SeqState&& other) noexcept : state(other.state) {
+  SeqState(SeqState&& other) noexcept
+      : state(other.state), whence(other.whence) {
     switch (state) {
       case State::kState0:
         Construct(&prior.prior.current_promise,
@@ -274,13 +286,15 @@ struct SeqState<Traits, P, F0, F1> {
     switch (state) {
       case State::kState0: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 1/3", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 1/3", this);
         }
         auto result = prior.prior.current_promise();
         PromiseResult0* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 1/3 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 1/3 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits0::IsOk(*p)
                          ? "ready"
@@ -304,13 +318,15 @@ struct SeqState<Traits, P, F0, F1> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState1: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 2/3", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 2/3", this);
         }
         auto result = prior.current_promise();
         PromiseResult1* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 2/3 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 2/3 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits1::IsOk(*p)
                          ? "ready"
@@ -335,11 +351,13 @@ struct SeqState<Traits, P, F0, F1> {
       default:
       case State::kState2: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 3/3", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 3/3", this);
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: poll step 3/3 gets %s", this,
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: poll step 3/3 gets %s", this,
                   result.ready() ? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
@@ -396,8 +414,10 @@ struct SeqState<Traits, P, F0, F1, F2> {
   };
   enum class State : uint8_t { kState0, kState1, kState2, kState3 };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation whence;
 
-  SeqState(P&& p, F0&& f0, F1&& f1, F2&& f2) noexcept {
+  SeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, DebugLocation whence) noexcept
+      : whence(whence) {
     Construct(&prior.prior.prior.current_promise, std::forward<P>(p));
     Construct(&prior.prior.prior.next_factory, std::forward<F0>(f0));
     Construct(&prior.prior.next_factory, std::forward<F1>(f1));
@@ -425,7 +445,8 @@ struct SeqState<Traits, P, F0, F1, F2> {
   tail2:
     Destruct(&prior.next_factory);
   }
-  SeqState(const SeqState& other) noexcept : state(other.state) {
+  SeqState(const SeqState& other) noexcept
+      : state(other.state), whence(other.whence) {
     GPR_ASSERT(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.next_factory,
@@ -434,7 +455,8 @@ struct SeqState<Traits, P, F0, F1, F2> {
     Construct(&prior.next_factory, other.prior.next_factory);
   }
   SeqState& operator=(const SeqState& other) = delete;
-  SeqState(SeqState&& other) noexcept : state(other.state) {
+  SeqState(SeqState&& other) noexcept
+      : state(other.state), whence(other.whence) {
     switch (state) {
       case State::kState0:
         Construct(&prior.prior.prior.current_promise,
@@ -466,13 +488,15 @@ struct SeqState<Traits, P, F0, F1, F2> {
     switch (state) {
       case State::kState0: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 1/4", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 1/4", this);
         }
         auto result = prior.prior.prior.current_promise();
         PromiseResult0* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 1/4 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 1/4 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits0::IsOk(*p)
                          ? "ready"
@@ -496,13 +520,15 @@ struct SeqState<Traits, P, F0, F1, F2> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState1: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 2/4", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 2/4", this);
         }
         auto result = prior.prior.current_promise();
         PromiseResult1* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 2/4 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 2/4 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits1::IsOk(*p)
                          ? "ready"
@@ -526,13 +552,15 @@ struct SeqState<Traits, P, F0, F1, F2> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState2: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 3/4", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 3/4", this);
         }
         auto result = prior.current_promise();
         PromiseResult2* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 3/4 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 3/4 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits2::IsOk(*p)
                          ? "ready"
@@ -557,11 +585,13 @@ struct SeqState<Traits, P, F0, F1, F2> {
       default:
       case State::kState3: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 4/4", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 4/4", this);
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: poll step 4/4 gets %s", this,
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: poll step 4/4 gets %s", this,
                   result.ready() ? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
@@ -630,8 +660,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   };
   enum class State : uint8_t { kState0, kState1, kState2, kState3, kState4 };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation whence;
 
-  SeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3) noexcept {
+  SeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3,
+           DebugLocation whence) noexcept
+      : whence(whence) {
     Construct(&prior.prior.prior.prior.current_promise, std::forward<P>(p));
     Construct(&prior.prior.prior.prior.next_factory, std::forward<F0>(f0));
     Construct(&prior.prior.prior.next_factory, std::forward<F1>(f1));
@@ -665,7 +698,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   tail3:
     Destruct(&prior.next_factory);
   }
-  SeqState(const SeqState& other) noexcept : state(other.state) {
+  SeqState(const SeqState& other) noexcept
+      : state(other.state), whence(other.whence) {
     GPR_ASSERT(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.next_factory,
@@ -676,7 +710,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
     Construct(&prior.next_factory, other.prior.next_factory);
   }
   SeqState& operator=(const SeqState& other) = delete;
-  SeqState(SeqState&& other) noexcept : state(other.state) {
+  SeqState(SeqState&& other) noexcept
+      : state(other.state), whence(other.whence) {
     switch (state) {
       case State::kState0:
         Construct(&prior.prior.prior.prior.current_promise,
@@ -715,13 +750,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
     switch (state) {
       case State::kState0: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 1/5", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 1/5", this);
         }
         auto result = prior.prior.prior.prior.current_promise();
         PromiseResult0* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 1/5 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 1/5 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits0::IsOk(*p)
                          ? "ready"
@@ -745,13 +782,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState1: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 2/5", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 2/5", this);
         }
         auto result = prior.prior.prior.current_promise();
         PromiseResult1* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 2/5 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 2/5 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits1::IsOk(*p)
                          ? "ready"
@@ -775,13 +814,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState2: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 3/5", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 3/5", this);
         }
         auto result = prior.prior.current_promise();
         PromiseResult2* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 3/5 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 3/5 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits2::IsOk(*p)
                          ? "ready"
@@ -805,13 +846,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState3: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 4/5", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 4/5", this);
         }
         auto result = prior.current_promise();
         PromiseResult3* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 4/5 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 4/5 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits3::IsOk(*p)
                          ? "ready"
@@ -836,11 +879,13 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
       default:
       case State::kState4: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 5/5", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 5/5", this);
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: poll step 5/5 gets %s", this,
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: poll step 5/5 gets %s", this,
                   result.ready() ? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
@@ -928,8 +973,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
     kState5
   };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation whence;
 
-  SeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4) noexcept {
+  SeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
+           DebugLocation whence) noexcept
+      : whence(whence) {
     Construct(&prior.prior.prior.prior.prior.current_promise,
               std::forward<P>(p));
     Construct(&prior.prior.prior.prior.prior.next_factory,
@@ -971,7 +1019,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
   tail4:
     Destruct(&prior.next_factory);
   }
-  SeqState(const SeqState& other) noexcept : state(other.state) {
+  SeqState(const SeqState& other) noexcept
+      : state(other.state), whence(other.whence) {
     GPR_ASSERT(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.next_factory,
@@ -984,7 +1033,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
     Construct(&prior.next_factory, other.prior.next_factory);
   }
   SeqState& operator=(const SeqState& other) = delete;
-  SeqState(SeqState&& other) noexcept : state(other.state) {
+  SeqState(SeqState&& other) noexcept
+      : state(other.state), whence(other.whence) {
     switch (state) {
       case State::kState0:
         Construct(
@@ -1031,13 +1081,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
     switch (state) {
       case State::kState0: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 1/6", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 1/6", this);
         }
         auto result = prior.prior.prior.prior.prior.current_promise();
         PromiseResult0* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 1/6 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 1/6 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits0::IsOk(*p)
                          ? "ready"
@@ -1062,13 +1114,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState1: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 2/6", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 2/6", this);
         }
         auto result = prior.prior.prior.prior.current_promise();
         PromiseResult1* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 2/6 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 2/6 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits1::IsOk(*p)
                          ? "ready"
@@ -1092,13 +1146,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState2: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 3/6", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 3/6", this);
         }
         auto result = prior.prior.prior.current_promise();
         PromiseResult2* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 3/6 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 3/6 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits2::IsOk(*p)
                          ? "ready"
@@ -1122,13 +1178,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState3: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 4/6", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 4/6", this);
         }
         auto result = prior.prior.current_promise();
         PromiseResult3* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 4/6 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 4/6 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits3::IsOk(*p)
                          ? "ready"
@@ -1152,13 +1210,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState4: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 5/6", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 5/6", this);
         }
         auto result = prior.current_promise();
         PromiseResult4* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 5/6 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 5/6 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits4::IsOk(*p)
                          ? "ready"
@@ -1183,11 +1243,13 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
       default:
       case State::kState5: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 6/6", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 6/6", this);
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: poll step 6/6 gets %s", this,
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: poll step 6/6 gets %s", this,
                   result.ready() ? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
@@ -1288,9 +1350,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
     kState6
   };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation whence;
 
-  SeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4,
-           F5&& f5) noexcept {
+  SeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
+           DebugLocation whence) noexcept
+      : whence(whence) {
     Construct(&prior.prior.prior.prior.prior.prior.current_promise,
               std::forward<P>(p));
     Construct(&prior.prior.prior.prior.prior.prior.next_factory,
@@ -1339,7 +1403,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
   tail5:
     Destruct(&prior.next_factory);
   }
-  SeqState(const SeqState& other) noexcept : state(other.state) {
+  SeqState(const SeqState& other) noexcept
+      : state(other.state), whence(other.whence) {
     GPR_ASSERT(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.next_factory,
@@ -1354,7 +1419,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
     Construct(&prior.next_factory, other.prior.next_factory);
   }
   SeqState& operator=(const SeqState& other) = delete;
-  SeqState(SeqState&& other) noexcept : state(other.state) {
+  SeqState(SeqState&& other) noexcept
+      : state(other.state), whence(other.whence) {
     switch (state) {
       case State::kState0:
         Construct(
@@ -1411,13 +1477,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
     switch (state) {
       case State::kState0: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 1/7", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 1/7", this);
         }
         auto result = prior.prior.prior.prior.prior.prior.current_promise();
         PromiseResult0* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 1/7 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 1/7 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits0::IsOk(*p)
                          ? "ready"
@@ -1442,13 +1510,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState1: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 2/7", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 2/7", this);
         }
         auto result = prior.prior.prior.prior.prior.current_promise();
         PromiseResult1* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 2/7 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 2/7 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits1::IsOk(*p)
                          ? "ready"
@@ -1473,13 +1543,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState2: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 3/7", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 3/7", this);
         }
         auto result = prior.prior.prior.prior.current_promise();
         PromiseResult2* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 3/7 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 3/7 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits2::IsOk(*p)
                          ? "ready"
@@ -1503,13 +1575,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState3: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 4/7", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 4/7", this);
         }
         auto result = prior.prior.prior.current_promise();
         PromiseResult3* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 4/7 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 4/7 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits3::IsOk(*p)
                          ? "ready"
@@ -1533,13 +1607,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState4: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 5/7", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 5/7", this);
         }
         auto result = prior.prior.current_promise();
         PromiseResult4* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 5/7 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 5/7 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits4::IsOk(*p)
                          ? "ready"
@@ -1563,13 +1639,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState5: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 6/7", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 6/7", this);
         }
         auto result = prior.current_promise();
         PromiseResult5* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 6/7 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 6/7 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits5::IsOk(*p)
                          ? "ready"
@@ -1594,11 +1672,13 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
       default:
       case State::kState6: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 7/7", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 7/7", this);
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: poll step 7/7 gets %s", this,
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: poll step 7/7 gets %s", this,
                   result.ready() ? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
@@ -1713,9 +1793,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
     kState7
   };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation whence;
 
-  SeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5,
-           F6&& f6) noexcept {
+  SeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6,
+           DebugLocation whence) noexcept
+      : whence(whence) {
     Construct(&prior.prior.prior.prior.prior.prior.prior.current_promise,
               std::forward<P>(p));
     Construct(&prior.prior.prior.prior.prior.prior.prior.next_factory,
@@ -1771,7 +1853,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
   tail6:
     Destruct(&prior.next_factory);
   }
-  SeqState(const SeqState& other) noexcept : state(other.state) {
+  SeqState(const SeqState& other) noexcept
+      : state(other.state), whence(other.whence) {
     GPR_ASSERT(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.prior.next_factory,
@@ -1788,7 +1871,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
     Construct(&prior.next_factory, other.prior.next_factory);
   }
   SeqState& operator=(const SeqState& other) = delete;
-  SeqState(SeqState&& other) noexcept : state(other.state) {
+  SeqState(SeqState&& other) noexcept
+      : state(other.state), whence(other.whence) {
     switch (state) {
       case State::kState0:
         Construct(&prior.prior.prior.prior.prior.prior.prior.current_promise,
@@ -1855,14 +1939,16 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
     switch (state) {
       case State::kState0: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 1/8", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 1/8", this);
         }
         auto result =
             prior.prior.prior.prior.prior.prior.prior.current_promise();
         PromiseResult0* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 1/8 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 1/8 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits0::IsOk(*p)
                          ? "ready"
@@ -1888,13 +1974,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState1: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 2/8", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 2/8", this);
         }
         auto result = prior.prior.prior.prior.prior.prior.current_promise();
         PromiseResult1* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 2/8 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 2/8 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits1::IsOk(*p)
                          ? "ready"
@@ -1919,13 +2007,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState2: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 3/8", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 3/8", this);
         }
         auto result = prior.prior.prior.prior.prior.current_promise();
         PromiseResult2* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 3/8 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 3/8 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits2::IsOk(*p)
                          ? "ready"
@@ -1950,13 +2040,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState3: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 4/8", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 4/8", this);
         }
         auto result = prior.prior.prior.prior.current_promise();
         PromiseResult3* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 4/8 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 4/8 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits3::IsOk(*p)
                          ? "ready"
@@ -1980,13 +2072,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState4: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 5/8", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 5/8", this);
         }
         auto result = prior.prior.prior.current_promise();
         PromiseResult4* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 5/8 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 5/8 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits4::IsOk(*p)
                          ? "ready"
@@ -2010,13 +2104,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState5: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 6/8", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 6/8", this);
         }
         auto result = prior.prior.current_promise();
         PromiseResult5* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 6/8 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 6/8 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits5::IsOk(*p)
                          ? "ready"
@@ -2040,13 +2136,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState6: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 7/8", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 7/8", this);
         }
         auto result = prior.current_promise();
         PromiseResult6* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 7/8 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 7/8 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits6::IsOk(*p)
                          ? "ready"
@@ -2071,11 +2169,13 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
       default:
       case State::kState7: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 8/8", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 8/8", this);
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: poll step 8/8 gets %s", this,
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: poll step 8/8 gets %s", this,
                   result.ready() ? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
@@ -2203,9 +2303,11 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
     kState8
   };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation whence;
 
   SeqState(P&& p, F0&& f0, F1&& f1, F2&& f2, F3&& f3, F4&& f4, F5&& f5, F6&& f6,
-           F7&& f7) noexcept {
+           F7&& f7, DebugLocation whence) noexcept
+      : whence(whence) {
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
               std::forward<P>(p));
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
@@ -2269,7 +2371,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
   tail7:
     Destruct(&prior.next_factory);
   }
-  SeqState(const SeqState& other) noexcept : state(other.state) {
+  SeqState(const SeqState& other) noexcept
+      : state(other.state), whence(other.whence) {
     GPR_ASSERT(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(
@@ -2289,7 +2392,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
     Construct(&prior.next_factory, other.prior.next_factory);
   }
   SeqState& operator=(const SeqState& other) = delete;
-  SeqState(SeqState&& other) noexcept : state(other.state) {
+  SeqState(SeqState&& other) noexcept
+      : state(other.state), whence(other.whence) {
     switch (state) {
       case State::kState0:
         Construct(
@@ -2366,14 +2470,16 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
     switch (state) {
       case State::kState0: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 1/9", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 1/9", this);
         }
         auto result =
             prior.prior.prior.prior.prior.prior.prior.prior.current_promise();
         PromiseResult0* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 1/9 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 1/9 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits0::IsOk(*p)
                          ? "ready"
@@ -2400,14 +2506,16 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState1: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 2/9", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 2/9", this);
         }
         auto result =
             prior.prior.prior.prior.prior.prior.prior.current_promise();
         PromiseResult1* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 2/9 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 2/9 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits1::IsOk(*p)
                          ? "ready"
@@ -2433,13 +2541,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState2: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 3/9", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 3/9", this);
         }
         auto result = prior.prior.prior.prior.prior.prior.current_promise();
         PromiseResult2* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 3/9 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 3/9 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits2::IsOk(*p)
                          ? "ready"
@@ -2464,13 +2574,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState3: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 4/9", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 4/9", this);
         }
         auto result = prior.prior.prior.prior.prior.current_promise();
         PromiseResult3* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 4/9 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 4/9 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits3::IsOk(*p)
                          ? "ready"
@@ -2495,13 +2607,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState4: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 5/9", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 5/9", this);
         }
         auto result = prior.prior.prior.prior.current_promise();
         PromiseResult4* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 5/9 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 5/9 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits4::IsOk(*p)
                          ? "ready"
@@ -2525,13 +2639,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState5: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 6/9", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 6/9", this);
         }
         auto result = prior.prior.prior.current_promise();
         PromiseResult5* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 6/9 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 6/9 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits5::IsOk(*p)
                          ? "ready"
@@ -2555,13 +2671,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState6: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 7/9", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 7/9", this);
         }
         auto result = prior.prior.current_promise();
         PromiseResult6* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 7/9 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 7/9 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits6::IsOk(*p)
                          ? "ready"
@@ -2585,13 +2703,15 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState7: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 8/9", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 8/9", this);
         }
         auto result = prior.current_promise();
         PromiseResult7* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(
-              GPR_DEBUG, "seq[%p]: poll step 8/9 gets %s", this,
+              whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+              "seq[%p]: poll step 8/9 gets %s", this,
               p != nullptr
                   ? (PromiseResultTraits7::IsOk(*p)
                          ? "ready"
@@ -2616,11 +2736,13 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
       default:
       case State::kState8: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step 9/9", this);
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: begin poll step 9/9", this);
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "seq[%p]: poll step 9/9 gets %s", this,
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG,
+                  "seq[%p]: poll step 9/9 gets %s", this,
                   result.ready() ? "ready" : "pending");
         }
         auto* p = result.value_if_ready();

@@ -184,8 +184,9 @@ using TrySeqTraits = TrySeqTraitsWithSfinae<T>;
 template <typename P, typename... Fs>
 class TrySeq {
  public:
-  explicit TrySeq(P&& promise, Fs&&... factories)
-      : state_(std::forward<P>(promise), std::forward<Fs>(factories)...) {}
+  explicit TrySeq(P&& promise, Fs&&... factories, DebugLocation whence)
+      : state_(std::forward<P>(promise), std::forward<Fs>(factories)...,
+               whence) {}
 
   auto operator()() { return state_.PollOnce(); }
 
@@ -227,9 +228,66 @@ struct TrySeqIterResultTraits {
 // Functors can return StatusOr<> to signal that a value is fed forward, or
 // Status to indicate only success/failure. In the case of returning Status,
 // the construction functors take no arguments.
-template <typename... Functors>
-promise_detail::TrySeq<Functors...> TrySeq(Functors... functors) {
-  return promise_detail::TrySeq<Functors...>(std::move(functors)...);
+template <typename F>
+F TrySeq(F functor) {
+  return functor;
+}
+
+template <typename F0, typename F1>
+promise_detail::TrySeq<F0, F1> TrySeq(F0 f0, F1 f1, DebugLocation whence = {}) {
+  return promise_detail::TrySeq<F0, F1>(std::move(f0), std::move(f1), whence);
+}
+
+template <typename F0, typename F1, typename F2>
+promise_detail::TrySeq<F0, F1, F2> TrySeq(F0 f0, F1 f1, F2 f2,
+                                          DebugLocation whence = {}) {
+  return promise_detail::TrySeq<F0, F1, F2>(std::move(f0), std::move(f1),
+                                            std::move(f2), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3>
+promise_detail::TrySeq<F0, F1, F2, F3> TrySeq(F0 f0, F1 f1, F2 f2, F3 f3,
+                                              DebugLocation whence = {}) {
+  return promise_detail::TrySeq<F0, F1, F2, F3>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4>
+promise_detail::TrySeq<F0, F1, F2, F3, F4> TrySeq(F0 f0, F1 f1, F2 f2, F3 f3,
+                                                  F4 f4,
+                                                  DebugLocation whence = {}) {
+  return promise_detail::TrySeq<F0, F1, F2, F3, F4>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
+      whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4,
+          typename F5>
+promise_detail::TrySeq<F0, F1, F2, F3, F4, F5> TrySeq(
+    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, DebugLocation whence = {}) {
+  return promise_detail::TrySeq<F0, F1, F2, F3, F4, F5>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
+      std::move(f5), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4,
+          typename F5, typename F6>
+promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6> TrySeq(
+    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6,
+    DebugLocation whence = {}) {
+  return promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
+      std::move(f5), std::move(f6), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4,
+          typename F5, typename F6, typename F7>
+promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6, F7> TrySeq(
+    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7,
+    DebugLocation whence = {}) {
+  return promise_detail::TrySeq<F0, F1, F2, F3, F4, F5, F6, F7>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
+      std::move(f5), std::move(f6), std::move(f7), whence);
 }
 
 // Try a sequence of operations of unknown length.

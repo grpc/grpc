@@ -19,6 +19,10 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
 #define GRPC_SRC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
 
+#include <grpc/support/port_platform.h>
+
+#include <utility>
+
 #if defined(__has_builtin)
 #if __has_builtin(__builtin_FILE)
 #define GRPC_DEFAULT_FILE __builtin_FILE()
@@ -76,6 +80,15 @@ class DebugLocation {
   int line() const { return -1; }
 };
 #endif
+
+template <typename T>
+struct ValueWithDebugLocation {
+  // NOLINTNEXTLINE
+  ValueWithDebugLocation(T&& value, DebugLocation debug_location = {})
+      : value(std::forward<T>(value)), debug_location(debug_location) {}
+  T value;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation debug_location;
+};
 
 #define DEBUG_LOCATION ::grpc_core::DebugLocation(__FILE__, __LINE__)
 
