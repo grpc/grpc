@@ -820,14 +820,14 @@ absl::StatusOr<bool> XdsDependencyManager::PopulateClusterConfigList(
 }
 
 RefCountedPtr<XdsDependencyManager::ClusterSubscription>
-XdsDependencyManager::GetClusterSubscription(std::string cluster_name) {
+XdsDependencyManager::GetClusterSubscription(absl::string_view cluster_name) {
   auto it = cluster_subscriptions_.find(cluster_name);
   if (it != cluster_subscriptions_.end()) {
     auto subscription = it->second->RefIfNonZero();
     if (subscription != nullptr) return subscription;
   }
   auto subscription = MakeRefCounted<ClusterSubscription>(cluster_name, Ref());
-  cluster_subscriptions_.emplace(std::move(cluster_name),
+  cluster_subscriptions_.emplace(subscription->cluster_name(),
                                  subscription->WeakRef());
   MaybeReportUpdate();  // Trigger CDS watch.
   return subscription;

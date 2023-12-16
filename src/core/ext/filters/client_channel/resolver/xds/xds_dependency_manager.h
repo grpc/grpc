@@ -94,12 +94,14 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
 
   class ClusterSubscription : public DualRefCounted<ClusterSubscription> {
    public:
-    ClusterSubscription(std::string cluster_name,
+    ClusterSubscription(absl::string_view cluster_name,
                         RefCountedPtr<XdsDependencyManager> dependency_mgr)
-        : cluster_name_(std::move(cluster_name)),
+        : cluster_name_(cluster_name),
           dependency_mgr_(std::move(dependency_mgr)) {}
 
     void Orphan() override;
+
+    absl::string_view cluster_name() const { return cluster_name_; }
 
    private:
     std::string cluster_name_;
@@ -120,7 +122,7 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   // the route config (e.g., RLS).  The cluster will be included in the
   // config as long as the returned object is still referenced.
   RefCountedPtr<ClusterSubscription> GetClusterSubscription(
-      std::string cluster_name);
+      absl::string_view cluster_name);
 
   static absl::string_view ChannelArgName() {
     return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_dependency_manager";
@@ -235,7 +237,7 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
 
   // Cluster state.
   absl::flat_hash_map<std::string, ClusterWatcherState> cluster_watchers_;
-  absl::flat_hash_map<std::string, WeakRefCountedPtr<ClusterSubscription>>
+  absl::flat_hash_map<absl::string_view, WeakRefCountedPtr<ClusterSubscription>>
       cluster_subscriptions_;
 
   // Endpoint state.

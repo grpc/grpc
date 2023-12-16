@@ -232,34 +232,39 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   auto it = new_xds_config->clusters.find(new_config->cluster());
   if (it == new_xds_config->clusters.end()) {
     // Cluster not present.
-    // If this is a dynamic cluster, subscribe to it if we're not yet
-    // subscribed.
-    if (new_config->is_dynamic() && subscription_ == nullptr) {
-      auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
-      if (dependency_mgr == nullptr) {
-        // Should never happen.
-        absl::Status status = absl::InternalError(
-            "xDS dependency mgr not passed to CDS LB policy");
-        ReportTransientFailure(status);
-        return status;
+    if (new_config->is_dynamic()) {
+      // This is a dynamic cluster.  Subscribe to it if not yet subscribed.
+      if (subscription_ == nullptr) {
+        auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
+        if (dependency_mgr == nullptr) {
+          // Should never happen.
+          absl::Status status = absl::InternalError(
+              "xDS dependency mgr not passed to CDS LB policy");
+          ReportTransientFailure(status);
+          return status;
+        }
+        subscription_ =
+            dependency_mgr->GetClusterSubscription(new_config->cluster());
+        // Stay in CONNECTING until we get an update that has the cluster.
+        return absl::OkStatus();
       }
-      subscription_ =
-          dependency_mgr->GetClusterSubscription(new_config->cluster());
+      // If we are already subscribed, it's possible that we just
+      // recently subscribed but another update came through before we
+      // got the new cluster, in which case it will still be missing.
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+        gpr_log(GPR_INFO,
+                "[cdslb %p] xDS config has no entry for dynamic cluster %s, "
+                "ignoring update",
+                this, new_config->cluster().c_str());
+      }
       // Stay in CONNECTING until we get an update that has the cluster.
       return absl::OkStatus();
     }
-    // If the cluster is not present in the new config, that means that
-    // we're seeing an update where this cluster has just been removed
-    // from the config, and we should soon be destroyed.  In the
-    // interim, we ignore the update and keep using the old config.
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "[cdslb %p] xDS config has no entry for cluster %s, ignoring update",
-          this, new_config->cluster().c_str());
-    }
-    GPR_ASSERT(xds_config_ != nullptr);
-    return absl::OkStatus();
+    // Not a dynamic cluster.  This should never happen.
+    absl::Status status = absl::UnavailableError(absl::StrCat(
+        "xDS config has no entry for static cluster ", new_config->cluster()));
+    ReportTransientFailure(status);
+    return status;
   }
   auto& new_cluster_list = it->second;
   // If new list is not OK, report TRANSIENT_FAILURE.
