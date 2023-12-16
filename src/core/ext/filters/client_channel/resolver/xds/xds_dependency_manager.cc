@@ -444,9 +444,9 @@ class XdsVirtualHostListIterator : public XdsRouting::VirtualHostListIterator {
 };
 
 // Gets the set of clusters referenced in the specified virtual host.
-std::set<absl::string_view> GetClustersFromVirtualHost(
+absl::flat_hash_set<absl::string_view> GetClustersFromVirtualHost(
     const XdsRouteConfigResource::VirtualHost& virtual_host) {
-  std::set<absl::string_view> clusters;
+  absl::flat_hash_set<absl::string_view> clusters;
   for (auto& route : virtual_host.routes) {
     auto* route_action =
         absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
@@ -829,7 +829,11 @@ XdsDependencyManager::GetClusterSubscription(absl::string_view cluster_name) {
   auto subscription = MakeRefCounted<ClusterSubscription>(cluster_name, Ref());
   cluster_subscriptions_.emplace(subscription->cluster_name(),
                                  subscription->WeakRef());
-  MaybeReportUpdate();  // Trigger CDS watch.
+  // If the cluster is not already subscribed to by virtue of being
+  // referenced in the route config, then trigger the CDS watch.
+  if (!clusters_from_route_config_.contains(cluster_name)) {
+    MaybeReportUpdate();
+  }
   return subscription;
 }
 
@@ -842,15 +846,12 @@ void XdsDependencyManager::OnClusterSubscriptionUnref(
   if (it->second != subscription) return;
   // Remove the entry.
   cluster_subscriptions_.erase(it);
-  // If this cluster is also subscribed to by virtue of being
-  // referenced in the route config, then we don't need to generate a
+  // If this cluster is not already subscribed to by virtue of being
+  // referenced in the route config, then update watches and generate a
   // new update.
-  if (clusters_from_route_config_.find(cluster_name) !=
-      clusters_from_route_config_.end()) {
-    return;
+  if (!clusters_from_route_config_.contains(cluster_name)) {
+    MaybeReportUpdate();
   }
-  // Return an update without this cluster.
-  MaybeReportUpdate();
 }
 
 void XdsDependencyManager::MaybeReportUpdate() {

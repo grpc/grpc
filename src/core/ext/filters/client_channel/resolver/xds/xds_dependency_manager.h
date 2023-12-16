@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -233,7 +234,7 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
   RouteConfigWatcher* route_config_watcher_ = nullptr;
   std::shared_ptr<const XdsRouteConfigResource> current_route_config_;
   const XdsRouteConfigResource::VirtualHost* current_virtual_host_ = nullptr;
-  std::set<absl::string_view> clusters_from_route_config_;
+  absl::flat_hash_set<absl::string_view> clusters_from_route_config_;
 
   // Cluster state.
   absl::flat_hash_map<std::string, ClusterWatcherState> cluster_watchers_;
