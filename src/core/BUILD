@@ -5734,6 +5734,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_map",
+        "absl/container:flat_hash_set",
         "absl/strings",
     ],
     language = "c++",
