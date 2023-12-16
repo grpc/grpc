@@ -201,6 +201,7 @@ void CdsLb::ExitIdleLocked() {
   if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
 }
 
+// FIXME: do we still need this?
 // We need at least one priority for each discovery mechanism, just so that we
 // have a child in which to create the xds_cluster_impl policy.  This ensures
 // that we properly handle the case of a discovery mechanism dropping 100% of
@@ -560,40 +561,12 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
        Json::FromObject(std::move(xds_override_host_lb_config))},
   })});
   // Wrap the xds_override_host policy in the xds_cluster_impl policy.
-  Json::Object xds_cluster_impl_config = {
-      {"clusterName", Json::FromString(new_cluster.cluster_name)},
-      {"childPolicy", std::move(xds_override_host_policy)},
-      {"maxConcurrentRequests",
-       Json::FromNumber(cluster_resource.max_concurrent_requests)},
-  };
-  if (endpoint_config.endpoints != nullptr &&
-      endpoint_config.endpoints->drop_config != nullptr) {
-    Json::Array drop_categories;
-    for (const auto& category :
-         endpoint_config.endpoints->drop_config->drop_category_list()) {
-      drop_categories.push_back(Json::FromObject({
-          {"category", Json::FromString(category.name)},
-          {"requests_per_million",
-           Json::FromNumber(category.parts_per_million)},
-      }));
-    }
-    if (!drop_categories.empty()) {
-      xds_cluster_impl_config["dropCategories"] =
-          Json::FromArray(std::move(drop_categories));
-    }
-  }
-  auto* eds = absl::get_if<XdsClusterResource::Eds>(&cluster_resource.type);
-  if (eds != nullptr) {
-    xds_cluster_impl_config["edsServiceName"] =
-        Json::FromString(eds->eds_service_name);
-  }
-  if (cluster_resource.lrs_load_reporting_server.has_value()) {
-    xds_cluster_impl_config["lrsLoadReportingServer"] =
-        cluster_resource.lrs_load_reporting_server->ToJson();
-  }
   Json xds_cluster_impl_policy = Json::FromArray({Json::FromObject({
       {"xds_cluster_impl_experimental",
-       Json::FromObject(std::move(xds_cluster_impl_config))},
+       Json::FromObject({
+           {"clusterName", Json::FromString(new_cluster.cluster_name)},
+           {"childPolicy", std::move(xds_override_host_policy)},
+       })},
   })});
   // Wrap the xds_cluster_impl policy in the outlier_detection policy.
   Json::Object outlier_detection_config = {
