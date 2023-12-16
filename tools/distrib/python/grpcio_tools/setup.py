@@ -323,6 +323,7 @@ setuptools.setup(
         "protobuf>=4.21.6,<5.0dev",
         "grpcio>={version}".format(version=grpc_version.VERSION),
         "setuptools",
+        "importlib_resources>=6,<7; python_version < 3.9"
     ],
     package_data=package_data(),
     cmdclass={
