@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 # Type aliases
 Message = google.protobuf.message.Message
+RpcError = grpc.RpcError
 
 
 class GrpcClientHelper:

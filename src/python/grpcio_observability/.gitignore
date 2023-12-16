@@ -1,6 +1,7 @@
 build/
-include/
+grpc_root/
+third_party/
+*.egg-info/
 *.c
 *.cpp
-*.egg-info
 *.so

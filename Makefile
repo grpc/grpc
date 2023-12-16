@@ -878,6 +878,7 @@ LIBGPR_SRC = \
     src/core/lib/gprpp/windows/thd.cc \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/call.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -1659,6 +1660,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/security_connector/ssl_utils.cc \
     src/core/lib/security/security_connector/tls/tls_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
+    src/core/lib/security/transport/legacy_server_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
@@ -1763,6 +1765,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/call.h \
     include/grpc/impl/channel_arg_names.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -2200,6 +2203,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/security/security_connector/load_system_roots_supported.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
+    src/core/lib/security/transport/legacy_server_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
@@ -2291,6 +2295,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/call.h \
     include/grpc/impl/channel_arg_names.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \

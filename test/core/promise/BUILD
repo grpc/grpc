@@ -240,6 +240,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "all_ok_test",
+    srcs = ["all_ok_test.cc"],
+    external_deps = [
+        "absl/utility",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:all_ok"],
+)
+
+grpc_cc_test(
     name = "seq_test",
     srcs = ["seq_test.cc"],
     external_deps = ["gtest"],

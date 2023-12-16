@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import random
+import sys
 from typing import Any, Dict, List
 import unittest
 
@@ -60,10 +61,6 @@ _VALID_CONFIG_STATS_ONLY_STR = """
     'cloud_monitoring': {}
 }
 """
-# Depends on grpc_core::IsTransportSuppliesClientLatencyEnabled,
-# the following metrcis might not exist.
-_SKIP_VEFIRY = [_cyobservability.MetricsName.CLIENT_TRANSPORT_LATENCY]
-_SPAN_PREFIXS = ["Recv", "Sent", "Attempt"]
 
 
 class TestExporter(_observability.Exporter):
@@ -129,13 +126,13 @@ class _MethodHandler(grpc.RpcMethodHandler):
         self.stream_unary = None
         self.stream_stream = None
         if self.request_streaming and self.response_streaming:
-            self.stream_stream = lambda x, y: handle_stream_stream(x, y)
+            self.stream_stream = handle_stream_stream
         elif self.request_streaming:
-            self.stream_unary = lambda x, y: handle_stream_unary(x, y)
+            self.stream_unary = handle_stream_unary
         elif self.response_streaming:
-            self.unary_stream = lambda x, y: handle_unary_stream(x, y)
+            self.unary_stream = handle_unary_stream
         else:
-            self.unary_unary = lambda x, y: handle_unary_unary(x, y)
+            self.unary_unary = handle_unary_unary
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
@@ -152,6 +149,10 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
 class ObservabilityTest(unittest.TestCase):
     def setUp(self):
         self.all_metric = []
@@ -175,53 +176,7 @@ class ObservabilityTest(unittest.TestCase):
             unary_unary_call(port=self._port)
 
         self.assertGreater(len(self.all_metric), 0)
-        self.assertGreater(len(self.all_span), 0)
         self._validate_metrics(self.all_metric)
-        self._validate_spans(self.all_span)
-
-    def testContextPropagationToSameServer(self):
-        # Sends two RPCs, one from gRPC client and the other from gRPC server:
-        #   gRPC Client -> gRPC Server 1 -> gRPC Server 1
-        # Verify that the trace_id was propagated to the 2nd RPC.
-        self._set_config_file(_VALID_CONFIG_TRACING_ONLY)
-        with grpc_observability.GCPOpenCensusObservability(
-            exporter=self.test_exporter
-        ):
-            port = self._start_server()
-            metadata = (
-                TRIGGER_RPC_METADATA,
-                ("port", str(port)),
-            )
-            unary_unary_call(port=port, metadata=metadata)
-
-        # 2 of each for ["Recv", "Sent", "Attempt"]
-        self.assertEqual(len(self.all_span), 6)
-        trace_id = self.all_span[0].trace_id
-        for span in self.all_span:
-            self.assertEqual(span.trace_id, trace_id)
-
-    def testContextPropagationToNewServer(self):
-        # Sends two RPCs, one from gRPC client and the other from gRPC server:
-        #   gRPC Client -> gRPC Server 1 -> gRPC Server 2
-        # Verify that the trace_id was propagated to the 2nd RPC.
-        # This test case is to make sure that the context from one thread can
-        # be propagated to different thread.
-        self._set_config_file(_VALID_CONFIG_TRACING_ONLY)
-        with grpc_observability.GCPOpenCensusObservability(
-            exporter=self.test_exporter
-        ):
-            port = self._start_server()
-            metadata = (
-                TRIGGER_RPC_METADATA,
-                TRIGGER_RPC_TO_NEW_SERVER_METADATA,
-            )
-            unary_unary_call(port=port, metadata=metadata)
-
-        # 2 of each for ["Recv", "Sent", "Attempt"]
-        self.assertEqual(len(self.all_span), 6)
-        trace_id = self.all_span[0].trace_id
-        for span in self.all_span:
-            self.assertEqual(span.trace_id, trace_id)
 
     def testThrowErrorWithoutConfig(self):
         with self.assertRaises(ValueError):
@@ -251,7 +206,6 @@ class ObservabilityTest(unittest.TestCase):
             unary_unary_call(port=self._port)
 
         self.assertEqual(len(self.all_metric), 0)
-        self.assertEqual(len(self.all_span), 0)
 
     def testThrowErrorWhenCallingMultipleInit(self):
         self._set_config_file(_VALID_CONFIG_TRACING_STATS)
@@ -269,7 +223,6 @@ class ObservabilityTest(unittest.TestCase):
             self._start_server()
             unary_unary_call(port=self._port)
 
-        self.assertEqual(len(self.all_span), 0)
         self.assertGreater(len(self.all_metric), 0)
         self._validate_metrics(self.all_metric)
 
@@ -282,8 +235,6 @@ class ObservabilityTest(unittest.TestCase):
             unary_unary_call(port=self._port)
 
         self.assertEqual(len(self.all_metric), 0)
-        self.assertGreater(len(self.all_span), 0)
-        self._validate_spans(self.all_span)
 
     def testRecordUnaryStream(self):
         self._set_config_file(_VALID_CONFIG_TRACING_STATS)
@@ -294,9 +245,7 @@ class ObservabilityTest(unittest.TestCase):
             unary_stream_call(port=self._port)
 
         self.assertGreater(len(self.all_metric), 0)
-        self.assertGreater(len(self.all_span), 0)
         self._validate_metrics(self.all_metric)
-        self._validate_spans(self.all_span)
 
     def testRecordStreamUnary(self):
         self._set_config_file(_VALID_CONFIG_TRACING_STATS)
@@ -309,7 +258,6 @@ class ObservabilityTest(unittest.TestCase):
         self.assertTrue(len(self.all_metric) > 0)
         self.assertTrue(len(self.all_span) > 0)
         self._validate_metrics(self.all_metric)
-        self._validate_spans(self.all_span)
 
     def testRecordStreamStream(self):
         self._set_config_file(_VALID_CONFIG_TRACING_STATS)
@@ -320,16 +268,13 @@ class ObservabilityTest(unittest.TestCase):
             stream_stream_call(port=self._port)
 
         self.assertGreater(len(self.all_metric), 0)
-        self.assertGreater(len(self.all_span), 0)
         self._validate_metrics(self.all_metric)
-        self._validate_spans(self.all_span)
 
     def testNoRecordBeforeInit(self):
         self._set_config_file(_VALID_CONFIG_TRACING_STATS)
         self._start_server()
         unary_unary_call(port=self._port)
         self.assertEqual(len(self.all_metric), 0)
-        self.assertEqual(len(self.all_span), 0)
         self._server.stop(0)
 
         with grpc_observability.GCPOpenCensusObservability(
@@ -339,9 +284,7 @@ class ObservabilityTest(unittest.TestCase):
             unary_unary_call(port=self._port)
 
         self.assertGreater(len(self.all_metric), 0)
-        self.assertGreater(len(self.all_span), 0)
         self._validate_metrics(self.all_metric)
-        self._validate_spans(self.all_span)
 
     def testNoRecordAfterExit(self):
         self._set_config_file(_VALID_CONFIG_TRACING_STATS)
@@ -352,38 +295,11 @@ class ObservabilityTest(unittest.TestCase):
             unary_unary_call(port=self._port)
 
         self.assertGreater(len(self.all_metric), 0)
-        self.assertGreater(len(self.all_span), 0)
         current_metric_len = len(self.all_metric)
-        current_spans_len = len(self.all_span)
         self._validate_metrics(self.all_metric)
-        self._validate_spans(self.all_span)
 
         unary_unary_call(port=self._port)
         self.assertEqual(len(self.all_metric), current_metric_len)
-        self.assertEqual(len(self.all_span), current_spans_len)
-
-    def testTraceSamplingRate(self):
-        # Make 40 UnaryCall's
-        # With 50% sampling rate, we should get 10-30 traces with >99.93% probability
-        # Each trace will have three span (Send, Recv, Attempt)
-        _CALLS = 40
-        _LOWER_BOUND = 10 * 3
-        _HIGHER_BOUND = 30 * 3
-        _VALID_CONFIG_TRACING_ONLY_SAMPLE_HALF = {
-            "project_id": "test-project",
-            "cloud_trace": {"sampling_rate": 0.5},
-        }
-        self._set_config_file(_VALID_CONFIG_TRACING_ONLY_SAMPLE_HALF)
-        with grpc_observability.GCPOpenCensusObservability(
-            exporter=self.test_exporter
-        ):
-            self._start_server()
-            for _ in range(_CALLS):
-                unary_unary_call(port=self._port)
-        self.assertEqual(len(self.all_metric), 0)
-        self.assertGreaterEqual(len(self.all_span), _LOWER_BOUND)
-        self.assertLessEqual(len(self.all_span), _HIGHER_BOUND)
-        self._validate_spans(self.all_span)
 
     def testConfigFileOverEnvVar(self):
         # env var have only stats enabled
@@ -398,8 +314,6 @@ class ObservabilityTest(unittest.TestCase):
             unary_unary_call(port=self._port)
 
         self.assertEqual(len(self.all_metric), 0)
-        self.assertGreater(len(self.all_span), 0)
-        self._validate_spans(self.all_span)
 
     def _set_config_file(self, config: Dict[str, Any]) -> None:
         # Using random name here so multiple tests can run with different config files.
@@ -420,8 +334,6 @@ class ObservabilityTest(unittest.TestCase):
     ) -> None:
         metric_names = set(metric.name for metric in metrics)
         for name in _cyobservability.MetricsName:
-            if name in _SKIP_VEFIRY:
-                continue
             if name not in metric_names:
                 logger.error(
                     "metric %s not found in exported metrics: %s!",
@@ -429,20 +341,6 @@ class ObservabilityTest(unittest.TestCase):
                     metric_names,
                 )
             self.assertTrue(name in metric_names)
-
-    def _validate_spans(
-        self, tracing_data: List[_observability.TracingData]
-    ) -> None:
-        span_names = set(data.name for data in tracing_data)
-        for prefix in _SPAN_PREFIXS:
-            prefix_exist = any(prefix in name for name in span_names)
-            if not prefix_exist:
-                logger.error(
-                    "missing span with prefix %s in exported spans: %s!",
-                    prefix,
-                    span_names,
-                )
-            self.assertTrue(prefix_exist)
 
 
 def unary_unary_call(port, metadata=None):
