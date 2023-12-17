@@ -81,15 +81,6 @@ class DebugLocation {
 };
 #endif
 
-template <typename T>
-struct ValueWithDebugLocation {
-  // NOLINTNEXTLINE
-  ValueWithDebugLocation(T&& value, DebugLocation debug_location = {})
-      : value(std::forward<T>(value)), debug_location(debug_location) {}
-  T value;
-  GPR_NO_UNIQUE_ADDRESS DebugLocation debug_location;
-};
-
 #define DEBUG_LOCATION ::grpc_core::DebugLocation(__FILE__, __LINE__)
 
 }  // namespace grpc_core
