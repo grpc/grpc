@@ -95,6 +95,9 @@ class ServerCallContext {
   // TODO(ctiller): legacy API - once we move transports to promises we'll
   // create the promise directly and not need to pass around this token.
   virtual const void* server_stream_data() = 0;
+
+ protected:
+  ~ServerCallContext() = default;
 };
 
 // TODO(ctiller): move more call things into this type

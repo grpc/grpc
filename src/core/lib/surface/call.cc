@@ -3771,8 +3771,8 @@ class ServerCallSpine final : public CallSpineInterface,
       ClientMetadataHandle metadata,
       grpc_metadata_array* publish_initial_metadata) override;
   ArenaPromise<ServerMetadataHandle> MakeTopOfServerCallPromise(
-      CallArgs call_args, grpc_completion_queue* cq,
-      absl::FunctionRef<void(grpc_call* call)> publish) override {
+      CallArgs, grpc_completion_queue*,
+      absl::FunctionRef<void(grpc_call* call)>) override {
     Crash("unimplemented");
   }
 

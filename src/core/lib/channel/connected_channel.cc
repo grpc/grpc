@@ -936,7 +936,7 @@ const grpc_channel_filter kServerPromiseBasedTransportFilter = {
     nullptr,
     sizeof(channel_data),
     connected_channel_init_channel_elem,
-    +[](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {},
+    +[](grpc_channel_stack*, grpc_channel_element*) {},
     connected_channel_destroy_channel_elem,
     connected_channel_get_channel_info,
     "connected",
