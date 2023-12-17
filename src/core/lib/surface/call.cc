@@ -3872,8 +3872,17 @@ auto MaybeOp(const grpc_op* ops, uint8_t idx, SetupFn setup) {
 
     Impl(const Impl&) = delete;
     Impl& operator=(const Impl&) = delete;
-    Impl(Impl&&) noexcept = default;
-    Impl& operator=(Impl&&) noexcept = default;
+    Impl(Impl&& other) noexcept : state_(MoveState(other.state_)) {}
+    Impl& operator=(Impl&& other) noexcept {
+      if (absl::holds_alternative<Dismissed>(state_)) {
+        state_.template emplace<Dismissed>();
+        return *this;
+      }
+      // Can't move after first poll => Promise is not an option
+      state_.template emplace<PromiseFactory>(
+          std::move(absl::get<PromiseFactory>(other.state_)));
+      return *this;
+    }
 
     Poll<StatusFlag> operator()() {
       if (absl::holds_alternative<Dismissed>(state_)) return Success{};
@@ -3888,7 +3897,14 @@ auto MaybeOp(const grpc_op* ops, uint8_t idx, SetupFn setup) {
 
    private:
     struct Dismissed {};
-    absl::variant<Dismissed, PromiseFactory, Promise> state_;
+    using State = absl::variant<Dismissed, PromiseFactory, Promise>;
+    State state_;
+
+    static State MoveState(State& state) {
+      if (absl::holds_alternative<Dismissed>(state)) return Dismissed{};
+      // Can't move after first poll => Promise is not an option
+      return std::move(absl::get<PromiseFactory>(state));
+    }
   };
   if (idx == 255) {
     return Impl();
