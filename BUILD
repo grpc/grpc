@@ -2510,7 +2510,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["//src/core:lib/gprpp/debug_location.h"],
     visibility = ["@grpc:debug_location"],
-    deps = ["gpr_platform"]
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
