@@ -45,6 +45,7 @@
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/call.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -147,6 +148,10 @@ class Call : public CppImplOf<Call, grpc_call> {
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
   virtual grpc_call_stack* call_stack() = 0;
+
+  // Return the EventEngine used for this call's async execution.
+  virtual grpc_event_engine::experimental::EventEngine* event_engine()
+      const = 0;
 
  protected:
   // The maximum number of concurrent batches possible.
@@ -527,6 +532,10 @@ class FilterStackCall final : public Call {
     return reinterpret_cast<grpc_call_stack*>(
         reinterpret_cast<char*>(this) +
         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(*this)));
+  }
+
+  grpc_event_engine::experimental::EventEngine* event_engine() const override {
+    return channel()->event_engine();
   }
 
   grpc_call_element* call_elem(size_t idx) {
@@ -2049,7 +2058,7 @@ class PromiseBasedCall : public Call,
     return failed_before_recv_message_.load(std::memory_order_relaxed);
   }
 
-  grpc_event_engine::experimental::EventEngine* event_engine() const final {
+  grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return channel()->event_engine();
   }
 
@@ -3794,4 +3803,9 @@ const char* grpc_call_error_to_string(grpc_call_error error) {
       return "GRPC_CALL_OK";
   }
   GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOW");
+}
+
+void grpc_call_run_in_event_engine(const grpc_call* call,
+                                   absl::AnyInvocable<void()> cb) {
+  grpc_core::Call::FromC(call)->event_engine()->Run(std::move(cb));
 }

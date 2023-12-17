@@ -491,6 +491,11 @@ class CallHandler {
   const RefCountedPtr<CallSpine> spine_;
 };
 
+struct CallInitiatorAndHandler {
+  CallInitiator initiator;
+  CallHandler handler;
+};
+
 template <typename CallHalf>
 auto OutgoingMessages(CallHalf& h) {
   struct Wrapper {

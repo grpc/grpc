@@ -332,11 +332,15 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
   }
   // original_ip_detection_extensions -- must be empty as per
   // https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md
-  if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_original_ip_detection_extensions(
-          http_connection_manager_proto)) {
-    ValidationErrors::ScopedField field(errors,
-                                        ".original_ip_detection_extensions");
-    errors->AddError("must be empty");
+  {
+    size_t size;
+    envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_original_ip_detection_extensions(
+        http_connection_manager_proto, &size);
+    if (size != 0) {
+      ValidationErrors::ScopedField field(errors,
+                                          ".original_ip_detection_extensions");
+      errors->AddError("must be empty");
+    }
   }
   // common_http_protocol_options
   const envoy_config_core_v3_HttpProtocolOptions* options =

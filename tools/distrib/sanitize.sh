@@ -17,7 +17,6 @@ set -ex
 
 cd $(dirname $0)/../..
 
-tools/distrib/iwyu.sh || true
 tools/buildgen/generate_projects.sh
 tools/distrib/check_include_guards.py --fix
 tools/distrib/check_naked_includes.py --fix || true
