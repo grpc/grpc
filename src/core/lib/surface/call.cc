@@ -3864,6 +3864,8 @@ auto MaybeOp(const grpc_op* ops, uint8_t idx, SetupFn setup) {
   using SetupResult = decltype(setup(*ops));
   using PromiseFactory = promise_detail::OncePromiseFactory<void, SetupResult>;
   using Promise = typename PromiseFactory::Promise;
+  struct Dismissed {};
+  using State = absl::variant<Dismissed, PromiseFactory, Promise>;
   class Impl {
    public:
     Impl() : state_(Dismissed{}) {}
@@ -3896,8 +3898,6 @@ auto MaybeOp(const grpc_op* ops, uint8_t idx, SetupFn setup) {
     }
 
    private:
-    struct Dismissed {};
-    using State = absl::variant<Dismissed, PromiseFactory, Promise>;
     State state_;
 
     static State MoveState(State& state) {
