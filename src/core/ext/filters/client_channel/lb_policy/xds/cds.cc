@@ -277,6 +277,13 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
             this, new_config->cluster().c_str(), new_config->is_dynamic());
   }
   GPR_ASSERT(new_config != nullptr);
+  // Cluster name should never change, because we should use a different
+  // child name in xds_cluster_manager in that case.
+  if (cluster_name_.empty()) {
+    cluster_name_ = new_config->cluster();
+  } else {
+    GPR_ASSERT(cluster_name_ == new_config->cluster());
+  }
   // Get xDS config.
   auto new_xds_config = args.args.GetObjectRef<XdsConfig>();
   if (new_xds_config == nullptr) {
@@ -286,7 +293,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     ReportTransientFailure(status);
     return status;
   }
-  auto it = new_xds_config->clusters.find(new_config->cluster());
+  auto it = new_xds_config->clusters.find(cluster_name_);
   if (it == new_xds_config->clusters.end()) {
     // Cluster not present.
     if (new_config->is_dynamic()) {
@@ -300,8 +307,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
           ReportTransientFailure(status);
           return status;
         }
-        subscription_ =
-            dependency_mgr->GetClusterSubscription(new_config->cluster());
+        subscription_ = dependency_mgr->GetClusterSubscription(cluster_name_);
         // Stay in CONNECTING until we get an update that has the cluster.
         return absl::OkStatus();
       }
@@ -312,62 +318,58 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
         gpr_log(GPR_INFO,
                 "[cdslb %p] xDS config has no entry for dynamic cluster %s, "
                 "ignoring update",
-                this, new_config->cluster().c_str());
+                this, cluster_name_.c_str());
       }
       // Stay in CONNECTING until we get an update that has the cluster.
       return absl::OkStatus();
     }
     // Not a dynamic cluster.  This should never happen.
     absl::Status status = absl::UnavailableError(absl::StrCat(
-        "xDS config has no entry for static cluster ", new_config->cluster()));
+        "xDS config has no entry for static cluster ", cluster_name_));
     ReportTransientFailure(status);
     return status;
   }
-  auto& new_cluster = it->second;
+  auto& new_cluster_config = it->second;
   // If new list is not OK, report TRANSIENT_FAILURE.
-  if (!new_cluster.ok()) {
-    ReportTransientFailure(new_cluster.status());
-    return new_cluster.status();
+  if (!new_cluster_config.ok()) {
+    ReportTransientFailure(new_cluster_config.status());
+    return new_cluster_config.status();
   }
-  GPR_ASSERT(new_cluster->cluster != nullptr);
+  GPR_ASSERT(new_cluster_config->cluster != nullptr);
   // Find old cluster, if any.
-  const XdsConfig::ClusterConfig* old_cluster = nullptr;
-  if (!cluster_name_.empty()) {
+  const XdsConfig::ClusterConfig* old_cluster_config = nullptr;
+  if (xds_config_ != nullptr) {
     auto it_old = xds_config_->clusters.find(cluster_name_);
     if (it_old != xds_config_->clusters.end() && it_old->second.ok()) {
-      old_cluster = &*it_old->second;
+      old_cluster_config = &*it_old->second;
       // If nothing changed for a leaf cluster, then ignore the update.
       // Can't do this for an aggregate cluster, because even if the aggregate
       // cluster itself didn't change, the leaf clusters may have changed.
-      if (new_config->cluster() == cluster_name_ &&
-          *new_cluster == *old_cluster &&
+      if (*new_cluster_config == *old_cluster_config &&
           absl::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
-              new_cluster->children)) {
+              new_cluster_config->children)) {
         return absl::OkStatus();
       }
     }
   }
-  // Swap in new config.
-  xds_config_ = std::move(new_xds_config);
-  cluster_name_ = new_config->cluster();
   // Construct child policy config and update state based on the cluster type.
   Json child_policy_config_json;
   UpdateArgs update_args;
   Match(
-      new_cluster->children,
+      new_cluster_config->children,
       // Leaf cluster.
       [&](const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) {
         // Compute new child numbers.
-        child_name_state_ =
-            ComputeChildNames(old_cluster, *new_cluster, endpoint_config);
+        child_name_state_ = ComputeChildNames(
+            old_cluster_config, *new_cluster_config, endpoint_config);
         // Populate addresses and resolution_note for child policy.
         update_args.addresses = std::make_shared<PriorityEndpointIterator>(
-            new_cluster->cluster_name, endpoint_config.endpoints,
+            new_cluster_config->cluster_name, endpoint_config.endpoints,
             child_name_state_.priority_child_numbers);
         update_args.resolution_note = endpoint_config.resolution_note;
         // Construct child policy config.
         child_policy_config_json = CreateChildPolicyConfigForLeafCluster(
-            *new_cluster, endpoint_config);
+            *new_cluster_config, endpoint_config);
       },
       // Aggregate cluster.
       [&](const XdsConfig::ClusterConfig::AggregateConfig& aggregate_config) {
@@ -376,6 +378,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
         child_policy_config_json =
             CreateChildPolicyConfigForAggregateCluster(aggregate_config);
       });
+  // Swap in new xDS config, now that we're done with the old one.
+  xds_config_ = std::move(new_xds_config);
   // Validate child policy config.
   auto child_config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
