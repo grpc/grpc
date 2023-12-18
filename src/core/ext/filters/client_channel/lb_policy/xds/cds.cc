@@ -140,6 +140,7 @@ class CdsLb : public LoadBalancingPolicy {
   std::string GetChildPolicyName(const std::string& cluster, size_t priority);
 
   Json CreateChildPolicyConfig(
+      const Json::Array& lb_policy_config,
       const std::vector<const XdsConfig::ClusterConfig*>& new_cluster_list);
   std::shared_ptr<EndpointAddressesIterator> CreateChildPolicyAddresses(
       const std::vector<const XdsConfig::ClusterConfig*>& new_cluster_list);
@@ -352,7 +353,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       ComputeChildNames(*old_leaf_cluster_configs, *new_leaf_cluster_configs);
   xds_config_ = std::move(new_xds_config);
   // Construct child policy config.
-  Json json = CreateChildPolicyConfig(*new_leaf_cluster_configs);
+  Json json = CreateChildPolicyConfig(
+      new_cluster_config->cluster->lb_policy_config, *new_leaf_cluster_configs);
   auto child_config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           json);
@@ -501,6 +503,7 @@ std::string MakeChildPolicyName(absl::string_view cluster,
 }
 
 Json CdsLb::CreateChildPolicyConfig(
+    const Json::Array& lb_policy_config,
     const std::vector<const XdsConfig::ClusterConfig*>& new_cluster_list) {
   Json::Object priority_children;
   Json::Array priority_priorities;
@@ -527,8 +530,7 @@ Json CdsLb::CreateChildPolicyConfig(
             }),
         });
       } else {
-        child_policy =
-            Json::FromArray(new_cluster_list[0]->cluster->lb_policy_config);
+        child_policy = Json::FromArray(lb_policy_config);
       }
       // Wrap the xDS LB policy in the xds_override_host policy.
       Json::Object xds_override_host_lb_config = {
