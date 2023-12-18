@@ -546,23 +546,9 @@ absl::StatusOr<const XdsClusterResource*> FindClusterConfig(
     const XdsDependencyManager::XdsConfig& xds_config,
     const std::string& cluster_name) {
   auto it = xds_config.clusters.find(cluster_name);
-  if (it != xds_config.clusters.end()) {
-    if (!it->second.ok()) {
-      // Shouldn't happen.
-      return absl::InternalError(absl::StrCat(
-          "xDS config does not contain entry for cluster ", cluster_name));
-    }
-    return it->second->front().cluster.get();
-  }
-  // Fall back to brute-force search for leaf clusters under an
-  // aggregate cluster.
-  // TODO(roth): If this becomes a performance problem, consider if we
-  // can do something smarter here.
-  for (const auto& p : xds_config.clusters) {
-    if (!p.second.ok()) continue;
-    for (const auto& cluster : *p.second) {
-      if (cluster.cluster_name == cluster_name) return cluster.cluster.get();
-    }
+  if (it != xds_config.clusters.end() && it->second.ok() &&
+      it->second->cluster != nullptr) {
+    return it->second->cluster.get();
   }
   return absl::InternalError(absl::StrCat(
       "xDS config does not contain entry for cluster ", cluster_name));
