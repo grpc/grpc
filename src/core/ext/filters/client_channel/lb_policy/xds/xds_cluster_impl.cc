@@ -527,9 +527,9 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
           &new_cluster_config.children);
   if (endpoint_config == nullptr) {
     // Should never happen.
-    absl::Status status = absl::InternalError(absl::StrCat(
-        "cluster config for ", new_config->cluster_name(),
-        " has no endpoint config"));
+    absl::Status status = absl::InternalError(
+        absl::StrCat("cluster config for ", new_config->cluster_name(),
+                     " has no endpoint config"));
     ReportTransientFailure(status);
     return status;
   }
@@ -564,21 +564,22 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
         *new_cluster_config.cluster->lrs_load_reporting_server,
         new_config->cluster_name(), new_eds_service_name);
     if (drop_stats_ == nullptr) {
-      gpr_log(GPR_ERROR,
-              "[xds_cluster_impl_lb %p] Failed to get cluster drop stats for "
-              "LRS server %s, cluster %s, EDS service name %s, load "
-              "reporting for drops will not be done.",
-              this,
-              new_cluster_config.cluster->lrs_load_reporting_server
-                  ->server_uri().c_str(),
-              new_config->cluster_name().c_str(), new_eds_service_name.c_str());
+      gpr_log(
+          GPR_ERROR,
+          "[xds_cluster_impl_lb %p] Failed to get cluster drop stats "
+          "for LRS server %s, cluster %s, EDS service name %s, load "
+          "reporting for drops will not be done.",
+          this,
+          new_cluster_config.cluster->lrs_load_reporting_server->server_uri()
+              .c_str(),
+          new_config->cluster_name().c_str(), new_eds_service_name.c_str());
     }
   }
   // Update call counter if needed.
   if (cluster_resource_ == nullptr ||
       old_eds_service_name != new_eds_service_name) {
-    call_counter_ = g_call_counter_map->GetOrCreate(
-        new_config->cluster_name(), new_eds_service_name);
+    call_counter_ = g_call_counter_map->GetOrCreate(new_config->cluster_name(),
+                                                    new_eds_service_name);
   }
   // Update config state, now that we're done comparing old and new fields.
   config_ = std::move(new_config);
@@ -604,12 +605,10 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   }
   // Configure root cert.
   absl::string_view root_provider_instance_name =
-      cluster_resource
-          .common_tls_context.certificate_validation_context
+      cluster_resource.common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.instance_name;
   absl::string_view root_cert_name =
-      cluster_resource
-          .common_tls_context.certificate_validation_context
+      cluster_resource.common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.certificate_name;
   RefCountedPtr<XdsCertificateProvider> root_cert_provider;
   if (!root_provider_instance_name.empty()) {
@@ -624,11 +623,10 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   }
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
-      cluster_resource
-          .common_tls_context.tls_certificate_provider_instance.instance_name;
+      cluster_resource.common_tls_context.tls_certificate_provider_instance
+          .instance_name;
   absl::string_view identity_cert_name =
-      cluster_resource
-          .common_tls_context.tls_certificate_provider_instance
+      cluster_resource.common_tls_context.tls_certificate_provider_instance
           .certificate_name;
   RefCountedPtr<XdsCertificateProvider> identity_cert_provider;
   if (!identity_provider_instance_name.empty()) {
@@ -643,8 +641,7 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   }
   // Configure SAN matchers.
   const std::vector<StringMatcher>& san_matchers =
-      cluster_resource
-          .common_tls_context.certificate_validation_context
+      cluster_resource.common_tls_context.certificate_validation_context
           .match_subject_alt_names;
   // Create xds cert provider.
   return MakeRefCounted<XdsCertificateProvider>(
@@ -752,16 +749,16 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
               address, per_address_args, args),
           std::move(locality_stats));
     }
-    gpr_log(
-        GPR_ERROR,
-        "[xds_cluster_impl_lb %p] Failed to get locality stats object for "
-        "LRS server %s, cluster %s, EDS service name %s; load reports will "
-        "not be generated (not wrapping subchannel)",
-        parent(),
-        parent()->cluster_resource_->lrs_load_reporting_server->server_uri()
-            .c_str(),
-        parent()->config_->cluster_name().c_str(),
-        GetEdsResourceName(*parent()->cluster_resource_).c_str());
+    gpr_log(GPR_ERROR,
+            "[xds_cluster_impl_lb %p] Failed to get locality stats object for "
+            "LRS server %s, cluster %s, EDS service name %s; load reports will "
+            "not be generated (not wrapping subchannel)",
+            parent(),
+            parent()
+                ->cluster_resource_->lrs_load_reporting_server->server_uri()
+                .c_str(),
+            parent()->config_->cluster_name().c_str(),
+            GetEdsResourceName(*parent()->cluster_resource_).c_str());
   }
   // Load reporting not enabled, so don't wrap the subchannel.
   return parent()->channel_control_helper()->CreateSubchannel(
@@ -810,9 +807,9 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
   if (it == json.object().end()) {
     errors->AddError("field not present");
   } else {
-    auto lb_config = CoreConfiguration::Get()
-                         .lb_policy_registry()
-                         .ParseLoadBalancingConfig(it->second);
+    auto lb_config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            it->second);
     if (!lb_config.ok()) {
       errors->AddError(lb_config.status().message());
     } else {
