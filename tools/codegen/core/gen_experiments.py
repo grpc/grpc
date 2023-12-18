@@ -23,10 +23,17 @@ Experiment definitions are in src/core/lib/experiments/experiments.yaml
 from __future__ import print_function
 
 import argparse
+import os
 import sys
 
 import experiments_compiler as exp
 import yaml
+
+REPO_ROOT = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "../../..")
+)
+print(REPO_ROOT)
+os.chdir(REPO_ROOT)
 
 DEFAULTS = {
     "broken": "false",
@@ -86,6 +93,11 @@ def ParseCommandLineArguments(args):
 args = ParseCommandLineArguments(sys.argv[1:])
 
 
+def _InjectGithubPath(path):
+    base, ext = os.path.splitext(path)
+    return base + ".github" + ext
+
+
 def _GenerateExperimentFiles(args, mode):
     if mode == "test":
         _EXPERIMENTS_DEFS = (
@@ -96,11 +108,18 @@ def _GenerateExperimentFiles(args, mode):
         )
         _EXPERIMENTS_HDR_FILE = "test/core/experiments/fixtures/experiments.h"
         _EXPERIMENTS_SRC_FILE = "test/core/experiments/fixtures/experiments.cc"
+        _EXPERIMENTS_BZL_FILE = "bazel/test_experiments.bzl"
     else:
         _EXPERIMENTS_DEFS = "src/core/lib/experiments/experiments.yaml"
         _EXPERIMENTS_ROLLOUTS = "src/core/lib/experiments/rollouts.yaml"
         _EXPERIMENTS_HDR_FILE = "src/core/lib/experiments/experiments.h"
         _EXPERIMENTS_SRC_FILE = "src/core/lib/experiments/experiments.cc"
+        _EXPERIMENTS_BZL_FILE = "bazel/experiments.bzl"
+        if "/google3/" in REPO_ROOT:
+            _EXPERIMENTS_ROLLOUTS = _InjectGithubPath(_EXPERIMENTS_ROLLOUTS)
+            _EXPERIMENTS_HDR_FILE = _InjectGithubPath(_EXPERIMENTS_HDR_FILE)
+            _EXPERIMENTS_SRC_FILE = _InjectGithubPath(_EXPERIMENTS_SRC_FILE)
+            _EXPERIMENTS_BZL_FILE = _InjectGithubPath(_EXPERIMENTS_BZL_FILE)
 
     with open(_EXPERIMENTS_DEFS) as f:
         attrs = yaml.safe_load(f.read())
@@ -152,12 +171,12 @@ def _GenerateExperimentFiles(args, mode):
     )
 
     print("Generating experiments.bzl")
+    compiler.GenExperimentsBzl(mode, _EXPERIMENTS_BZL_FILE)
     if mode == "test":
-        compiler.GenExperimentsBzl(mode, "bazel/test_experiments.bzl")
         print("Generating experiments tests")
-        compiler.GenTest("test/core/experiments/experiments_test.cc")
-    else:
-        compiler.GenExperimentsBzl(mode, "bazel/experiments.bzl")
+        compiler.GenTest(
+            os.path.join(REPO_ROOT, "test/core/experiments/experiments_test.cc")
+        )
 
 
 _GenerateExperimentFiles(args, "production")
