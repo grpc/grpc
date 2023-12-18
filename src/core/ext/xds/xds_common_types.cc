@@ -425,16 +425,18 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
     const google_protobuf_Struct* resource) {
   upb::Status status;
   const auto* msg_def = google_protobuf_Struct_getmsgdef(context.symtab);
-  size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0,
-                                    nullptr, 0, status.ptr());
+  size_t json_size =
+      upb_JsonEncode(reinterpret_cast<const upb_Message*>(resource), msg_def,
+                     context.symtab, 0, nullptr, 0, status.ptr());
   if (json_size == static_cast<size_t>(-1)) {
     return absl::InvalidArgumentError(
         absl::StrCat("error encoding google::Protobuf::Struct as JSON: ",
                      upb_Status_ErrorMessage(status.ptr())));
   }
   void* buf = upb_Arena_Malloc(context.arena, json_size + 1);
-  upb_JsonEncode(resource, msg_def, context.symtab, 0,
-                 reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
+  upb_JsonEncode(reinterpret_cast<const upb_Message*>(resource), msg_def,
+                 context.symtab, 0, reinterpret_cast<char*>(buf), json_size + 1,
+                 status.ptr());
   auto json = JsonParse(reinterpret_cast<char*>(buf));
   if (!json.ok()) {
     // This should never happen.
