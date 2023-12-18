@@ -22,11 +22,14 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "google/protobuf/struct.pb.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/surface/call.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
@@ -40,6 +43,9 @@ using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::cluster::v3::RoutingPriority;
 using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::type::v3::FractionalPercent;
+using ::testing::_;
+using ::testing::AtLeast;
+using ::testing::Return;
 
 using ClientStats = LrsServiceImpl::ClientStats;
 
@@ -302,6 +308,135 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   balancer_->ads_service()->SetCdsResource(cluster);
   // Make sure client sees the change.
   WaitForBackend(DEBUG_LOCATION, 1);
+}
+
+class MockClientCallTracer : public grpc_core::ClientCallTracer {
+ public:
+  class MockClientCallAttemptTracer
+      : public grpc_core::ClientCallTracer::CallAttemptTracer {
+   public:
+    MOCK_METHOD(void, RecordSendInitialMetadata,
+                (grpc_metadata_batch * send_initial_metadata), (override));
+    MOCK_METHOD(void, RecordSendTrailingMetadata,
+                (grpc_metadata_batch * send_trailing_metadata), (override));
+    MOCK_METHOD(void, RecordSendMessage,
+                (const grpc_core::SliceBuffer& send_message), (override));
+    MOCK_METHOD(void, RecordSendCompressedMessage,
+                (const grpc_core::SliceBuffer& send_compressed_message),
+                (override));
+    MOCK_METHOD(void, RecordReceivedInitialMetadata,
+                (grpc_metadata_batch * recv_initial_metadata), (override));
+    MOCK_METHOD(void, RecordReceivedMessage,
+                (const grpc_core::SliceBuffer& recv_message), (override));
+    MOCK_METHOD(void, RecordReceivedDecompressedMessage,
+                (const grpc_core::SliceBuffer& recv_decompressed_message),
+                (override));
+    MOCK_METHOD(void, RecordCancel, (grpc_error_handle cancel_error),
+                (override));
+    MOCK_METHOD(void, RecordReceivedTrailingMetadata,
+                (absl::Status status,
+                 grpc_metadata_batch* recv_trailing_metadata,
+                 const grpc_transport_stream_stats* transport_stream_stats),
+                (override));
+    MOCK_METHOD(void, RecordEnd, (const gpr_timespec& latency), (override));
+    MOCK_METHOD(void, RecordAnnotation, (absl::string_view annotation),
+                (override));
+    MOCK_METHOD(void, RecordAnnotation, (const Annotation& annotation),
+                (override));
+    MOCK_METHOD(std::shared_ptr<grpc_core::TcpTracerInterface>,
+                StartNewTcpTrace, (), (override));
+    MOCK_METHOD(void, AddOptionalLabels,
+                (OptionalLabelComponent,
+                 (std::shared_ptr<std::map<std::string, std::string>>)),
+                (override));
+    MOCK_METHOD(std::string, TraceId, (), (override));
+    MOCK_METHOD(std::string, SpanId, (), (override));
+    MOCK_METHOD(bool, IsSampled, (), (override));
+  };
+  MOCK_METHOD(CallAttemptTracer*, StartNewAttempt, (bool is_transparent_retry),
+              (override));
+  MOCK_METHOD(void, RecordAnnotation, (absl::string_view annotation),
+              (override));
+  MOCK_METHOD(void, RecordAnnotation, (const Annotation& annotation),
+              (override));
+  MOCK_METHOD(std::string, TraceId, (), (override));
+  MOCK_METHOD(std::string, SpanId, (), (override));
+  MOCK_METHOD(bool, IsSampled, (), (override));
+};
+
+MATCHER(VerifyServiceLabels, "") {
+  if (arg->find("serviceName") != arg->end() &&
+      arg->find("serviceNamespace") != arg->end()) {
+    return arg->at("serviceName") == "myservice" &&
+           arg->at("serviceNamespace") == "mynamespace";
+  }
+  return false;
+}
+
+TEST_P(CdsTest, VerifyServiceLabelsParsing) {
+  CreateAndStartBackends(1);
+  // Populate EDS resources.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kDefaultClusterName));
+  // Populate service labels to CDS resources.
+  auto cluster = default_cluster_;
+  google::protobuf::Struct labels;
+  (*labels.mutable_fields())["service_name"].set_string_value("myservice");
+  (*labels.mutable_fields())["service_namespace"].set_string_value(
+      "mynamespace");
+  (*cluster.mutable_metadata()
+        ->mutable_filter_metadata())["com.google.gsm.telemetry_labels"] =
+      std::move(labels);
+  cluster.mutable_eds_cluster_config()->set_service_name(kDefaultClusterName);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  class UnaryClient : public grpc::ClientUnaryReactor {
+   public:
+    explicit UnaryClient(grpc::testing::EchoTestService::Stub* stub) {
+      stub->async()->Echo(&cli_ctx_, &request_, &response_, this);
+      RpcOptions rpc_options;
+      rpc_options.SetupRpc(&cli_ctx_, &request_);
+      grpc_call_context_set(
+          cli_ctx_.c_call(), GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
+          /*value=*/&client_call_tracer_, /*destroy=*/nullptr);
+      EXPECT_CALL(client_call_tracer_, StartNewAttempt(_))
+          .WillOnce(Return(&client_call_attempt_tracer_));
+      EXPECT_CALL(
+          client_call_attempt_tracer_,
+          AddOptionalLabels(grpc_core::ClientCallTracer::CallAttemptTracer::
+                                OptionalLabelComponent::kXdsServiceLabels,
+                            VerifyServiceLabels()))
+          .Times(AtLeast(1));
+      StartCall();
+    }
+    void OnReadInitialMetadataDone(bool ok) override {}
+    void OnDone(const Status& s) override {
+      EXPECT_TRUE(s.ok());
+      EXPECT_EQ(request_.message(), response_.message());
+      std::unique_lock<std::mutex> l(mu_);
+      done_ = true;
+      cv_.notify_one();
+    }
+    void Await() {
+      std::unique_lock<std::mutex> l(mu_);
+      while (!done_) {
+        cv_.wait(l);
+      }
+    }
+
+   private:
+    MockClientCallTracer client_call_tracer_;
+    MockClientCallTracer::MockClientCallAttemptTracer
+        client_call_attempt_tracer_;
+    EchoRequest request_;
+    EchoResponse response_;
+    ClientContext cli_ctx_;
+    std::mutex mu_;
+    std::condition_variable cv_;
+    bool done_{false};
+  };
+  UnaryClient test{stub_.get()};
+  test.Await();
 }
 
 //

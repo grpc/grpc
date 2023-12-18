@@ -71,6 +71,9 @@ class FakeClientCallTracer : public ClientCallTracer {
     std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
+    void AddOptionalLabels(OptionalLabelComponent /*component*/,
+                           std::shared_ptr<std::map<std::string, std::string>>
+                           /*service_labels*/) override {}
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
     bool IsSampled() override { return false; }
