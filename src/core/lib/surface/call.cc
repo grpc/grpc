@@ -3851,6 +3851,54 @@ grpc_call_error ServerCallSpine::StartBatch(const grpc_op* ops, size_t nops,
 }
 
 namespace {
+template <typename SetupFn>
+class MaybeOpImpl {
+ public:
+  using SetupResult = decltype(std::declval<SetupFn>()(grpc_op()));
+  using PromiseFactory = promise_detail::OncePromiseFactory<void, SetupResult>;
+  using Promise = typename PromiseFactory::Promise;
+  struct Dismissed {};
+  using State = absl::variant<Dismissed, PromiseFactory, Promise>;
+
+  MaybeOpImpl() : state_(Dismissed{}) {}
+  explicit MaybeOpImpl(SetupResult result)
+      : state_(PromiseFactory(std::move(result))) {}
+
+  MaybeOpImpl(const MaybeOpImpl&) = delete;
+  MaybeOpImpl& operator=(const MaybeOpImpl&) = delete;
+  MaybeOpImpl(MaybeOpImpl&& other) noexcept : state_(MoveState(other.state_)) {}
+  MaybeOpImpl& operator=(MaybeOpImpl&& other) noexcept {
+    if (absl::holds_alternative<Dismissed>(state_)) {
+      state_.template emplace<Dismissed>();
+      return *this;
+    }
+    // Can't move after first poll => Promise is not an option
+    state_.template emplace<PromiseFactory>(
+        std::move(absl::get<PromiseFactory>(other.state_)));
+    return *this;
+  }
+
+  Poll<StatusFlag> operator()() {
+    if (absl::holds_alternative<Dismissed>(state_)) return Success{};
+    if (absl::holds_alternative<PromiseFactory>(state_)) {
+      auto& factory = absl::get<PromiseFactory>(state_);
+      auto promise = factory.Make();
+      state_.template emplace<Promise>(std::move(promise));
+    }
+    auto& promise = absl::get<Promise>(state_);
+    return poll_cast<StatusFlag>(promise());
+  }
+
+ private:
+  State state_;
+
+  static State MoveState(State& state) {
+    if (absl::holds_alternative<Dismissed>(state)) return Dismissed{};
+    // Can't move after first poll => Promise is not an option
+    return std::move(absl::get<PromiseFactory>(state));
+  }
+};
+
 // MaybeOp captures a fairly complicated dance we need to do for the batch API.
 // We first check if an op is included or not, and if it is, we run the setup
 // function in the context of the API call (NOT in the call party).
@@ -3861,55 +3909,10 @@ namespace {
 // dance will go away.
 template <typename SetupFn>
 auto MaybeOp(const grpc_op* ops, uint8_t idx, SetupFn setup) {
-  using SetupResult = decltype(setup(*ops));
-  using PromiseFactory = promise_detail::OncePromiseFactory<void, SetupResult>;
-  using Promise = typename PromiseFactory::Promise;
-  struct Dismissed {};
-  using State = absl::variant<Dismissed, PromiseFactory, Promise>;
-  class Impl {
-   public:
-    Impl() : state_(Dismissed{}) {}
-    explicit Impl(SetupResult result)
-        : state_(PromiseFactory(std::move(result))) {}
-
-    Impl(const Impl&) = delete;
-    Impl& operator=(const Impl&) = delete;
-    Impl(Impl&& other) noexcept : state_(MoveState(other.state_)) {}
-    Impl& operator=(Impl&& other) noexcept {
-      if (absl::holds_alternative<Dismissed>(state_)) {
-        state_.template emplace<Dismissed>();
-        return *this;
-      }
-      // Can't move after first poll => Promise is not an option
-      state_.template emplace<PromiseFactory>(
-          std::move(absl::get<PromiseFactory>(other.state_)));
-      return *this;
-    }
-
-    Poll<StatusFlag> operator()() {
-      if (absl::holds_alternative<Dismissed>(state_)) return Success{};
-      if (absl::holds_alternative<PromiseFactory>(state_)) {
-        auto& factory = absl::get<PromiseFactory>(state_);
-        auto promise = factory.Make();
-        state_.template emplace<Promise>(std::move(promise));
-      }
-      auto& promise = absl::get<Promise>(state_);
-      return poll_cast<StatusFlag>(promise());
-    }
-
-   private:
-    State state_;
-
-    static State MoveState(State& state) {
-      if (absl::holds_alternative<Dismissed>(state)) return Dismissed{};
-      // Can't move after first poll => Promise is not an option
-      return std::move(absl::get<PromiseFactory>(state));
-    }
-  };
   if (idx == 255) {
-    return Impl();
+    return MaybeOpImpl<SetupFn>();
   } else {
-    return Impl(setup(ops[idx]));
+    return MaybeOpImpl<SetupFn>(setup(ops[idx]));
   }
 }
 }  // namespace
