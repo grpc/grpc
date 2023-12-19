@@ -1705,9 +1705,10 @@ grpc_cc_library(
     language = "c++",
     tags = ["nofixdeps"],
     deps = [
-        "gpr",
-        "grpc++",
-        "lb_load_reporter",
+        ":gpr",
+        ":grpc++",
+        ":lb_load_reporter",
+        "//src/proto/grpc/lb/v1:load_reporter_proto",
     ],
 )
 
@@ -2511,6 +2512,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["//src/core:lib/gprpp/debug_location.h"],
     visibility = ["@grpc:debug_location"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
