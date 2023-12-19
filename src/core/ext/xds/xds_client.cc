@@ -729,8 +729,6 @@ absl::Status XdsClient::ChannelState::AdsCallState::AdsResponseParser::
         fields.type_url.c_str(), fields.version.c_str(), fields.nonce.c_str(),
         fields.num_resources);
   }
-  result_.read_delay_handle =
-      MakeRefCounted<AdsReadDelayHandle>(ads_call_state_->Ref());
   result_.type =
       ads_call_state_->xds_client()->GetResourceTypeLocked(fields.type_url);
   if (result_.type == nullptr) {
@@ -740,6 +738,8 @@ absl::Status XdsClient::ChannelState::AdsCallState::AdsResponseParser::
   result_.type_url = std::move(fields.type_url);
   result_.version = std::move(fields.version);
   result_.nonce = std::move(fields.nonce);
+  result_.read_delay_handle =
+      MakeRefCounted<AdsReadDelayHandle>(ads_call_state_->Ref());
   return absl::OkStatus();
 }
 

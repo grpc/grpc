@@ -2740,7 +2740,7 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
           .set_version_info("1")
           .set_nonce("A")
           .AddFooResource(XdsFooResource("foo1", 6))
-          .AddFooResource(XdsFooResource("foo2", 6))
+          .AddFooResource(XdsFooResource("foo2", 10))
           .Serialize());
   // Send a response with a single resource, will not be read until the handle
   // is released
@@ -2753,8 +2753,12 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
   // XdsClient should have delivered the response to the watcher.
   auto resource1 = watcher1->WaitForNextResourceAndHandle();
   ASSERT_NE(resource1, absl::nullopt);
+  EXPECT_EQ(resource1->resource->name, "foo1");
+  EXPECT_EQ(resource1->resource->value, 6);
   auto resource2 = watcher2->WaitForNextResourceAndHandle();
   ASSERT_NE(resource2, absl::nullopt);
+  EXPECT_EQ(resource2->resource->name, "foo2");
+  EXPECT_EQ(resource2->resource->value, 10);
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2763,13 +2767,15 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
   EXPECT_EQ(stream->reads_started(), 1);
-  resource1 = absl::nullopt;
-  resource2 = absl::nullopt;
+  resource1->read_delay_handle.reset();
+  EXPECT_EQ(stream->reads_started(), 1);
+  resource2->read_delay_handle.reset();
   EXPECT_EQ(stream->reads_started(), 2);
   resource1 = watcher1->WaitForNextResourceAndHandle();
-  resource2 = watcher2->WaitForNextResourceAndHandle();
   ASSERT_NE(resource1, absl::nullopt);
-  EXPECT_EQ(resource2, absl::nullopt);
+  EXPECT_EQ(resource1->resource->name, "foo1");
+  EXPECT_EQ(resource1->resource->value, 8);
+  EXPECT_EQ(watcher2->WaitForNextResourceAndHandle(), absl::nullopt);
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2777,7 +2783,7 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*version_info=*/"2", /*response_nonce=*/"B",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
-  resource1 = absl::nullopt;
+  resource1->read_delay_handle.reset();
   EXPECT_EQ(stream->reads_started(), 3);
   // Cancel watch.
   CancelFooWatch(watcher1.get(), "foo1");
