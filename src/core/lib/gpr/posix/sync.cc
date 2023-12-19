@@ -156,4 +156,4 @@ void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
 }
 
 #endif  // defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) &&
-       // !defined(GPR_CUSTOM_SYNC)
+        // !defined(GPR_CUSTOM_SYNC)

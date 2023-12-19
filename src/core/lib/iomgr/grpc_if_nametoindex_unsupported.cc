@@ -36,4 +36,4 @@ uint32_t grpc_if_nametoindex(char* name) {
 }
 
 #endif  // GRPC_IF_NAMETOINDEX == 0 ||
-       // !defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX)
+        // !defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX)
