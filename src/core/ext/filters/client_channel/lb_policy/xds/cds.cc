@@ -549,37 +549,14 @@ Json CdsLb::CreateChildPolicyConfig(
            Json::FromObject(std::move(xds_override_host_lb_config))},
       })};
       // Wrap it in the xds_cluster_impl policy.
-      Json::Object xds_cluster_impl_config = {
-          {"clusterName", Json::FromString(cluster_config->cluster_name)},
-          {"childPolicy", Json::FromArray(std::move(xds_override_host_config))},
-          {"maxConcurrentRequests",
-           Json::FromNumber(cluster_resource.max_concurrent_requests)},
-      };
-      if (endpoint_config.endpoints != nullptr &&
-          endpoint_config.endpoints->drop_config != nullptr) {
-        Json::Array drop_categories;
-        for (const auto& category :
-             endpoint_config.endpoints->drop_config->drop_category_list()) {
-          drop_categories.push_back(Json::FromObject({
-              {"category", Json::FromString(category.name)},
-              {"requests_per_million",
-               Json::FromNumber(category.parts_per_million)},
-          }));
-        }
-        if (!drop_categories.empty()) {
-          xds_cluster_impl_config["dropCategories"] =
-              Json::FromArray(std::move(drop_categories));
-        }
-      }
-      auto* eds = absl::get_if<XdsClusterResource::Eds>(&cluster_resource.type);
-      if (eds != nullptr) {
-        xds_cluster_impl_config["edsServiceName"] =
-            Json::FromString(eds->eds_service_name);
-      }
-      if (cluster_resource.lrs_load_reporting_server.has_value()) {
-        xds_cluster_impl_config["lrsLoadReportingServer"] =
-            cluster_resource.lrs_load_reporting_server->ToJson();
-      }
+      Json::Array xds_cluster_impl_config = {Json::FromObject({
+          {"xds_cluster_impl_experimental",
+           Json::FromObject({
+               {"clusterName", Json::FromString(cluster_config->cluster_name)},
+               {"childPolicy",
+                Json::FromArray(std::move(xds_override_host_config))},
+          })}
+      })};
       // Wrap it in the outlier_detection policy.
       Json::Object outlier_detection_config;
       if (cluster_resource.outlier_detection.has_value()) {
@@ -631,10 +608,7 @@ Json CdsLb::CreateChildPolicyConfig(
         }
       }
       outlier_detection_config["childPolicy"] =
-          Json::FromArray({Json::FromObject({
-              {"xds_cluster_impl_experimental",
-               Json::FromObject(std::move(xds_cluster_impl_config))},
-          })});
+          Json::FromArray(std::move(xds_cluster_impl_config));
       Json locality_picking_policy = Json::FromArray({Json::FromObject({
           {"outlier_detection_experimental",
            Json::FromObject(std::move(outlier_detection_config))},
