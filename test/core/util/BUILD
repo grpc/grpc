@@ -491,3 +491,12 @@ grpc_cc_library(
         "//src/core:resource_quota",
     ],
 )
+
+grpc_cc_library(
+    name = "fake_stats_plugin",
+    srcs = ["fake_stats_plugin.cc"],
+    hdrs = ["fake_stats_plugin.h"],
+    deps = [
+        "//:grpc",
+    ],
+)
