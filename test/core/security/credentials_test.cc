@@ -1944,7 +1944,7 @@ TEST(CredentialsTest, TestGetWellKnownGoogleCredentialsFilePath) {
   // so we set it to some fake value
   restore_home_env = true;
   SetEnv("HOME", "/fake/home/for/bazel");
-#endif  // defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) || \
+#endif  // defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) ||
        // defined(GPR_LINUX_ENV))
   std::string path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(!path.empty());

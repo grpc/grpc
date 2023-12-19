@@ -118,5 +118,5 @@ void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
   InitOnceExecuteOnce(once, run_once_func, &arg, &phony);
 }
 
-#endif  // defined(GPR_WINDOWS) && !defined(GPR_ABSEIL_SYNC) && \
+#endif  // defined(GPR_WINDOWS) && !defined(GPR_ABSEIL_SYNC) &&
        // !defined(GPR_CUSTOM_SYNC)

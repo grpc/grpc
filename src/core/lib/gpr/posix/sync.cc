@@ -155,5 +155,5 @@ void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
   GPR_ASSERT(pthread_once(once, init_function) == 0);
 }
 
-#endif  // defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) && \
+#endif  // defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) &&
        // !defined(GPR_CUSTOM_SYNC)
