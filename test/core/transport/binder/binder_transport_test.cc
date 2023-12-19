@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Unit-tests for grpc_binder_transport
+// Unit-tests for BinderTransport
 //
-// Verify that a calls to the perform_stream_op of grpc_binder_transport
+// Verify that a calls to the perform_stream_op of BinderTransport
 // transform into the correct sequence of binder transactions.
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 
@@ -51,7 +51,7 @@ class BinderTransportTest : public ::testing::Test {
             std::make_unique<NiceMock<MockBinder>>(),
             std::make_shared<
                 grpc::experimental::binder::UntrustedSecurityPolicy>())) {
-    auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
+    auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
     gbt->wire_writer = std::make_unique<MockWireWriter>();
     GRPC_STREAM_REF_INIT(&ref_, 1, nullptr, nullptr, "phony ref");
   }
@@ -60,25 +60,24 @@ class BinderTransportTest : public ::testing::Test {
     grpc_core::ExecCtx exec_ctx;
     transport_->Orphan();
     grpc_core::ExecCtx::Get()->Flush();
-    for (grpc_binder_stream* gbs : stream_buffer_) {
-      gbs->~grpc_binder_stream();
+    for (BinderStream* gbs : stream_buffer_) {
+      gbs->~BinderStream();
       gpr_free(gbs);
     }
     arena_->Destroy();
   }
 
-  void PerformStreamOp(grpc_binder_stream* gbs,
-                       grpc_transport_stream_op_batch* op) {
+  void PerformStreamOp(BinderStream* gbs, grpc_transport_stream_op_batch* op) {
     transport_->filter_stack_transport()->PerformStreamOp(
         reinterpret_cast<grpc_stream*>(gbs), op);
   }
 
-  grpc_binder_transport* GetBinderTransport() {
-    return reinterpret_cast<grpc_binder_transport*>(transport_);
+  BinderTransport* GetBinderTransport() {
+    return reinterpret_cast<BinderTransport*>(transport_);
   }
 
-  grpc_binder_stream* InitNewBinderStream() {
-    grpc_binder_stream* gbs = static_cast<grpc_binder_stream*>(
+  BinderStream* InitNewBinderStream() {
+    BinderStream* gbs = static_cast<BinderStream*>(
         gpr_malloc(transport_->filter_stack_transport()->SizeOfStream()));
     transport_->filter_stack_transport()->InitStream(
         reinterpret_cast<grpc_stream*>(gbs), &ref_, nullptr, arena_);
@@ -103,7 +102,7 @@ class BinderTransportTest : public ::testing::Test {
       grpc_core::Arena::Create(/* initial_size = */ 1, &memory_allocator_);
   grpc_core::Transport* transport_;
   grpc_stream_refcount ref_;
-  std::vector<grpc_binder_stream*> stream_buffer_;
+  std::vector<BinderStream*> stream_buffer_;
 };
 
 void MockCallback(void* arg, grpc_error_handle error);
@@ -381,20 +380,20 @@ TEST_F(BinderTransportTest, CreateBinderTransport) {
 }
 
 TEST_F(BinderTransportTest, TransactionIdIncrement) {
-  grpc_binder_stream* gbs0 = InitNewBinderStream();
+  BinderStream* gbs0 = InitNewBinderStream();
   EXPECT_EQ(gbs0->t, GetBinderTransport());
   EXPECT_EQ(gbs0->tx_code, kFirstCallId);
-  grpc_binder_stream* gbs1 = InitNewBinderStream();
+  BinderStream* gbs1 = InitNewBinderStream();
   EXPECT_EQ(gbs1->t, GetBinderTransport());
   EXPECT_EQ(gbs1->tx_code, kFirstCallId + 1);
-  grpc_binder_stream* gbs2 = InitNewBinderStream();
+  BinderStream* gbs2 = InitNewBinderStream();
   EXPECT_EQ(gbs2->t, GetBinderTransport());
   EXPECT_EQ(gbs2->tx_code, kFirstCallId + 2);
 }
 
 TEST_F(BinderTransportTest, PerformSendInitialMetadata) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
@@ -414,7 +413,7 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadata) {
 
 TEST_F(BinderTransportTest, PerformSendInitialMetadataMethodRef) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
@@ -437,7 +436,7 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadataMethodRef) {
 
 TEST_F(BinderTransportTest, PerformSendMessage) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
@@ -459,7 +458,7 @@ TEST_F(BinderTransportTest, PerformSendMessage) {
 
 TEST_F(BinderTransportTest, PerformSendTrailingMetadata) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
@@ -482,7 +481,7 @@ TEST_F(BinderTransportTest, PerformSendTrailingMetadata) {
 
 TEST_F(BinderTransportTest, PerformSendAll) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
@@ -517,7 +516,7 @@ TEST_F(BinderTransportTest, PerformSendAll) {
 
 TEST_F(BinderTransportTest, PerformRecvInitialMetadata) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
@@ -525,7 +524,7 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadata) {
   MakeRecvInitialMetadata recv_initial_metadata(&op);
 
   const Metadata kInitialMetadata = kDefaultMetadata;
-  auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
+  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
   gbt->transport_stream_receiver->NotifyRecvInitialMetadata(gbs->tx_code,
                                                             kInitialMetadata);
   PerformStreamOp(gbs, &op);
@@ -538,14 +537,14 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadata) {
 
 TEST_F(BinderTransportTest, PerformRecvInitialMetadataWithMethodRef) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
 
   MakeRecvInitialMetadata recv_initial_metadata(&op);
 
-  auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
+  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
   const Metadata kInitialMetadataWithMethodRef =
       AppendMethodRef(kDefaultMetadata, kDefaultMethodRef);
   gbt->transport_stream_receiver->NotifyRecvInitialMetadata(
@@ -560,14 +559,14 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadataWithMethodRef) {
 
 TEST_F(BinderTransportTest, PerformRecvMessage) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
 
   MakeRecvMessage recv_message(&op);
 
-  auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
+  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
   const std::string kMessage = kDefaultMessage;
   gbt->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kMessage);
 
@@ -580,7 +579,7 @@ TEST_F(BinderTransportTest, PerformRecvMessage) {
 
 TEST_F(BinderTransportTest, PerformRecvTrailingMetadata) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
@@ -588,7 +587,7 @@ TEST_F(BinderTransportTest, PerformRecvTrailingMetadata) {
   MakeRecvTrailingMetadata recv_trailing_metadata(&op);
 
   const Metadata kTrailingMetadata = kDefaultMetadata;
-  auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
+  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
   constexpr int kStatus = kDefaultStatus;
   gbt->transport_stream_receiver->NotifyRecvTrailingMetadata(
       gbs->tx_code, kTrailingMetadata, kStatus);
@@ -602,7 +601,7 @@ TEST_F(BinderTransportTest, PerformRecvTrailingMetadata) {
 
 TEST_F(BinderTransportTest, PerformRecvAll) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
@@ -611,7 +610,7 @@ TEST_F(BinderTransportTest, PerformRecvAll) {
   MakeRecvMessage recv_message(&op);
   MakeRecvTrailingMetadata recv_trailing_metadata(&op);
 
-  auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
+  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
   const Metadata kInitialMetadataWithMethodRef =
       AppendMethodRef(kDefaultMetadata, kDefaultMethodRef);
   gbt->transport_stream_receiver->NotifyRecvInitialMetadata(
@@ -638,7 +637,7 @@ TEST_F(BinderTransportTest, PerformRecvAll) {
 
 TEST_F(BinderTransportTest, PerformAllOps) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
   grpc_transport_stream_op_batch_payload payload(nullptr);
   op.payload = &payload;
@@ -682,7 +681,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
   // callbacks get scheduled.
   grpc_core::ExecCtx::Get()->Flush();
 
-  auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
+  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
   const Metadata kRecvInitialMetadata =
       AppendMethodRef(kDefaultMetadata, kDefaultMethodRef);
   gbt->transport_stream_receiver->NotifyRecvInitialMetadata(
@@ -709,7 +708,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
 
 TEST_F(BinderTransportTest, WireWriterRpcCallErrorPropagates) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_binder_stream* gbs = InitNewBinderStream();
+  BinderStream* gbs = InitNewBinderStream();
 
   MockGrpcClosure mock_on_complete1;
   MockGrpcClosure mock_on_complete2;

@@ -36,19 +36,17 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/transport/transport.h"
 
-struct grpc_binder_stream;
+struct BinderStream;
 
 // TODO(mingcl): Consider putting the struct in a namespace (Eventually this
 // depends on what style we want to follow)
-// TODO(mingcl): Decide casing for this class name. Should we use C-style class
-// name here or just go with C++ style?
-struct grpc_binder_transport final : public grpc_core::Transport,
-                                     public grpc_core::FilterStackTransport {
-  explicit grpc_binder_transport(
+struct BinderTransport final : public grpc_core::Transport,
+                               public grpc_core::FilterStackTransport {
+  explicit BinderTransport(
       std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
       std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
           security_policy);
-  ~grpc_binder_transport() override;
+  ~BinderTransport() override;
 
   grpc_core::FilterStackTransport* filter_stack_transport() override {
     return this;
@@ -87,7 +85,7 @@ struct grpc_binder_transport final : public grpc_core::Transport,
 
   bool is_client;
   // A set of currently registered streams (the key is the stream ID).
-  absl::flat_hash_map<int, grpc_binder_stream*> registered_stream;
+  absl::flat_hash_map<int, BinderStream*> registered_stream;
   grpc_core::Combiner* combiner;
 
   // The callback and the data for the callback when the stream is connected
