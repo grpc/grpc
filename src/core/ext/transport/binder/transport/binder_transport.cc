@@ -61,10 +61,10 @@ static void grpc_binder_unref_transport(BinderTransport* t, const char* reason,
   }
 }
 #else
-static void grpc_binder_stream_ref(grpc_binder_stream* s) {
+static void grpc_binder_stream_ref(BinderStream* s) {
   grpc_stream_ref(s->refcount);
 }
-static void grpc_binder_stream_unref(grpc_binder_stream* s) {
+static void grpc_binder_stream_unref(BinderStream* s) {
   grpc_stream_unref(s->refcount);
 }
 static void grpc_binder_ref_transport(BinderTransport* t) { t->refs.Ref(); }
