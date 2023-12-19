@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import defaultdict
+import datetime
 import logging
 import os
 import sys
 import time
-from typing import Any, Dict, Optional, Set
+from typing import Any, Callable, Dict, Optional, Set
 import unittest
 
 import grpc_observability
@@ -80,11 +82,7 @@ class OTelMetricExporter(MetricExporter):
                     self.all_metrics["name"].add(metric.name)
                     for data_point in metric.data.data_points:
                         for key, value in data_point.attributes.items():
-                            cur_value = self.all_metrics["label"].get(
-                                key, set()
-                            )
-                            cur_value.add(value)
-                            self.all_metrics["label"][key] = cur_value
+                            self.all_metrics["label"][key].add(value)
 
 
 class BaseTestOpenTelemetryPlugin(grpc_observability.OpenTelemetryPlugin):
@@ -103,7 +101,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
     def setUp(self):
         self.all_metrics = dict()
         self.all_metrics["name"] = set()
-        self.all_metrics["label"] = dict()
+        self.all_metrics["label"] = defaultdict(set)
         otel_exporter = OTelMetricExporter(self.all_metrics)
         reader = PeriodicExportingMetricReader(
             exporter=otel_exporter,
@@ -210,21 +208,37 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self.assertTrue(GRPC_OTHER_LABEL_VALUE in method_values)
         self.assertTrue(FILTERED_METHOD_NAME not in method_values)
 
+    def assert_eventually(
+        self,
+        predicate: Callable[[], bool],
+        *,
+        timeout: Optional[datetime.timedelta] = None,
+        message: Optional[Callable[[], str]] = None,
+    ) -> None:
+        message = message or (lambda: "Proposition did not evaluate to true")
+        timeout = timeout or datetime.timedelta(seconds=10)
+        end = datetime.datetime.now() + timeout
+        while datetime.datetime.now() < end:
+            if predicate():
+                break
+            time.sleep(0.5)
+        else:
+            self.fail(message() + " after " + str(timeout))
+
     def _validate_metrics_exist(self, all_metrics: Dict[str, Any]) -> None:
         # Sleep here to make sure we have at least one export from OTel MetricExporter.
-        time.sleep(OTEL_EXPORT_INTERVAL_S)
-        self.assertGreater(len(all_metrics["name"]), 0)
+        self.assert_eventually(
+            lambda: len(all_metrics["name"]) > 1,
+            message=lambda: f"No metrics was exported",
+        )
         self._validate_metrics_names(all_metrics["name"])
 
     def _validate_metrics_names(self, metric_names: Set[str]) -> None:
         for base_metric in _open_telemetry_measures.base_metrics():
-            if base_metric.name not in metric_names:
-                logger.error(
-                    "metric %s not found in exported metrics: %s!",
-                    base_metric.name,
-                    metric_names,
-                )
-            self.assertTrue(base_metric.name in metric_names)
+            self.assertTrue(
+                base_metric.name in metric_names,
+                msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
+            )
 
 
 if __name__ == "__main__":

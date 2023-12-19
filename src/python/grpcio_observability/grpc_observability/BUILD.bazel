@@ -53,6 +53,8 @@ pyx_library(
     ],
 )
 
+# Since `opentelemetry-sdk` and `opentelemetry-api` are non-hermetic,
+# pyobservability is for internal use only.
 py_library(
     name = "_opentelemetry_observability",
     srcs = [
