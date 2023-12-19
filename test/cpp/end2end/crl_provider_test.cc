@@ -282,11 +282,11 @@ TEST_F(CrlProviderTest, CrlProviderValidReloaderProvider) {
 }  // namespace testing
 }  // namespace grpc
 
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;
 }
-
-#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
