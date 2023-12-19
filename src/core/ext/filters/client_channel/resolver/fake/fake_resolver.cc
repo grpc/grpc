@@ -85,7 +85,7 @@ FakeResolver::FakeResolver(ResolverArgs args)
       response_generator_(
           args.args.GetObjectRef<FakeResolverResponseGenerator>()) {
   if (response_generator_ != nullptr) {
-    response_generator_->SetFakeResolver(Ref());
+    response_generator_->SetFakeResolver(RefAsSubclass<FakeResolver>());
   }
 }
 
@@ -137,7 +137,7 @@ void FakeResolverResponseGenerator::SetResponseAndNotify(
       if (notify_when_set != nullptr) notify_when_set->Notify();
       return;
     }
-    resolver = resolver_->Ref();
+    resolver = resolver_;
   }
   SendResultToResolver(std::move(resolver), std::move(result), notify_when_set);
 }

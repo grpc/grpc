@@ -578,7 +578,8 @@ class XdsClientTest : public ::testing::Test {
       FakeXdsBootstrap::Builder bootstrap_builder = FakeXdsBootstrap::Builder(),
       Duration resource_request_timeout = Duration::Seconds(15)) {
     auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
-    transport_factory_ = transport_factory->Ref();
+    transport_factory_ =
+        transport_factory->Ref().TakeAsSubclass<FakeXdsTransportFactory>();
     xds_client_ = MakeRefCounted<XdsClient>(
         bootstrap_builder.Build(), std::move(transport_factory),
         grpc_event_engine::experimental::GetDefaultEventEngine(), "foo agent",

@@ -404,7 +404,8 @@ void OldRoundRobin::RoundRobinSubchannelList::
     }
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
-        MakeRefCounted<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
+        MakeRefCounted<QueuePicker>(
+            p->RefAsSubclass<OldRoundRobin>(DEBUG_LOCATION, "QueuePicker")));
   } else if (num_transient_failure_ == num_subchannels()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO,
@@ -530,7 +531,7 @@ class RoundRobin : public LoadBalancingPolicy {
                            ? "RoundRobinEndpointList"
                            : nullptr) {
       Init(endpoints, args,
-           [&](RefCountedPtr<RoundRobinEndpointList> endpoint_list,
+           [&](RefCountedPtr<EndpointList> endpoint_list,
                const EndpointAddresses& addresses, const ChannelArgs& args) {
              return MakeOrphanable<RoundRobinEndpoint>(
                  std::move(endpoint_list), addresses, args,
@@ -541,7 +542,7 @@ class RoundRobin : public LoadBalancingPolicy {
    private:
     class RoundRobinEndpoint : public Endpoint {
      public:
-      RoundRobinEndpoint(RefCountedPtr<RoundRobinEndpointList> endpoint_list,
+      RoundRobinEndpoint(RefCountedPtr<EndpointList> endpoint_list,
                          const EndpointAddresses& addresses,
                          const ChannelArgs& args,
                          std::shared_ptr<WorkSerializer> work_serializer)
@@ -708,7 +709,8 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
             latest_pending_endpoint_list_.get());
   }
   latest_pending_endpoint_list_ = MakeOrphanable<RoundRobinEndpointList>(
-      Ref(DEBUG_LOCATION, "RoundRobinEndpointList"), addresses, args.args);
+      RefAsSubclass<RoundRobin>(DEBUG_LOCATION, "RoundRobinEndpointList"),
+      addresses, args.args);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_endpoint_list_->size() == 0) {

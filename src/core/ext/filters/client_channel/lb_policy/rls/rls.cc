@@ -1282,7 +1282,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
     auto it = lb_policy_->child_policy_map_.find(target);
     if (it == lb_policy_->child_policy_map_.end()) {
       auto new_child = MakeRefCounted<ChildPolicyWrapper>(
-          lb_policy_->Ref(DEBUG_LOCATION, "ChildPolicyWrapper"), target);
+          lb_policy_.Ref(DEBUG_LOCATION, "ChildPolicyWrapper"), target);
       new_child->StartUpdate();
       child_policies_to_finish_update.push_back(new_child.get());
       new_child_policy_wrappers.emplace_back(std::move(new_child));
@@ -1326,8 +1326,8 @@ RlsLb::Cache::Entry* RlsLb::Cache::FindOrInsert(const RequestKey& key) {
   if (it == map_.end()) {
     size_t entry_size = EntrySizeForKey(key);
     MaybeShrinkSize(size_limit_ - std::min(size_limit_, entry_size));
-    Entry* entry =
-        new Entry(lb_policy_->Ref(DEBUG_LOCATION, "CacheEntry"), key);
+    Entry* entry = new Entry(
+        lb_policy_->RefAsSubclass<RlsLb>(DEBUG_LOCATION, "CacheEntry"), key);
     map_.emplace(key, OrphanablePtr<Entry>(entry));
     size_ += entry_size;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -1550,11 +1550,11 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
     // Set up channelz linkage.
     channelz::ChannelNode* child_channelz_node =
         grpc_channel_get_channelz_node(channel_);
-    channelz::ChannelNode* parent_channelz_node =
-        lb_policy_->channel_args_.GetObject<channelz::ChannelNode>();
+    auto parent_channelz_node =
+        lb_policy_->channel_args_.GetObjectRef<channelz::ChannelNode>();
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
       parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
-      parent_channelz_node_ = parent_channelz_node->Ref();
+      parent_channelz_node_ = std::move(parent_channelz_node);
     }
     // Start connectivity watch.
     ClientChannel* client_channel =
@@ -1607,7 +1607,7 @@ void RlsLb::RlsChannel::StartRlsCall(const RequestKey& key,
   }
   lb_policy_->request_map_.emplace(
       key, MakeOrphanable<RlsRequest>(
-               lb_policy_->Ref(DEBUG_LOCATION, "RlsRequest"), key,
+               lb_policy_.Ref(DEBUG_LOCATION, "RlsRequest"), key,
                lb_policy_->rls_channel_->Ref(DEBUG_LOCATION, "RlsRequest"),
                std::move(backoff_state), reason, std::move(stale_header_data)));
 }
@@ -1886,7 +1886,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   update_in_progress_ = true;
   // Swap out config.
   RefCountedPtr<RlsLbConfig> old_config = std::move(config_);
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<RlsLbConfig>();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) &&
       (old_config == nullptr ||
        old_config->child_policy_config() != config_->child_policy_config())) {
@@ -1926,7 +1926,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
           gpr_log(GPR_INFO, "[rlslb %p] creating new default target", this);
         }
         default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
-            Ref(DEBUG_LOCATION, "ChildPolicyWrapper"),
+            RefAsSubclass<RlsLb>(DEBUG_LOCATION, "ChildPolicyWrapper"),
             config_->default_target());
         created_default_child = true;
       } else {
@@ -1945,8 +1945,8 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
     // Swap out RLS channel if needed.
     if (old_config == nullptr ||
         config_->lookup_service() != old_config->lookup_service()) {
-      rls_channel_ =
-          MakeOrphanable<RlsChannel>(Ref(DEBUG_LOCATION, "RlsChannel"));
+      rls_channel_ = MakeOrphanable<RlsChannel>(
+          RefAsSubclass<RlsLb>(DEBUG_LOCATION, "RlsChannel"));
     }
     // Resize cache if needed.
     if (old_config == nullptr ||
@@ -2116,7 +2116,8 @@ void RlsLb::UpdatePickerLocked() {
     status = absl::UnavailableError("no children available");
   }
   channel_control_helper()->UpdateState(
-      state, status, MakeRefCounted<Picker>(Ref(DEBUG_LOCATION, "Picker")));
+      state, status,
+      MakeRefCounted<Picker>(RefAsSubclass<RlsLb>(DEBUG_LOCATION, "Picker")));
 }
 
 //

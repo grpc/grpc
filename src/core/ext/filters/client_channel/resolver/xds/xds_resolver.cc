@@ -142,26 +142,25 @@ class XdsResolver : public Resolver {
         : resolver_(std::move(resolver)) {}
     void OnResourceChanged(
         std::shared_ptr<const XdsListenerResource> listener) override {
-      RefCountedPtr<ListenerWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [self = std::move(self), listener = std::move(listener)]() mutable {
+          [self = RefAsSubclass<ListenerWatcher>(),
+           listener = std::move(listener)]() mutable {
             self->resolver_->OnListenerUpdate(std::move(listener));
           },
           DEBUG_LOCATION);
     }
     void OnError(absl::Status status) override {
-      RefCountedPtr<ListenerWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [self = std::move(self), status = std::move(status)]() mutable {
+          [self = RefAsSubclass<ListenerWatcher>(),
+           status = std::move(status)]() mutable {
             self->resolver_->OnError(self->resolver_->lds_resource_name_,
                                      std::move(status));
           },
           DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist() override {
-      RefCountedPtr<ListenerWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [self = std::move(self)]() {
+          [self = RefAsSubclass<ListenerWatcher>()]() {
             self->resolver_->OnResourceDoesNotExist(
                 absl::StrCat(self->resolver_->lds_resource_name_,
                              ": xDS listener resource does not exist"));
@@ -180,9 +179,8 @@ class XdsResolver : public Resolver {
         : resolver_(std::move(resolver)) {}
     void OnResourceChanged(
         std::shared_ptr<const XdsRouteConfigResource> route_config) override {
-      RefCountedPtr<RouteConfigWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [self = std::move(self),
+          [self = RefAsSubclass<RouteConfigWatcher>(),
            route_config = std::move(route_config)]() mutable {
             if (self != self->resolver_->route_config_watcher_) return;
             self->resolver_->OnRouteConfigUpdate(std::move(route_config));
@@ -190,9 +188,9 @@ class XdsResolver : public Resolver {
           DEBUG_LOCATION);
     }
     void OnError(absl::Status status) override {
-      RefCountedPtr<RouteConfigWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [self = std::move(self), status = std::move(status)]() mutable {
+          [self = RefAsSubclass<RouteConfigWatcher>(),
+           status = std::move(status)]() mutable {
             if (self != self->resolver_->route_config_watcher_) return;
             self->resolver_->OnError(self->resolver_->route_config_name_,
                                      std::move(status));
@@ -200,9 +198,8 @@ class XdsResolver : public Resolver {
           DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist() override {
-      RefCountedPtr<RouteConfigWatcher> self = Ref();
       resolver_->work_serializer_->Run(
-          [self = std::move(self)]() {
+          [self = RefAsSubclass<RouteConfigWatcher>()]() {
             if (self != self->resolver_->route_config_watcher_) return;
             self->resolver_->OnResourceDoesNotExist(absl::StrCat(
                 self->resolver_->route_config_name_,
@@ -389,7 +386,8 @@ class XdsResolver : public Resolver {
       absl::string_view cluster_name) {
     auto it = cluster_ref_map_.find(cluster_name);
     if (it == cluster_ref_map_.end()) {
-      auto cluster = MakeRefCounted<ClusterRef>(Ref(), cluster_name);
+      auto cluster = MakeRefCounted<ClusterRef>(RefAsSubclass<XdsResolver>(),
+                                                cluster_name);
       cluster_ref_map_.emplace(cluster->cluster_name(), cluster->WeakRef());
       return cluster;
     }
@@ -980,7 +978,7 @@ void XdsResolver::StartLocked() {
   grpc_pollset_set_add_pollset_set(
       static_cast<GrpcXdsClient*>(xds_client_.get())->interested_parties(),
       interested_parties_);
-  auto watcher = MakeRefCounted<ListenerWatcher>(Ref());
+  auto watcher = MakeRefCounted<ListenerWatcher>(RefAsSubclass<XdsResolver>());
   listener_watcher_ = watcher.get();
   XdsListenerResourceType::StartWatch(xds_client_.get(), lds_resource_name_,
                                       std::move(watcher));
@@ -1042,7 +1040,8 @@ void XdsResolver::OnListenerUpdate(
           }
           // Start watch for the new RDS resource name.
           route_config_name_ = rds_name;
-          auto watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
+          auto watcher =
+              MakeRefCounted<RouteConfigWatcher>(RefAsSubclass<XdsResolver>());
           route_config_watcher_ = watcher.get();
           XdsRouteConfigResourceType::StartWatch(
               xds_client_.get(), route_config_name_, std::move(watcher));
@@ -1118,11 +1117,8 @@ void XdsResolver::OnError(absl::string_view context, absl::Status status) {
   Result result;
   result.addresses = status;
   result.service_config = std::move(status);
-  // Need to explicitly convert to the right RefCountedPtr<> type for
-  // use with ChannelArgs::SetObject().
-  RefCountedPtr<GrpcXdsClient> xds_client =
-      xds_client_->Ref(DEBUG_LOCATION, "xds resolver result");
-  result.args = args_.SetObject(std::move(xds_client));
+  result.args =
+      args_.SetObject(xds_client_.Ref(DEBUG_LOCATION, "xds resolver result"));
   result_handler_->ReportResult(std::move(result));
 }
 
@@ -1197,8 +1193,8 @@ void XdsResolver::GenerateResult() {
             absl::UnavailableError(route_config_data.status().message()));
     return;
   }
-  auto config_selector =
-      MakeRefCounted<XdsConfigSelector>(Ref(), std::move(*route_config_data));
+  auto config_selector = MakeRefCounted<XdsConfigSelector>(
+      RefAsSubclass<XdsResolver>(), std::move(*route_config_data));
   Result result;
   result.addresses.emplace();
   result.service_config = CreateServiceConfig();
@@ -1208,12 +1204,9 @@ void XdsResolver::GenerateResult() {
                 ? std::string((*result.service_config)->json_string()).c_str()
                 : result.service_config.status().ToString().c_str());
   }
-  // Need to explicitly convert to the right RefCountedPtr<> type for
-  // use with ChannelArgs::SetObject().
-  RefCountedPtr<GrpcXdsClient> xds_client =
-      xds_client_->Ref(DEBUG_LOCATION, "xds resolver result");
   result.args =
-      args_.SetObject(std::move(xds_client)).SetObject(config_selector);
+      args_.SetObject(xds_client_.Ref(DEBUG_LOCATION, "xds resolver result"))
+          .SetObject(config_selector);
   result_handler_->ReportResult(std::move(result));
 }
 

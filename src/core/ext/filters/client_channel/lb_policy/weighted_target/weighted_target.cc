@@ -316,7 +316,7 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   }
   update_in_progress_ = true;
   // Update config.
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<WeightedTargetLbConfig>();
   // Deactivate the targets not in the new config.
   for (const auto& p : targets_) {
     const std::string& name = p.first;
@@ -336,7 +336,8 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     // Create child if it does not already exist.
     if (target == nullptr) {
       target = MakeOrphanable<WeightedChild>(
-          Ref(DEBUG_LOCATION, "WeightedChild"), name);
+          RefAsSubclass<WeightedTargetLb>(DEBUG_LOCATION, "WeightedChild"),
+          name);
     }
     absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses;
     if (address_map.ok()) {

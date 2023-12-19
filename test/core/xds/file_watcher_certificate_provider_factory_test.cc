@@ -51,7 +51,7 @@ ParseConfig(absl::string_view json_string) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");
   }
-  return std::move(config);
+  return config.TakeAsSubclass<FileWatcherCertificateProviderFactory::Config>();
 }
 
 TEST(FileWatcherConfigTest, Basic) {

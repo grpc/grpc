@@ -210,7 +210,9 @@ OrphanablePtr<Orphanable> EventEngineClientChannelDNSResolver::StartRequest() {
     return nullptr;
   }
   return MakeOrphanable<EventEngineDNSRequestWrapper>(
-      Ref(DEBUG_LOCATION, "dns-resolving"), std::move(*dns_resolver));
+      RefAsSubclass<EventEngineClientChannelDNSResolver>(DEBUG_LOCATION,
+                                                         "dns-resolving"),
+      std::move(*dns_resolver));
 }
 
 // ----------------------------------------------------------------------------
