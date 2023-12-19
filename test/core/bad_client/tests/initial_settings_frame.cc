@@ -200,12 +200,10 @@ int main(int argc, char** argv) {
                            GRPC_BAD_CLIENT_DISCONNECT);
 
   // too many requests before the settings ack is sent should be cancelled
-  if (grpc_core::IsBlockExcessiveRequestsBeforeSettingsAckEnabled()) {
-    GRPC_RUN_BAD_CLIENT_TEST(single_request_verifier, nullptr,
-                             PFX_STR ZERO_SETTING_HDR FOOBAR_0 FOOBAR_2
-                                 SETTING_ACK RST_STREAM_1 RST_STREAM_3 FOOBAR_1,
-                             GRPC_BAD_CLIENT_MAX_CONCURRENT_REQUESTS_OF_ONE);
-  }
+  GRPC_RUN_BAD_CLIENT_TEST(single_request_verifier, nullptr,
+                           PFX_STR ZERO_SETTING_HDR FOOBAR_0 FOOBAR_2
+                               SETTING_ACK RST_STREAM_1 RST_STREAM_3 FOOBAR_1,
+                           GRPC_BAD_CLIENT_MAX_CONCURRENT_REQUESTS_OF_ONE);
 
   grpc_shutdown();
   return 0;

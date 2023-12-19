@@ -149,7 +149,8 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
     absl::Status UpdateLocked(
         RefCountedPtr<LoadBalancingPolicy::Config> config,
-        const absl::StatusOr<EndpointAddressesList>& addresses,
+        const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>>&
+            addresses,
         const ChannelArgs& args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
@@ -282,7 +283,7 @@ absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   }
   update_in_progress_ = true;
   // Update config.
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<XdsClusterManagerLbConfig>();
   // Deactivate the children not in the new config.
   for (const auto& p : children_) {
     const std::string& name = p.first;
@@ -298,8 +299,9 @@ absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
     const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second.config;
     auto& child = children_[name];
     if (child == nullptr) {
-      child = MakeOrphanable<ClusterChild>(Ref(DEBUG_LOCATION, "ClusterChild"),
-                                           name);
+      child = MakeOrphanable<ClusterChild>(
+          RefAsSubclass<XdsClusterManagerLb>(DEBUG_LOCATION, "ClusterChild"),
+          name);
     }
     absl::Status status =
         child->UpdateLocked(config, args.addresses, args.args);
@@ -482,7 +484,7 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
 
 absl::Status XdsClusterManagerLb::ClusterChild::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
-    const absl::StatusOr<EndpointAddressesList>& addresses,
+    const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>>& addresses,
     const ChannelArgs& args) {
   if (xds_cluster_manager_policy_->shutting_down_) return absl::OkStatus();
   // Update child weight.

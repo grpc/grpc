@@ -61,4 +61,3 @@
 - 1.59 'g' stands for ['generative'](https://github.com/grpc/grpc/tree/v1.59.x)
 - 1.60 'g' stands for ['gjallarhorn'](https://github.com/grpc/grpc/tree/v1.60.x)
 - 1.61 'g' stands for ['grand'](https://github.com/grpc/grpc/tree/master)
-- 1.62 'g' stats for 'guitar'

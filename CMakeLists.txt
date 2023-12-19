@@ -852,6 +852,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx alarm_test)
   endif()
+  add_dependencies(buildtests_cxx all_ok_test)
   add_dependencies(buildtests_cxx alloc_test)
   add_dependencies(buildtests_cxx alpn_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
@@ -1109,6 +1110,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx init_test)
   add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
   add_dependencies(buildtests_cxx insecure_security_connector_test)
+  add_dependencies(buildtests_cxx inter_activity_latch_test)
   add_dependencies(buildtests_cxx inter_activity_pipe_test)
   add_dependencies(buildtests_cxx interceptor_list_test)
   add_dependencies(buildtests_cxx interop_client)
@@ -1212,6 +1214,9 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx posix_event_engine_connect_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx posix_event_engine_native_dns_test)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx posix_event_engine_test)
   endif()
   add_dependencies(buildtests_cxx pre_stop_hook_server_test)
@@ -1228,6 +1233,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx proxy_auth_test)
   add_dependencies(buildtests_cxx qps_json_driver)
   add_dependencies(buildtests_cxx qps_worker)
+  add_dependencies(buildtests_cxx query_extensions_test)
   add_dependencies(buildtests_cxx race_test)
   add_dependencies(buildtests_cxx random_early_detection_test)
   add_dependencies(buildtests_cxx raw_end2end_test)
@@ -1694,6 +1700,7 @@ if(_gRPC_PLATFORM_ANDROID)
 endif()
 
 foreach(_hdr
+  include/grpc/impl/call.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
@@ -1752,6 +1759,7 @@ add_library(grpc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/channel_idle_filter.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
+  src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -1821,6 +1829,7 @@ add_library(grpc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/compression_filter.cc
+  src/core/ext/filters/http/message_compress/legacy_compression_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/rbac/rbac_filter.cc
@@ -2238,12 +2247,12 @@ add_library(grpc
   src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
-  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
   src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
   src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -2450,6 +2459,7 @@ add_library(grpc
   src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/security_connector/tls/tls_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
+  src/core/lib/security/transport/legacy_server_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
@@ -2621,6 +2631,7 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
+  include/grpc/impl/call.h
   include/grpc/impl/channel_arg_names.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -2816,6 +2827,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/channel_idle_filter.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
+  src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -2876,6 +2888,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/compression_filter.cc
+  src/core/ext/filters/http/message_compress/legacy_compression_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -2966,12 +2979,12 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
-  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
   src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
   src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -3139,6 +3152,7 @@ add_library(grpc_unsecure
   src/core/lib/security/security_connector/load_system_roots_supported.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
+  src/core/lib/security/transport/legacy_server_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
@@ -3295,6 +3309,7 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
+  include/grpc/impl/call.h
   include/grpc/impl/channel_arg_names.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -4954,12 +4969,12 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
-  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
   src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
   src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -5126,6 +5141,7 @@ add_library(grpc_authorization_provider
   src/core/lib/security/security_connector/load_system_roots_supported.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
+  src/core/lib/security/transport/legacy_server_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
@@ -5269,6 +5285,7 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
+  include/grpc/impl/call.h
   include/grpc/impl/channel_arg_names.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -5877,6 +5894,44 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(all_ok_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
+  test/core/promise/all_ok_test.cc
+)
+target_compile_features(all_ok_test PUBLIC cxx_std_14)
+target_include_directories(all_ok_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(all_ok_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::type_traits
+  absl::statusor
+  absl::utility
+  gpr
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -8856,7 +8911,6 @@ add_executable(chunked_vector_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
@@ -12153,7 +12207,6 @@ add_executable(flow_control_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
@@ -12239,7 +12292,6 @@ add_executable(for_each_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
@@ -12498,8 +12550,8 @@ target_include_directories(frame_header_test
 target_link_libraries(frame_header_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::status
   absl::statusor
+  gpr
 )
 
 
@@ -14940,6 +14992,39 @@ target_link_libraries(insecure_security_connector_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(inter_activity_latch_test
+  test/core/promise/inter_activity_latch_test.cc
+)
+target_compile_features(inter_activity_latch_test PUBLIC cxx_std_14)
+target_include_directories(inter_activity_latch_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(inter_activity_latch_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(inter_activity_pipe_test
   src/core/lib/debug/trace.cc
   src/core/lib/promise/activity.cc
@@ -14984,7 +15069,6 @@ add_executable(interceptor_list_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
@@ -15908,7 +15992,6 @@ add_executable(map_pipe_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
@@ -18246,6 +18329,48 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
+  add_executable(posix_event_engine_native_dns_test
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/test_suite/event_engine_test_framework.cc
+    test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+    test/core/event_engine/test_suite/posix_event_engine_native_dns_test.cc
+    test/core/event_engine/test_suite/tests/dns_test.cc
+    test/core/util/fake_udp_and_tcp_server.cc
+    test/cpp/util/get_grpc_test_runfile_dir.cc
+    test/cpp/util/windows/manifest_file.cc
+  )
+  target_compile_features(posix_event_engine_native_dns_test PUBLIC cxx_std_14)
+  target_include_directories(posix_event_engine_native_dns_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(posix_event_engine_native_dns_test
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    gtest
+    grpc++_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
   add_executable(posix_event_engine_test
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/test_suite/event_engine_test_framework.cc
@@ -18902,6 +19027,40 @@ target_link_libraries(qps_worker
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(query_extensions_test
+  test/core/event_engine/query_extensions_test.cc
+)
+target_compile_features(query_extensions_test PUBLIC cxx_std_14)
+target_include_directories(query_extensions_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(query_extensions_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::statusor
+  gpr
 )
 
 
@@ -24529,12 +24688,12 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
-  src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
   src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
   src/core/lib/event_engine/posix_engine/posix_engine_listener.cc

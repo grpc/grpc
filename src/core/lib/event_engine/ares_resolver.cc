@@ -193,7 +193,7 @@ AresResolver::CreateAresResolver(
 AresResolver::AresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     std::shared_ptr<EventEngine> event_engine, ares_channel channel)
-    : grpc_core::InternallyRefCounted<AresResolver>(
+    : RefCountedDNSResolverInterface(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
                                                             : nullptr),
       channel_(channel),
@@ -230,8 +230,8 @@ void AresResolver::Orphan() {
 }
 
 void AresResolver::LookupHostname(
-    absl::string_view name, absl::string_view default_port,
-    EventEngine::DNSResolver::LookupHostnameCallback callback) {
+    EventEngine::DNSResolver::LookupHostnameCallback callback,
+    absl::string_view name, absl::string_view default_port) {
   absl::string_view host;
   absl::string_view port_string;
   if (!grpc_core::SplitHostPort(name, &host, &port_string)) {
@@ -241,7 +241,13 @@ void AresResolver::LookupHostname(
              "Unparseable name: ", name))]() mutable { callback(status); });
     return;
   }
-  GPR_ASSERT(!host.empty());
+  if (host.empty()) {
+    event_engine_->Run([callback = std::move(callback),
+                        status = absl::InvalidArgumentError(absl::StrCat(
+                            "host must not be empty in name: ",
+                            name))]() mutable { callback(status); });
+    return;
+  }
   if (port_string.empty()) {
     if (default_port.empty()) {
       event_engine_->Run([callback = std::move(callback),
@@ -296,8 +302,8 @@ void AresResolver::LookupHostname(
 }
 
 void AresResolver::LookupSRV(
-    absl::string_view name,
-    EventEngine::DNSResolver::LookupSRVCallback callback) {
+    EventEngine::DNSResolver::LookupSRVCallback callback,
+    absl::string_view name) {
   absl::string_view host;
   absl::string_view port;
   if (!grpc_core::SplitHostPort(name, &host, &port)) {
@@ -307,7 +313,13 @@ void AresResolver::LookupSRV(
              "Unparseable name: ", name))]() mutable { callback(status); });
     return;
   }
-  GPR_ASSERT(!host.empty());
+  if (host.empty()) {
+    event_engine_->Run([callback = std::move(callback),
+                        status = absl::InvalidArgumentError(absl::StrCat(
+                            "host must not be empty in name: ",
+                            name))]() mutable { callback(status); });
+    return;
+  }
   // Don't query for SRV records if the target is "localhost"
   if (absl::EqualsIgnoreCase(host, "localhost")) {
     event_engine_->Run([callback = std::move(callback)]() mutable {
@@ -325,8 +337,8 @@ void AresResolver::LookupSRV(
 }
 
 void AresResolver::LookupTXT(
-    absl::string_view name,
-    EventEngine::DNSResolver::LookupTXTCallback callback) {
+    EventEngine::DNSResolver::LookupTXTCallback callback,
+    absl::string_view name) {
   absl::string_view host;
   absl::string_view port;
   if (!grpc_core::SplitHostPort(name, &host, &port)) {
@@ -336,7 +348,13 @@ void AresResolver::LookupTXT(
              "Unparseable name: ", name))]() mutable { callback(status); });
     return;
   }
-  GPR_ASSERT(!host.empty());
+  if (host.empty()) {
+    event_engine_->Run([callback = std::move(callback),
+                        status = absl::InvalidArgumentError(absl::StrCat(
+                            "host must not be empty in name: ",
+                            name))]() mutable { callback(status); });
+    return;
+  }
   // Don't query for TXT records if the target is "localhost"
   if (absl::EqualsIgnoreCase(host, "localhost")) {
     event_engine_->Run([callback = std::move(callback)]() mutable {
@@ -387,7 +405,8 @@ void AresResolver::CheckSocketsLocked() {
             event_engine_->Run(
                 [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
                  fd_node]() mutable {
-                  self->OnReadable(fd_node, absl::OkStatus());
+                  static_cast<AresResolver*>(self.get())
+                      ->OnReadable(fd_node, absl::OkStatus());
                 });
           } else {
             // Otherwise register with the poller for readable event.
@@ -396,7 +415,8 @@ void AresResolver::CheckSocketsLocked() {
             fd_node->polled_fd->RegisterForOnReadableLocked(
                 [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
                  fd_node](absl::Status status) mutable {
-                  self->OnReadable(fd_node, status);
+                  static_cast<AresResolver*>(self.get())
+                      ->OnReadable(fd_node, status);
                 });
           }
         }
@@ -410,7 +430,8 @@ void AresResolver::CheckSocketsLocked() {
           fd_node->polled_fd->RegisterForOnWriteableLocked(
               [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
                fd_node](absl::Status status) mutable {
-                self->OnWritable(fd_node, status);
+                static_cast<AresResolver*>(self.get())
+                    ->OnWritable(fd_node, status);
               });
         }
       }
@@ -453,7 +474,7 @@ void AresResolver::MaybeStartTimerLocked() {
   ares_backup_poll_alarm_handle_ = event_engine_->RunAfter(
       kAresBackupPollAlarmDuration,
       [self = Ref(DEBUG_LOCATION, "MaybeStartTimerLocked")]() {
-        self->OnAresBackupPollAlarm();
+        static_cast<AresResolver*>(self.get())->OnAresBackupPollAlarm();
       });
 }
 

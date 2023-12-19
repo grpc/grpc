@@ -126,10 +126,10 @@ class CdsLb : public LoadBalancingPolicy {
     void OnResourceChanged(
         std::shared_ptr<const XdsClusterResource> cluster_data,
         RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
-      RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          [self = std::move(self), cluster_data = std::move(cluster_data),
-           read_delay_handle = std::move(read_delay_handle)]() mutable {
+          [self = RefAsSubclass<ClusterWatcher>(),
+           cluster_data = std::move(cluster_data),
+           read_handle = std::move(read_delay_handle)]() mutable {
             self->parent_->OnClusterChanged(self->name_,
                                             std::move(cluster_data));
           },
@@ -138,20 +138,18 @@ class CdsLb : public LoadBalancingPolicy {
     void OnError(
         absl::Status status,
         RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
-      RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          [self = std::move(self), status = std::move(status),
-           read_delay_handle = std::move(read_delay_handle)]() mutable {
+          [self = RefAsSubclass<ClusterWatcher>(), status = std::move(status),
+           read_handle = std::move(read_delay_handle)]() mutable {
             self->parent_->OnError(self->name_, std::move(status));
           },
           DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist(
         RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
-      RefCountedPtr<ClusterWatcher> self = Ref();
       parent_->work_serializer()->Run(
-          [self = std::move(self),
-           read_delay_handle = std::move(read_delay_handle)]() {
+          [self = RefAsSubclass<ClusterWatcher>(),
+           read_handle = std::move(read_delay_handle)]() {
             self->parent_->OnResourceDoesNotExist(self->name_);
           },
           DEBUG_LOCATION);
@@ -206,8 +204,21 @@ class CdsLb : public LoadBalancingPolicy {
   // The root of the tree is config_->cluster().
   std::map<std::string, WatcherState> watchers_;
 
+  // TODO(roth, yashkt): These are here because XdsCertificateProvider
+  // does not store the actual underlying cert providers, it stores only
+  // their distributors, so we need to hold a ref to the cert providers
+  // here.  However, in the aggregate cluster case, there may be multiple
+  // clusters in the same cert provider, and we're only tracking the cert
+  // providers for the most recent underlying cluster here.  This is
+  // clearly a bug, and I think it will cause us to stop getting updates
+  // for all but one of the cert providers in the aggregate cluster
+  // case.  Need to figure out the right way to fix this -- I don't
+  // think we want to store another map here, so ideally, we should just
+  // have XdsCertificateProvider actually hold the refs to the cert
+  // providers instead of just the distributors.
   RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
   RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
+
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
 
   // Child LB policy.
@@ -275,7 +286,7 @@ void CdsLb::ExitIdleLocked() {
 absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   auto old_config = std::move(config_);
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<CdsLbConfig>();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s", this,
             config_->cluster().c_str());
@@ -295,7 +306,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       }
       watchers_.clear();
     }
-    auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), config_->cluster());
+    auto watcher = MakeRefCounted<ClusterWatcher>(RefAsSubclass<CdsLb>(),
+                                                  config_->cluster());
     watchers_[config_->cluster()].watcher = watcher.get();
     XdsClusterResourceType::StartWatch(xds_client_.get(), config_->cluster(),
                                        std::move(watcher));
@@ -324,7 +336,7 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
   auto& state = watchers_[name];
   // Create a new watcher if needed.
   if (state.watcher == nullptr) {
-    auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), name);
+    auto watcher = MakeRefCounted<ClusterWatcher>(RefAsSubclass<CdsLb>(), name);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
       gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
               name.c_str());
@@ -499,7 +511,8 @@ void CdsLb::OnClusterChanged(
       LoadBalancingPolicy::Args args;
       args.work_serializer = work_serializer();
       args.args = args_;
-      args.channel_control_helper = std::make_unique<Helper>(Ref());
+      args.channel_control_helper =
+          std::make_unique<Helper>(RefAsSubclass<CdsLb>());
       child_policy_ =
           CoreConfiguration::Get()
               .lb_policy_registry()
@@ -590,7 +603,7 @@ absl::Status CdsLb::UpdateXdsCertificateProvider(
   absl::string_view root_provider_cert_name =
       cluster_data.common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.certificate_name;
-  RefCountedPtr<XdsCertificateProvider> new_root_provider;
+  RefCountedPtr<grpc_tls_certificate_provider> new_root_provider;
   if (!root_provider_instance_name.empty()) {
     new_root_provider =
         xds_client_->certificate_provider_store()
@@ -601,20 +614,7 @@ absl::Status CdsLb::UpdateXdsCertificateProvider(
                        root_provider_instance_name, "\" not recognized."));
     }
   }
-  if (root_certificate_provider_ != new_root_provider) {
-    if (root_certificate_provider_ != nullptr &&
-        root_certificate_provider_->interested_parties() != nullptr) {
-      grpc_pollset_set_del_pollset_set(
-          interested_parties(),
-          root_certificate_provider_->interested_parties());
-    }
-    if (new_root_provider != nullptr &&
-        new_root_provider->interested_parties() != nullptr) {
-      grpc_pollset_set_add_pollset_set(interested_parties(),
-                                       new_root_provider->interested_parties());
-    }
-    root_certificate_provider_ = std::move(new_root_provider);
-  }
+  root_certificate_provider_ = std::move(new_root_provider);
   xds_certificate_provider_->UpdateRootCertNameAndDistributor(
       cluster_name, root_provider_cert_name,
       root_certificate_provider_ == nullptr
@@ -627,7 +627,7 @@ absl::Status CdsLb::UpdateXdsCertificateProvider(
   absl::string_view identity_provider_cert_name =
       cluster_data.common_tls_context.tls_certificate_provider_instance
           .certificate_name;
-  RefCountedPtr<XdsCertificateProvider> new_identity_provider;
+  RefCountedPtr<grpc_tls_certificate_provider> new_identity_provider;
   if (!identity_provider_instance_name.empty()) {
     new_identity_provider =
         xds_client_->certificate_provider_store()
@@ -638,20 +638,7 @@ absl::Status CdsLb::UpdateXdsCertificateProvider(
                        identity_provider_instance_name, "\" not recognized."));
     }
   }
-  if (identity_certificate_provider_ != new_identity_provider) {
-    if (identity_certificate_provider_ != nullptr &&
-        identity_certificate_provider_->interested_parties() != nullptr) {
-      grpc_pollset_set_del_pollset_set(
-          interested_parties(),
-          identity_certificate_provider_->interested_parties());
-    }
-    if (new_identity_provider != nullptr &&
-        new_identity_provider->interested_parties() != nullptr) {
-      grpc_pollset_set_add_pollset_set(
-          interested_parties(), new_identity_provider->interested_parties());
-    }
-    identity_certificate_provider_ = std::move(new_identity_provider);
-  }
+  identity_certificate_provider_ = std::move(new_identity_provider);
   xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
       cluster_name, identity_provider_cert_name,
       identity_certificate_provider_ == nullptr

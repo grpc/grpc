@@ -52,9 +52,3 @@ lang/ruby:
 "lang/C#":
 - src/compiler/csharp*
 - src/csharp/**
-
-"disposition/Needs Internal Changes":
-- src/core/lib/event_engine/windows/**
-- src/core/lib/gpr/windows/**
-- src/core/lib/gprpp/windows/**
-- test/core/event_engine/windows/**

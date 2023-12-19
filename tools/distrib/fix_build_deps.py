@@ -358,9 +358,7 @@ SCORERS = {
 }
 
 parser = argparse.ArgumentParser(description="Fix build dependencies")
-parser.add_argument(
-    "targets", nargs="*", default=[], help="targets to fix (empty => all)"
-)
+parser.add_argument("targets", nargs="+", help="targets to fix")
 parser.add_argument(
     "--score",
     type=str,

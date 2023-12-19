@@ -10,3 +10,4 @@
 /src/core/lib/resolver/** @markdroth
 /src/core/lib/service_config/** @markdroth
 /tools/dockerfile/** @jtattermusch @apolcyn
+/tools/run_tests/xds_k8s_test_driver/** @sergiitk @XuanWang-Amos @gnossen

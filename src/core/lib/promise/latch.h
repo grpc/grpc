@@ -37,6 +37,7 @@ namespace grpc_core {
 // Initially the Latch is unset.
 // It can be waited upon by the Wait method, which produces a Promise that
 // resolves when the Latch is Set to a value of type T.
+// Latches only work correctly within a single activity.
 template <typename T>
 class Latch {
  public:
@@ -204,6 +205,9 @@ class Latch<void> {
   IntraActivityWaiter waiter_;
 };
 
+template <typename T>
+using LatchWaitPromise = decltype(std::declval<Latch<T>>().Wait());
+
 // A Latch that can have its value observed by outside threads, but only waited
 // upon from inside a single activity.
 template <typename T>
@@ -267,9 +271,6 @@ class ExternallyObservableLatch<void> {
   std::atomic<bool> is_set_{false};
   IntraActivityWaiter waiter_;
 };
-
-template <typename T>
-using LatchWaitPromise = decltype(std::declval<Latch<T>>().Wait());
 
 }  // namespace grpc_core
 
