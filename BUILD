@@ -2399,6 +2399,18 @@ grpc_cc_library(
     ],
 )
 
+# This is an EXPERIMENTAL target subject to change.
+grpc_cc_library(
+    name = "grpcpp_otel_plugin",
+    hdrs = [
+        "include/grpcpp/ext/otel_plugin.h",
+    ],
+    language = "c++",
+    deps = [
+        "//src/cpp/ext/otel:otel_plugin",
+    ],
+)
+
 grpc_cc_library(
     name = "work_serializer",
     srcs = [

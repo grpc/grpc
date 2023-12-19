@@ -16,17 +16,19 @@
 //
 //
 
-#ifndef GRPCPP_EXT_CSM_OBSERVABILITY_H
-#define GRPCPP_EXT_CSM_OBSERVABILITY_H
+#ifndef GRPCPP_EXT_OTEL_PLUGIN_H
+#define GRPCPP_EXT_OTEL_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "opentelemetry/sdk/metrics/meter_provider.h"
+#include "opentelemetry/metrics/meter_provider.h"
 
 namespace grpc {
 
@@ -35,26 +37,32 @@ class OpenTelemetryPluginBuilderImpl;
 }  // namespace internal
 
 namespace experimental {
+// Metrics
+absl::string_view OpenTelemetryClientAttemptStartedInstrumentName();
+absl::string_view OpenTelemetryClientAttemptDurationInstrumentName();
+absl::string_view
+OpenTelemetryClientAttemptSentTotalCompressedMessageSizeInstrumentName();
+absl::string_view
+OpenTelemetryClientAttemptRcvdTotalCompressedMessageSizeInstrumentName();
+absl::string_view OpenTelemetryServerCallStartedInstrumentName();
+absl::string_view OpenTelemetryServerCallDurationInstrumentName();
+absl::string_view
+OpenTelemetryServerCallSentTotalCompressedMessageSizeInstrumentName();
+absl::string_view
+OpenTelemetryServerCallRcvdTotalCompressedMessageSizeInstrumentName();
 
-// This is a no-op at present, but in the future, this object would be useful
-// for performing cleanup.
-class CsmObservability {};
-
-// CsmObservabilityBuilder configures observability for all service mesh traffic
-// for a binary running on CSM.
-class CsmObservabilityBuilder {
+class OpenTelemetryPluginBuilder {
  public:
-  CsmObservabilityBuilder();
-  ~CsmObservabilityBuilder();
-  CsmObservabilityBuilder& SetMeterProvider(
-      std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
-          meter_provider);
+  OpenTelemetryPluginBuilder();
+  // If `SetMeterProvider()` is not called, no metrics are collected.
+  OpenTelemetryPluginBuilder& SetMeterProvider(
+      std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider);
   // If set, \a target_attribute_filter is called per channel to decide whether
   // to record the target attribute on client or to replace it with "other".
   // This helps reduce the cardinality on metrics in cases where many channels
   // are created with different targets in the same binary (which might happen
   // for example, if the channel target string uses IP addresses directly).
-  CsmObservabilityBuilder& SetTargetAttributeFilter(
+  OpenTelemetryPluginBuilder& SetTargetAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attribute_filter);
   // If set, \a generic_method_attribute_filter is called per call with a
@@ -62,16 +70,14 @@ class CsmObservabilityBuilder {
   // replace it with "other". Non-generic or pre-registered methods remain
   // unaffected. If not set, by default, generic method names are replaced with
   // "other" when recording metrics.
-  CsmObservabilityBuilder& SetGenericMethodAttributeFilter(
+  OpenTelemetryPluginBuilder& SetGenericMethodAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter);
-  // Builds the CsmObservability plugin. The return status shows whether
-  // CsmObservability was successfully enabled or not.
-  //
+  // Registers a global plugin that acts on all channels and servers running on
+  // the process.
   // The most common way to use this API is -
   //
-  // auto observability =
-  //    CsmObservabilityBuilder().SetMeterProvider(provider).BuildAndRegister();
+  // OpenTelemetryPluginBuilder().SetMeterProvider(provider).BuildAndRegister();
   //
   // The set of instruments available are -
   // grpc.client.attempt.started
@@ -82,13 +88,12 @@ class CsmObservabilityBuilder {
   // grpc.server.call.duration
   // grpc.server.call.sent_total_compressed_message_size
   // grpc.server.call.rcvd_total_compressed_message_size
-  absl::StatusOr<CsmObservability> BuildAndRegister();
+  void BuildAndRegisterGlobal();
 
  private:
-  std::unique_ptr<grpc::internal::OpenTelemetryPluginBuilderImpl> builder_;
+  std::unique_ptr<internal::OpenTelemetryPluginBuilderImpl> impl_;
 };
-
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPCPP_EXT_CSM_OBSERVABILITY_H
+#endif  // GRPCPP_EXT_OTEL_PLUGIN_H

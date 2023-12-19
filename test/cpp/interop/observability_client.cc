@@ -236,7 +236,7 @@ int main(int argc, char** argv) {
     auto meter_provider =
         std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
     meter_provider->AddMetricReader(std::move(prometheus_exporter));
-    grpc::internal::OpenTelemetryPluginBuilder otel_builder;
+    grpc::internal::OpenTelemetryPluginBuilderImpl otel_builder;
     otel_builder.SetMeterProvider(std::move(meter_provider));
     otel_builder.BuildAndRegisterGlobal();
   }
