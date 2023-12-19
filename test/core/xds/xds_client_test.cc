@@ -2742,7 +2742,8 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
           .AddFooResource(XdsFooResource("foo1", 6))
           .AddFooResource(XdsFooResource("foo2", 6))
           .Serialize());
-  // Send a response with a single resource
+  // Send a response with a single resource, will not be read until the handle
+  // is released
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
