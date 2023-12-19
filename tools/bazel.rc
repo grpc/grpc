@@ -140,7 +140,6 @@ build:ubsan --copt=-DGRPC_UBSAN
 build:ubsan --copt=-DNDEBUG
 build:ubsan --copt=-fno-sanitize=function,vptr
 build:ubsan --linkopt=-fsanitize=undefined
-build:ubsan --define=use_strict_warning=true
 # avoid ubsan build error with int128 by linking against libc++
 # see b/200667821
 build:ubsan --linkopt=-fsanitize-link-c++-runtime
