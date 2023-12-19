@@ -534,29 +534,21 @@ Json CdsLb::CreateChildPolicyConfig(
       }
       // Wrap the xDS LB policy in the xds_override_host policy.
       Json::Object xds_override_host_lb_config = {
+          {"clusterName", Json::FromString(cluster_config->cluster_name)},
           {"childPolicy", std::move(child_policy)},
       };
-      if (!cluster_resource.override_host_statuses.empty()) {
-        Json::Array status_list;
-        for (const auto& status : cluster_resource.override_host_statuses) {
-          status_list.emplace_back(Json::FromString(status.ToString()));
-        }
-        xds_override_host_lb_config["overrideHostStatus"] =
-            Json::FromArray(std::move(status_list));
-      }
       Json::Array xds_override_host_config = {Json::FromObject({
           {"xds_override_host_experimental",
            Json::FromObject(std::move(xds_override_host_lb_config))},
       })};
       // Wrap it in the xds_cluster_impl policy.
-      Json::Array xds_cluster_impl_config = {Json::FromObject({
-          {"xds_cluster_impl_experimental",
-           Json::FromObject({
-               {"clusterName", Json::FromString(cluster_config->cluster_name)},
-               {"childPolicy",
-                Json::FromArray(std::move(xds_override_host_config))},
-          })}
-      })};
+      Json::Array xds_cluster_impl_config = {Json::FromObject(
+          {{"xds_cluster_impl_experimental",
+            Json::FromObject({
+                {"clusterName", Json::FromString(cluster_config->cluster_name)},
+                {"childPolicy",
+                 Json::FromArray(std::move(xds_override_host_config))},
+            })}})};
       // Wrap it in the outlier_detection policy.
       Json::Object outlier_detection_config;
       if (cluster_resource.outlier_detection.has_value()) {

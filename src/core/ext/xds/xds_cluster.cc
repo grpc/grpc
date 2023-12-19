@@ -107,15 +107,8 @@ std::string XdsClusterResource::ToString() const {
   }
   contents.push_back(
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
-  if (!override_host_statuses.empty()) {
-    std::vector<const char*> statuses;
-    statuses.reserve(override_host_statuses.size());
-    for (const auto& status : override_host_statuses) {
-      statuses.push_back(status.ToString());
-    }
-    contents.push_back(absl::StrCat("override_host_statuses={",
-                                    absl::StrJoin(statuses, ", "), "}"));
-  }
+  contents.push_back(absl::StrCat("override_host_statuses=",
+                                  override_host_statuses.ToString()));
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
@@ -625,6 +618,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
   // Validate override host status.
   const auto* common_lb_config =
       envoy_config_cluster_v3_Cluster_common_lb_config(cluster);
+  bool override_host_status_found = false;
   if (common_lb_config != nullptr) {
     ValidationErrors::ScopedField field(&errors, ".common_lb_config");
     const auto* override_host_status =
@@ -638,10 +632,18 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       for (size_t i = 0; i < size; ++i) {
         auto status = XdsHealthStatus::FromUpb(statuses[i]);
         if (status.has_value()) {
-          cds_update->override_host_statuses.insert(*status);
+          cds_update->override_host_statuses.Add(*status);
         }
       }
+      override_host_status_found = true;
     }
+  }
+  // If the field is not set, we default to [UNKNOWN, HEALTHY].
+  if (!override_host_status_found) {
+    cds_update->override_host_statuses.Add(
+        XdsHealthStatus(XdsHealthStatus::kUnknown));
+    cds_update->override_host_statuses.Add(
+        XdsHealthStatus(XdsHealthStatus::kHealthy));
   }
   // Return result.
   if (!errors.ok()) {

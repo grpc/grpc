@@ -5387,6 +5387,7 @@ grpc_cc_library(
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
+        "xds_dependency_manager",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
