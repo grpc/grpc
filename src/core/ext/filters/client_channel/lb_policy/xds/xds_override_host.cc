@@ -946,8 +946,7 @@ const JsonLoaderInterface* XdsOverrideHostLbConfig::JsonLoader(
   return kJsonLoader;
 }
 
-void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json,
-                                           const JsonArgs& args,
+void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
                                            ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".childPolicy");
   auto it = json.object().find("childPolicy");
