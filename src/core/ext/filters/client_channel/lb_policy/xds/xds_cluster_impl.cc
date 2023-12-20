@@ -798,8 +798,7 @@ const JsonLoaderInterface* XdsClusterImplLbConfig::JsonLoader(const JsonArgs&) {
   return loader;
 }
 
-void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
-                                          const JsonArgs& args,
+void XdsClusterImplLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
                                           ValidationErrors* errors) {
   // Parse "childPolicy" field.
   ValidationErrors::ScopedField field(errors, ".childPolicy");
