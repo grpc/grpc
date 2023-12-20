@@ -498,5 +498,6 @@ grpc_cc_library(
     hdrs = ["fake_stats_plugin.h"],
     deps = [
         "//:grpc",
+        "//src/core:examine_stack",
     ],
 )

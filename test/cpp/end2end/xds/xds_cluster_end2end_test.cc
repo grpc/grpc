@@ -31,6 +31,7 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/call.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
+#include "test/core/util/fake_stats_plugin.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -365,21 +366,32 @@ class MockClientCallTracer : public grpc_core::ClientCallTracer {
 };
 
 MATCHER(VerifyServiceLabels, "") {
-  if (arg->find("serviceName") != arg->end() &&
-      arg->find("serviceNamespace") != arg->end()) {
-    return arg->at("serviceName") == "myservice" &&
-           arg->at("serviceNamespace") == "mynamespace";
+  using OptionalLabelComponent =
+      grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
+  auto iter = arg.find(OptionalLabelComponent::kXdsServiceLabels);
+  if (iter != arg.end()) {
+    const auto& xds_service_labels_map = iter->second;
+    if (xds_service_labels_map.find("serviceName") !=
+            xds_service_labels_map.end() &&
+        xds_service_labels_map.find("serviceNamespace") !=
+            xds_service_labels_map.end()) {
+      return xds_service_labels_map.at("serviceName") == "myservice" &&
+             xds_service_labels_map.at("serviceNamespace") == "mynamespace";
+    }
   }
   return false;
 }
 
+static grpc_core::FakeClientCallTracer* g_fake_client_call_tracer;
+
 TEST_P(CdsTest, VerifyServiceLabelsParsing) {
   CreateAndStartBackends(1);
-  // Populate EDS resources.
+  // Populates EDS resources.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args, kDefaultClusterName));
-  // Populate service labels to CDS resources.
+
+  // Populates service labels to CDS resources.
   auto cluster = default_cluster_;
   google::protobuf::Struct labels;
   (*labels.mutable_fields())["service_name"].set_string_value("myservice");
@@ -390,53 +402,19 @@ TEST_P(CdsTest, VerifyServiceLabelsParsing) {
       std::move(labels);
   cluster.mutable_eds_cluster_config()->set_service_name(kDefaultClusterName);
   balancer_->ads_service()->SetCdsResource(cluster);
-  class UnaryClient : public grpc::ClientUnaryReactor {
-   public:
-    explicit UnaryClient(grpc::testing::EchoTestService::Stub* stub) {
-      stub->async()->Echo(&cli_ctx_, &request_, &response_, this);
-      RpcOptions rpc_options;
-      rpc_options.SetupRpc(&cli_ctx_, &request_);
-      grpc_call_context_set(
-          cli_ctx_.c_call(), GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
-          /*value=*/&client_call_tracer_, /*destroy=*/nullptr);
-      EXPECT_CALL(client_call_tracer_, StartNewAttempt(_))
-          .WillOnce(Return(&client_call_attempt_tracer_));
-      EXPECT_CALL(
-          client_call_attempt_tracer_,
-          AddOptionalLabels(grpc_core::ClientCallTracer::CallAttemptTracer::
-                                OptionalLabelComponent::kXdsServiceLabels,
-                            VerifyServiceLabels()))
-          .Times(AtLeast(1));
-      StartCall();
-    }
-    void OnReadInitialMetadataDone(bool ok) override {}
-    void OnDone(const Status& s) override {
-      EXPECT_TRUE(s.ok());
-      EXPECT_EQ(request_.message(), response_.message());
-      std::unique_lock<std::mutex> l(mu_);
-      done_ = true;
-      cv_.notify_one();
-    }
-    void Await() {
-      std::unique_lock<std::mutex> l(mu_);
-      while (!done_) {
-        cv_.wait(l);
-      }
-    }
 
-   private:
-    MockClientCallTracer client_call_tracer_;
-    MockClientCallTracer::MockClientCallAttemptTracer
-        client_call_attempt_tracer_;
-    EchoRequest request_;
-    EchoResponse response_;
-    ClientContext cli_ctx_;
-    std::mutex mu_;
-    std::condition_variable cv_;
-    bool done_{false};
-  };
-  UnaryClient test{stub_.get()};
-  test.Await();
+  // Injects a fake client call tracer and registers the fake stats plugin.
+  std::vector<std::string> annotation_logger;
+  g_fake_client_call_tracer =
+      new grpc_core::FakeClientCallTracer(&annotation_logger);
+  grpc_core::InjectGlobalFakeClientCallTracer(g_fake_client_call_tracer);
+
+  // Sends an RPC and verifies that the service labels are recorded in the fake
+  // client call tracer.
+  EXPECT_TRUE(SendRpc().ok());
+  EXPECT_THAT(g_fake_client_call_tracer->GetLastCallAttemptTracer()
+                  ->GetoptionalLabels(),
+              VerifyServiceLabels());
 }
 
 //
@@ -2009,6 +1987,7 @@ int main(int argc, char** argv) {
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
+  grpc_core::RegisterFakeStatsPlugin();
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();
