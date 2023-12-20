@@ -271,7 +271,7 @@ class PriorityEndpointIterator : public EndpointAddressesIterator {
 
 absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Get new config.
-  RefCountedPtr<CdsLbConfig> new_config = std::move(args.config);
+  auto new_config = args.config.TakeAsSubclass<CdsLbConfig>();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s is_dynamic=%d",
             this, new_config->cluster().c_str(), new_config->is_dynamic());
@@ -397,7 +397,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     LoadBalancingPolicy::Args lb_args;
     lb_args.work_serializer = work_serializer();
     lb_args.args = args.args;
-    lb_args.channel_control_helper = std::make_unique<Helper>(Ref());
+    lb_args.channel_control_helper =
+        std::make_unique<Helper>(RefAsSubclass<CdsLb>());
     child_policy_ =
         CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
             (*child_config)->name(), std::move(lb_args));
@@ -549,20 +550,12 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
        })},
   })});
   // Wrap the priority policy in the xds_override_host policy.
-  Json::Object xds_override_host_lb_config = {
-      {"childPolicy", std::move(priority_policy)},
-  };
-  if (!cluster_resource.override_host_statuses.empty()) {
-    Json::Array status_list;
-    for (const auto& status : cluster_resource.override_host_statuses) {
-      status_list.emplace_back(Json::FromString(status.ToString()));
-    }
-    xds_override_host_lb_config["overrideHostStatus"] =
-        Json::FromArray(std::move(status_list));
-  }
   Json xds_override_host_policy = Json::FromArray({Json::FromObject({
       {"xds_override_host_experimental",
-       Json::FromObject(std::move(xds_override_host_lb_config))},
+       Json::FromObject({
+           {"clusterName", Json::FromString(new_cluster.cluster_name)},
+           {"childPolicy", std::move(priority_policy)},
+       })},
   })});
   // Wrap the xds_override_host policy in the xds_cluster_impl policy.
   Json xds_cluster_impl_policy = Json::FromArray({Json::FromObject({

@@ -78,6 +78,20 @@ TEST(OrphanablePtr, InternallyRefCounted) {
   bar->FinishWork();
 }
 
+TEST(OrphanablePtr, InternallyRefCountedRefAsSubclass) {
+  class Subclass : public Bar {
+   public:
+    void StartWork() { self_ref_ = RefAsSubclass<Subclass>(); }
+    void FinishWork() { self_ref_.reset(); }
+
+   private:
+    RefCountedPtr<Subclass> self_ref_;
+  };
+  auto bar = MakeOrphanable<Subclass>();
+  bar->StartWork();
+  bar->FinishWork();
+}
+
 class Baz : public InternallyRefCounted<Baz> {
  public:
   Baz() : Baz(0) {}

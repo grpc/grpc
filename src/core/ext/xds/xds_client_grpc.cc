@@ -155,7 +155,9 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   MutexLock lock(g_mu);
   if (g_xds_client != nullptr) {
     auto xds_client = g_xds_client->RefIfNonZero(DEBUG_LOCATION, reason);
-    if (xds_client != nullptr) return xds_client;
+    if (xds_client != nullptr) {
+      return xds_client.TakeAsSubclass<GrpcXdsClient>();
+    }
   }
   // Find bootstrap contents.
   auto bootstrap_contents = GetBootstrapContents(g_fallback_bootstrap_config);

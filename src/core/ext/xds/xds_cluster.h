@@ -95,7 +95,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   absl::optional<OutlierDetectionConfig> outlier_detection;
 
-  std::set<XdsHealthStatus> override_host_statuses;
+  XdsHealthStatusSet override_host_statuses;
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&

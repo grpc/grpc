@@ -163,9 +163,8 @@ class XdsDependencyManager::RouteConfigWatcher
 
   void OnResourceChanged(
       std::shared_ptr<const XdsRouteConfigResource> route_config) override {
-    RefCountedPtr<RouteConfigWatcher> self = Ref();
     dependency_mgr_->work_serializer_->Run(
-        [self = std::move(self),
+        [self = RefAsSubclass<RouteConfigWatcher>(),
          route_config = std::move(route_config)]() mutable {
           self->dependency_mgr_->OnRouteConfigUpdate(self->name_,
                                                      std::move(route_config));
@@ -174,18 +173,17 @@ class XdsDependencyManager::RouteConfigWatcher
   }
 
   void OnError(absl::Status status) override {
-    RefCountedPtr<RouteConfigWatcher> self = Ref();
     dependency_mgr_->work_serializer_->Run(
-        [self = std::move(self), status = std::move(status)]() mutable {
+        [self = RefAsSubclass<RouteConfigWatcher>(),
+         status = std::move(status)]() mutable {
           self->dependency_mgr_->OnError(self->name_, std::move(status));
         },
         DEBUG_LOCATION);
   }
 
   void OnResourceDoesNotExist() override {
-    RefCountedPtr<RouteConfigWatcher> self = Ref();
     dependency_mgr_->work_serializer_->Run(
-        [self = std::move(self)]() {
+        [self = RefAsSubclass<RouteConfigWatcher>()]() {
           self->dependency_mgr_->OnResourceDoesNotExist(absl::StrCat(
               self->name_,
               ": xDS route configuration resource does not exist"));
@@ -211,9 +209,9 @@ class XdsDependencyManager::ClusterWatcher
 
   void OnResourceChanged(
       std::shared_ptr<const XdsClusterResource> cluster) override {
-    RefCountedPtr<ClusterWatcher> self = Ref();
     dependency_mgr_->work_serializer_->Run(
-        [self = std::move(self), cluster = std::move(cluster)]() mutable {
+        [self = RefAsSubclass<ClusterWatcher>(),
+         cluster = std::move(cluster)]() mutable {
           self->dependency_mgr_->OnClusterUpdate(self->name_,
                                                  std::move(cluster));
         },
@@ -221,18 +219,17 @@ class XdsDependencyManager::ClusterWatcher
   }
 
   void OnError(absl::Status status) override {
-    RefCountedPtr<ClusterWatcher> self = Ref();
     dependency_mgr_->work_serializer_->Run(
-        [self = std::move(self), status = std::move(status)]() mutable {
+        [self = RefAsSubclass<ClusterWatcher>(),
+         status = std::move(status)]() mutable {
           self->dependency_mgr_->OnClusterError(self->name_, std::move(status));
         },
         DEBUG_LOCATION);
   }
 
   void OnResourceDoesNotExist() override {
-    RefCountedPtr<ClusterWatcher> self = Ref();
     dependency_mgr_->work_serializer_->Run(
-        [self = std::move(self)]() {
+        [self = RefAsSubclass<ClusterWatcher>()]() {
           self->dependency_mgr_->OnClusterDoesNotExist(self->name_);
         },
         DEBUG_LOCATION);
@@ -256,9 +253,9 @@ class XdsDependencyManager::EndpointWatcher
 
   void OnResourceChanged(
       std::shared_ptr<const XdsEndpointResource> endpoint) override {
-    RefCountedPtr<EndpointWatcher> self = Ref();
     dependency_mgr_->work_serializer_->Run(
-        [self = std::move(self), endpoint = std::move(endpoint)]() mutable {
+        [self = RefAsSubclass<EndpointWatcher>(),
+         endpoint = std::move(endpoint)]() mutable {
           self->dependency_mgr_->OnEndpointUpdate(self->name_,
                                                   std::move(endpoint));
         },
@@ -266,9 +263,9 @@ class XdsDependencyManager::EndpointWatcher
   }
 
   void OnError(absl::Status status) override {
-    RefCountedPtr<EndpointWatcher> self = Ref();
     dependency_mgr_->work_serializer_->Run(
-        [self = std::move(self), status = std::move(status)]() mutable {
+        [self = RefAsSubclass<EndpointWatcher>(),
+         status = std::move(status)]() mutable {
           self->dependency_mgr_->OnEndpointError(self->name_,
                                                  std::move(status));
         },
@@ -276,9 +273,8 @@ class XdsDependencyManager::EndpointWatcher
   }
 
   void OnResourceDoesNotExist() override {
-    RefCountedPtr<EndpointWatcher> self = Ref();
     dependency_mgr_->work_serializer_->Run(
-        [self = std::move(self)]() {
+        [self = RefAsSubclass<EndpointWatcher>()]() {
           self->dependency_mgr_->OnEndpointDoesNotExist(self->name_);
         },
         DEBUG_LOCATION);

@@ -106,7 +106,8 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
       certificate_providers_map_.insert({result->key(), result.get()});
     }
   } else {
-    result = it->second->RefIfNonZero();
+    result =
+        it->second->RefIfNonZero().TakeAsSubclass<CertificateProviderWrapper>();
     if (result == nullptr) {
       result = CreateCertificateProviderLocked(key);
       it->second = result.get();

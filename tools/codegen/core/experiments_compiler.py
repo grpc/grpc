@@ -403,8 +403,9 @@ class ExperimentsCompiler(object):
             if mode != "test":
                 include_guard = "GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H"
             else:
-                file_path_list = output_file.split("/")[0:-1]
-                file_name = output_file.split("/")[-1].split(".")[0]
+                real_output_file = output_file.replace(".github", "")
+                file_path_list = real_output_file.split("/")[0:-1]
+                file_name = real_output_file.split("/")[-1].split(".")[0]
 
                 include_guard = f"GRPC_{'_'.join(path.upper() for path in file_path_list)}_{file_name.upper()}_H"
 
@@ -562,9 +563,13 @@ class ExperimentsCompiler(object):
                     break
 
             print("#include <grpc/support/port_platform.h>", file=C)
+            print(file=C)
             if any_requires:
                 print("#include <stdint.h>", file=C)
-            print(f'#include "{header_file_path}"', file=C)
+                print(file=C)
+            print(
+                f'#include "{header_file_path.replace(".github", "")}"', file=C
+            )
             print(file=C)
             print("#ifndef GRPC_EXPERIMENTS_ARE_FINAL", file=C)
             idx = 0

@@ -177,7 +177,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
 // xDS Cluster Impl LB policy.
 class XdsClusterImplLb : public LoadBalancingPolicy {
  public:
-  XdsClusterImplLb(RefCountedPtr<XdsClient> xds_client, Args args);
+  XdsClusterImplLb(RefCountedPtr<GrpcXdsClient> xds_client, Args args);
 
   absl::string_view name() const override { return kXdsClusterImpl; }
 
@@ -423,7 +423,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
 // XdsClusterImplLb
 //
 
-XdsClusterImplLb::XdsClusterImplLb(RefCountedPtr<XdsClient> xds_client,
+XdsClusterImplLb::XdsClusterImplLb(RefCountedPtr<GrpcXdsClient> xds_client,
                                    Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
@@ -496,7 +496,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] Received update", this);
   }
   // Grab new LB policy config.
-  RefCountedPtr<XdsClusterImplLbConfig> new_config = std::move(args.config);
+  auto new_config = args.config.TakeAsSubclass<XdsClusterImplLbConfig>();
   // Cluster name should never change, because the cds policy will assign a
   // different priority child name if that happens, which means that this
   // policy instance will get replaced instead of being updated.
@@ -610,7 +610,7 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   absl::string_view root_cert_name =
       cluster_resource.common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.certificate_name;
-  RefCountedPtr<XdsCertificateProvider> root_cert_provider;
+  RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider;
   if (!root_provider_instance_name.empty()) {
     root_cert_provider =
         xds_client_->certificate_provider_store()
@@ -628,7 +628,7 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   absl::string_view identity_cert_name =
       cluster_resource.common_tls_context.tls_certificate_provider_instance
           .certificate_name;
-  RefCountedPtr<XdsCertificateProvider> identity_cert_provider;
+  RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider;
   if (!identity_provider_instance_name.empty()) {
     identity_cert_provider =
         xds_client_->certificate_provider_store()
@@ -684,8 +684,8 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper =
-      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+  lb_policy_args.channel_control_helper = std::make_unique<Helper>(
+      RefAsSubclass<XdsClusterImplLb>(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_xds_cluster_impl_lb_trace);
@@ -798,8 +798,7 @@ const JsonLoaderInterface* XdsClusterImplLbConfig::JsonLoader(const JsonArgs&) {
   return loader;
 }
 
-void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
-                                          const JsonArgs& args,
+void XdsClusterImplLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
                                           ValidationErrors* errors) {
   // Parse "childPolicy" field.
   ValidationErrors::ScopedField field(errors, ".childPolicy");
