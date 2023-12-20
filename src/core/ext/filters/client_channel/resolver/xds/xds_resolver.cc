@@ -165,7 +165,7 @@ class XdsResolver : public Resolver {
           DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist(
-         RefCountedPtr<ReadDelayHandle> read_delay_handle) override {
+        RefCountedPtr<ReadDelayHandle> read_delay_handle) override {
       resolver_->work_serializer_->Run(
           [self = RefAsSubclass<ListenerWatcher>(),
            read_delay_handle = std::move(read_delay_handle)]() {
