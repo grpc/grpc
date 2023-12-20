@@ -1148,7 +1148,8 @@ void MaybeLogRouteConfiguration(
     const upb_MessageDef* msg_type =
         envoy_config_route_v3_RouteConfiguration_getmsgdef(context.symtab);
     char buf[10240];
-    upb_TextEncode(route_config, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(route_config), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] RouteConfiguration: %s", context.client,
             buf);
   }

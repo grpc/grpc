@@ -343,8 +343,8 @@ class XdsResolver : public Resolver {
         // long as the cluster ref exists.
         subscription = dependency_mgr_->GetClusterSubscription(cluster_name);
       }
-      auto cluster = MakeRefCounted<ClusterRef>(Ref(), std::move(subscription),
-                                                cluster_key);
+      auto cluster = MakeRefCounted<ClusterRef>(
+          RefAsSubclass<XdsResolver>(), std::move(subscription), cluster_key);
       cluster_ref_map_.emplace(cluster->cluster_key(), cluster->WeakRef());
       return cluster;
     }
@@ -930,7 +930,8 @@ void XdsResolver::StartLocked() {
   }
   // Start watch for xDS config.
   dependency_mgr_ = MakeOrphanable<XdsDependencyManager>(
-      xds_client_, work_serializer_, std::make_unique<XdsWatcher>(Ref()),
+      xds_client_, work_serializer_,
+      std::make_unique<XdsWatcher>(RefAsSubclass<XdsResolver>()),
       data_plane_authority_, lds_resource_name_, args_, interested_parties_);
 }
 
@@ -965,11 +966,8 @@ void XdsResolver::OnError(absl::string_view context, absl::Status status) {
   Result result;
   result.addresses = status;
   result.service_config = std::move(status);
-  // Need to explicitly convert to the right RefCountedPtr<> type for
-  // use with ChannelArgs::SetObject().
-  RefCountedPtr<GrpcXdsClient> xds_client =
-      xds_client_->Ref(DEBUG_LOCATION, "xds resolver result");
-  result.args = args_.SetObject(std::move(xds_client));
+  result.args =
+      args_.SetObject(xds_client_.Ref(DEBUG_LOCATION, "xds resolver result"));
   result_handler_->ReportResult(std::move(result));
 }
 
@@ -1044,8 +1042,8 @@ void XdsResolver::GenerateResult() {
             absl::UnavailableError(route_config_data.status().message()));
     return;
   }
-  auto config_selector =
-      MakeRefCounted<XdsConfigSelector>(Ref(), std::move(*route_config_data));
+  auto config_selector = MakeRefCounted<XdsConfigSelector>(
+      RefAsSubclass<XdsResolver>(), std::move(*route_config_data));
   // Now create the service config.
   Result result;
   result.addresses.emplace();
@@ -1056,14 +1054,11 @@ void XdsResolver::GenerateResult() {
                 ? std::string((*result.service_config)->json_string()).c_str()
                 : result.service_config.status().ToString().c_str());
   }
-  // Need to explicitly convert to the right RefCountedPtr<> type for
-  // use with ChannelArgs::SetObject().
-  RefCountedPtr<GrpcXdsClient> xds_client =
-      xds_client_->Ref(DEBUG_LOCATION, "xds resolver result");
-  result.args = args_.SetObject(std::move(xds_client))
-                    .SetObject(config_selector)
-                    .SetObject(current_config_)
-                    .SetObject(dependency_mgr_->Ref());
+  result.args =
+      args_.SetObject(xds_client_.Ref(DEBUG_LOCATION, "xds resolver result"))
+           .SetObject(config_selector)
+           .SetObject(current_config_)
+           .SetObject(dependency_mgr_->Ref());
   result_handler_->ReportResult(std::move(result));
 }
 

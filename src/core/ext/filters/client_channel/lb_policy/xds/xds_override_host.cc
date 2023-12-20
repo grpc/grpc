@@ -186,9 +186,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     void SetSubchannel(SubchannelWrapper* subchannel) {
       if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
-        subchannel_ = subchannel->Ref();
+        subchannel_ = subchannel->RefAsSubclass<SubchannelWrapper>();
       } else {
-        subchannel_ = subchannel->WeakRef();
+        subchannel_ = subchannel->WeakRefAsSubclass<SubchannelWrapper>();
       }
     }
 
@@ -211,9 +211,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       auto subchannel = GetSubchannel();
       if (subchannel == nullptr) return;
       if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
-        subchannel_ = subchannel->Ref();
+        subchannel_ = subchannel->RefAsSubclass<SubchannelWrapper>();
       } else {
-        subchannel_ = subchannel->WeakRef();
+        subchannel_ = subchannel->WeakRefAsSubclass<SubchannelWrapper>();
       }
     }
 
@@ -366,7 +366,9 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
       RefCountedPtr<SubchannelWrapper> subchannel;
       auto it = policy_->subchannel_map_.find(address);
       if (it != policy_->subchannel_map_.end()) {
-        subchannel = it->second.GetSubchannel()->RefIfNonZero();
+        subchannel = it->second.GetSubchannel()
+                         ->RefIfNonZero()
+                         .TakeAsSubclass<SubchannelWrapper>();
       }
       if (subchannel == nullptr) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
@@ -562,7 +564,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   if (args.config == nullptr) {
     return absl::InvalidArgumentError("Missing policy config");
   }
-  RefCountedPtr<XdsOverrideHostLbConfig> new_config = std::move(args.config);
+  auto new_config = args.config.TakeAsSubclass<XdsOverrideHostLbConfig>();
   // Get xDS config.
   auto new_xds_config =
       args.args.GetObjectRef<XdsDependencyManager::XdsConfig>();
@@ -618,8 +620,8 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
 
 void XdsOverrideHostLb::MaybeUpdatePickerLocked() {
   if (picker_ != nullptr) {
-    auto xds_override_host_picker =
-        MakeRefCounted<Picker>(Ref(), picker_, override_host_status_set_);
+    auto xds_override_host_picker = MakeRefCounted<Picker>(
+        RefAsSubclass<XdsOverrideHostLb>(), picker_, override_host_status_set_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
       gpr_log(GPR_INFO,
               "[xds_override_host_lb %p] updating connectivity: state=%s "
@@ -637,8 +639,8 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper =
-      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+  lb_policy_args.channel_control_helper = std::make_unique<Helper>(
+      RefAsSubclass<XdsOverrideHostLb>(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_xds_override_host_trace);
@@ -756,8 +758,8 @@ XdsOverrideHostLb::AdoptSubchannel(
     const grpc_resolved_address& address,
     RefCountedPtr<SubchannelInterface> subchannel) {
   auto key = grpc_sockaddr_to_string(&address, /*normalize=*/false);
-  auto wrapper =
-      MakeRefCounted<SubchannelWrapper>(std::move(subchannel), Ref());
+  auto wrapper = MakeRefCounted<SubchannelWrapper>(
+      std::move(subchannel), RefAsSubclass<XdsOverrideHostLb>());
   if (key.ok()) {
     MutexLock lock(&subchannel_map_mu_);
     auto it = subchannel_map_.find(*key);
@@ -831,7 +833,8 @@ XdsOverrideHostLb::SubchannelWrapper::SubchannelWrapper(
     RefCountedPtr<SubchannelInterface> subchannel,
     RefCountedPtr<XdsOverrideHostLb> policy)
     : DelegatingSubchannel(std::move(subchannel)), policy_(std::move(policy)) {
-  auto watcher = std::make_unique<ConnectivityStateWatcher>(WeakRef());
+  auto watcher = std::make_unique<ConnectivityStateWatcher>(
+      WeakRefAsSubclass<SubchannelWrapper>());
   watcher_ = watcher.get();
   wrapped_subchannel()->WatchConnectivityState(std::move(watcher));
 }
@@ -882,9 +885,8 @@ void XdsOverrideHostLb::SubchannelWrapper::Orphan() {
     wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
     return;
   }
-  WeakRefCountedPtr<SubchannelWrapper> self = WeakRef();
   policy_->work_serializer()->Run(
-      [self = std::move(self)]() {
+      [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
         self->key_.reset();
         self->wrapped_subchannel()->CancelConnectivityStateWatch(
             self->watcher_);

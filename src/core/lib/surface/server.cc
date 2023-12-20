@@ -815,7 +815,8 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
   channelz::ListenSocketNode* listen_socket_node =
       listener->channelz_listen_socket_node();
   if (listen_socket_node != nullptr && channelz_node_ != nullptr) {
-    channelz_node_->AddChildListenSocket(listen_socket_node->Ref());
+    channelz_node_->AddChildListenSocket(
+        listen_socket_node->RefAsSubclass<channelz::ListenSocketNode>());
   }
   listeners_.emplace_back(std::move(listener));
 }

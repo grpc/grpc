@@ -254,7 +254,7 @@ BuildLeafClusterConfigList(const XdsConfig* xds_config,
 
 absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Get new config.
-  RefCountedPtr<CdsLbConfig> new_config = std::move(args.config);
+  auto new_config = args.config.TakeAsSubclass<CdsLbConfig>();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s is_dynamic=%d",
             this, new_config->cluster().c_str(), new_config->is_dynamic());
@@ -371,7 +371,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     LoadBalancingPolicy::Args lb_args;
     lb_args.work_serializer = work_serializer();
     lb_args.args = args.args;
-    lb_args.channel_control_helper = std::make_unique<Helper>(Ref());
+    lb_args.channel_control_helper =
+        std::make_unique<Helper>(RefAsSubclass<CdsLb>());
     child_policy_ =
         CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
             (*child_config)->name(), std::move(lb_args));
