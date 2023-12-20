@@ -467,8 +467,7 @@ bool PrivateGenerator::PrintStub(
           out->Print(
               method_dict,
               "response_deserializer=$ResponseModuleAndClass$.FromString,\n");
-          out->Print(
-              "_registered_method=True)\n");
+          out->Print("_registered_method=True)\n");
         }
       }
     }

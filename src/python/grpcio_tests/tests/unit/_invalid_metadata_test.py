@@ -32,10 +32,7 @@ _STREAM_STREAM = "/test/StreamStream"
 
 
 def _unary_unary_multi_callable(channel):
-    return channel.unary_unary(
-        _UNARY_UNARY,
-        _registered_method=True
-    )
+    return channel.unary_unary(_UNARY_UNARY, _registered_method=True)
 
 
 def _unary_stream_multi_callable(channel):

@@ -198,7 +198,7 @@ class ChannelCache:
                 self._mapping.pop(key)
                 self._mapping[key] = (
                     channel,
-                    datetime.datetime.now() + _EVICTION_PERIOD
+                    datetime.datetime.now() + _EVICTION_PERIOD,
                 )
                 return channel, call_handle
             else:
@@ -209,7 +209,7 @@ class ChannelCache:
                     call_handle = channel._get_registered_call_handle(method)
                 self._mapping[key] = (
                     channel,
-                    datetime.datetime.now() + _EVICTION_PERIOD
+                    datetime.datetime.now() + _EVICTION_PERIOD,
                 )
                 if (
                     len(self._mapping) == 1

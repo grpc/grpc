@@ -104,16 +104,19 @@ cdef class _ChannelState:
 cdef class CallHandle:
 
   def __cinit__(self, _ChannelState channel_state, object method):
-    self._method = method
+    self.method = method
     cpython.Py_INCREF(method)
+    # Note that since we always pass None for host, we set the
+    # second-to-last parameter of grpc_channel_register_call to a fixed
+    # NULL value.
     self.c_call_handle = grpc_channel_register_call(
       channel_state.c_channel, <const char *>method, NULL, NULL)
 
   def __dealloc__(self):
-    cpython.Py_DECREF(self._method)
+    cpython.Py_DECREF(self.method)
 
   @property
-  def method(self):
+  def call_handle(self):
     return cpython.PyLong_FromVoidPtr(self.c_call_handle)
 
 
@@ -511,6 +514,7 @@ cdef class Channel:
         else grpc_insecure_credentials_create())
     self._state.c_channel = grpc_channel_create(
         <char *>target, c_channel_credentials, channel_args.c_args())
+    self._registered_call_handles = {}
     grpc_channel_credentials_release(c_channel_credentials)
 
   def target(self):
@@ -569,12 +573,11 @@ cdef class Channel:
   def close_on_fork(self, code, details):
     _close(self, code, details, True)
 
-  def register_method(self, method):
+  def get_registered_call_handle(self, method):
     """
-    Regists a method to current channel.
+    Get or registers a call handler for a method.
 
-    Please note that since we're always passing None for host, we set the second to
-    the last parameter of grpc_channel_register_call to a fixed NULL value.
+    This method is not thread-safe.
 
     Args:
       method: Required, the method name for the RPC.
@@ -582,5 +585,6 @@ cdef class Channel:
     Returns:
       The registered call handle pointer in the form of a Python Long. 
     """
-    call_handle = CallHandle(self._state, method)
-    return call_handle.method
+    if method not in self._registered_call_handles.keys():
+      self._registered_call_handles[method] = CallHandle(self._state, method)
+    return self._registered_call_handles[method].call_handle

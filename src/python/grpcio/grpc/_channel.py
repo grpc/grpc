@@ -2077,26 +2077,25 @@ class Channel(grpc.Channel):
         self._target = target
         self._call_state = _ChannelCallState(self._channel)
         self._connectivity_state = _ChannelConnectivityState(self._channel)
-        self._registered_call_handles = {}
         cygrpc.fork_register_channel(self)
         if cygrpc.g_gevent_activated:
             cygrpc.gevent_increment_channel_count()
 
     def _get_registered_call_handle(self, method: str) -> int:
         """
-        Registers the method if it's not registered before and returns the registered
-        call handler.
+        Get the registered call handle for a method.
 
         This is a semi-private method. It is intended for use only by gRPC generated code.
 
         This method is not thread-safe.
+
+        Args:
+          method: Required, the method name for the RPC.
+
+        Returns:
+          The registered call handle pointer in the form of a Python Long.
         """
-        if method not in self._registered_call_handles.keys():
-            registered_call_handle = self._channel.register_method(
-                _common.encode(method)
-            )
-            self._registered_call_handles[method] = registered_call_handle
-        return self._registered_call_handles[method]
+        return self._channel.get_registered_call_handle(_common.encode(method))
 
     def _process_python_options(
         self, python_options: Sequence[ChannelArgumentType]

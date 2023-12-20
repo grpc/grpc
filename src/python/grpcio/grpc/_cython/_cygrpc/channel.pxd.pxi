@@ -74,6 +74,7 @@ cdef class SegregatedCall:
 cdef class Channel:
 
   cdef _ChannelState _state
+  cdef dict _registered_call_handles
 
   # TODO(https://github.com/grpc/grpc/issues/15662): Eliminate this.
   cdef tuple _arguments
@@ -82,4 +83,4 @@ cdef class Channel:
 cdef class CallHandle:
 
   cdef void *c_call_handle
-  cdef object _method
+  cdef object method
