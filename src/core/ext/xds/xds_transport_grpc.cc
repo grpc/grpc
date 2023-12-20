@@ -206,18 +206,18 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   auto self(static_cast<GrpcStreamingCall*>(arg));
   // If there was no payload, then we received status before we received
   // another message, so we stop reading.
-  if (self->recv_message_payload_ == nullptr) {
-    return;
+  if (self->recv_message_payload_ != nullptr) {
+    // Process the response.
+    grpc_byte_buffer_reader bbr;
+    grpc_byte_buffer_reader_init(&bbr, self->recv_message_payload_);
+    grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
+    grpc_byte_buffer_reader_destroy(&bbr);
+    grpc_byte_buffer_destroy(self->recv_message_payload_);
+    self->recv_message_payload_ = nullptr;
+    self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
+    CSliceUnref(response_slice);
   }
-  // Process the response.
-  grpc_byte_buffer_reader bbr;
-  grpc_byte_buffer_reader_init(&bbr, self->recv_message_payload_);
-  grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
-  grpc_byte_buffer_reader_destroy(&bbr);
-  grpc_byte_buffer_destroy(self->recv_message_payload_);
-  self->recv_message_payload_ = nullptr;
-  self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
-  CSliceUnref(response_slice);
+  self->Unref(DEBUG_LOCATION, "StartRecvMessage");
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
