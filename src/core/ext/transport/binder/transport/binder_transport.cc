@@ -133,7 +133,8 @@ static void AssignMetadata(grpc_metadata_batch* mb,
   }
 }
 
-static void cancel_stream_locked(BinderTransport* transport, BinderStream* stream,
+static void cancel_stream_locked(BinderTransport* transport,
+                                 BinderStream* stream,
                                  grpc_error_handle error) {
   gpr_log(GPR_INFO, "cancel_stream_locked");
   if (!stream->is_closed) {
@@ -363,7 +364,6 @@ class MetadataEncoder {
 }  // namespace grpc_binder
 
 static void accept_stream_locked(void* gt, grpc_error_handle /*error*/) {
-
   BinderTransport* transport = static_cast<BinderTransport*>(gt);
   if (transport->accept_stream_fn) {
     gpr_log(GPR_INFO, "Accepting a stream");
@@ -381,7 +381,8 @@ static void perform_stream_op_locked(void* stream_op,
                                      grpc_error_handle /*error*/) {
   grpc_transport_stream_op_batch* op =
       static_cast<grpc_transport_stream_op_batch*>(stream_op);
-  BinderStream* stream = static_cast<BinderStream*>(op->handler_private.extra_arg);
+  BinderStream* stream =
+      static_cast<BinderStream*>(op->handler_private.extra_arg);
   BinderTransport* transport = stream->t;
   if (op->cancel_stream) {
     // TODO(waynetu): Is this true?
@@ -673,8 +674,8 @@ void BinderTransport::DestroyStream(grpc_stream* gs,
 }
 
 static void destroy_transport_locked(void* gt, grpc_error_handle /*error*/) {
-  BinderTransport* gbt = static_cast<BinderTransport*>(gt);
-  close_transport_locked(gbt);
+  BinderTransport* transport = static_cast<BinderTransport*>(gt);
+  close_transport_locked(transport);
   // Release the references held by the transport.
   transport->wire_reader = nullptr;
   transport->transport_stream_receiver = nullptr;
