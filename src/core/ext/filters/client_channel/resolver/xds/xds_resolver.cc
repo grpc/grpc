@@ -1056,9 +1056,9 @@ void XdsResolver::GenerateResult() {
   }
   result.args =
       args_.SetObject(xds_client_.Ref(DEBUG_LOCATION, "xds resolver result"))
-           .SetObject(config_selector)
-           .SetObject(current_config_)
-           .SetObject(dependency_mgr_->Ref());
+          .SetObject(config_selector)
+          .SetObject(current_config_)
+          .SetObject(dependency_mgr_->Ref());
   result_handler_->ReportResult(std::move(result));
 }
 
