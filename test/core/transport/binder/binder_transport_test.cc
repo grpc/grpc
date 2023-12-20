@@ -525,8 +525,8 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadata) {
 
   const Metadata kInitialMetadata = kDefaultMetadata;
   auto* transport = reinterpret_cast<BinderTransport*>(transport_);
-  transport->transport_stream_receiver->NotifyRecvInitialMetadata(gbs->tx_code,
-                                                            kInitialMetadata);
+  transport->transport_stream_receiver->NotifyRecvInitialMetadata(
+      gbs->tx_code, kInitialMetadata);
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
   recv_initial_metadata.notification.WaitForNotification();
@@ -568,7 +568,8 @@ TEST_F(BinderTransportTest, PerformRecvMessage) {
 
   auto* transport = reinterpret_cast<BinderTransport*>(transport_);
   const std::string kMessage = kDefaultMessage;
-  transport->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kMessage);
+  transport->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code,
+                                                          kMessage);
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -617,7 +618,8 @@ TEST_F(BinderTransportTest, PerformRecvAll) {
       gbs->tx_code, kInitialMetadataWithMethodRef);
 
   const std::string kMessage = kDefaultMessage;
-  transport->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kMessage);
+  transport->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code,
+                                                          kMessage);
 
   Metadata trailing_metadata = kDefaultMetadata;
   constexpr int kStatus = kDefaultStatus;
@@ -687,7 +689,8 @@ TEST_F(BinderTransportTest, PerformAllOps) {
   transport->transport_stream_receiver->NotifyRecvInitialMetadata(
       gbs->tx_code, kRecvInitialMetadata);
   const std::string kRecvMessage = kDefaultMessage;
-  transport->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kRecvMessage);
+  transport->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code,
+                                                          kRecvMessage);
   const Metadata kRecvTrailingMetadata = kDefaultMetadata;
   constexpr int kStatus = 0x1234;
   transport->transport_stream_receiver->NotifyRecvTrailingMetadata(
