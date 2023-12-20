@@ -755,7 +755,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "seq_state",
-    external_deps = ["absl/base:core_headers"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/strings",
+    ],
     language = "c++",
     public_hdrs = [
         "lib/promise/detail/seq_state.h",
@@ -766,6 +769,7 @@ grpc_cc_library(
         "promise_factory",
         "promise_like",
         "promise_trace",
+        "//:debug_location",
         "//:gpr",
     ],
 )
@@ -781,6 +785,7 @@ grpc_cc_library(
         "poll",
         "promise_like",
         "seq_state",
+        "//:debug_location",
         "//:gpr_platform",
     ],
 )
@@ -803,6 +808,7 @@ grpc_cc_library(
         "promise_status",
         "seq_state",
         "status_flag",
+        "//:debug_location",
         "//:gpr_platform",
     ],
 )

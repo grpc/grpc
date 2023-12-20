@@ -476,7 +476,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   const bool is_initial_update = config_ == nullptr;
   auto old_config = std::move(config_);
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<XdsClusterImplLbConfig>();
   // On initial update, create drop stats.
   if (is_initial_update) {
     if (config_->lrs_load_reporting_server().has_value()) {
@@ -550,8 +550,8 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper =
-      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+  lb_policy_args.channel_control_helper = std::make_unique<Helper>(
+      RefAsSubclass<XdsClusterImplLb>(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_xds_cluster_impl_lb_trace);

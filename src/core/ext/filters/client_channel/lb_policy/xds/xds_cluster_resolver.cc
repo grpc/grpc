@@ -217,25 +217,24 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       }
       void OnResourceChanged(
           std::shared_ptr<const XdsEndpointResource> update) override {
-        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [self = std::move(self), update = std::move(update)]() mutable {
+            [self = RefAsSubclass<EndpointWatcher>(),
+             update = std::move(update)]() mutable {
               self->OnResourceChangedHelper(std::move(update));
             },
             DEBUG_LOCATION);
       }
       void OnError(absl::Status status) override {
-        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [self = std::move(self), status = std::move(status)]() mutable {
+            [self = RefAsSubclass<EndpointWatcher>(),
+             status = std::move(status)]() mutable {
               self->OnErrorHelper(std::move(status));
             },
             DEBUG_LOCATION);
       }
       void OnResourceDoesNotExist() override {
-        RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [self = std::move(self)]() {
+            [self = RefAsSubclass<EndpointWatcher>()]() {
               self->OnResourceDoesNotExistHelper();
             },
             DEBUG_LOCATION);
@@ -424,8 +423,9 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Start() {
             ":%p starting xds watch for %s",
             parent(), index(), this, std::string(GetEdsResourceName()).c_str());
   }
-  auto watcher = MakeRefCounted<EndpointWatcher>(
-      Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
+  auto watcher =
+      MakeRefCounted<EndpointWatcher>(RefAsSubclass<EdsDiscoveryMechanism>(
+          DEBUG_LOCATION, "EdsDiscoveryMechanism"));
   watcher_ = watcher.get();
   XdsEndpointResourceType::StartWatch(parent()->xds_client_.get(),
                                       GetEdsResourceName(), std::move(watcher));
@@ -463,7 +463,8 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
       target.c_str(), args, parent()->interested_parties(),
       parent()->work_serializer(),
       std::make_unique<ResolverResultHandler>(
-          Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
+          RefAsSubclass<LogicalDNSDiscoveryMechanism>(
+              DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
   if (resolver_ == nullptr) {
     parent()->OnResourceDoesNotExist(
         index(),
@@ -591,7 +592,7 @@ absl::Status XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = args_ == ChannelArgs();
   // Update config.
   auto old_config = std::move(config_);
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<XdsClusterResolverLbConfig>();
   // Update args.
   args_ = std::move(args.args);
   // Update child policy if needed.
@@ -604,13 +605,15 @@ absl::Status XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
       if (config.type == XdsClusterResolverLbConfig::DiscoveryMechanism::
                              DiscoveryMechanismType::EDS) {
         entry.discovery_mechanism = MakeOrphanable<EdsDiscoveryMechanism>(
-            Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"),
+            RefAsSubclass<XdsClusterResolverLb>(DEBUG_LOCATION,
+                                                "EdsDiscoveryMechanism"),
             discovery_mechanisms_.size());
       } else if (config.type == XdsClusterResolverLbConfig::DiscoveryMechanism::
                                     DiscoveryMechanismType::LOGICAL_DNS) {
         entry.discovery_mechanism =
             MakeOrphanable<LogicalDNSDiscoveryMechanism>(
-                Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism"),
+                RefAsSubclass<XdsClusterResolverLb>(
+                    DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism"),
                 discovery_mechanisms_.size());
       } else {
         GPR_ASSERT(0);
@@ -1010,8 +1013,8 @@ XdsClusterResolverLb::CreateChildPolicyLocked(const ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper =
-      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+  lb_policy_args.channel_control_helper = std::make_unique<Helper>(
+      RefAsSubclass<XdsClusterResolverLb>(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "priority_experimental", std::move(lb_policy_args));

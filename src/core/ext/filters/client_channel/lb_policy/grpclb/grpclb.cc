@@ -324,9 +324,8 @@ class GrpcLb : public LoadBalancingPolicy {
         }
         return;
       }
-      WeakRefCountedPtr<SubchannelWrapper> self = WeakRef();
       lb_policy_->work_serializer()->Run(
-          [self = std::move(self)]() {
+          [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
             if (!self->lb_policy_->shutting_down_) {
               self->lb_policy_->CacheDeletedSubchannelLocked(
                   self->wrapped_subchannel());
@@ -819,8 +818,8 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
   return MakeRefCounted<SubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(
           address, per_address_args, args),
-      parent()->Ref(DEBUG_LOCATION, "SubchannelWrapper"), std::move(lb_token),
-      std::move(client_stats));
+      parent()->RefAsSubclass<GrpcLb>(DEBUG_LOCATION, "SubchannelWrapper"),
+      std::move(lb_token), std::move(client_stats));
 }
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
@@ -1558,7 +1557,7 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[grpclb %p] received update", this);
   }
   const bool is_initial_update = lb_channel_ == nullptr;
-  config_ = args.config;
+  config_ = args.config.TakeAsSubclass<GrpcLbConfig>();
   GPR_ASSERT(config_ != nullptr);
   args_ = std::move(args.args);
   // Update fallback address list.
@@ -1581,8 +1580,8 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
     lb_fallback_timer_handle_ =
         channel_control_helper()->GetEventEngine()->RunAfter(
             fallback_at_startup_timeout_,
-            [self = static_cast<RefCountedPtr<GrpcLb>>(
-                 Ref(DEBUG_LOCATION, "on_fallback_timer"))]() mutable {
+            [self = RefAsSubclass<GrpcLb>(DEBUG_LOCATION,
+                                          "on_fallback_timer")]() mutable {
               ApplicationCallbackExecCtx callback_exec_ctx;
               ExecCtx exec_ctx;
               auto self_ptr = self.get();
@@ -1597,7 +1596,8 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
         ClientChannel::GetFromChannel(Channel::FromC(lb_channel_));
     GPR_ASSERT(client_channel != nullptr);
     // Ref held by callback.
-    watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
+    watcher_ =
+        new StateWatcher(RefAsSubclass<GrpcLb>(DEBUG_LOCATION, "StateWatcher"));
     client_channel->AddConnectivityWatcher(
         GRPC_CHANNEL_IDLE,
         OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
@@ -1640,11 +1640,10 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
     // Set up channelz linkage.
     channelz::ChannelNode* child_channelz_node =
         grpc_channel_get_channelz_node(lb_channel_);
-    channelz::ChannelNode* parent_channelz_node =
-        args_.GetObject<channelz::ChannelNode>();
+    auto parent_channelz_node = args_.GetObjectRef<channelz::ChannelNode>();
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
       parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
-      parent_channelz_node_ = parent_channelz_node->Ref();
+      parent_channelz_node_ = std::move(parent_channelz_node);
     }
   }
   // Propagate updates to the LB channel (pick_first) through the fake
@@ -1699,8 +1698,8 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   lb_call_retry_timer_handle_ =
       channel_control_helper()->GetEventEngine()->RunAfter(
           timeout,
-          [self = static_cast<RefCountedPtr<GrpcLb>>(
-               Ref(DEBUG_LOCATION, "on_balancer_call_retry_timer"))]() mutable {
+          [self = RefAsSubclass<GrpcLb>(
+               DEBUG_LOCATION, "on_balancer_call_retry_timer")]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto self_ptr = self.get();
@@ -1782,7 +1781,7 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(RefAsSubclass<GrpcLb>(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_lb_glb_trace);
@@ -1867,8 +1866,8 @@ void GrpcLb::StartSubchannelCacheTimerLocked() {
   subchannel_cache_timer_handle_ =
       channel_control_helper()->GetEventEngine()->RunAfter(
           cached_subchannels_.begin()->first - Timestamp::Now(),
-          [self = static_cast<RefCountedPtr<GrpcLb>>(
-               Ref(DEBUG_LOCATION, "OnSubchannelCacheTimer"))]() mutable {
+          [self = RefAsSubclass<GrpcLb>(DEBUG_LOCATION,
+                                        "OnSubchannelCacheTimer")]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto* self_ptr = self.get();

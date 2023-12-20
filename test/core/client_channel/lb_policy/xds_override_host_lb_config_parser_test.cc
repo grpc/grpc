@@ -65,7 +65,7 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfig) {
   ASSERT_NE(lb_config, nullptr);
   ASSERT_EQ(lb_config->name(), XdsOverrideHostLbConfig::Name());
   auto override_host_lb_config =
-      static_cast<RefCountedPtr<XdsOverrideHostLbConfig>>(lb_config);
+      lb_config.TakeAsSubclass<XdsOverrideHostLbConfig>();
   EXPECT_EQ(override_host_lb_config->override_host_status_set(),
             XdsHealthStatusSet({
                 XdsHealthStatus(XdsHealthStatus::HealthStatus::kDraining),
@@ -100,7 +100,7 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfigWithRR) {
   ASSERT_NE(lb_config, nullptr);
   ASSERT_EQ(lb_config->name(), XdsOverrideHostLbConfig::Name());
   auto override_host_lb_config =
-      static_cast<RefCountedPtr<XdsOverrideHostLbConfig>>(lb_config);
+      lb_config.TakeAsSubclass<XdsOverrideHostLbConfig>();
   ASSERT_NE(override_host_lb_config->child_config(), nullptr);
   ASSERT_EQ(override_host_lb_config->child_config()->name(), "round_robin");
 }
@@ -132,7 +132,7 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfigNoDraining) {
   ASSERT_NE(lb_config, nullptr);
   ASSERT_EQ(lb_config->name(), XdsOverrideHostLbConfig::Name());
   auto override_host_lb_config =
-      static_cast<RefCountedPtr<XdsOverrideHostLbConfig>>(lb_config);
+      lb_config.TakeAsSubclass<XdsOverrideHostLbConfig>();
   EXPECT_EQ(override_host_lb_config->override_host_status_set(),
             XdsHealthStatusSet(
                 {XdsHealthStatus(XdsHealthStatus::HealthStatus::kHealthy),
@@ -161,8 +161,9 @@ TEST(XdsOverrideHostConfigParsingTest, ValidConfigNoOverrideHostStatuses) {
   ASSERT_NE(global_config, nullptr);
   auto lb_config = global_config->parsed_lb_config();
   ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), XdsOverrideHostLbConfig::Name());
   auto override_host_lb_config =
-      static_cast<RefCountedPtr<XdsOverrideHostLbConfig>>(lb_config);
+      lb_config.TakeAsSubclass<XdsOverrideHostLbConfig>();
   EXPECT_EQ(override_host_lb_config->override_host_status_set(),
             XdsHealthStatusSet(
                 {XdsHealthStatus(XdsHealthStatus::HealthStatus::kHealthy),

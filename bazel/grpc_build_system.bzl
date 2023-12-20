@@ -108,7 +108,6 @@ def _update_visibility(visibility):
         "grpc++_test": PRIVATE,
         "http": PRIVATE,
         "httpcli": PRIVATE,
-        "iomgr_timer": PRIVATE,
         "iomgr_internal_errqueue": PRIVATE,
         "iomgr_buffer_list": PRIVATE,
         "json_reader_legacy": PRIVATE,

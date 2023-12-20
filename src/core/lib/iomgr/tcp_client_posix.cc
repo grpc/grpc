@@ -336,6 +336,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr),
                   addr->len);
   } while (err < 0 && errno == EINTR);
+  int connect_errno = (err < 0) ? errno : 0;
 
   auto addr_uri = grpc_sockaddr_to_uri(addr);
   if (!addr_uri.ok()) {
@@ -347,7 +348,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   std::string name = absl::StrCat("tcp-client:", addr_uri.value());
   grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
   int64_t connection_id = 0;
-  if (errno == EWOULDBLOCK || errno == EINPROGRESS) {
+  if (connect_errno == EWOULDBLOCK || connect_errno == EINPROGRESS) {
     // Connection is still in progress.
     connection_id = g_connection_id.fetch_add(1, std::memory_order_acq_rel);
   }
@@ -359,10 +360,10 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
     return 0;
   }
-  if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
+  if (connect_errno != EWOULDBLOCK && connect_errno != EINPROGRESS) {
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
-    grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
+    grpc_error_handle error = GRPC_OS_ERROR(connect_errno, "connect");
     error = grpc_error_set_str(
         error, grpc_core::StatusStrProperty::kTargetAddress, addr_uri.value());
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");

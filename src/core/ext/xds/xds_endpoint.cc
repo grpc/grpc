@@ -162,7 +162,8 @@ void MaybeLogClusterLoadAssignment(
         envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(
             context.symtab);
     char buf[10240];
-    upb_TextEncode(cla, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(cla), msg_type, nullptr,
+                   0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] ClusterLoadAssignment: %s",
             context.client, buf);
   }

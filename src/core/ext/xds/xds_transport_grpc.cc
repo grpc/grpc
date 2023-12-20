@@ -321,8 +321,9 @@ GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler) {
   return MakeOrphanable<GrpcStreamingCall>(
-      factory_->Ref(DEBUG_LOCATION, "StreamingCall"), channel_, method,
-      std::move(event_handler));
+      factory_->RefAsSubclass<GrpcXdsTransportFactory>(DEBUG_LOCATION,
+                                                       "StreamingCall"),
+      channel_, method, std::move(event_handler));
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {
