@@ -666,11 +666,12 @@ static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {
 void BinderTransport::DestroyStream(grpc_stream* gs,
                                     grpc_closure* then_schedule_closure) {
   gpr_log(GPR_INFO, __func__);
-  BinderStream* gbs = reinterpret_cast<BinderStream*>(gs);
-  gbs->destroy_stream_then_closure = then_schedule_closure;
-  gbs->t->combiner->Run(GRPC_CLOSURE_INIT(&gbs->destroy_stream,
-                                          destroy_stream_locked, gbs, nullptr),
-                        absl::OkStatus());
+  BinderStream* stream = reinterpret_cast<BinderStream*>(gs);
+  stream->destroy_stream_then_closure = then_schedule_closure;
+  stream->t->combiner->Run(
+      GRPC_CLOSURE_INIT(&stream->destroy_stream, destroy_stream_locked, stream,
+                        nullptr),
+      absl::OkStatus());
 }
 
 static void destroy_transport_locked(void* gt, grpc_error_handle /*error*/) {
