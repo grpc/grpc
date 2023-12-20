@@ -56,7 +56,7 @@ struct grpc_binder_transport final : public grpc_core::Transport,
   grpc_core::ClientTransport* client_transport() override { return nullptr; }
   grpc_core::ServerTransport* server_transport() override { return nullptr; }
   absl::string_view GetTransportName() const override { return "binder"; }
-  void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
+  void InitStream(grpc_stream* stream, grpc_stream_refcount* refcount,
                   const void* server_data, grpc_core::Arena* arena) override;
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
@@ -66,9 +66,9 @@ struct grpc_binder_transport final : public grpc_core::Transport,
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override {
     return false;
   }
-  void PerformStreamOp(grpc_stream* gs,
+  void PerformStreamOp(grpc_stream* stream,
                        grpc_transport_stream_op_batch* op) override;
-  void DestroyStream(grpc_stream* gs,
+  void DestroyStream(grpc_stream* stream,
                      grpc_closure* then_schedule_closure) override;
   void Orphan() override;
 
