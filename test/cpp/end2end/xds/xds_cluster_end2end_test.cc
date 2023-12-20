@@ -311,60 +311,6 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   WaitForBackend(DEBUG_LOCATION, 1);
 }
 
-class MockClientCallTracer : public grpc_core::ClientCallTracer {
- public:
-  class MockClientCallAttemptTracer
-      : public grpc_core::ClientCallTracer::CallAttemptTracer {
-   public:
-    MOCK_METHOD(void, RecordSendInitialMetadata,
-                (grpc_metadata_batch * send_initial_metadata), (override));
-    MOCK_METHOD(void, RecordSendTrailingMetadata,
-                (grpc_metadata_batch * send_trailing_metadata), (override));
-    MOCK_METHOD(void, RecordSendMessage,
-                (const grpc_core::SliceBuffer& send_message), (override));
-    MOCK_METHOD(void, RecordSendCompressedMessage,
-                (const grpc_core::SliceBuffer& send_compressed_message),
-                (override));
-    MOCK_METHOD(void, RecordReceivedInitialMetadata,
-                (grpc_metadata_batch * recv_initial_metadata), (override));
-    MOCK_METHOD(void, RecordReceivedMessage,
-                (const grpc_core::SliceBuffer& recv_message), (override));
-    MOCK_METHOD(void, RecordReceivedDecompressedMessage,
-                (const grpc_core::SliceBuffer& recv_decompressed_message),
-                (override));
-    MOCK_METHOD(void, RecordCancel, (grpc_error_handle cancel_error),
-                (override));
-    MOCK_METHOD(void, RecordReceivedTrailingMetadata,
-                (absl::Status status,
-                 grpc_metadata_batch* recv_trailing_metadata,
-                 const grpc_transport_stream_stats* transport_stream_stats),
-                (override));
-    MOCK_METHOD(void, RecordEnd, (const gpr_timespec& latency), (override));
-    MOCK_METHOD(void, RecordAnnotation, (absl::string_view annotation),
-                (override));
-    MOCK_METHOD(void, RecordAnnotation, (const Annotation& annotation),
-                (override));
-    MOCK_METHOD(std::shared_ptr<grpc_core::TcpTracerInterface>,
-                StartNewTcpTrace, (), (override));
-    MOCK_METHOD(void, AddOptionalLabels,
-                (OptionalLabelComponent,
-                 (std::shared_ptr<std::map<std::string, std::string>>)),
-                (override));
-    MOCK_METHOD(std::string, TraceId, (), (override));
-    MOCK_METHOD(std::string, SpanId, (), (override));
-    MOCK_METHOD(bool, IsSampled, (), (override));
-  };
-  MOCK_METHOD(CallAttemptTracer*, StartNewAttempt, (bool is_transparent_retry),
-              (override));
-  MOCK_METHOD(void, RecordAnnotation, (absl::string_view annotation),
-              (override));
-  MOCK_METHOD(void, RecordAnnotation, (const Annotation& annotation),
-              (override));
-  MOCK_METHOD(std::string, TraceId, (), (override));
-  MOCK_METHOD(std::string, SpanId, (), (override));
-  MOCK_METHOD(bool, IsSampled, (), (override));
-};
-
 MATCHER(VerifyServiceLabels, "") {
   using OptionalLabelComponent =
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
