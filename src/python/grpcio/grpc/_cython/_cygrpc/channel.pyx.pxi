@@ -101,6 +101,22 @@ cdef class _ChannelState:
     self.connectivity_due = set()
     self.closed_reason = None
 
+cdef class CallHandle:
+
+  def __cinit__(self, _ChannelState channel_state, object method):
+    self._method = method
+    cpython.Py_INCREF(method)
+    self.c_call_handle = grpc_channel_register_call(
+      channel_state.c_channel, <const char *>method, NULL, NULL)
+
+  def __dealloc__(self):
+    cpython.Py_DECREF(self._method)
+
+  @property
+  def method(self):
+    return cpython.PyLong_FromVoidPtr(self.c_call_handle)
+
+
 
 cdef tuple _operate(grpc_call *c_call, object operations, object user_tag):
   cdef grpc_call_error c_call_error
@@ -566,11 +582,5 @@ cdef class Channel:
     Returns:
       The registered call handle pointer in the form of a Python Long. 
     """
-    cpython.Py_INCREF(method)
-    registered_call_handle = grpc_channel_register_call(
-      self._state.c_channel, <const char *>method, NULL, NULL)
-    return cpython.PyLong_FromVoidPtr(registered_call_handle)
-
-  def _unregister_method(self, methods):
-    for method in methods:
-      cpython.Py_DECREF(method)
+    call_handle = CallHandle(self._state, method)
+    return call_handle.method

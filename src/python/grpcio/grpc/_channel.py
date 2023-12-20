@@ -2228,7 +2228,6 @@ class Channel(grpc.Channel):
     def _close(self) -> None:
         self._unsubscribe_all()
         self._channel.close(cygrpc.StatusCode.cancelled, "Channel closed!")
-        self._channel._unregister_method(self._registered_call_handles.keys())
         cygrpc.fork_unregister_channel(self)
         if cygrpc.g_gevent_activated:
             cygrpc.gevent_decrement_channel_count()

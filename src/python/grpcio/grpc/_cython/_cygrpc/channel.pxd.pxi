@@ -77,3 +77,9 @@ cdef class Channel:
 
   # TODO(https://github.com/grpc/grpc/issues/15662): Eliminate this.
   cdef tuple _arguments
+
+
+cdef class CallHandle:
+
+  cdef void *c_call_handle
+  cdef object _method
