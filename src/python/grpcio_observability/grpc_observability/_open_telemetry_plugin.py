@@ -18,6 +18,7 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 # pytype: disable=pyi-error
 import grpc
 from grpc_observability import _open_telemetry_measures
+from grpc_observability._cyobservability import MetricsName
 from grpc_observability._observability import StatsData
 from opentelemetry.sdk.metrics import Counter
 from opentelemetry.sdk.metrics import Histogram
@@ -29,38 +30,61 @@ GRPC_TARGET_LABEL = "grpc.target"
 GRPC_OTHER_LABEL_VALUE = "other"
 
 
-class LabelInjector(abc.ABC):
+class OpenTelemetryLabelInjector(abc.ABC):
     """
     An interface that allows you to add additional labels on the calls traced.
+
+    Please note that this class is still work in progress and NOT READY to be used.
     """
 
     _labels: List[Dict[str, str]]
 
     def __init__(self):
         # Calls Python OTel API to detect resource and get labels, save
-        # those lables to LabelInjector.labels.
+        # those lables to OpenTelemetryLabelInjector.labels.
         pass
 
     @abc.abstractmethod
     def get_labels(self):
-        # Get additional labels for this LabelInjector.
+        # Get additional labels for this OpenTelemetryLabelInjector.
         raise NotImplementedError()
 
 
 class OpenTelemetryPluginOption(abc.ABC):
+    """
+    An interface that allows you to add additional function to OpenTelemetryPlugin.
+
+    Please note that this class is still work in progress and NOT READY to be used.
+    """
+
     @abc.abstractmethod
     def is_active_on_method(self, method: str) -> bool:
-        # Determines whether a plugin option is active on a given method.
+        """Determines whether this plugin option is active on a given method.
+
+        Args:
+          method: Required. The RPC method, for example: `/helloworld.Greeter/SayHello`.
+
+        Returns:
+          True if this this plugin option is active on the giving method, false otherwise.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def is_active_on_server(self, channel_args: List[str]) -> bool:
-        # Determines whether a plugin option is active on a given server
+        """Determines whether this plugin option is active on a given server.
+
+        Args:
+          channel_args: Required. The channel args used for server.
+          TODO(xuanwn): detail on what channel_args will contain.
+
+        Returns:
+          True if this this plugin option is active on the server, false otherwise.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_label_injector(self) -> Optional[LabelInjector]:
-        # Returns the LabelsInjector used by this plugin option, or none.
+    def get_label_injector(self) -> Optional[OpenTelemetryLabelInjector]:
+        # Returns the LabelsInjector used by this plugin option, or None.
         raise NotImplementedError()
 
 
@@ -70,8 +94,8 @@ class OpenTelemetryPlugin:
 
     def get_plugin_options(
         self,
-    ) -> Optional[Iterable[OpenTelemetryPluginOption]]:
-        return None
+    ) -> Iterable[OpenTelemetryPluginOption]:
+        return []
 
     def get_meter_provider(self) -> Optional[MeterProvider]:
         return None
@@ -117,15 +141,15 @@ class OpenTelemetryPlugin:
 
 class _OpenTelemetryPlugin:
     _plugin: OpenTelemetryPlugin
+    _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
 
     def __init__(self, plugin: OpenTelemetryPlugin):
         self._plugin = plugin
         self._metric_to_recorder = dict()
 
-        if self._plugin.get_meter_provider():
-            meter = self._plugin.get_meter_provider().get_meter(
-                "grpc-python", grpc.__version__
-            )
+        meter_provider = self._plugin.get_meter_provider()
+        if meter_provider:
+            meter = meter_provider.get_meter("grpc-python", grpc.__version__)
             enabled_metrics = _open_telemetry_measures.base_metrics()
             self._metric_to_recorder = self._register_metrics(
                 meter, enabled_metrics
@@ -137,12 +161,12 @@ class _OpenTelemetryPlugin:
 
     def _record_stats_data(self, stats_data: StatsData) -> None:
         # Actually record the data using MeterProvider.
-        if self._plugin.target_attribute_filter(
+        if not self._plugin.target_attribute_filter(
             stats_data.labels.get(GRPC_TARGET_LABEL, "")
         ):
             # Filter target name.
             stats_data.labels[GRPC_TARGET_LABEL] = GRPC_OTHER_LABEL_VALUE
-        if self._plugin.generic_method_attribute_filter(
+        if not self._plugin.generic_method_attribute_filter(
             stats_data.labels.get(GRPC_METHOD_LABEL, "")
         ):
             # Filter method name.
@@ -167,7 +191,7 @@ class _OpenTelemetryPlugin:
 
     def _register_metrics(
         self, meter: Meter, metrics: List[_open_telemetry_measures.Metric]
-    ) -> Dict[Any, Union[Counter, Histogram]]:
+    ) -> Dict[MetricsName, Union[Counter, Histogram]]:
         metric_to_recorder_map = {}
         recorder = None
         for metric in metrics:
