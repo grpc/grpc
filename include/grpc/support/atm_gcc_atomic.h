@@ -25,6 +25,8 @@
    __atomic_* interface.  */
 #include <grpc/support/port_platform.h>
 
+#if defined(GPR_GCC_ATOMIC)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,5 +82,7 @@ static __inline int gpr_atm_full_cas(gpr_atm* p, gpr_atm o, gpr_atm n) {
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // definedGPR_GCC_ATOMIC)
 
 #endif /* GRPC_SUPPORT_ATM_GCC_ATOMIC_H */
