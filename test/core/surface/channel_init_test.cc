@@ -35,9 +35,9 @@ const grpc_channel_filter* FilterNamed(const char* name) {
   if (it != filters->end()) return it->second;
   return filters
       ->emplace(name,
-                new grpc_channel_filter{nullptr, nullptr, nullptr, 0, nullptr,
-                                        nullptr, nullptr, 0, nullptr, nullptr,
-                                        nullptr, nullptr, name})
+                new grpc_channel_filter{nullptr, nullptr, nullptr, nullptr, 0,
+                                        nullptr, nullptr, nullptr, 0, nullptr,
+                                        nullptr, nullptr, nullptr, name})
       .first->second;
 }
 

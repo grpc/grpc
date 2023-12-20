@@ -216,10 +216,10 @@ OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler) {
-  auto call = MakeOrphanable<FakeStreamingCall>(Ref(), method,
-                                                std::move(event_handler));
+  auto call = MakeOrphanable<FakeStreamingCall>(
+      RefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler));
   MutexLock lock(&mu_);
-  active_calls_[method] = call->Ref();
+  active_calls_[method] = call->Ref().TakeAsSubclass<FakeStreamingCall>();
   cv_.Signal();
   return call;
 }
@@ -240,9 +240,10 @@ FakeXdsTransportFactory::Create(
   auto& entry = transport_map_[&server];
   GPR_ASSERT(entry == nullptr);
   auto transport = MakeOrphanable<FakeXdsTransport>(
-      Ref(), server, std::move(on_connectivity_failure),
-      auto_complete_messages_from_client_, abort_on_undrained_messages_);
-  entry = transport->Ref();
+      RefAsSubclass<FakeXdsTransportFactory>(), server,
+      std::move(on_connectivity_failure), auto_complete_messages_from_client_,
+      abort_on_undrained_messages_);
+  entry = transport->Ref().TakeAsSubclass<FakeXdsTransport>();
   return transport;
 }
 

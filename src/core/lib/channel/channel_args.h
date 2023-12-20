@@ -233,12 +233,12 @@ struct GetObjectImpl<
   static Result Get(StoredType p) { return p; };
   static ReffedResult GetReffed(StoredType p) {
     if (p == nullptr) return nullptr;
-    return p->Ref();
+    return p->template RefAsSubclass<T>();
   };
   static ReffedResult GetReffed(StoredType p, const DebugLocation& location,
                                 const char* reason) {
     if (p == nullptr) return nullptr;
-    return p->Ref(location, reason);
+    return p->template RefAsSubclass<T>(location, reason);
   };
 };
 
@@ -345,7 +345,7 @@ class ChannelArgs {
       return &rep_;
     }
 
-    std::string ToString() const;
+    absl::string_view ToString(std::list<std::string>& backing) const;
 
     grpc_arg MakeCArg(const char* name) const;
 

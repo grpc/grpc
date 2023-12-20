@@ -418,7 +418,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
             latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<SubchannelList>(
-      Ref(), addresses, latest_update_args_.args);
+      RefAsSubclass<PickFirst>(), addresses, latest_update_args_.args);
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE and request re-resolution.
   if (latest_pending_subchannel_list_->size() == 0) {
@@ -1030,7 +1030,7 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
       gpr_log(GPR_INFO, "[PF %p] starting health watch", p);
     }
     auto watcher = std::make_unique<HealthWatcher>(
-        p->Ref(DEBUG_LOCATION, "HealthWatcher"));
+        p->RefAsSubclass<PickFirst>(DEBUG_LOCATION, "HealthWatcher"));
     p->health_watcher_ = watcher.get();
     auto health_data_watcher = MakeHealthCheckWatcher(
         p->work_serializer(), subchannel_list_->args_, std::move(watcher));

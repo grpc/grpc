@@ -109,6 +109,15 @@ class TlsCredentialsOptions {
 
   void set_crl_provider(std::shared_ptr<CrlProvider> crl_provider);
 
+  // Sets the minimum TLS version that will be negotiated during the TLS
+  // handshake. If not set, the underlying SSL library will use TLS v1.2.
+  // @param tls_version: The minimum TLS version.
+  void set_min_tls_version(grpc_tls_version tls_version);
+  // Sets the maximum TLS version that will be negotiated during the TLS
+  // handshake. If not set, the underlying SSL library will use TLS v1.3.
+  // @param tls_version: The maximum TLS version.
+  void set_max_tls_version(grpc_tls_version tls_version);
+
   // ----- Getters for member fields ----
   // Returns a deep copy of the internal c options. The caller takes ownership
   // of the returned pointer. This function shall be used only internally.

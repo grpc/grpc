@@ -411,6 +411,8 @@ auto ConnectedChannelStream::RecvMessages(
             }
             if (cancel_on_error && !status.ok()) {
               incoming_messages.CloseWithError();
+            } else {
+              incoming_messages.Close();
             }
             return Immediate(LoopCtl<absl::Status>(status.status()));
           };
@@ -857,6 +859,7 @@ grpc_channel_filter MakeConnectedFilter() {
   return {
       connected_channel_start_transport_stream_op_batch,
       make_call_promise != nullptr ? make_call_wrapper : nullptr,
+      /* init_call: */ nullptr,
       connected_channel_start_transport_op,
       sizeof(call_data),
       connected_channel_init_call_elem,
@@ -882,8 +885,8 @@ grpc_channel_filter MakeConnectedFilter() {
 }
 
 ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
-    Transport* transport, CallArgs call_args, NextPromiseFactory) {
-  return transport->client_transport()->MakeCallPromise(std::move(call_args));
+    Transport*, CallArgs, NextPromiseFactory) {
+  Crash("unimplemented");
 }
 
 const grpc_channel_filter kPromiseBasedTransportFilter =

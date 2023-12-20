@@ -610,10 +610,9 @@ void OldWeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
     scheduler_ = std::move(scheduler);
   }
   // Start timer.
-  WeakRefCountedPtr<Picker> self = WeakRef();
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
       config_->weight_update_period(),
-      [self = std::move(self),
+      [self = WeakRefAsSubclass<Picker>(),
        work_serializer = wrr_->work_serializer()]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
@@ -673,7 +672,7 @@ void OldWeightedRoundRobin::ResetBackoffLocked() {
 
 absl::Status OldWeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   global_stats().IncrementWrrUpdates();
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<WeightedRoundRobinConfig>();
   std::shared_ptr<EndpointAddressesIterator> addresses;
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
@@ -757,8 +756,9 @@ OldWeightedRoundRobin::GetOrCreateWeight(const grpc_resolved_address& address) {
     auto weight = it->second->RefIfNonZero();
     if (weight != nullptr) return weight;
   }
-  auto weight =
-      MakeRefCounted<AddressWeight>(Ref(DEBUG_LOCATION, "AddressWeight"), *key);
+  auto weight = MakeRefCounted<AddressWeight>(
+      RefAsSubclass<OldWeightedRoundRobin>(DEBUG_LOCATION, "AddressWeight"),
+      *key);
   address_weight_map_.emplace(*key, weight.get());
   return weight;
 }
@@ -833,7 +833,8 @@ void OldWeightedRoundRobin::WeightedRoundRobinSubchannelList::
     }
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, absl::Status(),
-        MakeRefCounted<Picker>(p->Ref(), this));
+        MakeRefCounted<Picker>(p->RefAsSubclass<OldWeightedRoundRobin>(),
+                               this));
   } else if (num_connecting_ > 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO, "[WRR %p] reporting CONNECTING with subchannel list %p",
@@ -1038,7 +1039,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
    public:
     class WrrEndpoint : public Endpoint {
      public:
-      WrrEndpoint(RefCountedPtr<WrrEndpointList> endpoint_list,
+      WrrEndpoint(RefCountedPtr<EndpointList> endpoint_list,
                   const EndpointAddresses& addresses, const ChannelArgs& args,
                   std::shared_ptr<WorkSerializer> work_serializer)
           : Endpoint(std::move(endpoint_list)),
@@ -1086,7 +1087,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
                            ? "WrrEndpointList"
                            : nullptr) {
       Init(endpoints, args,
-           [&](RefCountedPtr<WrrEndpointList> endpoint_list,
+           [&](RefCountedPtr<EndpointList> endpoint_list,
                const EndpointAddresses& addresses, const ChannelArgs& args) {
              return MakeOrphanable<WrrEndpoint>(
                  std::move(endpoint_list), addresses, args,
@@ -1452,10 +1453,9 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
     gpr_log(GPR_INFO, "[WRR %p picker %p] scheduling timer for %s", wrr_.get(),
             this, config_->weight_update_period().ToString().c_str());
   }
-  WeakRefCountedPtr<Picker> self = WeakRef();
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
       config_->weight_update_period(),
-      [self = std::move(self),
+      [self = WeakRefAsSubclass<Picker>(),
        work_serializer = wrr_->work_serializer()]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
@@ -1515,7 +1515,7 @@ void WeightedRoundRobin::ResetBackoffLocked() {
 
 absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   global_stats().IncrementWrrUpdates();
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<WeightedRoundRobinConfig>();
   std::shared_ptr<EndpointAddressesIterator> addresses;
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
@@ -1560,8 +1560,8 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[WRR %p] replacing previous pending endpoint list %p",
             this, latest_pending_endpoint_list_.get());
   }
-  latest_pending_endpoint_list_ =
-      MakeOrphanable<WrrEndpointList>(Ref(), addresses.get(), args.args);
+  latest_pending_endpoint_list_ = MakeOrphanable<WrrEndpointList>(
+      RefAsSubclass<WeightedRoundRobin>(), addresses.get(), args.args);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_endpoint_list_->size() == 0) {
@@ -1599,7 +1599,7 @@ WeightedRoundRobin::GetOrCreateWeight(
     if (weight != nullptr) return weight;
   }
   auto weight = MakeRefCounted<EndpointWeight>(
-      Ref(DEBUG_LOCATION, "EndpointWeight"), key);
+      RefAsSubclass<WeightedRoundRobin>(DEBUG_LOCATION, "EndpointWeight"), key);
   endpoint_weight_map_.emplace(key, weight.get());
   return weight;
 }
@@ -1759,7 +1759,7 @@ void WeightedRoundRobin::WrrEndpointList::
     }
     wrr->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, absl::Status(),
-        MakeRefCounted<Picker>(wrr->Ref(), this));
+        MakeRefCounted<Picker>(wrr->RefAsSubclass<WeightedRoundRobin>(), this));
   } else if (num_connecting_ > 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO, "[WRR %p] reporting CONNECTING with endpoint list %p",

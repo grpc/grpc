@@ -356,7 +356,8 @@ void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
     MutexLock lock(&mu_);
     connected_subchannel_ = subchannel_->connected_subchannel();
   }
-  auto connectivity_watcher = MakeRefCounted<ConnectivityWatcher>(WeakRef());
+  auto connectivity_watcher =
+      MakeRefCounted<ConnectivityWatcher>(WeakRefAsSubclass<HealthProducer>());
   connectivity_watcher_ = connectivity_watcher.get();
   subchannel_->WatchConnectivityState(std::move(connectivity_watcher));
 }
@@ -387,7 +388,8 @@ void HealthProducer::AddWatcher(
         health_checkers_.emplace(*health_check_service_name, nullptr).first;
     auto& health_checker = it->second;
     if (health_checker == nullptr) {
-      health_checker = MakeOrphanable<HealthChecker>(WeakRef(), it->first);
+      health_checker = MakeOrphanable<HealthChecker>(
+          WeakRefAsSubclass<HealthProducer>(), it->first);
     }
     health_checker->AddWatcherLocked(watcher);
   }
@@ -456,7 +458,10 @@ void HealthWatcher::SetSubchannel(Subchannel* subchannel) {
   subchannel->GetOrAddDataProducer(
       HealthProducer::Type(),
       [&](Subchannel::DataProducerInterface** producer) {
-        if (*producer != nullptr) producer_ = (*producer)->RefIfNonZero();
+        if (*producer != nullptr) {
+          producer_ =
+              (*producer)->RefIfNonZero().TakeAsSubclass<HealthProducer>();
+        }
         if (producer_ == nullptr) {
           producer_ = MakeRefCounted<HealthProducer>();
           *producer = producer_.get();

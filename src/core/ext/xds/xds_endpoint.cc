@@ -142,8 +142,9 @@ std::string XdsEndpointResource::ToString() const {
     priority_strings.emplace_back(
         absl::StrCat("priority ", i, ": ", priority.ToString()));
   }
-  return absl::StrCat("priorities=[", absl::StrJoin(priority_strings, ", "),
-                      "], drop_config=", drop_config->ToString());
+  return absl::StrCat(
+      "priorities=[", absl::StrJoin(priority_strings, ", "), "], drop_config=",
+      drop_config == nullptr ? "<null>" : drop_config->ToString());
 }
 
 //
@@ -161,7 +162,8 @@ void MaybeLogClusterLoadAssignment(
         envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(
             context.symtab);
     char buf[10240];
-    upb_TextEncode(cla, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(cla), msg_type, nullptr,
+                   0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] ClusterLoadAssignment: %s",
             context.client, buf);
   }
@@ -447,7 +449,6 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
     }
   }
   // policy
-  eds_resource->drop_config = MakeRefCounted<XdsEndpointResource::DropConfig>();
   const auto* policy = envoy_config_endpoint_v3_ClusterLoadAssignment_policy(
       cluster_load_assignment);
   if (policy != nullptr) {
@@ -456,6 +457,10 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
     const auto* const* drop_overload =
         envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_drop_overloads(
             policy, &drop_size);
+    if (drop_size > 0) {
+      eds_resource->drop_config =
+          MakeRefCounted<XdsEndpointResource::DropConfig>();
+    }
     for (size_t i = 0; i < drop_size; ++i) {
       ValidationErrors::ScopedField field(
           &errors, absl::StrCat(".drop_overloads[", i, "]"));

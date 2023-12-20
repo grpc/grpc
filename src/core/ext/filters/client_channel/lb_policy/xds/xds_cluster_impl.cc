@@ -371,7 +371,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
   // Handle EDS drops.
   const std::string* drop_category;
-  if (drop_config_->ShouldDrop(&drop_category)) {
+  if (drop_config_ != nullptr && drop_config_->ShouldDrop(&drop_category)) {
     if (drop_stats_ != nullptr) drop_stats_->AddCallDropped(*drop_category);
     return PickResult::Drop(absl::UnavailableError(
         absl::StrCat("EDS-configured drop: ", *drop_category)));
@@ -476,7 +476,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   const bool is_initial_update = config_ == nullptr;
   auto old_config = std::move(config_);
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<XdsClusterImplLbConfig>();
   // On initial update, create drop stats.
   if (is_initial_update) {
     if (config_->lrs_load_reporting_server().has_value()) {
@@ -550,8 +550,8 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper =
-      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+  lb_policy_args.channel_control_helper = std::make_unique<Helper>(
+      RefAsSubclass<XdsClusterImplLb>(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_xds_cluster_impl_lb_trace);
@@ -705,7 +705,7 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
   // Parse "dropCategories" field.
   {
     auto value = LoadJsonObjectField<std::vector<DropCategory>>(
-        json.object(), args, "dropCategories", errors);
+        json.object(), args, "dropCategories", errors, /*required=*/false);
     if (value.has_value()) {
       drop_config_ = MakeRefCounted<XdsEndpointResource::DropConfig>();
       for (size_t i = 0; i < value->size(); ++i) {
