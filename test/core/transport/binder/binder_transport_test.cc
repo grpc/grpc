@@ -51,8 +51,8 @@ class BinderTransportTest : public ::testing::Test {
             std::make_unique<NiceMock<MockBinder>>(),
             std::make_shared<
                 grpc::experimental::binder::UntrustedSecurityPolicy>())) {
-    auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
-    gbt->wire_writer = std::make_unique<MockWireWriter>();
+    auto* transport = reinterpret_cast<BinderTransport*>(transport_);
+    transport->wire_writer = std::make_unique<MockWireWriter>();
     GRPC_STREAM_REF_INIT(&ref_, 1, nullptr, nullptr, "phony ref");
   }
 
@@ -524,8 +524,8 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadata) {
   MakeRecvInitialMetadata recv_initial_metadata(&op);
 
   const Metadata kInitialMetadata = kDefaultMetadata;
-  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
-  gbt->transport_stream_receiver->NotifyRecvInitialMetadata(gbs->tx_code,
+  auto* transport = reinterpret_cast<BinderTransport*>(transport_);
+  transport->transport_stream_receiver->NotifyRecvInitialMetadata(gbs->tx_code,
                                                             kInitialMetadata);
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -544,10 +544,10 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadataWithMethodRef) {
 
   MakeRecvInitialMetadata recv_initial_metadata(&op);
 
-  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
+  auto* transport = reinterpret_cast<BinderTransport*>(transport_);
   const Metadata kInitialMetadataWithMethodRef =
       AppendMethodRef(kDefaultMetadata, kDefaultMethodRef);
-  gbt->transport_stream_receiver->NotifyRecvInitialMetadata(
+  transport->transport_stream_receiver->NotifyRecvInitialMetadata(
       gbs->tx_code, kInitialMetadataWithMethodRef);
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -566,9 +566,9 @@ TEST_F(BinderTransportTest, PerformRecvMessage) {
 
   MakeRecvMessage recv_message(&op);
 
-  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
+  auto* transport = reinterpret_cast<BinderTransport*>(transport_);
   const std::string kMessage = kDefaultMessage;
-  gbt->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kMessage);
+  transport->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kMessage);
 
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -587,9 +587,9 @@ TEST_F(BinderTransportTest, PerformRecvTrailingMetadata) {
   MakeRecvTrailingMetadata recv_trailing_metadata(&op);
 
   const Metadata kTrailingMetadata = kDefaultMetadata;
-  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
+  auto* transport = reinterpret_cast<BinderTransport*>(transport_);
   constexpr int kStatus = kDefaultStatus;
-  gbt->transport_stream_receiver->NotifyRecvTrailingMetadata(
+  transport->transport_stream_receiver->NotifyRecvTrailingMetadata(
       gbs->tx_code, kTrailingMetadata, kStatus);
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -610,18 +610,18 @@ TEST_F(BinderTransportTest, PerformRecvAll) {
   MakeRecvMessage recv_message(&op);
   MakeRecvTrailingMetadata recv_trailing_metadata(&op);
 
-  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
+  auto* transport = reinterpret_cast<BinderTransport*>(transport_);
   const Metadata kInitialMetadataWithMethodRef =
       AppendMethodRef(kDefaultMetadata, kDefaultMethodRef);
-  gbt->transport_stream_receiver->NotifyRecvInitialMetadata(
+  transport->transport_stream_receiver->NotifyRecvInitialMetadata(
       gbs->tx_code, kInitialMetadataWithMethodRef);
 
   const std::string kMessage = kDefaultMessage;
-  gbt->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kMessage);
+  transport->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kMessage);
 
   Metadata trailing_metadata = kDefaultMetadata;
   constexpr int kStatus = kDefaultStatus;
-  gbt->transport_stream_receiver->NotifyRecvTrailingMetadata(
+  transport->transport_stream_receiver->NotifyRecvTrailingMetadata(
       gbs->tx_code, trailing_metadata, kStatus);
   PerformStreamOp(gbs, &op);
   grpc_core::ExecCtx::Get()->Flush();
@@ -681,16 +681,16 @@ TEST_F(BinderTransportTest, PerformAllOps) {
   // callbacks get scheduled.
   grpc_core::ExecCtx::Get()->Flush();
 
-  auto* gbt = reinterpret_cast<BinderTransport*>(transport_);
+  auto* transport = reinterpret_cast<BinderTransport*>(transport_);
   const Metadata kRecvInitialMetadata =
       AppendMethodRef(kDefaultMetadata, kDefaultMethodRef);
-  gbt->transport_stream_receiver->NotifyRecvInitialMetadata(
+  transport->transport_stream_receiver->NotifyRecvInitialMetadata(
       gbs->tx_code, kRecvInitialMetadata);
   const std::string kRecvMessage = kDefaultMessage;
-  gbt->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kRecvMessage);
+  transport->transport_stream_receiver->NotifyRecvMessage(gbs->tx_code, kRecvMessage);
   const Metadata kRecvTrailingMetadata = kDefaultMetadata;
   constexpr int kStatus = 0x1234;
-  gbt->transport_stream_receiver->NotifyRecvTrailingMetadata(
+  transport->transport_stream_receiver->NotifyRecvTrailingMetadata(
       gbs->tx_code, kRecvTrailingMetadata, kStatus);
 
   grpc_core::ExecCtx::Get()->Flush();
