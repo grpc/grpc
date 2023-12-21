@@ -311,7 +311,7 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   WaitForBackend(DEBUG_LOCATION, 1);
 }
 
-MATCHER(VerifyServiceLabels, "") {
+MATCHER(VerifyCsmServiceLabels, "") {
   using OptionalLabelComponent =
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
   auto iter = arg.find(OptionalLabelComponent::kXdsServiceLabels);
@@ -328,9 +328,7 @@ MATCHER(VerifyServiceLabels, "") {
   return false;
 }
 
-static grpc_core::FakeClientCallTracer* g_fake_client_call_tracer;
-
-TEST_P(CdsTest, VerifyServiceLabelsParsing) {
+TEST_P(CdsTest, VerifyCsmServiceLabelsParsing) {
   CreateAndStartBackends(1);
   // Populates EDS resources.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -349,18 +347,20 @@ TEST_P(CdsTest, VerifyServiceLabelsParsing) {
   cluster.mutable_eds_cluster_config()->set_service_name(kDefaultClusterName);
   balancer_->ads_service()->SetCdsResource(cluster);
 
-  // Injects a fake client call tracer and registers the fake stats plugin.
-  std::vector<std::string> annotation_logger;
-  g_fake_client_call_tracer =
-      new grpc_core::FakeClientCallTracer(&annotation_logger);
-  grpc_core::InjectGlobalFakeClientCallTracer(g_fake_client_call_tracer);
+  // Injects a fake client call tracer factory.
+  grpc_core::FakeClientCallTracerFactory fake_client_call_tracer_factory;
+  ChannelArguments channel_args;
+  channel_args.SetPointer(GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY,
+                          &fake_client_call_tracer_factory);
+  ResetStub(/*failover_timeout_ms=*/0, &channel_args);
 
   // Sends an RPC and verifies that the service labels are recorded in the fake
   // client call tracer.
   EXPECT_TRUE(SendRpc().ok());
-  EXPECT_THAT(g_fake_client_call_tracer->GetLastCallAttemptTracer()
+  EXPECT_THAT(fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
+                  ->GetLastCallAttemptTracer()
                   ->GetoptionalLabels(),
-              VerifyServiceLabels());
+              VerifyCsmServiceLabels());
 }
 
 //

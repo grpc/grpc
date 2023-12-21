@@ -22,7 +22,6 @@
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/tcp_tracer.h"
-#include "src/core/lib/gprpp/examine_stack.h"
 
 namespace grpc_core {
 
@@ -34,16 +33,7 @@ class FakeClientCallTracer : public ClientCallTracer {
     explicit FakeClientCallAttemptTracer(
         std::vector<std::string>* annotation_logger)
         : annotation_logger_(annotation_logger) {}
-    ~FakeClientCallAttemptTracer() override {
-      std::cout << "~FakeClientCallAttemptTracer: " << this << "\n";
-      absl::optional<std::string> stacktrace =
-          grpc_core::GetCurrentStackTrace();
-      if (stacktrace.has_value()) {
-        gpr_log(GPR_DEBUG, "%s", stacktrace->c_str());
-      } else {
-        gpr_log(GPR_DEBUG, "stacktrace unavailable");
-      }
-    }
+    ~FakeClientCallAttemptTracer() override {}
     void RecordSendInitialMetadata(
         grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
@@ -74,11 +64,6 @@ class FakeClientCallTracer : public ClientCallTracer {
                            std::shared_ptr<std::map<std::string, std::string>>
                                service_labels) override {
       optional_labels_.emplace(component, *service_labels);
-      for (const auto& pair : optional_labels_) {
-        for (const auto& ipair : pair.second) {
-          std::cout << ipair.first << ", " << ipair.second << "\n";
-        }
-      }
     }
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
@@ -122,8 +107,26 @@ class FakeClientCallTracer : public ClientCallTracer {
       call_attempt_tracers_;
 };
 
-void InjectGlobalFakeClientCallTracer(
-    FakeClientCallTracer* fake_client_call_tracer);
+#define GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY \
+  "grpc.testing.inject_fake_client_call_tracer_factory"
+
+class FakeClientCallTracerFactory {
+ public:
+  grpc_core::FakeClientCallTracer* CreateFakeClientCallTracer() {
+    fake_client_call_tracers_.emplace_back(
+        new grpc_core::FakeClientCallTracer(&annotation_logger_));
+    return fake_client_call_tracers_.back().get();
+  }
+
+  grpc_core::FakeClientCallTracer* GetLastFakeClientCallTracer() {
+    return fake_client_call_tracers_.back().get();
+  }
+
+ private:
+  std::vector<std::string> annotation_logger_;
+  std::vector<std::unique_ptr<grpc_core::FakeClientCallTracer>>
+      fake_client_call_tracers_;
+};
 
 class FakeStatsClientFilter : public ChannelFilter {
  public:
@@ -134,6 +137,11 @@ class FakeStatsClientFilter : public ChannelFilter {
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  explicit FakeStatsClientFilter(
+      FakeClientCallTracerFactory* fake_client_call_tracer_factory);
+  FakeClientCallTracerFactory* const fake_client_call_tracer_factory_;
 };
 
 void RegisterFakeStatsPlugin();
