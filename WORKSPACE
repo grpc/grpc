@@ -48,7 +48,7 @@ android_workspace()
 # be invoked by binder transport implementation through JNI.
 local_repository(
     name = "binder_transport_android_helper",
-    path = "./src/core/ext/transport/binder/java",
+    path = "src/core/ext/transport/binder/java",
 )
 
 # Prevents bazel's '...' expansion from including the following folder.
