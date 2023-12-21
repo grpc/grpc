@@ -783,7 +783,7 @@ async def _schedule_rpc_coro(object rpc_coro,
 
 
 async def _handle_rpc(list generic_handlers, tuple interceptors,
-                      RPCState rpc_state, object loop):
+                      RPCState rpc_state, object loop, bint concurrency_exceeded):
     cdef object method_handler
     # Finds the method handler (application logic)
     method_handler = await _find_method_handler(
@@ -798,6 +798,18 @@ async def _handle_rpc(list generic_handlers, tuple interceptors,
             rpc_state,
             StatusCode.unimplemented,
             'Method not found!',
+            _IMMUTABLE_EMPTY_METADATA,
+            rpc_state.create_send_initial_metadata_op_if_not_sent(),
+            loop
+        )
+        return
+
+    if concurrency_exceeded:
+        rpc_state.status_sent = True
+        await _send_error_status_from_server(
+            rpc_state,
+            StatusCode.resource_exhausted,
+            'Concurrent RPC limit exceeded!',
             _IMMUTABLE_EMPTY_METADATA,
             rpc_state.create_send_initial_metadata_op_if_not_sent(),
             loop
@@ -854,13 +866,17 @@ cdef class _ConcurrentRpcLimiter:
         self._active_rpcs = 0
         self._active_rpcs_condition = asyncio.Condition()
         self._loop = loop
+        self._concurrency_exceeded = False
 
     async def check_before_request_call(self):
         await self._active_rpcs_condition.acquire()
         try:
-            predicate = lambda: self._active_rpcs < self._maximum_concurrent_rpcs
-            await self._active_rpcs_condition.wait_for(predicate)
-            self._active_rpcs += 1
+            # predicate = lambda: self._active_rpcs < self._maximum_concurrent_rpcs
+            # await self._active_rpcs_condition.wait_for(predicate)
+            if self._active_rpcs >= self._maximum_concurrent_rpcs:
+                self._concurrency_exceeded = True
+            else:
+                self._active_rpcs += 1
         finally:
             self._active_rpcs_condition.release()
 
@@ -868,6 +884,8 @@ cdef class _ConcurrentRpcLimiter:
         await self._active_rpcs_condition.acquire()
         try:
             self._active_rpcs -= 1
+            if self._active_rpcs < self._maximum_concurrent_rpcs:
+                self._concurrency_exceeded = False
             self._active_rpcs_condition.notify()
         finally:
             self._active_rpcs_condition.release()
@@ -973,7 +991,8 @@ cdef class AioServer:
             rpc_coro = _handle_rpc(self._generic_handlers,
                                    self._interceptors,
                                    rpc_state,
-                                   self._loop)
+                                   self._loop,
+                                   self._limiter._concurrency_exceeded)
 
             # Fires off a task that listens on the cancellation from client.
             rpc_task = self._loop.create_task(
