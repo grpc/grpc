@@ -173,11 +173,11 @@ build_rules = {
 }
 exec((bazel_file), build_rules)
 grpc_dep_names_set = set(_GRPC_DEP_NAMES)
-names_and_urls_set = set(names_and_urls.keys())
-if grpc_dep_names_set != names_and_urls_set:
+names_set = set(names_and_urls.keys())
+if grpc_dep_names_set != names_set:
     print("Differences detected between GRPC_DEP_NAMES and grpc_deps.bzl")
-    print("- GRPC_DEP_NAMES only:", grpc_dep_names_set - names_and_urls_set)
-    print("- grpc_deps.bzl only:", names_and_urls_set - grpc_dep_names_set)
+    print("- GRPC_DEP_NAMES only:", grpc_dep_names_set - names_set)
+    print("- grpc_deps.bzl only:", names_set - grpc_dep_names_set)
     sys.exit(1)
 
 # There are some "bazel-only" deps that are exceptions to this sanity check,
