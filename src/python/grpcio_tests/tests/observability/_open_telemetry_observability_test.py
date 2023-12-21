@@ -18,7 +18,7 @@ import logging
 import os
 import sys
 import time
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 import unittest
 
 import grpc_observability
@@ -44,11 +44,18 @@ OTEL_EXPORT_INTERVAL_S = 0.5
 class OTelMetricExporter(MetricExporter):
     """Implementation of :class:`MetricExporter` that export metrics to the
     provided metric_list.
+
+    all_metrics: A dict which key is grpc_observability._opentelemetry_measures.Metric.name,
+        value is a list of labels recorded for that metric.
+        An example item of this dict:
+            {"grpc.client.attempt.started":
+              [{'grpc.method': 'test/UnaryUnary', 'grpc.target': 'localhost:42517'},
+               {'grpc.method': 'other', 'grpc.target': 'localhost:42517'}]}
     """
 
     def __init__(
         self,
-        all_metrics: Dict[str, Any],
+        all_metrics: Dict[str, List],
         preferred_temporality: Dict[type, AggregationTemporality] = None,
         preferred_aggregation: Dict[
             type, "opentelemetry.sdk.metrics.view.Aggregation"
@@ -79,10 +86,10 @@ class OTelMetricExporter(MetricExporter):
         for resource_metric in metrics_data.resource_metrics:
             for scope_metric in resource_metric.scope_metrics:
                 for metric in scope_metric.metrics:
-                    self.all_metrics["name"].add(metric.name)
                     for data_point in metric.data.data_points:
-                        for key, value in data_point.attributes.items():
-                            self.all_metrics["label"][key].add(value)
+                        self.all_metrics[metric.name].append(
+                            data_point.attributes
+                        )
 
 
 class BaseTestOpenTelemetryPlugin(grpc_observability.OpenTelemetryPlugin):
@@ -99,9 +106,7 @@ class BaseTestOpenTelemetryPlugin(grpc_observability.OpenTelemetryPlugin):
 )
 class OpenTelemetryObservabilityTest(unittest.TestCase):
     def setUp(self):
-        self.all_metrics = dict()
-        self.all_metrics["name"] = set()
-        self.all_metrics["label"] = defaultdict(set)
+        self.all_metrics = defaultdict(list)
         otel_exporter = OTelMetricExporter(self.all_metrics)
         reader = PeriodicExportingMetricReader(
             exporter=otel_exporter,
@@ -125,6 +130,20 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             _test_server.unary_unary_call(port=port)
 
         self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics)
+
+    def testRecordUnaryUnaryClientOnly(self):
+        server, port = _test_server.start_server()
+        self._server = server
+
+        otel_plugin = BaseTestOpenTelemetryPlugin(self._provider)
+        with grpc_observability.OpenTelemetryObservability(
+            plugins=[otel_plugin]
+        ):
+            _test_server.unary_unary_call(port=port)
+
+        self._validate_metrics_exist(self.all_metrics)
+        self._validate_client_metrics_names(self.all_metrics)
 
     def testRecordUnaryStream(self):
         otel_plugin = BaseTestOpenTelemetryPlugin(self._provider)
@@ -137,6 +156,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             _test_server.unary_stream_call(port=port)
 
         self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics)
 
     def testRecordStreamUnary(self):
         otel_plugin = BaseTestOpenTelemetryPlugin(self._provider)
@@ -149,6 +169,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             _test_server.stream_unary_call(port=port)
 
         self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics)
 
     def testRecordStreamStream(self):
         otel_plugin = BaseTestOpenTelemetryPlugin(self._provider)
@@ -161,11 +182,17 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             _test_server.stream_stream_call(port=port)
 
         self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics)
 
     def testTargetAttributeFilter(self):
-        # If target label contains 'localhost', is should be replaced with 'other'.
+        main_server, main_port = _test_server.start_server()
+        backup_server, backup_port = _test_server.start_server()
+        main_target = f"localhost:{main_port}"
+        backup_target = f"localhost:{backup_port}"
+
+        # Replace target label with 'other' for main_server.
         def target_filter(target: str) -> bool:
-            if "localhost" in target:
+            if main_target in target:
                 return False
             return True
 
@@ -175,17 +202,26 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         with grpc_observability.OpenTelemetryObservability(
             plugins=[otel_plugin]
         ):
-            server, port = _test_server.start_server()
-            self._server = server
-            _test_server.unary_unary_call(port=port)
+            _test_server.unary_unary_call(port=main_port)
+            _test_server.unary_unary_call(port=backup_port)
 
         self._validate_metrics_exist(self.all_metrics)
-        target_values = self.all_metrics["label"].get(GRPC_TARGET_LABEL)
+        self._validate_client_metrics_names(self.all_metrics)
+
+        target_values = set()
+        for label_list in self.all_metrics.values():
+            for labels in label_list:
+                if GRPC_TARGET_LABEL in labels:
+                    target_values.add(labels[GRPC_TARGET_LABEL])
         self.assertTrue(GRPC_OTHER_LABEL_VALUE in target_values)
+        self.assertTrue(backup_target in target_values)
+
+        main_server.stop(0)
+        backup_server.stop(0)
 
     def testMethodAttributeFilter(self):
-        # If method label contains 'UnaryUnaryFiltered', is should be replaced with 'other'.
-        FILTERED_METHOD_NAME = "UnaryUnaryFiltered"
+        # If method name is 'test/UnaryUnaryFiltered', is should be replaced with 'other'.
+        FILTERED_METHOD_NAME = "test/UnaryUnaryFiltered"
 
         def method_filter(method: str) -> bool:
             if FILTERED_METHOD_NAME in method:
@@ -204,7 +240,12 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             _test_server.unary_unary_filtered_call(port=port)
 
         self._validate_metrics_exist(self.all_metrics)
-        method_values = self.all_metrics["label"].get(GRPC_METHOD_LABEL)
+        self._validate_all_metrics_names(self.all_metrics)
+        method_values = set()
+        for label_list in self.all_metrics.values():
+            for labels in label_list:
+                if GRPC_METHOD_LABEL in labels:
+                    method_values.add(labels[GRPC_METHOD_LABEL])
         self.assertTrue(GRPC_OTHER_LABEL_VALUE in method_values)
         self.assertTrue(FILTERED_METHOD_NAME not in method_values)
 
@@ -228,17 +269,29 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
     def _validate_metrics_exist(self, all_metrics: Dict[str, Any]) -> None:
         # Sleep here to make sure we have at least one export from OTel MetricExporter.
         self.assert_eventually(
-            lambda: len(all_metrics["name"]) > 1,
+            lambda: len(all_metrics.keys()) > 1,
             message=lambda: f"No metrics was exported",
         )
-        self._validate_metrics_names(all_metrics["name"])
 
-    def _validate_metrics_names(self, metric_names: Set[str]) -> None:
+    def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:
+        self._validate_server_metrics_names(metric_names)
+        self._validate_client_metrics_names(metric_names)
+
+    def _validate_server_metrics_names(self, metric_names: Set[str]) -> None:
         for base_metric in _open_telemetry_measures.base_metrics():
-            self.assertTrue(
-                base_metric.name in metric_names,
-                msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
-            )
+            if "grpc.server" in base_metric.name:
+                self.assertTrue(
+                    base_metric.name in metric_names,
+                    msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
+                )
+
+    def _validate_client_metrics_names(self, metric_names: Set[str]) -> None:
+        for base_metric in _open_telemetry_measures.base_metrics():
+            if "grpc.client" in base_metric.name:
+                self.assertTrue(
+                    base_metric.name in metric_names,
+                    msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
+                )
 
 
 if __name__ == "__main__":

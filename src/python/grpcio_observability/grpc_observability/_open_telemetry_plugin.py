@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import abc
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Dict, Iterable, List, Optional, Union
 
 # pytype: disable=pyi-error
 import grpc
@@ -160,18 +160,17 @@ class _OpenTelemetryPlugin:
         return stats_data.name in self._metric_to_recorder.keys()
 
     def _record_stats_data(self, stats_data: StatsData) -> None:
-        # Actually record the data using MeterProvider.
-        if not self._plugin.target_attribute_filter(
-            stats_data.labels.get(GRPC_TARGET_LABEL, "")
-        ):
+        recorder = self._metric_to_recorder[stats_data.name]
+
+        target = stats_data.labels.get(GRPC_TARGET_LABEL, "")
+        if not self._plugin.target_attribute_filter(target):
             # Filter target name.
             stats_data.labels[GRPC_TARGET_LABEL] = GRPC_OTHER_LABEL_VALUE
-        if not self._plugin.generic_method_attribute_filter(
-            stats_data.labels.get(GRPC_METHOD_LABEL, "")
-        ):
+
+        method = stats_data.labels.get(GRPC_METHOD_LABEL, "")
+        if not self._plugin.generic_method_attribute_filter(method):
             # Filter method name.
             stats_data.labels[GRPC_METHOD_LABEL] = GRPC_OTHER_LABEL_VALUE
-        recorder = self._metric_to_recorder[stats_data.name]
 
         value = 0
         if stats_data.measure_double:
