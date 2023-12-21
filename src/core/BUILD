@@ -33,7 +33,7 @@ package(
 # the top-level BUILD file that have not yet been moved here. Should go away
 # once the transition is complete.
 exports_files(
-    glob(["**"]),
+    glob(["**"], exclude=["ext/transport/binder/java/**"]),
     visibility = ["//:__subpackages__"],
 )
 
