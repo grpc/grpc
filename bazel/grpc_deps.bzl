@@ -323,7 +323,7 @@ def grpc_deps():
             strip_prefix = "benchmark-344117638c8ff7e239044fd0fa7085839fc03021",
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/344117638c8ff7e239044fd0fa7085839fc03021.tar.gz",
-                "https://github.com/google/benchmark/archive/344117638c8ff7e239044fd0fa7085839fc03021.tar.gz"
+                "https://github.com/google/benchmark/archive/344117638c8ff7e239044fd0fa7085839fc03021.tar.gz",
             ],
         )
 
