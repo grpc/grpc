@@ -85,8 +85,9 @@ constexpr absl::string_view kPeerCanonicalServiceAttribute =
     "csm.remote_workload_canonical_service";
 // Type values used by Google Cloud Resource Detector
 constexpr absl::string_view kGkeType = "gcp_kubernetes_engine";
+constexpr absl::string_view kGceType = "gcp_compute_engine";
 
-enum class GcpResourceType : std::uint8_t { kGke, kUnknown };
+enum class GcpResourceType : std::uint8_t { kGke, kGce, kUnknown };
 
 // A minimal class for helping with the information we need from the xDS
 // bootstrap file for GSM Observability reasons.
@@ -147,6 +148,8 @@ std::string GetXdsBootstrapContents() {
 GcpResourceType StringToGcpResourceType(absl::string_view type) {
   if (type == kGkeType) {
     return GcpResourceType::kGke;
+  } else if (type == kGceType) {
+    return GcpResourceType::kGce;
   }
   return GcpResourceType::kUnknown;
 }
@@ -221,17 +224,34 @@ class MeshLabelsIterable : public LabelsIterable {
                                 struct_pb.struct_pb, kMetadataExchangeTypeKey,
                                 struct_pb.arena.ptr()));
     }
-    // Only handle GKE type for now.
+    if (pos_ == local_labels_size + 2) {
+      return std::make_pair(
+          kPeerCanonicalServiceAttribute,
+          GetStringValueFromUpbStruct(struct_pb.struct_pb,
+                                      kMetadataExchangeCanonicalServiceKey,
+                                      struct_pb.arena.ptr()));
+    }
     switch (remote_type_) {
       case GcpResourceType::kGke:
-        if ((pos_ - 2 - local_labels_size) >= kGkeAttributeList.size()) {
+        if ((pos_ - 3 - local_labels_size) >= kGkeAttributeList.size()) {
           return absl::nullopt;
         }
         return std::make_pair(
-            kGkeAttributeList[pos_ - 2 - local_labels_size].otel_attribute,
+            kGkeAttributeList[pos_ - 3 - local_labels_size].otel_attribute,
             GetStringValueFromUpbStruct(
                 struct_pb.struct_pb,
-                kGkeAttributeList[pos_ - 2 - local_labels_size]
+                kGkeAttributeList[pos_ - 3 - local_labels_size]
+                    .metadata_attribute,
+                struct_pb.arena.ptr()));
+      case GcpResourceType::kGce:
+        if ((pos_ - 3 - local_labels_size) >= kGceAttributeList.size()) {
+          return absl::nullopt;
+        }
+        return std::make_pair(
+            kGceAttributeList[pos_ - 3 - local_labels_size].otel_attribute,
+            GetStringValueFromUpbStruct(
+                struct_pb.struct_pb,
+                kGceAttributeList[pos_ - 3 - local_labels_size]
                     .metadata_attribute,
                 struct_pb.arena.ptr()));
       case GcpResourceType::kUnknown:
@@ -259,7 +279,7 @@ class MeshLabelsIterable : public LabelsIterable {
   }
 
  private:
-  struct GkeAttribute {
+  struct RemoteAttribute {
     absl::string_view otel_attribute;
     absl::string_view metadata_attribute;
   };
@@ -269,16 +289,21 @@ class MeshLabelsIterable : public LabelsIterable {
     google_protobuf_Struct* struct_pb = nullptr;
   };
 
-  static constexpr std::array<GkeAttribute, 6> kGkeAttributeList = {
-      GkeAttribute{kPeerWorkloadNameAttribute,
-                   kMetadataExchangeWorkloadNameKey},
-      GkeAttribute{kPeerNamespaceNameAttribute,
-                   kMetadataExchangeNamespaceNameKey},
-      GkeAttribute{kPeerClusterNameAttribute, kMetadataExchangeClusterNameKey},
-      GkeAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
-      GkeAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
-      GkeAttribute{kPeerCanonicalServiceAttribute,
-                   kMetadataExchangeCanonicalServiceKey},
+  static constexpr std::array<RemoteAttribute, 5> kGkeAttributeList = {
+      RemoteAttribute{kPeerWorkloadNameAttribute,
+                      kMetadataExchangeWorkloadNameKey},
+      RemoteAttribute{kPeerNamespaceNameAttribute,
+                      kMetadataExchangeNamespaceNameKey},
+      RemoteAttribute{kPeerClusterNameAttribute,
+                      kMetadataExchangeClusterNameKey},
+      RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
+      RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
+  };
+  static constexpr std::array<RemoteAttribute, 3> kGceAttributeList = {
+      RemoteAttribute{kPeerWorkloadNameAttribute,
+                      kMetadataExchangeWorkloadNameKey},
+      RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
+      RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
   };
 
   StructPb& GetDecodedMetadata() const {
@@ -315,8 +340,10 @@ class MeshLabelsIterable : public LabelsIterable {
   uint32_t pos_ = 0;
 };
 
-constexpr std::array<MeshLabelsIterable::GkeAttribute, 6>
+constexpr std::array<MeshLabelsIterable::RemoteAttribute, 5>
     MeshLabelsIterable::kGkeAttributeList;
+constexpr std::array<MeshLabelsIterable::RemoteAttribute, 3>
+    MeshLabelsIterable::kGceAttributeList;
 
 }  // namespace
 
@@ -359,13 +386,13 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
       opentelemetry::sdk::resource::SemanticConventions::kK8sNamespaceName);
   absl::string_view cluster_name_value = GetStringValueFromAttributeMap(
       map, opentelemetry::sdk::resource::SemanticConventions::kK8sClusterName);
-  absl::string_view cluster_location_value = GetStringValueFromAttributeMap(
+  absl::string_view location_value = GetStringValueFromAttributeMap(
       map, opentelemetry::sdk::resource::SemanticConventions::
-               kCloudRegion);  // if regional
-  if (cluster_location_value == "unknown") {
-    cluster_location_value = GetStringValueFromAttributeMap(
+               kCloudAvailabilityZone);  // if zonal
+  if (location_value == "unknown") {
+    location_value = GetStringValueFromAttributeMap(
         map, opentelemetry::sdk::resource::SemanticConventions::
-                 kCloudAvailabilityZone);  // if zonal
+                 kCloudRegion);  // if regional
   }
   absl::string_view project_id_value = GetStringValueFromAttributeMap(
       map, opentelemetry::sdk::resource::SemanticConventions::kCloudAccountId);
@@ -374,7 +401,8 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   // Create metadata to be sent over wire.
   AddStringKeyValueToStructProto(metadata, kMetadataExchangeTypeKey, type_value,
                                  arena.ptr());
-  // Only handle GKE for now
+  AddStringKeyValueToStructProto(metadata, kMetadataExchangeCanonicalServiceKey,
+                                 canonical_service_value, arena.ptr());
   if (type_value == kGkeType) {
     AddStringKeyValueToStructProto(metadata, kMetadataExchangeWorkloadNameKey,
                                    workload_name_value, arena.ptr());
@@ -383,12 +411,16 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
     AddStringKeyValueToStructProto(metadata, kMetadataExchangeClusterNameKey,
                                    cluster_name_value, arena.ptr());
     AddStringKeyValueToStructProto(metadata, kMetadataExchangeLocationKey,
-                                   cluster_location_value, arena.ptr());
+                                   location_value, arena.ptr());
     AddStringKeyValueToStructProto(metadata, kMetadataExchangeProjectIdKey,
                                    project_id_value, arena.ptr());
-    AddStringKeyValueToStructProto(metadata,
-                                   kMetadataExchangeCanonicalServiceKey,
-                                   canonical_service_value, arena.ptr());
+  } else if (type_value == kGceType) {
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeWorkloadNameKey,
+                                   workload_name_value, arena.ptr());
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeLocationKey,
+                                   location_value, arena.ptr());
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeProjectIdKey,
+                                   project_id_value, arena.ptr());
   }
 
   size_t output_length;
