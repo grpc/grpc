@@ -172,9 +172,13 @@ build_rules = {
     "Label": lambda a: None,
 }
 exec((bazel_file), build_rules)
-for name in _GRPC_DEP_NAMES:
-    assert name in list(names_and_urls.keys())
-assert len(_GRPC_DEP_NAMES) == len(list(names_and_urls.keys()))
+grpc_dep_names_set = set(_GRPC_DEP_NAMES)
+names_set = set(names_and_urls.keys())
+if grpc_dep_names_set != names_set:
+    print("Differences detected between GRPC_DEP_NAMES and grpc_deps.bzl")
+    print("- GRPC_DEP_NAMES only:", grpc_dep_names_set - names_set)
+    print("- grpc_deps.bzl only:", names_set - grpc_dep_names_set)
+    sys.exit(1)
 
 # There are some "bazel-only" deps that are exceptions to this sanity check,
 # we don't require that there is a corresponding git module for these.
