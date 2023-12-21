@@ -28,6 +28,7 @@ absl::StatusOr<FakeStatsClientFilter> FakeStatsClientFilter::Create(
   auto* fake_client_call_tracer_factory =
       args.GetPointer<FakeClientCallTracerFactory>(
           GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY);
+  GPR_ASSERT(fake_client_call_tracer_factory != nullptr);
   return FakeStatsClientFilter(fake_client_call_tracer_factory);
 }
 
@@ -35,9 +36,6 @@ grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
 FakeStatsClientFilter::MakeCallPromise(
     grpc_core::CallArgs call_args,
     grpc_core::NextPromiseFactory next_promise_factory) {
-  if (fake_client_call_tracer_factory_ == nullptr) {
-    return next_promise_factory(std::move(call_args));
-  }
   FakeClientCallTracer* client_call_tracer =
       fake_client_call_tracer_factory_->CreateFakeClientCallTracer();
   if (client_call_tracer != nullptr) {
@@ -60,8 +58,14 @@ FakeStatsClientFilter::FakeStatsClientFilter(
 void RegisterFakeStatsPlugin() {
   grpc_core::CoreConfiguration::RegisterBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) mutable {
-        builder->channel_init()->RegisterFilter(
-            GRPC_CLIENT_CHANNEL, &FakeStatsClientFilter::kFilter);
+        builder->channel_init()
+            ->RegisterFilter(GRPC_CLIENT_CHANNEL,
+                             &FakeStatsClientFilter::kFilter)
+            .If([](const grpc_core::ChannelArgs& args) {
+              return args.GetPointer<FakeClientCallTracerFactory>(
+                         GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY) !=
+                     nullptr;
+            });
       });
 }
 
