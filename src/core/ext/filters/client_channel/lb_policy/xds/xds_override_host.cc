@@ -143,10 +143,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     void CancelConnectivityStateWatch(
         ConnectivityStateWatcherInterface* watcher) override;
 
-    grpc_connectivity_state connectivity_state() {
-      return connectivity_state_.load();
-    }
-
     RefCountedStringValue address_list() const {
       return subchannel_entry_->address_list();
     }
@@ -178,14 +174,11 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     void UpdateConnectivityState(grpc_connectivity_state state,
                                  absl::Status status);
 
-    ConnectivityStateWatcher* watcher_;
     RefCountedPtr<SubchannelEntry> subchannel_entry_;
+    ConnectivityStateWatcher* watcher_;
     std::set<std::unique_ptr<ConnectivityStateWatcherInterface>,
              PtrLessThan<ConnectivityStateWatcherInterface>>
         watchers_;
-// FIXME: move to SubchannelEntry
-    std::atomic<grpc_connectivity_state> connectivity_state_ = {
-        GRPC_CHANNEL_IDLE};
   };
 
   class SubchannelEntry : public InternallyRefCounted<SubchannelEntry> {
@@ -197,6 +190,13 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     void Orphan() override {
       subchannel_ = WeakRefCountedPtr<SubchannelWrapper>(nullptr);
       Unref();
+    }
+
+    grpc_connectivity_state connectivity_state() const {
+      return connectivity_state_.load();
+    }
+    void set_connectivity_state(grpc_connectivity_state state) {
+      connectivity_state_.store(state);
     }
 
     void SetSubchannel(SubchannelWrapper* subchannel) {
@@ -245,6 +245,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
    private:
     RefCountedPtr<XdsOverrideHostLb> policy_;
+    std::atomic<grpc_connectivity_state> connectivity_state_{
+        GRPC_CHANNEL_IDLE};
 // FIXME: add lock annotations for all three!
     absl::variant<WeakRefCountedPtr<SubchannelWrapper>,
                   RefCountedPtr<SubchannelWrapper>>
@@ -402,7 +404,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
         }
         continue;
       }
-      auto connectivity_state = subchannel->connectivity_state();
+      auto connectivity_state = it->second->connectivity_state();
       if (connectivity_state == GRPC_CHANNEL_READY) {
         // Found a READY subchannel.  Pass back the actual address list
         // and return the subchannel.
@@ -808,7 +810,7 @@ void XdsOverrideHostLb::SubchannelWrapper::Orphan() {
 
 void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
     grpc_connectivity_state state, absl::Status status) {
-  connectivity_state_.store(state);
+  subchannel_entry_->set_connectivity_state(state);
   // Sending connectivity state notifications to the watchers may cause the set
   // of watchers to change, so we can't be iterating over the set of watchers
   // while we send the notifications
