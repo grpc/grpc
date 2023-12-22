@@ -183,7 +183,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     std::set<std::unique_ptr<ConnectivityStateWatcherInterface>,
              PtrLessThan<ConnectivityStateWatcherInterface>>
         watchers_;
-// FIXME: move to SubchannelEntry
+    // FIXME: move to SubchannelEntry
     std::atomic<grpc_connectivity_state> connectivity_state_ = {
         GRPC_CHANNEL_IDLE};
   };
@@ -380,7 +380,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
       RefCountedPtr<SubchannelWrapper> subchannel;
       auto it = policy_->subchannel_map_.find(address);
       if (it != policy_->subchannel_map_.end()) {
-        subchannel = it->second.GetSubchannel()
+        subchannel = it->second->GetSubchannel()
                          ->RefIfNonZero()
                          .TakeAsSubclass<SubchannelWrapper>();
       }
@@ -392,12 +392,12 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
         continue;
       }
       if (!override_host_health_status_set_.Contains(
-              it->second.eds_health_status())) {
+              it->second->eds_health_status())) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
           gpr_log(GPR_INFO,
                   "Subchannel %s health status is not overridden (%s)",
                   std::string(address).c_str(),
-                  it->second.eds_health_status().ToString());
+                  it->second->eds_health_status().ToString());
         }
         continue;
       }
@@ -409,7 +409,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
           gpr_log(GPR_INFO, "Picker override found READY subchannel %s",
                   std::string(address).c_str());
         }
-        override_host_attr->set_actual_address_list(it->second.address_list());
+        override_host_attr->set_actual_address_list(it->second->address_list());
         return PickResult::Complete(subchannel->wrapped_subchannel());
       } else if (connectivity_state == GRPC_CHANNEL_IDLE) {
         if (idle_subchannel == nullptr) idle_subchannel = std::move(subchannel);
@@ -696,10 +696,10 @@ void XdsOverrideHostLb::UpdateAddressMap(
           gpr_log(GPR_INFO, "[xds_override_host_lb %p] adding map key %s", this,
                   address.c_str());
         }
-        it = subchannel_map_.emplace(
-            address,
-            MakeOrphanable<SubchannelEntry>(address_info.eds_health_status))
-            .first;
+        it = subchannel_map_
+                 .emplace(address, MakeOrphanable<SubchannelEntry>(
+                                       address_info.eds_health_status))
+                 .first;
       } else {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
           gpr_log(GPR_INFO,
@@ -823,10 +823,9 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
   bool update_picker = false;
   {
     MutexLock lock(&policy()->subchannel_map_mu_);
-    update_picker =
-        subchannel_entry_->GetSubchannel() == this &&
-        subchannel_entry_->eds_health_status().status() ==
-            XdsHealthStatus::kDraining;
+    update_picker = subchannel_entry_->GetSubchannel() == this &&
+                    subchannel_entry_->eds_health_status().status() ==
+                        XdsHealthStatus::kDraining;
   }
   if (update_picker) policy()->MaybeUpdatePickerLocked();
 }
