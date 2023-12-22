@@ -464,7 +464,7 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
     // Populate the address list in the override host attribute so that
     // the StatefulSession filter can set the cookie.
     if (override_host_attr != nullptr) {
-// FIXME: this needs the lock!
+      MutexLock lock(&wrapper->policy()->subchannel_map_mu_);
       override_host_attr->set_actual_address_list(wrapper->address_list());
     }
     // Unwrap the subchannel.
