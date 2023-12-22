@@ -1,0 +1,786 @@
+// Copyright 2016 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// A ServiceConfig is supplied when a service is deployed. It mostly contains
+// parameters for how clients that connect to the service should behave (for
+// example, the load balancing policy to use to pick between service replicas).
+//
+// The configuration options provided here act as overrides to automatically
+// chosen option values. Service owners should be conservative in specifying
+// options as the system is likely to choose better values for these options in
+// the vast majority of cases. In other words, please specify a configuration
+// option only if you really have to, and avoid copy-paste inclusion of configs.
+//
+// Note that gRPC uses the service config in JSON form, not in protobuf
+// form.  This proto definition is intended to help document the schema but
+// will not actually be used directly by gRPC.
+//
+// Copied from https://github.com/grpc/grpc-proto/blob/master/grpc/service_config/service_config.proto 
+// for testing purposes
+
+syntax = "proto3";
+
+package grpc.service_config;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/code.proto";
+import "src/proto/grpc/lookup/v1/rls_config.proto";
+
+option java_package = "io.grpc.serviceconfig";
+option java_multiple_files = true;
+option java_outer_classname = "ServiceConfigProto";
+
+// Configuration for a method.
+message MethodConfig {
+  // The names of the methods to which this configuration applies.
+  // - MethodConfig without names (empty list) will be skipped.
+  // - Each name entry must be unique across the entire ServiceConfig.
+  // - If the 'method' field is empty, this MethodConfig specifies the defaults
+  //   for all methods for the specified service.
+  // - If the 'service' field is empty, the 'method' field must be empty, and
+  //   this MethodConfig specifies the default for all methods (it's the default
+  //   config).
+  //
+  // When determining which MethodConfig to use for a given RPC, the most
+  // specific match wins. For example, let's say that the service config
+  // contains the following MethodConfig entries:
+  //
+  // method_config { name { } ... }
+  // method_config { name { service: "MyService" } ... }
+  // method_config { name { service: "MyService" method: "Foo" } ... }
+  //
+  // MyService/Foo will use the third entry, because it exactly matches the
+  // service and method name. MyService/Bar will use the second entry, because
+  // it provides the default for all methods of MyService. AnotherService/Baz
+  // will use the first entry, because it doesn't match the other two.
+  //
+  // In JSON representation, value "", value `null`, and not present are the
+  // same. The following are the same Name:
+  // - { "service": "s" }
+  // - { "service": "s", "method": null }
+  // - { "service": "s", "method": "" }
+  message Name {
+    string service = 1;  // Required. Includes proto package name.
+    string method = 2;
+  }
+  repeated Name name = 1;
+
+  // Whether RPCs sent to this method should wait until the connection is
+  // ready by default. If false, the RPC will abort immediately if there is
+  // a transient failure connecting to the server. Otherwise, gRPC will
+  // attempt to connect until the deadline is exceeded.
+  //
+  // The value specified via the gRPC client API will override the value
+  // set here. However, note that setting the value in the client API will
+  // also affect transient errors encountered during name resolution, which
+  // cannot be caught by the value here, since the service config is
+  // obtained by the gRPC client via name resolution.
+  google.protobuf.BoolValue wait_for_ready = 2;
+
+  // The default timeout in seconds for RPCs sent to this method. This can be
+  // overridden in code. If no reply is received in the specified amount of
+  // time, the request is aborted and a DEADLINE_EXCEEDED error status
+  // is returned to the caller.
+  //
+  // The actual deadline used will be the minimum of the value specified here
+  // and the value set by the application via the gRPC client API.  If either
+  // one is not set, then the other will be used.  If neither is set, then the
+  // request has no deadline.
+  google.protobuf.Duration timeout = 3;
+
+  // The maximum allowed payload size for an individual request or object in a
+  // stream (client->server) in bytes. The size which is measured is the
+  // serialized payload after per-message compression (but before stream
+  // compression) in bytes. This applies both to streaming and non-streaming
+  // requests.
+  //
+  // The actual value used is the minimum of the value specified here and the
+  // value set by the application via the gRPC client API.  If either one is
+  // not set, then the other will be used.  If neither is set, then the
+  // built-in default is used.
+  //
+  // If a client attempts to send an object larger than this value, it will not
+  // be sent and the client will see a ClientError.
+  // Note that 0 is a valid value, meaning that the request message
+  // must be empty.
+  google.protobuf.UInt32Value max_request_message_bytes = 4;
+
+  // The maximum allowed payload size for an individual response or object in a
+  // stream (server->client) in bytes. The size which is measured is the
+  // serialized payload after per-message compression (but before stream
+  // compression) in bytes. This applies both to streaming and non-streaming
+  // requests.
+  //
+  // The actual value used is the minimum of the value specified here and the
+  // value set by the application via the gRPC client API.  If either one is
+  // not set, then the other will be used.  If neither is set, then the
+  // built-in default is used.
+  //
+  // If a server attempts to send an object larger than this value, it will not
+  // be sent, and a ServerError will be sent to the client instead.
+  // Note that 0 is a valid value, meaning that the response message
+  // must be empty.
+  google.protobuf.UInt32Value max_response_message_bytes = 5;
+
+  // The retry policy for outgoing RPCs.
+  message RetryPolicy {
+    // The maximum number of RPC attempts, including the original attempt.
+    //
+    // This field is required and must be greater than 1.
+    // Any value greater than 5 will be treated as if it were 5.
+    uint32 max_attempts = 1;
+
+    // Exponential backoff parameters. The initial retry attempt will occur at
+    // random(0, initial_backoff). In general, the nth attempt will occur at
+    // random(0,
+    //   min(initial_backoff*backoff_multiplier**(n-1), max_backoff)).
+    // Required. Must be greater than zero.
+    google.protobuf.Duration initial_backoff = 2;
+    // Required. Must be greater than zero.
+    google.protobuf.Duration max_backoff = 3;
+    float backoff_multiplier = 4;  // Required. Must be greater than zero.
+
+    // The set of status codes which may be retried.
+    //
+    // This field is required and must be non-empty.
+    repeated google.rpc.Code retryable_status_codes = 5;
+  }
+
+  // The hedging policy for outgoing RPCs. Hedged RPCs may execute more than
+  // once on the server, so only idempotent methods should specify a hedging
+  // policy.
+  message HedgingPolicy {
+    // The hedging policy will send up to max_requests RPCs.
+    // This number represents the total number of all attempts, including
+    // the original attempt.
+    //
+    // This field is required and must be greater than 1.
+    // Any value greater than 5 will be treated as if it were 5.
+    uint32 max_attempts = 1;
+
+    // The first RPC will be sent immediately, but the max_requests-1 subsequent
+    // hedged RPCs will be sent at intervals of every hedging_delay. Set this
+    // to 0 to immediately send all max_requests RPCs.
+    google.protobuf.Duration hedging_delay = 2;
+
+    // The set of status codes which indicate other hedged RPCs may still
+    // succeed. If a non-fatal status code is returned by the server, hedged
+    // RPCs will continue. Otherwise, outstanding requests will be canceled and
+    // the error returned to the client application layer.
+    //
+    // This field is optional.
+    repeated google.rpc.Code non_fatal_status_codes = 3;
+  }
+
+  // Only one of retry_policy or hedging_policy may be set. If neither is set,
+  // RPCs will not be retried or hedged.
+  oneof retry_or_hedging_policy {
+    RetryPolicy retry_policy = 6;
+    HedgingPolicy hedging_policy = 7;
+  }
+}
+
+// Configuration for pick_first LB policy.
+message PickFirstConfig {
+  // If set to true, instructs the LB policy to randomly shuffle the list of
+  // addresses received from the name resolver before attempting to connect to
+  // them.
+  bool shuffle_address_list = 1;
+}
+
+// Configuration for round_robin LB policy.
+message RoundRobinConfig {}
+
+// Configuration for weighted_round_robin LB policy.
+message WeightedRoundRobinLbConfig {
+  // Whether to enable out-of-band utilization reporting collection from
+  // the endpoints.  By default, per-request utilization reporting is used.
+  google.protobuf.BoolValue enable_oob_load_report = 1;
+
+  // Load reporting interval to request from the server.  Note that the
+  // server may not provide reports as frequently as the client requests.
+  // Used only when enable_oob_load_report is true.  Default is 10 seconds.
+  google.protobuf.Duration oob_reporting_period = 2;
+
+  // A given endpoint must report load metrics continuously for at least
+  // this long before the endpoint weight will be used.  This avoids
+  // churn when the set of endpoint addresses changes.  Takes effect
+  // both immediately after we establish a connection to an endpoint and
+  // after weight_expiration_period has caused us to stop using the most
+  // recent load metrics.  Default is 10 seconds.
+  google.protobuf.Duration blackout_period = 3;
+
+  // If a given endpoint has not reported load metrics in this long,
+  // then we stop using the reported weight.  This ensures that we do
+  // not continue to use very stale weights.  Once we stop using a stale
+  // value, if we later start seeing fresh reports again, the
+  // blackout_period applies.  Defaults to 3 minutes.
+  google.protobuf.Duration weight_expiration_period = 4;
+
+  // How often endpoint weights are recalculated. Values less than 100ms are
+  // capped at 100ms. Default is 1 second.
+  google.protobuf.Duration weight_update_period = 5;
+
+  // The multiplier used to adjust endpoint weights with the error rate
+  // calculated as eps/qps. Configuration is rejected if this value is negative.
+  // Default is 1.0.
+  google.protobuf.FloatValue error_utilization_penalty = 6;
+}
+
+// Configuration for outlier_detection LB policy
+message OutlierDetectionLoadBalancingConfig {
+  // The time interval between ejection analysis sweeps. This can result in
+  // both new ejections as well as addresses being returned to service. Defaults
+  // to 10000ms or 10s.
+  google.protobuf.Duration interval = 1;
+
+  // The base time that as address is ejected for. The real time is equal to the
+  // base time multiplied by the number of times the address has been ejected.
+  // Defaults to 30000ms or 30s.
+  google.protobuf.Duration base_ejection_time = 2;
+
+  // The maximum time that an address is ejected for. If not specified, the default value (300000ms or 300s) or
+  // the base_ejection_time value is applied, whatever is larger.
+  google.protobuf.Duration max_ejection_time = 3;
+
+  // The maximum % of an address list that can be ejected due to outlier
+  // detection. Defaults to 10% but will eject at least one address regardless of the value.
+  google.protobuf.UInt32Value max_ejection_percent = 4;
+
+  // Parameters for the success rate ejection algorithm.
+  // This algorithm monitors the request success rate for all endpoints and
+  // ejects individual endpoints whose success rates are statistical outliers.
+  message SuccessRateEjection {
+    // This factor is used to determine the ejection threshold for success rate
+    // outlier ejection. The ejection threshold is the difference between the
+    // mean success rate, and the product of this factor and the standard
+    // deviation of the mean success rate: mean - (stdev *
+    // success_rate_stdev_factor). This factor is divided by a thousand to get a
+    // double. That is, if the desired factor is 1.9, the runtime value should
+    // be 1900. Defaults to 1900.
+    google.protobuf.UInt32Value stdev_factor = 1;
+
+    // The % chance that an address will be actually ejected when an outlier status
+    // is detected through success rate statistics. This setting can be used to
+    // disable ejection or to ramp it up slowly. Defaults to 100.
+    google.protobuf.UInt32Value enforcement_percentage = 2;
+
+    // The number of addresses that must have enough request volume to
+    // detect success rate outliers. If the number of addresses is less than this
+    // setting, outlier detection via success rate statistics is not performed
+    // for any addresses. Defaults to 5.
+    google.protobuf.UInt32Value minimum_hosts = 3;
+
+    // The minimum number of total requests that must be collected in one
+    // interval (as defined by the interval duration above) to include this address
+    // in success rate based outlier detection. If the volume is lower than this
+    // setting, outlier detection via success rate statistics is not performed
+    // for that address. Defaults to 100.
+    google.protobuf.UInt32Value request_volume = 4;
+  }
+
+  // Parameters for the failure percentage algorithm.
+  // This algorithm ejects individual endpoints whose failure rate is greater than
+  // some threshold, independently of any other endpoint.
+  message FailurePercentageEjection {
+    // The failure percentage to use when determining failure percentage-based outlier detection. If
+    // the failure percentage of a given address is greater than or equal to this value, it will be
+    // ejected. Defaults to 85.
+    google.protobuf.UInt32Value threshold = 1;
+
+    // The % chance that an address will be actually ejected when an outlier status is detected through
+    // failure percentage statistics. This setting can be used to disable ejection or to ramp it up
+    // slowly. Defaults to 100.
+    google.protobuf.UInt32Value enforcement_percentage = 2;
+
+    // The minimum number of addresses in order to perform failure percentage-based ejection.
+    // If the total number of addresses is less than this value, failure percentage-based
+    // ejection will not be performed. Defaults to 5.
+    google.protobuf.UInt32Value minimum_hosts = 3;
+
+    // The minimum number of total requests that must be collected in one interval (as defined by the
+    // interval duration above) to perform failure percentage-based ejection for this address. If the
+    // volume is lower than this setting, failure percentage-based ejection will not be performed for
+    // this host. Defaults to 50.
+    google.protobuf.UInt32Value request_volume = 4;
+  }
+
+  // If set, success rate ejections will be performed
+  SuccessRateEjection success_rate_ejection = 5;
+  
+  // If set, failure rate ejections will be performed
+  FailurePercentageEjection failure_percentage_ejection = 6;
+
+  // The config for the child policy
+  repeated LoadBalancingConfig child_policy = 13;
+}
+
+// Configuration for grpclb LB policy.
+message GrpcLbConfig {
+  // Optional.  What LB policy to use for routing between the backend
+  // addresses.  If unset, defaults to round_robin.
+  // Currently, the only supported values are round_robin and pick_first.
+  // Note that this will be used both in balancer mode and in fallback mode.
+  // Multiple LB policies can be specified; clients will iterate through
+  // the list in order and stop at the first policy that they support.
+  repeated LoadBalancingConfig child_policy = 1;
+  // Optional.  If specified, overrides the name of the service to be sent to
+  // the balancer.
+  string service_name = 2;
+  // Optional. The timeout in seconds for receiving the server list from the LB
+  // server. Defaults to 10s.
+  google.protobuf.Duration initial_fallback_timeout = 3;
+}
+
+// Configuration for priority LB policy.
+message PriorityLoadBalancingPolicyConfig {
+  // A map of name to child policy configuration.
+  // The names are used to allow the priority policy to update
+  // existing child policies instead of creating new ones every
+  // time it receives a config update.
+  message Child {
+    repeated LoadBalancingConfig config = 1;
+
+    // If true, will ignore reresolution requests from this child.
+    bool ignore_reresolution_requests = 2;
+  }
+  map<string, Child> children = 1;
+
+  // A list of child names in decreasing priority order
+  // (i.e., first element is the highest priority).
+  repeated string priorities = 2;
+}
+
+// Configuration for weighted_target LB policy.
+message WeightedTargetLoadBalancingPolicyConfig {
+  message Target {
+    uint32 weight = 1;
+    repeated LoadBalancingConfig child_policy = 2;
+  }
+  map<string, Target> targets = 1;
+}
+
+// Config for RLS LB policy.
+message RlsLoadBalancingPolicyConfig {
+  grpc.lookup.v1.RouteLookupConfig route_lookup_config = 1;
+
+  // Service config to use for the RLS channel.
+  ServiceConfig route_lookup_channel_service_config = 2;
+
+  repeated LoadBalancingConfig child_policy = 3;
+  // Field name to add to child policy config to contain the target name.
+  string child_policy_config_target_field_name = 4;
+}
+
+// Configuration for xds_cluster_manager_experimental LB policy.
+message XdsClusterManagerLoadBalancingPolicyConfig {
+  message Child {
+    repeated LoadBalancingConfig child_policy = 1;
+  }
+  map<string, Child> children = 1;
+}
+
+// Configuration for the cds LB policy.
+message CdsConfig {
+  string cluster = 1;  // Required.
+}
+
+// Represents an xDS server.
+message XdsServer {
+  string server_uri = 1 [json_name = "server_uri"];  // Required.
+
+  message ChannelCredentials {
+    string type = 1;  // Required.
+    google.protobuf.Struct config = 2;  // Optional JSON config.
+  }
+  // A list of channel creds to use.  The first supported type will be used.
+  repeated ChannelCredentials channel_creds = 2 [json_name = "channel_creds"];
+
+  // A repeated list of server features.
+  repeated google.protobuf.Value server_features = 3
+      [json_name = "server_features"];
+}
+
+// Configuration for xds_cluster_resolver LB policy.
+message XdsClusterResolverLoadBalancingPolicyConfig {
+  // Describes a discovery mechanism instance.
+  // For EDS or LOGICAL_DNS clusters, there will be exactly one
+  // DiscoveryMechanism, which will describe the cluster of the parent
+  // CDS policy.
+  // For aggregate clusters, there will be one DiscoveryMechanism for each
+  // underlying cluster.
+  message DiscoveryMechanism {
+    // Cluster name.
+    string cluster = 1;
+
+    // LRS server to send load reports to.
+    // If not present, load reporting will be disabled.
+    // If set to the empty string, load reporting will be sent to the same
+    // server that we obtained CDS data from.
+    // DEPRECATED: Use new lrs_load_reporting_server field instead.
+    google.protobuf.StringValue lrs_load_reporting_server_name = 2
+        [deprecated=true];
+
+    // LRS server to send load reports to.
+    // If not present, load reporting will be disabled.
+    // Supercedes lrs_load_reporting_server_name field.
+    XdsServer lrs_load_reporting_server = 7;
+
+    // Maximum number of outstanding requests can be made to the upstream
+    // cluster.  Default is 1024.
+    google.protobuf.UInt32Value max_concurrent_requests = 3;
+
+    enum Type {
+      UNKNOWN = 0;
+      EDS = 1;
+      LOGICAL_DNS = 2;
+    };
+    Type type = 4;
+
+    // For type EDS only.
+    // EDS service name, as returned in CDS.
+    // May be unset if not specified in CDS.
+    string eds_service_name = 5;
+
+    // For type LOGICAL_DNS only.
+    // DNS name to resolve in "host:port" form.
+    string dns_hostname = 6;
+
+    // The configuration for outlier_detection child policies
+    // Within this message, the child_policy field will be ignored
+    OutlierDetectionLoadBalancingConfig outlier_detection = 8;
+
+    // The configuration for xds_override_host child policy
+    repeated OverrideHostLoadBalancingPolicyConfig.HealthStatus override_host_status = 9;
+  }
+
+  // Ordered list of discovery mechanisms.
+  // Must have at least one element.
+  // Results from each discovery mechanism are concatenated together in
+  // successive priorities.
+  repeated DiscoveryMechanism discovery_mechanisms = 1;
+
+  // xDS LB policy. Will be used as the child config of the xds_cluster_impl LB policy. 
+  repeated LoadBalancingConfig xds_lb_policy = 2;
+}
+
+// Configuration for xds_cluster_impl LB policy.
+message XdsClusterImplLoadBalancingPolicyConfig {
+  // Cluster name.  Required.
+  string cluster = 1;
+
+  // EDS service name.
+  // Not set if cluster is not an EDS cluster or if it does not
+  // specify an EDS service name.
+  string eds_service_name = 2;
+
+  // Server to send load reports to.
+  // If unset, no load reporting is done.
+  // If set to empty string, load reporting will be sent to the same
+  // server as we are getting xds data from.
+  // DEPRECATED: Use new lrs_load_reporting_server field instead.
+  google.protobuf.StringValue lrs_load_reporting_server_name = 3
+      [deprecated=true];
+
+  // LRS server to send load reports to.
+  // If not present, load reporting will be disabled.
+  // Supercedes lrs_load_reporting_server_name field.
+  XdsServer lrs_load_reporting_server = 7;
+
+  // Maximum number of outstanding requests can be made to the upstream cluster.
+  // Default is 1024.
+  google.protobuf.UInt32Value max_concurrent_requests = 4;
+
+  // Drop configuration.
+  message DropCategory {
+    string category = 1;
+    uint32 requests_per_million = 2;
+  }
+  repeated DropCategory drop_categories = 5;
+
+  // Child policy.
+  repeated LoadBalancingConfig child_policy = 6;
+}
+
+// Configuration for eds LB policy.
+message EdsLoadBalancingPolicyConfig {
+  // Cluster name.  Required.
+  string cluster = 1;
+
+  // EDS service name, as returned in CDS.
+  // May be unset if not specified in CDS.
+  string eds_service_name = 2;
+
+  // Server to send load reports to.
+  // If unset, no load reporting is done.
+  // If set to empty string, load reporting will be sent to the same
+  // server as we are getting xds data from.
+  google.protobuf.StringValue lrs_load_reporting_server_name = 3;
+
+  // Locality-picking policy.
+  // This policy's config is expected to be in the format used
+  // by the weighted_target policy.  Note that the config should include
+  // an empty value for the "targets" field; that empty value will be
+  // replaced by one that is dynamically generated based on the EDS data.
+  // Optional; defaults to "weighted_target".
+  repeated LoadBalancingConfig locality_picking_policy = 4;
+
+  // Endpoint-picking policy.
+  // This will be configured as the policy for each child in the
+  // locality-policy's config.
+  // Optional; defaults to "round_robin".
+  repeated LoadBalancingConfig endpoint_picking_policy = 5;
+}
+
+// Configuration for ring_hash LB policy.
+message RingHashLoadBalancingConfig {
+  // A client-side option will cap these values to 4096.  If either of these
+  // values are greater than the client-side cap, they will be treated
+  // as the client-side cap value.
+  uint64 min_ring_size = 1;  // Optional, defaults to 1024, max 8M.
+  uint64 max_ring_size = 2;  // Optional, defaults to 4096, max 8M.
+}
+
+// Configuration for lrs LB policy.
+message LrsLoadBalancingPolicyConfig {
+  // Cluster name.  Required.
+  string cluster_name = 1;
+
+  // EDS service name, as returned in CDS.
+  // May be unset if not specified in CDS.
+  string eds_service_name = 2;
+
+  // Server to send load reports to.  Required.
+  // If set to empty string, load reporting will be sent to the same
+  // server as we are getting xds data from.
+  string lrs_load_reporting_server_name = 3;
+
+  // The locality for which this policy will report load.  Required.
+  message Locality {
+    string region = 1;
+    string zone = 2;
+    string subzone = 3;
+  }
+  Locality locality = 4;
+
+  // Endpoint-picking policy.
+  repeated LoadBalancingConfig child_policy = 5;
+}
+
+// Configuration for the xds_wrr_locality load balancing policy.
+message XdsWrrLocalityLoadBalancingPolicyConfig {
+  repeated LoadBalancingConfig child_policy = 1;
+}
+
+// Configuration for the least_request LB policy.
+message LeastRequestLocalityLoadBalancingPolicyConfig {
+  uint64 choice_count = 1;
+}
+
+
+// Configuration for the override_host LB policy.
+message OverrideHostLoadBalancingPolicyConfig {
+  enum HealthStatus {
+    UNKNOWN = 0;
+    HEALTHY = 1;
+    DRAINING = 3;
+  }
+
+  // valid health status for hosts that are considered when using
+  // xds_override_host_experimental policy.
+  // Default is [UNKNOWN, HEALTHY]
+  repeated HealthStatus override_host_status = 1;
+
+  repeated LoadBalancingConfig child_policy = 2;
+}
+
+// Configuration for xds LB policy.
+message XdsConfig {
+  // Name of balancer to connect to.
+  string balancer_name = 1 [deprecated = true];
+  // Optional.  What LB policy to use for intra-locality routing.
+  // If unset, will use whatever algorithm is specified by the balancer.
+  // Multiple LB policies can be specified; clients will iterate through
+  // the list in order and stop at the first policy that they support.
+  repeated LoadBalancingConfig child_policy = 2;
+  // Optional.  What LB policy to use in fallback mode.  If not
+  // specified, defaults to round_robin.
+  // Multiple LB policies can be specified; clients will iterate through
+  // the list in order and stop at the first policy that they support.
+  repeated LoadBalancingConfig fallback_policy = 3;
+  // Optional.  Name to use in EDS query.  If not present, defaults to
+  // the server name from the target URI.
+  string eds_service_name = 4;
+  // LRS server to send load reports to.
+  // If not present, load reporting will be disabled.
+  // If set to the empty string, load reporting will be sent to the same
+  // server that we obtained CDS data from.
+  google.protobuf.StringValue lrs_load_reporting_server_name = 5;
+}
+
+// Selects LB policy and provides corresponding configuration.
+//
+// In general, all instances of this field should be repeated. Clients will
+// iterate through the list in order and stop at the first policy that they
+// support.  This allows the service config to specify custom policies that may
+// not be known to all clients.
+//
+// - If the config for the first supported policy is invalid, the whole service
+//   config is invalid.
+// - If the list doesn't contain any supported policy, the whole service config
+//   is invalid.
+message LoadBalancingConfig {
+  // Exactly one LB policy may be configured.
+  oneof policy {
+    // For each new LB policy supported by gRPC, a new field must be added
+    // here.  The field's name must be the LB policy name and its type is a
+    // message that provides whatever configuration parameters are needed
+    // by the LB policy.  The configuration message will be passed to the
+    // LB policy when it is instantiated on the client.
+    //
+    // If the LB policy does not require any configuration parameters, the
+    // message for that LB policy may be empty.
+    //
+    // Note that if an LB policy contains another nested LB policy
+    // (e.g., a gslb policy picks the cluster and then delegates to
+    // a round_robin policy to pick the backend within that cluster), its
+    // configuration message may include a nested instance of the
+    // LoadBalancingConfig message to configure the nested LB policy.
+
+    PickFirstConfig pick_first = 4 [json_name = "pick_first"];
+
+    RoundRobinConfig round_robin = 1 [json_name = "round_robin"];
+
+    WeightedRoundRobinLbConfig weighted_round_robin = 20
+        [json_name = "weighted_round_robin"];
+
+    // gRPC lookaside load balancing.
+    // This will eventually be deprecated by the new xDS-based local
+    // balancing policy.
+    GrpcLbConfig grpclb = 3;
+
+    // REMAINING POLICIES ARE EXPERIMENTAL -- DO NOT USE
+
+    PriorityLoadBalancingPolicyConfig priority_experimental = 9
+        [json_name = "priority_experimental"];
+    WeightedTargetLoadBalancingPolicyConfig weighted_target_experimental = 10
+        [json_name = "weighted_target_experimental"];
+    OutlierDetectionLoadBalancingConfig outlier_detection = 15
+        [json_name = "outlier_detection_experimental"];
+    RlsLoadBalancingPolicyConfig rls = 19 [json_name = "rls_experimental"];
+
+    // xDS-based load balancing.
+    XdsClusterManagerLoadBalancingPolicyConfig xds_cluster_manager_experimental
+        = 14 [json_name = "xds_cluster_manager_experimental"];
+    CdsConfig cds_experimental = 6 [json_name = "cds_experimental"];
+    XdsClusterResolverLoadBalancingPolicyConfig
+        xds_cluster_resolver_experimental = 11
+        [json_name = "xds_cluster_resolver_experimental"];
+    XdsClusterImplLoadBalancingPolicyConfig xds_cluster_impl_experimental = 12
+        [json_name = "xds_cluster_impl_experimental"];
+    OverrideHostLoadBalancingPolicyConfig override_host_experimental = 18
+        [json_name = "override_host_experimental"];
+    XdsWrrLocalityLoadBalancingPolicyConfig xds_wrr_locality_experimental = 16
+        [json_name = "xds_wrr_locality_experimental"];
+    RingHashLoadBalancingConfig ring_hash_experimental = 13
+        [json_name = "ring_hash_experimental"];
+    LeastRequestLocalityLoadBalancingPolicyConfig least_request_experimental =
+        17 [json_name = "least_request_experimental"];
+
+    // Deprecated xDS-related policies.
+    LrsLoadBalancingPolicyConfig lrs_experimental = 8
+        [json_name = "lrs_experimental", deprecated = true];
+    EdsLoadBalancingPolicyConfig eds_experimental = 7
+        [json_name = "eds_experimental", deprecated = true];
+    XdsConfig xds = 2 [deprecated = true];
+    XdsConfig xds_experimental = 5 [json_name = "xds_experimental",
+                                    deprecated = true];
+
+    // Next available ID: 21
+  }
+}
+
+// A ServiceConfig represents information about a service but is not specific to
+// any name resolver.
+message ServiceConfig {
+  // Load balancing policy.
+  //
+  // Note that load_balancing_policy is deprecated in favor of
+  // load_balancing_config; the former will be used only if the latter
+  // is unset.
+  //
+  // If no LB policy is configured here, then the default is pick_first.
+  // If the policy name is set via the client API, that value overrides
+  // the value specified here.
+  //
+  // If the deprecated load_balancing_policy field is used, note that if the
+  // resolver returns at least one balancer address (as opposed to backend
+  // addresses), gRPC will use grpclb (see
+  // https://github.com/grpc/grpc/blob/master/doc/load-balancing.md),
+  // regardless of what policy is configured here.  However, if the resolver
+  // returns at least one backend address in addition to the balancer
+  // address(es), the client may fall back to the requested policy if it
+  // is unable to reach any of the grpclb load balancers.
+  enum LoadBalancingPolicy {
+    UNSPECIFIED = 0;
+    ROUND_ROBIN = 1;
+  }
+  LoadBalancingPolicy load_balancing_policy = 1 [deprecated = true];
+  // Multiple LB policies can be specified; clients will iterate through
+  // the list in order and stop at the first policy that they support. If none
+  // are supported, the service config is considered invalid.
+  repeated LoadBalancingConfig load_balancing_config = 4;
+
+  // Per-method configuration.
+  repeated MethodConfig method_config = 2;
+
+  // If a RetryThrottlingPolicy is provided, gRPC will automatically throttle
+  // retry attempts and hedged RPCs when the client's ratio of failures to
+  // successes exceeds a threshold.
+  //
+  // For each server name, the gRPC client will maintain a token_count which is
+  // initially set to max_tokens. Every outgoing RPC (regardless of service or
+  // method invoked) will change token_count as follows:
+  //
+  //   - Every failed RPC will decrement the token_count by 1.
+  //   - Every successful RPC will increment the token_count by token_ratio.
+  //
+  // If token_count is less than or equal to max_tokens / 2, then RPCs will not
+  // be retried and hedged RPCs will not be sent.
+  message RetryThrottlingPolicy {
+    // The number of tokens starts at max_tokens. The token_count will always be
+    // between 0 and max_tokens.
+    //
+    // This field is required and must be greater than zero.
+    uint32 max_tokens = 1;
+
+    // The amount of tokens to add on each successful RPC. Typically this will
+    // be some number between 0 and 1, e.g., 0.1.
+    //
+    // This field is required and must be greater than zero. Up to 3 decimal
+    // places are supported.
+    float token_ratio = 2;
+  }
+  RetryThrottlingPolicy retry_throttling = 3;
+
+  message HealthCheckConfig {
+    // Service name to use in the health-checking request.
+    google.protobuf.StringValue service_name = 1;
+  }
+  HealthCheckConfig health_check_config = 5;
+
+  // next available tag: 6
+}

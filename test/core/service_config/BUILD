@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 grpc_package(name = "test/core/service_config")
 
@@ -30,5 +31,28 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "service_config_fuzzer",
+    size = "enormous",
+    srcs = ["service_config_fuzzer.cc"],
+    corpus = "service_config_fuzzer_corpus",
+    language = "C++",
+    proto = "service_config_fuzzer.proto",
+    proto_deps = [
+        "//src/proto/grpc/service_config:service_config_proto",
+    ],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:service_config_helper",
     ],
 )
