@@ -147,7 +147,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return subchannel_entry_->address_list();
     }
 
-    XdsOverrideHostLb* policy() { return subchannel_entry_->policy_.get(); }
+    XdsOverrideHostLb* policy() const { return subchannel_entry_->policy(); }
 
    private:
     class ConnectivityStateWatcher : public ConnectivityStateWatcherInterface {
@@ -191,6 +191,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       subchannel_ = WeakRefCountedPtr<SubchannelWrapper>(nullptr);
       Unref();
     }
+
+    XdsOverrideHostLb* policy() const { return policy_.get(); }
 
     grpc_connectivity_state connectivity_state() const {
       return connectivity_state_.load();
