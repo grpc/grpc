@@ -22,6 +22,7 @@ spec:
       - |
         GRPC_EXPERIMENTS="${grpc_experiment}" \
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            perf record -F 777 -o qps_client.perf.data -g --event=cpu_cycles \
             /source/code/bazel-bin/test/cpp/qps/qps_worker \
             --driver_port="${DRIVER_PORT}"
       command:
@@ -45,6 +46,7 @@ spec:
       - |
         GRPC_EXPERIMENTS="${grpc_experiment}" \
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            perf record -F 777 -o qps_server.perf.data -g --event=cpu_cycles \
             /source/code/bazel-bin/test/cpp/qps/qps_worker \
             --driver_port="${DRIVER_PORT}" --server_port=10010
       command:
