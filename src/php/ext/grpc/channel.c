@@ -208,7 +208,7 @@ target_bound_le_t* update_and_get_target_upper_bound(char* target, int bound) {
   if (!(PHP_GRPC_PERSISTENT_LIST_FIND(&grpc_target_upper_bound_map, target,
       key_len, rsrc))) {
     // Target is not persisted.
-    php_grpc_zend_resource new_rsrc;
+    php_grpc_zend_resource new_rsrc = {0};
     target_bound_status = malloc(sizeof(target_bound_le_t));
     if (bound == -1) {
       // If the bound is not set, use 1 as default.s
@@ -281,7 +281,7 @@ void create_and_add_channel_to_persistent_list(
     }
   }
   // There is space in the persistent map.
-  php_grpc_zend_resource new_rsrc;
+  php_grpc_zend_resource new_rsrc = {0};
   channel_persistent_le_t *le;
   // this links each persistent list entry to a destructor
   new_rsrc.type = le_plink;
