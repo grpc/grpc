@@ -197,6 +197,14 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* context,
         absl::StrAppend(&body, absl::StrFormat("[%d body] %s\n", i, line));
       }
       response->add_output(body);
+      for (const auto& name_value :
+           calls[i].context.GetServerInitialMetadata()) {
+        context->AddInitialMetadata(
+            absl::StrFormat("call-%d-%s", i,
+                            absl::string_view(name_value.first.data(),
+                                              name_value.first.length())),
+            std::string(name_value.second.data(), name_value.second.length()));
+      }
       gpr_log(GPR_INFO, "Forward Echo response:%d\n%s", i, body.c_str());
     } else {
       gpr_log(GPR_ERROR, "RPC %d failed %d: %s", i,
