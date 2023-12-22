@@ -100,6 +100,7 @@ class ClientCallbackEnd2endTest
       server_address_ << "localhost:" << picked_port_;
       builder.AddListeningPort(server_address_.str(), server_creds);
     }
+    gpr_log(GPR_ERROR, "Debugging: %s", server_address_.str().c_str());
     if (!GetParam().callback_server) {
       builder.RegisterService(&service_);
     } else {
@@ -238,6 +239,7 @@ class ClientCallbackEnd2endTest
       generic_stub_->UnaryCall(
           &cli_ctx, kMethodName, options, send_buf.get(), &recv_buf,
           [&request, &recv_buf, &done, &mu, &cv, maybe_except](Status s) {
+            std::cout << "!!!!!!!!!!!!!!!!!!!!!!1";
             GPR_ASSERT(s.ok());
 
             EchoResponse response;
