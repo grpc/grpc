@@ -30,7 +30,7 @@ python3 setup.py bdist_wheel
 pushd $(mktemp -d '/tmp/test_xds_protos.XXXXXX')
 python3 -m virtualenv env
 env/bin/python -m pip install ${WORK_DIR}/dist/*.whl
-cp ${WORK_DIR}/generated_file_import_test.py generated_file_import_test.py
+cp ${WORK_DIR}/__init__.py generated_file_import_test.py
 env/bin/python generated_file_import_test.py
 popd
 

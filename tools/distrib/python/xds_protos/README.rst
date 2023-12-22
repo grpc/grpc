@@ -4,6 +4,9 @@ Each generated Python file can be imported according to their proto package. For
 
 ::
 
+  # Populate symbol db
+  import xds_protos
+
   # Import the message definitions
   from envoy.service.status.v3 import csds_pb2
   # Import the gRPC service and stub
