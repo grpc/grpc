@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <utility>
+#include <type_traits>
 
 #include "absl/meta/type_traits.h"
 
