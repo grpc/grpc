@@ -18,7 +18,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <utility>
-#include <type_traits>
 
 #include "absl/meta/type_traits.h"
 
@@ -72,7 +71,7 @@ class PromiseLike<void>;
 
 template <typename F>
 class PromiseLike<F, absl::enable_if_t<!std::is_void<
-                         typename std::result_of<F()>::type>::value>> {
+                         typename absl::type_traits_internal::result_of<F()>::type>::value>> {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
 
