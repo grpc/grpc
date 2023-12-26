@@ -187,15 +187,22 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   class SubchannelEntry : public RefCounted<SubchannelEntry> {
    public:
-    using SubchannelRef = absl::variant<WeakRefCountedPtr<SubchannelWrapper>,
-                                        RefCountedPtr<SubchannelWrapper>>;
+    using SubchannelPtr =
+        absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>;
 
     explicit SubchannelEntry(XdsHealthStatus eds_health_status)
         : eds_health_status_(eds_health_status) {}
 
-    SubchannelRef TakeSubchannelRef()
+    RefCountedPtr<SubchannelWrapper> TakeSubchannelRef()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-      return std::move(subchannel_);
+      return MatchMutable(
+          &subchannel_,
+          [](SubchannelWrapper**) -> RefCountedPtr<SubchannelWrapper> {
+            return nullptr;
+          },
+          [](RefCountedPtr<SubchannelWrapper>* subchannel) {
+            return std::move(*subchannel);
+          });
     }
 
     grpc_connectivity_state connectivity_state() const {
@@ -210,24 +217,19 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
         subchannel_ = subchannel->RefAsSubclass<SubchannelWrapper>();
       } else {
-        subchannel_ = subchannel->WeakRefAsSubclass<SubchannelWrapper>();
+        subchannel_ = subchannel;
       }
     }
 
     void UnsetSubchannel(SubchannelWrapper* wrapper)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-      if (GetSubchannel() == wrapper) {
-        subchannel_ = WeakRefCountedPtr<SubchannelWrapper>(nullptr);
-      }
+      if (GetSubchannel() == wrapper) subchannel_ = nullptr;
     }
 
     SubchannelWrapper* GetSubchannel() const
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
       return Match(
-          subchannel_,
-          [](const WeakRefCountedPtr<SubchannelWrapper>& subchannel) {
-            return subchannel.get();
-          },
+          subchannel_, [](SubchannelWrapper* subchannel) { return subchannel; },
           [](const RefCountedPtr<SubchannelWrapper>& subchannel) {
             return subchannel.get();
           });
@@ -244,18 +246,18 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       eds_health_status_ = eds_health_status;
       // TODO(roth): Change this to use the gprpp MatchMutable() function
       // once we can do that without breaking lock annotations.
-      auto* weak_ref =
-          absl::get_if<WeakRefCountedPtr<SubchannelWrapper>>(&subchannel_);
-      if (weak_ref != nullptr) {
-        if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
+      auto* raw_ptr = absl::get_if<SubchannelWrapper*>(&subchannel_);
+      if (raw_ptr != nullptr) {
+        if (eds_health_status_.status() == XdsHealthStatus::kDraining &&
+            *raw_ptr != nullptr) {
           subchannel_ =
-              (*weak_ref)->RefIfNonZero().TakeAsSubclass<SubchannelWrapper>();
+              (*raw_ptr)->RefIfNonZero().TakeAsSubclass<SubchannelWrapper>();
         }
         return nullptr;
       }
       auto strong_ref =
           std::move(absl::get<RefCountedPtr<SubchannelWrapper>>(subchannel_));
-      subchannel_ = strong_ref->WeakRefAsSubclass<SubchannelWrapper>();
+      subchannel_ = strong_ref.get();
       return strong_ref;
     }
 
@@ -276,7 +278,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
    private:
     std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
-    SubchannelRef subchannel_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
+    SubchannelPtr subchannel_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
     XdsHealthStatus eds_health_status_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
     RefCountedStringValue address_list_
         ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
@@ -524,11 +526,14 @@ void XdsOverrideHostLb::ShutdownLocked() {
   shutting_down_ = true;
   {
     // Drop subchannel refs after releasing the lock to avoid deadlock.
-    std::vector<SubchannelEntry::SubchannelRef> subchannel_refs_to_drop;
+    std::vector<SubchannelEntry::SubchannelPtr> subchannel_refs_to_drop;
     MutexLock lock(&mu_);
     subchannel_refs_to_drop.reserve(subchannel_map_.size());
     for (auto& p : subchannel_map_) {
-      subchannel_refs_to_drop.push_back(p.second->TakeSubchannelRef());
+      auto subchannel = p.second->TakeSubchannelRef();
+      if (subchannel != nullptr) {
+        subchannel_refs_to_drop.push_back(std::move(subchannel));
+      }
     }
     subchannel_map_.clear();
   }
@@ -709,7 +714,7 @@ void XdsOverrideHostLb::UpdateAddressMap(
   // Now grab the lock and update subchannel_map_ from addresses_for_map.
   {
     // Drop subchannel refs after releasing the lock to avoid deadlock.
-    std::vector<SubchannelEntry::SubchannelRef> subchannel_refs_to_drop;
+    std::vector<SubchannelEntry::SubchannelPtr> subchannel_refs_to_drop;
     MutexLock lock(&mu_);
     for (auto it = subchannel_map_.begin(); it != subchannel_map_.end();) {
       if (addresses_for_map.find(it->first) == addresses_for_map.end()) {
@@ -717,7 +722,10 @@ void XdsOverrideHostLb::UpdateAddressMap(
           gpr_log(GPR_INFO, "[xds_override_host_lb %p] removing map key %s",
                   this, it->first.c_str());
         }
-        subchannel_refs_to_drop.push_back(it->second->TakeSubchannelRef());
+        auto subchannel = it->second->TakeSubchannelRef();
+        if (subchannel != nullptr) {
+          subchannel_refs_to_drop.push_back(std::move(subchannel));
+        }
         it = subchannel_map_.erase(it);
       } else {
         ++it;
@@ -747,7 +755,7 @@ void XdsOverrideHostLb::UpdateAddressMap(
         auto subchannel_ref =
             it->second->SetEdsHealthStatus(address_info.eds_health_status);
         if (subchannel_ref != nullptr) {
-          subchannel_refs_to_drop.emplace_back(std::move(subchannel_ref));
+          subchannel_refs_to_drop.push_back(std::move(subchannel_ref));
         }
       }
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
