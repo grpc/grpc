@@ -183,9 +183,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   class SubchannelEntry : public RefCounted<SubchannelEntry> {
    public:
-    using SubchannelRef =
-        absl::variant<WeakRefCountedPtr<SubchannelWrapper>,
-                      RefCountedPtr<SubchannelWrapper>>;
+    using SubchannelRef = absl::variant<WeakRefCountedPtr<SubchannelWrapper>,
+                                        RefCountedPtr<SubchannelWrapper>>;
 
     SubchannelEntry(RefCountedPtr<XdsOverrideHostLb> policy,
                     XdsHealthStatus eds_health_status)
@@ -276,11 +275,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
    private:
     RefCountedPtr<XdsOverrideHostLb> policy_;
-    std::atomic<grpc_connectivity_state> connectivity_state_{
-        GRPC_CHANNEL_IDLE};
+    std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
     SubchannelRef subchannel_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
-    XdsHealthStatus eds_health_status_
-        ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
+    XdsHealthStatus eds_health_status_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
     RefCountedStringValue address_list_
         ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
   };
