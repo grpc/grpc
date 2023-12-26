@@ -1371,6 +1371,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   std::string serialized_payload = xds_client()->api_.CreateLrsInitialRequest();
   call_->SendMessage(std::move(serialized_payload));
   send_message_pending_ = true;
+  call_->StartRecvMessage();
 }
 
 void XdsClient::ChannelState::LrsCallState::Orphan() {
@@ -1419,11 +1420,11 @@ void XdsClient::ChannelState::LrsCallState::OnRequestSent(bool /*ok*/) {
 void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
     absl::string_view payload) {
   MutexLock lock(&xds_client()->mu_);
-  // If we're no longer the current call, ignore the result.
-  if (!IsCurrentCallOnChannel()) return;
   // Start recv after any code branch
   auto cleanup =
       absl::MakeCleanup([call = call_.get()]() { call->StartRecvMessage(); });
+  // If we're no longer the current call, ignore the result.
+  if (!IsCurrentCallOnChannel()) return;
   // Parse the response.
   bool send_all_clusters = false;
   std::set<std::string> new_cluster_names;
