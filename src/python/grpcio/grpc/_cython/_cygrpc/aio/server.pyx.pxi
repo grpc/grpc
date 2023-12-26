@@ -871,8 +871,6 @@ cdef class _ConcurrentRpcLimiter:
     async def check_before_request_call(self):
         await self._active_rpcs_condition.acquire()
         try:
-            # predicate = lambda: self._active_rpcs < self._maximum_concurrent_rpcs
-            # await self._active_rpcs_condition.wait_for(predicate)
             if self._active_rpcs >= self._maximum_concurrent_rpcs:
                 self._concurrency_exceeded = True
             else:
