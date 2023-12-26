@@ -977,8 +977,10 @@ cdef class AioServer:
             if self._status != AIO_SERVER_STATUS_RUNNING:
                 break
 
+            concurrency_exceeded = False
             if self._limiter is not None:
                 await self._limiter.check_before_request_call()
+                concurrency_exceeded = self._limiter._concurrency_exceeded
 
             # Accepts new request from Core
             rpc_state = await self._request_call()
@@ -992,7 +994,7 @@ cdef class AioServer:
                                    self._interceptors,
                                    rpc_state,
                                    self._loop,
-                                   self._limiter._concurrency_exceeded)
+                                   concurrency_exceeded)
 
             # Fires off a task that listens on the cancellation from client.
             rpc_task = self._loop.create_task(
