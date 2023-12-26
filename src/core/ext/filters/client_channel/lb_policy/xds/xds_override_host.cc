@@ -356,11 +356,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       const grpc_resolved_address& address,
       RefCountedPtr<SubchannelInterface> subchannel);
 
-  void OnSubchannelConnectivityStateChange(absl::string_view subchannel_key)
-      ABSL_NO_THREAD_SAFETY_ANALYSIS;  // Called from within the
-                                       // WorkSerializer and does not require
-                                       // additional synchronization
-
   // Current config from the resolver.
   RefCountedPtr<XdsOverrideHostLbConfig> config_;
 
