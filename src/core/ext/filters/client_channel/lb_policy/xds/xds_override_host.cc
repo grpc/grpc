@@ -21,7 +21,6 @@
 #include <stddef.h>
 
 #include <algorithm>
-#include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
@@ -205,11 +204,13 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
           });
     }
 
-    grpc_connectivity_state connectivity_state() const {
-      return connectivity_state_.load();
+    grpc_connectivity_state connectivity_state() const
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+      return connectivity_state_;
     }
-    void set_connectivity_state(grpc_connectivity_state state) {
-      connectivity_state_.store(state);
+    void set_connectivity_state(grpc_connectivity_state state)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+      connectivity_state_ = state;
     }
 
     void SetSubchannel(SubchannelWrapper* subchannel)
@@ -277,7 +278,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     }
 
    private:
-    std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
+    grpc_connectivity_state connectivity_state_
+        ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_) = GRPC_CHANNEL_IDLE;
     SubchannelPtr subchannel_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
     XdsHealthStatus eds_health_status_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
     RefCountedStringValue address_list_
@@ -856,8 +858,13 @@ void XdsOverrideHostLb::SubchannelWrapper::Orphan() {
 
 void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
     grpc_connectivity_state state, absl::Status status) {
+  bool update_picker = false;
   if (subchannel_entry_ != nullptr) {
+    MutexLock lock(&policy()->mu_);
     subchannel_entry_->set_connectivity_state(state);
+    update_picker = subchannel_entry_->GetSubchannel() == this &&
+                    subchannel_entry_->eds_health_status().status() ==
+                        XdsHealthStatus::kDraining;
   }
   // Sending connectivity state notifications to the watchers may cause the set
   // of watchers to change, so we can't be iterating over the set of watchers
@@ -871,13 +878,6 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
     if (watchers_.find(watcher) != watchers_.end()) {
       watcher->OnConnectivityStateChange(state, status);
     }
-  }
-  bool update_picker = false;
-  if (subchannel_entry_ != nullptr) {
-    MutexLock lock(&policy()->mu_);
-    update_picker = subchannel_entry_->GetSubchannel() == this &&
-                    subchannel_entry_->eds_health_status().status() ==
-                        XdsHealthStatus::kDraining;
   }
   if (update_picker) policy()->MaybeUpdatePickerLocked();
 }
