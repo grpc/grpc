@@ -1420,11 +1420,11 @@ void XdsClient::ChannelState::LrsCallState::OnRequestSent(bool /*ok*/) {
 void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
     absl::string_view payload) {
   MutexLock lock(&xds_client()->mu_);
+  // If we're no longer the current call, ignore the result.
+  if (!IsCurrentCallOnChannel()) return;
   // Start recv after any code branch
   auto cleanup =
       absl::MakeCleanup([call = call_.get()]() { call->StartRecvMessage(); });
-  // If we're no longer the current call, ignore the result.
-  if (!IsCurrentCallOnChannel()) return;
   // Parse the response.
   bool send_all_clusters = false;
   std::set<std::string> new_cluster_names;
