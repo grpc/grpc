@@ -55,9 +55,12 @@ $ cd grpc
 
 #### Build the gRPC C core library
 
+Please note, grpc core is required to build php extension from source.
+For compiling the grpc core, (grpc team plans to only support cmake and bazel.)[https://github.com/grpc/grpc/issues/20205#issuecomment-539452253]
+
 ```sh
 $ git submodule update --init
-$ EXTRA_DEFINES=GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK make
+$ cmake .
 ```
 
 #### Build and install the `grpc` extension
