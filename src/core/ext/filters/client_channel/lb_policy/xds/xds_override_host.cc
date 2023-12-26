@@ -138,7 +138,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     void CancelConnectivityStateWatch(
         ConnectivityStateWatcherInterface* watcher) override;
 
-    RefCountedStringValue address_list() const {
+    RefCountedStringValue address_list() const
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
       return subchannel_entry_->address_list();
     }
 
@@ -186,12 +187,15 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
                     XdsHealthStatus eds_health_status)
         : policy_(std::move(policy)), eds_health_status_(eds_health_status) {}
 
-    void Orphan() override {
+    void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS {
       GPR_ASSERT(GetSubchannel() == nullptr);
       Unref();
     }
 
-    SubchannelRef TakeSubchannelRef() { return std::move(subchannel_); }
+    SubchannelRef TakeSubchannelRef()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+      return std::move(subchannel_);
+    }
 
     XdsOverrideHostLb* policy() const { return policy_.get(); }
 
@@ -203,7 +207,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     }
 
     RefCountedPtr<SubchannelWrapper> WrapSubchannel(
-        RefCountedPtr<SubchannelInterface> subchannel) {
+        RefCountedPtr<SubchannelInterface> subchannel)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
       auto wrapper =
           MakeRefCounted<SubchannelWrapper>(std::move(subchannel), Ref());
       if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
@@ -214,19 +219,23 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return wrapper;
     }
 
-    void UnsetSubchannel(SubchannelWrapper* wrapper) {
+    void UnsetSubchannel(SubchannelWrapper* wrapper)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
       if (GetSubchannel() == wrapper) {
         subchannel_ = WeakRefCountedPtr<SubchannelWrapper>(nullptr);
       }
     }
 
-    SubchannelWrapper* GetSubchannel() const {
+    SubchannelWrapper* GetSubchannel() const
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
       return Match(
           subchannel_,
-          [](const WeakRefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>&
-                 subchannel) { return subchannel.get(); },
-          [](const RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>&
-                 subchannel) { return subchannel.get(); });
+          [](const WeakRefCountedPtr<SubchannelWrapper>& subchannel) {
+            return subchannel.get();
+          },
+          [](const RefCountedPtr<SubchannelWrapper>& subchannel) {
+            return subchannel.get();
+          });
     }
 
     // Returns the previously held strong ref, if any, which the caller
@@ -234,42 +243,51 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     // the last strong ref, we need to avoid deadlock caused by
     // SubchannelWrapper::Orphan() re-acquiring the lock.
     RefCountedPtr<SubchannelWrapper> SetEdsHealthStatus(
-        XdsHealthStatus eds_health_status) {
+        XdsHealthStatus eds_health_status)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
       if (eds_health_status_ == eds_health_status) return nullptr;
       eds_health_status_ = eds_health_status;
-      return MatchMutable(
-          &subchannel_,
-          [&](WeakRefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>*
-                  subchannel) -> RefCountedPtr<SubchannelWrapper> {
-            if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
-              subchannel_ = (*subchannel)->RefIfNonZero()
-                                .TakeAsSubclass<SubchannelWrapper>();
-            }
-            return nullptr;
-          },
-          [&](RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>* subchannel) {
-            auto sc = std::move(*subchannel);
-            subchannel_ = sc->WeakRefAsSubclass<SubchannelWrapper>();
-            return sc;
-          });
+      // TODO(roth): Change this to use the gprpp MatchMutable() function
+      // once we can do that without breaking lock annotations.
+      auto* weak_ref =
+          absl::get_if<WeakRefCountedPtr<SubchannelWrapper>>(&subchannel_);
+      if (weak_ref != nullptr) {
+        if (eds_health_status_.status() == XdsHealthStatus::kDraining) {
+          subchannel_ =
+              (*weak_ref)->RefIfNonZero().TakeAsSubclass<SubchannelWrapper>();
+        }
+        return nullptr;
+      }
+      auto strong_ref =
+          std::move(absl::get<RefCountedPtr<SubchannelWrapper>>(subchannel_));
+      subchannel_ = strong_ref->WeakRefAsSubclass<SubchannelWrapper>();
+      return strong_ref;
     }
 
-    XdsHealthStatus eds_health_status() const { return eds_health_status_; }
+    XdsHealthStatus eds_health_status() const
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+      return eds_health_status_;
+    }
 
-    void set_address_list(RefCountedStringValue address_list) {
+    void set_address_list(RefCountedStringValue address_list)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
       address_list_ = std::move(address_list);
     }
 
-    RefCountedStringValue address_list() const { return address_list_; }
+    RefCountedStringValue address_list() const
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+      return address_list_;
+    }
 
    private:
     RefCountedPtr<XdsOverrideHostLb> policy_;
     std::atomic<grpc_connectivity_state> connectivity_state_{
         GRPC_CHANNEL_IDLE};
-// FIXME: add lock annotations for all three!
-    SubchannelRef subchannel_;
-    XdsHealthStatus eds_health_status_;
-    RefCountedStringValue address_list_;
+    SubchannelRef subchannel_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
+    XdsHealthStatus eds_health_status_
+        ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
+    RefCountedStringValue address_list_
+        ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
   };
 
   // A picker that wraps the picker from the child for cases when cookie is
@@ -363,9 +381,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   grpc_connectivity_state state_ = GRPC_CHANNEL_CONNECTING;
   absl::Status status_;
   RefCountedPtr<SubchannelPicker> picker_;
-  Mutex subchannel_map_mu_;
+  Mutex mu_;
   std::map<std::string, OrphanablePtr<SubchannelEntry>, std::less<>>
-      subchannel_map_ ABSL_GUARDED_BY(subchannel_map_mu_);
+      subchannel_map_ ABSL_GUARDED_BY(mu_);
 };
 
 //
@@ -395,7 +413,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   RefCountedPtr<SubchannelWrapper> idle_subchannel;
   bool found_connecting = false;
   {
-    MutexLock lock(&policy_->subchannel_map_mu_);
+    MutexLock lock(&policy_->mu_);
     for (absl::string_view address : absl::StrSplit(cookie_address_list, ',')) {
       RefCountedPtr<SubchannelWrapper> subchannel;
       auto it = policy_->subchannel_map_.find(address);
@@ -484,7 +502,7 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
     // Populate the address list in the override host attribute so that
     // the StatefulSession filter can set the cookie.
     if (override_host_attr != nullptr) {
-      MutexLock lock(&wrapper->policy()->subchannel_map_mu_);
+      MutexLock lock(&wrapper->policy()->mu_);
       override_host_attr->set_actual_address_list(wrapper->address_list());
     }
     // Unwrap the subchannel.
@@ -520,7 +538,7 @@ void XdsOverrideHostLb::ShutdownLocked() {
   {
     // Drop subchannel refs after releasing the lock to avoid deadlock.
     std::vector<SubchannelEntry::SubchannelRef> subchannel_refs_to_drop;
-    MutexLock lock(&subchannel_map_mu_);
+    MutexLock lock(&mu_);
     subchannel_refs_to_drop.reserve(subchannel_map_.size());
     for (auto& p : subchannel_map_) {
       subchannel_refs_to_drop.push_back(p.second->TakeSubchannelRef());
@@ -705,7 +723,7 @@ void XdsOverrideHostLb::UpdateAddressMap(
   {
     // Drop subchannel refs after releasing the lock to avoid deadlock.
     std::vector<SubchannelEntry::SubchannelRef> subchannel_refs_to_drop;
-    MutexLock lock(&subchannel_map_mu_);
+    MutexLock lock(&mu_);
     for (auto it = subchannel_map_.begin(); it != subchannel_map_.end();) {
       if (addresses_for_map.find(it->first) == addresses_for_map.end()) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
@@ -762,7 +780,7 @@ XdsOverrideHostLb::AdoptSubchannel(
     RefCountedPtr<SubchannelInterface> subchannel) {
   auto key = grpc_sockaddr_to_string(&address, /*normalize=*/false);
   if (key.ok()) {
-    MutexLock lock(&subchannel_map_mu_);
+    MutexLock lock(&mu_);
     auto it = subchannel_map_.find(*key);
     if (it != subchannel_map_.end()) {
       return it->second->WrapSubchannel(std::move(subchannel));
@@ -825,7 +843,7 @@ void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
 
 void XdsOverrideHostLb::SubchannelWrapper::Orphan() {
   {
-    MutexLock lock(&policy()->subchannel_map_mu_);
+    MutexLock lock(&policy()->mu_);
     subchannel_entry_->UnsetSubchannel(this);
   }
   if (!IsWorkSerializerDispatchEnabled()) {
@@ -858,7 +876,7 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
   }
   bool update_picker = false;
   {
-    MutexLock lock(&policy()->subchannel_map_mu_);
+    MutexLock lock(&policy()->mu_);
     update_picker = subchannel_entry_->GetSubchannel() == this &&
                     subchannel_entry_->eds_health_status().status() ==
                         XdsHealthStatus::kDraining;
