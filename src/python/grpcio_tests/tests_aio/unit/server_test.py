@@ -588,18 +588,19 @@ class TestServer(AioTestBase):
                 coro_wrapper(channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
             )
             rpc_tasks.append(task)
-        await_tasks = asyncio.wait(
-            rpc_tasks, return_when=asyncio.ALL_COMPLETED
-        )
+        await_tasks = asyncio.wait(rpc_tasks, return_when=asyncio.ALL_COMPLETED)
 
         done, _ = await await_tasks
         for task in done:
             exception = task.exception()
             if exception:
                 self.assertTrue(isinstance(exception, aio.AioRpcError))
-                self.assertEqual(grpc.StatusCode.RESOURCE_EXHAUSTED, exception.code())
-                self.assertIn("Concurrent RPC limit exceeded", exception.details())
-
+                self.assertEqual(
+                    grpc.StatusCode.RESOURCE_EXHAUSTED, exception.code()
+                )
+                self.assertIn(
+                    "Concurrent RPC limit exceeded", exception.details()
+                )
 
         # Clean-up
         await channel.close()
