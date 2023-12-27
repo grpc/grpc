@@ -33,7 +33,10 @@ package(
 # the top-level BUILD file that have not yet been moved here. Should go away
 # once the transition is complete.
 exports_files(
-    glob(["**"]),
+    glob(
+        ["**"],
+        exclude = ["ext/transport/binder/java/**"],
+    ),
     visibility = ["//:__subpackages__"],
 )
 
@@ -152,6 +155,7 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
+    visibility = ["@grpc:useful"],
     deps = ["//:gpr_platform"],
 )
 

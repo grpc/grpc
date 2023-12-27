@@ -20,30 +20,30 @@
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 
 struct RecvInitialMetadataArgs {
-  grpc_binder_stream* gbs;
-  grpc_binder_transport* gbt;
+  grpc_binder_stream* stream;
+  grpc_binder_transport* transport;
   int tx_code;
   absl::StatusOr<grpc_binder::Metadata> initial_metadata;
 };
 
 struct RecvMessageArgs {
-  grpc_binder_stream* gbs;
-  grpc_binder_transport* gbt;
+  grpc_binder_stream* stream;
+  grpc_binder_transport* transport;
   int tx_code;
   absl::StatusOr<std::string> message;
 };
 
 struct RecvTrailingMetadataArgs {
-  grpc_binder_stream* gbs;
-  grpc_binder_transport* gbt;
+  grpc_binder_stream* stream;
+  grpc_binder_transport* transport;
   int tx_code;
   absl::StatusOr<grpc_binder::Metadata> trailing_metadata;
   int status;
 };
 
 struct RegisterStreamArgs {
-  grpc_binder_stream* gbs;
-  grpc_binder_transport* gbt;
+  grpc_binder_stream* stream;
+  grpc_binder_transport* transport;
 };
 
 // TODO(mingcl): Figure out if we want to use class instead of struct here
@@ -59,12 +59,12 @@ struct grpc_binder_stream {
         tx_code(tx_code),
         is_client(is_client),
         is_closed(false) {
-    recv_initial_metadata_args.gbs = this;
-    recv_initial_metadata_args.gbt = t;
-    recv_message_args.gbs = this;
-    recv_message_args.gbt = t;
-    recv_trailing_metadata_args.gbs = this;
-    recv_trailing_metadata_args.gbt = t;
+    recv_initial_metadata_args.stream = this;
+    recv_initial_metadata_args.transport = t;
+    recv_message_args.stream = this;
+    recv_message_args.transport = t;
+    recv_trailing_metadata_args.stream = this;
+    recv_trailing_metadata_args.transport = t;
   }
 
   ~grpc_binder_stream() {
