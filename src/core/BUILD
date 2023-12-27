@@ -5408,6 +5408,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_trace",
         "//:orphanable",
+        "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:work_serializer",
