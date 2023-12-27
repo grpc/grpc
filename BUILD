@@ -1274,6 +1274,7 @@ grpc_cc_library(
     tags = [
         "nofixdeps",
     ],
+    visibility = ["@grpc:event_engine_base_hdrs"],
     deps = [
         "channel_arg_names",
         "gpr",
