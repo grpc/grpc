@@ -109,8 +109,8 @@ std::string XdsClusterResource::ToString() const {
         absl::StrCat("common_tls_context=", common_tls_context.ToString()));
   }
   if (connection_idle_timeout != Duration::Zero()) {
-    contents.push_back(absl::StrCat(
-        "connection_idle_timeout=", connection_idle_timeout.ToString()));
+    contents.push_back(absl::StrCat("connection_idle_timeout=",
+                                    connection_idle_timeout.ToString()));
   }
   contents.push_back(
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));

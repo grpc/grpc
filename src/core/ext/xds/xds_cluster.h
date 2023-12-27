@@ -131,8 +131,7 @@ class XdsClusterResourceType
     envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab);
     envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(
         symtab);
-    envoy_extensions_upstreams_http_v3_HttpProtocolOptions_getmsgdef(
-        symtab);
+    envoy_extensions_upstreams_http_v3_HttpProtocolOptions_getmsgdef(symtab);
   }
 };
 
