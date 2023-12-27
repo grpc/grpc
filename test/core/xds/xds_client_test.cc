@@ -285,7 +285,7 @@ class XdsClientTest : public ::testing::Test {
         if (!resource_and_handle.has_value()) {
           return nullptr;
         }
-        return resource_and_handle->resource;
+        return std::move(resource_and_handle->resource);
       }
 
       absl::optional<absl::Status> WaitForNextError(
@@ -600,7 +600,8 @@ class XdsClientTest : public ::testing::Test {
   void InitXdsClient(
       FakeXdsBootstrap::Builder bootstrap_builder = FakeXdsBootstrap::Builder(),
       Duration resource_request_timeout = Duration::Seconds(15)) {
-    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
+    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>(
+        []() { FAIL() << "Multiple concurrent reads"; });
     transport_factory_ =
         transport_factory->Ref().TakeAsSubclass<FakeXdsTransportFactory>();
     xds_client_ = MakeRefCounted<XdsClient>(
@@ -2723,18 +2724,23 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
   InitXdsClient();
   // Start watches for "foo1" and "foo2".
   auto watcher1 = StartFooWatch("foo1");
-  auto watcher2 = StartFooWatch("foo2");
-  // Watchers should initially not see any resource reported.
-  EXPECT_FALSE(watcher1->HasEvent());
-  EXPECT_FALSE(watcher2->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
   // XdsClient should have sent a subscription request on the ADS stream.
   auto request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  auto watcher2 = StartFooWatch("foo2");
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
   // Send a response with 2 resources.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -2771,7 +2777,6 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
   resource1->read_delay_handle.reset();
   EXPECT_EQ(stream->reads_started(), 1);
   resource2->read_delay_handle.reset();
-  EXPECT_EQ(stream->reads_started(), 2);
   resource1 = watcher1->WaitForNextResourceAndHandle();
   ASSERT_NE(resource1, absl::nullopt);
   EXPECT_EQ(resource1->resource->name, "foo1");
@@ -2784,6 +2789,7 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*version_info=*/"2", /*response_nonce=*/"B",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
+  EXPECT_EQ(stream->reads_started(), 2);
   resource1->read_delay_handle.reset();
   EXPECT_EQ(stream->reads_started(), 3);
   // Cancel watch.

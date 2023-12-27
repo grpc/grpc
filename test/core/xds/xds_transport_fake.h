@@ -58,11 +58,14 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
    public:
     FakeStreamingCall(
         RefCountedPtr<FakeXdsTransport> transport, const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler)
+        std::unique_ptr<StreamingCall::EventHandler> event_handler,
+        std::function<void()> too_many_pending_reads_callback)
         : transport_(std::move(transport)),
           method_(method),
-          event_handler_(MakeRefCounted<RefCountedEventHandler>(
-              std::move(event_handler))) {}
+          event_handler_(
+              MakeRefCounted<RefCountedEventHandler>(std::move(event_handler))),
+          too_many_pending_reads_callback_(
+              std::move(too_many_pending_reads_callback)) {}
 
     ~FakeStreamingCall() override;
 
@@ -128,11 +131,14 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
     size_t reads_started_ ABSL_GUARDED_BY(&mu_) = 0;
-    bool read_pending_ ABSL_GUARDED_BY(&mu_) = false;
+    size_t num_pending_reads_ ABSL_GUARDED_BY(&mu_) = 0;
     std::deque<std::string> to_client_messages_ ABSL_GUARDED_BY(&mu_);
+    std::function<void()> too_many_pending_reads_callback_;
   };
 
-  FakeXdsTransportFactory() = default;
+  FakeXdsTransportFactory(std::function<void()> too_many_pending_reads_callback)
+      : too_many_pending_reads_callback_(
+            std::move(too_many_pending_reads_callback)) {}
 
   using XdsTransportFactory::Ref;  // Make it public.
 
@@ -173,7 +179,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
                      const XdsBootstrap::XdsServer& server,
                      std::function<void(absl::Status)> on_connectivity_failure,
                      bool auto_complete_messages_from_client,
-                     bool abort_on_undrained_messages)
+                     bool abort_on_undrained_messages,
+                     std::function<void()> too_many_pending_reads_callback)
         : factory_(std::move(factory)),
           server_(server),
           auto_complete_messages_from_client_(
@@ -181,7 +188,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
           abort_on_undrained_messages_(abort_on_undrained_messages),
           on_connectivity_failure_(
               MakeRefCounted<RefCountedOnConnectivityFailure>(
-                  std::move(on_connectivity_failure))) {}
+                  std::move(on_connectivity_failure))),
+          too_many_pending_reads_callback_(
+              std::move(too_many_pending_reads_callback)) {}
 
     void Orphan() override;
 
@@ -235,6 +244,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
         ABSL_GUARDED_BY(&mu_);
     std::map<std::string /*method*/, RefCountedPtr<FakeStreamingCall>>
         active_calls_ ABSL_GUARDED_BY(&mu_);
+    std::function<void()> too_many_pending_reads_callback_;
   };
 
   OrphanablePtr<XdsTransport> Create(
@@ -250,6 +260,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       transport_map_ ABSL_GUARDED_BY(&mu_);
   bool auto_complete_messages_from_client_ ABSL_GUARDED_BY(&mu_) = true;
   bool abort_on_undrained_messages_ ABSL_GUARDED_BY(&mu_) = true;
+  std::function<void()> too_many_pending_reads_callback_;
 };
 
 }  // namespace grpc_core

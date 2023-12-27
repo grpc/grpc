@@ -57,7 +57,9 @@ class Fuzzer {
       // Leave xds_client_ unset, so Act() will be a no-op.
       return;
     }
-    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
+    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>([]() {
+      gpr_assertion_failed(__FILE__, __LINE__, "Multiple concurrent reads");
+    });
     transport_factory->SetAutoCompleteMessagesFromClient(false);
     transport_factory->SetAbortOnUndrainedMessages(false);
     transport_factory_ = transport_factory.get();

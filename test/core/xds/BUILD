@@ -152,7 +152,6 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/types:optional",
-        "gtest",
     ],
     language = "C++",
     deps = [

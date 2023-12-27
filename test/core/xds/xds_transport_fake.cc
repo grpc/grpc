@@ -129,14 +129,11 @@ void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
 void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
   absl::optional<std::string> pending;
   MutexLock lock(&mu_);
-  if (read_pending_) {
-    gpr_log(GPR_ERROR,
-            "StartRecvMessage had been called while there is already a pending "
-            "read request");
-    return;
+  if (num_pending_reads_ > 0) {
+    too_many_pending_reads_callback_();
   }
   ++reads_started_;
-  read_pending_ = true;
+  ++num_pending_reads_;
   if (!to_client_messages_.empty()) {
     // Dispatch pending message (if there's one) on a separate thread to avoid
     // recursion
@@ -158,19 +155,21 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessageToClient(
 void FakeXdsTransportFactory::FakeStreamingCall::MaybeDeliverMessageToClient() {
   RefCountedPtr<RefCountedEventHandler> event_handler;
   std::string message;
-  {
-    ReleasableMutexLock lock(&mu_);
-    if (!read_pending_ || to_client_messages_.empty()) {
-      return;
+  // Loop terminates with a break inside
+  while (true) {
+    {
+      MutexLock lock(&mu_);
+      if (num_pending_reads_ == 0 || to_client_messages_.empty()) {
+        break;
+      }
+      --num_pending_reads_;
+      message = std::move(to_client_messages_.front());
+      to_client_messages_.pop_front();
+      event_handler = event_handler_;
     }
-    read_pending_ = false;
-    message = std::move(to_client_messages_.front());
-    to_client_messages_.pop_front();
-    event_handler = event_handler_;
-    lock.Release();
+    ExecCtx exec_ctx;
+    event_handler->OnRecvMessage(message);
   }
-  ExecCtx exec_ctx;
-  event_handler->OnRecvMessage(message);
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
@@ -259,7 +258,8 @@ FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler) {
   auto call = MakeOrphanable<FakeStreamingCall>(
-      RefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler));
+      RefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler),
+      too_many_pending_reads_callback_);
   MutexLock lock(&mu_);
   active_calls_[method] = call->Ref().TakeAsSubclass<FakeStreamingCall>();
   cv_.Signal();
@@ -284,7 +284,7 @@ FakeXdsTransportFactory::Create(
   auto transport = MakeOrphanable<FakeXdsTransport>(
       RefAsSubclass<FakeXdsTransportFactory>(), server,
       std::move(on_connectivity_failure), auto_complete_messages_from_client_,
-      abort_on_undrained_messages_);
+      abort_on_undrained_messages_, too_many_pending_reads_callback_);
   entry = transport->Ref().TakeAsSubclass<FakeXdsTransport>();
   return transport;
 }
