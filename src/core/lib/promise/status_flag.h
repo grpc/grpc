@@ -21,6 +21,8 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/promise/detail/status.h"
 
 namespace grpc_core {
@@ -39,6 +41,16 @@ struct StatusCastImpl<absl::Status, Success> {
 template <>
 struct StatusCastImpl<absl::Status, const Success&> {
   static absl::Status Cast(Success) { return absl::OkStatus(); }
+};
+
+template <>
+struct StatusCastImpl<absl::Status, Failure> {
+  static absl::Status Cast(Failure) { return absl::CancelledError(); }
+};
+
+template <typename T>
+struct StatusCastImpl<absl::StatusOr<T>, Failure> {
+  static absl::StatusOr<T> Cast(Failure) { return absl::CancelledError(); }
 };
 
 // A boolean representing whether an operation succeeded (true) or failed
@@ -91,6 +103,8 @@ class ValueOrFailure {
   ValueOrFailure(T value) : value_(std::move(value)) {}
   // NOLINTNEXTLINE(google-explicit-constructor)
   ValueOrFailure(Failure) {}
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  ValueOrFailure(StatusFlag status) { GPR_ASSERT(!status.ok()); }
 
   static ValueOrFailure FromOptional(absl::optional<T> value) {
     return ValueOrFailure{std::move(value)};
@@ -103,6 +117,10 @@ class ValueOrFailure {
   T& value() { return value_.value(); }
   const T& operator*() const { return *value_; }
   T& operator*() { return *value_; }
+
+  bool operator==(const ValueOrFailure& other) const {
+    return value_ == other.value_;
+  }
 
  private:
   absl::optional<T> value_;
@@ -123,6 +141,21 @@ struct StatusCastImpl<absl::StatusOr<T>, ValueOrFailure<T>> {
   static absl::StatusOr<T> Cast(ValueOrFailure<T> value) {
     return value.ok() ? absl::StatusOr<T>(std::move(value.value()))
                       : absl::CancelledError();
+  }
+};
+
+template <typename T>
+struct StatusCastImpl<ValueOrFailure<T>, Failure> {
+  static ValueOrFailure<T> Cast(Failure) {
+    return ValueOrFailure<T>(Failure{});
+  }
+};
+
+template <typename T>
+struct StatusCastImpl<ValueOrFailure<T>, StatusFlag&> {
+  static ValueOrFailure<T> Cast(StatusFlag f) {
+    GPR_ASSERT(!f.ok());
+    return ValueOrFailure<T>(Failure{});
   }
 };
 

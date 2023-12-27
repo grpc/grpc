@@ -327,8 +327,6 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
           call_handler.SpawnGuarded(
               "recv_trailing_metadata",
               [md = std::move(md), call_handler]() mutable {
-                gpr_log(GPR_INFO, "Pushing trailing metadata: %s",
-                        md->DebugString().c_str());
                 return call_handler.PushServerTrailingMetadata(std::move(md));
               });
           return Empty{};

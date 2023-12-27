@@ -96,7 +96,7 @@ ClientTransport::ClientTransport(
         },
         // Write buffers to corresponding endpoints concurrently.
         [this]() {
-          return TryJoin(
+          return TryJoin<absl::StatusOr>(
               control_endpoint_->Write(
                   std::move(control_endpoint_write_buffer_)),
               data_endpoint_->Write(std::move(data_endpoint_write_buffer_)));
@@ -134,7 +134,7 @@ ClientTransport::ClientTransport(
                   .value());
           // Read header and trailers from control endpoint.
           // Read message padding and message from data endpoint.
-          return TryJoin(
+          return TryJoin<absl::StatusOr>(
               control_endpoint_->Read(frame_header_->GetFrameLength()),
               data_endpoint_->Read(frame_header_->message_padding +
                                    frame_header_->message_length));

@@ -435,6 +435,7 @@ grpc_cc_library(
     ],
     deps = [
         "promise_status",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )

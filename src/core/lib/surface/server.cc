@@ -1455,7 +1455,7 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
               []() -> NextResult<MessageHandle> {
                 return NextResult<MessageHandle>();
               });
-          return TryJoin(
+          return TryJoin<absl::StatusOr>(
               Map(std::move(maybe_read_first_message),
                   [](NextResult<MessageHandle> n) {
                     return ValueOrFailure<NextResult<MessageHandle>>{

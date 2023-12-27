@@ -105,7 +105,7 @@ class ClientTransport {
                              std::move(pipe_server_frames.sender))));
     }
     return TrySeq(
-        TryJoin(
+        TryJoin<absl::StatusOr>(
             // Continuously send client frame with client to server messages.
             ForEach(std::move(*call_args.client_to_server_messages),
                     [stream_id, initial_frame = true,
@@ -214,9 +214,10 @@ class ClientTransport {
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
-  std::map<uint32_t, std::shared_ptr<InterActivityPipe<
-                         ServerFrame, server_frame_queue_size_>::Sender>>
-      stream_map_ ABSL_GUARDED_BY(mu_);
+  std::map<uint32_t,
+           std::shared_ptr<InterActivityPipe<
+               ServerFrame, server_frame_queue_size_>::Sender>> stream_map_
+      ABSL_GUARDED_BY(mu_);
   ActivityPtr writer_;
   ActivityPtr reader_;
   std::unique_ptr<PromiseEndpoint> control_endpoint_;
