@@ -58,7 +58,8 @@ class Fuzzer {
       return;
     }
     auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>([]() {
-      gpr_assertion_failed(__FILE__, __LINE__, "Multiple concurrent reads");
+      bool has_pending_read = false;
+      GPR_ASSERT(has_pending_read);
     });
     transport_factory->SetAutoCompleteMessagesFromClient(false);
     transport_factory->SetAbortOnUndrainedMessages(false);

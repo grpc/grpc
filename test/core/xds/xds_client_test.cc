@@ -2777,6 +2777,7 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
   resource1->read_delay_handle.reset();
   EXPECT_EQ(stream->reads_started(), 1);
   resource2->read_delay_handle.reset();
+  EXPECT_EQ(stream->reads_started(), 2);
   resource1 = watcher1->WaitForNextResourceAndHandle();
   ASSERT_NE(resource1, absl::nullopt);
   EXPECT_EQ(resource1->resource->name, "foo1");
