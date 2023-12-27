@@ -38,11 +38,14 @@
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
+#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/core/v3/health_check.upb.h"
+#include "envoy/config/core/v3/protocol.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
+#include "envoy/extensions/upstreams/http/v3/http_protocol_options.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
@@ -105,17 +108,14 @@ std::string XdsClusterResource::ToString() const {
     contents.push_back(
         absl::StrCat("common_tls_context=", common_tls_context.ToString()));
   }
+  if (connection_idle_timeout != Duration::Zero()) {
+    contents.push_back(absl::StrCat(
+        "connection_idle_timeout=", connection_idle_timeout.ToString()));
+  }
   contents.push_back(
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
-  if (!override_host_statuses.empty()) {
-    std::vector<const char*> statuses;
-    statuses.reserve(override_host_statuses.size());
-    for (const auto& status : override_host_statuses) {
-      statuses.push_back(status.ToString());
-    }
-    contents.push_back(absl::StrCat("override_host_statuses={",
-                                    absl::StrJoin(statuses, ", "), "}"));
-  }
+  contents.push_back(absl::StrCat("override_host_statuses=",
+                                  override_host_statuses.ToString()));
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
@@ -407,6 +407,50 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
   }
 }
 
+void ParseUpstreamConfig(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_core_v3_TypedExtensionConfig* upstream_config,
+    XdsClusterResource* cds_update, ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".typed_config");
+  const auto* typed_config =
+      envoy_config_core_v3_TypedExtensionConfig_typed_config(upstream_config);
+  auto extension = ExtractXdsExtension(context, typed_config, errors);
+  if (!extension.has_value()) return;
+  if (extension->type !=
+      "envoy.extensions.upstreams.http.v3.HttpProtocolOptions") {
+    ValidationErrors::ScopedField field(errors, ".type_url");
+    errors->AddError("unsupported upstream config type");
+    return;
+  }
+  absl::string_view* serialized_http_protocol_options =
+      absl::get_if<absl::string_view>(&extension->value);
+  if (serialized_http_protocol_options == nullptr) {
+    errors->AddError("can't decode HttpProtocolOptions");
+    return;
+  }
+  const auto* http_protocol_options =
+      envoy_extensions_upstreams_http_v3_HttpProtocolOptions_parse(
+          serialized_http_protocol_options->data(),
+          serialized_http_protocol_options->size(), context.arena);
+  if (http_protocol_options == nullptr) {
+    errors->AddError("can't decode HttpProtocolOptions");
+    return;
+  }
+  ValidationErrors::ScopedField field2(errors, ".common_http_protocol_options");
+  const auto* common_http_protocol_options =
+      envoy_extensions_upstreams_http_v3_HttpProtocolOptions_common_http_protocol_options(
+          http_protocol_options);
+  if (common_http_protocol_options != nullptr) {
+    const auto* idle_timeout =
+        envoy_config_core_v3_HttpProtocolOptions_idle_timeout(
+            common_http_protocol_options);
+    if (idle_timeout != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".idle_timeout");
+      cds_update->connection_idle_timeout = ParseDuration(idle_timeout, errors);
+    }
+  }
+}
+
 absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_cluster_v3_Cluster* cluster) {
@@ -473,6 +517,13 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     }
     cds_update->lrs_load_reporting_server.emplace(
         static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(context.server));
+  }
+  // Protocol options.
+  auto* upstream_config =
+      envoy_config_cluster_v3_Cluster_upstream_config(cluster);
+  if (upstream_config != nullptr) {
+    ValidationErrors::ScopedField field(&errors, ".upstream_config");
+    ParseUpstreamConfig(context, upstream_config, cds_update.get(), &errors);
   }
   // The Cluster resource encodes the circuit breaking parameters in a list of
   // Thresholds messages, where each message specifies the parameters for a
@@ -625,6 +676,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
   // Validate override host status.
   const auto* common_lb_config =
       envoy_config_cluster_v3_Cluster_common_lb_config(cluster);
+  bool override_host_status_found = false;
   if (common_lb_config != nullptr) {
     ValidationErrors::ScopedField field(&errors, ".common_lb_config");
     const auto* override_host_status =
@@ -638,10 +690,18 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       for (size_t i = 0; i < size; ++i) {
         auto status = XdsHealthStatus::FromUpb(statuses[i]);
         if (status.has_value()) {
-          cds_update->override_host_statuses.insert(*status);
+          cds_update->override_host_statuses.Add(*status);
         }
       }
+      override_host_status_found = true;
     }
+  }
+  // If the field is not set, we default to [UNKNOWN, HEALTHY].
+  if (!override_host_status_found) {
+    cds_update->override_host_statuses.Add(
+        XdsHealthStatus(XdsHealthStatus::kUnknown));
+    cds_update->override_host_statuses.Add(
+        XdsHealthStatus(XdsHealthStatus::kHealthy));
   }
   // Return result.
   if (!errors.ok()) {

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package envoy.extensions.upstreams.http.v3;
+
+import "src/proto/grpc/testing/xds/v3/protocol.proto";
+
+message HttpProtocolOptions {
+  // This contains options common across HTTP/1 and HTTP/2
+  config.core.v3.HttpProtocolOptions common_http_protocol_options = 1;
+}

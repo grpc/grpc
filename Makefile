@@ -1154,6 +1154,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c \
@@ -1312,6 +1313,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.c \
@@ -3469,6 +3471,7 @@ src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/common.upb_minita
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c: $(OPENSSL_DEP)
+src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c: $(OPENSSL_DEP)
@@ -3608,6 +3611,7 @@ src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/common.upbdef
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.c: $(OPENSSL_DEP)
