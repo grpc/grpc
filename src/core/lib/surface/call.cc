@@ -3705,14 +3705,6 @@ ServerPromiseBasedCall::MakeTopOfServerCallPromise(
   return Seq(server_to_client_messages_->AwaitClosed(),
              send_trailing_metadata_.Wait());
 }
-#else
-ArenaPromise<ServerMetadataHandle>
-ServerCallContext::MakeTopOfServerCallPromise(
-    CallArgs, grpc_completion_queue*, grpc_metadata_array*,
-    absl::FunctionRef<void(grpc_call*)>) {
-  (void)call_;
-  Crash("Promise-based server call is not enabled");
-}
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
