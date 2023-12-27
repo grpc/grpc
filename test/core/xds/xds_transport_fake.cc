@@ -127,7 +127,6 @@ void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
-  absl::optional<std::string> pending;
   MutexLock lock(&mu_);
   if (num_pending_reads_ > 0) {
     transport_->factory()->too_many_pending_reads_callback_();

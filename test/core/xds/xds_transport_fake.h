@@ -205,7 +205,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void RemoveStream(const char* method, FakeStreamingCall* call);
 
-    RefCountedPtr<FakeXdsTransportFactory> factory() const { return factory_; }
+    FakeXdsTransportFactory* factory() const { return factory_.get(); }
 
    private:
     class RefCountedOnConnectivityFailure

@@ -57,10 +57,8 @@ class Fuzzer {
       // Leave xds_client_ unset, so Act() will be a no-op.
       return;
     }
-    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>([]() {
-      bool has_pending_read = false;
-      GPR_ASSERT(has_pending_read);
-    });
+    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>(
+        []() { Crash("Multiple concurrent reads"); });
     transport_factory->SetAutoCompleteMessagesFromClient(false);
     transport_factory->SetAbortOnUndrainedMessages(false);
     transport_factory_ = transport_factory.get();
