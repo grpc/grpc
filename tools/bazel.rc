@@ -1,5 +1,9 @@
 # bazelrc file
 
+# Bazel 7 begins to enable module by default which breaks gRPC build.
+# Therefore, this option is disabled until gRPC works with bzlmod.
+common --enable_bzlmod=false
+
 # for platform-appropriate cxxopts
 common --enable_platform_specific_config
 
