@@ -23456,8 +23456,8 @@ target_include_directories(status_flag_test
 target_link_libraries(status_flag_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::status
   absl::statusor
+  gpr
 )
 
 
