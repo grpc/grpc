@@ -3705,7 +3705,6 @@ ServerPromiseBasedCall::MakeTopOfServerCallPromise(
   return Seq(server_to_client_messages_->AwaitClosed(),
              send_trailing_metadata_.Wait());
 }
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // CallSpine based Server Call
@@ -4072,6 +4071,12 @@ RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
   auto* call = new (alloc.second) ServerCallSpine(server, channel, alloc.first);
   return RefCountedPtr<ServerCallSpine>(call);
 }
+#else
+RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
+                                                 Channel* channel) {
+  Crash("not implemented");
+}
+#endif
 
 }  // namespace grpc_core
 
