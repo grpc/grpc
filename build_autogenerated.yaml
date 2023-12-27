@@ -16132,8 +16132,8 @@ targets:
   - test/core/promise/status_flag_test.cc
   deps:
   - gtest
-  - absl/status:status
   - absl/status:statusor
+  - gpr
   uses_polling: false
 - name: status_helper_test
   gtest: true
