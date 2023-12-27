@@ -915,6 +915,11 @@ XdsOverrideHostLb::AdoptSubchannel(
 }
 
 void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_override_host_lb %p] creating owned subchannel for %s",
+            this, std::string(address).c_str());
+  }
   auto addr = StringToSockaddr(address);
   GPR_ASSERT(addr.ok());
   // We don't currently have any cases where per_address_args need to be
@@ -1002,6 +1007,11 @@ void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
 }
 
 void XdsOverrideHostLb::SubchannelWrapper::Orphan() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_override_host_lb %p] subchannel wrapper %p orphaned",
+            policy_.get(), this);
+  }
   if (subchannel_entry_ != nullptr) {
     Duration connection_idle_timeout =
         policy()->connection_idle_timeout_.load();
@@ -1025,8 +1035,11 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
   bool update_picker = false;
   if (subchannel_entry_ != nullptr) {
     MutexLock lock(&policy()->mu_);
-    subchannel_entry_->set_connectivity_state(state);
-    update_picker = subchannel_entry_->GetSubchannel() == this;
+    if (subchannel_entry_->connectivity_state() != state) {
+      subchannel_entry_->set_connectivity_state(state);
+      update_picker = subchannel_entry_->HasOwnedSubchannel() &&
+                      subchannel_entry_->GetSubchannel() == this;
+    }
   }
   // Sending connectivity state notifications to the watchers may cause the set
   // of watchers to change, so we can't be iterating over the set of watchers
@@ -1109,6 +1122,14 @@ void XdsOverrideHostLb::SubchannelEntry::OnSubchannelWrapperOrphan(
     // is still within its idle timeout, so we make a new copy of
     // the wrapper with the same underlying subchannel, and we hold
     // our own ref to it.
+// FIXME: this will start a new watch, but we aren't necessarily in the
+// WorkSerializer here!
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_override_host_lb] subchannel wrapper %p: cloning "
+              "to gain ownership",
+              this);
+    }
     subchannel_ = wrapper->Clone();
   }
 }
