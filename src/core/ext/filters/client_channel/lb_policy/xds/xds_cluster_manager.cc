@@ -40,7 +40,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"

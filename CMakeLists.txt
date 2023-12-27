@@ -1796,7 +1796,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
@@ -1815,7 +1814,9 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
   src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc
   src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
+  src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc
   src/core/ext/filters/client_channel/retry_filter.cc
   src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc
   src/core/ext/filters/client_channel/retry_service_config.cc

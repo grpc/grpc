@@ -4183,7 +4183,7 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "context",
-        "grpc_resolver_xds_header",
+        "grpc_resolver_xds_attributes",
         "grpc_service_config",
         "json",
         "json_args",
@@ -4706,9 +4706,9 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "delegating_helper",
-        "grpc_matchers",
+        "grpc_lb_address_filtering",
+        "grpc_lb_xds_channel_args",
         "grpc_outlier_detection_header",
-        "grpc_tls_credentials",
         "grpc_xds_client",
         "json",
         "json_args",
@@ -4721,6 +4721,7 @@ grpc_cc_library(
         "pollset_set",
         "time",
         "unique_type_name",
+        "xds_dependency_manager",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4742,54 +4743,6 @@ grpc_cc_library(
     deps = [
         "//:endpoint_addresses",
         "//:gpr_platform",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_lb_policy_xds_cluster_resolver",
-    srcs = [
-        "ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
-    ],
-    external_deps = [
-        "absl/functional:function_ref",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/types:optional",
-    ],
-    language = "c++",
-    deps = [
-        "channel_args",
-        "delegating_helper",
-        "grpc_lb_address_filtering",
-        "grpc_lb_xds_channel_args",
-        "grpc_xds_client",
-        "json",
-        "json_args",
-        "json_object_loader",
-        "json_writer",
-        "lb_policy",
-        "lb_policy_factory",
-        "lb_policy_registry",
-        "no_destruct",
-        "pollset_set",
-        "ref_counted_string",
-        "resolved_address",
-        "validation_errors",
-        "//:channel_arg_names",
-        "//:config",
-        "//:debug_location",
-        "//:endpoint_addresses",
-        "//:gpr",
-        "//:grpc_base",
-        "//:grpc_client_channel",
-        "//:grpc_resolver",
-        "//:grpc_resolver_fake",
-        "//:grpc_trace",
-        "//:orphanable",
-        "//:ref_counted_ptr",
-        "//:work_serializer",
-        "//:xds_client",
     ],
 )
 
@@ -4824,6 +4777,7 @@ grpc_cc_library(
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
+        "xds_dependency_manager",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
@@ -4852,7 +4806,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "delegating_helper",
-        "grpc_resolver_xds_header",
+        "grpc_resolver_xds_attributes",
         "json",
         "json_args",
         "json_object_loader",
@@ -5444,6 +5398,7 @@ grpc_cc_library(
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
+        "xds_dependency_manager",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
@@ -5753,9 +5708,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_xds_header",
+    name = "grpc_resolver_xds_attributes",
     hdrs = [
-        "ext/filters/client_channel/resolver/xds/xds_resolver.h",
+        "ext/filters/client_channel/resolver/xds/xds_resolver_attributes.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
@@ -5763,6 +5718,48 @@ grpc_cc_library(
         "grpc_service_config",
         "unique_type_name",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_xds_trace",
+    srcs = [
+        "ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/resolver/xds/xds_resolver_trace.h",
+    ],
+    language = "c++",
+    deps = [
+        "//:gpr_platform",
+        "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_dependency_manager",
+    srcs = [
+        "ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/resolver/xds/xds_dependency_manager.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:flat_hash_set",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_lb_xds_channel_args",
+        "grpc_resolver_xds_trace",
+        "grpc_xds_client",
+        "match",
+        "ref_counted",
+        "//:config",
+        "//:gpr",
+        "//:grpc_resolver",
+        "//:grpc_resolver_fake",
     ],
 )
 
@@ -5792,7 +5789,8 @@ grpc_cc_library(
         "dual_ref_counted",
         "experiments",
         "grpc_lb_policy_ring_hash",
-        "grpc_resolver_xds_header",
+        "grpc_resolver_xds_attributes",
+        "grpc_resolver_xds_trace",
         "grpc_service_config",
         "grpc_xds_client",
         "iomgr_fwd",
@@ -5801,6 +5799,7 @@ grpc_cc_library(
         "ref_counted",
         "slice",
         "time",
+        "xds_dependency_manager",
         "xxhash_inline",
         "//:channel_arg_names",
         "//:config",

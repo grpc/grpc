@@ -101,7 +101,7 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentCertificateVerifier",
         test_value_1="MakeRefCounted<HostNameCertificateVerifier>()",
-        test_value_2='MakeRefCounted<XdsCertificateVerifier>(nullptr, "")',
+        test_value_2="MakeRefCounted<XdsCertificateVerifier>(nullptr)",
     ),
     DataMember(
         name="check_call_host",
