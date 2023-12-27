@@ -136,7 +136,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     std::function<void()> too_many_pending_reads_callback_;
   };
 
-  FakeXdsTransportFactory(std::function<void()> too_many_pending_reads_callback)
+  explicit FakeXdsTransportFactory(
+      std::function<void()> too_many_pending_reads_callback)
       : too_many_pending_reads_callback_(
             std::move(too_many_pending_reads_callback)) {}
 
