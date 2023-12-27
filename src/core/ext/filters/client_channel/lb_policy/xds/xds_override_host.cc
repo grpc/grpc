@@ -44,6 +44,7 @@
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
@@ -84,6 +85,9 @@
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
+
+using ::grpc_event_engine::experimental::EventEngine;
+
 TraceFlag grpc_lb_xds_override_host_trace(false, "xds_override_host_lb");
 
 namespace {
@@ -103,13 +107,6 @@ struct PtrLessThan {
     return v1.get() < v2;
   }
 };
-
-XdsHealthStatus GetEndpointHealthStatus(const EndpointAddresses& endpoint) {
-  return XdsHealthStatus(static_cast<XdsHealthStatus::HealthStatus>(
-      endpoint.args()
-          .GetInt(GRPC_ARG_XDS_HEALTH_STATUS)
-          .value_or(XdsHealthStatus::HealthStatus::kUnknown)));
-}
 
 //
 // xds_override_host LB policy
@@ -430,6 +427,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   void CreateSubchannelForAddress(absl::string_view address);
 
+  void ScheduleTimerForSubchannelCleanup();
+  void CleanupSubchannels();
+
   // State from most recent resolver update.
   ChannelArgs args_;
   XdsHealthStatusSet override_host_status_set_;
@@ -449,7 +449,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   std::map<std::string, RefCountedPtr<SubchannelEntry>, std::less<>>
       subchannel_map_ ABSL_GUARDED_BY(mu_);
 
-// FIXME: add timer to periodically clean up idle owned subchannels
+  // Timer handle for periodic subchannel sweep.
+  absl::optional<EventEngine::TaskHandle> timer_handle_;
 };
 
 //
@@ -635,6 +636,10 @@ void XdsOverrideHostLb::ResetState() {
     }
     subchannel_map_.clear();
   }
+  // Cancel timer, if any.
+  if (timer_handle_.has_value()) {
+    channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+  }
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
   if (child_policy_ != nullptr) {
@@ -665,6 +670,13 @@ void XdsOverrideHostLb::ExitIdleLocked() {
 
 void XdsOverrideHostLb::ResetBackoffLocked() {
   if (child_policy_ != nullptr) child_policy_->ResetBackoffLocked();
+}
+
+XdsHealthStatus GetEndpointHealthStatus(const EndpointAddresses& endpoint) {
+  return XdsHealthStatus(static_cast<XdsHealthStatus::HealthStatus>(
+      endpoint.args()
+          .GetInt(GRPC_ARG_XDS_HEALTH_STATUS)
+          .value_or(XdsHealthStatus::HealthStatus::kUnknown)));
 }
 
 // Wraps the endpoint iterator and filters out endpoints in state DRAINING.
@@ -891,6 +903,8 @@ void XdsOverrideHostLb::UpdateAddressMap(
       it->second->set_address_list(std::move(address_info.address_list));
     }
   }
+  // Start timer if not already running.
+  if (!timer_handle_.has_value()) ScheduleTimerForSubchannelCleanup();
 }
 
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
@@ -945,6 +959,32 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
     it->second->SetOwnedSubchannel(std::move(wrapper));
   }
   MaybeUpdatePickerLocked();
+}
+
+void XdsOverrideHostLb::ScheduleTimerForSubchannelCleanup() {
+  timer_handle_ = channel_control_helper()->GetEventEngine()->RunAfter(
+      Duration::Seconds(5),
+      [self = RefAsSubclass<XdsOverrideHostLb>()]() {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        auto self_ptr = self.get();
+        self_ptr->work_serializer()->Run(
+            [self = std::move(self)]() { self->CleanupSubchannels(); },
+            DEBUG_LOCATION);
+      });
+}
+
+void XdsOverrideHostLb::CleanupSubchannels() {
+  const Timestamp idle_threshold =
+      Timestamp::Now() - connection_idle_timeout_.load();
+  std::vector<RefCountedPtr<SubchannelWrapper>> subchannel_refs_to_drop;
+  MutexLock lock(&mu_);
+  if (subchannel_map_.empty()) return;
+  for (const auto& p : subchannel_map_) {
+    p.second->TakeOwnedSubchannelIfIdleSince(idle_threshold,
+                                             &subchannel_refs_to_drop);
+  }
+  ScheduleTimerForSubchannelCleanup();
 }
 
 //
@@ -1088,19 +1128,6 @@ XdsOverrideHostLb::SubchannelEntry::GetSubchannelRef() const
   return sc->RefIfNonZero().TakeAsSubclass<SubchannelWrapper>();
 }
 
-RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
-XdsOverrideHostLb::SubchannelEntry::TakeOwnedSubchannel()
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-  return MatchMutable(
-      &subchannel_,
-      [](SubchannelWrapper**) -> RefCountedPtr<SubchannelWrapper> {
-        return nullptr;
-      },
-      [](RefCountedPtr<SubchannelWrapper>* subchannel) {
-        return std::move(*subchannel);
-      });
-}
-
 void XdsOverrideHostLb::SubchannelEntry::UnsetSubchannel(
     std::vector<RefCountedPtr<SubchannelWrapper>>* owned_subchannels)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
@@ -1144,6 +1171,19 @@ void XdsOverrideHostLb::SubchannelEntry::TakeOwnedSubchannelIfIdleSince(
     owned_subchannels->push_back(std::move(*owned_subchannel));
     subchannel_ = nullptr;
   }
+}
+
+RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
+XdsOverrideHostLb::SubchannelEntry::TakeOwnedSubchannel()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+  return MatchMutable(
+      &subchannel_,
+      [](SubchannelWrapper**) -> RefCountedPtr<SubchannelWrapper> {
+        return nullptr;
+      },
+      [](RefCountedPtr<SubchannelWrapper>* subchannel) {
+        return std::move(*subchannel);
+      });
 }
 
 //
