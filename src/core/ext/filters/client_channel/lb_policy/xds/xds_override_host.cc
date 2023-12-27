@@ -150,6 +150,11 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return subchannel_entry_->address_list();
     }
 
+    void set_last_used_time()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+      subchannel_entry_->set_last_used_time();
+    }
+
     XdsOverrideHostLb* policy() const { return policy_.get(); }
 
    private:
@@ -278,6 +283,15 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return address_list_;
     }
 
+    Timestamp last_used_time() const
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+      return last_used_time_;
+    }
+    void set_last_used_time()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+      last_used_time_ = Timestamp::Now();
+    }
+
    private:
     grpc_connectivity_state connectivity_state_
         ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_) = GRPC_CHANNEL_IDLE;
@@ -285,6 +299,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     XdsHealthStatus eds_health_status_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
     RefCountedStringValue address_list_
         ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
+    Timestamp last_used_time_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_) =
+        Timestamp::InfFuture();
   };
 
   // A picker that wraps the picker from the child for cases when cookie is
@@ -366,6 +382,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   // Current config from the resolver.
   XdsHealthStatusSet override_host_status_set_;
+  Duration connection_idle_timeout_;
 
   // Internal state.
   bool shutting_down_ = false;
@@ -443,6 +460,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
           gpr_log(GPR_INFO, "Picker override found READY subchannel %s",
                   std::string(address).c_str());
         }
+        it->second->set_last_used_time();
         override_host_attr->set_actual_address_list(it->second->address_list());
         return PickResult::Complete(subchannel->wrapped_subchannel());
       } else if (connectivity_state == GRPC_CHANNEL_IDLE) {
@@ -498,6 +516,7 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
     // the StatefulSession filter can set the cookie.
     if (override_host_attr != nullptr) {
       MutexLock lock(&wrapper->policy()->mu_);
+      wrapper->set_last_used_time();
       override_host_attr->set_actual_address_list(wrapper->address_list());
     }
     // Unwrap the subchannel.
@@ -635,6 +654,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
     return status;
   }
   override_host_status_set_ = it->second->cluster->override_host_statuses;
+  connection_idle_timeout_ = it->second->cluster->connection_idle_timeout;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
     gpr_log(GPR_INFO, "[xds_override_host_lb %p] override host status set: %s",
             this, override_host_status_set_.ToString().c_str());
