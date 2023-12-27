@@ -51,43 +51,43 @@ OpenTelemetryServerCallSentTotalCompressedMessageSizeInstrumentName();
 absl::string_view
 OpenTelemetryServerCallRcvdTotalCompressedMessageSizeInstrumentName();
 
+/// The most common way to use this API is -
+///
+/// OpenTelemetryPluginBuilder().SetMeterProvider(provider).BuildAndRegister();
+///
+/// The set of instruments available are -
+/// grpc.client.attempt.started
+/// grpc.client.attempt.duration
+/// grpc.client.attempt.sent_total_compressed_message_size
+/// grpc.client.attempt.rcvd_total_compressed_message_size
+/// grpc.server.call.started
+/// grpc.server.call.duration
+/// grpc.server.call.sent_total_compressed_message_size
+/// grpc.server.call.rcvd_total_compressed_message_size
 class OpenTelemetryPluginBuilder {
  public:
   OpenTelemetryPluginBuilder();
-  // If `SetMeterProvider()` is not called, no metrics are collected.
+  /// If `SetMeterProvider()` is not called, no metrics are collected.
   OpenTelemetryPluginBuilder& SetMeterProvider(
       std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider);
-  // If set, \a target_attribute_filter is called per channel to decide whether
-  // to record the target attribute on client or to replace it with "other".
-  // This helps reduce the cardinality on metrics in cases where many channels
-  // are created with different targets in the same binary (which might happen
-  // for example, if the channel target string uses IP addresses directly).
+  /// If set, \a target_attribute_filter is called per channel to decide whether
+  /// to record the target attribute on client or to replace it with "other".
+  /// This helps reduce the cardinality on metrics in cases where many channels
+  /// are created with different targets in the same binary (which might happen
+  /// for example, if the channel target string uses IP addresses directly).
   OpenTelemetryPluginBuilder& SetTargetAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attribute_filter);
-  // If set, \a generic_method_attribute_filter is called per call with a
-  // generic method type to decide whether to record the method name or to
-  // replace it with "other". Non-generic or pre-registered methods remain
-  // unaffected. If not set, by default, generic method names are replaced with
-  // "other" when recording metrics.
+  /// If set, \a generic_method_attribute_filter is called per call with a
+  /// generic method type to decide whether to record the method name or to
+  /// replace it with "other". Non-generic or pre-registered methods remain
+  /// unaffected. If not set, by default, generic method names are replaced with
+  /// "other" when recording metrics.
   OpenTelemetryPluginBuilder& SetGenericMethodAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter);
-  // Registers a global plugin that acts on all channels and servers running on
-  // the process.
-  // The most common way to use this API is -
-  //
-  // OpenTelemetryPluginBuilder().SetMeterProvider(provider).BuildAndRegister();
-  //
-  // The set of instruments available are -
-  // grpc.client.attempt.started
-  // grpc.client.attempt.duration
-  // grpc.client.attempt.sent_total_compressed_message_size
-  // grpc.client.attempt.rcvd_total_compressed_message_size
-  // grpc.server.call.started
-  // grpc.server.call.duration
-  // grpc.server.call.sent_total_compressed_message_size
-  // grpc.server.call.rcvd_total_compressed_message_size
+  /// Registers a global plugin that acts on all channels and servers running on
+  /// the process.
   void BuildAndRegisterGlobal();
 
  private:
