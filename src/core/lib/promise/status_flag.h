@@ -159,6 +159,14 @@ struct StatusCastImpl<ValueOrFailure<T>, StatusFlag&> {
   }
 };
 
+template <typename T>
+struct StatusCastImpl<ValueOrFailure<T>, StatusFlag> {
+  static ValueOrFailure<T> Cast(StatusFlag f) {
+    GPR_ASSERT(!f.ok());
+    return ValueOrFailure<T>(Failure{});
+  }
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_PROMISE_STATUS_FLAG_H

@@ -23,6 +23,9 @@
 
 namespace grpc_core {
 
+// Defines a promise that calls grpc_cq_end_op() (on first poll) and then waits
+// for the callback supplied to grpc_cq_end_op() to be called, before resolving
+// to Empty{}
 class WaitForCqEndOp {
  public:
   WaitForCqEndOp(bool is_closure, void* tag, grpc_error_handle error,
