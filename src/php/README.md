@@ -76,6 +76,20 @@ $ make
 $ [sudo] make install
 ```
 
+Or more simplier, use package manager to install grpc and grpc-devel instead of compile grpc core and libs from source.
+
+eg: with fedora or redhat 
+
+```sh
+dnf install grpc grpc-devel
+cd src/php/ext/grpc
+phpize
+./configure
+make
+[sudo] make install
+```
+
+
 This will compile and install the `grpc` extension into the
 standard PHP extension directory. You should be able to run
 the [unit tests](#unit-tests), with the `grpc` extension installed.
