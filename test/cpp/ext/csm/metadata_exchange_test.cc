@@ -206,8 +206,8 @@ class MetadataExchangeTest
 
 // Verify that grpc.client.attempt.started does not get service mesh attributes
 TEST_P(MetadataExchangeTest, ClientAttemptStarted) {
-  Init(/*metric_names=*/{
-      grpc::experimental::OpenTelemetryClientAttemptStartedInstrumentName()});
+  Init(/*metric_names=*/{grpc::experimental::OpenTelemetryPluginBuilder::
+                             kClientAttemptStartedInstrumentName});
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(

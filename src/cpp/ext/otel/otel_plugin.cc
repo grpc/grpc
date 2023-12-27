@@ -266,6 +266,10 @@ void OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
 }  // namespace internal
 
 namespace experimental {
+
+constexpr absl::string_view
+    OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName;
+
 absl::string_view OpenTelemetryClientAttemptStartedInstrumentName() {
   return "grpc.client.attempt.started";
 }

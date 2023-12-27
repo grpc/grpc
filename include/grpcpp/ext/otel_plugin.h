@@ -39,6 +39,7 @@ class OpenTelemetryPluginBuilderImpl;
 namespace experimental {
 // Metrics
 absl::string_view OpenTelemetryClientAttemptStartedInstrumentName();
+absl::string_view OpenTelemetryClientAttemptStartedInstrumentName();
 absl::string_view OpenTelemetryClientAttemptDurationInstrumentName();
 absl::string_view
 OpenTelemetryClientAttemptSentTotalCompressedMessageSizeInstrumentName();
@@ -66,6 +67,9 @@ OpenTelemetryServerCallRcvdTotalCompressedMessageSizeInstrumentName();
 /// grpc.server.call.rcvd_total_compressed_message_size
 class OpenTelemetryPluginBuilder {
  public:
+  static constexpr absl::string_view kClientAttemptStartedInstrumentName =
+      "grpc.client.attempt.started";
+
   OpenTelemetryPluginBuilder();
   /// If `SetMeterProvider()` is not called, no metrics are collected.
   OpenTelemetryPluginBuilder& SetMeterProvider(
