@@ -68,7 +68,7 @@ namespace party_detail {
 
 // Number of bits reserved for wakeups gives us the maximum number of
 // participants.
-static constexpr size_t kMaxParticipants = 20;
+static constexpr size_t kMaxParticipants = 16;
 
 }  // namespace party_detail
 
@@ -198,29 +198,29 @@ class PartySyncUsingAtomics {
   //     The first thread to set this owns the party until it is unlocked
   //     That thread will run the main loop until no further work needs to
   //     be done.
-  //   - 1 bit to indicate whether the party is being destroyed
-  //   - 20 bits, one per participant, indicating which participants have
-  //     been woken up and should be polled next time the main loop runs.
-  //   - 20 bits, one per participant, indicating which participants have
-  //     been allocated already.
+  //   - 1 bit to indicate whether there are participants waiting to be
+  //   added
+  //   - 16 bits, one per participant, indicating which participants have
+  //   been
+  //     woken up and should be polled next time the main loop runs.
 
   // clang-format off
-  // Bits used to store 20 bits of wakeups
-  static constexpr uint64_t kWakeupMask    = 0x0000'0000'000f'ffff;
-  // Bits used to store 20 bits of allocated participant slots.
-  static constexpr uint64_t kAllocatedMask = 0x0000'00ff'fff0'0000;
+  // Bits used to store 16 bits of wakeups
+  static constexpr uint64_t kWakeupMask    = 0x0000'0000'0000'ffff;
+  // Bits used to store 16 bits of allocated participant slots.
+  static constexpr uint64_t kAllocatedMask = 0x0000'0000'ffff'0000;
   // Bit indicating destruction has begun (refs went to zero)
-  static constexpr uint64_t kDestroying    = 0x0000'0400'0000'0000;
+  static constexpr uint64_t kDestroying    = 0x0000'0001'0000'0000;
   // Bit indicating locked or not
-  static constexpr uint64_t kLocked        = 0x0000'0800'0000'0000;
-  // Bits used to store 20 bits of ref counts
-  static constexpr uint64_t kRefMask       = 0xffff'f000'0000'0000;
+  static constexpr uint64_t kLocked        = 0x0000'0008'0000'0000;
+  // Bits used to store 24 bits of ref counts
+  static constexpr uint64_t kRefMask       = 0xffff'ff00'0000'0000;
   // clang-format on
 
   // Shift to get from a participant mask to an allocated mask.
-  static constexpr size_t kAllocatedShift = 20;
+  static constexpr size_t kAllocatedShift = 16;
   // How far to shift to get the refcount
-  static constexpr size_t kRefShift = 44;
+  static constexpr size_t kRefShift = 40;
   // One ref count
   static constexpr uint64_t kOneRef = 1ull << kRefShift;
 
