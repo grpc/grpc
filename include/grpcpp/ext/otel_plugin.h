@@ -37,20 +37,6 @@ class OpenTelemetryPluginBuilderImpl;
 }  // namespace internal
 
 namespace experimental {
-// Metrics
-absl::string_view OpenTelemetryClientAttemptStartedInstrumentName();
-absl::string_view OpenTelemetryClientAttemptStartedInstrumentName();
-absl::string_view OpenTelemetryClientAttemptDurationInstrumentName();
-absl::string_view
-OpenTelemetryClientAttemptSentTotalCompressedMessageSizeInstrumentName();
-absl::string_view
-OpenTelemetryClientAttemptRcvdTotalCompressedMessageSizeInstrumentName();
-absl::string_view OpenTelemetryServerCallStartedInstrumentName();
-absl::string_view OpenTelemetryServerCallDurationInstrumentName();
-absl::string_view
-OpenTelemetryServerCallSentTotalCompressedMessageSizeInstrumentName();
-absl::string_view
-OpenTelemetryServerCallRcvdTotalCompressedMessageSizeInstrumentName();
 
 /// The most common way to use this API is -
 ///
@@ -67,8 +53,27 @@ OpenTelemetryServerCallRcvdTotalCompressedMessageSizeInstrumentName();
 /// grpc.server.call.rcvd_total_compressed_message_size
 class OpenTelemetryPluginBuilder {
  public:
+  /// Metrics
   static constexpr absl::string_view kClientAttemptStartedInstrumentName =
       "grpc.client.attempt.started";
+  static constexpr absl::string_view kClientAttemptDurationInstrumentName =
+      "grpc.client.attempt.duration";
+  static constexpr absl::string_view
+      kClientAttemptSentTotalCompressedMessageSizeInstrumentName =
+          "grpc.client.attempt.sent_total_compressed_message_size";
+  static constexpr absl::string_view
+      kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName =
+          "grpc.client.attempt.rcvd_total_compressed_message_size";
+  static constexpr absl::string_view kServerCallStartedInstrumentName =
+      "grpc.server.call.started";
+  static constexpr absl::string_view kServerCallDurationInstrumentName =
+      "grpc.server.call.duration";
+  static constexpr absl::string_view
+      kServerCallSentTotalCompressedMessageSizeInstrumentName =
+          "grpc.server.call.sent_total_compressed_message_size";
+  static constexpr absl::string_view
+      kServerCallRcvdTotalCompressedMessageSizeInstrumentName =
+          "grpc.server.call.rcvd_total_compressed_message_size";
 
   OpenTelemetryPluginBuilder();
   /// If `SetMeterProvider()` is not called, no metrics are collected.

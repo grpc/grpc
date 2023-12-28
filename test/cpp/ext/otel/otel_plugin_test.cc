@@ -51,7 +51,8 @@ TEST(OpenTelemetryPluginBuildTest, Basic) {
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptStarted) {
-  Init({grpc::experimental::OpenTelemetryClientAttemptStartedInstrumentName()});
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptStartedInstrumentName});
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -79,8 +80,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptStarted) {
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptDuration) {
-  Init(
-      {grpc::experimental::OpenTelemetryClientAttemptDurationInstrumentName()});
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptDurationInstrumentName});
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto data = ReadCurrentMetricsData(
@@ -112,9 +113,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptDuration) {
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ClientAttemptSentTotalCompressedMessageSize) {
-  Init(
-      {grpc::experimental::
-           OpenTelemetryClientAttemptSentTotalCompressedMessageSizeInstrumentName()});
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptSentTotalCompressedMessageSizeInstrumentName});
   SendRPC();
   const char* kMetricName =
       "grpc.client.attempt.sent_total_compressed_message_size";
@@ -148,9 +148,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ClientAttemptRcvdTotalCompressedMessageSize) {
-  Init(
-      {grpc::experimental::
-           OpenTelemetryClientAttemptRcvdTotalCompressedMessageSizeInstrumentName()});
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName});
   SendRPC();
   const char* kMetricName =
       "grpc.client.attempt.rcvd_total_compressed_message_size";
@@ -183,7 +182,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallStarted) {
-  Init({grpc::experimental::OpenTelemetryServerCallStartedInstrumentName()});
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kServerCallStartedInstrumentName});
   SendRPC();
   const char* kMetricName = "grpc.server.call.started";
   auto data = ReadCurrentMetricsData(
@@ -207,7 +207,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallStarted) {
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallDuration) {
-  Init({grpc::experimental::OpenTelemetryServerCallDurationInstrumentName()});
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kServerCallDurationInstrumentName});
   SendRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -235,9 +236,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallDuration) {
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ServerCallSentTotalCompressedMessageSize) {
-  Init(
-      {grpc::experimental::
-           OpenTelemetryServerCallSentTotalCompressedMessageSizeInstrumentName()});
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kServerCallSentTotalCompressedMessageSizeInstrumentName});
   SendRPC();
   const char* kMetricName =
       "grpc.server.call.sent_total_compressed_message_size";
@@ -267,9 +267,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ServerCallRcvdTotalCompressedMessageSize) {
-  Init(
-      {grpc::experimental::
-           OpenTelemetryServerCallRcvdTotalCompressedMessageSizeInstrumentName()});
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kServerCallRcvdTotalCompressedMessageSizeInstrumentName});
   SendRPC();
   const char* kMetricName =
       "grpc.server.call.rcvd_total_compressed_message_size";
@@ -299,7 +298,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 
 // Make sure that no meter provider results in normal operations.
 TEST_F(OpenTelemetryPluginEnd2EndTest, NoMeterProviderRegistered) {
-  Init({grpc::experimental::OpenTelemetryClientAttemptStartedInstrumentName()},
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptStartedInstrumentName},
        /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/true);
@@ -308,8 +308,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, NoMeterProviderRegistered) {
 
 // Test that a channel selector returning true records metrics on the channel.
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsTrue) {
-  Init({grpc::experimental::
-            OpenTelemetryClientAttemptStartedInstrumentName()}, /*resource=*/
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptStartedInstrumentName}, /*resource=*/
        opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
@@ -344,8 +344,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsTrue) {
 // Test that a target selector returning false does not record metrics on the
 // channel.
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsFalse) {
-  Init({grpc::experimental::
-            OpenTelemetryClientAttemptStartedInstrumentName()}, /*resource=*/
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptStartedInstrumentName}, /*resource=*/
        opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
@@ -363,8 +363,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsFalse) {
 // Test that a target attribute filter returning true records metrics with the
 // target as is on the channel.
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsTrue) {
-  Init({grpc::experimental::
-            OpenTelemetryClientAttemptStartedInstrumentName()}, /*resource=*/
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptStartedInstrumentName}, /*resource=*/
        opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
@@ -401,8 +401,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsTrue) {
 // Test that a target attribute filter returning false records metrics with the
 // target as "other".
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsFalse) {
-  Init({grpc::experimental::
-            OpenTelemetryClientAttemptStartedInstrumentName()}, /*resource=*/
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptStartedInstrumentName}, /*resource=*/
        opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
@@ -438,7 +438,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsFalse) {
 
 // Test that generic method names are scrubbed properly on the client side.
 TEST_F(OpenTelemetryPluginEnd2EndTest, GenericClientRpc) {
-  Init({grpc::experimental::OpenTelemetryClientAttemptStartedInstrumentName()});
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptStartedInstrumentName});
   SendGenericRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -469,7 +470,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, GenericClientRpc) {
 // the method attribute filter is set and it returns false.
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericClientRpcWithMethodAttributeFilterReturningFalse) {
-  Init({grpc::experimental::OpenTelemetryClientAttemptStartedInstrumentName()},
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptStartedInstrumentName},
        /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
@@ -508,7 +510,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 // the method attribute filter is set and it returns true.
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericClientRpcWithMethodAttributeFilterReturningTrue) {
-  Init({grpc::experimental::OpenTelemetryClientAttemptStartedInstrumentName()},
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptStartedInstrumentName},
        /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
@@ -545,7 +548,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 
 // Test that generic method names are scrubbed properly on the server side.
 TEST_F(OpenTelemetryPluginEnd2EndTest, GenericServerRpc) {
-  Init({grpc::experimental::OpenTelemetryServerCallDurationInstrumentName()});
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kServerCallDurationInstrumentName});
   SendGenericRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -575,7 +579,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, GenericServerRpc) {
 // the method attribute filter is set and it returns false.
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericServerRpcWithMethodAttributeFilterReturningFalse) {
-  Init({grpc::experimental::OpenTelemetryServerCallDurationInstrumentName()},
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kServerCallDurationInstrumentName},
        /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
@@ -613,7 +618,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 // the method attribute filter is set and it returns true.
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericServerRpcWithMethodAttributeFilterReturningTrue) {
-  Init({grpc::experimental::OpenTelemetryServerCallDurationInstrumentName()},
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kServerCallDurationInstrumentName},
        /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
