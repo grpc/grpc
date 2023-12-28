@@ -131,8 +131,8 @@ class MpscReceiver;
 template <typename T>
 class MpscSender {
  public:
-  MpscSender(const MpscSender&) = delete;
-  MpscSender& operator=(const MpscSender&) = delete;
+  MpscSender(const MpscSender&) = default;
+  MpscSender& operator=(const MpscSender&) = default;
   MpscSender(MpscSender&&) noexcept = default;
   MpscSender& operator=(MpscSender&&) noexcept = default;
 
@@ -140,7 +140,10 @@ class MpscSender {
   // Resolves to true if sent, false if the receiver was closed (and the value
   // will never be successfully sent).
   auto Send(T t) {
-    return [this, t = std::move(t)]() mutable { return center_->PollSend(t); };
+    return [this, t = std::move(t)]() mutable -> Poll<bool> {
+      if (center_ == nullptr) return false;
+      return center_->PollSend(t);
+    };
   }
 
   bool UnbufferedImmediateSend(T t) {

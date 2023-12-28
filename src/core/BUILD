@@ -620,6 +620,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "switch",
+    language = "c++",
+    public_hdrs = ["lib/promise/switch.h"],
+    deps = [
+        "if",
+        "promise_factory",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_status",
     external_deps = [
         "absl/status",
@@ -734,15 +745,6 @@ grpc_cc_library(
         "status_flag",
         "//:gpr_platform",
     ],
-)
-
-grpc_cc_library(
-    name = "switch",
-    language = "c++",
-    public_hdrs = [
-        "lib/promise/detail/switch.h",
-    ],
-    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
@@ -6223,6 +6225,7 @@ grpc_cc_library(
         "bitset",
         "chaotic_good_frame_header",
         "context",
+        "match",
         "no_destruct",
         "slice",
         "slice_buffer",
@@ -6377,6 +6380,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good_transport",
+    srcs = [
+        "ext/transport/chaotic_good/chaotic_good_transport.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/chaotic_good_transport.h",
+    ],
+    external_deps = ["absl/random"],
+    language = "c++",
+    deps = [
+        "chaotic_good_frame",
+        "chaotic_good_frame_header",
+        "grpc_promise_endpoint",
+        "if",
+        "try_join",
+        "try_seq",
+        "//:hpack_encoder",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
     name = "chaotic_good_client_transport",
     srcs = [
         "ext/transport/chaotic_good/client_transport.cc",
@@ -6386,6 +6411,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_map",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",
@@ -6396,9 +6422,11 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "activity",
+        "all_ok",
         "arena",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "chaotic_good_transport",
         "context",
         "event_engine_wakeup_scheduler",
         "for_each",
@@ -6406,6 +6434,7 @@ grpc_cc_library(
         "if",
         "inter_activity_pipe",
         "loop",
+        "map",
         "match",
         "memory_quota",
         "mpsc",
@@ -6414,6 +6443,63 @@ grpc_cc_library(
         "resource_quota",
         "slice",
         "slice_buffer",
+        "try_join",
+        "try_seq",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:hpack_encoder",
+        "//:hpack_parser",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_server_transport",
+    srcs = [
+        "ext/transport/chaotic_good/server_transport.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/server_transport.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/random",
+        "absl/random:bit_gen_ref",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    deps = [
+        "1999",
+        "activity",
+        "arena",
+        "chaotic_good_frame",
+        "chaotic_good_frame_header",
+        "chaotic_good_transport",
+        "context",
+        "default_event_engine",
+        "event_engine_wakeup_scheduler",
+        "for_each",
+        "grpc_promise_endpoint",
+        "if",
+        "inter_activity_pipe",
+        "loop",
+        "memory_quota",
+        "mpsc",
+        "pipe",
+        "poll",
+        "resource_quota",
+        "seq",
+        "slice",
+        "slice_buffer",
+        "switch",
         "try_join",
         "try_seq",
         "//:exec_ctx",

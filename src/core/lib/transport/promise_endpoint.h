@@ -71,13 +71,17 @@ class PromiseEndpoint {
       grpc_slice_buffer_swap(write_buffer_.c_slice_buffer(),
                              data.c_slice_buffer());
     }
-    // If `Write()` returns true immediately, the callback will not be called.
-    // We still need to call our callback to pick up the result.
-    if (endpoint_->Write(std::bind(&PromiseEndpoint::WriteCallback, this,
-                                   std::placeholders::_1),
-                         &write_buffer_,
-                         nullptr /* uses default arguments */)) {
+    if (write_buffer_.Length() == 0u) {
       WriteCallback(absl::OkStatus());
+    } else {
+      // If `Write()` returns true immediately, the callback will not be called.
+      // We still need to call our callback to pick up the result.
+      if (endpoint_->Write(std::bind(&PromiseEndpoint::WriteCallback, this,
+                                     std::placeholders::_1),
+                           &write_buffer_,
+                           nullptr /* uses default arguments */)) {
+        WriteCallback(absl::OkStatus());
+      }
     }
     return [this]() -> Poll<absl::Status> {
       MutexLock lock(&write_mutex_);
