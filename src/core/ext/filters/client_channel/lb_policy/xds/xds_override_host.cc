@@ -21,7 +21,6 @@
 #include <stddef.h>
 
 #include <algorithm>
-#include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
@@ -433,8 +432,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   // State from most recent resolver update.
   ChannelArgs args_;
   XdsHealthStatusSet override_host_status_set_;
-  // This uses an atomic, since it's accessed when a subchannel is orphaned.
-  std::atomic<Duration> connection_idle_timeout_;
+  Duration connection_idle_timeout_;
 
   // Internal state.
   bool shutting_down_ = false;
@@ -736,7 +734,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   }
   args_ = std::move(args.args);
   override_host_status_set_ = it->second->cluster->override_host_statuses;
-  connection_idle_timeout_.store(it->second->cluster->connection_idle_timeout);
+  connection_idle_timeout_ = it->second->cluster->connection_idle_timeout;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
     gpr_log(GPR_INFO, "[xds_override_host_lb %p] override host status set: %s",
             this, override_host_status_set_.ToString().c_str());
@@ -975,8 +973,7 @@ void XdsOverrideHostLb::ScheduleTimerForSubchannelCleanup() {
 }
 
 void XdsOverrideHostLb::CleanupSubchannels() {
-  const Timestamp idle_threshold =
-      Timestamp::Now() - connection_idle_timeout_.load();
+  const Timestamp idle_threshold = Timestamp::Now() - connection_idle_timeout_;
   std::vector<RefCountedPtr<SubchannelWrapper>> subchannel_refs_to_drop;
   MutexLock lock(&mu_);
   if (subchannel_map_.empty()) return;
@@ -1052,20 +1049,24 @@ void XdsOverrideHostLb::SubchannelWrapper::Orphan() {
             "[xds_override_host_lb %p] subchannel wrapper %p orphaned",
             policy_.get(), this);
   }
-  if (subchannel_entry_ != nullptr) {
-    Duration connection_idle_timeout =
-        policy()->connection_idle_timeout_.load();
-    MutexLock lock(&policy()->mu_);
-    subchannel_entry_->OnSubchannelWrapperOrphan(this, connection_idle_timeout);
-  }
   if (!IsWorkSerializerDispatchEnabled()) {
     wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
+    if (subchannel_entry_ != nullptr) {
+      MutexLock lock(&policy()->mu_);
+      subchannel_entry_->OnSubchannelWrapperOrphan(
+          this, policy()->connection_idle_timeout_);
+    }
     return;
   }
   policy()->work_serializer()->Run(
       [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
         self->wrapped_subchannel()->CancelConnectivityStateWatch(
             self->watcher_);
+        if (self->subchannel_entry_ != nullptr) {
+          MutexLock lock(&self->policy()->mu_);
+          self->subchannel_entry_->OnSubchannelWrapperOrphan(
+              self.get(), self->policy()->connection_idle_timeout_);
+        }
       },
       DEBUG_LOCATION);
 }
@@ -1149,8 +1150,6 @@ void XdsOverrideHostLb::SubchannelEntry::OnSubchannelWrapperOrphan(
     // is still within its idle timeout, so we make a new copy of
     // the wrapper with the same underlying subchannel, and we hold
     // our own ref to it.
-// FIXME: this will start a new watch, but we aren't necessarily in the
-// WorkSerializer here!
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
       gpr_log(GPR_INFO,
               "[xds_override_host_lb] subchannel wrapper %p: cloning "
