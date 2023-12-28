@@ -37,9 +37,10 @@ namespace grpc_core {
 PromiseEndpoint::PromiseEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint,
-    SliceBuffer already_received) {
-  GPR_ASSERT(endpoint != nullptr);
-  read_state_->endpoint = std::move(endpoint);
+    SliceBuffer already_received)
+    : endpoint_(std::move(endpoint)) {
+  GPR_ASSERT(endpoint_ != nullptr);
+  read_state_->endpoint = endpoint_;
   // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
   // available.
   grpc_slice_buffer_swap(read_state_->buffer.c_slice_buffer(),
@@ -48,12 +49,12 @@ PromiseEndpoint::PromiseEndpoint(
 
 const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
 PromiseEndpoint::GetPeerAddress() const {
-  return read_state_->endpoint->GetPeerAddress();
+  return endpoint_->GetPeerAddress();
 }
 
 const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
 PromiseEndpoint::GetLocalAddress() const {
-  return read_state_->endpoint->GetLocalAddress();
+  return endpoint_->GetLocalAddress();
 }
 
 void PromiseEndpoint::ReadState::Complete(absl::Status status,
@@ -83,7 +84,13 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
     // If `Read()` returns true immediately, the callback will not be
     // called. We still need to call our callback to pick up the result and
     // maybe do further reads.
-    if (endpoint->Read(
+    auto ep = endpoint.lock();
+    if (ep == nullptr) {
+      Complete(absl::UnavailableError("Endpoint closed during read."),
+               num_bytes_requested);
+      return;
+    }
+    if (ep->Read(
             [self = Ref(), num_bytes_requested](absl::Status status) {
               self->Complete(std::move(status), num_bytes_requested);
             },

@@ -76,7 +76,7 @@ class PromiseEndpoint {
     // If `Write()` returns true immediately, the callback will not be called.
     // We still need to call our callback to pick up the result.
     write_state_->waker = Activity::current()->MakeNonOwningWaker();
-    const bool completed = read_state_->endpoint->Write(
+    const bool completed = endpoint_->Write(
         [write_state = write_state_](absl::Status status) {
           write_state->Complete(std::move(status));
         },
@@ -120,7 +120,7 @@ class PromiseEndpoint {
       // If `Read()` returns true immediately, the callback will not be
       // called.
       read_state_->waker = Activity::current()->MakeNonOwningWaker();
-      if (read_state_->endpoint->Read(
+      if (endpoint_->Read(
               [read_state = read_state_, num_bytes](absl::Status status) {
                 read_state->Complete(std::move(status), num_bytes);
               },
@@ -194,6 +194,9 @@ class PromiseEndpoint {
   GetLocalAddress() const;
 
  private:
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+      endpoint_;
+
   struct ReadState : public RefCounted<ReadState> {
     std::atomic<bool> complete{false};
     // Read buffer used for storing successful reads given by
@@ -208,8 +211,9 @@ class PromiseEndpoint {
     Waker waker;
     // Backing endpoint: we keep this on ReadState as reads will need to
     // repeatedly read until the target size is hit, and we don't want to access
-    // the main object during this.
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+    // the main object during this dance (indeed the main object may be
+    // deleted).
+    std::weak_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint;
 
     void Complete(absl::Status status, size_t num_bytes_requested);
