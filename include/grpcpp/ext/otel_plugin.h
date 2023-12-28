@@ -41,19 +41,9 @@ namespace experimental {
 /// The most common way to use this API is -
 ///
 /// OpenTelemetryPluginBuilder().SetMeterProvider(provider).BuildAndRegister();
-///
-/// The set of instruments available are -
-/// grpc.client.attempt.started
-/// grpc.client.attempt.duration
-/// grpc.client.attempt.sent_total_compressed_message_size
-/// grpc.client.attempt.rcvd_total_compressed_message_size
-/// grpc.server.call.started
-/// grpc.server.call.duration
-/// grpc.server.call.sent_total_compressed_message_size
-/// grpc.server.call.rcvd_total_compressed_message_size
 class OpenTelemetryPluginBuilder {
  public:
-  /// Metrics
+  /// Instruments available by default
   static constexpr absl::string_view kClientAttemptStartedInstrumentName =
       "grpc.client.attempt.started";
   static constexpr absl::string_view kClientAttemptDurationInstrumentName =
