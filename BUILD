@@ -1273,6 +1273,7 @@ grpc_cc_library(
     tags = [
         "nofixdeps",
     ],
+    visibility = ["@grpc:event_engine_base_hdrs"],
     deps = [
         "channel_arg_names",
         "gpr",
@@ -1462,6 +1463,7 @@ grpc_cc_library(
         "//src/core:lib/surface/lame_client.h",
         "//src/core:lib/surface/server.h",
         "//src/core:lib/surface/validate_metadata.h",
+        "//src/core:lib/surface/wait_for_cq_end_op.h",
         "//src/core:lib/transport/batch_builder.h",
         "//src/core:lib/transport/connectivity_state.h",
         "//src/core:lib/transport/custom_metadata.h",
@@ -1538,6 +1540,7 @@ grpc_cc_library(
         "work_serializer",
         "//src/core:1999",
         "//src/core:activity",
+        "//src/core:all_ok",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
@@ -1610,6 +1613,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:transport_fwd",
+        "//src/core:try_join",
         "//src/core:try_seq",
         "//src/core:type_list",
         "//src/core:useful",
@@ -2396,6 +2400,18 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "//src/cpp/ext/csm:csm_observability",
+    ],
+)
+
+# This is an EXPERIMENTAL target subject to change.
+grpc_cc_library(
+    name = "grpcpp_otel_plugin",
+    hdrs = [
+        "include/grpcpp/ext/otel_plugin.h",
+    ],
+    language = "c++",
+    deps = [
+        "//src/cpp/ext/otel:otel_plugin",
     ],
 )
 
@@ -3657,6 +3673,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -4285,6 +4302,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_transport_sockets_tls_upbdefs",
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_upstreams_http_upb",
+    deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_upstreams_http_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
 )
 
 grpc_upb_proto_library(

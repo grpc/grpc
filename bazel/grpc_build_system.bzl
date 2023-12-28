@@ -120,6 +120,8 @@ def _update_visibility(visibility):
         "xds": PRIVATE,
         "xds_client_core": PRIVATE,
         "grpc_python_observability": PRIVATE,
+        "event_engine_base_hdrs": PRIVATE,
+        "useful": PRIVATE,
     }
     final_visibility = []
     for rule in visibility:

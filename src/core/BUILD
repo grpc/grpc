@@ -33,7 +33,10 @@ package(
 # the top-level BUILD file that have not yet been moved here. Should go away
 # once the transition is complete.
 exports_files(
-    glob(["**"]),
+    glob(
+        ["**"],
+        exclude = ["ext/transport/binder/java/**"],
+    ),
     visibility = ["//:__subpackages__"],
 )
 
@@ -152,6 +155,7 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
+    visibility = ["@grpc:useful"],
     deps = ["//:gpr_platform"],
 )
 
@@ -435,6 +439,7 @@ grpc_cc_library(
     ],
     deps = [
         "promise_status",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -706,6 +711,7 @@ grpc_cc_library(
         "join_state",
         "map",
         "poll",
+        "status_flag",
         "//:gpr_platform",
     ],
 )
@@ -806,6 +812,7 @@ grpc_cc_library(
         "promise_like",
         "promise_status",
         "seq_state",
+        "status_flag",
         "//:debug_location",
         "//:gpr_platform",
     ],
@@ -4448,6 +4455,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/functional:bind_front",
         "absl/memory",
         "absl/random",
@@ -4511,6 +4519,8 @@ grpc_cc_library(
         "envoy_extensions_load_balancing_policies_wrr_locality_upb",
         "envoy_extensions_transport_sockets_tls_upb",
         "envoy_extensions_transport_sockets_tls_upbdefs",
+        "envoy_extensions_upstreams_http_upb",
+        "envoy_extensions_upstreams_http_upbdefs",
         "envoy_service_discovery_upb",
         "envoy_service_discovery_upbdefs",
         "envoy_service_load_stats_upb",
@@ -4657,6 +4667,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:uri_parser",
+        "//:xds_client",
     ],
 )
 
@@ -4726,6 +4737,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:work_serializer",
+        "//:xds_client",
     ],
 )
 
@@ -5403,6 +5415,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_trace",
         "//:orphanable",
+        "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:work_serializer",
@@ -6589,6 +6602,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_transport_sockets_tls_upbdefs",
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_upstreams_http_upb",
+    deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_upstreams_http_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
 )
 
 grpc_upb_proto_library(

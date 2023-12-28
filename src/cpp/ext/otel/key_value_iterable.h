@@ -38,7 +38,7 @@
 namespace grpc {
 namespace internal {
 
-inline opentelemetry::nostd::string_view AbslStrViewToOTelStrView(
+inline opentelemetry::nostd::string_view AbslStrViewToOpenTelemetryStrView(
     absl::string_view str) {
   return opentelemetry::nostd::string_view(str.data(), str.size());
 }
@@ -62,15 +62,15 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
     if (injected_labels_iterable_ != nullptr) {
       injected_labels_iterable_->ResetIteratorPosition();
       while (const auto& pair = injected_labels_iterable_->Next()) {
-        if (!callback(AbslStrViewToOTelStrView(pair->first),
-                      AbslStrViewToOTelStrView(pair->second))) {
+        if (!callback(AbslStrViewToOpenTelemetryStrView(pair->first),
+                      AbslStrViewToOpenTelemetryStrView(pair->second))) {
           return false;
         }
       }
     }
     for (const auto& pair : additional_labels_) {
-      if (!callback(AbslStrViewToOTelStrView(pair.first),
-                    AbslStrViewToOTelStrView(pair.second))) {
+      if (!callback(AbslStrViewToOpenTelemetryStrView(pair.first),
+                    AbslStrViewToOpenTelemetryStrView(pair.second))) {
         return false;
       }
     }

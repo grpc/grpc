@@ -105,7 +105,7 @@ class ClientTransport {
                              std::move(pipe_server_frames.sender))));
     }
     return TrySeq(
-        TryJoin(
+        TryJoin<absl::StatusOr>(
             // Continuously send client frame with client to server messages.
             ForEach(std::move(*call_args.client_to_server_messages),
                     [stream_id, initial_frame = true,
