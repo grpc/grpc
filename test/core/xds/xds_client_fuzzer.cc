@@ -57,7 +57,8 @@ class Fuzzer {
       // Leave xds_client_ unset, so Act() will be a no-op.
       return;
     }
-    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
+    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>(
+        []() { Crash("Multiple concurrent reads"); });
     transport_factory->SetAutoCompleteMessagesFromClient(false);
     transport_factory->SetAbortOnUndrainedMessages(false);
     transport_factory_ = transport_factory.get();
@@ -147,20 +148,26 @@ class Fuzzer {
         : resource_name_(std::move(resource_name)) {}
 
     void OnResourceChanged(
-        std::shared_ptr<const typename ResourceType::ResourceType> resource)
+        std::shared_ptr<const typename ResourceType::ResourceType> resource,
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
       gpr_log(GPR_INFO, "==> OnResourceChanged(%s %s): %s",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str(), resource->ToString().c_str());
     }
 
-    void OnError(absl::Status status) override {
+    void OnError(
+        absl::Status status,
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
+        override {
       gpr_log(GPR_INFO, "==> OnError(%s %s): %s",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str(), status.ToString().c_str());
     }
 
-    void OnResourceDoesNotExist() override {
+    void OnResourceDoesNotExist(
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
+        override {
       gpr_log(GPR_INFO, "==> OnResourceDoesNotExist(%s %s)",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str());

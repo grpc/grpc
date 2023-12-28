@@ -56,6 +56,11 @@ extern TraceFlag grpc_xds_client_refcount_trace;
 
 class XdsClient : public DualRefCounted<XdsClient> {
  public:
+  class ReadDelayHandle : public RefCounted<ReadDelayHandle> {
+   public:
+    static RefCountedPtr<ReadDelayHandle> NoWait() { return nullptr; }
+  };
+
   // Resource watcher interface.  Implemented by callers.
   // Note: Most callers will not use this API directly but rather via a
   // resource-type-specific wrapper API provided by the relevant
@@ -63,11 +68,14 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class ResourceWatcherInterface : public RefCounted<ResourceWatcherInterface> {
    public:
     virtual void OnGenericResourceChanged(
-        std::shared_ptr<const XdsResourceType::ResourceData> resource)
+        std::shared_ptr<const XdsResourceType::ResourceData> resource,
+        RefCountedPtr<ReadDelayHandle> read_delay_handle)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnError(absl::Status status)
+    virtual void OnError(absl::Status status,
+                         RefCountedPtr<ReadDelayHandle> read_delay_handle)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnResourceDoesNotExist()
+    virtual void OnResourceDoesNotExist(
+        RefCountedPtr<ReadDelayHandle> read_delay_handle)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
   };
 
@@ -277,11 +285,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void NotifyWatchersOnErrorLocked(
       const std::map<ResourceWatcherInterface*,
                      RefCountedPtr<ResourceWatcherInterface>>& watchers,
-      absl::Status status);
+      absl::Status status, RefCountedPtr<ReadDelayHandle> read_delay_handle);
   // Sends a resource-does-not-exist notification to a specific set of watchers.
   void NotifyWatchersOnResourceDoesNotExist(
       const std::map<ResourceWatcherInterface*,
-                     RefCountedPtr<ResourceWatcherInterface>>& watchers);
+                     RefCountedPtr<ResourceWatcherInterface>>& watchers,
+      RefCountedPtr<ReadDelayHandle> read_delay_handle);
 
   void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);

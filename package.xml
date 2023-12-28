@@ -1625,10 +1625,12 @@
     <file baseinstalldir="/" name="src/core/lib/matchers/matchers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/all_ok.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/arena_promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/cancel_callback.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/basic_seq.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/detail/join_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_like.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/seq_state.h" role="src" />
@@ -1653,6 +1655,7 @@
     <file baseinstalldir="/" name="src/core/lib/promise/status_flag.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/try_join.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/endpoint_addresses.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/endpoint_addresses.h" role="src" />
@@ -1856,6 +1859,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/wait_for_cq_end_op.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/batch_builder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/batch_builder.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />

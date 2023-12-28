@@ -326,6 +326,11 @@ void grpc_channel_stack::InitClientCallSpine(
     grpc_core::CallSpineInterface* call) {
   for (size_t i = 0; i < count; i++) {
     auto* elem = grpc_channel_stack_element(this, i);
+    if (elem->filter->init_call == nullptr) {
+      grpc_core::Crash(
+          absl::StrCat("Filter '", elem->filter->name,
+                       "' does not support the call-v3 interface"));
+    }
     elem->filter->init_call(elem, call);
   }
 }
@@ -334,6 +339,11 @@ void grpc_channel_stack::InitServerCallSpine(
     grpc_core::CallSpineInterface* call) {
   for (size_t i = 0; i < count; i++) {
     auto* elem = grpc_channel_stack_element(this, count - 1 - i);
+    if (elem->filter->init_call == nullptr) {
+      grpc_core::Crash(
+          absl::StrCat("Filter '", elem->filter->name,
+                       "' does not support the call-v3 interface"));
+    }
     elem->filter->init_call(elem, call);
   }
 }
