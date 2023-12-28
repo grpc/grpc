@@ -91,8 +91,8 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
                {"childPolicy",
                 Json::FromArray({Json::FromObject(
                     {{child_policy, Json::FromObject({})}})})}})}})}));
-    auto xds_config = MakeXdsConfig(
-        override_host_statuses, connection_idle_timeout, cluster_name);
+    auto xds_config = MakeXdsConfig(override_host_statuses,
+                                    connection_idle_timeout, cluster_name);
     return ApplyUpdate(
         BuildUpdate(endpoints, std::move(config),
                     ChannelArgs().SetObject(std::move(xds_config))),
@@ -341,11 +341,10 @@ TEST_F(XdsOverrideHostTest, DrainingState) {
   auto* address1_attribute = MakeOverrideHostAttribute(kAddresses[1]);
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   // Now move endpoint 1 to state DRAINING.
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kUnknown},
-       {kAddresses[1], XdsHealthStatus::kDraining},
-       {kAddresses[2], XdsHealthStatus::kHealthy}},
-      {"UNKNOWN", "HEALTHY", "DRAINING"});
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[1], XdsHealthStatus::kDraining},
+                                 {kAddresses[2], XdsHealthStatus::kHealthy}},
+                                {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   // Picks without an override will round-robin over the two endpoints
   // that are not in draining state.
@@ -353,9 +352,8 @@ TEST_F(XdsOverrideHostTest, DrainingState) {
   // Picks with an override are able to select the draining endpoint.
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   // Send the LB policy an update that removes the draining endpoint.
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kUnknown},
-       {kAddresses[2], XdsHealthStatus::kHealthy}});
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[2], XdsHealthStatus::kHealthy}});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   // Gone!
@@ -377,11 +375,10 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   // points to that hose, but the host should not be used if there is no
   // override pointing to it.
   gpr_log(GPR_INFO, "### sending update with DRAINING host");
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kUnknown},
-       {kAddresses[1], XdsHealthStatus::kDraining},
-       {kAddresses[2], XdsHealthStatus::kHealthy}},
-      {"UNKNOWN", "HEALTHY", "DRAINING"});
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[1], XdsHealthStatus::kDraining},
+                                 {kAddresses[2], XdsHealthStatus::kHealthy}},
+                                {"UNKNOWN", "HEALTHY", "DRAINING"});
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   picker = ExpectState(GRPC_CHANNEL_READY);
@@ -428,19 +425,17 @@ TEST_F(XdsOverrideHostTest, DrainingToHealthy) {
   // state DRAINING.
   auto* address1_attribute = MakeOverrideHostAttribute(kAddresses[1]);
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kUnknown},
-       {kAddresses[1], XdsHealthStatus::kDraining},
-       {kAddresses[2], XdsHealthStatus::kHealthy}},
-      {"UNKNOWN", "HEALTHY", "DRAINING"});
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[1], XdsHealthStatus::kDraining},
+                                 {kAddresses[2], XdsHealthStatus::kHealthy}},
+                                {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kHealthy},
-       {kAddresses[1], XdsHealthStatus::kHealthy},
-       {kAddresses[2], XdsHealthStatus::kHealthy}},
-      {"UNKNOWN", "HEALTHY", "DRAINING"});
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kHealthy},
+                                 {kAddresses[1], XdsHealthStatus::kHealthy},
+                                 {kAddresses[2], XdsHealthStatus::kHealthy}},
+                                {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(), kAddresses);
@@ -458,11 +453,10 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
   // the idle threshold and will therefore be retained when it moves to
   // state DRAINING.
   ExpectOverridePicks(picker.get(), address2_attribute, kAddresses[2]);
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kUnknown},
-       {kAddresses[1], XdsHealthStatus::kHealthy},
-       {kAddresses[2], XdsHealthStatus::kDraining}},
-      {"UNKNOWN", "HEALTHY", "DRAINING"});
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[1], XdsHealthStatus::kHealthy},
+                                 {kAddresses[2], XdsHealthStatus::kDraining}},
+                                {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
@@ -470,11 +464,10 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   ExpectOverridePicks(picker.get(), address2_attribute, kAddresses[2]);
   // UNKNOWN excluded: overrides for first endpoint are not honored.
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kUnknown},
-       {kAddresses[1], XdsHealthStatus::kHealthy},
-       {kAddresses[2], XdsHealthStatus::kDraining}},
-      {"HEALTHY", "DRAINING"});
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[1], XdsHealthStatus::kHealthy},
+                                 {kAddresses[2], XdsHealthStatus::kDraining}},
+                                {"HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
@@ -483,11 +476,10 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   ExpectOverridePicks(picker.get(), address2_attribute, kAddresses[2]);
   // HEALTHY excluded: overrides for second endpoint are not honored.
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kUnknown},
-       {kAddresses[1], XdsHealthStatus::kHealthy},
-       {kAddresses[2], XdsHealthStatus::kDraining}},
-      {"UNKNOWN", "DRAINING"});
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[1], XdsHealthStatus::kHealthy},
+                                 {kAddresses[2], XdsHealthStatus::kDraining}},
+                                {"UNKNOWN", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
@@ -496,11 +488,10 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
                                      {kAddresses[0], kAddresses[1]});
   ExpectOverridePicks(picker.get(), address2_attribute, kAddresses[2]);
   // DRAINING excluded: overrides for third endpoint are not honored.
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kUnknown},
-       {kAddresses[1], XdsHealthStatus::kHealthy},
-       {kAddresses[2], XdsHealthStatus::kDraining}},
-      {"UNKNOWN", "HEALTHY"});
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[1], XdsHealthStatus::kHealthy},
+                                 {kAddresses[2], XdsHealthStatus::kDraining}},
+                                {"UNKNOWN", "HEALTHY"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
@@ -550,11 +541,10 @@ TEST_F(XdsOverrideHostTest, MultipleAddressesPerEndpoint) {
 TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kUnknown},
-       {kAddresses[1], XdsHealthStatus::kDraining},
-       {kAddresses[2], XdsHealthStatus::kHealthy}},
-      {"UNKNOWN", "HEALTHY", "DRAINING"});
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[1], XdsHealthStatus::kDraining},
+                                 {kAddresses[2], XdsHealthStatus::kHealthy}},
+                                {"UNKNOWN", "HEALTHY", "DRAINING"});
   // The draining endpoint is not passed down to the child policy.
   // Picks without an override will round-robin over the two endpoints
   // that are not in draining state.
@@ -613,11 +603,10 @@ TEST_F(XdsOverrideHostTest,
   auto picker = ExpectStartupWithRoundRobin(kAddresses);
   ASSERT_NE(picker, nullptr);
   // Now move endpoint 1 to state DRAINING.
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kUnknown},
-       {kAddresses[1], XdsHealthStatus::kDraining},
-       {kAddresses[2], XdsHealthStatus::kHealthy}},
-      {"UNKNOWN", "HEALTHY", "DRAINING"});
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[1], XdsHealthStatus::kDraining},
+                                 {kAddresses[2], XdsHealthStatus::kHealthy}},
+                                {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   // Picks without an override will round-robin over the two endpoints
   // that are not in draining state.
@@ -663,12 +652,11 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
   auto* address2_attribute = MakeOverrideHostAttribute(kAddresses[2]);
   ExpectOverridePicks(picker.get(), address2_attribute, kAddresses[2]);
   // Now move endpoints 1 and 2 to state DRAINING.
-  ApplyUpdateWithHealthStatuses(
-      {{kAddresses[0], XdsHealthStatus::kUnknown},
-       {kAddresses[1], XdsHealthStatus::kDraining},
-       {kAddresses[2], XdsHealthStatus::kDraining}},
-      {"UNKNOWN", "HEALTHY", "DRAINING"},
-      Duration::Minutes(1));
+  ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
+                                 {kAddresses[1], XdsHealthStatus::kDraining},
+                                 {kAddresses[2], XdsHealthStatus::kDraining}},
+                                {"UNKNOWN", "HEALTHY", "DRAINING"},
+                                Duration::Minutes(1));
   picker = ExpectState(GRPC_CHANNEL_READY);
   // Picks without an override will use only the endpoint that is not in
   // draining state.

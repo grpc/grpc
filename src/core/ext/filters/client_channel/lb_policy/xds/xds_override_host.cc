@@ -958,14 +958,12 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
 
 void XdsOverrideHostLb::StartTimerForSubchannelCleanup(Duration duration) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_override_host_lb %p] subchannel cleanup pass will run in %s",
-        this, duration.ToString().c_str());
+    gpr_log(GPR_INFO,
+            "[xds_override_host_lb %p] subchannel cleanup pass will run in %s",
+            this, duration.ToString().c_str());
   }
   timer_handle_ = channel_control_helper()->GetEventEngine()->RunAfter(
-      duration,
-      [self = RefAsSubclass<XdsOverrideHostLb>()]() mutable {
+      duration, [self = RefAsSubclass<XdsOverrideHostLb>()]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         auto self_ptr = self.get();
