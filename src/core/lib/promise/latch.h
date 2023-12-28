@@ -185,6 +185,8 @@ class Latch<void> {
     waiter_.Wake();
   }
 
+  bool is_set() const { return is_set_; }
+
  private:
   std::string DebugTag() {
     return absl::StrCat(Activity::current()->DebugTag(), " LATCH(void)[0x",
