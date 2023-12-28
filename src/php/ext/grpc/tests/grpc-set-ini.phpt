@@ -1,7 +1,7 @@
 --TEST--
 Ensure ini settings are handled
 --SKIPIF--
-<?php if (!extension_loaded("grpc")) print "skip"; ?>
+<?php if (!extension_loaded("grpc") || PHP_OS === "Darwin") print "skip"; ?>
 --INI--
 grpc.enable_fork_support = 1
 grpc.poll_strategy = epoll1
