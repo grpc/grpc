@@ -385,7 +385,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
     }
 
-    std::shared_ptr<WorkSerializer> work_serializer() {
+    size_t NumWatchers() const {
+      size_t num_watchers;
+      absl::Notification notification;
+      work_serializer()->Run(
+          [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*test_->work_serializer_) {
+            num_watchers = state_tracker_.NumWatchers();
+            notification.Notify();
+          },
+          DEBUG_LOCATION);
+      notification.WaitForNotification();
+      return num_watchers;
+    }
+
+    std::shared_ptr<WorkSerializer> work_serializer() const {
       return test_->work_serializer_;
     }
 

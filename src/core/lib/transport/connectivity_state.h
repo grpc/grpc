@@ -128,6 +128,10 @@ class ConnectivityStateTracker {
   // Not thread safe; access must be serialized with an external lock.
   absl::Status status() const { return status_; }
 
+  // Returns the number of watchers.
+  // Not thread safe; access must be serialized with an external lock.
+  size_t NumWatchers() const { return watchers_.size(); }
+
  private:
   const char* name_;
   std::atomic<grpc_connectivity_state> state_{grpc_connectivity_state()};

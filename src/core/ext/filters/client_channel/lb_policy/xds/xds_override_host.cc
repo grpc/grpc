@@ -317,7 +317,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     RefCountedStringValue address_list_
         ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
     Timestamp last_used_time_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_) =
-        Timestamp::InfFuture();
+        Timestamp::InfPast();
   };
 
   // A picker that wraps the picker from the child for cases when cookie is
@@ -933,8 +933,8 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
   }
   auto addr = StringToSockaddr(address);
   GPR_ASSERT(addr.ok());
-  // We don't currently have any cases where per_address_args need to be
-  // passed through.  If we encounter any such cases in the future, we
+  // Note: We don't currently have any cases where per_address_args need to
+  // be passed through.  If we encounter any such cases in the future, we
   // will need to change this to store those attributes from the resolver
   // update in the map entry.
   auto subchannel = channel_control_helper()->CreateSubchannel(
