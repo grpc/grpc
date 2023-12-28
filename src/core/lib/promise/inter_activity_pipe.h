@@ -146,6 +146,12 @@ class InterActivityPipe {
       return [center = center_]() { return center->Next(); };
     }
 
+    bool IsClose() { return center_->IsClosed(); }
+
+    void MarkClose() {
+      if (center_ != nullptr) center_->MarkClosed();
+    }
+
    private:
     RefCountedPtr<Center> center_;
   };
