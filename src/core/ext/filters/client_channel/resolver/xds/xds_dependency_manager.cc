@@ -120,8 +120,7 @@ class XdsDependencyManager::ListenerWatcher
       std::shared_ptr<const XdsListenerResource> listener,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
-        [dependency_mgr = dependency_mgr_,
-         listener = std::move(listener),
+        [dependency_mgr = dependency_mgr_, listener = std::move(listener),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           dependency_mgr->OnListenerUpdate(std::move(listener));
         },
@@ -132,8 +131,7 @@ class XdsDependencyManager::ListenerWatcher
       absl::Status status,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
-        [dependency_mgr = dependency_mgr_,
-         status = std::move(status),
+        [dependency_mgr = dependency_mgr_, status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           dependency_mgr->OnError(dependency_mgr->listener_resource_name_,
                                   std::move(status));
@@ -185,8 +183,7 @@ class XdsDependencyManager::RouteConfigWatcher
       absl::Status status,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
-        [self = RefAsSubclass<RouteConfigWatcher>(),
-         status = std::move(status),
+        [self = RefAsSubclass<RouteConfigWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnError(self->name_, std::move(status));
         },
@@ -225,8 +222,7 @@ class XdsDependencyManager::ClusterWatcher
       std::shared_ptr<const XdsClusterResource> cluster,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
-        [self = RefAsSubclass<ClusterWatcher>(),
-         cluster = std::move(cluster),
+        [self = RefAsSubclass<ClusterWatcher>(), cluster = std::move(cluster),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnClusterUpdate(self->name_,
                                                  std::move(cluster));
@@ -238,8 +234,7 @@ class XdsDependencyManager::ClusterWatcher
       absl::Status status,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
-        [self = RefAsSubclass<ClusterWatcher>(),
-         status = std::move(status),
+        [self = RefAsSubclass<ClusterWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnClusterError(self->name_, std::move(status));
         },
@@ -289,8 +284,7 @@ class XdsDependencyManager::EndpointWatcher
       absl::Status status,
       RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
-        [self = RefAsSubclass<EndpointWatcher>(),
-         status = std::move(status),
+        [self = RefAsSubclass<EndpointWatcher>(), status = std::move(status),
          read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnEndpointError(self->name_,
                                                  std::move(status));
