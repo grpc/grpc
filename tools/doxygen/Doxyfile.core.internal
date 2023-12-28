@@ -2426,10 +2426,12 @@ src/core/lib/matchers/matchers.cc \
 src/core/lib/matchers/matchers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
+src/core/lib/promise/all_ok.h \
 src/core/lib/promise/arena_promise.h \
 src/core/lib/promise/cancel_callback.h \
 src/core/lib/promise/context.h \
 src/core/lib/promise/detail/basic_seq.h \
+src/core/lib/promise/detail/join_state.h \
 src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/seq_state.h \
@@ -2454,6 +2456,7 @@ src/core/lib/promise/sleep.h \
 src/core/lib/promise/status_flag.h \
 src/core/lib/promise/trace.cc \
 src/core/lib/promise/trace.h \
+src/core/lib/promise/try_join.h \
 src/core/lib/promise/try_seq.h \
 src/core/lib/resolver/endpoint_addresses.cc \
 src/core/lib/resolver/endpoint_addresses.h \
@@ -2658,6 +2661,7 @@ src/core/lib/surface/server.h \
 src/core/lib/surface/validate_metadata.cc \
 src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
+src/core/lib/surface/wait_for_cq_end_op.h \
 src/core/lib/transport/README.md \
 src/core/lib/transport/batch_builder.cc \
 src/core/lib/transport/batch_builder.h \

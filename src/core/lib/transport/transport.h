@@ -329,6 +329,8 @@ class CallSpineInterface {
 
 class CallSpine final : public CallSpineInterface {
  public:
+  CallSpine() { Crash("unimplemented"); }
+
   Pipe<ClientMetadataHandle>& client_initial_metadata() override {
     return client_initial_metadata_;
   }
@@ -366,7 +368,7 @@ class CallSpine final : public CallSpineInterface {
 
 class CallInitiator {
  public:
-  explicit CallInitiator(RefCountedPtr<CallSpine> spine)
+  explicit CallInitiator(RefCountedPtr<CallSpineInterface> spine)
       : spine_(std::move(spine)) {}
 
   auto PushClientInitialMetadata(ClientMetadataHandle md) {
@@ -427,12 +429,12 @@ class CallInitiator {
   }
 
  private:
-  const RefCountedPtr<CallSpine> spine_;
+  const RefCountedPtr<CallSpineInterface> spine_;
 };
 
 class CallHandler {
  public:
-  explicit CallHandler(RefCountedPtr<CallSpine> spine)
+  explicit CallHandler(RefCountedPtr<CallSpineInterface> spine)
       : spine_(std::move(spine)) {}
 
   auto PullClientInitialMetadata() {
@@ -453,7 +455,7 @@ class CallHandler {
 
   auto PushServerTrailingMetadata(ClientMetadataHandle md) {
     GPR_DEBUG_ASSERT(Activity::current() == &spine_->party());
-    return Map(spine_->server_initial_metadata().sender.Push(std::move(md)),
+    return Map(spine_->server_trailing_metadata().sender.Push(std::move(md)),
                [](bool ok) { return StatusFlag(ok); });
   }
 
@@ -488,7 +490,7 @@ class CallHandler {
   }
 
  private:
-  const RefCountedPtr<CallSpine> spine_;
+  const RefCountedPtr<CallSpineInterface> spine_;
 };
 
 struct CallInitiatorAndHandler {
