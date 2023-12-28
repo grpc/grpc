@@ -48,6 +48,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -69,6 +70,15 @@ namespace grpc_core {
 TraceFlag grpc_cds_lb_trace(false, "cds_lb");
 
 namespace {
+
+// TODO(roth): Remove this after the 1.63 release.
+bool XdsAggregateClusterBackwardCompatibilityEnabled() {
+  auto value = GetEnv("GRPC_XDS_AGGREGATE_CLUSTER_BACKWARD_COMPAT");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 using XdsConfig = XdsDependencyManager::XdsConfig;
 
@@ -146,7 +156,8 @@ class CdsLb : public LoadBalancingPolicy {
 
   Json CreateChildPolicyConfigForLeafCluster(
       const XdsConfig::ClusterConfig& new_cluster,
-      const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config);
+      const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config,
+      const XdsClusterResource* aggregate_cluster_resource);
   Json CreateChildPolicyConfigForAggregateCluster(
       const XdsConfig::ClusterConfig::AggregateConfig& aggregate_config);
 
@@ -201,7 +212,6 @@ void CdsLb::ExitIdleLocked() {
   if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
 }
 
-// FIXME: do we still need this?
 // We need at least one priority for each discovery mechanism, just so that we
 // have a child in which to create the xds_cluster_impl policy.  This ensures
 // that we properly handle the case of a discovery mechanism dropping 100% of
@@ -352,6 +362,36 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       }
     }
   }
+  // TODO(roth): Remove this after the 1.63 release.
+  const XdsClusterResource* aggregate_cluster_resource = nullptr;
+  static constexpr absl::string_view kArgXdsAggregateClusterName =
+      GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_aggregate_cluster_name";
+  if (XdsAggregateClusterBackwardCompatibilityEnabled()) {
+    if (absl::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
+          new_cluster_config->children)) {
+      auto aggregate_cluster = args.args.GetString(kArgXdsAggregateClusterName);
+      if (aggregate_cluster.has_value()) {
+        auto it = new_xds_config->clusters.find(*aggregate_cluster);
+        if (it == new_xds_config->clusters.end()) {
+          // Cluster not present.  This should never happen.
+          absl::Status status = absl::UnavailableError(absl::StrCat(
+              "xDS config has no entry for aggregate cluster ",
+              *aggregate_cluster));
+          ReportTransientFailure(status);
+          return status;
+        }
+        auto& aggregate_cluster_config = it->second;
+        if (!aggregate_cluster_config.ok()) {
+          ReportTransientFailure(aggregate_cluster_config.status());
+          return aggregate_cluster_config.status();
+        }
+        GPR_ASSERT(aggregate_cluster_config->cluster != nullptr);
+        aggregate_cluster_resource = aggregate_cluster_config->cluster.get();
+      }
+    } else {
+      args.args = args.args.Set(kArgXdsAggregateClusterName, cluster_name_);
+    }
+  }
   // Construct child policy config and update state based on the cluster type.
   Json child_policy_config_json;
   UpdateArgs update_args;
@@ -369,7 +409,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
         update_args.resolution_note = endpoint_config.resolution_note;
         // Construct child policy config.
         child_policy_config_json = CreateChildPolicyConfigForLeafCluster(
-            *new_cluster_config, endpoint_config);
+            *new_cluster_config, endpoint_config, aggregate_cluster_resource);
       },
       // Aggregate cluster.
       [&](const XdsConfig::ClusterConfig::AggregateConfig& aggregate_config) {
@@ -509,7 +549,8 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
 
 Json CdsLb::CreateChildPolicyConfigForLeafCluster(
     const XdsConfig::ClusterConfig& new_cluster,
-    const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) {
+    const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config,
+    const XdsClusterResource* aggregate_cluster_resource) {
   const auto& cluster_resource = *new_cluster.cluster;
   const bool is_logical_dns =
       absl::holds_alternative<XdsClusterResource::LogicalDns>(
@@ -522,6 +563,11 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
             {"pick_first", Json::FromObject({})},
         }),
     });
+  // TODO(roth): Remove this after the 1.63 release.
+  } else if (XdsAggregateClusterBackwardCompatibilityEnabled() &&
+             aggregate_cluster_resource != nullptr) {
+    xds_lb_policy =
+        Json::FromArray(aggregate_cluster_resource->lb_policy_config);
   } else {
     xds_lb_policy = Json::FromArray(new_cluster.cluster->lb_policy_config);
   }
