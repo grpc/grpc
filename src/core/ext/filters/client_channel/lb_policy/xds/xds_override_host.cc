@@ -244,18 +244,15 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelWrapper> GetSubchannelRef() const
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_);
 
+    // If the entry has an owned subchannel, moves it out of the entry
+    // and returns it.
+    RefCountedPtr<SubchannelWrapper> TakeOwnedSubchannel()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_);
+
     // Unsets the entry's subchannel.
     // If the entry had an owned subchannel, moves the ref into
     // owned_subchannels.
     void UnsetSubchannel(
-        std::vector<RefCountedPtr<SubchannelWrapper>>* owned_subchannels)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_);
-
-    // If the entry has an owned subchannel and last_used_time_ is older
-    // than idle_threshold, moves the owned subchannel out of the entry
-    // and appends it to owned_subchannels.
-    void TakeOwnedSubchannelIfIdleSince(
-        Timestamp idle_threshold,
         std::vector<RefCountedPtr<SubchannelWrapper>>* owned_subchannels)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_);
 
@@ -303,11 +300,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     }
 
    private:
-    // If the entry has an owned subchannel, moves it out of the entry
-    // and returns it.
-    RefCountedPtr<SubchannelWrapper> TakeOwnedSubchannel()
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_);
-
     grpc_connectivity_state connectivity_state_
         ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_) = GRPC_CHANNEL_IDLE;
     absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>
@@ -426,7 +418,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   void CreateSubchannelForAddress(absl::string_view address);
 
-  void ScheduleTimerForSubchannelCleanup();
+  void StartTimerForSubchannelCleanup(Duration duration);
   void CleanupSubchannels();
 
   // State from most recent resolver update.
@@ -637,6 +629,7 @@ void XdsOverrideHostLb::ResetState() {
   // Cancel timer, if any.
   if (timer_handle_.has_value()) {
     channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+    timer_handle_.reset();
   }
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
@@ -736,8 +729,11 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   override_host_status_set_ = it->second->cluster->override_host_statuses;
   connection_idle_timeout_ = it->second->cluster->connection_idle_timeout;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-    gpr_log(GPR_INFO, "[xds_override_host_lb %p] override host status set: %s",
-            this, override_host_status_set_.ToString().c_str());
+    gpr_log(GPR_INFO,
+            "[xds_override_host_lb %p] override host status set: %s "
+            "connection idle timeout: %s",
+            this, override_host_status_set_.ToString().c_str(),
+            connection_idle_timeout_.ToString().c_str());
   }
   // Update address map and wrap endpoint iterator for child policy.
   if (args.addresses.ok()) {
@@ -901,7 +897,9 @@ void XdsOverrideHostLb::UpdateAddressMap(
     }
   }
   // Start timer if not already running.
-  if (!timer_handle_.has_value()) ScheduleTimerForSubchannelCleanup();
+  if (!timer_handle_.has_value()) {
+    StartTimerForSubchannelCleanup(connection_idle_timeout_);
+  }
 }
 
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
@@ -958,9 +956,15 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
   MaybeUpdatePickerLocked();
 }
 
-void XdsOverrideHostLb::ScheduleTimerForSubchannelCleanup() {
+void XdsOverrideHostLb::StartTimerForSubchannelCleanup(Duration duration) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+    gpr_log(
+        GPR_INFO,
+        "[xds_override_host_lb %p] subchannel cleanup pass will run in %s",
+        this, duration.ToString().c_str());
+  }
   timer_handle_ = channel_control_helper()->GetEventEngine()->RunAfter(
-      Duration::Seconds(5),
+      duration,
       [self = RefAsSubclass<XdsOverrideHostLb>()]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
@@ -972,15 +976,42 @@ void XdsOverrideHostLb::ScheduleTimerForSubchannelCleanup() {
 }
 
 void XdsOverrideHostLb::CleanupSubchannels() {
-  const Timestamp idle_threshold = Timestamp::Now() - connection_idle_timeout_;
-  std::vector<RefCountedPtr<SubchannelWrapper>> subchannel_refs_to_drop;
-  MutexLock lock(&mu_);
-  if (subchannel_map_.empty()) return;
-  for (const auto& p : subchannel_map_) {
-    p.second->TakeOwnedSubchannelIfIdleSince(idle_threshold,
-                                             &subchannel_refs_to_drop);
+  if (!timer_handle_.has_value()) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_override_host_lb %p] running subchannel cleanup pass", this);
   }
-  ScheduleTimerForSubchannelCleanup();
+  const Timestamp now = Timestamp::Now();
+  const Timestamp idle_threshold = now - connection_idle_timeout_;
+  Duration next_time = connection_idle_timeout_;
+  std::vector<RefCountedPtr<SubchannelWrapper>> subchannel_refs_to_drop;
+  {
+    MutexLock lock(&mu_);
+    if (subchannel_map_.empty()) return;
+    for (const auto& p : subchannel_map_) {
+      if (p.second->last_used_time() <= idle_threshold) {
+        auto subchannel = p.second->TakeOwnedSubchannel();
+        if (subchannel != nullptr) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+            gpr_log(GPR_INFO,
+                    "[xds_override_host_lb %p] dropping subchannel for %s",
+                    this, p.first.c_str());
+          }
+          subchannel_refs_to_drop.push_back(std::move(subchannel));
+        }
+      } else {
+        // Not dropping the subchannel.  Check the entry's last_used_time to
+        // determine the next time at which the timer needs to run.
+        const Duration next_time_for_entry =
+            p.second->last_used_time() + connection_idle_timeout_ - now;
+        next_time = std::min(next_time, next_time_for_entry);
+      }
+    }
+  }
+  // Min time between timer runs is 5s so that we don't kill ourselves
+  // with lock contention and CPU usage due to sweeps over the map.
+  next_time = std::max(next_time, Duration::Seconds(5));
+  StartTimerForSubchannelCleanup(next_time);
 }
 
 //
@@ -1128,6 +1159,19 @@ XdsOverrideHostLb::SubchannelEntry::GetSubchannelRef() const
   return sc->RefIfNonZero().TakeAsSubclass<SubchannelWrapper>();
 }
 
+RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
+XdsOverrideHostLb::SubchannelEntry::TakeOwnedSubchannel()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+  return MatchMutable(
+      &subchannel_,
+      [](SubchannelWrapper**) -> RefCountedPtr<SubchannelWrapper> {
+        return nullptr;
+      },
+      [](RefCountedPtr<SubchannelWrapper>* subchannel) {
+        return std::move(*subchannel);
+      });
+}
+
 void XdsOverrideHostLb::SubchannelEntry::UnsetSubchannel(
     std::vector<RefCountedPtr<SubchannelWrapper>>* owned_subchannels)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
@@ -1157,31 +1201,6 @@ void XdsOverrideHostLb::SubchannelEntry::OnSubchannelWrapperOrphan(
     }
     subchannel_ = wrapper->Clone();
   }
-}
-
-void XdsOverrideHostLb::SubchannelEntry::TakeOwnedSubchannelIfIdleSince(
-    Timestamp idle_threshold,
-    std::vector<RefCountedPtr<SubchannelWrapper>>* owned_subchannels)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-  auto* owned_subchannel =
-      absl::get_if<RefCountedPtr<SubchannelWrapper>>(&subchannel_);
-  if (owned_subchannel != nullptr && last_used_time_ < idle_threshold) {
-    owned_subchannels->push_back(std::move(*owned_subchannel));
-    subchannel_ = nullptr;
-  }
-}
-
-RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
-XdsOverrideHostLb::SubchannelEntry::TakeOwnedSubchannel()
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-  return MatchMutable(
-      &subchannel_,
-      [](SubchannelWrapper**) -> RefCountedPtr<SubchannelWrapper> {
-        return nullptr;
-      },
-      [](RefCountedPtr<SubchannelWrapper>* subchannel) {
-        return std::move(*subchannel);
-      });
 }
 
 //

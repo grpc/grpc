@@ -1427,14 +1427,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   void SetExpectedTimerDuration(
       absl::optional<grpc_event_engine::experimental::EventEngine::Duration>
-          duration) {
+          duration,
+      SourceLocation location = SourceLocation()) {
     if (duration.has_value()) {
       fuzzing_ee_->SetRunAfterDurationCallback(
-          [expected = *duration](
+          [expected = *duration, location = location](
               grpc_event_engine::experimental::EventEngine::Duration duration) {
             EXPECT_EQ(duration, expected)
                 << "Expected: " << expected.count()
-                << "ns\nActual: " << duration.count() << "ns";
+                << "ns\n  Actual: " << duration.count() << "ns\n"
+                << location.file() << ":" << location.line();
           });
     } else {
       fuzzing_ee_->SetRunAfterDurationCallback(nullptr);
