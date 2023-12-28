@@ -117,28 +117,35 @@ class XdsDependencyManager::ListenerWatcher
       : dependency_mgr_(std::move(dependency_mgr)) {}
 
   void OnResourceChanged(
-      std::shared_ptr<const XdsListenerResource> listener) override {
+      std::shared_ptr<const XdsListenerResource> listener,
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [dependency_mgr = dependency_mgr_,
-         listener = std::move(listener)]() mutable {
+         listener = std::move(listener),
+         read_delay_handle = std::move(read_delay_handle)]() mutable {
           dependency_mgr->OnListenerUpdate(std::move(listener));
         },
         DEBUG_LOCATION);
   }
 
-  void OnError(absl::Status status) override {
+  void OnError(
+      absl::Status status,
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [dependency_mgr = dependency_mgr_,
-         status = std::move(status)]() mutable {
+         status = std::move(status),
+         read_delay_handle = std::move(read_delay_handle)]() mutable {
           dependency_mgr->OnError(dependency_mgr->listener_resource_name_,
                                   std::move(status));
         },
         DEBUG_LOCATION);
   }
 
-  void OnResourceDoesNotExist() override {
+  void OnResourceDoesNotExist(
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
-        [dependency_mgr = dependency_mgr_]() {
+        [dependency_mgr = dependency_mgr_,
+         read_delay_handle = std::move(read_delay_handle)]() {
           dependency_mgr->OnResourceDoesNotExist(
               absl::StrCat(dependency_mgr->listener_resource_name_,
                            ": xDS listener resource does not exist"));
@@ -162,28 +169,35 @@ class XdsDependencyManager::RouteConfigWatcher
       : dependency_mgr_(std::move(dependency_mgr)), name_(std::move(name)) {}
 
   void OnResourceChanged(
-      std::shared_ptr<const XdsRouteConfigResource> route_config) override {
+      std::shared_ptr<const XdsRouteConfigResource> route_config,
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<RouteConfigWatcher>(),
-         route_config = std::move(route_config)]() mutable {
+         route_config = std::move(route_config),
+         read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnRouteConfigUpdate(self->name_,
                                                      std::move(route_config));
         },
         DEBUG_LOCATION);
   }
 
-  void OnError(absl::Status status) override {
+  void OnError(
+      absl::Status status,
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<RouteConfigWatcher>(),
-         status = std::move(status)]() mutable {
+         status = std::move(status),
+         read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnError(self->name_, std::move(status));
         },
         DEBUG_LOCATION);
   }
 
-  void OnResourceDoesNotExist() override {
+  void OnResourceDoesNotExist(
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
-        [self = RefAsSubclass<RouteConfigWatcher>()]() {
+        [self = RefAsSubclass<RouteConfigWatcher>(),
+         read_delay_handle = std::move(read_delay_handle)]() {
           self->dependency_mgr_->OnResourceDoesNotExist(absl::StrCat(
               self->name_,
               ": xDS route configuration resource does not exist"));
@@ -208,28 +222,35 @@ class XdsDependencyManager::ClusterWatcher
       : dependency_mgr_(std::move(dependency_mgr)), name_(name) {}
 
   void OnResourceChanged(
-      std::shared_ptr<const XdsClusterResource> cluster) override {
+      std::shared_ptr<const XdsClusterResource> cluster,
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<ClusterWatcher>(),
-         cluster = std::move(cluster)]() mutable {
+         cluster = std::move(cluster),
+         read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnClusterUpdate(self->name_,
                                                  std::move(cluster));
         },
         DEBUG_LOCATION);
   }
 
-  void OnError(absl::Status status) override {
+  void OnError(
+      absl::Status status,
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<ClusterWatcher>(),
-         status = std::move(status)]() mutable {
+         status = std::move(status),
+         read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnClusterError(self->name_, std::move(status));
         },
         DEBUG_LOCATION);
   }
 
-  void OnResourceDoesNotExist() override {
+  void OnResourceDoesNotExist(
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
-        [self = RefAsSubclass<ClusterWatcher>()]() {
+        [self = RefAsSubclass<ClusterWatcher>(),
+         read_delay_handle = std::move(read_delay_handle)]() {
           self->dependency_mgr_->OnClusterDoesNotExist(self->name_);
         },
         DEBUG_LOCATION);
@@ -252,29 +273,36 @@ class XdsDependencyManager::EndpointWatcher
       : dependency_mgr_(std::move(dependency_mgr)), name_(name) {}
 
   void OnResourceChanged(
-      std::shared_ptr<const XdsEndpointResource> endpoint) override {
+      std::shared_ptr<const XdsEndpointResource> endpoint,
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<EndpointWatcher>(),
-         endpoint = std::move(endpoint)]() mutable {
+         endpoint = std::move(endpoint),
+         read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnEndpointUpdate(self->name_,
                                                   std::move(endpoint));
         },
         DEBUG_LOCATION);
   }
 
-  void OnError(absl::Status status) override {
+  void OnError(
+      absl::Status status,
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
         [self = RefAsSubclass<EndpointWatcher>(),
-         status = std::move(status)]() mutable {
+         status = std::move(status),
+         read_delay_handle = std::move(read_delay_handle)]() mutable {
           self->dependency_mgr_->OnEndpointError(self->name_,
                                                  std::move(status));
         },
         DEBUG_LOCATION);
   }
 
-  void OnResourceDoesNotExist() override {
+  void OnResourceDoesNotExist(
+      RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
     dependency_mgr_->work_serializer_->Run(
-        [self = RefAsSubclass<EndpointWatcher>()]() {
+        [self = RefAsSubclass<EndpointWatcher>(),
+         read_delay_handle = std::move(read_delay_handle)]() {
           self->dependency_mgr_->OnEndpointDoesNotExist(self->name_);
         },
         DEBUG_LOCATION);

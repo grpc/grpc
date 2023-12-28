@@ -31,6 +31,7 @@
 #include "src/core/lib/promise/detail/seq_state.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/status_flag.h"
 
 namespace grpc_core {
 
@@ -89,6 +90,7 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
     return run_next(std::move(prior));
   }
 };
+
 template <typename T, typename AnyType = void>
 struct TakeValueExists {
   static constexpr bool value = false;
@@ -146,7 +148,7 @@ struct TrySeqTraitsWithSfinae<
   template <typename R>
   static R ReturnValue(T&& status) {
     GPR_DEBUG_ASSERT(!IsStatusOk(status));
-    return StatusCast<R>(std::move(status));
+    return StatusCast<R>(status.status());
   }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {

@@ -37,6 +37,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//src/cpp/ext/csm:csm_observability",
+        "//src/cpp/ext/otel:otel_plugin",
         "//test/core/util:grpc_test_util",
     ],
 )
