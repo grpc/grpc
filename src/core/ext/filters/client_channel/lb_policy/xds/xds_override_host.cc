@@ -52,8 +52,8 @@
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -215,7 +215,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
    public:
     bool HasOwnedSubchannel() const
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-      auto *sc = absl::get_if<RefCountedPtr<SubchannelWrapper>>(&subchannel_);
+      auto* sc = absl::get_if<RefCountedPtr<SubchannelWrapper>>(&subchannel_);
       return sc != nullptr && *sc != nullptr;
     }
 
@@ -312,8 +312,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
         ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_) = GRPC_CHANNEL_IDLE;
     absl::variant<SubchannelWrapper*, RefCountedPtr<SubchannelWrapper>>
         subchannel_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
-    XdsHealthStatus eds_health_status_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_)
-        = XdsHealthStatus(XdsHealthStatus::kUnknown);
+    XdsHealthStatus eds_health_status_ ABSL_GUARDED_BY(
+        &XdsOverrideHostLb::mu_) = XdsHealthStatus(XdsHealthStatus::kUnknown);
     RefCountedStringValue address_list_
         ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
     Timestamp last_used_time_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_) =
@@ -881,8 +881,7 @@ void XdsOverrideHostLb::UpdateAddressMap(
           gpr_log(GPR_INFO, "[xds_override_host_lb %p] adding map key %s", this,
                   address.c_str());
         }
-        it = subchannel_map_
-                 .emplace(address, MakeRefCounted<SubchannelEntry>())
+        it = subchannel_map_.emplace(address, MakeRefCounted<SubchannelEntry>())
                  .first;
       }
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
@@ -929,8 +928,8 @@ XdsOverrideHostLb::AdoptSubchannel(
 void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_override_host_lb %p] creating owned subchannel for %s",
-            this, std::string(address).c_str());
+            "[xds_override_host_lb %p] creating owned subchannel for %s", this,
+            std::string(address).c_str());
   }
   auto addr = StringToSockaddr(address);
   GPR_ASSERT(addr.ok());
