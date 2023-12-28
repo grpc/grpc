@@ -360,9 +360,9 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
     class SubchannelCreationRequester {
      public:
-      SubchannelCreationRequester(absl::string_view address,
-                                  RefCountedPtr<XdsOverrideHostLb> policy)
-          : address_(std::move(address)) {
+      SubchannelCreationRequester(RefCountedPtr<XdsOverrideHostLb> policy,
+                                  absl::string_view address)
+          : policy_(std::move(policy)), address_(address) {
         GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
         // Hop into ExecCtx, so that we don't get stuck running
         // arbitrary WorkSerializer callbacks while doing a pick.
@@ -550,7 +550,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
       gpr_log(GPR_INFO, "Picker override found entry with no subchannel");
     }
     if (!IsWorkSerializerDispatchEnabled()) {
-      new SubchannelCreationRequester(address_with_no_subchannel, policy_);
+      new SubchannelCreationRequester(policy_, address_with_no_subchannel);
     } else {
       policy_->work_serializer()->Run(
           [policy = policy_,
@@ -964,7 +964,7 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
 void XdsOverrideHostLb::ScheduleTimerForSubchannelCleanup() {
   timer_handle_ = channel_control_helper()->GetEventEngine()->RunAfter(
       Duration::Seconds(5),
-      [self = RefAsSubclass<XdsOverrideHostLb>()]() {
+      [self = RefAsSubclass<XdsOverrideHostLb>()]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         auto self_ptr = self.get();
