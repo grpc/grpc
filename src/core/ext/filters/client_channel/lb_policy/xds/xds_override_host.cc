@@ -488,7 +488,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
       auto subchannel = it->second->GetSubchannelRef();
       if (subchannel == nullptr) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-          gpr_log(GPR_INFO, "Subchannel %s was not found",
+          gpr_log(GPR_INFO, "No subchannel for %s",
                   std::string(address).c_str());
         }
         if (address_with_no_subchannel.empty()) {
@@ -1183,8 +1183,15 @@ void XdsOverrideHostLb::SubchannelEntry::UnsetSubchannel(
 void XdsOverrideHostLb::SubchannelEntry::OnSubchannelWrapperOrphan(
     SubchannelWrapper* wrapper, Duration connection_idle_timeout)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-  if (GetSubchannel() != wrapper) return;
+  auto* subchannel = GetSubchannel();
+  if (subchannel != wrapper) return;
   if (last_used_time_ < (Timestamp::Now() - connection_idle_timeout)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(
+          GPR_INFO,
+          "[xds_override_host_lb] removing unowned subchannel wrapper %p",
+          subchannel);
+    }
     subchannel_ = nullptr;
   } else {
     // The subchannel is being released by the child policy, but it
@@ -1195,7 +1202,7 @@ void XdsOverrideHostLb::SubchannelEntry::OnSubchannelWrapperOrphan(
       gpr_log(GPR_INFO,
               "[xds_override_host_lb] subchannel wrapper %p: cloning "
               "to gain ownership",
-              this);
+              subchannel);
     }
     subchannel_ = wrapper->Clone();
   }
