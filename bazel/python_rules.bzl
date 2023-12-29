@@ -222,11 +222,11 @@ def _generate_pb2_grpc_src_impl(context):
     py_info = _merge_pyinfos(
         [
             p,
-            context.attr._grpc_library[PyInfo],
+            context.attr.grpc_library[PyInfo],
         ] + [dep[PyInfo] for dep in context.attr.py_deps],
     )
 
-    runfiles = context.runfiles(files = out_files, transitive_files = py_info.transitive_sources).merge(context.attr._grpc_library[DefaultInfo].data_runfiles)
+    runfiles = context.runfiles(files = out_files, transitive_files = py_info.transitive_sources).merge(context.attr.grpc_library[DefaultInfo].data_runfiles)
 
     return [
         DefaultInfo(
@@ -261,7 +261,7 @@ _generate_pb2_grpc_src = rule(
             cfg = "exec",
             default = Label("//external:protocol_compiler"),
         ),
-        "_grpc_library": attr.label(
+        "grpc_library": attr.label(
             default = Label("//src/python/grpcio/grpc:grpcio"),
             providers = [PyInfo],
         ),
