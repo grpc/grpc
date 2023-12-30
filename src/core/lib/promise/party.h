@@ -102,7 +102,8 @@ class PartySyncUsingAtomics {
   template <typename F>
   GRPC_MUST_USE_RESULT bool RunParty(F poll_one_participant) {
     uint64_t prev_state;
-    do {
+    ++iteration_;
+    for (;;) {
       // Grab the current state, and clear the wakeup bits & add flag.
       prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
                                     std::memory_order_acquire);
@@ -133,9 +134,23 @@ class PartySyncUsingAtomics {
       // TODO(ctiller): consider mitigations for the accidental wakeup on owning
       // waker creation case -- I currently expect this will be more expensive
       // than this quick loop.
-    } while (!state_.compare_exchange_weak(
-        prev_state, (prev_state & (kRefMask | kAllocatedMask)),
-        std::memory_order_acq_rel, std::memory_order_acquire));
+      if (wake_after_poll_ == 0) {
+        if (state_.compare_exchange_weak(
+                prev_state, (prev_state & (kRefMask | kAllocatedMask)),
+                std::memory_order_acq_rel, std::memory_order_acquire)) {
+          return false;
+        }
+      } else {
+        if (state_.compare_exchange_weak(
+                prev_state,
+                (prev_state & (kRefMask | kAllocatedMask | kLocked)) |
+                    wake_after_poll_,
+                std::memory_order_acq_rel, std::memory_order_acquire)) {
+          ++iteration_;
+          wake_after_poll_ = 0;
+        }
+      }
+    }
     return false;
   }
 
@@ -186,6 +201,9 @@ class PartySyncUsingAtomics {
   // Returns true if the caller should run the party.
   GRPC_MUST_USE_RESULT bool ScheduleWakeup(WakeupMask mask);
 
+  void WakeAfterPoll(WakeupMask mask) { wake_after_poll_ |= mask; }
+  uint32_t iteration() const { return iteration_; }
+
  private:
   bool UnreffedLast();
 
@@ -225,6 +243,8 @@ class PartySyncUsingAtomics {
   static constexpr uint64_t kOneRef = 1ull << kRefShift;
 
   std::atomic<uint64_t> state_;
+  uint32_t iteration_ = 0;
+  WakeupMask wake_after_poll_ = 0;
 };
 
 class PartySyncUsingMutex {
@@ -357,6 +377,18 @@ class Party : public Activity, private Wakeable {
   }
 
   Arena* arena() const { return arena_; }
+
+  // Return a promise that resolves to Empty{} when the current party poll is
+  // complete.
+  auto AfterCurrentPoll() {
+    GPR_DEBUG_ASSERT(Activity::current() == this);
+    sync_.WakeAfterPoll(CurrentParticipant());
+    return [this, iteration = sync_.iteration()]() -> Poll<Empty> {
+      GPR_DEBUG_ASSERT(Activity::current() == this);
+      if (iteration == sync_.iteration()) return Pending{};
+      return Empty{};
+    };
+  }
 
   class BulkSpawner {
    public:
@@ -548,6 +580,7 @@ class Party : public Activity, private Wakeable {
 
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
   void AddParticipants(Participant** participant, size_t count);
+  bool RunOneParticipant(int i);
 
   virtual grpc_event_engine::experimental::EventEngine* event_engine()
       const = 0;

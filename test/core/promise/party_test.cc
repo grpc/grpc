@@ -490,6 +490,49 @@ TEST_F(PartyTest, CanBulkSpawn) {
   n2.WaitForNotification();
 }
 
+TEST_F(PartyTest, AfterCurrentPollWorks) {
+  auto party = MakeRefCounted<TestParty>();
+  Notification n;
+  {
+    Party::BulkSpawner spawner(party.get());
+    int state = 0;
+    spawner.Spawn(
+        "spawn_final",
+        [&state, &party]() {
+          return Seq(party->AfterCurrentPoll(), [&state]() {
+            EXPECT_EQ(state, 3);
+            return Empty{};
+          });
+        },
+        [&n](Empty) { n.Notify(); });
+    spawner.Spawn(
+        "spawn1",
+        [&state]() {
+          EXPECT_EQ(state, 0);
+          state = 1;
+          return Empty{};
+        },
+        [](Empty) {});
+    spawner.Spawn(
+        "spawn2",
+        [&state]() {
+          EXPECT_EQ(state, 1);
+          state = 2;
+          return Empty{};
+        },
+        [](Empty) {});
+    spawner.Spawn(
+        "spawn3",
+        [&state]() {
+          EXPECT_EQ(state, 2);
+          state = 3;
+          return Empty{};
+        },
+        [](Empty) {});
+  }
+  n.WaitForNotification();
+}
+
 TEST_F(PartyTest, ThreadStressTest) {
   auto party = MakeRefCounted<TestParty>();
   std::vector<std::thread> threads;
