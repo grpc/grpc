@@ -19,7 +19,7 @@ import sys
 
 from grpc_tools import _protoc_compiler
 import importlib.resources
-if sys.version_info < (3, 9):
+if sys.version_info >= (3, 9):
     import importlib.resources as importlib_resources
 else:
     import importlib_resources
