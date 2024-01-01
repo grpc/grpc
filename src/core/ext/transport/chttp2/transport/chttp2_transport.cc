@@ -79,6 +79,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -342,7 +343,7 @@ void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
 }
 
 HttpAnnotation::HttpAnnotation(
-    Type type, Timestamp time,
+    Type type, gpr_timespec time,
     absl::optional<chttp2::TransportFlowControl::Stats> transport_stats,
     absl::optional<chttp2::StreamFlowControl::Stats> stream_stats)
     : CallTracerAnnotationInterface::Annotation(
@@ -367,7 +368,7 @@ std::string HttpAnnotation::ToString() const {
     default:
       absl::StrAppend(&s, "Unknown");
   }
-  absl::StrAppend(&s, " time: ", time_.ToString());
+  absl::StrAppend(&s, " time: ", gpr_format_timespec(time_));
   if (transport_stats_.has_value()) {
     absl::StrAppend(&s, " transport:[", transport_stats_->ToString(), "]");
   }
@@ -1508,7 +1509,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->send_initial_metadata) {
     if (s->call_tracer) {
       s->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kStart, grpc_core::Timestamp::Now(),
+          grpc_core::HttpAnnotation::Type::kStart, gpr_now(GPR_CLOCK_REALTIME),
           s->t->flow_control.stats(), s->flow_control.stats()));
     }
     if (t->is_client && t->channelz_socket != nullptr) {
