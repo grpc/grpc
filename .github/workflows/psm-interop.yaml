@@ -43,7 +43,7 @@ jobs:
               - 'src/proto/grpc/testing/messages.proto'
               - 'src/proto/grpc/testing/test.proto'
 
-      - uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4.7.1
+      - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
         if: ${{ steps.paths_filter.outputs.psm_interop_src == 'true' }}
         with:
           python-version: "${{ matrix.python_version }}"
