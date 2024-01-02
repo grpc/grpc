@@ -3014,7 +3014,6 @@ libs:
   deps:
   - upb_collections_lib
   - upb
-  - utf8_range_lib
   - z
   - absl/algorithm:container
   - absl/cleanup:cleanup
@@ -3399,8 +3398,7 @@ libs:
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/reader.c
-  deps:
-  - utf8_range_lib
+  deps: []
 - name: upb_textformat_lib
   build: all
   language: c
@@ -3554,18 +3552,17 @@ libs:
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/reader.c
-  deps:
-  - utf8_range_lib
+  deps: []
 - name: utf8_range_lib
   build: all
   language: c
   public_headers: []
   headers:
-  - third_party/utf8_range/utf8_range.h
+  - third_party/upb/third_party/utf8_range/utf8_range.h
   src:
-  - third_party/utf8_range/naive.c
-  - third_party/utf8_range/range2-neon.c
-  - third_party/utf8_range/range2-sse.c
+  - third_party/upb/third_party/utf8_range/naive.c
+  - third_party/upb/third_party/utf8_range/range2-neon.c
+  - third_party/upb/third_party/utf8_range/range2-sse.c
   deps: []
 - name: z
   build: private
@@ -5051,7 +5048,6 @@ libs:
   deps:
   - upb
   - re2
-  - utf8_range_lib
   - z
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
@@ -7344,7 +7340,6 @@ targets:
   deps:
   - gtest
   - upb
-  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8759,7 +8754,6 @@ targets:
   deps:
   - gtest
   - upb
-  - utf8_range_lib
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -9330,7 +9324,6 @@ targets:
   deps:
   - gtest
   - upb
-  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9503,7 +9496,6 @@ targets:
   deps:
   - gtest
   - upb
-  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11028,7 +11020,6 @@ targets:
   deps:
   - gtest
   - upb
-  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11659,7 +11650,6 @@ targets:
   deps:
   - gtest
   - upb
-  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -12614,7 +12604,6 @@ targets:
   deps:
   - gtest
   - upb
-  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
@@ -17303,7 +17292,6 @@ targets:
   deps:
   - gtest
   - upb
-  - utf8_range_lib
   - z
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map

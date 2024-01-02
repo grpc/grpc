@@ -1109,7 +1109,6 @@
       'dependencies': [
         'upb_collections_lib',
         'upb',
-        'utf8_range_lib',
         'z',
         'absl/algorithm:container',
         'absl/cleanup:cleanup',
@@ -1627,7 +1626,6 @@
       'target_name': 'upb_json_lib',
       'type': 'static_library',
       'dependencies': [
-        'utf8_range_lib',
       ],
       'sources': [
         'src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c',
@@ -1682,7 +1680,6 @@
       'target_name': 'upb_textformat_lib',
       'type': 'static_library',
       'dependencies': [
-        'utf8_range_lib',
       ],
       'sources': [
         'src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c',
@@ -1738,9 +1735,9 @@
       'dependencies': [
       ],
       'sources': [
-        'third_party/utf8_range/naive.c',
-        'third_party/utf8_range/range2-neon.c',
-        'third_party/utf8_range/range2-sse.c',
+        'third_party/upb/third_party/utf8_range/naive.c',
+        'third_party/upb/third_party/utf8_range/range2-neon.c',
+        'third_party/upb/third_party/utf8_range/range2-sse.c',
       ],
     },
     {
@@ -2003,7 +2000,6 @@
       'dependencies': [
         'upb',
         're2',
-        'utf8_range_lib',
         'z',
         'absl/cleanup:cleanup',
         'absl/container:flat_hash_map',

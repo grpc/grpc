@@ -3045,10 +3045,6 @@
     <file baseinstalldir="/" name="third_party/upb/upb/wire/reader.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/reader.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/types.h" role="src" />
-    <file baseinstalldir="/" name="third_party/utf8_range/naive.c" role="src" />
-    <file baseinstalldir="/" name="third_party/utf8_range/range2-neon.c" role="src" />
-    <file baseinstalldir="/" name="third_party/utf8_range/range2-sse.c" role="src" />
-    <file baseinstalldir="/" name="third_party/utf8_range/utf8_range.h" role="src" />
     <file baseinstalldir="/" name="third_party/xxhash/xxhash.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />

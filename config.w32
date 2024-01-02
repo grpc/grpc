@@ -1305,9 +1305,6 @@ if (PHP_GRPC != "no") {
     "third_party\\upb\\upb\\wire\\encode.c " +
     "third_party\\upb\\upb\\wire\\eps_copy_input_stream.c " +
     "third_party\\upb\\upb\\wire\\reader.c " +
-    "third_party\\utf8_range\\naive.c " +
-    "third_party\\utf8_range\\range2-neon.c " +
-    "third_party\\utf8_range\\range2-sse.c " +
     "third_party\\zlib\\adler32.c " +
     "third_party\\zlib\\compress.c " +
     "third_party\\zlib\\crc32.c " +
@@ -1801,7 +1798,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\reflection\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\text");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\wire");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\utf8_range");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
   _build_dirs = new Array();
   for (i = 0; i < build_dirs.length; i++) {
