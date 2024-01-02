@@ -130,6 +130,11 @@ absl::StatusOr<LegacyBackendMetricFilter> LegacyBackendMetricFilter::Create(
   return LegacyBackendMetricFilter();
 }
 
+absl::StatusOr<BackendMetricFilter> BackendMetricFilter::Create(
+    const ChannelArgs&, ChannelFilter::Args) {
+  return BackendMetricFilter();
+}
+
 ArenaPromise<ServerMetadataHandle> LegacyBackendMetricFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   return ArenaPromise<ServerMetadataHandle>(Map(
