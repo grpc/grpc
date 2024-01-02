@@ -202,6 +202,7 @@ class ObservabilityTest(unittest.TestCase):
                 )
             self.assertTrue(name in metric_names)
 
+
 if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

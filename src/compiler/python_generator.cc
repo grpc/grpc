@@ -642,8 +642,7 @@ bool PrivateGenerator::PrintServiceClass(
         args_dict["ArityMethodName"] = arity_method_name;
         args_dict["PackageQualifiedService"] = package_qualified_service_name;
         args_dict["Method"] = method->name();
-        out->Print(args_dict,
-                   "return grpc.experimental.$ArityMethodName$(\n");
+        out->Print(args_dict, "return grpc.experimental.$ArityMethodName$(\n");
         {
           IndentScope continuation_indent(out);
           StringMap serializer_dict;
