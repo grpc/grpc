@@ -37,6 +37,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/slice/slice.h"
@@ -114,6 +115,10 @@ const grpc_channel_filter LegacyBackendMetricFilter::kFilter =
     MakePromiseBasedFilter<LegacyBackendMetricFilter, FilterEndpoint::kServer>(
         "backend_metric");
 
+const grpc_channel_filter BackendMetricFilter::kFilter =
+    MakePromiseBasedFilter<BackendMetricFilter, FilterEndpoint::kServer>(
+        "backend_metric");
+
 absl::StatusOr<LegacyBackendMetricFilter> LegacyBackendMetricFilter::Create(
     const ChannelArgs&, ChannelFilter::Args) {
   return LegacyBackendMetricFilter();
@@ -150,9 +155,35 @@ ArenaPromise<ServerMetadataHandle> LegacyBackendMetricFilter::MakeCallPromise(
       }));
 }
 
+void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  auto* ctx = &GetContext<
+      grpc_call_context_element>()[GRPC_CONTEXT_BACKEND_METRIC_PROVIDER];
+  if (ctx == nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+      gpr_log(GPR_INFO, "[%p] No BackendMetricProvider.", this);
+    }
+    return;
+  }
+  absl::optional<std::string> serialized = MaybeSerializeBackendMetrics(
+      reinterpret_cast<BackendMetricProvider*>(ctx->value));
+  if (serialized.has_value() && !serialized->empty()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+      gpr_log(GPR_INFO, "[%p] Backend metrics serialized. size: %" PRIuPTR,
+              this, serialized->size());
+    }
+    md.Set(EndpointLoadMetricsBinMetadata(),
+           Slice::FromCopiedString(std::move(*serialized)));
+  } else if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+    gpr_log(GPR_INFO, "[%p] No backend metrics.", this);
+  }
+}
+
 void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &LegacyBackendMetricFilter::kFilter)
+      ->RegisterFilter(GRPC_SERVER_CHANNEL,
+                       IsV3BackendMetricFilterEnabled()
+                           ? &BackendMetricFilter::kFilter
+                           : &LegacyBackendMetricFilter::kFilter)
       .IfHasChannelArg(GRPC_ARG_SERVER_CALL_METRIC_RECORDING);
 }
 

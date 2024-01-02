@@ -253,6 +253,12 @@
   expiry: 2024/02/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
+- name: v3_backend_metric_filter
+  description:
+    Use the backend metric filter utilizing the v3 filter api
+  expiry: 2024/05/05
+  owner: ctiller@google.com
+  test_tags: []
 - name: v3_channel_idle_filters
   description:
     Use the v3 filter API version of the idle filters.

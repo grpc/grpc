@@ -43,6 +43,24 @@ class LegacyBackendMetricFilter : public ChannelFilter {
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 };
 
+class BackendMetricFilter : public ImplementChannelFilter<BackendMetricFilter> {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<BackendMetricFilter> Create(const ChannelArgs& args,
+                                                    ChannelFilter::Args);
+
+  class Call {
+   public:
+    static const NoInterceptor OnClientInitialMetadata;
+    static const NoInterceptor OnServerInitialMetadata;
+    void OnServerTrailingMetadata(ServerMetadata& md);
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_FILTERS_BACKEND_METRICS_BACKEND_METRIC_FILTER_H
