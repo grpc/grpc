@@ -261,9 +261,11 @@ void StatefulSessionFilter::Call::OnClientInitialMetadata(
   cluster_name_ =
       GetClusterToUse(host_cluster.second, service_config_call_data);
   cluster_changed_ = cluster_name_ != host_cluster.second;
+  perform_filtering_ = true;
 }
 
 void StatefulSessionFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
+  if (!perform_filtering_) return;
   // Add cookie to server initial metadata if needed.
   MaybeUpdateServerInitialMetadata(cookie_config_, cluster_changed_,
                                    cluster_name_, cookie_address_list_,
@@ -271,6 +273,7 @@ void StatefulSessionFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
 }
 
 void StatefulSessionFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  if (!perform_filtering_) return;
   // If we got a Trailers-Only response, then add the
   // cookie to the trailing metadata instead of the
   // initial metadata.

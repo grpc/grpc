@@ -93,6 +93,7 @@ class StatefulSessionFilter
     absl::string_view cluster_name_;
     absl::string_view cookie_address_list_;
     bool cluster_changed_;
+    bool perform_filtering_ = false;
   };
 
  private:
