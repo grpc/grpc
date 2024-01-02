@@ -87,6 +87,7 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("src/compiler", "grpc_root/src/compiler"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
     ("third_party/protobuf/src", "third_party/protobuf/src"),
+    ("third_party/protobuf/third_party/utf8_range", "third_party/protobuf/third_party/utf8_range"),
 ]
 
 DELETE_TARGETS_ON_CLEANUP = ["third_party"]
