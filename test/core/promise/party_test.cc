@@ -496,6 +496,11 @@ TEST_F(PartyTest, AfterCurrentPollWorks) {
   int state = 0;
   {
     Party::BulkSpawner spawner(party.get());
+    // BulkSpawner will schedule and poll this promise first, but the
+    // `AfterCurrentPoll` will pause it.
+    // Then spawn1, spawn2, and spawn3 will run in order (with EXPECT_EQ checks
+    // demonstrating this), at which point the poll will complete, causing
+    // spawn_final to be awoken and scheduled and see the final state.
     spawner.Spawn(
         "spawn_final",
         [&state, &party]() {
