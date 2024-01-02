@@ -231,15 +231,6 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   }
 
  private:
-  struct CertificateProviders {
-    // We need to save our own refs to the root and instance certificate
-    // providers since the xds certificate provider just stores a ref to their
-    // distributors.
-    RefCountedPtr<grpc_tls_certificate_provider> root;
-    RefCountedPtr<grpc_tls_certificate_provider> instance;
-    RefCountedPtr<XdsCertificateProvider> xds;
-  };
-
   class RouteConfigWatcher;
   struct RdsUpdateState {
     RouteConfigWatcher* watcher;
@@ -277,7 +268,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   size_t rds_resources_yet_to_fetch_ ABSL_GUARDED_BY(mu_) = 0;
   std::map<std::string /* resource_name */, RdsUpdateState> rds_map_
       ABSL_GUARDED_BY(mu_);
-  std::map<const XdsListenerResource::FilterChainData*, CertificateProviders>
+  std::map<const XdsListenerResource::FilterChainData*,
+           RefCountedPtr<XdsCertificateProvider>>
       certificate_providers_map_ ABSL_GUARDED_BY(mu_);
 };
 
@@ -809,10 +801,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         const XdsListenerResource::FilterChainData* filter_chain) {
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(filter_chain);
-  if (it != certificate_providers_map_.end()) {
-    return it->second.xds;
-  }
-  CertificateProviders certificate_providers;
+  if (it != certificate_providers_map_.end()) return it->second;
   // Configure root cert.
   absl::string_view root_provider_instance_name =
       filter_chain->downstream_tls_context.common_tls_context
@@ -822,11 +811,12 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       filter_chain->downstream_tls_context.common_tls_context
           .certificate_validation_context.ca_certificate_provider_instance
           .certificate_name;
+  RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider;
   if (!root_provider_instance_name.empty()) {
-    certificate_providers.root =
+    root_cert_provider =
         xds_client_->certificate_provider_store()
             .CreateOrGetCertificateProvider(root_provider_instance_name);
-    if (certificate_providers.root == nullptr) {
+    if (root_cert_provider == nullptr) {
       return absl::NotFoundError(
           absl::StrCat("Certificate provider instance name: \"",
                        root_provider_instance_name, "\" not recognized."));
@@ -839,33 +829,23 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   absl::string_view identity_provider_cert_name =
       filter_chain->downstream_tls_context.common_tls_context
           .tls_certificate_provider_instance.certificate_name;
+  RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider;
   if (!identity_provider_instance_name.empty()) {
-    certificate_providers.instance =
+    identity_cert_provider =
         xds_client_->certificate_provider_store()
             .CreateOrGetCertificateProvider(identity_provider_instance_name);
-    if (certificate_providers.instance == nullptr) {
+    if (identity_cert_provider == nullptr) {
       return absl::NotFoundError(
           absl::StrCat("Certificate provider instance name: \"",
                        identity_provider_instance_name, "\" not recognized."));
     }
   }
-  certificate_providers.xds = MakeRefCounted<XdsCertificateProvider>();
-  certificate_providers.xds->UpdateRootCertNameAndDistributor(
-      "", root_provider_cert_name,
-      certificate_providers.root == nullptr
-          ? nullptr
-          : certificate_providers.root->distributor());
-  certificate_providers.xds->UpdateIdentityCertNameAndDistributor(
-      "", identity_provider_cert_name,
-      certificate_providers.instance == nullptr
-          ? nullptr
-          : certificate_providers.instance->distributor());
-  certificate_providers.xds->UpdateRequireClientCertificate(
-      "", filter_chain->downstream_tls_context.require_client_certificate);
-  auto xds_certificate_provider = certificate_providers.xds;
-  certificate_providers_map_.emplace(filter_chain,
-                                     std::move(certificate_providers));
-  return xds_certificate_provider;
+  auto xds_cert_provider = MakeRefCounted<XdsCertificateProvider>(
+      std::move(root_cert_provider), root_provider_cert_name,
+      std::move(identity_cert_provider), identity_provider_cert_name,
+      filter_chain->downstream_tls_context.require_client_certificate);
+  certificate_providers_map_.emplace(filter_chain, xds_cert_provider);
+  return xds_cert_provider;
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::

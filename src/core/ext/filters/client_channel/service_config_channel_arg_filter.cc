@@ -54,7 +54,8 @@ namespace grpc_core {
 
 namespace {
 
-class ServiceConfigChannelArgFilter : public ChannelFilter {
+class ServiceConfigChannelArgFilter
+    : public ImplementChannelFilter<ServiceConfigChannelArgFilter> {
  public:
   static absl::StatusOr<ServiceConfigChannelArgFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args) {
@@ -74,28 +75,43 @@ class ServiceConfigChannelArgFilter : public ChannelFilter {
     }
   }
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& md,
+                                 ServiceConfigChannelArgFilter* filter);
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
 
  private:
   RefCountedPtr<ServiceConfig> service_config_;
 };
 
-ArenaPromise<ServerMetadataHandle>
-ServiceConfigChannelArgFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+const NoInterceptor
+    ServiceConfigChannelArgFilter::Call::OnServerInitialMetadata;
+const NoInterceptor
+    ServiceConfigChannelArgFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor
+    ServiceConfigChannelArgFilter::Call::OnClientToServerMessage;
+const NoInterceptor
+    ServiceConfigChannelArgFilter::Call::OnServerToClientMessage;
+const NoInterceptor ServiceConfigChannelArgFilter::Call::OnFinalize;
+
+void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
+    ClientMetadata& md, ServiceConfigChannelArgFilter* filter) {
   const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
-  if (service_config_ != nullptr) {
-    method_configs = service_config_->GetMethodParsedConfigVector(
-        call_args.client_initial_metadata->get_pointer(HttpPathMetadata())
-            ->c_slice());
+  if (filter->service_config_ != nullptr) {
+    method_configs = filter->service_config_->GetMethodParsedConfigVector(
+        md.get_pointer(HttpPathMetadata())->c_slice());
   }
   auto* arena = GetContext<Arena>();
   auto* service_config_call_data = arena->New<ServiceConfigCallData>(
       arena, GetContext<grpc_call_context_element>());
-  service_config_call_data->SetServiceConfig(service_config_, method_configs);
-  return next_promise_factory(std::move(call_args));
+  service_config_call_data->SetServiceConfig(filter->service_config_,
+                                             method_configs);
 }
 
 const grpc_channel_filter kServiceConfigChannelArgFilter =
