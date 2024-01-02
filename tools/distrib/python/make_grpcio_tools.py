@@ -71,7 +71,7 @@ PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//src/"
 CC_INCLUDES = [
     os.path.join("third_party", "abseil-cpp"),
     os.path.join("third_party", "protobuf", "src"),
-    os.path.join("third_party", "utf8_range"),
+    os.path.join("third_party", "protobuf", "third_party", "utf8_range"),
 ]
 
 # include path for .proto files
