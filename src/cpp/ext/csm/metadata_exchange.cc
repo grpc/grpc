@@ -325,6 +325,9 @@ class OptionalLabelsIterable : public LabelsIterable {
           optional_labels_span) {
     // Performs JSON label name format to Service Labels spec format conversion.
     for (const auto& optional_labels : optional_labels_span) {
+      if (optional_labels == nullptr) {
+        continue;
+      }
       if (optional_labels->find("serviceName") != optional_labels->end()) {
         optional_labels_[0] = {"csm.service_name",
                                optional_labels->at("serviceName")};
@@ -352,7 +355,12 @@ class OptionalLabelsIterable : public LabelsIterable {
   void ResetIteratorPosition() override { pos_ = 0; }
 
  private:
-  absl::InlinedVector<std::pair<std::string, std::string>, 2> optional_labels_;
+  // According to the CSM Observability Metric spec, if the control plane fails
+  // to provide these labels, the client will set their values to "unknown".
+  // These default values are set below.
+  absl::InlinedVector<std::pair<std::string, std::string>, 2> optional_labels_ =
+      {{"csm.service_name", "unknown"},
+       {"csm.service_namespace_name", "unknown"}};
   uint32_t pos_ = 0;
 };
 

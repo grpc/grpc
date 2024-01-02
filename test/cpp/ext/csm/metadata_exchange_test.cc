@@ -160,6 +160,11 @@ class MetadataExchangeTest
         absl::get<std::string>(attributes.at("csm.workload_canonical_service")),
         "canonical_service");
     EXPECT_EQ(absl::get<std::string>(attributes.at("csm.mesh_id")), "mesh-id");
+    EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_name")),
+              "unknown");
+    EXPECT_EQ(
+        absl::get<std::string>(attributes.at("csm.service_namespace_name")),
+        "unknown");
     switch (GetParam().type()) {
       case TestScenario::ResourceType::kGke:
         EXPECT_EQ(
