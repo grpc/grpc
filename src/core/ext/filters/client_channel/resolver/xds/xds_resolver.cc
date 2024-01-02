@@ -376,7 +376,8 @@ class XdsResolver : public Resolver {
     RouteConfigData::RouteEntry* route_;
   };
 
-  class ClusterSelectionFilter : public ChannelFilter {
+  class ClusterSelectionFilter
+      : public ImplementChannelFilter<ClusterSelectionFilter> {
    public:
     const static grpc_channel_filter kFilter;
 
@@ -386,8 +387,15 @@ class XdsResolver : public Resolver {
     }
 
     // Construct a promise for one call.
-    ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-        CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+    class Call {
+     public:
+      void OnClientInitialMetadata(ClientMetadata& md);
+      static const NoInterceptor OnServerInitialMetadata;
+      static const NoInterceptor OnServerTrailingMetadata;
+      static const NoInterceptor OnClientToServerMessage;
+      static const NoInterceptor OnServerToClientMessage;
+      static const NoInterceptor OnFinalize;
+    };
 
    private:
     explicit ClusterSelectionFilter(ChannelFilter::Args filter_args)
@@ -440,6 +448,16 @@ class XdsResolver : public Resolver {
 
   std::map<absl::string_view, WeakRefCountedPtr<ClusterRef>> cluster_ref_map_;
 };
+
+const NoInterceptor
+    XdsResolver::ClusterSelectionFilter::Call::OnServerInitialMetadata;
+const NoInterceptor
+    XdsResolver::ClusterSelectionFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor
+    XdsResolver::ClusterSelectionFilter::Call::OnClientToServerMessage;
+const NoInterceptor
+    XdsResolver::ClusterSelectionFilter::Call::OnServerToClientMessage;
+const NoInterceptor XdsResolver::ClusterSelectionFilter::Call::OnFinalize;
 
 //
 // XdsResolver::RouteConfigData::RouteListIterator
@@ -899,9 +917,8 @@ const grpc_channel_filter XdsResolver::ClusterSelectionFilter::kFilter =
                            kFilterExaminesServerInitialMetadata>(
         "cluster_selection_filter");
 
-ArenaPromise<ServerMetadataHandle>
-XdsResolver::ClusterSelectionFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void XdsResolver::ClusterSelectionFilter::Call::OnClientInitialMetadata(
+    ClientMetadata&) {
   auto* service_config_call_data =
       static_cast<ClientChannelServiceConfigCallData*>(
           GetContext<grpc_call_context_element>()
@@ -920,7 +937,6 @@ XdsResolver::ClusterSelectionFilter::MakeCallPromise(
           [cluster = std::move(cluster)]() mutable { cluster.reset(); });
     }
   }
-  return next_promise_factory(std::move(call_args));
 }
 
 //
