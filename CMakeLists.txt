@@ -9537,6 +9537,7 @@ add_executable(client_transport_error_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
@@ -9581,12 +9582,15 @@ add_executable(client_transport_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/transport/chaotic_good/client_transport_test.cc
+  test/core/transport/chaotic_good/mock_promise_endpoint.cc
+  test/core/transport/chaotic_good/transport_test.cc
 )
 target_compile_features(client_transport_test PUBLIC cxx_std_14)
 target_include_directories(client_transport_test
@@ -22437,12 +22441,15 @@ add_executable(server_transport_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/lib/transport/promise_endpoint.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/transport/chaotic_good/mock_promise_endpoint.cc
   test/core/transport/chaotic_good/server_transport_test.cc
+  test/core/transport/chaotic_good/transport_test.cc
 )
 target_compile_features(server_transport_test PUBLIC cxx_std_14)
 target_include_directories(server_transport_test
