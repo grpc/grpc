@@ -47,8 +47,9 @@ namespace grpc_core {
 
 TraceFlag grpc_backend_metric_filter_trace(false, "backend_metric_filter");
 
-absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
-    BackendMetricProvider* provider) const {
+namespace {
+absl::optional<std::string> MaybeSerializeBackendMetrics(
+    BackendMetricProvider* provider) {
   if (provider == nullptr) return absl::nullopt;
   BackendMetricData data = provider->GetBackendMetricData();
   upb::Arena arena;
@@ -107,17 +108,18 @@ absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
       xds_data_orca_v3_OrcaLoadReport_serialize(response, arena.ptr(), &len);
   return std::string(buf, len);
 }
+}  // namespace
 
-const grpc_channel_filter BackendMetricFilter::kFilter =
-    MakePromiseBasedFilter<BackendMetricFilter, FilterEndpoint::kServer>(
+const grpc_channel_filter LegacyBackendMetricFilter::kFilter =
+    MakePromiseBasedFilter<LegacyBackendMetricFilter, FilterEndpoint::kServer>(
         "backend_metric");
 
-absl::StatusOr<BackendMetricFilter> BackendMetricFilter::Create(
+absl::StatusOr<LegacyBackendMetricFilter> LegacyBackendMetricFilter::Create(
     const ChannelArgs&, ChannelFilter::Args) {
-  return BackendMetricFilter();
+  return LegacyBackendMetricFilter();
 }
 
-ArenaPromise<ServerMetadataHandle> BackendMetricFilter::MakeCallPromise(
+ArenaPromise<ServerMetadataHandle> LegacyBackendMetricFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   return ArenaPromise<ServerMetadataHandle>(Map(
       next_promise_factory(std::move(call_args)),
@@ -150,7 +152,7 @@ ArenaPromise<ServerMetadataHandle> BackendMetricFilter::MakeCallPromise(
 
 void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &BackendMetricFilter::kFilter)
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &LegacyBackendMetricFilter::kFilter)
       .IfHasChannelArg(GRPC_ARG_SERVER_CALL_METRIC_RECORDING);
 }
 
