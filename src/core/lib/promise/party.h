@@ -380,6 +380,8 @@ class Party : public Activity, private Wakeable {
 
   // Return a promise that resolves to Empty{} when the current party poll is
   // complete.
+  // This is useful for implementing batching and the like: we can hold some
+  // action until the rest of the party resolves itself.
   auto AfterCurrentPoll() {
     GPR_DEBUG_ASSERT(Activity::current() == this);
     sync_.WakeAfterPoll(CurrentParticipant());
