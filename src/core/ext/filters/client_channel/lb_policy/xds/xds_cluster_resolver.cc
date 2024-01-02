@@ -215,26 +215,33 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       ~EndpointWatcher() override {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
-      void OnResourceChanged(
-          std::shared_ptr<const XdsEndpointResource> update) override {
+      void OnResourceChanged(std::shared_ptr<const XdsEndpointResource> update,
+                             RefCountedPtr<XdsClient::ReadDelayHandle>
+                                 read_delay_handle) override {
         discovery_mechanism_->parent()->work_serializer()->Run(
             [self = RefAsSubclass<EndpointWatcher>(),
-             update = std::move(update)]() mutable {
+             update = std::move(update),
+             read_delay_handle = std::move(read_delay_handle)]() mutable {
               self->OnResourceChangedHelper(std::move(update));
             },
             DEBUG_LOCATION);
       }
-      void OnError(absl::Status status) override {
+      void OnError(absl::Status status,
+                   RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle)
+          override {
         discovery_mechanism_->parent()->work_serializer()->Run(
             [self = RefAsSubclass<EndpointWatcher>(),
-             status = std::move(status)]() mutable {
+             status = std::move(status),
+             read_delay_handle = std::move(read_delay_handle)]() mutable {
               self->OnErrorHelper(std::move(status));
             },
             DEBUG_LOCATION);
       }
-      void OnResourceDoesNotExist() override {
+      void OnResourceDoesNotExist(RefCountedPtr<XdsClient::ReadDelayHandle>
+                                      read_delay_handle) override {
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [self = RefAsSubclass<EndpointWatcher>()]() {
+            [self = RefAsSubclass<EndpointWatcher>(),
+             read_delay_handle = std::move(read_delay_handle)]() {
               self->OnResourceDoesNotExistHelper();
             },
             DEBUG_LOCATION);

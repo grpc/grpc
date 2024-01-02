@@ -4457,6 +4457,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/functional:bind_front",
         "absl/memory",
         "absl/random",
@@ -4666,6 +4667,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:uri_parser",
+        "//:xds_client",
     ],
 )
 
@@ -4734,6 +4736,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:work_serializer",
+        "//:xds_client",
     ],
 )
 
@@ -6371,6 +6374,8 @@ grpc_cc_library(
     deps = [
         "activity",
         "event_engine_common",
+        "if",
+        "map",
         "poll",
         "slice",
         "slice_buffer",
