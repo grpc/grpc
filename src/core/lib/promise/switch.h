@@ -69,4 +69,4 @@ auto Switch(D discriminator, promise_detail::Case<D, F> c, Others... others) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_IF_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_SWITCH_H
