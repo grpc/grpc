@@ -81,12 +81,9 @@ inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsHttp2StatsFixEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
-inline bool IsMemoryPressureControllerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
-inline bool IsOverloadProtectionEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
@@ -94,7 +91,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
-inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -149,12 +145,9 @@ inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsHttp2StatsFixEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
-inline bool IsMemoryPressureControllerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
-inline bool IsOverloadProtectionEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
@@ -162,7 +155,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
-inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -217,12 +209,9 @@ inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsHttp2StatsFixEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
-inline bool IsMemoryPressureControllerEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
-inline bool IsOverloadProtectionEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
@@ -230,7 +219,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
-inline bool IsRedMaxConcurrentStreamsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -274,16 +262,13 @@ enum ExperimentIds {
   kExperimentIdHttp2StatsFix,
   kExperimentIdKeepaliveFix,
   kExperimentIdKeepaliveServerFix,
-  kExperimentIdMemoryPressureController,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
-  kExperimentIdOverloadProtection,
   kExperimentIdPeerStateBasedFraming,
   kExperimentIdPendingQueueCap,
   kExperimentIdPickFirstHappyEyeballs,
   kExperimentIdPromiseBasedClientCall,
   kExperimentIdPromiseBasedServerCall,
-  kExperimentIdRedMaxConcurrentStreams,
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdRegisteredMethodsMap,
@@ -355,10 +340,6 @@ inline bool IsKeepaliveFixEnabled() {
 inline bool IsKeepaliveServerFixEnabled() {
   return IsExperimentEnabled(kExperimentIdKeepaliveServerFix);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_PRESSURE_CONTROLLER
-inline bool IsMemoryPressureControllerEnabled() {
-  return IsExperimentEnabled(kExperimentIdMemoryPressureController);
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() {
   return IsExperimentEnabled(kExperimentIdMonitoringExperiment);
@@ -366,10 +347,6 @@ inline bool IsMonitoringExperimentEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MULTIPING
 inline bool IsMultipingEnabled() {
   return IsExperimentEnabled(kExperimentIdMultiping);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_OVERLOAD_PROTECTION
-inline bool IsOverloadProtectionEnabled() {
-  return IsExperimentEnabled(kExperimentIdOverloadProtection);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PEER_STATE_BASED_FRAMING
 inline bool IsPeerStateBasedFramingEnabled() {
@@ -390,10 +367,6 @@ inline bool IsPromiseBasedClientCallEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 inline bool IsPromiseBasedServerCallEnabled() {
   return IsExperimentEnabled(kExperimentIdPromiseBasedServerCall);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_RED_MAX_CONCURRENT_STREAMS
-inline bool IsRedMaxConcurrentStreamsEnabled() {
-  return IsExperimentEnabled(kExperimentIdRedMaxConcurrentStreams);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() {

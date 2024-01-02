@@ -113,11 +113,6 @@
   owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: memory_pressure_controller
-  description: New memory pressure controller
-  expiry: 2024/05/05
-  owner: ctiller@google.com
-  test_tags: [resource_quota_test]
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
   expiry: never-ever
@@ -127,13 +122,6 @@
   description:
     Allow more than one ping to be in flight at a time by default.
   expiry: 2024/01/15
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]
-- name: overload_protection
-  description:
-    If chttp2 has more streams than it can handle open, send RST_STREAM immediately
-    on new streams appearing.
-  expiry: 2024/03/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: peer_state_based_framing
@@ -183,13 +171,6 @@
   expiry: 2024/06/14
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
-- name: red_max_concurrent_streams
-  description:
-    Perform random early rejection of requests that would exceed a newly reduced
-    MAX_CONCURRENT_STREAMS but are allowed by the current.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]
 - name: registered_method_lookup_in_transport
   description:
     Change registered method's lookup point to transport

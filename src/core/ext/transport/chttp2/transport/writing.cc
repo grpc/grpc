@@ -34,6 +34,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -577,9 +578,10 @@ class StreamWriteContext {
         t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
     if (s_->call_tracer) {
-      s_->call_tracer->RecordAnnotation(HttpAnnotation(
-          HttpAnnotation::Type::kHeadWritten, Timestamp::Now(),
-          s_->t->flow_control.stats(), s_->flow_control.stats()));
+      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
+          grpc_core::HttpAnnotation::Type::kHeadWritten,
+          gpr_now(GPR_CLOCK_REALTIME), s_->t->flow_control.stats(),
+          s_->flow_control.stats()));
     }
   }
 
@@ -723,8 +725,8 @@ class StreamWriteContext {
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
     if (s_->call_tracer) {
-      s_->call_tracer->RecordAnnotation(HttpAnnotation(
-          HttpAnnotation::Type::kEnd, Timestamp::Now(),
+      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
+          grpc_core::HttpAnnotation::Type::kEnd, gpr_now(GPR_CLOCK_REALTIME),
           s_->t->flow_control.stats(), s_->flow_control.stats()));
     }
   }

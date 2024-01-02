@@ -686,7 +686,6 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
-                   grpc_core::IsRedMaxConcurrentStreamsEnabled() &&
                    t->stream_map.size() >=
                        t->max_concurrent_streams_policy.AdvertiseValue() &&
                    grpc_core::RandomEarlyDetection(
