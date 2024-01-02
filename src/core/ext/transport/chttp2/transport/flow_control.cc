@@ -323,10 +323,8 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     // TODO(ncteisen): experiment with setting target to be huge under low
     // memory pressure.
     uint32_t target = static_cast<uint32_t>(RoundUpToPowerOf2(
-        Clamp(IsMemoryPressureControllerEnabled()
-                  ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
-                  : pow(2, SmoothLogBdp(TargetLogBdp())),
-              0.0, static_cast<double>(kMaxInitialWindowSize))));
+        Clamp(TargetInitialWindowSizeBasedOnMemoryPressureAndBdp(), 0.0,
+              static_cast<double>(kMaxInitialWindowSize))));
     if (target < kMinPositiveInitialWindowSize) target = 0;
     if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
       // Hook for simulating unusual flow control situations in tests.
