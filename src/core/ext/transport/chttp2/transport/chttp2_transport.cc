@@ -2338,8 +2338,13 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
           [id = s->id, http_error,
            remove_stream_handle = grpc_chttp2_mark_stream_closed(
                t, s, 1, 1, due_to_error)](grpc_chttp2_transport* t) {
-            grpc_chttp2_add_rst_stream_to_next_write(
-                t, id, static_cast<uint32_t>(http_error), nullptr);
+            if (grpc_core::IsChttp2NewWritesEnabled()) {
+              t->qframes.emplace_back(grpc_core::Http2RstStreamFrame{
+                  id, static_cast<uint32_t>(http_error)});
+            } else {
+              grpc_chttp2_add_rst_stream_to_next_write(
+                  t, id, static_cast<uint32_t>(http_error), nullptr);
+            }
             grpc_chttp2_initiate_write(t,
                                        GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
           });
@@ -2550,6 +2555,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                   headers),
               frame.payload);
           t->qframes.emplace_back(std::move(frame));
+          t->qframes.emplace_back(
+              grpc_core::Http2RstStreamFrame{id, GRPC_HTTP2_NO_ERROR});
         } else {
           size_t idx = grpc_slice_buffer_add_indexed(t->qbuf.c_slice_buffer(),
                                                      GRPC_SLICE_MALLOC(9));
@@ -2571,10 +2578,10 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
           *p++ = static_cast<uint8_t>(id >> 16);
           *p++ = static_cast<uint8_t>(id >> 8);
           *p++ = static_cast<uint8_t>(id);
+          grpc_chttp2_add_rst_stream_to_next_write(t, id, GRPC_HTTP2_NO_ERROR,
+                                                   nullptr);
         }
         grpc_chttp2_reset_ping_clock(t);
-        grpc_chttp2_add_rst_stream_to_next_write(t, id, GRPC_HTTP2_NO_ERROR,
-                                                 nullptr);
 
         grpc_chttp2_initiate_write(t,
                                    GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API);

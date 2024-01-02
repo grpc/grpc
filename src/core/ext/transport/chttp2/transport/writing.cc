@@ -232,7 +232,7 @@ class WriteContext {
               grpc_chttp2_settings_timeout(std::move(t));
             });
       }
-      t_->force_send_settings.SetAll(false);
+      t_->force_send_settings.ClearAll();
       t_->dirtied_local_settings = false;
       t_->sent_local_settings = true;
       t_->flow_control.FlushedSettings();

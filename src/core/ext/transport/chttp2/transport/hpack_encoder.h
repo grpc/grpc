@@ -326,6 +326,9 @@ class Compressor<HttpSchemeMetadata, HttpSchemeCompressor> {
 
 }  // namespace hpack_encoder_detail
 
+// Encode a set of headers into a slice buffer.
+// Will mutate the slices pointed to by `key_values` (specifically will move
+// from them).
 void EncodeUncompressedHeaders(absl::Span<std::pair<Slice, Slice>> key_values,
                                SliceBuffer& out);
 

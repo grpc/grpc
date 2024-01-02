@@ -279,6 +279,18 @@ class StringKey {
 };
 }  // namespace
 
+void EncodeUncompressedHeaders(absl::Span<std::pair<Slice, Slice>> key_values,
+                               SliceBuffer& out) {
+  for (auto& kv : key_values) {
+    StringKey key(std::move(kv.first));
+    key.WritePrefix(0x00, out.AddTiny(key.prefix_length()));
+    out.Append(key.key());
+    NonBinaryStringValue emit(std::move(kv.second));
+    emit.WritePrefix(out.AddTiny(emit.prefix_length()));
+    out.Append(emit.data());
+  }
+}
+
 namespace hpack_encoder_detail {
 void Encoder::EmitIndexed(uint32_t elem_index) {
   VarintWriter<1> w(elem_index);

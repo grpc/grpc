@@ -579,9 +579,14 @@ error_handler:
     // handle stream errors by closing the stream
     grpc_chttp2_mark_stream_closed(t, s, true, false,
                                    absl_status_to_grpc_error(status));
-    grpc_chttp2_add_rst_stream_to_next_write(t, t->incoming_stream_id,
-                                             GRPC_HTTP2_PROTOCOL_ERROR,
-                                             &s->stats.outgoing);
+    if (grpc_core::IsChttp2NewWritesEnabled()) {
+      t->qframes.emplace_back(grpc_core::Http2RstStreamFrame{
+          t->incoming_stream_id, GRPC_HTTP2_PROTOCOL_ERROR});
+    } else {
+      grpc_chttp2_add_rst_stream_to_next_write(t, t->incoming_stream_id,
+                                               GRPC_HTTP2_PROTOCOL_ERROR,
+                                               &s->stats.outgoing);
+    }
     return init_non_header_skip_frame_parser(t);
   } else {
     return absl_status_to_grpc_error(status);
@@ -964,8 +969,13 @@ static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(sp);
   grpc_chttp2_transport* t = s->t.get();
   if (!s->write_closed) {
-    grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
-                                             &s->stats.outgoing);
+    if (grpc_core::IsChttp2NewWritesEnabled()) {
+      t->qframes.emplace_back(
+          grpc_core::Http2RstStreamFrame{s->id, GRPC_HTTP2_NO_ERROR});
+    } else {
+      grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
+                                               &s->stats.outgoing);
+    }
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM);
     grpc_chttp2_mark_stream_closed(t, s, true, true, absl::OkStatus());
   }
