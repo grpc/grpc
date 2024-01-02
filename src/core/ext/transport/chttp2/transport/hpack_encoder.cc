@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <cstdint>
 
+#include "frame.h"
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -106,6 +108,42 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
 
     frame_type = GRPC_CHTTP2_FRAME_CONTINUATION;
     flags = 0;
+  }
+}
+
+void HPackCompressor::Frame(const EncodeHeaderOptions& options,
+                            SliceBuffer& raw, std::vector<Http2Frame>& output) {
+  Http2HeaderFrame first;
+  // per the HTTP/2 spec:
+  //   A HEADERS frame carries the END_STREAM flag that signals the end of a
+  //   stream. However, a HEADERS frame with the END_STREAM flag set can be
+  //   followed by CONTINUATION frames on the same stream. Logically, the
+  //   CONTINUATION frames are part of the HEADERS frame.
+  // Thus, we add the END_STREAM flag to the HEADER frame (the first frame).
+  first.end_stream = options.is_end_of_stream;
+  if (raw.Length() <= options.max_frame_size) {
+    first.end_headers = true;
+    first.payload = std::move(raw);
+    output.emplace_back(std::move(first));
+    return;
+  }
+  raw.MoveFirstNBytesIntoSliceBuffer(options.max_frame_size, first.payload);
+  output.emplace_back(std::move(first));
+  while (true) {
+    Http2ContinuationFrame continuation;
+    // per the HTTP/2 spec:
+    //   A HEADERS frame without the END_HEADERS flag set MUST be followed by
+    //   a CONTINUATION frame for the same stream.
+    // Thus, we add the END_HEADER flag to the last frame.
+    if (raw.Length() < options.max_frame_size) {
+      continuation.end_headers = true;
+      continuation.payload = std::move(raw);
+      output.emplace_back(std::move(continuation));
+      return;
+    }
+    raw.MoveFirstNBytesIntoSliceBuffer(options.max_frame_size,
+                                       continuation.payload);
+    output.emplace_back(std::move(continuation));
   }
 }
 

@@ -73,7 +73,8 @@ void grpc_chttp2_add_rst_stream_to_next_write(
     grpc_chttp2_transport* t, uint32_t id, uint32_t code,
     grpc_transport_one_way_stats* stats) {
   t->num_pending_induced_frames++;
-  grpc_slice_buffer_add(&t->qbuf,
+  GPR_ASSERT(grpc_core::IsChttp2NewWritesEnabled());
+  grpc_slice_buffer_add(t->qbuf.c_slice_buffer(),
                         grpc_chttp2_rst_stream_create(id, code, stats));
 }
 

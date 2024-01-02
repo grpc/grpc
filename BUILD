@@ -3928,6 +3928,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "chttp2_bin_encoder",
+        "chttp2_frame",
         "chttp2_legacy_frame",
         "chttp2_varint",
         "gpr",

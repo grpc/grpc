@@ -27,6 +27,7 @@
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "frame.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -140,7 +141,12 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
             memcpy(parser->target_settings, parser->incoming_settings,
                    GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
             t->num_pending_induced_frames++;
-            grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
+            if (grpc_core::IsChttp2NewWritesEnabled()) {
+              t->qframes.emplace_back(grpc_core::Http2SettingsFrame{true});
+            } else {
+              grpc_slice_buffer_add(t->qbuf.c_slice_buffer(),
+                                    grpc_chttp2_settings_ack_create());
+            }
             grpc_chttp2_initiate_write(t,
                                        GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK);
             if (t->notify_on_receive_settings != nullptr) {
@@ -207,10 +213,17 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                                                  sp->max_value);
                 break;
               case GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE:
-                grpc_chttp2_goaway_append(
-                    t->last_new_stream_id, sp->error_value,
-                    grpc_slice_from_static_string("HTTP2 settings error"),
-                    &t->qbuf);
+                if (grpc_core::IsChttp2NewWritesEnabled()) {
+                  t->qframes.emplace_back(grpc_core::Http2GoawayFrame{
+                      t->last_new_stream_id, sp->error_value,
+                      grpc_core::Slice::FromStaticString(
+                          "HTTP2 settings error")});
+                } else {
+                  grpc_chttp2_goaway_append(
+                      t->last_new_stream_id, sp->error_value,
+                      grpc_slice_from_static_string("HTTP2 settings error"),
+                      t->qbuf.c_slice_buffer());
+                }
                 return GRPC_ERROR_CREATE(absl::StrFormat(
                     "invalid value %u passed for %s", parser->value, sp->name));
             }

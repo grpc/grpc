@@ -68,6 +68,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_NEW_WRITES
+inline bool IsChttp2NewWritesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
@@ -133,6 +135,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_NEW_WRITES
+inline bool IsChttp2NewWritesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
@@ -199,6 +203,8 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_NEW_WRITES
+inline bool IsChttp2NewWritesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
@@ -258,6 +264,7 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 enum ExperimentIds {
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdCanaryClientPrivacy,
+  kExperimentIdChttp2NewWrites,
   kExperimentIdClientIdleness,
   kExperimentIdClientPrivacy,
   kExperimentIdEventEngineClient,
@@ -307,6 +314,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
 inline bool IsCanaryClientPrivacyEnabled() {
   return IsExperimentEnabled(kExperimentIdCanaryClientPrivacy);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_NEW_WRITES
+inline bool IsChttp2NewWritesEnabled() {
+  return IsExperimentEnabled(kExperimentIdChttp2NewWrites);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() {

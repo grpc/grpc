@@ -34,6 +34,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "frame.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -349,7 +350,8 @@ struct grpc_chttp2_transport final
   grpc_core::HPackCompressor hpack_compressor;
 
   /// data to write next write
-  grpc_slice_buffer qbuf;
+  grpc_core::SliceBuffer qbuf;
+  std::vector<grpc_core::Http2Frame> qframes;
 
   size_t max_requests_per_read;
 
@@ -360,9 +362,7 @@ struct grpc_chttp2_transport final
   grpc_chttp2_sent_goaway_state sent_goaway_state = GRPC_CHTTP2_NO_GOAWAY_SEND;
 
   /// bitmask of setting indexes to send out
-  /// Hack: it's common for implementations to assume 65536 bytes initial send
-  /// window -- this should by rights be 0
-  uint32_t force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
+  grpc_core::BitSet<GRPC_CHTTP2_NUM_SETTINGS> force_send_settings;
   /// settings values
   uint32_t settings[GRPC_NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
 

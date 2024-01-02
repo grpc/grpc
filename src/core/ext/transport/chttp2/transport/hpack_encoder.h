@@ -24,6 +24,7 @@
 #include <stddef.h>
 
 #include <cstdint>
+#include <initializer_list>
 #include <utility>
 #include <vector>
 
@@ -34,6 +35,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/lib/gprpp/time.h"
@@ -324,6 +326,9 @@ class Compressor<HttpSchemeMetadata, HttpSchemeCompressor> {
 
 }  // namespace hpack_encoder_detail
 
+void EncodeUncompressedHeaders(absl::Span<std::pair<Slice, Slice>> key_values,
+                               SliceBuffer& out);
+
 class HPackCompressor {
   class SliceIndex;
 
@@ -360,6 +365,17 @@ class HPackCompressor {
   }
 
   template <typename HeaderSet>
+  void EncodeHeaders(const EncodeHeaderOptions& options,
+                     const HeaderSet& headers,
+                     std::vector<Http2Frame>& output) {
+    SliceBuffer raw;
+    hpack_encoder_detail::Encoder encoder(
+        this, options.use_true_binary_metadata, raw);
+    headers.Encode(&encoder);
+    Frame(options, raw, output);
+  }
+
+  template <typename HeaderSet>
   void EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output) {
     hpack_encoder_detail::Encoder encoder(this, true, output);
     headers.Encode(&encoder);
@@ -372,6 +388,8 @@ class HPackCompressor {
 
   void Frame(const EncodeHeaderOptions& options, SliceBuffer& raw,
              grpc_slice_buffer* output);
+  void Frame(const EncodeHeaderOptions& options, SliceBuffer& raw,
+             std::vector<Http2Frame>& output);
 
   // maximum number of bytes we'll use for the decode table (to guard against
   // peers ooming us by setting decode table size high)

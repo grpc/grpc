@@ -51,6 +51,12 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: chttp2_new_writes
+  description:
+    If set, use the new chttp2 write path.
+  expiry: 2024/05/05
+  owner: ctiller@google.com
+  test_tags: []
 - name: client_idleness
   description: If enabled, client channel idleness is enabled by default.
   expiry: 2024/03/15

@@ -36,6 +36,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
+#include "frame.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
@@ -652,10 +653,15 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                               [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])) {
       if (grpc_core::IsRfcMaxConcurrentStreamsEnabled()) {
         ++t->num_pending_induced_frames;
-        grpc_slice_buffer_add(
-            &t->qbuf,
-            grpc_chttp2_rst_stream_create(t->incoming_stream_id,
-                                          GRPC_HTTP2_REFUSED_STREAM, nullptr));
+        if (grpc_core::IsChttp2NewWritesEnabled()) {
+          t->qframes.emplace_back(grpc_core::Http2RstStreamFrame{
+              t->incoming_stream_id, GRPC_HTTP2_REFUSED_STREAM});
+        } else {
+          grpc_slice_buffer_add(
+              t->qbuf.c_slice_buffer(),
+              grpc_chttp2_rst_stream_create(
+                  t->incoming_stream_id, GRPC_HTTP2_REFUSED_STREAM, nullptr));
+        }
         grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
         return init_header_skip_frame_parser(t, priority_type, is_eoh);
       } else {
@@ -668,9 +674,15 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
       ++t->num_pending_induced_frames;
-      grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_rst_stream_create(
-                                          t->incoming_stream_id,
+      if (grpc_core::IsChttp2NewWritesEnabled()) {
+        t->qframes.emplace_back(grpc_core::Http2RstStreamFrame{
+            t->incoming_stream_id, GRPC_HTTP2_REFUSED_STREAM});
+      } else {
+        grpc_slice_buffer_add(
+            t->qbuf.c_slice_buffer(),
+            grpc_chttp2_rst_stream_create(t->incoming_stream_id,
                                           GRPC_HTTP2_REFUSED_STREAM, nullptr));
+      }
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
@@ -686,9 +698,15 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       // setting, but are over the next value that will be advertised.
       // Apply some backpressure by randomly not accepting new streams.
       ++t->num_pending_induced_frames;
-      grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_rst_stream_create(
-                                          t->incoming_stream_id,
+      if (grpc_core::IsChttp2NewWritesEnabled()) {
+        t->qframes.emplace_back(grpc_core::Http2RstStreamFrame{
+            t->incoming_stream_id, GRPC_HTTP2_REFUSED_STREAM});
+      } else {
+        grpc_slice_buffer_add(
+            t->qbuf.c_slice_buffer(),
+            grpc_chttp2_rst_stream_create(t->incoming_stream_id,
                                           GRPC_HTTP2_REFUSED_STREAM, nullptr));
+      }
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT ||
@@ -710,10 +728,15 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           t, std::string(t->peer_string.as_string_view()).c_str(),
           t->incoming_stream_id, t->last_new_stream_id));
       ++t->num_pending_induced_frames;
-      grpc_slice_buffer_add(
-          &t->qbuf,
-          grpc_chttp2_rst_stream_create(t->incoming_stream_id,
-                                        GRPC_HTTP2_ENHANCE_YOUR_CALM, nullptr));
+      if (grpc_core::IsChttp2NewWritesEnabled()) {
+        t->qframes.emplace_back(grpc_core::Http2RstStreamFrame{
+            t->incoming_stream_id, GRPC_HTTP2_ENHANCE_YOUR_CALM});
+      } else {
+        grpc_slice_buffer_add(
+            t->qbuf.c_slice_buffer(),
+            grpc_chttp2_rst_stream_create(
+                t->incoming_stream_id, GRPC_HTTP2_ENHANCE_YOUR_CALM, nullptr));
+      }
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       t->last_new_stream_id = t->incoming_stream_id;
       return init_header_skip_frame_parser(t, priority_type, is_eoh);

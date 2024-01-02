@@ -183,6 +183,12 @@ class BitSet {
     return *this;
   }
 
+  void ClearAll() {
+    for (size_t i = 0; i < kUnits; i++) {
+      units_[i] = 0;
+    }
+  }
+
  private:
   // Given a bit index, return which unit it's stored in.
   static constexpr size_t unit_for(size_t bit) { return bit / kUnitBits; }
