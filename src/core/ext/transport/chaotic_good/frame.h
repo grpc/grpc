@@ -68,6 +68,7 @@ struct SettingsFrame final : public FrameInterface {
                            absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  ClientMetadataHandle headers;
   std::string ToString() const override;
 
   bool operator==(const SettingsFrame&) const { return true; }

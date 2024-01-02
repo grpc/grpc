@@ -160,21 +160,38 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
 }
 }  // namespace
 
-absl::Status SettingsFrame::Deserialize(HPackParser*, const FrameHeader& header,
-                                        absl::BitGenRef,
+absl::Status SettingsFrame::Deserialize(HPackParser* parser,
+                                        const FrameHeader& header,
+                                        absl::BitGenRef bitsrc,
                                         SliceBuffer& slice_buffer) {
   if (header.type != FrameType::kSettings) {
     return absl::InvalidArgumentError("Expected settings frame");
   }
-  if (header.flags.any()) {
+  if (header.flags.is_set(1)) {
     return absl::InvalidArgumentError("Unexpected flags");
   }
   FrameDeserializer deserializer(header, slice_buffer);
+  if (header.flags.is_set(0)) {
+    fflush(stdout);
+    auto r = ReadMetadata<ClientMetadata>(parser, deserializer.ReceiveHeaders(),
+                                          header.stream_id, true, true, bitsrc);
+    if (!r.ok()) return r.status();
+    GPR_ASSERT(r.value() != nullptr);
+    if (r.value() != nullptr) {
+      headers = std::move(r.value());
+    }
+  } else if (header.header_length != 0) {
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Unexpected non-zero header length", header.header_length));
+  }
   return deserializer.Finish();
 }
 
-SliceBuffer SettingsFrame::Serialize(HPackCompressor*) const {
+SliceBuffer SettingsFrame::Serialize(HPackCompressor* encoder) const {
   FrameSerializer serializer(FrameType::kSettings, 0, 0);
+  if (headers.get() != nullptr) {
+    encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
+  }
   return serializer.Finish();
 }
 
