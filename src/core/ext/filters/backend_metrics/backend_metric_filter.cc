@@ -48,6 +48,12 @@ namespace grpc_core {
 
 TraceFlag grpc_backend_metric_filter_trace(false, "backend_metric_filter");
 
+const NoInterceptor BackendMetricFilter::Call::OnClientInitialMetadata;
+const NoInterceptor BackendMetricFilter::Call::OnServerInitialMetadata;
+const NoInterceptor BackendMetricFilter::Call::OnClientToServerMessage;
+const NoInterceptor BackendMetricFilter::Call::OnServerToClientMessage;
+const NoInterceptor BackendMetricFilter::Call::OnFinalize;
+
 namespace {
 absl::optional<std::string> MaybeSerializeBackendMetrics(
     BackendMetricProvider* provider) {
