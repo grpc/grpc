@@ -16282,6 +16282,24 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: switch_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/if.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/switch.h
+  src:
+  - test/core/promise/switch_test.cc
+  deps:
+  - gtest
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
 - name: sync_test
   gtest: true
   build: test
