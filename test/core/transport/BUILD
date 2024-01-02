@@ -95,21 +95,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "pid_controller_test",
-    srcs = ["pid_controller_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
     name = "promise_endpoint_test",
     srcs = ["promise_endpoint_test.cc"],
     external_deps = [

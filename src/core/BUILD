@@ -2608,20 +2608,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "pid_controller",
-    srcs = [
-        "lib/transport/pid_controller.cc",
-    ],
-    hdrs = [
-        "lib/transport/pid_controller.h",
-    ],
-    deps = [
-        "useful",
-        "//:gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "bdp_estimator",
     srcs = [
         "lib/transport/bdp_estimator.cc",
@@ -5905,7 +5891,6 @@ grpc_cc_library(
         "experiments",
         "http2_settings",
         "memory_quota",
-        "pid_controller",
         "time",
         "useful",
         "//:gpr",

@@ -104,16 +104,7 @@ TransportFlowControl::TransportFlowControl(absl::string_view name,
                                            MemoryOwner* memory_owner)
     : memory_owner_(memory_owner),
       enable_bdp_probe_(enable_bdp_probe),
-      bdp_estimator_(name),
-      pid_controller_(PidController::Args()
-                          .set_gain_p(4)
-                          .set_gain_i(8)
-                          .set_gain_d(0)
-                          .set_initial_control_value(TargetLogBdp())
-                          .set_min_control_value(-1)
-                          .set_max_control_value(25)
-                          .set_integral_range(10)),
-      last_pid_update_(Timestamp::Now()) {}
+      bdp_estimator_(name) {}
 
 uint32_t TransportFlowControl::DesiredAnnounceSize(bool writing_anyway) const {
   const uint32_t target_announced_window =
@@ -182,41 +173,6 @@ FlowControlAction TransportFlowControl::UpdateAction(FlowControlAction action) {
         FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
   }
   return action;
-}
-
-// Take in a target and modifies it based on the memory pressure of the system
-static double AdjustForMemoryPressure(double memory_pressure, double target) {
-  // do not increase window under heavy memory pressure.
-  static const double kLowMemPressure = 0.1;
-  static const double kZeroTarget = 22;
-  static const double kHighMemPressure = 0.8;
-  static const double kMaxMemPressure = 0.9;
-  if (memory_pressure < kLowMemPressure && target < kZeroTarget) {
-    target = (target - kZeroTarget) * memory_pressure / kLowMemPressure +
-             kZeroTarget;
-  } else if (memory_pressure > kHighMemPressure) {
-    target *= 1 - std::min(1.0, (memory_pressure - kHighMemPressure) /
-                                    (kMaxMemPressure - kHighMemPressure));
-  }
-  return target;
-}
-
-double TransportFlowControl::TargetLogBdp() {
-  return AdjustForMemoryPressure(
-      memory_owner_->is_valid()
-          ? memory_owner_->GetPressureInfo().pressure_control_value
-          : 0.0,
-      1 + log2(bdp_estimator_.EstimateBdp()));
-}
-
-double TransportFlowControl::SmoothLogBdp(double value) {
-  Timestamp now = Timestamp::Now();
-  double bdp_error = value - pid_controller_.last_control_value();
-  const double dt = (now - last_pid_update_).seconds();
-  last_pid_update_ = now;
-  // Limit dt to 100ms
-  const double kMaxDt = 0.1;
-  return pid_controller_.Update(bdp_error, dt > kMaxDt ? kMaxDt : dt);
 }
 
 double
