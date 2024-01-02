@@ -107,6 +107,7 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsV3BackendMetricFilterEnabled() { return false; }
 inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
 inline bool IsV3CompressionFilterEnabled() { return false; }
 inline bool IsV3ServerAuthFilterEnabled() { return false; }
@@ -172,6 +173,7 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsV3BackendMetricFilterEnabled() { return false; }
 inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
 inline bool IsV3CompressionFilterEnabled() { return false; }
 inline bool IsV3ServerAuthFilterEnabled() { return false; }
@@ -237,6 +239,7 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsV3BackendMetricFilterEnabled() { return false; }
 inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
 inline bool IsV3CompressionFilterEnabled() { return false; }
 inline bool IsV3ServerAuthFilterEnabled() { return false; }
@@ -286,6 +289,7 @@ enum ExperimentIds {
   kExperimentIdTcpRcvLowat,
   kExperimentIdTraceRecordCallops,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
+  kExperimentIdV3BackendMetricFilter,
   kExperimentIdV3ChannelIdleFilters,
   kExperimentIdV3CompressionFilter,
   kExperimentIdV3ServerAuthFilter,
@@ -427,6 +431,10 @@ inline bool IsTraceRecordCallopsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled(kExperimentIdUnconstrainedMaxQuotaBufferSize);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_V3_BACKEND_METRIC_FILTER
+inline bool IsV3BackendMetricFilterEnabled() {
+  return IsExperimentEnabled(kExperimentIdV3BackendMetricFilter);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_V3_CHANNEL_IDLE_FILTERS
 inline bool IsV3ChannelIdleFiltersEnabled() {

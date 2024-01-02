@@ -5488,6 +5488,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_type",
         "context",
+        "experiments",
         "grpc_backend_metric_data",
         "grpc_backend_metric_provider",
         "map",
