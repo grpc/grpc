@@ -346,6 +346,8 @@ TEST_F(XdsOverrideHostTest, DrainingState) {
                                  {kAddresses[2], XdsHealthStatus::kHealthy}},
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
+  // Make sure subchannels get orphaned in the WorkSerializer.
+  WaitForWorkSerializerToFlush();
   // Picks without an override will round-robin over the two endpoints
   // that are not in draining state.
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
@@ -382,6 +384,8 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   picker = ExpectState(GRPC_CHANNEL_READY);
+  // Make sure subchannels get orphaned in the WorkSerializer.
+  WaitForWorkSerializerToFlush();
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   // Now the connection to the draining host gets dropped.
@@ -430,6 +434,8 @@ TEST_F(XdsOverrideHostTest, DrainingToHealthy) {
                                  {kAddresses[2], XdsHealthStatus::kHealthy}},
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
+  // Make sure subchannels get orphaned in the WorkSerializer.
+  WaitForWorkSerializerToFlush();
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kHealthy},
@@ -459,6 +465,8 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
+  // Make sure subchannels get orphaned in the WorkSerializer.
+  WaitForWorkSerializerToFlush();
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
   ExpectOverridePicks(picker.get(), address0_attribute, kAddresses[0]);
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
@@ -608,6 +616,8 @@ TEST_F(XdsOverrideHostTest,
                                  {kAddresses[2], XdsHealthStatus::kHealthy}},
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
+  // Make sure subchannels get orphaned in the WorkSerializer.
+  WaitForWorkSerializerToFlush();
   // Picks without an override will round-robin over the two endpoints
   // that are not in draining state.
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
@@ -635,6 +645,7 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
       });
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  gpr_log(GPR_INFO, "### sending initial update");
   EXPECT_EQ(UpdateXdsOverrideHostPolicy(kAddresses, {"UNKNOWN", "HEALTHY"},
                                         Duration::Minutes(1)),
             absl::OkStatus());
@@ -652,12 +663,15 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
   auto* address2_attribute = MakeOverrideHostAttribute(kAddresses[2]);
   ExpectOverridePicks(picker.get(), address2_attribute, kAddresses[2]);
   // Now move endpoints 1 and 2 to state DRAINING.
+  gpr_log(GPR_INFO, "### moving endpoints 1 and 2 to state DRAINING");
   ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
                                  {kAddresses[1], XdsHealthStatus::kDraining},
                                  {kAddresses[2], XdsHealthStatus::kDraining}},
                                 {"UNKNOWN", "HEALTHY", "DRAINING"},
                                 Duration::Minutes(1));
   picker = ExpectState(GRPC_CHANNEL_READY);
+  // Make sure subchannels get orphaned in the WorkSerializer.
+  WaitForWorkSerializerToFlush();
   // Picks without an override will use only the endpoint that is not in
   // draining state.
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0]});

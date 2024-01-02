@@ -750,8 +750,7 @@ void RoundRobin::RoundRobinEndpointList::RoundRobinEndpoint::OnStateUpdate(
     gpr_log(GPR_INFO,
             "[RR %p] connectivity changed for child %p, endpoint_list %p "
             "(index %" PRIuPTR " of %" PRIuPTR
-            "): prev_state=%s new_state=%s "
-            "(%s)",
+            "): prev_state=%s new_state=%s (%s)",
             round_robin, this, rr_endpoint_list, Index(),
             rr_endpoint_list->size(),
             (old_state.has_value() ? ConnectivityStateName(*old_state) : "N/A"),
