@@ -426,7 +426,7 @@ for dirname in [
             "grpc_proto_fuzzer": grpc_cc_library,
             "grpc_proto_library": grpc_proto_library,
             "select": lambda d: d["//conditions:default"],
-            "glob": lambda files: None,
+            "glob": lambda files, **kwargs: None,
             "grpc_end2end_tests": lambda: None,
             "grpc_upb_proto_library": lambda name, **kwargs: None,
             "grpc_upb_proto_reflection_library": lambda name, **kwargs: None,

@@ -6373,6 +6373,8 @@ grpc_cc_library(
     deps = [
         "activity",
         "event_engine_common",
+        "if",
+        "map",
         "poll",
         "slice",
         "slice_buffer",
