@@ -38,6 +38,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
@@ -230,13 +231,14 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   }
 }
 
+namespace grpc_core {
 namespace {
 
 class CountDefaultMetadataEncoder {
  public:
   size_t count() const { return count_; }
 
-  void Encode(const grpc_core::Slice&, const grpc_core::Slice&) {}
+  void Encode(const Slice&, const Slice&) {}
 
   template <typename Which>
   void Encode(Which, const typename Which::ValueType&) {
@@ -247,21 +249,17 @@ class CountDefaultMetadataEncoder {
   size_t count_ = 0;
 };
 
-}  // namespace
-
 // Returns true if initial_metadata contains only default headers.
-static bool is_default_initial_metadata(grpc_metadata_batch* initial_metadata) {
+bool IsDefaultInitialMetadata(grpc_metadata_batch* initial_metadata) {
   CountDefaultMetadataEncoder enc;
   initial_metadata->Encode(&enc);
   return enc.count() == initial_metadata->count();
 }
 
-namespace {
-
 class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
-    grpc_core::global_stats().IncrementHttp2WritesBegun();
+    global_stats().IncrementHttp2WritesBegun();
   }
 
   void FlushSettings() {
@@ -280,7 +278,7 @@ class WriteContext {
                                       t_->settings[GRPC_LOCAL_SETTINGS],
                                       t_->force_send_settings,
                                       GRPC_CHTTP2_NUM_SETTINGS));
-      if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
+      if (t_->keepalive_timeout != Duration::Infinity()) {
         GPR_ASSERT(
             t_->settings_ack_watchdog ==
             grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);
@@ -288,8 +286,8 @@ class WriteContext {
         // for implementations taking some more time about acking a setting.
         t_->settings_ack_watchdog = t_->event_engine->RunAfter(
             t_->settings_timeout, [t = t_->Ref()]() mutable {
-              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-              grpc_core::ExecCtx exec_ctx;
+              ApplicationCallbackExecCtx callback_exec_ctx;
+              ExecCtx exec_ctx;
               grpc_chttp2_settings_timeout(std::move(t));
             });
       }
@@ -298,7 +296,7 @@ class WriteContext {
       t_->sent_local_settings = true;
       t_->flow_control.FlushedSettings();
       t_->max_concurrent_streams_policy.FlushedSettings();
-      grpc_core::global_stats().IncrementHttp2SettingsWrites();
+      global_stats().IncrementHttp2SettingsWrites();
     }
   }
 
@@ -383,7 +381,7 @@ class WriteContext {
 
  private:
   grpc_chttp2_transport* const t_;
-  size_t target_write_size_ = grpc_core::IsWriteSizePolicyEnabled()
+  size_t target_write_size_ = IsWriteSizePolicyEnabled()
                                   ? t_->write_size_policy.WriteTargetSize()
                                   : 1024 * 1024;
 
@@ -415,12 +413,12 @@ class DataSendContext {
   }
 
   uint32_t max_outgoing() const {
-    return grpc_core::Clamp<uint32_t>(
+    return Clamp<uint32_t>(
         std::min<int64_t>(
             {t_->settings[GRPC_PEER_SETTINGS]
                          [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
              stream_remote_window(), t_->flow_control.remote_window(),
-             grpc_core::IsWriteSizeCapEnabled()
+             IsWriteSizeCapEnabled()
                  ? static_cast<int64_t>(write_context_->target_write_size())
                  : std::numeric_limits<uint32_t>::max()}),
         0, std::numeric_limits<uint32_t>::max());
@@ -458,8 +456,7 @@ class DataSendContext {
   WriteContext* write_context_;
   grpc_chttp2_transport* t_;
   grpc_chttp2_stream* s_;
-  grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd_{
-      &s_->flow_control};
+  chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd_{&s_->flow_control};
   const size_t sending_bytes_before_;
   bool is_last_frame_ = false;
 };
@@ -486,11 +483,11 @@ class StreamWriteContext {
     // https://github.com/grpc/proposal/blob/master/A6-client-retries.md#when-retries-are-valid
     if (!t_->is_client && s_->flow_controlled_buffer.length == 0 &&
         s_->send_trailing_metadata != nullptr &&
-        is_default_initial_metadata(s_->send_initial_metadata)) {
+        IsDefaultInitialMetadata(s_->send_initial_metadata)) {
       ConvertInitialMetadataToTrailingMetadata();
     } else {
       t_->hpack_compressor.EncodeHeaders(
-          grpc_core::HPackCompressor::EncodeHeaderOptions{
+          HPackCompressor::EncodeHeaderOptions{
               s_->id,  // stream_id
               false,   // is_eof
               t_->settings
@@ -514,10 +511,9 @@ class StreamWriteContext {
         t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
     if (s_->call_tracer) {
-      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kHeadWritten,
-          grpc_core::Timestamp::Now(), s_->t->flow_control.stats(),
-          s_->flow_control.stats()));
+      s_->call_tracer->RecordAnnotation(HttpAnnotation(
+          HttpAnnotation::Type::kHeadWritten, Timestamp::Now(),
+          s_->t->flow_control.stats(), s_->flow_control.stats()));
     }
   }
 
@@ -546,11 +542,11 @@ class StreamWriteContext {
 
     if (!data_send_context.AnyOutgoing()) {
       if (t_->flow_control.remote_window() <= 0) {
-        grpc_core::global_stats().IncrementHttp2TransportStalls();
+        global_stats().IncrementHttp2TransportStalls();
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
-        grpc_core::global_stats().IncrementHttp2StreamStalls();
+        global_stats().IncrementHttp2StreamStalls();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
       }
@@ -586,15 +582,14 @@ class StreamWriteContext {
                               &s_->stats.outgoing, t_->outbuf.c_slice_buffer());
     } else {
       if (send_status_.has_value()) {
-        s_->send_trailing_metadata->Set(grpc_core::HttpStatusMetadata(),
-                                        *send_status_);
+        s_->send_trailing_metadata->Set(HttpStatusMetadata(), *send_status_);
       }
       if (send_content_type_.has_value()) {
-        s_->send_trailing_metadata->Set(grpc_core::ContentTypeMetadata(),
+        s_->send_trailing_metadata->Set(ContentTypeMetadata(),
                                         *send_content_type_);
       }
       t_->hpack_compressor.EncodeHeaders(
-          grpc_core::HPackCompressor::EncodeHeaderOptions{
+          HPackCompressor::EncodeHeaderOptions{
               s_->id, true,
               t_->settings
                       [GRPC_PEER_SETTINGS]
@@ -623,10 +618,8 @@ class StreamWriteContext {
         gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
     // When sending Trailers-Only, we need to move the :status and
     // content-type headers to the trailers.
-    send_status_ =
-        s_->send_initial_metadata->get(grpc_core::HttpStatusMetadata());
-    send_content_type_ =
-        s_->send_initial_metadata->get(grpc_core::ContentTypeMetadata());
+    send_status_ = s_->send_initial_metadata->get(HttpStatusMetadata());
+    send_content_type_ = s_->send_initial_metadata->get(ContentTypeMetadata());
   }
 
   void SentLastFrame() {
@@ -647,8 +640,8 @@ class StreamWriteContext {
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
     if (s_->call_tracer) {
-      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kEnd, grpc_core::Timestamp::Now(),
+      s_->call_tracer->RecordAnnotation(HttpAnnotation(
+          HttpAnnotation::Type::kEnd, Timestamp::Now(),
           s_->t->flow_control.stats(), s_->flow_control.stats()));
     }
   }
@@ -658,15 +651,15 @@ class StreamWriteContext {
   grpc_chttp2_stream* const s_;
   bool stream_became_writable_ = false;
   absl::optional<uint32_t> send_status_;
-  absl::optional<grpc_core::ContentTypeMetadata::ValueType> send_content_type_ =
-      {};
+  absl::optional<ContentTypeMetadata::ValueType> send_content_type_ = {};
 };
 }  // namespace
+}  // namespace grpc_core
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t) {
   int64_t outbuf_relative_start_pos = 0;
-  WriteContext ctx(t);
+  grpc_core::WriteContext ctx(t);
   ctx.FlushSettings();
   ctx.FlushPingAcks();
   ctx.FlushQueuedBuffers();
@@ -679,7 +672,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   // for each grpc_chttp2_stream that's become writable, frame it's data
   // (according to available window sizes) and add to the output buffer
   while (grpc_chttp2_stream* s = ctx.NextStream()) {
-    StreamWriteContext stream_ctx(&ctx, s);
+    grpc_core::StreamWriteContext stream_ctx(&ctx, s);
     size_t orig_len = t->outbuf.c_slice_buffer()->length;
     int64_t num_stream_bytes = 0;
     stream_ctx.FlushInitialMetadata();

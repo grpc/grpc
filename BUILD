@@ -4044,6 +4044,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "chttp2_context_list_entry",
+        "chttp2_frame",
         "chttp2_legacy_frame",
         "chttp2_varint",
         "debug_location",
