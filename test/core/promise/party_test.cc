@@ -493,9 +493,9 @@ TEST_F(PartyTest, CanBulkSpawn) {
 TEST_F(PartyTest, AfterCurrentPollWorks) {
   auto party = MakeRefCounted<TestParty>();
   Notification n;
+  int state = 0;
   {
     Party::BulkSpawner spawner(party.get());
-    int state = 0;
     spawner.Spawn(
         "spawn_final",
         [&state, &party]() {
