@@ -275,7 +275,8 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
   common_name_index =
       X509_NAME_get_index_by_NID(subject_name, NID_commonName, -1);
   if (common_name_index == -1) {
-    gpr_log(GPR_DEBUG, "Could not get common name of subject from certificate.");
+    gpr_log(GPR_DEBUG,
+            "Could not get common name of subject from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_entry = X509_NAME_get_entry(subject_name, common_name_index);
