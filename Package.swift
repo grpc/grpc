@@ -1895,8 +1895,6 @@ let package = Package(
         "src/core/lib/transport/metadata_compression_traits.h",
         "src/core/lib/transport/parsed_metadata.cc",
         "src/core/lib/transport/parsed_metadata.h",
-        "src/core/lib/transport/pid_controller.cc",
-        "src/core/lib/transport/pid_controller.h",
         "src/core/lib/transport/simple_slice_based_metadata.h",
         "src/core/lib/transport/status_conversion.cc",
         "src/core/lib/transport/status_conversion.h",

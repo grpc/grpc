@@ -810,7 +810,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/transport/http_connect_handshaker.cc',
     'src/core/lib/transport/metadata_batch.cc',
     'src/core/lib/transport/parsed_metadata.cc',
-    'src/core/lib/transport/pid_controller.cc',
     'src/core/lib/transport/status_conversion.cc',
     'src/core/lib/transport/tcp_connect_handshaker.cc',
     'src/core/lib/transport/timeout_encoding.cc',
