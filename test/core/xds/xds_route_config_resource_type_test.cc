@@ -1749,7 +1749,7 @@ TEST_F(RlsTest, Basic) {
       ::testing::ElementsAre(::testing::Pair(
           "rls",
           "[{\"rls_experimental\":{"
-          "\"childPolicy\":[{\"cds_experimental\":{}}],"
+          "\"childPolicy\":[{\"cds_experimental\":{\"isDynamic\":true}}],"
           "\"childPolicyConfigTargetFieldName\":\"cluster\","
           "\"routeLookupConfig\":{"
           "\"cacheSizeBytes\":\"1024\","
@@ -1852,7 +1852,7 @@ TEST_F(RlsTest, NotUsedInAllVirtualHosts) {
       ::testing::ElementsAre(::testing::Pair(
           "rls",
           "[{\"rls_experimental\":{"
-          "\"childPolicy\":[{\"cds_experimental\":{}}],"
+          "\"childPolicy\":[{\"cds_experimental\":{\"isDynamic\":true}}],"
           "\"childPolicyConfigTargetFieldName\":\"cluster\","
           "\"routeLookupConfig\":{"
           "\"cacheSizeBytes\":\"1024\","

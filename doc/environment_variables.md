@@ -102,7 +102,6 @@ some configuration as environment variables that can be set.
   - xds_client - traces xds client
   - xds_cluster_manager_lb - traces cluster manager LB policy
   - xds_cluster_impl_lb - traces cluster impl LB policy
-  - xds_cluster_resolver_lb - traces xds cluster resolver LB policy
   - xds_resolver - traces xds resolver
 
   The following tracers will only run in binaries built in DEBUG mode. This is

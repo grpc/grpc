@@ -425,8 +425,8 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   }
   // When an RPC fails, we know the channel has seen the update.
   constexpr char kErrorMessage[] =
-      "empty address list: DNS resolution failed for server.example.com:443 "
-      "\\(UNAVAILABLE: injected error\\)";
+      "empty address list: DNS resolution failed for server.example.com:443: "
+      "UNAVAILABLE: injected error";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send an EDS update that moves locality1 to priority 0.
   args1 = EdsResourceArgs({
@@ -613,7 +613,7 @@ TEST_P(AggregateClusterTest, DependencyLoopWithNoLeafClusters) {
   cluster_config.add_clusters(kNewClusterName1);
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancer_->ads_service()->SetCdsResource(cluster);
-  // kDefaultClusterName points to the default cluster.
+  // kNewClusterName1 points to the default cluster.
   cluster.set_name(kNewClusterName1);
   cluster_config.Clear();
   cluster_config.add_clusters(kDefaultClusterName);
@@ -621,8 +621,8 @@ TEST_P(AggregateClusterTest, DependencyLoopWithNoLeafClusters) {
   balancer_->ads_service()->SetCdsResource(cluster);
   // RPCs should fail.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      "new_cluster_1: FAILED_PRECONDITION: "
-                      "aggregate cluster graph has no leaf clusters");
+                      "aggregate cluster dependency graph for cluster_name "
+                      "has no leaf clusters");
 }
 
 TEST_P(AggregateClusterTest, DependencyLoopWithLeafClusters) {
