@@ -9,6 +9,7 @@
   "tests.health_check._health_servicer_test.HealthServicerTest",
   "tests.interop._insecure_intraop_test.InsecureIntraopTest",
   "tests.interop._secure_intraop_test.SecureIntraopTest",
+  "tests.observability._observability_test.ObservabilityTest",
   "tests.protoc_plugin._python_plugin_test.ModuleMainTest",
   "tests.protoc_plugin._python_plugin_test.PythonPluginTest",
   "tests.protoc_plugin._python_plugin_test.SimpleStubsPluginTest",

@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.60.0dev</release>
-  <api>1.60.0dev</api>
+  <release>1.61.0dev</release>
+  <api>1.61.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.60.0 update
+- gRPC Core 1.61.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -49,6 +49,7 @@
     <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/call.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/channel_arg_names.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
@@ -109,6 +110,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/channel_idle_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/idle_filter_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/idle_filter_state.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backend_metric.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backend_metric.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backup_poller.cc" role="src" />
@@ -174,7 +177,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc" role="src" />
@@ -204,8 +206,12 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/polling_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/polling_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver_attributes.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc" role="src" />
@@ -235,6 +241,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/http/http_filters_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/compression_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/compression_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/legacy_compression_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/legacy_compression_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.cc" role="src" />
@@ -1248,7 +1256,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/grpc_polled_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/handle_containers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/nameser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/poller.h" role="src" />
@@ -1265,6 +1272,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/internal_errqueue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/lockfree_event.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/lockfree_event.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/native_dns_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/native_dns_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine.cc" role="src" />
@@ -1291,6 +1300,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/ref_counted_dns_resolver_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/shim.cc" role="src" />
@@ -1615,10 +1625,12 @@
     <file baseinstalldir="/" name="src/core/lib/matchers/matchers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/all_ok.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/arena_promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/cancel_callback.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/basic_seq.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/detail/join_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_like.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/seq_state.h" role="src" />
@@ -1640,8 +1652,10 @@
     <file baseinstalldir="/" name="src/core/lib/promise/seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/sleep.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/sleep.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/status_flag.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/try_join.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/endpoint_addresses.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/endpoint_addresses.h" role="src" />
@@ -1778,6 +1792,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/tls_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/legacy_server_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.cc" role="src" />
@@ -1844,6 +1859,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/wait_for_cq_end_op.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/batch_builder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/batch_builder.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />

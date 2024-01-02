@@ -55,6 +55,9 @@
             % endfor
           ],
           publicHeadersPath: "spm-core-include",
+          resources: [
+            .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+          ],
           cSettings: [
             .headerSearchPath("./"),
             .headerSearchPath("include/"),
@@ -101,6 +104,9 @@
             "src/cpp/",
           ],
           publicHeadersPath: "spm-cpp-include",
+          resources: [
+            .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+          ],
           cSettings: [
             .headerSearchPath("./"),
             .headerSearchPath("include/"),

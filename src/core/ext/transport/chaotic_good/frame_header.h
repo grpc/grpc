@@ -35,13 +35,13 @@ enum class FrameType : uint8_t {
 };
 
 struct FrameHeader {
-  FrameType type;
+  FrameType type = FrameType::kCancel;
   BitSet<2> flags;
-  uint32_t stream_id;
-  uint32_t header_length;
-  uint32_t message_length;
-  uint32_t message_padding;
-  uint32_t trailer_length;
+  uint32_t stream_id = 0;
+  uint32_t header_length = 0;
+  uint32_t message_length = 0;
+  uint32_t message_padding = 0;
+  uint32_t trailer_length = 0;
 
   // Parses a frame header from a buffer of 24 bytes. All 24 bytes are consumed.
   static absl::StatusOr<FrameHeader> Parse(const uint8_t* data);
@@ -49,6 +49,8 @@ struct FrameHeader {
   void Serialize(uint8_t* data) const;
   // Compute frame sizes from the header.
   uint32_t GetFrameLength() const;
+  // Report contents as a string
+  std::string ToString() const;
 
   bool operator==(const FrameHeader& h) const {
     return type == h.type && flags == h.flags && stream_id == h.stream_id &&

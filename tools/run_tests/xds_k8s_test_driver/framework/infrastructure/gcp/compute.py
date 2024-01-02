@@ -565,8 +565,8 @@ class ComputeV1(
             return True
         except googleapiclient.errors.HttpError as error:
             if error.resp and error.resp.status == 404:
-                logger.info(
-                    'Resource %s "%s" not deleted since it does not exist',
+                logger.debug(
+                    "Resource %s %s not deleted since it doesn't exist",
                     resource_type,
                     resource_name,
                 )

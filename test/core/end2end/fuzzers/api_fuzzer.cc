@@ -40,6 +40,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -54,7 +55,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
@@ -369,6 +369,18 @@ static grpc_channel_credentials* ReadChannelCreds(
   }
 }
 
+static grpc_server_credentials* ReadServerCreds(
+    const api_fuzzer::ServerCreds& creds) {
+  switch (creds.type_case()) {
+    case api_fuzzer::ServerCreds::TYPE_NOT_SET:
+      return nullptr;
+    case api_fuzzer::ServerCreds::kInsecureCreds:
+      return grpc_insecure_server_credentials_create();
+    case api_fuzzer::ServerCreds::kNull:
+      return nullptr;
+  }
+}
+
 namespace grpc_core {
 namespace testing {
 
@@ -404,13 +416,17 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
   fuzzing_env.resource_quota = resource_quota();
   ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
       create_channel.channel_args(), fuzzing_env);
-  grpc_channel_credentials* creds =
-      create_channel.has_channel_creds()
-          ? ReadChannelCreds(create_channel.channel_creds())
-          : grpc_insecure_credentials_create();
-  channel_ = grpc_channel_create(create_channel.target().c_str(), creds,
-                                 args.ToC().get());
-  grpc_channel_credentials_release(creds);
+  if (create_channel.inproc()) {
+    channel_ = grpc_inproc_channel_create(server_, args.ToC().get(), nullptr);
+  } else {
+    grpc_channel_credentials* creds =
+        create_channel.has_channel_creds()
+            ? ReadChannelCreds(create_channel.channel_creds())
+            : grpc_insecure_credentials_create();
+    channel_ = grpc_channel_create(create_channel.target().c_str(), creds,
+                                   args.ToC().get());
+    grpc_channel_credentials_release(creds);
+  }
   GPR_ASSERT(channel_ != nullptr);
   channel_force_delete_ = false;
   return Result::kComplete;
@@ -428,6 +444,12 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
     server_ = grpc_server_create(args.ToC().get(), nullptr);
     GPR_ASSERT(server_ != nullptr);
     grpc_server_register_completion_queue(server_, cq(), nullptr);
+    for (const auto& http2_port : create_server.http2_ports()) {
+      auto* creds = ReadServerCreds(http2_port.server_creds());
+      auto addr = absl::StrCat("localhost:", http2_port.port());
+      grpc_server_add_http2_port(server_, addr.c_str(), creds);
+      grpc_server_credentials_release(creds);
+    }
     grpc_server_start(server_);
     ResetServerState();
   } else {

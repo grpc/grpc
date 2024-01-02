@@ -45,6 +45,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/channel_idle_filter.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
+    src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/client_channel/backend_metric.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
@@ -79,7 +80,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
@@ -98,7 +98,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
     src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc \
     src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
     src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
@@ -114,6 +116,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/compression_filter.cc \
+    src/core/ext/filters/http/message_compress/legacy_compression_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
@@ -534,12 +537,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/forkable.cc \
-    src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
     src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
+    src/core/lib/event_engine/posix_engine/native_dns_resolver.cc \
     src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
@@ -789,6 +792,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/security_connector/ssl_utils.cc \
     src/core/lib/security/security_connector/tls/tls_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
+    src/core/lib/security/transport/legacy_server_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
@@ -1345,7 +1349,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.60.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.61.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)

@@ -44,7 +44,7 @@ class TestServerConfigSelectorProvider : public ServerConfigSelectorProvider {
 // Test that ServerConfigSelectorProvider can be safely copied to channel args
 // and destroyed
 TEST(ServerConfigSelectorProviderTest, CopyChannelArgs) {
-  auto server_config_selector_provider =
+  RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider =
       MakeRefCounted<TestServerConfigSelectorProvider>();
   auto args = ChannelArgs().SetObject(server_config_selector_provider);
   EXPECT_EQ(server_config_selector_provider,

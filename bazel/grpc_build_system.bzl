@@ -29,8 +29,8 @@ Contains macros used throughout the repo.
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
-load("//bazel:experiments.bzl", "EXPERIMENTS")
-load("//bazel:test_experiments.bzl", "TEST_EXPERIMENTS")
+load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES")
+load("//bazel:test_experiments.bzl", "TEST_EXPERIMENTS", "TEST_EXPERIMENT_ENABLES")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
@@ -108,7 +108,6 @@ def _update_visibility(visibility):
         "grpc++_test": PRIVATE,
         "http": PRIVATE,
         "httpcli": PRIVATE,
-        "iomgr_timer": PRIVATE,
         "iomgr_internal_errqueue": PRIVATE,
         "iomgr_buffer_list": PRIVATE,
         "json_reader_legacy": PRIVATE,
@@ -121,6 +120,8 @@ def _update_visibility(visibility):
         "xds": PRIVATE,
         "xds_client_core": PRIVATE,
         "grpc_python_observability": PRIVATE,
+        "event_engine_base_hdrs": PRIVATE,
+        "useful": PRIVATE,
     }
     final_visibility = []
     for rule in visibility:
@@ -418,6 +419,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         return tags
 
     experiment_config = list(poller_config)
+    experiment_enables = {k: v for k, v in EXPERIMENT_ENABLES.items() + TEST_EXPERIMENT_ENABLES.items()}
     for mode, config in mode_config.items():
         enabled_tags, disabled_tags = config
         if enabled_tags != None:
@@ -426,7 +428,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=" + experiment
                     env = dict(config["env"])
-                    env["GRPC_EXPERIMENTS"] = experiment
+                    env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
                     env["GRPC_CI_EXPERIMENTS"] = "1"
                     config["env"] = env
                     tags = config["tags"] + ["experiment_variation"]

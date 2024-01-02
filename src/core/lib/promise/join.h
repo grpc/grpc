@@ -44,6 +44,10 @@ struct JoinTraits {
   static R EarlyReturn(T) {
     abort();
   }
+  template <typename... A>
+  static std::tuple<A...> FinalReturn(A... a) {
+    return std::make_tuple(std::move(a)...);
+  }
 };
 
 template <typename... Promises>

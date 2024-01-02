@@ -79,7 +79,7 @@ namespace experimental {
 ///
 ///
 /// Blocking EventEngine Callbacks
-/// -----------------------------
+/// ------------------------------
 ///
 /// Doing blocking work in EventEngine callbacks is generally not advisable.
 /// While gRPC's default EventEngine implementations have some capacity to scale
@@ -89,6 +89,15 @@ namespace experimental {
 ///
 /// *Best Practice* : Occasional blocking work may be fine, but we do not
 /// recommend running a mostly blocking workload in EventEngine threads.
+///
+///
+/// Thread-safety guarantees
+/// ------------------------
+///
+/// All EventEngine methods are guaranteed to be thread-safe, no external
+/// synchronization is required to call any EventEngine method. Please note that
+/// this does not apply to application callbacks, which may be run concurrently;
+/// application state synchronization must be managed by the application.
 ///
 ////////////////////////////////////////////////////////////////////////////////
 class EventEngine : public std::enable_shared_from_this<EventEngine> {
@@ -246,6 +255,45 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
     virtual const ResolvedAddress& GetLocalAddress() const = 0;
+
+    /// A method which allows users to query whether an Endpoint implementation
+    /// supports a specified extension. The name of the extension is provided
+    /// as an input.
+    ///
+    /// An extension could be any type with a unique string id. Each extension
+    /// may support additional capabilities and if the Endpoint implementation
+    /// supports the queried extension, it should return a valid pointer to the
+    /// extension type.
+    ///
+    /// E.g., use case of an EventEngine::Endpoint supporting a custom
+    /// extension.
+    ///
+    /// class CustomEndpointExtension {
+    ///  public:
+    ///    static constexpr std::string name = "my.namespace.extension_name";
+    ///    void Process() { ... }
+    /// }
+    ///
+    ///
+    /// class CustomEndpoint :
+    ///        public EventEngine::Endpoint, CustomEndpointExtension {
+    ///   public:
+    ///     void* QueryExtension(absl::string_view id) override {
+    ///       if (id == CustomEndpointExtension::name) {
+    ///         return static_cast<CustomEndpointExtension*>(this);
+    ///       }
+    ///       return nullptr;
+    ///     }
+    ///     ...
+    /// }
+    ///
+    /// auto ext_ =
+    /// static_cast<CustomEndpointExtension*>(
+    ///   endpoint->QueryExtension(CustomrEndpointExtension::name));
+    /// if (ext_ != nullptr) { ext_->Process(); }
+    ///
+    ///
+    virtual void* QueryExtension(absl::string_view /*id*/) { return nullptr; }
   };
 
   /// Called when a new connection is established.
@@ -405,8 +453,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 
   /// Asynchronously executes a task as soon as possible.
   ///
-  /// \a Closures scheduled with \a Run cannot be cancelled. The \a closure will
-  /// not be deleted after it has been run, ownership remains with the caller.
+  /// \a Closures passed to \a Run cannot be cancelled. The \a closure will not
+  /// be deleted after it has been run, ownership remains with the caller.
   ///
   /// Implementations must not execute the closure in the calling thread before
   /// \a Run returns. For example, if the caller must release a lock before the
@@ -415,9 +463,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   virtual void Run(Closure* closure) = 0;
   /// Asynchronously executes a task as soon as possible.
   ///
-  /// \a Closures scheduled with \a Run cannot be cancelled. Unlike the
-  /// overloaded \a Closure alternative, the absl::AnyInvocable version's \a
-  /// closure will be deleted by the EventEngine after the closure has been run.
+  /// \a Closures passed to \a Run cannot be cancelled. Unlike the overloaded \a
+  /// Closure alternative, the absl::AnyInvocable version's \a closure will be
+  /// deleted by the EventEngine after the closure has been run.
   ///
   /// This version of \a Run may be less performant than the \a Closure version
   /// in some scenarios. This overload is useful in situations where performance
@@ -453,13 +501,12 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
                               absl::AnyInvocable<void()> closure) = 0;
   /// Request cancellation of a task.
   ///
-  /// If the associated closure has already been scheduled to run, it will not
-  /// be cancelled, and this function will return false.
+  /// If the associated closure cannot be cancelled for any reason, this
+  /// function will return false.
   ///
-  /// If the associated closure has not been scheduled to run, it will be
-  /// cancelled, and this method will return true. The associated
-  /// absl::AnyInvocable or \a Closure* will not be called. If the closure type
-  /// was an absl::AnyInvocable, it will be destroyed before the method returns.
+  /// If the associated closure can be cancelled, the associated callback will
+  /// never be run, and this method will return true. If the callback type was
+  /// an absl::AnyInvocable, it will be destroyed before the method returns.
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 

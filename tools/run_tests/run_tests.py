@@ -26,10 +26,10 @@ import logging
 import multiprocessing
 import os
 import os.path
-import pipes
 import platform
 import random
 import re
+import shlex
 import socket
 import subprocess
 import sys
@@ -479,7 +479,7 @@ class CLanguage(object):
                         cmdline = [binary] + target["args"]
                         shortname = target.get(
                             "shortname",
-                            " ".join(pipes.quote(arg) for arg in cmdline),
+                            " ".join(shlex.quote(arg) for arg in cmdline),
                         )
                         shortname += shortname_ext
                         out.append(
@@ -567,6 +567,13 @@ class CLanguage(object):
         elif compiler == "gcc10.2_openssl102":
             return (
                 "debian11_openssl102",
+                [
+                    "-DgRPC_SSL_PROVIDER=package",
+                ],
+            )
+        elif compiler == "gcc10.2_openssl111":
+            return (
+                "debian11_openssl111",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
                 ],
@@ -897,6 +904,13 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python312_config = _python_config_generator(
+            name="py312",
+            major="3",
+            minor="12",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -921,7 +935,7 @@ class PythonLanguage(object):
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python37_config,
-                    python311_config,
+                    python312_config,
                 )
         elif args.compiler == "python3.7":
             return (python37_config,)
@@ -933,6 +947,8 @@ class PythonLanguage(object):
             return (python310_config,)
         elif args.compiler == "python3.11":
             return (python311_config,)
+        elif args.compiler == "python3.12":
+            return (python312_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -946,6 +962,7 @@ class PythonLanguage(object):
                 python39_config,
                 python310_config,
                 python311_config,
+                python312_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -1187,6 +1204,19 @@ class ObjCLanguage(object):
                 },
             )
         )
+        out.append(
+            self.config.job_spec(
+                ["src/objective-c/tests/build_one_example.sh"],
+                timeout_seconds=20 * 60,
+                shortname="ios-buildtest-example-switft-use-frameworks",
+                cpu_cost=1e6,
+                environ={
+                    "SCHEME": "SwiftUseFrameworks",
+                    "EXAMPLE_PATH": "src/objective-c/examples/SwiftUseFrameworks",
+                },
+            )
+        )
+
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
         # out.append(
@@ -1304,7 +1334,6 @@ _LANGUAGES = {
     "objc": ObjCLanguage(),
     "sanity": Sanity("sanity_tests.yaml"),
     "clang-tidy": Sanity("clang_tidy_tests.yaml"),
-    "iwyu": Sanity("iwyu_tests.yaml"),
 }
 
 _MSBUILD_CONFIG = {
@@ -1709,19 +1738,19 @@ argp.add_argument(
         "gcc8",
         "gcc10.2",
         "gcc10.2_openssl102",
+        "gcc10.2_openssl111",
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
         "clang6",
         "clang16",
         # TODO: Automatically populate from supported version
-        "python2.7",
-        "python3.5",
         "python3.7",
         "python3.8",
         "python3.9",
         "python3.10",
         "python3.11",
+        "python3.12",
         "pypy",
         "pypy3",
         "python_alpine",

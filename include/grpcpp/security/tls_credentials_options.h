@@ -99,14 +99,24 @@ class TlsCredentialsOptions {
   // verifiers other than the host name verifier is used.
   void set_check_call_host(bool check_call_host);
 
-  // TODO(zhenlian): This is an experimental API is likely to change in the
-  // future. Before de-experiementalizing, verify the API is up to date.
+  // Deprecated in favor of set_crl_provider. The
+  // crl provider interface provides a significantly more flexible approach to
+  // using CRLs. See gRFC A69 for details.
   // If set, gRPC will read all hashed x.509 CRL files in the directory and
   // enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
   // version > 1.1.
   void set_crl_directory(const std::string& path);
 
   void set_crl_provider(std::shared_ptr<CrlProvider> crl_provider);
+
+  // Sets the minimum TLS version that will be negotiated during the TLS
+  // handshake. If not set, the underlying SSL library will use TLS v1.2.
+  // @param tls_version: The minimum TLS version.
+  void set_min_tls_version(grpc_tls_version tls_version);
+  // Sets the maximum TLS version that will be negotiated during the TLS
+  // handshake. If not set, the underlying SSL library will use TLS v1.3.
+  // @param tls_version: The maximum TLS version.
+  void set_max_tls_version(grpc_tls_version tls_version);
 
   // ----- Getters for member fields ----
   // Returns a deep copy of the internal c options. The caller takes ownership

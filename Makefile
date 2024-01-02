@@ -411,7 +411,7 @@ Q = @
 endif
 
 CORE_VERSION = 37.0.0
-CPP_VERSION = 1.60.0-dev
+CPP_VERSION = 1.61.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -878,6 +878,7 @@ LIBGPR_SRC = \
     src/core/lib/gprpp/windows/thd.cc \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/call.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -958,6 +959,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/channel_idle_filter.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
+    src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/client_channel/backend_metric.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
@@ -992,7 +994,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
@@ -1011,7 +1012,9 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
     src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc \
     src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
     src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
@@ -1027,6 +1030,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/compression_filter.cc \
+    src/core/ext/filters/http/message_compress/legacy_compression_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
@@ -1444,12 +1448,12 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/forkable.cc \
-    src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
     src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
+    src/core/lib/event_engine/posix_engine/native_dns_resolver.cc \
     src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
@@ -1656,6 +1660,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/security_connector/ssl_utils.cc \
     src/core/lib/security/security_connector/tls/tls_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
+    src/core/lib/security/transport/legacy_server_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
@@ -1760,6 +1765,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/call.h \
     include/grpc/impl/channel_arg_names.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -1872,6 +1878,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/channel_idle_filter.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
+    src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/client_channel/backend_metric.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
@@ -1932,6 +1939,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/compression_filter.cc \
+    src/core/ext/filters/http/message_compress/legacy_compression_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
@@ -2022,12 +2030,12 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/forkable.cc \
-    src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
     src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
+    src/core/lib/event_engine/posix_engine/native_dns_resolver.cc \
     src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
@@ -2195,6 +2203,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/security/security_connector/load_system_roots_supported.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
+    src/core/lib/security/transport/legacy_server_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
@@ -2286,6 +2295,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/call.h \
     include/grpc/impl/channel_arg_names.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -3366,11 +3376,12 @@ src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc: $(OPENSSL_
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_filter.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_service_config_parser.cc: $(OPENSSL_DEP)
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc: $(OPENSSL_DEP)

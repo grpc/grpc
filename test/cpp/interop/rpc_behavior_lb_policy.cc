@@ -84,7 +84,7 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
   absl::string_view name() const override { return kRpcBehaviorLbPolicyName; }
 
   absl::Status UpdateLocked(UpdateArgs args) override {
-    RefCountedPtr<RpcBehaviorLbPolicyConfig> config = std::move(args.config);
+    auto config = args.config.TakeAsSubclass<RpcBehaviorLbPolicyConfig>();
     rpc_behavior_ = std::string(config->rpc_behavior());
     // Use correct config for the delegate load balancing policy
     auto delegate_config =

@@ -17,6 +17,7 @@
 
 #include <atomic>
 #include <memory>
+#include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
@@ -68,6 +69,12 @@ class EventEngineEndpointWrapper {
 
   explicit EventEngineEndpointWrapper(
       std::unique_ptr<EventEngine::Endpoint> endpoint);
+
+  EventEngine::Endpoint* endpoint() { return endpoint_.get(); }
+
+  std::unique_ptr<EventEngine::Endpoint> ReleaseEndpoint() {
+    return std::move(endpoint_);
+  }
 
   int Fd() {
     grpc_core::MutexLock lock(&mu_);
@@ -426,6 +433,30 @@ grpc_endpoint* grpc_event_engine_endpoint_create(
 
 bool grpc_is_event_engine_endpoint(grpc_endpoint* ep) {
   return ep->vtable == &grpc_event_engine_endpoint_vtable;
+}
+
+EventEngine::Endpoint* grpc_get_wrapped_event_engine_endpoint(
+    grpc_endpoint* ep) {
+  if (!grpc_is_event_engine_endpoint(ep)) {
+    return nullptr;
+  }
+  auto* eeep =
+      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
+          ep);
+  return eeep->wrapper->endpoint();
+}
+
+std::unique_ptr<EventEngine::Endpoint> grpc_take_wrapped_event_engine_endpoint(
+    grpc_endpoint* ep) {
+  if (!grpc_is_event_engine_endpoint(ep)) {
+    return nullptr;
+  }
+  auto* eeep =
+      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
+          ep);
+  auto endpoint = eeep->wrapper->ReleaseEndpoint();
+  delete eeep->wrapper;
+  return endpoint;
 }
 
 void grpc_event_engine_endpoint_destroy_and_release_fd(

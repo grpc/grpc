@@ -13,13 +13,10 @@
 // limitations under the License.
 //
 
-// TODO(roth): Split this file up into a common test framework and a set
-// of test files that use that framework.  Need to figure out the best
-// way to split up the tests.  One option would be to split it up by xDS
-// resource type; another approach would be to have all of the "core"
-// xDS functionality in one file and then move specific features to
-// their own files (e.g., mTLS security, fault injection, circuit
-// breaking, etc).
+// TODO(yashkt): Split this file up into (at least) the following pieces:
+// - xDS-enabled server functionality
+// - mTLS functionality on both client and server
+// - RBAC
 
 #include <deque>
 #include <memory>
@@ -324,34 +321,14 @@ class XdsSecurityTest : public XdsEnd2endTest {
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   }
 
-  // Sends CDS updates with the new security configuration and verifies that
-  // after propagation, this new configuration is used for connections. If \a
-  // identity_instance_name and \a root_instance_name are both empty,
-  // connections are expected to use fallback credentials.
-  void UpdateAndVerifyXdsSecurityConfiguration(
+  void MaybeSetUpstreamTlsContextOnCluster(
       absl::string_view root_instance_name,
       absl::string_view root_certificate_name,
       absl::string_view identity_instance_name,
       absl::string_view identity_certificate_name,
-      const std::vector<StringMatcher>& san_matchers,
-      const std::vector<std::string>& expected_authenticated_identity,
-      bool test_expects_failure = false) {
-    // Change the backend and use a unique service name to use so that we know
-    // that the CDS update was applied.
-    std::string service_name = absl::StrCat(
-        "eds_service_name",
-        absl::FormatTime("%H%M%E3S", absl::Now(), absl::LocalTimeZone()));
-    backend_index_ = (backend_index_ + 1) % 2;
-    EdsResourceArgs args({
-        {"locality0",
-         CreateEndpointsForBackends(backend_index_, backend_index_ + 1)},
-    });
-    balancer_->ads_service()->SetEdsResource(
-        BuildEdsResource(args, service_name.c_str()));
-    auto cluster = default_cluster_;
-    cluster.mutable_eds_cluster_config()->set_service_name(service_name);
+      const std::vector<StringMatcher>& san_matchers, Cluster* cluster) {
     if (!identity_instance_name.empty() || !root_instance_name.empty()) {
-      auto* transport_socket = cluster.mutable_transport_socket();
+      auto* transport_socket = cluster->mutable_transport_socket();
       transport_socket->set_name("envoy.transport_sockets.tls");
       UpstreamTlsContext upstream_tls_context;
       if (!identity_instance_name.empty()) {
@@ -382,6 +359,37 @@ class XdsSecurityTest : public XdsEnd2endTest {
       }
       transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
     }
+  }
+
+  // Sends CDS updates with the new security configuration and verifies that
+  // after propagation, this new configuration is used for connections. If \a
+  // identity_instance_name and \a root_instance_name are both empty,
+  // connections are expected to use fallback credentials.
+  void UpdateAndVerifyXdsSecurityConfiguration(
+      absl::string_view root_instance_name,
+      absl::string_view root_certificate_name,
+      absl::string_view identity_instance_name,
+      absl::string_view identity_certificate_name,
+      const std::vector<StringMatcher>& san_matchers,
+      const std::vector<std::string>& expected_authenticated_identity,
+      bool test_expects_failure = false) {
+    // Change the backend and use a unique service name to use so that we know
+    // that the CDS update was applied.
+    std::string service_name = absl::StrCat(
+        "eds_service_name",
+        absl::FormatTime("%H%M%E3S", absl::Now(), absl::LocalTimeZone()));
+    backend_index_ = (backend_index_ + 1) % 2;
+    EdsResourceArgs args({
+        {"locality0",
+         CreateEndpointsForBackends(backend_index_, backend_index_ + 1)},
+    });
+    balancer_->ads_service()->SetEdsResource(
+        BuildEdsResource(args, service_name.c_str()));
+    auto cluster = default_cluster_;
+    cluster.mutable_eds_cluster_config()->set_service_name(service_name);
+    MaybeSetUpstreamTlsContextOnCluster(
+        root_instance_name, root_certificate_name, identity_instance_name,
+        identity_certificate_name, san_matchers, &cluster);
     balancer_->ads_service()->SetCdsResource(cluster);
     // The updates might take time to have an effect, so use a retry loop.
     if (test_expects_failure) {
@@ -728,6 +736,63 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
   UpdateAndVerifyXdsSecurityConfiguration("file_plugin", "", "file_plugin", "",
                                           {server_san_exact_},
                                           authenticated_identity_);
+}
+
+TEST_P(XdsSecurityTest, MtlsWithAggregateCluster) {
+  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
+  g_fake2_cert_data_map->Set({{"", {root_cert_, fallback_identity_pair_}}});
+  // Set up aggregate cluster.
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  // Populate new EDS resources.
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args2({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  MaybeSetUpstreamTlsContextOnCluster("fake_plugin1", "", "fake_plugin1", "",
+                                      {}, &new_cluster1);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  MaybeSetUpstreamTlsContextOnCluster("fake_plugin1", "", "fake_plugin2", "",
+                                      {}, &new_cluster2);
+  balancer_->ads_service()->SetCdsResource(new_cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  auto* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  envoy::extensions::clusters::aggregate::v3::ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kNewCluster2Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // RPC should go to backend 0.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
+  // Make sure the backend saw the right client identity.
+  EXPECT_EQ(backends_[0]->backend_service()->last_peer_identity(),
+            authenticated_identity_);
+  // Now stop backend 0 and wait for backend 1.
+  ShutdownBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 1);
+  // Make sure the backend saw the right client identity.
+  EXPECT_EQ(backends_[1]->backend_service()->last_peer_identity(),
+            fallback_authenticated_identity_);
 }
 
 class XdsEnabledServerTest : public XdsEnd2endTest {

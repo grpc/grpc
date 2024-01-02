@@ -25,7 +25,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -53,7 +53,7 @@ namespace grpc_core {
 class MyEndpointList : public EndpointList {
  public:
   MyEndpointList(RefCountedPtr<MyLbPolicy> lb_policy,
-                 const EndpointAddressesList& endpoints,
+                 EndpointAddressesIterator* endpoints,
                  const ChannelArgs& args)
       : EndpointList(std::move(lb_policy),
                      GRPC_TRACE_FLAG_ENABLED(grpc_my_tracer)
@@ -184,8 +184,8 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   EndpointList(RefCountedPtr<LoadBalancingPolicy> policy, const char* tracer)
       : policy_(std::move(policy)), tracer_(tracer) {}
 
-  void Init(const EndpointAddressesList& endpoints, const ChannelArgs& args,
-            absl::AnyInvocable<OrphanablePtr<Endpoint>(
+  void Init(EndpointAddressesIterator* endpoints, const ChannelArgs& args,
+            absl::FunctionRef<OrphanablePtr<Endpoint>(
                 RefCountedPtr<EndpointList>, const EndpointAddresses&,
                 const ChannelArgs&)>
                 create_endpoint);

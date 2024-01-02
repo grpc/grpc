@@ -70,8 +70,9 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
     errors->AddError("could not parse plugin config");
     return {};
   }
-  const auto* plugin_config =
-      grpc_lookup_v1_RouteLookupClusterSpecifier_route_lookup_config(specifier);
+  const auto* plugin_config = reinterpret_cast<const upb_Message*>(
+      grpc_lookup_v1_RouteLookupClusterSpecifier_route_lookup_config(
+          specifier));
   if (plugin_config == nullptr) {
     ValidationErrors::ScopedField field(errors, ".route_lookup_config");
     errors->AddError("field not present");
@@ -98,7 +99,10 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
             {"routeLookupConfig", std::move(*json)},
             {"childPolicy",
              Json::FromArray({
-                 Json::FromObject({{"cds_experimental", Json::FromObject({})}}),
+                 Json::FromObject({{"cds_experimental",
+                                    Json::FromObject({
+                                        {"isDynamic", Json::FromBool(true)},
+                                    })}}),
              })},
             {"childPolicyConfigTargetFieldName", Json::FromString("cluster")},
         })}})});

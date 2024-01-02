@@ -37,6 +37,7 @@
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -57,31 +58,59 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   XdsOverrideHostTest()
       : LoadBalancingPolicyTest("xds_override_host_experimental") {}
 
-  static RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
-      absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
-                                                                  "HEALTHY"},
-      std::string child_policy = "round_robin") {
-    Json child_policy_config =
-        Json::FromObject({{child_policy, Json::FromObject({})}});
-    Json::Array override_host_status_array;
-    for (const absl::string_view host_status : override_host_status) {
-      override_host_status_array.push_back(
-          Json::FromString(std::string(host_status)));
+  static RefCountedPtr<const XdsDependencyManager::XdsConfig> MakeXdsConfig(
+      absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
+                                                                    "HEALTHY"},
+      std::string cluster_name = "cluster_name") {
+    auto cluster_resource = std::make_shared<XdsClusterResource>();
+    for (const absl::string_view host_status : override_host_statuses) {
+      cluster_resource->override_host_statuses.Add(
+          XdsHealthStatus::FromString(host_status).value());
     }
-    return MakeConfig(Json::FromArray({Json::FromObject(
+    auto xds_config = MakeRefCounted<XdsDependencyManager::XdsConfig>();
+    xds_config->clusters[cluster_name].emplace(
+        cluster_name, std::move(cluster_resource), nullptr, "");
+    return xds_config;
+  }
+
+  absl::Status UpdateXdsOverrideHostPolicy(
+      absl::Span<const EndpointAddresses> endpoints,
+      absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
+                                                                    "HEALTHY"},
+      std::string cluster_name = "cluster_name",
+      std::string child_policy = "round_robin") {
+    auto config = MakeConfig(Json::FromArray({Json::FromObject(
         {{"xds_override_host_experimental",
           Json::FromObject(
-              {{"childPolicy", Json::FromArray({child_policy_config})},
-               {"overrideHostStatus",
-                Json::FromArray(override_host_status_array)}})}})}));
+              {{"clusterName", Json::FromString(cluster_name)},
+               {"childPolicy",
+                Json::FromArray({Json::FromObject(
+                    {{child_policy, Json::FromObject({})}})})}})}})}));
+    auto xds_config = MakeXdsConfig(override_host_statuses, cluster_name);
+    return ApplyUpdate(
+        BuildUpdate(endpoints, std::move(config),
+                    ChannelArgs().SetObject(std::move(xds_config))),
+        lb_policy());
+  }
+
+  absl::Status UpdateXdsOverrideHostPolicy(
+      absl::Span<const absl::string_view> addresses,
+      absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
+                                                                    "HEALTHY"},
+      std::string cluster_name = "cluster_name",
+      std::string child_policy = "round_robin") {
+    return UpdateXdsOverrideHostPolicy(
+        MakeEndpointAddressesListFromAddressList(addresses),
+        override_host_statuses, std::move(cluster_name),
+        std::move(child_policy));
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-  ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses) {
-    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, MakeXdsOverrideHostConfig()),
-                          lb_policy()),
-              absl::OkStatus());
-    return ExpectRoundRobinStartup(addresses);
+  ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses,
+                              SourceLocation location = SourceLocation()) {
+    EXPECT_EQ(UpdateXdsOverrideHostPolicy(addresses), absl::OkStatus())
+        << location.file() << ":" << location.line();
+    return ExpectRoundRobinStartup(addresses, location);
   }
 
   EndpointAddresses MakeAddressWithHealthStatus(
@@ -97,14 +126,13 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
           addresses_and_statuses,
       absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
                                                                   "HEALTHY"}) {
-    LoadBalancingPolicy::UpdateArgs update;
-    update.config = MakeXdsOverrideHostConfig(override_host_status);
-    update.addresses.emplace();
+    EndpointAddressesList endpoints;
     for (auto address_and_status : addresses_and_statuses) {
-      update.addresses->push_back(MakeAddressWithHealthStatus(
+      endpoints.push_back(MakeAddressWithHealthStatus(
           address_and_status.first, address_and_status.second));
     }
-    EXPECT_EQ(ApplyUpdate(update, lb_policy()), absl::OkStatus());
+    EXPECT_EQ(UpdateXdsOverrideHostPolicy(endpoints, override_host_status),
+              absl::OkStatus());
   }
 
   struct OverrideHostAttributeStorage {
@@ -231,9 +259,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   auto* address1_attribute = MakeOverrideHostAttribute(kAddresses[1]);
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   // The override address is removed.
-  EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[0], kAddresses[2]},
-                                    MakeXdsOverrideHostConfig()),
-                        lb_policy()),
+  EXPECT_EQ(UpdateXdsOverrideHostPolicy({kAddresses[0], kAddresses[2]}),
             absl::OkStatus());
   picker =
       WaitForRoundRobinListChange(kAddresses, {kAddresses[0], kAddresses[2]});
@@ -242,9 +268,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   ExpectRoundRobinPicksWithAttribute(picker.get(), address1_attribute,
                                      {kAddresses[0], kAddresses[2]});
   // The override address comes back.
-  EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[1], kAddresses[2]},
-                                    MakeXdsOverrideHostConfig()),
-                        lb_policy()),
+  EXPECT_EQ(UpdateXdsOverrideHostPolicy({kAddresses[1], kAddresses[2]}),
             absl::OkStatus());
   picker = WaitForRoundRobinListChange({kAddresses[0], kAddresses[2]},
                                        {kAddresses[1], kAddresses[2]});
@@ -473,9 +497,7 @@ TEST_F(XdsOverrideHostTest, MultipleAddressesPerEndpoint) {
       MakeEndpointAddresses(kEndpoint1Addresses),
       MakeEndpointAddresses(kEndpoint2Addresses),
       MakeEndpointAddresses(kEndpoint3Addresses)};
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kEndpoints, MakeXdsOverrideHostConfig()),
-                        lb_policy()),
-            absl::OkStatus());
+  EXPECT_EQ(UpdateXdsOverrideHostPolicy(kEndpoints), absl::OkStatus());
   auto picker = ExpectRoundRobinStartup(kEndpoints);
   ASSERT_NE(picker, nullptr);
   // Check that the host is overridden.

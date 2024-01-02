@@ -51,6 +51,7 @@ if(GRPC_AS_SUBMODULE)
   # this build.
   set(_PROTOBUF_LIBPROTOBUF libprotobuf)
   set(_REFLECTION grpc++_reflection)
+  set(_ORCA_SERVICE grpcpp_orca_service)
   if(CMAKE_CROSSCOMPILING)
     find_program(_PROTOBUF_PROTOC protoc)
   else()

@@ -1,0 +1,19 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '10.0'
+
+# Without this we get linker errors due to files with same names but different paths
+# ref: https://github.com/CocoaPods/CocoaPods/issues/8289#issuecomment-1022723820
+install! 'cocoapods', :deterministic_uuids => false
+
+use_frameworks!
+
+# Location of gRPC's repo root relative to this file.
+GRPC_LOCAL_SRC = '../../../..'
+
+target 'SwiftUseFrameworks' do
+  pod 'gRPC', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-C++', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
+  pod 'BoringSSL-GRPC', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+end
