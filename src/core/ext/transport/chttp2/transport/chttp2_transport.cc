@@ -1933,7 +1933,7 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     t->sent_goaway_state = GRPC_CHTTP2_GRACEFUL_GOAWAY;
     if (grpc_core::IsChttp2NewWritesEnabled()) {
       t_->qframes.emplace_back(grpc_core::Http2GoawayFrame{
-          1u << 31, GRPC_HTTP2_NO_ERROR, grpc_core::Slice{}});
+          (1u << 31) - 1, GRPC_HTTP2_NO_ERROR, grpc_core::Slice{}});
     } else {
       grpc_chttp2_goaway_append((1u << 31) - 1, 0, grpc_empty_slice(),
                                 t->qbuf.c_slice_buffer());
@@ -2341,6 +2341,7 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
             if (grpc_core::IsChttp2NewWritesEnabled()) {
               t->qframes.emplace_back(grpc_core::Http2RstStreamFrame{
                   id, static_cast<uint32_t>(http_error)});
+              t->num_pending_induced_frames++;
             } else {
               grpc_chttp2_add_rst_stream_to_next_write(
                   t, id, static_cast<uint32_t>(http_error), nullptr);
@@ -2544,7 +2545,6 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
             grpc_core::Slice::FromCopiedString(absl::StrCat(grpc_status)));
         headers.emplace_back(grpc_core::Slice::FromStaticString("grpc-message"),
                              grpc_core::Slice::FromCopiedString(message));
-
         if (grpc_core::IsChttp2NewWritesEnabled()) {
           grpc_core::Http2HeaderFrame frame;
           frame.stream_id = id;
@@ -2557,6 +2557,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
           t->qframes.emplace_back(std::move(frame));
           t->qframes.emplace_back(
               grpc_core::Http2RstStreamFrame{id, GRPC_HTTP2_NO_ERROR});
+          t->num_pending_induced_frames++;
         } else {
           size_t idx = grpc_slice_buffer_add_indexed(t->qbuf.c_slice_buffer(),
                                                      GRPC_SLICE_MALLOC(9));

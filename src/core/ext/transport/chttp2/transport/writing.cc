@@ -391,9 +391,16 @@ class WriteContext {
   }
 
   grpc_chttp2_stream* NextStream() {
-    if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
-      result_.partial = true;
-      return nullptr;
+    if (IsChttp2NewWritesEnabled()) {
+      if (data_write_bytes_ > target_write_size_) {
+        result_.partial = true;
+        return nullptr;
+      }
+    } else {
+      if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
+        result_.partial = true;
+        return nullptr;
+      }
     }
 
     grpc_chttp2_stream* s;
@@ -427,6 +434,9 @@ class WriteContext {
 
   void AddFrame(Http2Frame&& frame) {
     GPR_ASSERT(IsChttp2NewWritesEnabled());
+    if (auto* p = absl::get_if<Http2DataFrame>(&frame)) {
+      data_write_bytes_ += p->payload.Length();
+    }
     frames_.emplace_back(std::move(frame));
   }
 
@@ -444,6 +454,7 @@ class WriteContext {
   int initial_metadata_writes_ = 0;
   int trailing_metadata_writes_ = 0;
   int message_writes_ = 0;
+  size_t data_write_bytes_ = 0;
   grpc_chttp2_begin_write_result result_ = {false, false, false};
   std::vector<Http2Frame> frames_;
 };

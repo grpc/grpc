@@ -582,6 +582,7 @@ error_handler:
     if (grpc_core::IsChttp2NewWritesEnabled()) {
       t->qframes.emplace_back(grpc_core::Http2RstStreamFrame{
           t->incoming_stream_id, GRPC_HTTP2_PROTOCOL_ERROR});
+      t->num_pending_induced_frames++;
     } else {
       grpc_chttp2_add_rst_stream_to_next_write(t, t->incoming_stream_id,
                                                GRPC_HTTP2_PROTOCOL_ERROR,
@@ -972,6 +973,7 @@ static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
     if (grpc_core::IsChttp2NewWritesEnabled()) {
       t->qframes.emplace_back(
           grpc_core::Http2RstStreamFrame{s->id, GRPC_HTTP2_NO_ERROR});
+      t->num_pending_induced_frames++;
     } else {
       grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
                                                &s->stats.outgoing);
