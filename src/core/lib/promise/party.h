@@ -102,7 +102,7 @@ class PartySyncUsingAtomics {
   template <typename F>
   GRPC_MUST_USE_RESULT bool RunParty(F poll_one_participant) {
     uint64_t prev_state;
-    ++iteration_;
+    iteration_.fetch_add(1, std::memory_order_relaxed);
     for (;;) {
       // Grab the current state, and clear the wakeup bits & add flag.
       prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
@@ -146,7 +146,7 @@ class PartySyncUsingAtomics {
                 (prev_state & (kRefMask | kAllocatedMask | kLocked)) |
                     wake_after_poll_,
                 std::memory_order_acq_rel, std::memory_order_acquire)) {
-          ++iteration_;
+          iteration_.fetch_add(1, std::memory_order_relaxed);
           wake_after_poll_ = 0;
         }
       }
@@ -202,7 +202,9 @@ class PartySyncUsingAtomics {
   GRPC_MUST_USE_RESULT bool ScheduleWakeup(WakeupMask mask);
 
   void WakeAfterPoll(WakeupMask mask) { wake_after_poll_ |= mask; }
-  uint32_t iteration() const { return iteration_; }
+  uint32_t iteration() const {
+    return iteration_.load(std::memory_order_relaxed);
+  }
 
  private:
   bool UnreffedLast();
@@ -243,7 +245,7 @@ class PartySyncUsingAtomics {
   static constexpr uint64_t kOneRef = 1ull << kRefShift;
 
   std::atomic<uint64_t> state_;
-  uint32_t iteration_ = 0;
+  std::atomic<uint32_t> iteration_{0};
   WakeupMask wake_after_poll_ = 0;
 };
 
