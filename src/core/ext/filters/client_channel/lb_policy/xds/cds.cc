@@ -368,15 +368,15 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_aggregate_cluster_name";
   if (XdsAggregateClusterBackwardCompatibilityEnabled()) {
     if (absl::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
-          new_cluster_config->children)) {
+            new_cluster_config->children)) {
       auto aggregate_cluster = args.args.GetString(kArgXdsAggregateClusterName);
       if (aggregate_cluster.has_value()) {
         auto it = new_xds_config->clusters.find(*aggregate_cluster);
         if (it == new_xds_config->clusters.end()) {
           // Cluster not present.  This should never happen.
-          absl::Status status = absl::UnavailableError(absl::StrCat(
-              "xDS config has no entry for aggregate cluster ",
-              *aggregate_cluster));
+          absl::Status status = absl::UnavailableError(
+              absl::StrCat("xDS config has no entry for aggregate cluster ",
+                           *aggregate_cluster));
           ReportTransientFailure(status);
           return status;
         }
@@ -563,9 +563,10 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
             {"pick_first", Json::FromObject({})},
         }),
     });
-  // TODO(roth): Remove this after the 1.63 release.
-  } else if (XdsAggregateClusterBackwardCompatibilityEnabled() &&
-             aggregate_cluster_resource != nullptr) {
+  }
+  // TODO(roth): Remove this "else if" block after the 1.63 release.
+  else if (XdsAggregateClusterBackwardCompatibilityEnabled() &&
+           aggregate_cluster_resource != nullptr) {
     xds_lb_policy =
         Json::FromArray(aggregate_cluster_resource->lb_policy_config);
   } else {
