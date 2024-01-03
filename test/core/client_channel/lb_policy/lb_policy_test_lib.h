@@ -470,7 +470,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           << location.file() << ":" << location.line();
       if (update == nullptr) return absl::nullopt;
       StateUpdate result = std::move(*update);
-      gpr_log(GPR_INFO, "got next state update: %s", result.ToString().c_str());
+      gpr_log(GPR_INFO, "dequeued next state update: %s",
+              result.ToString().c_str());
       queue_.pop_front();
       return std::move(result);
     }
@@ -576,7 +577,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       StateUpdate update{
           state, status,
           MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
-      gpr_log(GPR_INFO, "state update from LB policy: %s",
+      gpr_log(GPR_INFO, "enqueuing state update from LB policy: %s",
               update.ToString().c_str());
       queue_.push_back(std::move(update));
     }
