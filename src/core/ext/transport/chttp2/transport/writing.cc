@@ -305,11 +305,11 @@ class WriteContext {
     // InvalidateNow to avoid getting stuck re-initializing the ping timer
     // in a loop while draining the currently-held combiner. Also see
     // https://github.com/grpc/grpc/issues/26079.
-    grpc_core::ExecCtx::Get()->InvalidateNow();
+    ExecCtx::Get()->InvalidateNow();
     Match(
         t_->ping_rate_policy.RequestSendPing(
             NextAllowedPingInterval(t_), t_->ping_callbacks.pings_inflight()),
-        [this](grpc_core::Chttp2PingRatePolicy::SendGranted) {
+        [this](Chttp2PingRatePolicy::SendGranted) {
           t_->ping_rate_policy.SentPing();
           const uint64_t id = t_->ping_callbacks.StartPing(t_->bitgen);
           if (IsChttp2NewWritesEnabled()) {
@@ -322,7 +322,7 @@ class WriteContext {
           if (t_->channelz_socket != nullptr) {
             t_->channelz_socket->RecordKeepaliveSent();
           }
-          grpc_core::global_stats().IncrementHttp2PingsSent();
+          global_stats().IncrementHttp2PingsSent();
           if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
               GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
               GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
@@ -333,7 +333,7 @@ class WriteContext {
                     t_->ping_rate_policy.GetDebugString().c_str());
           }
         },
-        [this](grpc_core::Chttp2PingRatePolicy::TooManyRecentPings) {
+        [this](Chttp2PingRatePolicy::TooManyRecentPings) {
           // need to receive something of substance before sending a ping again
           if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
               GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
@@ -346,7 +346,7 @@ class WriteContext {
                     t_->ping_rate_policy.GetDebugString().c_str());
           }
         },
-        [this](grpc_core::Chttp2PingRatePolicy::TooSoon too_soon) {
+        [this](Chttp2PingRatePolicy::TooSoon too_soon) {
           // not enough elapsed time between successive pings
           if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
               GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
@@ -367,8 +367,8 @@ class WriteContext {
                   kInvalid) {
             t_->delayed_ping_timer_handle = t_->event_engine->RunAfter(
                 too_soon.wait, [t = t_->Ref()]() mutable {
-                  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-                  grpc_core::ExecCtx exec_ctx;
+                  ApplicationCallbackExecCtx callback_exec_ctx;
+                  ExecCtx exec_ctx;
                   grpc_chttp2_retry_initiate_ping(std::move(t));
                 });
           }
@@ -603,10 +603,9 @@ class StreamWriteContext {
         t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
     if (s_->call_tracer) {
-      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kHeadWritten,
-          gpr_now(GPR_CLOCK_REALTIME), s_->t->flow_control.stats(),
-          s_->flow_control.stats()));
+      s_->call_tracer->RecordAnnotation(HttpAnnotation(
+          HttpAnnotation::Type::kHeadWritten, gpr_now(GPR_CLOCK_REALTIME),
+          s_->t->flow_control.stats(), s_->flow_control.stats()));
     }
   }
 
@@ -750,8 +749,8 @@ class StreamWriteContext {
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
     if (s_->call_tracer) {
-      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kEnd, gpr_now(GPR_CLOCK_REALTIME),
+      s_->call_tracer->RecordAnnotation(HttpAnnotation(
+          HttpAnnotation::Type::kEnd, gpr_now(GPR_CLOCK_REALTIME),
           s_->t->flow_control.stats(), s_->flow_control.stats()));
     }
   }
