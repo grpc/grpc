@@ -2071,10 +2071,11 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
+  SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION;
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
-  if (ssl_context == nullptr) {
+      if (ssl_context == nullptr) {
     grpc_core::LogSslErrorStack();
     gpr_log(GPR_ERROR, "Could not create ssl context.");
     return TSI_INVALID_ARGUMENT;
@@ -2286,6 +2287,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     do {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
       impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
+      SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_RENEGOTIATION);
 #else
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif
