@@ -662,13 +662,19 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   auto* address2_attribute = MakeOverrideHostAttribute(kAddresses[2]);
   ExpectOverridePicks(picker.get(), address2_attribute, kAddresses[2]);
-  // Now move endpoints 1 and 2 to state DRAINING.
+  // Increment time by 5 seconds and send an update that moves endpoints 1
+  // and 2 to state DRAINING.
   gpr_log(GPR_INFO, "### moving endpoints 1 and 2 to state DRAINING");
+  IncrementTimeBy(Duration::Seconds(5));
   ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
                                  {kAddresses[1], XdsHealthStatus::kDraining},
                                  {kAddresses[2], XdsHealthStatus::kDraining}},
                                 {"UNKNOWN", "HEALTHY", "DRAINING"},
                                 Duration::Minutes(1));
+  // The update should cause the timer to be reset for the next
+  // expiration time.
+  EXPECT_THAT(timer_durations, ::testing::ElementsAre(Duration::Seconds(55)));
+  timer_durations.clear();
   picker = ExpectState(GRPC_CHANNEL_READY);
   // Make sure subchannels get orphaned in the WorkSerializer.
   WaitForWorkSerializerToFlush();
@@ -685,21 +691,24 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
   auto* subchannel2 = FindSubchannel(kAddresses[2]);
   ASSERT_NE(subchannel2, nullptr);
   EXPECT_EQ(subchannel2->NumWatchers(), 1);
-  // Now advance time by half the idle threshold.  Both subchannels
-  // should still be owned.
-  IncrementTimeBy(Duration::Seconds(30));
+  // Trigger the timer.  Both subchannels have gotten an override pick more
+  // recently than the timer was scheduled, so neither one will be unreffed.
+  IncrementTimeBy(Duration::Seconds(55));
   EXPECT_EQ(subchannel1->NumWatchers(), 1);
   EXPECT_EQ(subchannel2->NumWatchers(), 1);
+  // The timer will be reset for 5 seconds.
+  EXPECT_THAT(timer_durations, ::testing::ElementsAre(Duration::Seconds(5)));
+  timer_durations.clear();
   // Send another override pick for endpoint 1.
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
-  // Now advance time to the end of the idle threshold, which should
-  // cause the timer to fire.
-  IncrementTimeBy(Duration::Seconds(30));
-  // We should have unreffed endpoint 2 but kept endpoint 1.
+  // Trigger the timer again.  This time, it should unref endpoint 2 but
+  // keep endpoint 1.
+  IncrementTimeBy(Duration::Seconds(5));
   EXPECT_EQ(subchannel1->NumWatchers(), 1);
   EXPECT_EQ(subchannel2->NumWatchers(), 0);
-  // The timer should now be set for 30 seconds.
-  EXPECT_THAT(timer_durations, ::testing::ElementsAre(Duration::Seconds(30)));
+  // The timer should now be set for 55 seconds, which is how long it
+  // will be until endpoint 1 should be unreffed.
+  EXPECT_THAT(timer_durations, ::testing::ElementsAre(Duration::Seconds(55)));
 }
 
 }  // namespace

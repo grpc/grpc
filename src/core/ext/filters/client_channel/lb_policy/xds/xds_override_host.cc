@@ -398,6 +398,19 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
                      RefCountedPtr<SubchannelPicker> picker) override;
   };
 
+  class IdleTimer : public InternallyRefCounted<IdleTimer> {
+   public:
+    IdleTimer(RefCountedPtr<XdsOverrideHostLb> policy, Duration duration);
+
+    void Orphan() override;
+
+   private:
+    void OnTimerLocked();
+
+    RefCountedPtr<XdsOverrideHostLb> policy_;
+    absl::optional<EventEngine::TaskHandle> timer_handle_;
+  };
+
   ~XdsOverrideHostLb() override;
 
   void ShutdownLocked() override;
@@ -418,7 +431,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   void CreateSubchannelForAddress(absl::string_view address);
 
-  void StartTimerForSubchannelCleanup(Duration duration);
   void CleanupSubchannels();
 
   // State from most recent resolver update.
@@ -440,7 +452,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       subchannel_map_ ABSL_GUARDED_BY(mu_);
 
   // Timer handle for periodic subchannel sweep.
-  absl::optional<EventEngine::TaskHandle> timer_handle_;
+  OrphanablePtr<IdleTimer> idle_timer_;
 };
 
 //
@@ -589,6 +601,56 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
 }
 
 //
+// XdsOverrideHostLb::IdleTimer
+//
+
+XdsOverrideHostLb::IdleTimer::IdleTimer(
+    RefCountedPtr<XdsOverrideHostLb> policy, Duration duration)
+    : policy_(std::move(policy)) {
+  // Min time between timer runs is 5s so that we don't kill ourselves
+  // with lock contention and CPU usage due to sweeps over the map.
+  duration = std::max(duration, Duration::Seconds(5));
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_override_host_lb %p] idle timer %p: subchannel cleanup "
+            "pass will run in %s",
+            policy_.get(), this, duration.ToString().c_str());
+  }
+  timer_handle_ = policy_->channel_control_helper()->GetEventEngine()->RunAfter(
+      duration, [self = RefAsSubclass<IdleTimer>()]() mutable {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        auto self_ptr = self.get();
+        self_ptr->policy_->work_serializer()->Run(
+            [self = std::move(self)]() { self->OnTimerLocked(); },
+            DEBUG_LOCATION);
+      });
+}
+
+void XdsOverrideHostLb::IdleTimer::Orphan() {
+  if (timer_handle_.has_value()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO, "[xds_override_host_lb %p] idle timer %p: cancelling",
+              policy_.get(), this);
+    }
+    policy_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+    timer_handle_.reset();
+  }
+  Unref();
+}
+
+void XdsOverrideHostLb::IdleTimer::OnTimerLocked() {
+  if (timer_handle_.has_value()) {
+    timer_handle_.reset();
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO, "[xds_override_host_lb %p] idle timer %p: timer fired",
+              policy_.get(), this);
+    }
+    policy_->CleanupSubchannels();
+  }
+}
+
+//
 // XdsOverrideHostLb
 //
 
@@ -627,10 +689,7 @@ void XdsOverrideHostLb::ResetState() {
     subchannel_map_.clear();
   }
   // Cancel timer, if any.
-  if (timer_handle_.has_value()) {
-    channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
-    timer_handle_.reset();
-  }
+  idle_timer_.reset();
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
   if (child_policy_ != nullptr) {
@@ -852,6 +911,9 @@ void XdsOverrideHostLb::UpdateAddressMap(
     }
   });
   // Now grab the lock and update subchannel_map_ from addresses_for_map.
+  const Timestamp now = Timestamp::Now();
+  const Timestamp idle_threshold = now - connection_idle_timeout_;
+  Duration next_time = connection_idle_timeout_;
   {
     // Drop subchannel refs after releasing the lock to avoid deadlock.
     std::vector<RefCountedPtr<SubchannelWrapper>> subchannel_refs_to_drop;
@@ -882,24 +944,25 @@ void XdsOverrideHostLb::UpdateAddressMap(
       }
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
         gpr_log(GPR_INFO,
-                "[xds_override_host_lb %p] setting EDS health status for "
-                "%s to %s",
+                "[xds_override_host_lb %p] map key %s: setting "
+                "eds_health_status=%s address_list=%s",
                 this, address.c_str(),
-                address_info.eds_health_status.ToString());
+                address_info.eds_health_status.ToString(),
+                address_info.address_list.c_str());
       }
       it->second->set_eds_health_status(address_info.eds_health_status);
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-        gpr_log(GPR_INFO,
-                "[xds_override_host_lb %p] setting address list for %s to %s",
-                this, address.c_str(), address_info.address_list.c_str());
-      }
       it->second->set_address_list(std::move(address_info.address_list));
+      // Check the entry's last_used_time to determine the next time at
+      // which the timer needs to run.
+      if (it->second->last_used_time() > idle_threshold) {
+        const Duration next_time_for_entry =
+            it->second->last_used_time() + connection_idle_timeout_ - now;
+        next_time = std::min(next_time, next_time_for_entry);
+      }
     }
   }
-  // Start timer if not already running.
-  if (!timer_handle_.has_value()) {
-    StartTimerForSubchannelCleanup(connection_idle_timeout_);
-  }
+  idle_timer_ =
+      MakeOrphanable<IdleTimer>(RefAsSubclass<XdsOverrideHostLb>(), next_time);
 }
 
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
@@ -956,29 +1019,7 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
   MaybeUpdatePickerLocked();
 }
 
-void XdsOverrideHostLb::StartTimerForSubchannelCleanup(Duration duration) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_override_host_lb %p] subchannel cleanup pass will run in %s",
-            this, duration.ToString().c_str());
-  }
-  timer_handle_ = channel_control_helper()->GetEventEngine()->RunAfter(
-      duration, [self = RefAsSubclass<XdsOverrideHostLb>()]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
-        ExecCtx exec_ctx;
-        auto self_ptr = self.get();
-        self_ptr->work_serializer()->Run(
-            [self = std::move(self)]() { self->CleanupSubchannels(); },
-            DEBUG_LOCATION);
-      });
-}
-
 void XdsOverrideHostLb::CleanupSubchannels() {
-  if (!timer_handle_.has_value()) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_override_host_lb %p] running subchannel cleanup pass", this);
-  }
   const Timestamp now = Timestamp::Now();
   const Timestamp idle_threshold = now - connection_idle_timeout_;
   Duration next_time = connection_idle_timeout_;
@@ -1006,10 +1047,8 @@ void XdsOverrideHostLb::CleanupSubchannels() {
       }
     }
   }
-  // Min time between timer runs is 5s so that we don't kill ourselves
-  // with lock contention and CPU usage due to sweeps over the map.
-  next_time = std::max(next_time, Duration::Seconds(5));
-  StartTimerForSubchannelCleanup(next_time);
+  idle_timer_ =
+      MakeOrphanable<IdleTimer>(RefAsSubclass<XdsOverrideHostLb>(), next_time);
 }
 
 //
