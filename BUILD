@@ -584,7 +584,6 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_lb_policy_cds",
     "//src/core:grpc_lb_policy_xds_cluster_impl",
     "//src/core:grpc_lb_policy_xds_cluster_manager",
-    "//src/core:grpc_lb_policy_xds_cluster_resolver",
     "//src/core:grpc_lb_policy_xds_override_host",
     "//src/core:grpc_lb_policy_xds_wrr_locality",
     "//src/core:grpc_lb_policy_ring_hash",
@@ -1274,6 +1273,7 @@ grpc_cc_library(
     tags = [
         "nofixdeps",
     ],
+    visibility = ["@grpc:event_engine_base_hdrs"],
     deps = [
         "channel_arg_names",
         "gpr",
@@ -1463,6 +1463,7 @@ grpc_cc_library(
         "//src/core:lib/surface/lame_client.h",
         "//src/core:lib/surface/server.h",
         "//src/core:lib/surface/validate_metadata.h",
+        "//src/core:lib/surface/wait_for_cq_end_op.h",
         "//src/core:lib/transport/batch_builder.h",
         "//src/core:lib/transport/connectivity_state.h",
         "//src/core:lib/transport/custom_metadata.h",
@@ -1539,6 +1540,7 @@ grpc_cc_library(
         "work_serializer",
         "//src/core:1999",
         "//src/core:activity",
+        "//src/core:all_ok",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
@@ -1611,6 +1613,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:transport_fwd",
+        "//src/core:try_join",
         "//src/core:try_seq",
         "//src/core:type_list",
         "//src/core:useful",
@@ -2400,6 +2403,18 @@ grpc_cc_library(
     ],
 )
 
+# This is an EXPERIMENTAL target subject to change.
+grpc_cc_library(
+    name = "grpcpp_otel_plugin",
+    hdrs = [
+        "include/grpcpp/ext/otel_plugin.h",
+    ],
+    language = "c++",
+    deps = [
+        "//src/cpp/ext/otel:otel_plugin",
+    ],
+)
+
 grpc_cc_library(
     name = "work_serializer",
     srcs = [
@@ -2714,7 +2729,6 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     tags = ["nofixdeps"],
-    visibility = ["@grpc:iomgr_timer"],
     deps = [
         "event_engine_base_hdrs",
         "exec_ctx",
@@ -3659,6 +3673,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",

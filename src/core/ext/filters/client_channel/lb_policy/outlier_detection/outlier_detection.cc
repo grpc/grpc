@@ -151,9 +151,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
         }
         return;
       }
-      WeakRefCountedPtr<SubchannelWrapper> self = WeakRef();
       work_serializer_->Run(
-          [self = std::move(self)]() {
+          [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
             if (self->subchannel_state_ != nullptr) {
               self->subchannel_state_->RemoveSubchannel(self.get());
             }
@@ -624,7 +623,7 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   }
   auto old_config = std::move(config_);
   // Update config.
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<OutlierDetectionLbConfig>();
   // Update outlier detection timer.
   if (!config_->CountingEnabled()) {
     // No need for timer.  Cancel the current timer, if any.
@@ -639,7 +638,8 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO, "[outlier_detection_lb %p] starting timer", this);
     }
-    ejection_timer_ = MakeOrphanable<EjectionTimer>(Ref(), Timestamp::Now());
+    ejection_timer_ = MakeOrphanable<EjectionTimer>(
+        RefAsSubclass<OutlierDetectionLb>(), Timestamp::Now());
     for (const auto& p : endpoint_state_map_) {
       p.second->RotateBucket();  // Reset call counters.
     }
@@ -654,8 +654,8 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
               "[outlier_detection_lb %p] interval changed, replacing timer",
               this);
     }
-    ejection_timer_ =
-        MakeOrphanable<EjectionTimer>(Ref(), ejection_timer_->StartTime());
+    ejection_timer_ = MakeOrphanable<EjectionTimer>(
+        RefAsSubclass<OutlierDetectionLb>(), ejection_timer_->StartTime());
   }
   // Update subchannel and endpoint maps.
   if (args.addresses.ok()) {
@@ -783,8 +783,8 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper =
-      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+  lb_policy_args.channel_control_helper = std::make_unique<Helper>(
+      RefAsSubclass<OutlierDetectionLb>(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_outlier_detection_lb_trace);

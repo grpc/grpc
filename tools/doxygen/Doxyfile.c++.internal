@@ -1155,7 +1155,6 @@ src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
@@ -1185,8 +1184,12 @@ src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
 src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
 src/core/ext/filters/client_channel/resolver/polling_resolver.h \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
+src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc \
+src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.h \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
-src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h \
+src/core/ext/filters/client_channel/resolver/xds/xds_resolver_attributes.h \
+src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc \
+src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.h \
 src/core/ext/filters/client_channel/retry_filter.cc \
 src/core/ext/filters/client_channel/retry_filter.h \
 src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
@@ -2639,10 +2642,12 @@ src/core/lib/matchers/matchers.cc \
 src/core/lib/matchers/matchers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
+src/core/lib/promise/all_ok.h \
 src/core/lib/promise/arena_promise.h \
 src/core/lib/promise/cancel_callback.h \
 src/core/lib/promise/context.h \
 src/core/lib/promise/detail/basic_seq.h \
+src/core/lib/promise/detail/join_state.h \
 src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/seq_state.h \
@@ -2667,6 +2672,7 @@ src/core/lib/promise/sleep.h \
 src/core/lib/promise/status_flag.h \
 src/core/lib/promise/trace.cc \
 src/core/lib/promise/trace.h \
+src/core/lib/promise/try_join.h \
 src/core/lib/promise/try_seq.h \
 src/core/lib/resolver/endpoint_addresses.cc \
 src/core/lib/resolver/endpoint_addresses.h \
@@ -2870,6 +2876,7 @@ src/core/lib/surface/server.h \
 src/core/lib/surface/validate_metadata.cc \
 src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
+src/core/lib/surface/wait_for_cq_end_op.h \
 src/core/lib/transport/batch_builder.cc \
 src/core/lib/transport/batch_builder.h \
 src/core/lib/transport/bdp_estimator.cc \
@@ -2892,8 +2899,6 @@ src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/metadata_compression_traits.h \
 src/core/lib/transport/parsed_metadata.cc \
 src/core/lib/transport/parsed_metadata.h \
-src/core/lib/transport/pid_controller.cc \
-src/core/lib/transport/pid_controller.h \
 src/core/lib/transport/simple_slice_based_metadata.h \
 src/core/lib/transport/status_conversion.cc \
 src/core/lib/transport/status_conversion.h \

@@ -48,7 +48,7 @@ android_workspace()
 # be invoked by binder transport implementation through JNI.
 local_repository(
     name = "binder_transport_android_helper",
-    path = "./src/core/ext/transport/binder/java",
+    path = "src/core/ext/transport/binder/java",
 )
 
 # Prevents bazel's '...' expansion from including the following folder.
@@ -88,6 +88,13 @@ http_archive(
     sha256 = "bf2861de6bf75115288468f340b0c4609cc99cc1ccc7668f0f71adfd853eedb3",
     url = "https://github.com/bazelbuild/rules_swift/releases/download/1.7.1/rules_swift.1.7.1.tar.gz",
 )
+
+load(
+    "@build_bazel_apple_support//lib:repositories.bzl",
+    "apple_support_dependencies",
+)
+
+apple_support_dependencies()
 
 load(
     "@build_bazel_rules_swift//swift:repositories.bzl",
