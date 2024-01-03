@@ -6386,6 +6386,7 @@ grpc_cc_library(
         "if",
         "try_join",
         "try_seq",
+        "//:gpr_platform",
         "//:hpack_encoder",
         "//:promise",
     ],
