@@ -24,6 +24,7 @@
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
+#include "grpcpp/ext/otel_plugin.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -33,7 +34,6 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/cpp/ext/otel/otel_plugin.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
@@ -236,7 +236,7 @@ int main(int argc, char** argv) {
     auto meter_provider =
         std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
     meter_provider->AddMetricReader(std::move(prometheus_exporter));
-    grpc::internal::OpenTelemetryPluginBuilderImpl otel_builder;
+    grpc::experimental::OpenTelemetryPluginBuilder otel_builder;
     otel_builder.SetMeterProvider(std::move(meter_provider));
     otel_builder.BuildAndRegisterGlobal();
   }

@@ -48,7 +48,9 @@ void OpenTelemetryPluginEnd2EndTest::Init(
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_attribute_filter,
     absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
-        generic_method_attribute_filter) {
+        generic_method_attribute_filter,
+    std::vector<std::unique_ptr<grpc::experimental::OpenTelemetryPluginOption>>
+        plugin_options) {
   // We are resetting the MeterProvider and OpenTelemetry plugin at the start
   // of each test to avoid test results from one test carrying over to another
   // test. (Some measurements can get arbitrarily delayed.)
@@ -76,6 +78,9 @@ void OpenTelemetryPluginEnd2EndTest::Init(
   ot_builder.SetTargetAttributeFilter(std::move(target_attribute_filter));
   ot_builder.SetGenericMethodAttributeFilter(
       std::move(generic_method_attribute_filter));
+  for (auto& option : plugin_options) {
+    ot_builder.AddPluginOption(std::move(option));
+  }
   ot_builder.BuildAndRegisterGlobal();
   grpc_init();
   grpc::ServerBuilder builder;

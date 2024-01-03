@@ -48,13 +48,19 @@ class OpenTelemetryClientFilter : public grpc_core::ChannelFilter {
       grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory) override;
 
-  absl::string_view target() const { return target_; }
+  absl::string_view filtered_target() const { return filtered_target_; }
+
+  bool PluginOptionActive(size_t index) const {
+    return active_plugin_options_[index];
+  }
 
  private:
-  explicit OpenTelemetryClientFilter(std::string target)
-      : target_(std::move(target)) {}
+  explicit OpenTelemetryClientFilter(std::string target);
 
-  std::string target_;
+  std::string filtered_target_;
+  std::vector<bool>
+      active_plugin_options_;  // bool for whether a corresponding plugin option
+                               // is active on this call tracer.
 };
 
 }  // namespace internal

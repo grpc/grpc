@@ -859,7 +859,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         args->server->server_call_tracer_factory() != nullptr) {
       auto* server_call_tracer =
           args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
-              arena);
+              arena, args->server->channel_args());
       if (server_call_tracer != nullptr) {
         // Note that we are setting both
         // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
@@ -3426,7 +3426,7 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   if (args->server->server_call_tracer_factory() != nullptr) {
     auto* server_call_tracer =
         args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
-            arena);
+            arena, args->server->channel_args());
     if (server_call_tracer != nullptr) {
       // Note that we are setting both
       // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and

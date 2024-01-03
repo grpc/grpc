@@ -67,15 +67,34 @@ class LabelsInjector {
   // Read the incoming initial metadata to get the set of labels to be added to
   // metrics.
   virtual std::unique_ptr<LabelsIterable> GetLabels(
-      grpc_metadata_batch* incoming_initial_metadata) = 0;
+      grpc_metadata_batch* incoming_initial_metadata) const = 0;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer. On the server side, \a labels_from_incoming_metadata returned
   // from `GetLabels` should be provided as input here. On the client side, this
   // should be nullptr.
-  virtual void AddLabels(grpc_metadata_batch* outgoing_initial_metadata,
-                         LabelsIterable* labels_from_incoming_metadata) = 0;
+  virtual void AddLabels(
+      grpc_metadata_batch* outgoing_initial_metadata,
+      LabelsIterable* labels_from_incoming_metadata) const = 0;
 };
+
+}  // namespace internal
+
+namespace experimental {
+class OpenTelemetryPluginOption {
+ public:
+  virtual ~OpenTelemetryPluginOption() {}
+  // Determines whether a plugin option is active on a given channel target
+  virtual bool IsActiveOnClientChannel(absl::string_view target) const = 0;
+  // Determines whether a plugin option is active on a given server
+  virtual bool IsActiveOnServer(const grpc_core::ChannelArgs& args) const = 0;
+  // Returns the LabelsInjector used by this plugin option, nullptr if none.
+  virtual const grpc::internal::LabelsInjector* labels_injector() const = 0;
+};
+
+}  // namespace experimental
+
+namespace internal {
 
 struct OpenTelemetryPluginState {
   struct Client {
@@ -107,6 +126,8 @@ struct OpenTelemetryPluginState {
       generic_method_attribute_filter;
   absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
       server_selector;
+  std::vector<std::unique_ptr<experimental::OpenTelemetryPluginOption>>
+      plugin_options;
 };
 
 const struct OpenTelemetryPluginState& OpenTelemetryPluginState();
@@ -119,6 +140,7 @@ absl::string_view OpenTelemetryTargetKey();
 class OpenTelemetryPluginBuilderImpl {
  public:
   OpenTelemetryPluginBuilderImpl();
+  ~OpenTelemetryPluginBuilderImpl();
   // If `SetMeterProvider()` is not called, no metrics are collected.
   OpenTelemetryPluginBuilderImpl& SetMeterProvider(
       std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider);
@@ -166,6 +188,8 @@ class OpenTelemetryPluginBuilderImpl {
   OpenTelemetryPluginBuilderImpl& SetGenericMethodAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter);
+  OpenTelemetryPluginBuilderImpl& AddPluginOption(
+      std::unique_ptr<experimental::OpenTelemetryPluginOption> option);
   void BuildAndRegisterGlobal();
 
  private:
@@ -179,6 +203,8 @@ class OpenTelemetryPluginBuilderImpl {
       generic_method_attribute_filter_;
   absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
       server_selector_;
+  std::vector<std::unique_ptr<experimental::OpenTelemetryPluginOption>>
+      plugin_options_;
 };
 
 }  // namespace internal

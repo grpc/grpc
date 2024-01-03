@@ -30,6 +30,7 @@
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/cpp/ext/otel/otel_plugin.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
@@ -651,6 +652,273 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
       absl::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "UNIMPLEMENTED");
+}
+
+using OpenTelemetryPluginOptionEnd2EndTest = OpenTelemetryPluginEnd2EndTest;
+
+class SimpleLabelIterable : public grpc::internal::LabelsIterable {
+ public:
+  explicit SimpleLabelIterable(
+      std::pair<absl::string_view, absl::string_view> label)
+      : label_(label) {}
+
+  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
+      override {
+    if (iterated_) {
+      return absl::nullopt;
+    }
+    iterated_ = true;
+    return label_;
+  }
+
+  size_t Size() const override { return 1; }
+
+  void ResetIteratorPosition() override { iterated_ = false; }
+
+ private:
+  bool iterated_ = false;
+  std::pair<absl::string_view, absl::string_view> label_;
+};
+
+class CustomLabelInjector : public grpc::internal::LabelsInjector {
+ public:
+  CustomLabelInjector(std::pair<std::string, std::string> label)
+      : label_(std::move(label)) {}
+  ~CustomLabelInjector() override {}
+
+  std::unique_ptr<grpc::internal::LabelsIterable> GetLabels(
+      grpc_metadata_batch* /*incoming_initial_metadata*/) const override {
+    return std::make_unique<SimpleLabelIterable>(label_);
+  }
+
+  void AddLabels(
+      grpc_metadata_batch* /*outgoing_initial_metadata*/,
+      grpc::internal::LabelsIterable* /*labels_from_incoming_metadata*/)
+      const override {
+    return;
+  }
+
+ private:
+  std::pair<std::string, std::string> label_;
+};
+
+class CustomPluginOption
+    : public grpc::experimental::OpenTelemetryPluginOption {
+ public:
+  CustomPluginOption(bool enabled_on_client, bool enabled_on_server,
+                     std::pair<std::string, std::string> label)
+      : enabled_on_client_(enabled_on_client),
+        enabled_on_server_(enabled_on_server),
+        label_injector_(
+            std::make_unique<CustomLabelInjector>(std::move(label))) {}
+
+  ~CustomPluginOption() override {}
+
+  bool IsActiveOnClientChannel(absl::string_view target) const override {
+    return enabled_on_client_;
+  }
+
+  bool IsActiveOnServer(const grpc_core::ChannelArgs& args) const override {
+    return enabled_on_server_;
+  }
+
+  const grpc::internal::LabelsInjector* labels_injector() const override {
+    return label_injector_.get();
+  }
+
+ private:
+  bool enabled_on_client_;
+  bool enabled_on_server_;
+  std::unique_ptr<CustomLabelInjector> label_injector_;
+};
+
+TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
+  std::vector<std::unique_ptr<grpc::experimental::OpenTelemetryPluginOption>>
+      plugin_option_list;
+  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
+      /*enabled_on_client*/ true, /*enabled_on_server*/ true,
+      std::make_pair("key", "value")));
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptDurationInstrumentName,
+        grpc::experimental::OpenTelemetryPluginBuilder::
+            kServerCallDurationInstrumentName},
+       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*target_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*generic_method_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>(),
+       /*plugin_options=*/std::move(plugin_option_list));
+  SendRPC();
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains("grpc.client.attempt.duration") ||
+               !data.contains("grpc.server.call.duration");
+      });
+  // Verify client side metric
+  ASSERT_EQ(data["grpc.client.attempt.duration"].size(), 1);
+  const auto& client_attributes =
+      data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
+  EXPECT_EQ(client_attributes.size(), 4);
+  EXPECT_EQ(absl::get<std::string>(client_attributes.at("key")), "value");
+  // Verify server side metric
+  ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
+  const auto& server_attributes =
+      data["grpc.server.call.duration"][0].attributes.GetAttributes();
+  EXPECT_EQ(server_attributes.size(), 3);
+  EXPECT_EQ(absl::get<std::string>(server_attributes.at("key")), "value");
+}
+
+TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
+  std::vector<std::unique_ptr<grpc::experimental::OpenTelemetryPluginOption>>
+      plugin_option_list;
+  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
+      /*enabled_on_client*/ true, /*enabled_on_server*/ false,
+      std::make_pair("key", "value")));
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptDurationInstrumentName,
+        grpc::experimental::OpenTelemetryPluginBuilder::
+            kServerCallDurationInstrumentName},
+       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*target_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*generic_method_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>(),
+       /*plugin_options=*/std::move(plugin_option_list));
+  SendRPC();
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains("grpc.client.attempt.duration") ||
+               !data.contains("grpc.server.call.duration");
+      });
+  // Verify client side metric
+  ASSERT_EQ(data["grpc.client.attempt.duration"].size(), 1);
+  const auto& client_attributes =
+      data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
+  EXPECT_EQ(client_attributes.size(), 4);
+  EXPECT_EQ(absl::get<std::string>(client_attributes.at("key")), "value");
+  // Verify server side metric
+  ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
+  const auto& server_attributes =
+      data["grpc.server.call.duration"][0].attributes.GetAttributes();
+  EXPECT_EQ(server_attributes.size(), 2);
+  EXPECT_EQ(server_attributes.find("key"), server_attributes.end());
+}
+
+TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
+  std::vector<std::unique_ptr<grpc::experimental::OpenTelemetryPluginOption>>
+      plugin_option_list;
+  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
+      /*enabled_on_client*/ false, /*enabled_on_server*/ true,
+      std::make_pair("key", "value")));
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptDurationInstrumentName,
+        grpc::experimental::OpenTelemetryPluginBuilder::
+            kServerCallDurationInstrumentName},
+       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*target_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*generic_method_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>(),
+       /*plugin_options=*/std::move(plugin_option_list));
+  SendRPC();
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains("grpc.client.attempt.duration") ||
+               !data.contains("grpc.server.call.duration");
+      });
+  // Verify client side metric
+  ASSERT_EQ(data["grpc.client.attempt.duration"].size(), 1);
+  const auto& attributes =
+      data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 3);
+  EXPECT_EQ(attributes.find("key"), attributes.end());
+  // Verify server side metric
+  ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
+  const auto& server_attributes =
+      data["grpc.server.call.duration"][0].attributes.GetAttributes();
+  EXPECT_EQ(server_attributes.size(), 3);
+  EXPECT_EQ(absl::get<std::string>(server_attributes.at("key")), "value");
+}
+
+TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
+       MultipleEnabledAndDisabledPluginOptions) {
+  std::vector<std::unique_ptr<grpc::experimental::OpenTelemetryPluginOption>>
+      plugin_option_list;
+  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
+      /*enabled_on_client*/ true, /*enabled_on_server*/ true,
+      std::make_pair("key1", "value1")));
+  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
+      /*enabled_on_client*/ true, /*enabled_on_server*/ false,
+      std::make_pair("key2", "value2")));
+  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
+      /*enabled_on_client*/ true, /*enabled_on_server*/ false,
+      std::make_pair("key3", "value3")));
+  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
+      /*enabled_on_client*/ false, /*enabled_on_server*/ true,
+      std::make_pair("key4", "value4")));
+  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
+      /*enabled_on_client*/ false, /*enabled_on_server*/ true,
+      std::make_pair("key5", "value5")));
+  Init({grpc::experimental::OpenTelemetryPluginBuilder::
+            kClientAttemptDurationInstrumentName,
+        grpc::experimental::OpenTelemetryPluginBuilder::
+            kServerCallDurationInstrumentName},
+       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*target_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*generic_method_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>(),
+       /*plugin_options=*/std::move(plugin_option_list));
+  SendRPC();
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains("grpc.client.attempt.duration") ||
+               !data.contains("grpc.server.call.duration");
+      });
+  // Verify client side metric
+  ASSERT_EQ(data["grpc.client.attempt.duration"].size(), 1);
+  const auto& client_attributes =
+      data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
+  EXPECT_EQ(client_attributes.size(), 6);
+  EXPECT_EQ(absl::get<std::string>(client_attributes.at("key1")), "value1");
+  EXPECT_EQ(absl::get<std::string>(client_attributes.at("key2")), "value2");
+  EXPECT_EQ(absl::get<std::string>(client_attributes.at("key3")), "value3");
+  EXPECT_EQ(client_attributes.find("key4"), client_attributes.end());
+  EXPECT_EQ(client_attributes.find("key5"), client_attributes.end());
+  // Verify server side metric
+  ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
+  const auto& server_attributes =
+      data["grpc.server.call.duration"][0].attributes.GetAttributes();
+  EXPECT_EQ(server_attributes.size(), 5);
+  EXPECT_EQ(absl::get<std::string>(server_attributes.at("key1")), "value1");
+  EXPECT_EQ(server_attributes.find("key2"), server_attributes.end());
+  EXPECT_EQ(server_attributes.find("key3"), server_attributes.end());
+  EXPECT_EQ(absl::get<std::string>(server_attributes.at("key4")), "value4");
+  EXPECT_EQ(absl::get<std::string>(server_attributes.at("key5")), "value5");
 }
 
 }  // namespace

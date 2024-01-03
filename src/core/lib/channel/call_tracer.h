@@ -175,7 +175,8 @@ class ServerCallTracerFactory {
 
   virtual ~ServerCallTracerFactory() {}
 
-  virtual ServerCallTracer* CreateNewServerCallTracer(Arena* arena) = 0;
+  virtual ServerCallTracer* CreateNewServerCallTracer(
+      Arena* arena, const ChannelArgs& channel_args) = 0;
 
   // Returns true if a server is to be traced, false otherwise.
   virtual bool IsServerTraced(const ChannelArgs& /*args*/) { return true; }

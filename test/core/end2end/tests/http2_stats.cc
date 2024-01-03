@@ -200,7 +200,8 @@ grpc_transport_stream_stats FakeServerCallTracer::transport_stream_stats_;
 
 class FakeServerCallTracerFactory : public ServerCallTracerFactory {
  public:
-  ServerCallTracer* CreateNewServerCallTracer(Arena* arena) override {
+  ServerCallTracer* CreateNewServerCallTracer(
+      Arena* arena, const grpc_core::ChannelArgs& /*args*/) override {
     return arena->ManagedNew<FakeServerCallTracer>();
   }
 };

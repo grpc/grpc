@@ -42,6 +42,58 @@
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
+
+namespace internal {
+
+bool CsmServerSelector(const grpc_core::ChannelArgs& args) {
+  return args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);
+}
+
+bool CsmChannelTargetSelector(absl::string_view target) {
+  auto uri = grpc_core::URI::Parse(target);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "Failed to parse URI: %s", std::string(target).c_str());
+    return false;
+  }
+  // CSM channels should have an "xds" scheme
+  if (uri->scheme() != "xds") {
+    return false;
+  }
+  // If set, the authority should be TD
+  if (!uri->authority().empty() &&
+      uri->authority() != "traffic-director-global.xds.googleapis.com") {
+    return false;
+  }
+  return true;
+}
+
+class CsmOpenTelemetryPluginOption
+    : public grpc::experimental::OpenTelemetryPluginOption {
+ public:
+  CsmOpenTelemetryPluginOption()
+      : labels_injector_(std::make_unique<internal::ServiceMeshLabelsInjector>(
+            google::cloud::otel::MakeResourceDetector()
+                ->Detect()
+                .GetAttributes())) {}
+
+  bool IsActiveOnClientChannel(absl::string_view target) const override {
+    return CsmChannelTargetSelector(target);
+  }
+
+  bool IsActiveOnServer(const grpc_core::ChannelArgs& args) const override {
+    return CsmServerSelector(args);
+  }
+
+  const grpc::internal::LabelsInjector* labels_injector() const override {
+    return labels_injector_.get();
+  }
+
+ private:
+  std::unique_ptr<internal::ServiceMeshLabelsInjector> labels_injector_;
+};
+
+}  // namespace internal
+
 namespace experimental {
 
 //
@@ -78,9 +130,7 @@ CsmObservabilityBuilder::SetGenericMethodAttributeFilter(
 }
 
 absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
-  builder_->SetServerSelector([](const grpc_core::ChannelArgs& args) {
-    return args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);
-  });
+  builder_->SetServerSelector(internal::CsmServerSelector);
   builder_->SetTargetSelector(internal::CsmChannelTargetSelector);
   builder_->SetLabelsInjector(
       std::make_unique<internal::ServiceMeshLabelsInjector>(
@@ -91,27 +141,10 @@ absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
   return CsmObservability();
 }
 
-}  // namespace experimental
-
-namespace internal {
-
-bool CsmChannelTargetSelector(absl::string_view target) {
-  auto uri = grpc_core::URI::Parse(target);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "Failed to parse URI: %s", std::string(target).c_str());
-    return false;
-  }
-  // CSM channels should have an "xds" scheme
-  if (uri->scheme() != "xds") {
-    return false;
-  }
-  // If set, the authority should be TD
-  if (!uri->authority().empty() &&
-      uri->authority() != "traffic-director-global.xds.googleapis.com") {
-    return false;
-  }
-  return true;
+OpenTelemetryPluginOption* MakeCsmOpenTelemetryPluginOption() {
+  return new grpc::internal::CsmOpenTelemetryPluginOption;
 }
 
-}  // namespace internal
+}  // namespace experimental
+
 }  // namespace grpc
