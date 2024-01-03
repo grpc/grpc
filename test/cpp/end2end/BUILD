@@ -1047,6 +1047,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/container:flat_hash_set",
         "gtest",
     ],
     tags = ["ssl_credentials_test"],
