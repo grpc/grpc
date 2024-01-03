@@ -604,8 +604,8 @@ LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
 // XdsOverrideHostLb::IdleTimer
 //
 
-XdsOverrideHostLb::IdleTimer::IdleTimer(
-    RefCountedPtr<XdsOverrideHostLb> policy, Duration duration)
+XdsOverrideHostLb::IdleTimer::IdleTimer(RefCountedPtr<XdsOverrideHostLb> policy,
+                                        Duration duration)
     : policy_(std::move(policy)) {
   // Min time between timer runs is 5s so that we don't kill ourselves
   // with lock contention and CPU usage due to sweeps over the map.
@@ -1226,10 +1226,9 @@ void XdsOverrideHostLb::SubchannelEntry::OnSubchannelWrapperOrphan(
   if (subchannel != wrapper) return;
   if (last_used_time_ < (Timestamp::Now() - connection_idle_timeout)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "[xds_override_host_lb] removing unowned subchannel wrapper %p",
-          subchannel);
+      gpr_log(GPR_INFO,
+              "[xds_override_host_lb] removing unowned subchannel wrapper %p",
+              subchannel);
     }
     subchannel_ = nullptr;
   } else {
