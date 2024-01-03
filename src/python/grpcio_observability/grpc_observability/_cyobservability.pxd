@@ -76,7 +76,6 @@ cdef extern from "observability_util.h" namespace "grpc_observability":
   cdef cGcpObservabilityConfig ReadAndActivateObservabilityConfig() nogil
   cdef void NativeObservabilityInit() except +
   cdef void* CreateClientCallTracer(const char* method,
-                                    const char* target,
                                     const char* trace_id,
                                     const char* parent_span_id) except +
   cdef void* CreateServerCallTracerFactory() except +
@@ -145,7 +144,6 @@ cdef extern from "constants.h" namespace "grpc_observability":
     kRpcServerStartedRpcsMeasureName
 
   string kClientMethod
-  string kClientTarget
   string kClientStatus
 
 cdef extern from "sampler.h" namespace "grpc_observability":
