@@ -1885,6 +1885,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/simple_slice_based_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/tcp_connect_handshaker.cc" role="src" />

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TSTATS_H
-#define TSTATS_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_STATS_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_STATS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,4 +25,4 @@ struct grpc_transport_one_way_stats {
   uint64_t header_bytes = 0;
 };
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_STATS_H
