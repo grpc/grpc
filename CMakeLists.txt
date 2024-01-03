@@ -1846,6 +1846,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   src/core/ext/transport/chttp2/transport/decode_huff.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
+  src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
   src/core/ext/transport/chttp2/transport/frame_goaway.cc
   src/core/ext/transport/chttp2/transport/frame_ping.cc
@@ -2897,6 +2898,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   src/core/ext/transport/chttp2/transport/decode_huff.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
+  src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
   src/core/ext/transport/chttp2/transport/frame_goaway.cc
   src/core/ext/transport/chttp2/transport/frame_ping.cc
@@ -24627,6 +24629,7 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/decode_huff.cc
+  src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/hpack_encoder.cc
   src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   src/core/ext/transport/chttp2/transport/hpack_parse_result.cc

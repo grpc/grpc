@@ -23,13 +23,12 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "frame.h"
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
