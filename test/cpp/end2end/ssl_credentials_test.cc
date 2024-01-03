@@ -553,8 +553,9 @@ TEST_P(SslCredentialsTest, ServerCertificateIsUntrusted) {
 TEST_P(SslCredentialsTest, ClientCertificateIsUntrusted) {
   // Skip this test if the client certificate is not requested.
   if (GetParam().request_type == grpc_ssl_client_certificate_request_type::
-                                     GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE)
+                                     GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {
     return;
+  }
 
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
