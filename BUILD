@@ -1536,6 +1536,7 @@ grpc_cc_library(
         "sockaddr_utils",
         "stats",
         "tcp_tracer",
+        "transport_stats",
         "uri_parser",
         "work_serializer",
         "//src/core:1999",
@@ -1620,6 +1621,14 @@ grpc_cc_library(
         "//src/core:windows_event_engine",
         "//src/core:windows_event_engine_listener",
     ],
+)
+
+grpc_cc_library(
+    name = "transport_stats",
+    hdrs = [
+        "//src/core:lib/transport/stats.h",
+    ],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -3800,6 +3809,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "transport_stats",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],

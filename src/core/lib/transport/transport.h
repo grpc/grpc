@@ -63,6 +63,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/stats.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
 // Minimum and maximum protocol accepted versions.
@@ -587,12 +588,6 @@ inline void grpc_stream_unref(grpc_stream_refcount* refcount) {
 // the same refcount
 grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount,
                                                void* buffer, size_t length);
-
-struct grpc_transport_one_way_stats {
-  uint64_t framing_bytes = 0;
-  uint64_t data_bytes = 0;
-  uint64_t header_bytes = 0;
-};
 
 struct grpc_transport_stream_stats {
   grpc_transport_one_way_stats incoming;

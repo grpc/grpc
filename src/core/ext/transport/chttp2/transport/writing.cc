@@ -201,6 +201,7 @@ class WriteContext {
           t_->max_concurrent_streams_policy.AdvertiseValue();
       if (IsChttp2NewWritesEnabled()) {
         Http2SettingsFrame frame;
+        // TODO(ctiller): move this code into a settings-specific module.
         for (size_t i = 0; i < GRPC_CHTTP2_NUM_SETTINGS; i++) {
           if (t_->force_send_settings.is_set(i) ||
               t_->settings[GRPC_SENT_SETTINGS][i] !=
@@ -208,6 +209,8 @@ class WriteContext {
             frame.settings.push_back(
                 {static_cast<uint16_t>(grpc_setting_id_to_wire_id[i]),
                  t_->settings[GRPC_LOCAL_SETTINGS][i]});
+            t_->settings[GRPC_SENT_SETTINGS][i] =
+                t_->settings[GRPC_LOCAL_SETTINGS][i];
           }
         }
         AddFrame(std::move(frame));
@@ -537,11 +540,22 @@ class DataSendContext {
 class StreamWriteContext {
  public:
   StreamWriteContext(WriteContext* write_context, grpc_chttp2_stream* s)
-      : write_context_(write_context), t_(write_context->transport()), s_(s) {
+      : write_context_(write_context),
+        t_(write_context->transport()),
+        s_(s),
+        output_frames_before_(write_context->mutable_frames().size()) {
     GRPC_CHTTP2_IF_TRACING(
         gpr_log(GPR_INFO, "W:%p %s[%d] im-(sent,send)=(%d,%d)", t_,
                 t_->is_client ? "CLIENT" : "SERVER", s->id,
                 s->sent_initial_metadata, s->send_initial_metadata != nullptr));
+  }
+
+  ~StreamWriteContext() {
+    AccumulateSizeStats(
+        absl::Span<Http2Frame>(
+            write_context_->mutable_frames().data() + output_frames_before_,
+            write_context_->mutable_frames().size() - output_frames_before_),
+        s_->stats.outgoing);
   }
 
   void FlushInitialMetadata() {
@@ -748,6 +762,7 @@ class StreamWriteContext {
   bool stream_became_writable_ = false;
   absl::optional<uint32_t> send_status_;
   absl::optional<ContentTypeMetadata::ValueType> send_content_type_ = {};
+  const size_t output_frames_before_;
 };
 }  // namespace
 }  // namespace grpc_core

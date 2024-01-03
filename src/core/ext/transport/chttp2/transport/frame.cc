@@ -421,6 +421,7 @@ absl::StatusOr<Http2WindowUpdateFrame> ParseWindowUpdateFrame(
 }  // namespace
 
 void Http2FrameHeader::Serialize(uint8_t* output) const {
+  gpr_log(GPR_ERROR, "SERIALIZE HEADER: %s", ToString().c_str());
   Write3b(length, output);
   output[3] = type;
   output[4] = flags;
@@ -471,6 +472,58 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   SerializeHeaderAndPayload serialize(buffer_needed, out);
   for (auto& frame : frames) {
     absl::visit(serialize, frame);
+  }
+}
+
+namespace {
+class AccumulateStats {
+ public:
+  explicit AccumulateStats(grpc_transport_one_way_stats& stats)
+      : stats_(stats) {}
+
+  void operator()(const Http2DataFrame& frame) {
+    stats_.framing_bytes += kFrameHeaderSize;
+    stats_.data_bytes += frame.payload.Length();
+  }
+
+  void operator()(const Http2HeaderFrame& frame) {
+    stats_.framing_bytes += kFrameHeaderSize;
+    stats_.header_bytes += frame.payload.Length();
+  }
+
+  void operator()(const Http2ContinuationFrame& frame) {
+    stats_.framing_bytes += kFrameHeaderSize;
+    stats_.header_bytes += frame.payload.Length();
+  }
+
+  void operator()(const Http2RstStreamFrame& frame) {
+    stats_.framing_bytes += kFrameHeaderSize;
+    stats_.framing_bytes += 4;
+  }
+
+  void operator()(const Http2SettingsFrame& frame) { Crash("unreachable"); }
+
+  void operator()(const Http2PingFrame& frame) { Crash("unreachable"); }
+
+  void operator()(const Http2GoawayFrame& frame) { Crash("unreachable"); }
+
+  void operator()(const Http2WindowUpdateFrame& frame) {
+    stats_.framing_bytes += kFrameHeaderSize;
+    stats_.framing_bytes += 4;
+  }
+
+  void operator()(const Http2UnknownFrame&) { Crash("unreachable"); }
+
+ private:
+  grpc_transport_one_way_stats& stats_;
+};
+}  // namespace
+
+void AccumulateSizeStats(absl::Span<Http2Frame> frames,
+                         grpc_transport_one_way_stats& stats) {
+  AccumulateStats accumulate(stats);
+  for (auto& frame : frames) {
+    absl::visit(accumulate, frame);
   }
 }
 

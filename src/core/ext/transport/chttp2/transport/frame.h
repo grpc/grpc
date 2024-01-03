@@ -28,6 +28,7 @@
 
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/stats.h"
 
 namespace grpc_core {
 
@@ -206,6 +207,10 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
 // Serialize frame and append to out, leaves frames in an unknown state (may
 // move things out of frames)
 void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
+
+// Compute framing statistics for a frame.
+void AccumulateSizeStats(absl::Span<Http2Frame> frames,
+                         grpc_transport_one_way_stats& stats);
 
 }  // namespace grpc_core
 
