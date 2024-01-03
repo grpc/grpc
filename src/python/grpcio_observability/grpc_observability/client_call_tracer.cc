@@ -41,11 +41,9 @@ constexpr uint32_t
 //
 
 PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(
-    const char* method, const char* target, const char* trace_id,
-    const char* parent_span_id, bool tracing_enabled)
-    : method_(GetMethod(method)),
-      target_(GetTarget(target)),
-      tracing_enabled_(tracing_enabled) {
+    const char* method, const char* trace_id, const char* parent_span_id,
+    bool tracing_enabled)
+    : method_(GetMethod(method)), tracing_enabled_(tracing_enabled) {
   GenerateClientContext(absl::StrCat("Sent.", method_),
                         absl::string_view(trace_id),
                         absl::string_view(parent_span_id), &context_);
@@ -86,7 +84,7 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
     RecordIntMetric(kRpcClientTransparentRetriesPerCallMeasureName,
                     transparent_retries_, context_.Labels());
     RecordDoubleMetric(kRpcClientRetryDelayPerCallMeasureName,
-                       ToDoubleSeconds(retry_delay_), context_.Labels());
+                       ToDoubleMilliseconds(retry_delay_), context_.Labels());
   }
 
   if (tracing_enabled_) {
@@ -148,7 +146,6 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     return;
   }
   context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
-  context_.Labels().emplace_back(kClientTarget, std::string(parent_->target_));
   RecordIntMetric(kRpcClientStartedRpcsMeasureName, 1, context_.Labels());
 }
 
@@ -228,7 +225,6 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 
   std::string final_status = absl::StatusCodeToString(status_code_);
   context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
-  context_.Labels().emplace_back(kClientTarget, std::string(parent_->target_));
   context_.Labels().emplace_back(kClientStatus, final_status);
   RecordDoubleMetric(
       kRpcClientSentBytesPerRpcMeasureName,
@@ -242,11 +238,12 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
                               ? transport_stream_stats->incoming.data_bytes
                               : 0),
       context_.Labels());
-  RecordDoubleMetric(kRpcClientServerLatencyMeasureName,
-                     absl::ToDoubleSeconds(absl::Nanoseconds(elapsed_time)),
-                     context_.Labels());
+  RecordDoubleMetric(
+      kRpcClientServerLatencyMeasureName,
+      absl::ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time)),
+      context_.Labels());
   RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName,
-                     absl::ToDoubleSeconds(absl::Now() - start_time_),
+                     absl::ToDoubleMilliseconds(absl::Now() - start_time_),
                      context_.Labels());
   RecordIntMetric(kRpcClientCompletedRpcMeasureName, 1, context_.Labels());
 }
