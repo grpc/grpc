@@ -72,7 +72,9 @@ class FrameSerializer {
     header_.message_length = msg.length;
     header_.message_padding = msg.padding;
     output_.data = msg.message->payload()->Copy();
-    output_.data.Append(Slice::FromStaticBuffer(kZeros, msg.padding));
+    if (msg.padding != 0) {
+      output_.data.Append(Slice::FromStaticBuffer(kZeros, msg.padding));
+    }
   }
 
   // If called, must be called before Finish.
