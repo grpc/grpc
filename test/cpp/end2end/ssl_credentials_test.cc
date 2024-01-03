@@ -220,7 +220,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
         auth_context->FindPropertyValues(GRPC_X509_SAN_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), sans.size());
     absl::flat_hash_set<std::string> observed_sans;
-    for (int i = 0; i < properties.size(); ++i) {
+    for (size_t i = 0; i < properties.size(); ++i) {
       observed_sans.insert(ToString(properties[i]));
     }
     EXPECT_EQ(sans, observed_sans);
@@ -250,7 +250,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
         auth_context->FindPropertyValues(GRPC_PEER_DNS_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), dns_sans.size());
     absl::flat_hash_set<std::string> observed_sans;
-    for (int i = 0; i < properties.size(); ++i) {
+    for (size_t i = 0; i < properties.size(); ++i) {
       observed_sans.insert(ToString(properties[i]));
     }
     EXPECT_EQ(dns_sans, observed_sans);
@@ -264,7 +264,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
         auth_context->FindPropertyValues(GRPC_PEER_URI_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), uri_sans.size());
     absl::flat_hash_set<std::string> observed_sans;
-    for (int i = 0; i < properties.size(); ++i) {
+    for (size_t i = 0; i < properties.size(); ++i) {
       observed_sans.insert(ToString(properties[i]));
     }
     EXPECT_EQ(uri_sans, observed_sans);
@@ -278,7 +278,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
         auth_context->FindPropertyValues(GRPC_PEER_EMAIL_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), email_sans.size());
     absl::flat_hash_set<std::string> observed_sans;
-    for (int i = 0; i < properties.size(); ++i) {
+    for (size_t i = 0; i < properties.size(); ++i) {
       observed_sans.insert(ToString(properties[i]));
     }
     EXPECT_EQ(email_sans, observed_sans);
@@ -292,7 +292,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
         auth_context->FindPropertyValues(GRPC_PEER_IP_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), ip_sans.size());
     absl::flat_hash_set<std::string> observed_sans;
-    for (int i = 0; i < properties.size(); ++i) {
+    for (size_t i = 0; i < properties.size(); ++i) {
       observed_sans.insert(ToString(properties[i]));
     }
     EXPECT_EQ(ip_sans, observed_sans);
