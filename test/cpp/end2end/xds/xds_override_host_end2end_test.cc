@@ -268,7 +268,7 @@ TEST_P(OverrideHostTest, HappyPath) {
   WaitForAllBackends(DEBUG_LOCATION);
   // Get cookie for backend #0.
   auto cookies = GetCookiesForBackend(DEBUG_LOCATION, 0);
-  EXPECT_THAT(cookies,
+  ASSERT_THAT(cookies,
               ::testing::ElementsAre(::testing::AllOf(
                   ::testing::Field("name", &Cookie::name, kCookieName),
                   ::testing::Field("attributes", &Cookie::attributes,
@@ -307,7 +307,7 @@ TEST_P(OverrideHostTest, AffinityWorksAcrossPriorities) {
   WaitForAllBackends(DEBUG_LOCATION, 0, 2);
   // Get cookie for backend 1.
   auto cookies = GetCookiesForBackend(DEBUG_LOCATION, 1);
-  EXPECT_THAT(cookies,
+  ASSERT_THAT(cookies,
               ::testing::ElementsAre(::testing::AllOf(
                   ::testing::Field("name", &Cookie::name, kCookieName),
                   ::testing::Field("attributes", &Cookie::attributes,
@@ -349,8 +349,11 @@ TEST_P(OverrideHostTest,
   })));
   WaitForAllBackends(DEBUG_LOCATION, 0, 2);
   // Get cookie for backend 1.
-  auto cookies = GetCookiesForBackend(DEBUG_LOCATION, 1);
-  EXPECT_THAT(cookies,
+  // It may take more requests than usual to hit the backend we want,
+  // since the weighted_target policy does not do a strict round-robin.
+  auto cookies =
+      GetCookiesForBackend(DEBUG_LOCATION, 1, /*max_requests_per_backend=*/10);
+  ASSERT_THAT(cookies,
               ::testing::ElementsAre(::testing::AllOf(
                   ::testing::Field("name", &Cookie::name, kCookieName),
                   ::testing::Field("attributes", &Cookie::attributes,
@@ -727,7 +730,7 @@ TEST_P(OverrideHostTest, MultipleAddressesPerEndpoint) {
   ResetBackendCounters();
   // Get cookie for backend 1.
   auto cookies = GetCookiesForBackend(DEBUG_LOCATION, 1);
-  EXPECT_THAT(cookies,
+  ASSERT_THAT(cookies,
               ::testing::ElementsAre(::testing::AllOf(
                   ::testing::Field("name", &Cookie::name, kCookieName),
                   ::testing::Field("attributes", &Cookie::attributes,
