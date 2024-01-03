@@ -103,8 +103,8 @@ class FakeCallTracer : public ClientCallTracer {
     }
 
    private:
-    static grpc_transport_stream_stats transport_stream_stats_ ABSL_GUARDED_BY(
-        g_mu);
+    static grpc_transport_stream_stats transport_stream_stats_
+        ABSL_GUARDED_BY(g_mu);
   };
 
   explicit FakeCallTracer() {}
@@ -192,8 +192,8 @@ class FakeServerCallTracer : public ServerCallTracer {
   }
 
  private:
-  static grpc_transport_stream_stats transport_stream_stats_ ABSL_GUARDED_BY(
-      g_mu);
+  static grpc_transport_stream_stats transport_stream_stats_
+      ABSL_GUARDED_BY(g_mu);
 };
 
 grpc_transport_stream_stats FakeServerCallTracer::transport_stream_stats_;

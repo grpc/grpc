@@ -1177,6 +1177,7 @@ libs:
   - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
+  - src/core/lib/transport/stats.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/tcp_connect_handshaker.h
   - src/core/lib/transport/timeout_encoding.h
@@ -2608,6 +2609,7 @@ libs:
   - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
+  - src/core/lib/transport/stats.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/tcp_connect_handshaker.h
   - src/core/lib/transport/timeout_encoding.h
@@ -4743,6 +4745,7 @@ libs:
   - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
+  - src/core/lib/transport/stats.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -17080,6 +17083,7 @@ targets:
   - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
+  - src/core/lib/transport/stats.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -17435,6 +17439,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/stats.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/lib/debug/trace.cc
