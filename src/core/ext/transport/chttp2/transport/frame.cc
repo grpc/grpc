@@ -421,7 +421,6 @@ absl::StatusOr<Http2WindowUpdateFrame> ParseWindowUpdateFrame(
 }  // namespace
 
 void Http2FrameHeader::Serialize(uint8_t* output) const {
-  gpr_log(GPR_ERROR, "SERIALIZE HEADER: %s", ToString().c_str());
   Write3b(length, output);
   output[3] = type;
   output[4] = flags;
