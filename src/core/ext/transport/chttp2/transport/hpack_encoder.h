@@ -354,8 +354,6 @@ class HPackCompressor {
     bool is_end_of_stream;
     bool use_true_binary_metadata;
     size_t max_frame_size;
-    // Only used if framing to a grpc_slice_buffer; if output is a
-    // vector<Http2Frame> this is unused.
     grpc_transport_one_way_stats* stats;
   };
 

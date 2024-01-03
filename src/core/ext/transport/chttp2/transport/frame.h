@@ -208,10 +208,6 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
 // move things out of frames)
 void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 
-// Compute framing statistics for a frame.
-void AccumulateSizeStats(absl::Span<Http2Frame> frames,
-                         grpc_transport_one_way_stats& stats);
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H

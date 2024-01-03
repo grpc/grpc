@@ -395,12 +395,12 @@ class WriteContext {
 
   grpc_chttp2_stream* NextStream() {
     if (IsChttp2NewWritesEnabled()) {
-      if (data_write_bytes_ > target_write_size_) {
+      if (data_write_bytes_ >= target_write_size_) {
         result_.partial = true;
         return nullptr;
       }
     } else {
-      if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
+      if (t_->outbuf.c_slice_buffer()->length >= target_write_size_) {
         result_.partial = true;
         return nullptr;
       }
@@ -437,9 +437,6 @@ class WriteContext {
 
   void AddFrame(Http2Frame&& frame) {
     GPR_ASSERT(IsChttp2NewWritesEnabled());
-    if (auto* p = absl::get_if<Http2DataFrame>(&frame)) {
-      data_write_bytes_ += p->payload.Length();
-    }
     frames_.emplace_back(std::move(frame));
   }
 
@@ -498,6 +495,7 @@ class DataSendContext {
     uint32_t send_bytes =
         static_cast<uint32_t>(std::min(static_cast<size_t>(max_outgoing()),
                                        s_->flow_controlled_buffer.length));
+    GPR_ASSERT(!is_last_frame_);
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
                      s_->send_trailing_metadata != nullptr &&
                      s_->send_trailing_metadata->empty();
@@ -507,6 +505,7 @@ class DataSendContext {
                                           send_bytes,
                                           frame.payload.c_slice_buffer());
       write_context_->AddFrame(std::move(frame));
+      s_->stats.outgoing.framing_bytes += 9;
     } else {
       grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
                               is_last_frame_, &s_->stats.outgoing,
@@ -548,14 +547,6 @@ class StreamWriteContext {
         gpr_log(GPR_INFO, "W:%p %s[%d] im-(sent,send)=(%d,%d)", t_,
                 t_->is_client ? "CLIENT" : "SERVER", s->id,
                 s->sent_initial_metadata, s->send_initial_metadata != nullptr));
-  }
-
-  ~StreamWriteContext() {
-    AccumulateSizeStats(
-        absl::Span<Http2Frame>(
-            write_context_->mutable_frames().data() + output_frames_before_,
-            write_context_->mutable_frames().size() - output_frames_before_),
-        s_->stats.outgoing);
   }
 
   void FlushInitialMetadata() {
@@ -616,6 +607,7 @@ class StreamWriteContext {
     if (stream_announce == 0) return;
     if (IsChttp2NewWritesEnabled()) {
       write_context_->AddFrame(Http2WindowUpdateFrame{s_->id, stream_announce});
+      s_->stats.outgoing.framing_bytes += 13;
     } else {
       grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
                             grpc_chttp2_window_update_create(
@@ -674,6 +666,7 @@ class StreamWriteContext {
     if (s_->send_trailing_metadata->empty()) {
       if (IsChttp2NewWritesEnabled()) {
         write_context_->AddFrame(Http2DataFrame{s_->id, true, SliceBuffer{}});
+        s_->stats.outgoing.framing_bytes += 9;
       } else {
         grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
                                 &s_->stats.outgoing,
@@ -739,6 +732,7 @@ class StreamWriteContext {
       if (IsChttp2NewWritesEnabled()) {
         write_context_->AddFrame(
             Http2RstStreamFrame{s_->id, GRPC_HTTP2_NO_ERROR});
+        s_->stats.outgoing.framing_bytes += 13;
       } else {
         grpc_slice_buffer_add(
             t_->outbuf.c_slice_buffer(),

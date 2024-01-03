@@ -103,8 +103,8 @@ class FakeCallTracer : public ClientCallTracer {
     }
 
    private:
-    static grpc_transport_stream_stats transport_stream_stats_
-        ABSL_GUARDED_BY(g_mu);
+    static grpc_transport_stream_stats transport_stream_stats_ ABSL_GUARDED_BY(
+        g_mu);
   };
 
   explicit FakeCallTracer() {}
@@ -192,8 +192,8 @@ class FakeServerCallTracer : public ServerCallTracer {
   }
 
  private:
-  static grpc_transport_stream_stats transport_stream_stats_
-      ABSL_GUARDED_BY(g_mu);
+  static grpc_transport_stream_stats transport_stream_stats_ ABSL_GUARDED_BY(
+      g_mu);
 };
 
 grpc_transport_stream_stats FakeServerCallTracer::transport_stream_stats_;
@@ -274,14 +274,16 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   // bytes from data header frame, 5 bytes from the grpc header on data and 9
   // bytes from the trailing header frame. The actual number might be more due
   // to RST_STREAM (13 bytes) and WINDOW_UPDATE (13 bytes) frames.
-  EXPECT_GE(client_transport_stats.outgoing.framing_bytes, 32);
-  EXPECT_LE(client_transport_stats.outgoing.framing_bytes, 58);
-  EXPECT_GE(client_transport_stats.incoming.framing_bytes, 32);
-  EXPECT_LE(client_transport_stats.incoming.framing_bytes, 58);
-  EXPECT_GE(server_transport_stats.outgoing.framing_bytes, 32);
-  EXPECT_LE(server_transport_stats.outgoing.framing_bytes, 58);
-  EXPECT_GE(server_transport_stats.incoming.framing_bytes, 32);
-  EXPECT_LE(server_transport_stats.incoming.framing_bytes, 58);
+  static const size_t kMinFramingBytes = 9 + 9 + 5 + 9;
+  static const size_t kMaxFramingBytes = kMinFramingBytes + 13 + 13;
+  EXPECT_GE(client_transport_stats.outgoing.framing_bytes, kMinFramingBytes);
+  EXPECT_LE(client_transport_stats.outgoing.framing_bytes, kMaxFramingBytes);
+  EXPECT_GE(client_transport_stats.incoming.framing_bytes, kMinFramingBytes);
+  EXPECT_LE(client_transport_stats.incoming.framing_bytes, kMaxFramingBytes);
+  EXPECT_GE(server_transport_stats.outgoing.framing_bytes, kMinFramingBytes);
+  EXPECT_LE(server_transport_stats.outgoing.framing_bytes, kMaxFramingBytes);
+  EXPECT_GE(server_transport_stats.incoming.framing_bytes, kMinFramingBytes);
+  EXPECT_LE(server_transport_stats.incoming.framing_bytes, kMaxFramingBytes);
 
   delete ServerCallTracerFactory::Get(ChannelArgs());
   ServerCallTracerFactory::RegisterGlobal(nullptr);

@@ -114,6 +114,8 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
                             SliceBuffer& raw, std::vector<Http2Frame>& output) {
   Http2HeaderFrame first;
   first.stream_id = options.stream_id;
+  options.stats->header_bytes += raw.Length();
+  options.stats->framing_bytes += 9;
   // per the HTTP/2 spec:
   //   A HEADERS frame carries the END_STREAM flag that signals the end of a
   //   stream. However, a HEADERS frame with the END_STREAM flag set can be
@@ -132,6 +134,7 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
   while (true) {
     Http2ContinuationFrame continuation;
     continuation.stream_id = options.stream_id;
+    options.stats->framing_bytes += 9;
     // per the HTTP/2 spec:
     //   A HEADERS frame without the END_HEADERS flag set MUST be followed by
     //   a CONTINUATION frame for the same stream.
