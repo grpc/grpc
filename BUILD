@@ -1592,6 +1592,7 @@ grpc_cc_library(
         "//src/core:poll",
         "//src/core:pollset_set",
         "//src/core:posix_event_engine_base_hdrs",
+        "//src/core:prioritized_race",
         "//src/core:promise_status",
         "//src/core:race",
         "//src/core:random_early_detection",

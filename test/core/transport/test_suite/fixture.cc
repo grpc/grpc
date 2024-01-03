@@ -12,10 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
+#include "test/core/transport/test_suite/fixture.h"
 
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
+namespace grpc_core {
 
-grpc_core::TraceFlag grpc_chaotic_good_trace(false, "chaotic_good");
+TransportFixtureRegistry& TransportFixtureRegistry::Get() {
+  static TransportFixtureRegistry* registry = new TransportFixtureRegistry();
+  return *registry;
+}
+void TransportFixtureRegistry::RegisterFixture(
+    absl::string_view name,
+    absl::AnyInvocable<TransportFixture*() const> create) {
+  fixtures_.push_back({name, std::move(create)});
+}
 
-namespace grpc_core {}  // namespace grpc_core
+}  // namespace grpc_core

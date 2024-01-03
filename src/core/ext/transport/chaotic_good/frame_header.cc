@@ -69,14 +69,6 @@ absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) {
   }
   header.message_length = ReadLittleEndianUint32(data + 12);
   header.message_padding = ReadLittleEndianUint32(data + 16);
-  if (header.flags.is_set(1) && header.message_length <= 0) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Invalid message length: ", header.message_length));
-  }
-  if (header.flags.is_set(1) && header.message_padding <= 0) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Invalid message padding: ", header.message_padding));
-  }
   header.trailer_length = ReadLittleEndianUint32(data + 20);
   return header;
 }
