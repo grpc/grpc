@@ -24,13 +24,13 @@
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
-#include "grpcpp/ext/otel_plugin.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/ext/gcp_observability.h>
+#include <grpcpp/ext/otel_plugin.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"

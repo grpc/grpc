@@ -714,11 +714,11 @@ class CustomPluginOption
 
   ~CustomPluginOption() override {}
 
-  bool IsActiveOnClientChannel(absl::string_view target) const override {
+  bool IsActiveOnClientChannel(absl::string_view /*target*/) const override {
     return enabled_on_client_;
   }
 
-  bool IsActiveOnServer(const grpc_core::ChannelArgs& args) const override {
+  bool IsActiveOnServer(const grpc_core::ChannelArgs& /*args*/) const override {
     return enabled_on_server_;
   }
 
