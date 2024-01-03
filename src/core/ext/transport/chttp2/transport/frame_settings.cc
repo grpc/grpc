@@ -142,7 +142,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                    GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
             t->num_pending_induced_frames++;
             if (grpc_core::IsChttp2NewWritesEnabled()) {
-              t->qframes.emplace_back(grpc_core::Http2SettingsFrame{true});
+              t->qframes.emplace_back(grpc_core::Http2SettingsFrame{true, {}});
             } else {
               grpc_slice_buffer_add(t->qbuf.c_slice_buffer(),
                                     grpc_chttp2_settings_ack_create());
