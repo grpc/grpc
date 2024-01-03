@@ -605,7 +605,7 @@ TEST_P(SslCredentialsTest, ServerHostnameVerificationFails) {
   });
   notification.WaitForNotification();
 
-  std::string root_cert = ReadFile(kClientCertPath);
+  std::string root_cert = ReadFile(kCaCertPath);
   std::string client_key = ReadFile(kClientKeyPath);
   std::string client_cert = ReadFile(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
@@ -618,8 +618,9 @@ TEST_P(SslCredentialsTest, ServerHostnameVerificationFails) {
   auto auth_context =
       DoRpc(ssl_options, cache, /*override_ssl_target_name=*/false);
   EXPECT_EQ(auth_context.status().code(), absl::StatusCode::kUnavailable);
-  EXPECT_THAT(auth_context.status().message(),
-              HasSubstr("CERTIFICATE_VERIFY_FAILED"));
+  // TODO(matthewstevenson88): Logs say "No match found for server name:
+  // localhost." but this error is not propagated to the user. Fix this.
+  EXPECT_FALSE(auth_context.status().message().empty());
   EXPECT_EQ(GetSessionCacheSize(cache), 0);
 
   grpc_ssl_session_cache_destroy(cache);
