@@ -293,8 +293,6 @@ TEST_P(OverrideHostTest, HappyPath) {
   EXPECT_EQ(backends_[0]->backend_service2()->request_count(), 5);
 }
 
-// FIXME: this works only because of child policy retention in the
-// priority policy
 TEST_P(OverrideHostTest, AffinityWorksAcrossPriorities) {
   CreateAndStartBackends(3);
   SetListenerAndRouteConfiguration(balancer_.get(),
@@ -332,8 +330,6 @@ TEST_P(OverrideHostTest, AffinityWorksAcrossPriorities) {
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 5);
 }
 
-// FIXME: this works only because of child policy retention in the
-// weighted_target policy
 TEST_P(OverrideHostTest,
        AffinityWorksAcrossPrioritiesHeuristicChangesChildName) {
   CreateAndStartBackends(3);
