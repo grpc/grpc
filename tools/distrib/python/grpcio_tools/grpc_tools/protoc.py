@@ -18,7 +18,11 @@ import os
 import sys
 
 from grpc_tools import _protoc_compiler
-from importlib.resources import files
+
+if sys.version_info.major == 3 and sys.version_info.minor >= 9:
+    from importlib.resources import files
+else:
+    import pkg_resources
 
 _PROTO_MODULE_SUFFIX = "_pb2"
 _SERVICE_MODULE_SUFFIX = "_pb2_grpc"
@@ -63,8 +67,17 @@ if sys.version_info >= (3, 5, 0):
                         ),
                     ]
                 )
-                proto_include = (files("grpc_tools") / "_proto").resolve()
-                sys.path.append(proto_include)
+
+                if sys.version_info.major == 3 and sys.version_info.minor >= 9:
+                    proto_include = (files("grpc_tools") / "_proto").resolve()
+                    sys.path.append(proto_include)
+                else:
+                    proto_include = pkg_resources.resource_filename(
+                        "grpc_tools", "_proto")
+                    sys.path.append(
+                        pkg_resources.resource_filename("grpc_tools", "_proto")
+                    )
+
                 _FINDERS_INSTALLED = True
 
     def _module_name_to_proto_file(suffix, module_name):
@@ -184,5 +197,8 @@ if sys.version_info >= (3, 5, 0):
         _maybe_install_proto_finders()
 
 if __name__ == "__main__":
-    proto_include = (files("grpc_tools") / "_proto").resolve()
+    if sys.version_info.major == 3 and sys.version_info.minor >= 9:
+        proto_include = (files("grpc_tools") / "_proto").resolve()
+    else:
+        proto_include = pkg_resources.resource_filename("grpc_tools", "_proto")
     sys.exit(main(sys.argv + ["-I{}".format(proto_include)]))
