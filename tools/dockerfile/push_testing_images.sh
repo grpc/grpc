@@ -86,8 +86,8 @@ fi
 for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
 do
   # Generate image name based on Dockerfile checksum. That works well as long
-  # as can count on dockerfiles being written in a way that changing the logical
-  # contents of the docker image always changes the SHA (e.g. using "ADD file"
+  # as can count on dockerfiles being written in a way that changing the logical 
+  # contents of the docker image always changes the SHA (e.g. using "ADD file" 
   # cmd in the dockerfile in not ok as contents of the added file will not be
   # reflected in the SHA).
   DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)
