@@ -155,16 +155,19 @@ class MetadataExchangeTest
   void VerifyServiceMeshAttributes(
       const std::map<std::string,
                      opentelemetry::sdk::common::OwnedAttributeValue>&
-          attributes) {
+          attributes,
+      bool verify_client_only_attributes = true) {
     EXPECT_EQ(
         absl::get<std::string>(attributes.at("csm.workload_canonical_service")),
         "canonical_service");
     EXPECT_EQ(absl::get<std::string>(attributes.at("csm.mesh_id")), "mesh-id");
-    EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_name")),
-              "unknown");
-    EXPECT_EQ(
-        absl::get<std::string>(attributes.at("csm.service_namespace_name")),
-        "unknown");
+    if (verify_client_only_attributes) {
+      EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_name")),
+                "unknown");
+      EXPECT_EQ(
+          absl::get<std::string>(attributes.at("csm.service_namespace_name")),
+          "unknown");
+    }
     switch (GetParam().type()) {
       case TestScenario::ResourceType::kGke:
         EXPECT_EQ(
@@ -297,7 +300,8 @@ TEST_P(MetadataExchangeTest, ServerCallDuration) {
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
-  VerifyServiceMeshAttributes(attributes);
+  VerifyServiceMeshAttributes(attributes,
+                              /*verify_client_only_attributes=*/false);
 }
 
 // Test that the server records unknown when the client does not send metadata

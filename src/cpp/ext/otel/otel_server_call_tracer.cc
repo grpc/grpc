@@ -185,7 +185,10 @@ void OpenTelemetryServerCallTracer::RecordEnd(
       additional_labels = {{{OTelMethodKey(), MethodForStats()},
                             {OTelStatusKey(), grpc_status_code_to_string(
                                                   final_info->final_status)}}};
-  KeyValueIterable labels(injected_labels_.get(), nullptr, additional_labels);
+  // Currently we do not have any optional labels on the server side.
+  KeyValueIterable labels(injected_labels_.get(),
+                          /*optional_labels_iterable=*/nullptr,
+                          additional_labels);
   if (OTelPluginState().server.call.duration != nullptr) {
     OTelPluginState().server.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,
