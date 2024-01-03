@@ -63,6 +63,7 @@ COMMIT_HASH_SUFFIX = '"'
 EXTERNAL_LINKS = [
     ("@com_google_absl//", "third_party/abseil-cpp/"),
     ("@com_google_protobuf//", "third_party/protobuf/"),
+    ("@utf8_range//", "third_party/protobuf/third_party/utf8_range"),
 ]
 
 PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//src/"
