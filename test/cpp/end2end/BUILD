@@ -1038,8 +1038,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "ssl_credentials_test",
-    srcs = ["ssl_credentials_test.cc"],
     timeout = "long",
+    srcs = ["ssl_credentials_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:client.key",
