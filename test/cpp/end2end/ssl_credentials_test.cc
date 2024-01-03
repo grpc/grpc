@@ -34,7 +34,9 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/tsi/ssl_transport_security.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -44,7 +46,6 @@
 // - Use P256, P384, P512 credentials.
 // - Use a long certificate chain.
 // - Use a large certificate.
-// - Cert verification failure.
 // - Large trust bundle.
 // - Bad ALPN.
 // - In TLS 1.2, play with the ciphersuites.
@@ -52,10 +53,16 @@
 // - Certs containing more SANs.
 // - Copy all of this over to tls_credentials_test.cc.
 // - Client doesn't have cert but server requests one.
+// - Bad session ticket in cache.
+// - Use same channel creds object on sequential/concurrent handshakes.
+// - Do successful handshake with a localhost server cert.
+// - Missing or malformed roots on both sides.
 
 namespace grpc {
 namespace testing {
 namespace {
+
+using ::testing::HasSubstr;
 
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
@@ -71,6 +78,12 @@ std::string ReadFile(const std::string& file_path) {
   std::string file_contents(grpc_core::StringViewFromSlice(slice));
   grpc_slice_unref(slice);
   return file_contents;
+}
+
+std::size_t GetSessionCacheSize(grpc_ssl_session_cache* cache) {
+  tsi_ssl_session_cache* tsi_cache =
+      reinterpret_cast<tsi_ssl_session_cache*>(cache);
+  return tsi_ssl_session_cache_size(tsi_cache);
 }
 
 void SetTlsVersion(grpc_tls_version tls_version, ChannelCredentials* creds) {
@@ -91,13 +104,13 @@ struct SslOptions {
 
 class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
  protected:
-  void RunServer(absl::Notification* notification) {
-    std::string root_cert = ReadFile(kCaCertPath);
+  void RunServer(absl::Notification* notification,
+                 absl::string_view pem_root_certs) {
     grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
         ReadFile(kServerKeyPath), ReadFile(kServerCertPath)};
     grpc::SslServerCredentialsOptions ssl_options(GetParam().request_type);
     ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
-    ssl_options.pem_root_certs = root_cert;
+    ssl_options.pem_root_certs = std::string(pem_root_certs);
 
     grpc::ServerBuilder builder;
     TestServiceImpl service_;
@@ -119,12 +132,15 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
   }
 
   absl::StatusOr<std::shared_ptr<const AuthContext>> DoRpc(
-      const SslCredentialsOptions& ssl_options, grpc_ssl_session_cache* cache) {
+      const SslCredentialsOptions& ssl_options, grpc_ssl_session_cache* cache,
+      bool override_ssl_target_name = true) {
     ChannelArguments channel_args;
     if (GetParam().use_session_cache) {
       channel_args.SetPointer(std::string(GRPC_SSL_SESSION_CACHE_ARG), cache);
     }
-    channel_args.SetSslTargetNameOverride("foo.test.google.fr");
+    if (override_ssl_target_name) {
+      channel_args.SetSslTargetNameOverride("foo.test.google.fr");
+    }
 
     auto creds = grpc::SslCredentials(ssl_options);
     SetTlsVersion(GetParam().tls_version, creds.get());
@@ -300,7 +316,10 @@ TEST_P(SslCredentialsTest, FullHandshake) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
-  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  server_thread_ = new std::thread([&]() {
+    std::string root_cert = ReadFile(kCaCertPath);
+    RunServer(&notification, root_cert);
+  });
   notification.WaitForNotification();
 
   std::string root_cert = ReadFile(kCaCertPath);
@@ -335,6 +354,9 @@ TEST_P(SslCredentialsTest, FullHandshake) {
   ExpectPeerEmailSans(*full_handshake_context, /*email_sans=*/{});
   ExpectPeerIpSans(*full_handshake_context, {"192.168.1.3"});
   ExpectNoSpiffeId(*full_handshake_context);
+  if (GetParam().use_session_cache) {
+    EXPECT_EQ(GetSessionCacheSize(cache), 1);
+  }
 
   grpc_ssl_session_cache_destroy(cache);
 }
@@ -346,7 +368,10 @@ TEST_P(SslCredentialsTest, ResumedHandshake) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
-  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  server_thread_ = new std::thread([&]() {
+    std::string root_cert = ReadFile(kCaCertPath);
+    RunServer(&notification, root_cert);
+  });
   notification.WaitForNotification();
 
   std::string root_cert = ReadFile(kCaCertPath);
@@ -385,6 +410,7 @@ TEST_P(SslCredentialsTest, ResumedHandshake) {
   ExpectPeerEmailSans(*resumed_handshake_context, /*email_sans=*/{});
   ExpectPeerIpSans(*resumed_handshake_context, {"192.168.1.3"});
   ExpectNoSpiffeId(*resumed_handshake_context);
+  EXPECT_EQ(GetSessionCacheSize(cache), 1);
 
   grpc_ssl_session_cache_destroy(cache);
 }
@@ -396,7 +422,10 @@ TEST_P(SslCredentialsTest, SequentialResumption) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
-  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  server_thread_ = new std::thread([&]() {
+    std::string root_cert = ReadFile(kCaCertPath);
+    RunServer(&notification, root_cert);
+  });
   notification.WaitForNotification();
 
   std::string root_cert = ReadFile(kCaCertPath);
@@ -428,7 +457,10 @@ TEST_P(SslCredentialsTest, ConcurrentResumption) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
-  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  server_thread_ = new std::thread([&]() {
+    std::string root_cert = ReadFile(kCaCertPath);
+    RunServer(&notification, root_cert);
+  });
   notification.WaitForNotification();
 
   std::string root_cert = ReadFile(kCaCertPath);
@@ -461,13 +493,13 @@ TEST_P(SslCredentialsTest, ConcurrentResumption) {
 }
 
 TEST_P(SslCredentialsTest, ResumptionFailsDueToNoCapacityInCache) {
-  // Skip this test if session caching is disabled.
-  if (!GetParam().use_session_cache) return;
-
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
-  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  server_thread_ = new std::thread([&]() {
+    std::string root_cert = ReadFile(kCaCertPath);
+    RunServer(&notification, root_cert);
+  });
   notification.WaitForNotification();
 
   std::string root_cert = ReadFile(kCaCertPath);
@@ -485,6 +517,109 @@ TEST_P(SslCredentialsTest, ResumptionFailsDueToNoCapacityInCache) {
     ExpectOk(full_handshake_context.status());
     ExpectNonResumedSession(*full_handshake_context);
   }
+
+  grpc_ssl_session_cache_destroy(cache);
+}
+
+TEST_P(SslCredentialsTest, ServerCertificateIsUntrusted) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    std::string root_cert = ReadFile(kCaCertPath);
+    RunServer(&notification, root_cert);
+  });
+  notification.WaitForNotification();
+
+  std::string root_cert = ReadFile(kClientCertPath);
+  std::string client_key = ReadFile(kClientKeyPath);
+  std::string client_cert = ReadFile(kClientCertPath);
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs = root_cert;
+  ssl_options.pem_private_key = client_key;
+  ssl_options.pem_cert_chain = client_cert;
+
+  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(0);
+
+  auto auth_context = DoRpc(ssl_options, cache);
+  EXPECT_EQ(auth_context.status().code(), absl::StatusCode::kUnavailable);
+  EXPECT_THAT(auth_context.status().message(),
+              HasSubstr("CERTIFICATE_VERIFY_FAILED"));
+  EXPECT_EQ(GetSessionCacheSize(cache), 0);
+
+  grpc_ssl_session_cache_destroy(cache);
+}
+
+TEST_P(SslCredentialsTest, ClientCertificateIsUntrusted) {
+  // Skip this test if the client certificate is not requested.
+  if (GetParam().request_type == grpc_ssl_client_certificate_request_type::
+                                     GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE)
+    return;
+
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    std::string root_cert = ReadFile(kServerCertPath);
+    RunServer(&notification, root_cert);
+  });
+  notification.WaitForNotification();
+
+  std::string root_cert = ReadFile(kClientCertPath);
+  std::string client_key = ReadFile(kClientKeyPath);
+  std::string client_cert = ReadFile(kClientCertPath);
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs = root_cert;
+  ssl_options.pem_private_key = client_key;
+  ssl_options.pem_cert_chain = client_cert;
+
+  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(0);
+
+  auto auth_context = DoRpc(ssl_options, cache);
+  if (GetParam().request_type ==
+          grpc_ssl_client_certificate_request_type::
+              GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY ||
+      GetParam().request_type ==
+          grpc_ssl_client_certificate_request_type::
+              GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY) {
+    EXPECT_EQ(auth_context.status().code(), absl::StatusCode::kUnavailable);
+    EXPECT_THAT(auth_context.status().message(),
+                HasSubstr("CERTIFICATE_VERIFY_FAILED"));
+    EXPECT_EQ(GetSessionCacheSize(cache), 0);
+  } else {
+    // TODO(matthewstevenson88): The handshake fails with a certificate
+    // verification error in these cases. This is a bug. Fix this.
+  }
+
+  grpc_ssl_session_cache_destroy(cache);
+}
+
+TEST_P(SslCredentialsTest, ServerHostnameVerificationFails) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    std::string root_cert = ReadFile(kCaCertPath);
+    RunServer(&notification, root_cert);
+  });
+  notification.WaitForNotification();
+
+  std::string root_cert = ReadFile(kClientCertPath);
+  std::string client_key = ReadFile(kClientKeyPath);
+  std::string client_cert = ReadFile(kClientCertPath);
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs = root_cert;
+  ssl_options.pem_private_key = client_key;
+  ssl_options.pem_cert_chain = client_cert;
+
+  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(0);
+
+  auto auth_context =
+      DoRpc(ssl_options, cache, /*override_ssl_target_name=*/false);
+  EXPECT_EQ(auth_context.status().code(), absl::StatusCode::kUnavailable);
+  EXPECT_THAT(auth_context.status().message(),
+              HasSubstr("CERTIFICATE_VERIFY_FAILED"));
+  EXPECT_EQ(GetSessionCacheSize(cache), 0);
 
   grpc_ssl_session_cache_destroy(cache);
 }
