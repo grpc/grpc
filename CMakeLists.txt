@@ -8820,7 +8820,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(chaotic_good_server_test
-  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc

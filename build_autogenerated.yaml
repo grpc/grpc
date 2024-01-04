@@ -7188,21 +7188,18 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   src:
-  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
