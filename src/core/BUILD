@@ -2232,12 +2232,9 @@ grpc_cc_library(
     name = "windows_native_resolver",
     srcs = ["lib/event_engine/windows/native_windows_dns_resolver.cc"],
     hdrs = ["lib/event_engine/windows/native_windows_dns_resolver.h"],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings:str_format"],
     deps = [
+        "ref_counted_dns_resolver_interface",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
