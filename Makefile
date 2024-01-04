@@ -2262,6 +2262,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/tsi/local_transport_security.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    third_party/protobuf/third_party/utf8_range/naive.c \
+    third_party/protobuf/third_party/utf8_range/range2-neon.c \
+    third_party/protobuf/third_party/utf8_range/range2-sse.c \
     third_party/upb/upb/message/accessors.c \
     third_party/upb/upb/mini_descriptor/build_enum.c \
     third_party/upb/upb/mini_descriptor/decode.c \
@@ -2562,6 +2565,9 @@ endif
 # transitive_deps: []
 LIBUPB_JSON_LIB_SRC = \
     src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c \
+    third_party/protobuf/third_party/utf8_range/naive.c \
+    third_party/protobuf/third_party/utf8_range/range2-neon.c \
+    third_party/protobuf/third_party/utf8_range/range2-sse.c \
     third_party/upb/upb/base/status.c \
     third_party/upb/upb/hash/common.c \
     third_party/upb/upb/json/decode.c \
@@ -2653,6 +2659,9 @@ endif
 # transitive_deps: []
 LIBUPB_TEXTFORMAT_LIB_SRC = \
     src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c \
+    third_party/protobuf/third_party/utf8_range/naive.c \
+    third_party/protobuf/third_party/utf8_range/range2-neon.c \
+    third_party/protobuf/third_party/utf8_range/range2-sse.c \
     third_party/upb/upb/base/status.c \
     third_party/upb/upb/hash/common.c \
     third_party/upb/upb/lex/atoi.c \

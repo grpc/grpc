@@ -2865,6 +2865,10 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_32.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64_msvc.h" role="src" />
+    <file baseinstalldir="/" name="third_party/protobuf/third_party/utf8_range/naive.c" role="src" />
+    <file baseinstalldir="/" name="third_party/protobuf/third_party/utf8_range/range2-neon.c" role="src" />
+    <file baseinstalldir="/" name="third_party/protobuf/third_party/utf8_range/range2-sse.c" role="src" />
+    <file baseinstalldir="/" name="third_party/protobuf/third_party/utf8_range/utf8_range.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/bitmap256.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/bitstate.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/compile.cc" role="src" />

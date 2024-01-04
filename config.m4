@@ -1276,6 +1276,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/tls13_server.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
+    third_party/protobuf/third_party/utf8_range/naive.c \
+    third_party/protobuf/third_party/utf8_range/range2-neon.c \
+    third_party/protobuf/third_party/utf8_range/range2-sse.c \
     third_party/re2/re2/bitstate.cc \
     third_party/re2/re2/compile.cc \
     third_party/re2/re2/dfa.cc \
@@ -1636,6 +1639,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/protobuf/third_party/utf8_range)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/base)

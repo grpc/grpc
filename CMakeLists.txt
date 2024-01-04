@@ -3212,6 +3212,9 @@ add_library(grpc_unsecure
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -3573,6 +3576,9 @@ endif()
 
 add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/base/status.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/json/decode.c
@@ -3670,6 +3676,9 @@ endif()
 
 add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/base/status.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/lex/atoi.c
@@ -5188,6 +5197,9 @@ add_library(grpc_authorization_provider
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
@@ -8931,6 +8943,9 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
@@ -11526,6 +11541,9 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
@@ -12226,6 +12244,9 @@ add_executable(flow_control_test
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/pid_controller.cc
   test/core/transport/chttp2/flow_control_test.cc
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
@@ -12309,6 +12330,9 @@ add_executable(for_each_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
@@ -15085,6 +15109,9 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/interceptor_list_test.cc
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
@@ -16007,6 +16034,9 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/map_pipe_test.cc
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
@@ -17703,6 +17733,9 @@ add_executable(periodic_update_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
@@ -24904,6 +24937,9 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/lib/uri/uri_parser.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   test/core/transport/chaotic_good/frame_test.cc
+  third_party/protobuf/third_party/utf8_range/naive.c
+  third_party/protobuf/third_party/utf8_range/range2-neon.c
+  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
