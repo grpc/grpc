@@ -60,19 +60,12 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
-const char* const description_memory_pressure_controller =
-    "New memory pressure controller";
-const char* const additional_constraints_memory_pressure_controller = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_overload_protection =
-    "If chttp2 has more streams than it can handle open, send RST_STREAM "
-    "immediately on new streams appearing.";
-const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -93,21 +86,22 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
-const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
-const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
-const char* const description_red_max_concurrent_streams =
-    "Perform random early rejection of requests that would exceed a newly "
-    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
-const char* const additional_constraints_red_max_concurrent_streams = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const uint8_t required_experiments_promise_based_inproc_transport[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
@@ -147,6 +141,18 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_v3_backend_metric_filter =
+    "Use the backend metric filter utilizing the v3 filter api";
+const char* const additional_constraints_v3_backend_metric_filter = "{}";
+const char* const description_v3_channel_idle_filters =
+    "Use the v3 filter API version of the idle filters.";
+const char* const additional_constraints_v3_channel_idle_filters = "{}";
+const char* const description_v3_compression_filter =
+    "Use the compression filter utilizing the v3 filter api";
+const char* const additional_constraints_v3_compression_filter = "{}";
+const char* const description_v3_server_auth_filter =
+    "Use the server auth filter utilizing the v3 filter api";
+const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -202,15 +208,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
-    {"memory_pressure_controller", description_memory_pressure_controller,
-     additional_constraints_memory_pressure_controller, nullptr, 0, false,
-     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"overload_protection", description_overload_protection,
-     additional_constraints_overload_protection, nullptr, 0, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
@@ -219,19 +220,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call, nullptr, 0, false, true},
-    {"promise_based_inproc_transport",
-     description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
-     false},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
-    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
-     additional_constraints_red_max_concurrent_streams, nullptr, 0, false,
-     true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
      true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport,
+     required_experiments_promise_based_inproc_transport, 3, false, false},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
@@ -259,6 +257,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
+    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
+     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
+    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
+     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
+    {"v3_compression_filter", description_v3_compression_filter,
+     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
+    {"v3_server_auth_filter", description_v3_server_auth_filter,
+     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -314,19 +320,12 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
-const char* const description_memory_pressure_controller =
-    "New memory pressure controller";
-const char* const additional_constraints_memory_pressure_controller = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_overload_protection =
-    "If chttp2 has more streams than it can handle open, send RST_STREAM "
-    "immediately on new streams appearing.";
-const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -347,21 +346,22 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
-const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
-const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
-const char* const description_red_max_concurrent_streams =
-    "Perform random early rejection of requests that would exceed a newly "
-    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
-const char* const additional_constraints_red_max_concurrent_streams = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const uint8_t required_experiments_promise_based_inproc_transport[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
@@ -401,6 +401,18 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_v3_backend_metric_filter =
+    "Use the backend metric filter utilizing the v3 filter api";
+const char* const additional_constraints_v3_backend_metric_filter = "{}";
+const char* const description_v3_channel_idle_filters =
+    "Use the v3 filter API version of the idle filters.";
+const char* const additional_constraints_v3_channel_idle_filters = "{}";
+const char* const description_v3_compression_filter =
+    "Use the compression filter utilizing the v3 filter api";
+const char* const additional_constraints_v3_compression_filter = "{}";
+const char* const description_v3_server_auth_filter =
+    "Use the server auth filter utilizing the v3 filter api";
+const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -456,15 +468,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
-    {"memory_pressure_controller", description_memory_pressure_controller,
-     additional_constraints_memory_pressure_controller, nullptr, 0, false,
-     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"overload_protection", description_overload_protection,
-     additional_constraints_overload_protection, nullptr, 0, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
@@ -473,19 +480,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call, nullptr, 0, false, true},
-    {"promise_based_inproc_transport",
-     description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
-     false},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
-    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
-     additional_constraints_red_max_concurrent_streams, nullptr, 0, false,
-     true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
      true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport,
+     required_experiments_promise_based_inproc_transport, 3, false, false},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
@@ -513,6 +517,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
+    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
+     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
+    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
+     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
+    {"v3_compression_filter", description_v3_compression_filter,
+     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
+    {"v3_server_auth_filter", description_v3_server_auth_filter,
+     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -568,19 +580,12 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
-const char* const description_memory_pressure_controller =
-    "New memory pressure controller";
-const char* const additional_constraints_memory_pressure_controller = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_overload_protection =
-    "If chttp2 has more streams than it can handle open, send RST_STREAM "
-    "immediately on new streams appearing.";
-const char* const additional_constraints_overload_protection = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -601,21 +606,22 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
-const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
-const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
-const char* const description_red_max_concurrent_streams =
-    "Perform random early rejection of requests that would exceed a newly "
-    "reduced MAX_CONCURRENT_STREAMS but are allowed by the current.";
-const char* const additional_constraints_red_max_concurrent_streams = "{}";
 const char* const description_registered_method_lookup_in_transport =
     "Change registered method's lookup point to transport";
 const char* const additional_constraints_registered_method_lookup_in_transport =
     "{}";
+const char* const description_promise_based_inproc_transport =
+    "Use promises for the in-process transport.";
+const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const uint8_t required_experiments_promise_based_inproc_transport[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
+    static_cast<uint8_t>(
+        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
 const char* const description_registered_methods_map =
     "Use absl::flat_hash_map for registered methods.";
 const char* const additional_constraints_registered_methods_map = "{}";
@@ -655,6 +661,18 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_v3_backend_metric_filter =
+    "Use the backend metric filter utilizing the v3 filter api";
+const char* const additional_constraints_v3_backend_metric_filter = "{}";
+const char* const description_v3_channel_idle_filters =
+    "Use the v3 filter API version of the idle filters.";
+const char* const additional_constraints_v3_channel_idle_filters = "{}";
+const char* const description_v3_compression_filter =
+    "Use the compression filter utilizing the v3 filter api";
+const char* const additional_constraints_v3_compression_filter = "{}";
+const char* const description_v3_server_auth_filter =
+    "Use the server auth filter utilizing the v3 filter api";
+const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -710,15 +728,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
-    {"memory_pressure_controller", description_memory_pressure_controller,
-     additional_constraints_memory_pressure_controller, nullptr, 0, false,
-     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"overload_protection", description_overload_protection,
-     additional_constraints_overload_protection, nullptr, 0, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
@@ -727,19 +740,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call, nullptr, 0, false, true},
-    {"promise_based_inproc_transport",
-     description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
-     false},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
-    {"red_max_concurrent_streams", description_red_max_concurrent_streams,
-     additional_constraints_red_max_concurrent_streams, nullptr, 0, false,
-     true},
     {"registered_method_lookup_in_transport",
      description_registered_method_lookup_in_transport,
      additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
      true, true},
+    {"promise_based_inproc_transport",
+     description_promise_based_inproc_transport,
+     additional_constraints_promise_based_inproc_transport,
+     required_experiments_promise_based_inproc_transport, 3, false, false},
     {"registered_methods_map", description_registered_methods_map,
      additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
@@ -767,6 +777,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
+    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
+     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
+    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
+     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
+    {"v3_compression_filter", description_v3_compression_filter,
+     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
+    {"v3_server_auth_filter", description_v3_server_auth_filter,
+     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,

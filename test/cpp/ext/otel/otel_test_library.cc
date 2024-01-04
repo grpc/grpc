@@ -29,6 +29,7 @@
 #include <grpcpp/grpcpp.h>
 
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "test/core/util/test_config.h"
@@ -38,11 +39,60 @@
 namespace grpc {
 namespace testing {
 
-void OTelPluginEnd2EndTest::Init(
+#define GRPC_ARG_CSM_SERVICE_NAME "grpc.testing.csm_service_name"
+#define GRPC_ARG_CSM_SERVICE_NAMESPACE_NAME \
+  "grpc.testing.csm_service_namespace_name"
+
+// A subchannel filter that adds the service labels for test to the
+// CallAttemptTracer in a call.
+class AddServiceLabelsFilter : public grpc_core::ChannelFilter {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<AddServiceLabelsFilter> Create(
+      const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
+    return AddServiceLabelsFilter(
+        args.GetString(GRPC_ARG_CSM_SERVICE_NAME).value(),
+        args.GetString(GRPC_ARG_CSM_SERVICE_NAMESPACE_NAME).value());
+  }
+
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
+      grpc_core::CallArgs call_args,
+      grpc_core::NextPromiseFactory next_promise_factory) override {
+    using CallAttemptTracer = grpc_core::ClientCallTracer::CallAttemptTracer;
+    auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
+    auto* call_tracer = static_cast<CallAttemptTracer*>(
+        call_context[GRPC_CONTEXT_CALL_TRACER].value);
+    EXPECT_NE(call_tracer, nullptr);
+    auto service_labels =
+        std::make_shared<std::map<std::string, std::string>>();
+    (*service_labels)["serviceName"] = service_name_;
+    (*service_labels)["serviceNamespace"] = service_namespace_;
+    call_tracer->AddOptionalLabels(
+        CallAttemptTracer::OptionalLabelComponent::kXdsServiceLabels,
+        service_labels);
+    return next_promise_factory(std::move(call_args));
+  }
+
+ private:
+  AddServiceLabelsFilter(absl::string_view service_name,
+                         absl::string_view service_namespace)
+      : service_name_(service_name), service_namespace_(service_namespace) {}
+
+  std::string service_name_;
+  std::string service_namespace_;
+};
+
+const grpc_channel_filter AddServiceLabelsFilter::kFilter =
+    grpc_core::MakePromiseBasedFilter<AddServiceLabelsFilter,
+                                      grpc_core::FilterEndpoint::kClient>(
+        "add_service_labels_filter");
+
+void OpenTelemetryPluginEnd2EndTest::Init(
     const absl::flat_hash_set<absl::string_view>& metric_names,
     opentelemetry::sdk::resource::Resource resource,
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector,
-    bool test_no_meter_provider,
+    bool test_no_meter_provider, bool add_service_labels_in_call,
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_selector,
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
@@ -59,7 +109,7 @@ void OTelPluginEnd2EndTest::Init(
   reader_.reset(new grpc::testing::MockMetricReader);
   meter_provider->AddMetricReader(reader_);
   grpc_core::CoreConfiguration::Reset();
-  grpc::internal::OpenTelemetryPluginBuilder ot_builder;
+  grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
   ot_builder.DisableAllMetrics();
   for (const auto& metric_name : metric_names) {
     ot_builder.EnableMetric(metric_name);
@@ -77,6 +127,18 @@ void OTelPluginEnd2EndTest::Init(
   ot_builder.SetGenericMethodAttributeFilter(
       std::move(generic_method_attribute_filter));
   ot_builder.BuildAndRegisterGlobal();
+  ChannelArguments channel_args;
+  if (add_service_labels_in_call) {
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) mutable {
+          builder->channel_init()->RegisterFilter(
+              GRPC_CLIENT_SUBCHANNEL, &AddServiceLabelsFilter::kFilter);
+        });
+    channel_args.SetString(GRPC_ARG_CSM_SERVICE_NAME,
+                           std::string(kServiceName));
+    channel_args.SetString(GRPC_ARG_CSM_SERVICE_NAMESPACE_NAME,
+                           std::string(kServiceNamespaceName));
+  }
   grpc_init();
   grpc::ServerBuilder builder;
   int port;
@@ -90,25 +152,26 @@ void OTelPluginEnd2EndTest::Init(
   server_address_ = absl::StrCat("localhost:", port);
   canonical_server_address_ = absl::StrCat("dns:///", server_address_);
 
-  auto channel =
-      grpc::CreateChannel(server_address_, grpc::InsecureChannelCredentials());
+  auto channel = grpc::CreateCustomChannel(
+      server_address_, grpc::InsecureChannelCredentials(), channel_args);
   stub_ = EchoTestService::NewStub(channel);
   generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
 }
 
-void OTelPluginEnd2EndTest::TearDown() {
+void OpenTelemetryPluginEnd2EndTest::TearDown() {
   server_->Shutdown();
   grpc_shutdown_blocking();
   delete grpc_core::ServerCallTracerFactory::Get(grpc_core::ChannelArgs());
   grpc_core::ServerCallTracerFactory::RegisterGlobal(nullptr);
 }
 
-void OTelPluginEnd2EndTest::ResetStub(std::shared_ptr<Channel> channel) {
+void OpenTelemetryPluginEnd2EndTest::ResetStub(
+    std::shared_ptr<Channel> channel) {
   stub_ = EchoTestService::NewStub(channel);
   generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
 }
 
-void OTelPluginEnd2EndTest::SendRPC() {
+void OpenTelemetryPluginEnd2EndTest::SendRPC() {
   EchoRequest request;
   request.set_message("foo");
   EchoResponse response;
@@ -116,7 +179,7 @@ void OTelPluginEnd2EndTest::SendRPC() {
   grpc::Status status = stub_->Echo(&context, request, &response);
 }
 
-void OTelPluginEnd2EndTest::SendGenericRPC() {
+void OpenTelemetryPluginEnd2EndTest::SendGenericRPC() {
   grpc::ClientContext context;
   EchoRequest request;
   std::unique_ptr<ByteBuffer> send_buf = SerializeToByteBuffer(&request);
@@ -130,7 +193,7 @@ void OTelPluginEnd2EndTest::SendGenericRPC() {
 
 absl::flat_hash_map<
     std::string, std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
-OTelPluginEnd2EndTest::ReadCurrentMetricsData(
+OpenTelemetryPluginEnd2EndTest::ReadCurrentMetricsData(
     absl::AnyInvocable<
         bool(const absl::flat_hash_map<
              std::string,

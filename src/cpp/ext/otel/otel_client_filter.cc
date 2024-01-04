@@ -76,8 +76,8 @@ absl::StatusOr<OpenTelemetryClientFilter> OpenTelemetryClientFilter::Create(
   std::string target = args.GetOwnedString(GRPC_ARG_SERVER_URI).value_or("");
   // Use the original target string only if a filter on the attribute is not
   // registered or if the filter returns true, otherwise use "other".
-  if (OTelPluginState().target_attribute_filter == nullptr ||
-      OTelPluginState().target_attribute_filter(target)) {
+  if (OpenTelemetryPluginState().target_attribute_filter == nullptr ||
+      OpenTelemetryPluginState().target_attribute_filter(target)) {
     return OpenTelemetryClientFilter(std::move(target));
   }
   return OpenTelemetryClientFilter("other");
@@ -116,13 +116,14 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     : parent_(parent),
       arena_allocated_(arena_allocated),
       start_time_(absl::Now()) {
-  if (OTelPluginState().client.attempt.started != nullptr) {
+  if (OpenTelemetryPluginState().client.attempt.started != nullptr) {
     std::array<std::pair<absl::string_view, absl::string_view>, 2>
-        additional_labels = {{{OTelMethodKey(), parent_->MethodForStats()},
-                              {OTelTargetKey(), parent_->parent_->target()}}};
+        additional_labels = {
+            {{OpenTelemetryMethodKey(), parent_->MethodForStats()},
+             {OpenTelemetryTargetKey(), parent_->parent_->target()}}};
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
-    OTelPluginState().client.attempt.started->Add(
+    OpenTelemetryPluginState().client.attempt.started->Add(
         1, KeyValueIterable(/*injected_labels_iterable=*/nullptr,
                             /*optional_labels_iterable=*/nullptr,
                             additional_labels));
@@ -131,17 +132,17 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordReceivedInitialMetadata(grpc_metadata_batch* recv_initial_metadata) {
-  if (OTelPluginState().labels_injector != nullptr) {
-    injected_labels_ =
-        OTelPluginState().labels_injector->GetLabels(recv_initial_metadata);
+  if (OpenTelemetryPluginState().labels_injector != nullptr) {
+    injected_labels_ = OpenTelemetryPluginState().labels_injector->GetLabels(
+        recv_initial_metadata);
   }
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
-  if (OTelPluginState().labels_injector != nullptr) {
-    OTelPluginState().labels_injector->AddLabels(send_initial_metadata,
-                                                 nullptr);
+  if (OpenTelemetryPluginState().labels_injector != nullptr) {
+    OpenTelemetryPluginState().labels_injector->AddLabels(send_initial_metadata,
+                                                          nullptr);
   }
 }
 
@@ -176,39 +177,42 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) {
   std::array<std::pair<absl::string_view, absl::string_view>, 3>
-      additional_labels = {{{OTelMethodKey(), parent_->MethodForStats()},
-                            {OTelTargetKey(), parent_->parent_->target()},
-                            {OTelStatusKey(), grpc_status_code_to_string(
-                                                  static_cast<grpc_status_code>(
-                                                      status.code()))}}};
+      additional_labels = {
+          {{OpenTelemetryMethodKey(), parent_->MethodForStats()},
+           {OpenTelemetryTargetKey(), parent_->parent_->target()},
+           {OpenTelemetryStatusKey(),
+            grpc_status_code_to_string(
+                static_cast<grpc_status_code>(status.code()))}}};
   std::unique_ptr<LabelsIterable> optional_labels;
-  if (OTelPluginState().labels_injector != nullptr) {
+  if (OpenTelemetryPluginState().labels_injector != nullptr) {
     optional_labels =
-        OTelPluginState().labels_injector->GetLabelsFromOptionalLabels(
+        OpenTelemetryPluginState().labels_injector->GetLabelsFromOptionalLabels(
             optional_labels_vector_);
   }
   KeyValueIterable labels(injected_labels_.get(), optional_labels.get(),
                           additional_labels);
-  if (OTelPluginState().client.attempt.duration != nullptr) {
-    OTelPluginState().client.attempt.duration->Record(
+  if (OpenTelemetryPluginState().client.attempt.duration != nullptr) {
+    OpenTelemetryPluginState().client.attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,
         opentelemetry::context::Context{});
   }
-  if (OTelPluginState().client.attempt.sent_total_compressed_message_size !=
-      nullptr) {
-    OTelPluginState().client.attempt.sent_total_compressed_message_size->Record(
-        transport_stream_stats != nullptr
-            ? transport_stream_stats->outgoing.data_bytes
-            : 0,
-        labels, opentelemetry::context::Context{});
+  if (OpenTelemetryPluginState()
+          .client.attempt.sent_total_compressed_message_size != nullptr) {
+    OpenTelemetryPluginState()
+        .client.attempt.sent_total_compressed_message_size->Record(
+            transport_stream_stats != nullptr
+                ? transport_stream_stats->outgoing.data_bytes
+                : 0,
+            labels, opentelemetry::context::Context{});
   }
-  if (OTelPluginState().client.attempt.rcvd_total_compressed_message_size !=
-      nullptr) {
-    OTelPluginState().client.attempt.rcvd_total_compressed_message_size->Record(
-        transport_stream_stats != nullptr
-            ? transport_stream_stats->incoming.data_bytes
-            : 0,
-        labels, opentelemetry::context::Context{});
+  if (OpenTelemetryPluginState()
+          .client.attempt.rcvd_total_compressed_message_size != nullptr) {
+    OpenTelemetryPluginState()
+        .client.attempt.rcvd_total_compressed_message_size->Record(
+            transport_stream_stats != nullptr
+                ? transport_stream_stats->incoming.data_bytes
+                : 0,
+            labels, opentelemetry::context::Context{});
   }
 }
 
@@ -288,8 +292,8 @@ OpenTelemetryCallTracer::StartNewAttempt(bool is_transparent_retry) {
 absl::string_view OpenTelemetryCallTracer::MethodForStats() const {
   absl::string_view method = absl::StripPrefix(path_.as_string_view(), "/");
   if (registered_method_ ||
-      (OTelPluginState().generic_method_attribute_filter != nullptr &&
-       OTelPluginState().generic_method_attribute_filter(method))) {
+      (OpenTelemetryPluginState().generic_method_attribute_filter != nullptr &&
+       OpenTelemetryPluginState().generic_method_attribute_filter(method))) {
     return method;
   }
   return "other";

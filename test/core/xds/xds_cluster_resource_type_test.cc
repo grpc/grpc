@@ -1349,11 +1349,66 @@ TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.override_host_statuses,
-              ::testing::UnorderedElementsAre(
-                  XdsHealthStatus(XdsHealthStatus::kUnknown),
-                  XdsHealthStatus(XdsHealthStatus::kHealthy),
-                  XdsHealthStatus(XdsHealthStatus::kDraining)));
+  EXPECT_EQ(resource.override_host_statuses.ToString(),
+            "{UNKNOWN, HEALTHY, DRAINING}");
+}
+
+TEST_F(HostOverrideStatusTest,
+       DefaultsToUnknownAndHealthyWithoutCommonLbConfig) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.override_host_statuses.ToString(), "{UNKNOWN, HEALTHY}");
+}
+
+TEST_F(HostOverrideStatusTest,
+       DefaultsToUnknownAndHealthyWithoutOverrideHostStatus) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_common_lb_config();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.override_host_statuses.ToString(), "{UNKNOWN, HEALTHY}");
+}
+
+TEST_F(HostOverrideStatusTest, CanExplicitlySetToEmpty) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_common_lb_config()->mutable_override_host_status();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.override_host_statuses.ToString(), "{}");
 }
 
 using TelemetryLabelTest = XdsClusterTest;

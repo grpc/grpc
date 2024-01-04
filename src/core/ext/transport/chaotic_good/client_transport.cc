@@ -16,6 +16,7 @@
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -77,8 +78,7 @@ ClientTransport::ClientTransport(
                 control_endpoint_write_buffer_.Append(
                     frame->Serialize(hpack_compressor_.get()));
                 if (frame->message != nullptr) {
-                  std::string message_padding(
-                      frame->frame_header.message_padding, '0');
+                  std::string message_padding(frame->message_padding, '0');
                   Slice slice(grpc_slice_from_cpp_string(message_padding));
                   // Append message padding to data_endpoint_buffer.
                   data_endpoint_write_buffer_.Append(std::move(slice));
@@ -96,7 +96,7 @@ ClientTransport::ClientTransport(
         },
         // Write buffers to corresponding endpoints concurrently.
         [this]() {
-          return TryJoin(
+          return TryJoin<absl::StatusOr>(
               control_endpoint_->Write(
                   std::move(control_endpoint_write_buffer_)),
               data_endpoint_->Write(std::move(data_endpoint_write_buffer_)));
@@ -134,7 +134,7 @@ ClientTransport::ClientTransport(
                   .value());
           // Read header and trailers from control endpoint.
           // Read message padding and message from data endpoint.
-          return TryJoin(
+          return TryJoin<absl::StatusOr>(
               control_endpoint_->Read(frame_header_->GetFrameLength()),
               data_endpoint_->Read(frame_header_->message_padding +
                                    frame_header_->message_length));
@@ -157,11 +157,9 @@ ClientTransport::ClientTransport(
           // Move message into frame.
           frame.message = arena_->MakePooled<Message>(
               std::move(data_endpoint_read_buffer_), 0);
-          auto stream_id = frame.frame_header.stream_id;
-          {
-            MutexLock lock(&mu_);
-            return stream_map_[stream_id]->Push(ServerFrame(std::move(frame)));
-          }
+          MutexLock lock(&mu_);
+          const uint32_t stream_id = frame_header_->stream_id;
+          return stream_map_[stream_id]->Push(ServerFrame(std::move(frame)));
         },
         // Check if send frame to corresponding stream successfully.
         [](bool ret) -> LoopCtl<absl::Status> {

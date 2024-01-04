@@ -123,25 +123,20 @@ if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
   # Instantiate the virtualenv from the Python version passed in.
-  $PYTHON -m pip install --user virtualenv==20.0.23
-  $PYTHON -m virtualenv "$VENV"
+  $PYTHON -m pip install --user virtualenv==20.25.0
+  # Use --no-seed to prevent virtualenv from installing seed packages.
+  # Otherwise it might not find cython module while building grpcio.
+  $PYTHON -m virtualenv --no-seed "$VENV"
   VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
-
-# On library/version/platforms combo that do not have a binary
-# published, we may end up building a dependency from source. In that
-# case, several of our build environment variables may disrupt the
-# third-party build process. This function pipes through only the
-# minimal environment necessary.
 pip_install() {
-  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
+  $VENV_PYTHON -m pip install "$@"
 }
 
-# Pin setuptools to < 60.0.0 to restore the distutil installation, see:
-# https://github.com/pypa/setuptools/pull/2896
-pip_install --upgrade pip==21.3.1
-pip_install --upgrade setuptools==59.6.0
+$VENV_PYTHON -m ensurepip --upgrade
+pip_install --upgrade wheel
+pip_install --upgrade setuptools==66.1.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -175,6 +170,15 @@ pip_install_dir "$ROOT"
 
 $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
 pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"
+
+# Build/install Observability
+# Observability does not support Windows and MacOS.
+if [ "$(is_mingw)" ] || [ "$(is_darwin)" ]; then
+  echo "Skip building grpcio_observability for Windows or MacOS"
+else
+  $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
+  pip_install_dir_and_deps "$ROOT/src/python/grpcio_observability"
+fi
 
 # Build/install Channelz
 $VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" preprocess

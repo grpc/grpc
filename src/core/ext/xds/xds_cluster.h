@@ -95,7 +95,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   absl::optional<OutlierDetectionConfig> outlier_detection;
 
-  std::set<XdsHealthStatus> override_host_statuses;
+  XdsHealthStatusSet override_host_statuses;
 
   std::map<std::string, std::string> telemetry_labels;
 

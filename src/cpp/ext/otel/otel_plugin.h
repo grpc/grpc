@@ -43,7 +43,7 @@ namespace grpc {
 namespace internal {
 
 // An iterable container interface that can be used as a return type for the
-// OTel plugin's label injector.
+// OpenTelemetry plugin's label injector.
 class LabelsIterable {
  public:
   virtual ~LabelsIterable() = default;
@@ -60,7 +60,7 @@ class LabelsIterable {
 };
 
 // An interface that allows you to add additional labels on the calls traced
-// through the OTel plugin.
+// through the OpenTelemetry plugin.
 class LabelsInjector {
  public:
   virtual ~LabelsInjector() {}
@@ -83,7 +83,7 @@ class LabelsInjector {
           optional_labels) = 0;
 };
 
-struct OTelPluginState {
+struct OpenTelemetryPluginState {
   struct Client {
     struct Attempt {
       std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
@@ -115,33 +115,21 @@ struct OTelPluginState {
       server_selector;
 };
 
-const struct OTelPluginState& OTelPluginState();
+const struct OpenTelemetryPluginState& OpenTelemetryPluginState();
 
 // Tags
-absl::string_view OTelMethodKey();
-absl::string_view OTelStatusKey();
-absl::string_view OTelTargetKey();
+absl::string_view OpenTelemetryMethodKey();
+absl::string_view OpenTelemetryStatusKey();
+absl::string_view OpenTelemetryTargetKey();
 
-// Metrics
-absl::string_view OTelClientAttemptStartedInstrumentName();
-absl::string_view OTelClientAttemptDurationInstrumentName();
-absl::string_view
-OTelClientAttemptSentTotalCompressedMessageSizeInstrumentName();
-absl::string_view
-OTelClientAttemptRcvdTotalCompressedMessageSizeInstrumentName();
-absl::string_view OTelServerCallStartedInstrumentName();
-absl::string_view OTelServerCallDurationInstrumentName();
-absl::string_view OTelServerCallSentTotalCompressedMessageSizeInstrumentName();
-absl::string_view OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName();
-
-class OpenTelemetryPluginBuilder {
+class OpenTelemetryPluginBuilderImpl {
  public:
-  OpenTelemetryPluginBuilder();
+  OpenTelemetryPluginBuilderImpl();
   // If `SetMeterProvider()` is not called, no metrics are collected.
-  OpenTelemetryPluginBuilder& SetMeterProvider(
+  OpenTelemetryPluginBuilderImpl& SetMeterProvider(
       std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider);
-  // Methods to manipulate which instruments are enabled in the OTel Stats
-  // Plugin. The default set of instruments are -
+  // Methods to manipulate which instruments are enabled in the OpenTelemetry
+  // Stats Plugin. The default set of instruments are -
   // grpc.client.attempt.started
   // grpc.client.attempt.duration
   // grpc.client.attempt.sent_total_compressed_message_size
@@ -150,22 +138,22 @@ class OpenTelemetryPluginBuilder {
   // grpc.server.call.duration
   // grpc.server.call.sent_total_compressed_message_size
   // grpc.server.call.rcvd_total_compressed_message_size
-  OpenTelemetryPluginBuilder& EnableMetric(absl::string_view metric_name);
-  OpenTelemetryPluginBuilder& DisableMetric(absl::string_view metric_name);
-  OpenTelemetryPluginBuilder& DisableAllMetrics();
+  OpenTelemetryPluginBuilderImpl& EnableMetric(absl::string_view metric_name);
+  OpenTelemetryPluginBuilderImpl& DisableMetric(absl::string_view metric_name);
+  OpenTelemetryPluginBuilderImpl& DisableAllMetrics();
   // Allows setting a labels injector on calls traced through this plugin.
-  OpenTelemetryPluginBuilder& SetLabelsInjector(
+  OpenTelemetryPluginBuilderImpl& SetLabelsInjector(
       std::unique_ptr<LabelsInjector> labels_injector);
   // If set, \a target_selector is called per channel to decide whether to
   // collect metrics on that target or not.
-  OpenTelemetryPluginBuilder& SetTargetSelector(
+  OpenTelemetryPluginBuilderImpl& SetTargetSelector(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_selector);
   // If set, \a server_selector is called per incoming call on the server
   // to decide whether to collect metrics on that call or not.
   // TODO(yashkt): We should only need to do this per server connection or even
   // per server. Change this when we have a ServerTracer.
-  OpenTelemetryPluginBuilder& SetServerSelector(
+  OpenTelemetryPluginBuilderImpl& SetServerSelector(
       absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
           server_selector);
   // If set, \a target_attribute_filter is called per channel to decide whether
@@ -173,7 +161,7 @@ class OpenTelemetryPluginBuilder {
   // This helps reduce the cardinality on metrics in cases where many channels
   // are created with different targets in the same binary (which might happen
   // for example, if the channel target string uses IP addresses directly).
-  OpenTelemetryPluginBuilder& SetTargetAttributeFilter(
+  OpenTelemetryPluginBuilderImpl& SetTargetAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attribute_filter);
   // If set, \a generic_method_attribute_filter is called per call with a
@@ -181,7 +169,7 @@ class OpenTelemetryPluginBuilder {
   // replace it with "other". Non-generic or pre-registered methods remain
   // unaffected. If not set, by default, generic method names are replaced with
   // "other" when recording metrics.
-  OpenTelemetryPluginBuilder& SetGenericMethodAttributeFilter(
+  OpenTelemetryPluginBuilderImpl& SetGenericMethodAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter);
   void BuildAndRegisterGlobal();

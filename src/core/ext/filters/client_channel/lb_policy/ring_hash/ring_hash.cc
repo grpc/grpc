@@ -346,7 +346,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         return endpoint_info.picker->Pick(args);
       case GRPC_CHANNEL_IDLE:
         new EndpointConnectionAttempter(
-            ring_hash_->Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
+            ring_hash_.Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
             endpoint_info.endpoint);
         ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHANNEL_CONNECTING:
@@ -677,8 +677,8 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       it->second->UpdateLocked(i);
       endpoint_map.emplace(address_set, std::move(it->second));
     } else {
-      endpoint_map.emplace(address_set,
-                           MakeOrphanable<RingHashEndpoint>(Ref(), i));
+      endpoint_map.emplace(address_set, MakeOrphanable<RingHashEndpoint>(
+                                            RefAsSubclass<RingHash>(), i));
     }
   }
   endpoint_map_ = std::move(endpoint_map);
@@ -779,7 +779,8 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
   // Note that we use our own picker regardless of connectivity state.
   channel_control_helper()->UpdateState(
       state, status,
-      MakeRefCounted<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
+      MakeRefCounted<Picker>(
+          RefAsSubclass<RingHash>(DEBUG_LOCATION, "RingHashPicker")));
   // While the ring_hash policy is reporting TRANSIENT_FAILURE, it will
   // not be getting any pick requests from the priority policy.
   // However, because the ring_hash policy does not attempt to

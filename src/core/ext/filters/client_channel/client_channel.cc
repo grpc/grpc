@@ -407,6 +407,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
 const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
     ClientChannel::MakeCallPromise,
+    /* init_call: */ nullptr,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -423,6 +424,7 @@ const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
 const grpc_channel_filter ClientChannel::kFilterVtableWithoutPromises = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
     nullptr,
+    /* init_call: */ nullptr,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -570,6 +572,7 @@ class DynamicTerminationFilter::CallData {
 const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     DynamicTerminationFilter::CallData::StartTransportStreamOpBatch,
     DynamicTerminationFilter::MakeCallPromise,
+    /* init_call: */ nullptr,
     DynamicTerminationFilter::StartTransportOp,
     sizeof(DynamicTerminationFilter::CallData),
     DynamicTerminationFilter::CallData::Init,
@@ -711,8 +714,9 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     auto& watcher_wrapper = watcher_map_[watcher.get()];
     GPR_ASSERT(watcher_wrapper == nullptr);
-    watcher_wrapper = new WatcherWrapper(std::move(watcher),
-                                         Ref(DEBUG_LOCATION, "WatcherWrapper"));
+    watcher_wrapper = new WatcherWrapper(
+        std::move(watcher),
+        RefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
     subchannel_->WatchConnectivityState(
         RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
             watcher_wrapper));
@@ -916,7 +920,8 @@ ClientChannel::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
     GPR_ASSERT(chand->external_watchers_[on_complete] == nullptr);
     // Store a ref to the watcher in the external_watchers_ map.
     chand->external_watchers_[on_complete] =
-        Ref(DEBUG_LOCATION, "AddWatcherToExternalWatchersMapLocked");
+        RefAsSubclass<ExternalConnectivityWatcher>(
+            DEBUG_LOCATION, "AddWatcherToExternalWatchersMapLocked");
   }
   // Pass the ref from creating the object to Start().
   chand_->work_serializer_->Run(
@@ -3425,7 +3430,8 @@ void ClientChannel::FilterBasedLoadBalancedCall::TryPick(bool was_queued) {
 
 void ClientChannel::FilterBasedLoadBalancedCall::OnAddToQueueLocked() {
   // Register call combiner cancellation callback.
-  lb_call_canceller_ = new LbQueuedCallCanceller(Ref());
+  lb_call_canceller_ =
+      new LbQueuedCallCanceller(RefAsSubclass<FilterBasedLoadBalancedCall>());
 }
 
 void ClientChannel::FilterBasedLoadBalancedCall::RetryPickLocked() {
@@ -3514,7 +3520,7 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
   }
   // Extract peer name from server initial metadata.
   call_args.server_initial_metadata->InterceptAndMap(
-      [self = RefCountedPtr<PromiseBasedLoadBalancedCall>(lb_call->Ref())](
+      [self = lb_call->RefAsSubclass<PromiseBasedLoadBalancedCall>()](
           ServerMetadataHandle metadata) {
         if (self->call_attempt_tracer() != nullptr) {
           self->call_attempt_tracer()->RecordReceivedInitialMetadata(

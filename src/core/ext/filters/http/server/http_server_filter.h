@@ -47,6 +47,7 @@ class HttpServerFilter : public ImplementChannelFilter<HttpServerFilter> {
     void OnServerTrailingMetadata(ServerMetadata& md);
     static const NoInterceptor OnClientToServerMessage;
     static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
   };
 
  private:

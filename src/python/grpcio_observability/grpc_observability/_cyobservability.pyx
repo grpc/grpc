@@ -22,7 +22,7 @@ import os
 from threading import Thread
 from typing import List, Mapping, Tuple, Union
 
-import _observability
+from grpc_observability import _observability
 
 # Time we wait for batch exporting census data
 # TODO(xuanwn): change interval to a more appropriate number
@@ -72,7 +72,6 @@ class MetricsName(enum.Enum):
   CLIENT_RETRIES_PER_CALL = _CyMetricsName.CY_CLIENT_RETRIES_PER_CALL
   CLIENT_TRANSPARENT_RETRIES_PER_CALL = _CyMetricsName.CY_CLIENT_TRANSPARENT_RETRIES_PER_CALL
   CLIENT_RETRY_DELAY_PER_CALL = _CyMetricsName.CY_CLIENT_RETRY_DELAY_PER_CALL
-  CLIENT_TRANSPORT_LATENCY = _CyMetricsName.CY_CLIENT_TRANSPORT_LATENCY
   SERVER_SENT_MESSAGES_PER_RPC = _CyMetricsName.CY_SERVER_SENT_MESSAGES_PER_RPC
   SERVER_SENT_BYTES_PER_RPC = _CyMetricsName.CY_SERVER_SENT_BYTES_PER_RPC
   SERVER_RECEIVED_MESSAGES_PER_RPC = _CyMetricsName.CY_SERVER_RECEIVED_MESSAGES_PER_RPC
@@ -101,41 +100,33 @@ def _start_exporting_thread(object exporter) -> None:
   GLOBAL_EXPORT_THREAD = Thread(target=_export_census_data, args=(exporter,))
   GLOBAL_EXPORT_THREAD.start()
 
+def activate_config(object py_config) -> None:
+  py_config: "_observability_config.GcpObservabilityConfig"
 
-def set_gcp_observability_config(object py_config) -> bool:
-  py_config: _gcp_observability.GcpObservabilityPythonConfig
-
-  py_labels = {}
-  sampling_rate = 0.0
-
-  cdef cGcpObservabilityConfig c_config = ReadAndActivateObservabilityConfig()
-  if not c_config.is_valid:
-    return False
-
-  for label in c_config.labels:
-    py_labels[_decode(label.key)] = _decode(label.value)
-
-  if PythonCensusTracingEnabled():
-    sampling_rate = c_config.cloud_trace.sampling_rate
+  if (py_config.tracing_enabled):
+    EnablePythonCensusTracing(True);
     # Save sampling rate to global sampler.
-    ProbabilitySampler.Get().SetThreshold(sampling_rate)
+    ProbabilitySampler.Get().SetThreshold(py_config.sampling_rate)
 
-  py_config.set_configuration(_decode(c_config.project_id), sampling_rate, py_labels,
-                              PythonCensusTracingEnabled(), PythonCensusStatsEnabled())
-  return True
+  if (py_config.stats_enabled):
+    EnablePythonCensusStats(True);
+
+def activate_stats() -> None:
+  EnablePythonCensusStats(True);
 
 
-def create_client_call_tracer(bytes method_name, bytes trace_id,
+def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id,
                               bytes parent_span_id=b'') -> cpython.PyObject:
   """Create a ClientCallTracer and save to PyCapsule.
 
   Returns: A grpc_observability._observability.ClientCallTracerCapsule object.
   """
   cdef char* c_method = cpython.PyBytes_AsString(method_name)
+  cdef char* c_target = cpython.PyBytes_AsString(target)
   cdef char* c_trace_id = cpython.PyBytes_AsString(trace_id)
   cdef char* c_parent_span_id = cpython.PyBytes_AsString(parent_span_id)
 
-  cdef void* call_tracer = CreateClientCallTracer(c_method, c_trace_id, c_parent_span_id)
+  cdef void* call_tracer = CreateClientCallTracer(c_method, c_target, c_trace_id, c_parent_span_id)
   capsule = cpython.PyCapsule_New(call_tracer, CLIENT_CALL_TRACER, NULL)
   return capsule
 
@@ -257,7 +248,7 @@ def _get_tracing_data(SpanCensusData span_data, vector[Label] span_labels,
                                     span_annotations = py_span_annotations)
 
 
-def _record_rpc_latency(object exporter, str method, float rpc_latency, str status_code) -> None:
+def _record_rpc_latency(object exporter, str method, str target, float rpc_latency, str status_code) -> None:
   exporter: _observability.Exporter
 
   measurement = {}
@@ -267,6 +258,7 @@ def _record_rpc_latency(object exporter, str method, float rpc_latency, str stat
 
   labels = {}
   labels[_decode(kClientMethod)] = method.strip("/")
+  labels[_decode(kClientTarget)] = target
   labels[_decode(kClientStatus)] = status_code
   metric = _get_stats_data(measurement, labels)
   exporter.export_stats_data([metric])

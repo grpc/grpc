@@ -165,7 +165,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_wrr_locality_lb_trace)) {
     gpr_log(GPR_INFO, "[xds_wrr_locality_lb %p] Received update", this);
   }
-  RefCountedPtr<XdsWrrLocalityLbConfig> config = std::move(args.config);
+  auto config = args.config.TakeAsSubclass<XdsWrrLocalityLbConfig>();
   // Scan the addresses to find the weight for each locality.
   std::map<std::string, uint32_t> locality_weights;
   if (args.addresses.ok()) {
@@ -252,8 +252,8 @@ OrphanablePtr<LoadBalancingPolicy> XdsWrrLocalityLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper =
-      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+  lb_policy_args.channel_control_helper = std::make_unique<Helper>(
+      RefAsSubclass<XdsWrrLocalityLb>(DEBUG_LOCATION, "Helper"));
   auto lb_policy =
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "weighted_target_experimental", std::move(lb_policy_args));

@@ -131,9 +131,9 @@ configLangArgs32core+=( -l c++ )
 runnerLangArgs+=( -l "cxx:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" )
 
 # dotnet
-# configLangArgs8core+=( -l dotnet )
-# configLangArgs32core+=( -l dotnet )
-# runnerLangArgs+=( -l "dotnet:${GRPC_DOTNET_REPO}:${GRPC_DOTNET_COMMIT}" )
+configLangArgs8core+=( -l dotnet )
+configLangArgs32core+=( -l dotnet )
+runnerLangArgs+=( -l "dotnet:${GRPC_DOTNET_REPO}:${GRPC_DOTNET_COMMIT}" )
 
 # # go
 configLangArgs8core+=( -l go )

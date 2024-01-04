@@ -20,10 +20,18 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <memory>
 #include <tuple>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
@@ -34,6 +42,7 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/trace.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
@@ -90,6 +99,39 @@ class MemoryQuotaTracker {
   Mutex mu_;
   std::vector<std::weak_ptr<BasicMemoryQuota>> quotas_ ABSL_GUARDED_BY(mu_);
 };
+
+// Reference count for a slice allocated by MemoryAllocator::MakeSlice.
+// Takes care of releasing memory back when the slice is destroyed.
+class SliceRefCount : public grpc_slice_refcount {
+ public:
+  SliceRefCount(
+      std::shared_ptr<
+          grpc_event_engine::experimental::internal::MemoryAllocatorImpl>
+          allocator,
+      size_t size)
+      : grpc_slice_refcount(Destroy),
+        allocator_(std::move(allocator)),
+        size_(size) {
+    // Nothing to do here.
+  }
+  ~SliceRefCount() {
+    allocator_->Release(size_);
+    allocator_.reset();
+  }
+
+ private:
+  static void Destroy(grpc_slice_refcount* p) {
+    auto* rc = static_cast<SliceRefCount*>(p);
+    rc->~SliceRefCount();
+    free(rc);
+  }
+
+  std::shared_ptr<
+      grpc_event_engine::experimental::internal::MemoryAllocatorImpl>
+      allocator_;
+  size_t size_;
+};
+
 }  // namespace
 
 //
@@ -335,6 +377,18 @@ void GrpcMemoryAllocatorImpl::Replenish() {
   taken_bytes_.fetch_add(amount, std::memory_order_relaxed);
   // Add the taken amount to the free pool.
   free_bytes_.fetch_add(amount, std::memory_order_acq_rel);
+}
+
+grpc_slice GrpcMemoryAllocatorImpl::MakeSlice(MemoryRequest request) {
+  auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
+  void* p = malloc(size);
+  new (p) SliceRefCount(shared_from_this(), size);
+  grpc_slice slice;
+  slice.refcount = static_cast<SliceRefCount*>(p);
+  slice.data.refcounted.bytes =
+      static_cast<uint8_t*>(p) + sizeof(SliceRefCount);
+  slice.data.refcounted.length = size - sizeof(SliceRefCount);
+  return slice;
 }
 
 //
@@ -604,14 +658,9 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
   pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
-  if (IsMemoryPressureControllerEnabled()) {
-    pressure_info.pressure_control_value =
-        pressure_tracker_.AddSampleAndGetControlValue(
-            pressure_info.instantaneous_pressure);
-  } else {
-    pressure_info.pressure_control_value =
-        std::min(pressure_info.instantaneous_pressure, 1.0);
-  }
+  pressure_info.pressure_control_value =
+      pressure_tracker_.AddSampleAndGetControlValue(
+          pressure_info.instantaneous_pressure);
   pressure_info.max_recommended_allocation_size = quota_size / 16;
   return pressure_info;
 }

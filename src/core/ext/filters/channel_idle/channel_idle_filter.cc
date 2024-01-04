@@ -56,6 +56,13 @@
 
 namespace grpc_core {
 
+const NoInterceptor ChannelIdleFilter::Call::OnClientInitialMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnServerInitialMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnClientToServerMessage;
+const NoInterceptor ChannelIdleFilter::Call::OnServerToClientMessage;
+const NoInterceptor ChannelIdleFilter::Call::OnFinalize;
+
 namespace {
 
 // TODO(roth): This can go back to being a constant when the experiment
@@ -221,17 +228,6 @@ void MaxAgeFilter::PostInit() {
   }
 }
 
-// Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
-  IncreaseCallCount();
-  return ArenaPromise<ServerMetadataHandle>(
-      [decrementer = Decrementer(this),
-       next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
-}
-
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
   if (!op->disconnect_with_error.ok()) Shutdown();
@@ -298,6 +294,7 @@ const grpc_channel_filter MaxAgeFilter::kFilter =
     MakePromiseBasedFilter<MaxAgeFilter, FilterEndpoint::kServer>("max_age");
 
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
+  if (!IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_CHANNEL, &ClientIdleFilter::kFilter)
       .ExcludeFromMinimalStack()

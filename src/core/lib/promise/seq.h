@@ -21,6 +21,7 @@
 
 #include <utility>
 
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/seq_state.h"
@@ -39,6 +40,7 @@ struct SeqTraits {
     return next->Make(std::forward<T>(value));
   }
   static bool IsOk(const T&) { return true; }
+  static const char* ErrorString(const T&) { abort(); }
   template <typename R>
   static R ReturnValue(T&&) {
     abort();
@@ -57,8 +59,9 @@ struct SeqTraits {
 template <typename P, typename... Fs>
 class Seq {
  public:
-  explicit Seq(P&& promise, Fs&&... factories)
-      : state_(std::forward<P>(promise), std::forward<Fs>(factories)...) {}
+  explicit Seq(P&& promise, Fs&&... factories, DebugLocation whence)
+      : state_(std::forward<P>(promise), std::forward<Fs>(factories)...,
+               whence) {}
 
   auto operator()() { return state_.PollOnce(); }
 
@@ -94,14 +97,111 @@ struct SeqIterResultTraits {
 // Pass its result to the third, and run the returned promise.
 // etc
 // Return the final value.
-template <typename... Functors>
-promise_detail::Seq<Functors...> Seq(Functors... functors) {
-  return promise_detail::Seq<Functors...>(std::move(functors)...);
-}
-
 template <typename F>
 F Seq(F functor) {
   return functor;
+}
+
+template <typename F0, typename F1>
+promise_detail::Seq<F0, F1> Seq(F0 f0, F1 f1, DebugLocation whence = {}) {
+  return promise_detail::Seq<F0, F1>(std::move(f0), std::move(f1), whence);
+}
+
+template <typename F0, typename F1, typename F2>
+promise_detail::Seq<F0, F1, F2> Seq(F0 f0, F1 f1, F2 f2,
+                                    DebugLocation whence = {}) {
+  return promise_detail::Seq<F0, F1, F2>(std::move(f0), std::move(f1),
+                                         std::move(f2), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3>
+promise_detail::Seq<F0, F1, F2, F3> Seq(F0 f0, F1 f1, F2 f2, F3 f3,
+                                        DebugLocation whence = {}) {
+  return promise_detail::Seq<F0, F1, F2, F3>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4>
+promise_detail::Seq<F0, F1, F2, F3, F4> Seq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4,
+                                            DebugLocation whence = {}) {
+  return promise_detail::Seq<F0, F1, F2, F3, F4>(std::move(f0), std::move(f1),
+                                                 std::move(f2), std::move(f3),
+                                                 std::move(f4), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4,
+          typename F5>
+promise_detail::Seq<F0, F1, F2, F3, F4, F5> Seq(F0 f0, F1 f1, F2 f2, F3 f3,
+                                                F4 f4, F5 f5,
+                                                DebugLocation whence = {}) {
+  return promise_detail::Seq<F0, F1, F2, F3, F4, F5>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
+      std::move(f5), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4,
+          typename F5, typename F6>
+promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6> Seq(F0 f0, F1 f1, F2 f2, F3 f3,
+                                                    F4 f4, F5 f5, F6 f6,
+                                                    DebugLocation whence = {}) {
+  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
+      std::move(f5), std::move(f6), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4,
+          typename F5, typename F6, typename F7>
+promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7> Seq(
+    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7,
+    DebugLocation whence = {}) {
+  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
+      std::move(f5), std::move(f6), std::move(f7), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4,
+          typename F5, typename F6, typename F7, typename F8>
+promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8> Seq(
+    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8,
+    DebugLocation whence = {}) {
+  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
+      std::move(f5), std::move(f6), std::move(f7), std::move(f8), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4,
+          typename F5, typename F6, typename F7, typename F8, typename F9>
+promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> Seq(
+    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
+    DebugLocation whence = {}) {
+  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
+      std::move(f5), std::move(f6), std::move(f7), std::move(f8), std::move(f9),
+      whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4,
+          typename F5, typename F6, typename F7, typename F8, typename F9,
+          typename F10>
+promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> Seq(
+    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
+    F10 f10, DebugLocation whence = {}) {
+  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
+      std::move(f5), std::move(f6), std::move(f7), std::move(f8), std::move(f9),
+      std::move(f10), whence);
+}
+
+template <typename F0, typename F1, typename F2, typename F3, typename F4,
+          typename F5, typename F6, typename F7, typename F8, typename F9,
+          typename F10, typename F11>
+promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> Seq(
+    F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
+    F10 f10, F11 f11, DebugLocation whence = {}) {
+  return promise_detail::Seq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11>(
+      std::move(f0), std::move(f1), std::move(f2), std::move(f3), std::move(f4),
+      std::move(f5), std::move(f6), std::move(f7), std::move(f8), std::move(f9),
+      std::move(f10), std::move(f11), whence);
 }
 
 // Execute a sequence of operations of unknown length.

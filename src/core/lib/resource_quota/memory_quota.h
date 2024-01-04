@@ -400,6 +400,12 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Returns the number of bytes reserved.
   size_t Reserve(MemoryRequest request) override;
 
+  /// Allocate a slice, using MemoryRequest to size the number of returned
+  /// bytes. For a variable length request, check the returned slice length to
+  /// verify how much memory was allocated. Takes care of reserving memory for
+  /// any relevant control structures also.
+  grpc_slice MakeSlice(MemoryRequest request) override;
+
   // Release some bytes that were previously reserved.
   void Release(size_t n) override {
     // Add the released memory to our free bytes counter... if this increases

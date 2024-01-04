@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 # Type aliases
 # Channel
 Channel = channelz_pb2.Channel
+ChannelData = channelz_pb2.ChannelData
 ChannelConnectivityState = channelz_pb2.ChannelConnectivityState
 ChannelState = ChannelConnectivityState.State  # pylint: disable=no-member
 _GetTopChannelsRequest = channelz_pb2.GetTopChannelsRequest
@@ -109,6 +110,7 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
             result += f" target={channel.data.target}"
         result += (
             f" call_started={channel.data.calls_started}"
+            + f" calls_succeeded={channel.data.calls_succeeded}"
             + f" calls_failed={channel.data.calls_failed}"
         )
         result += f" state={ChannelState.Name(channel.data.state.state)}>"
@@ -169,6 +171,26 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
             for channel in response.channel:
                 start = max(start, channel.ref.channel_id)
                 yield channel
+
+    def get_channel(self, channel_id, **kwargs) -> Channel:
+        """Return a single Channel, otherwise raises RpcError."""
+        response: channelz_pb2.GetChannelResponse
+        try:
+            response = self.call_unary_with_deadline(
+                rpc="GetChannel",
+                req=channelz_pb2.GetChannelRequest(channel_id=channel_id),
+                **kwargs,
+            )
+            return response.channel
+        except grpc.RpcError as err:
+            if isinstance(err, grpc.Call):
+                # Translate NOT_FOUND into GrpcApp.NotFound.
+                if err.code() is grpc.StatusCode.NOT_FOUND:
+                    raise framework.rpc.grpc.GrpcApp.NotFound(
+                        f"Channel with channel_id {channel_id} not found",
+                    )
+
+            raise
 
     def list_servers(self, **kwargs) -> Iterator[Server]:
         """Iterate over all pages of all servers that exist in the process."""

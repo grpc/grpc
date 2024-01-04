@@ -291,8 +291,9 @@ void MaybeLogHttpConnectionManager(
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
             context.symtab);
     char buf[10240];
-    upb_TextEncode(http_connection_manager_config, msg_type, nullptr, 0, buf,
-                   sizeof(buf));
+    upb_TextEncode(
+        reinterpret_cast<const upb_Message*>(http_connection_manager_config),
+        msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] HttpConnectionManager: %s",
             context.client, buf);
   }
@@ -332,11 +333,15 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
   }
   // original_ip_detection_extensions -- must be empty as per
   // https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md
-  if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_original_ip_detection_extensions(
-          http_connection_manager_proto)) {
-    ValidationErrors::ScopedField field(errors,
-                                        ".original_ip_detection_extensions");
-    errors->AddError("must be empty");
+  {
+    size_t size;
+    envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_original_ip_detection_extensions(
+        http_connection_manager_proto, &size);
+    if (size != 0) {
+      ValidationErrors::ScopedField field(errors,
+                                          ".original_ip_detection_extensions");
+      errors->AddError("must be empty");
+    }
   }
   // common_http_protocol_options
   const envoy_config_core_v3_HttpProtocolOptions* options =
@@ -1091,7 +1096,8 @@ void MaybeLogListener(const XdsResourceType::DecodeContext& context,
     const upb_MessageDef* msg_type =
         envoy_config_listener_v3_Listener_getmsgdef(context.symtab);
     char buf[10240];
-    upb_TextEncode(listener, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(listener), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] Listener: %s", context.client, buf);
   }
 }

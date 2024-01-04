@@ -527,7 +527,9 @@ class OobBackendMetricTestLoadBalancingPolicy
       subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
           Duration::Seconds(1),
           std::make_unique<BackendMetricWatcher>(
-              EndpointAddresses(address, per_address_args), parent()->Ref())));
+              EndpointAddresses(address, per_address_args),
+              parent()
+                  ->RefAsSubclass<OobBackendMetricTestLoadBalancingPolicy>())));
       return subchannel;
     }
   };
