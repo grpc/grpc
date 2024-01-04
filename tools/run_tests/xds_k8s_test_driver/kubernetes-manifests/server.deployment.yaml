@@ -40,6 +40,9 @@ spec:
           failureThreshold: 1000
         args:
           - "--port=${test_port}"
+          % if enable_csm_observability:
+          - "--enable_csm_observability"
+          % endif
         ports:
           - containerPort: ${test_port}
         env:
