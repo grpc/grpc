@@ -106,7 +106,7 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(const char* addr) {
   GPR_ASSERT(event_engine_ != nullptr);
   auto ee_listener = event_engine_->CreateListener(
       std::move(accept_cb), std::move(shutdown_cb), config_,
-      std::make_unique<MemoryQuota>("chaotic_good_server_listener"));
+      std::make_unique<grpc_core::MemoryQuota>("chaotic_good_server_listener"));
   if (!ee_listener.ok()) {
     return ee_listener.status();
   }
@@ -208,7 +208,6 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       SliceBuffer());
   // Start receiving setting frames.
   self->connection_->receive_settings_activity_ = OnReceive(self);
-  // self->Unref();
 }
 
 ActivityPtr
@@ -354,9 +353,9 @@ ChaoticGoodServerListener::ActiveConnection::HandshakingState::OnReceive(
           grpc_event_engine::experimental::GetDefaultEventEngine()),
       [](absl::Status status) {
         if (!status.ok()) {
-          gpr_log(GPR_ERROR, "Error server receive setting frame failed: %s",
-                  StatusToString(status).c_str());
-        }
+      gpr_log(GPR_ERROR, "Error server receive setting frame failed: %s",
+              StatusToString(status).c_str());
+    }
       },
       MakeScopedArena(1024, &self->connection_->memory_allocator_),
       grpc_event_engine::experimental::GetDefaultEventEngine().get());
