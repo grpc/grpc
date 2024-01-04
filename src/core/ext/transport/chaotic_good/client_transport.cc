@@ -196,9 +196,7 @@ ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
 void ChaoticGoodClientTransport::AbortWithError() {
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
-  if (!outgoing_frames_.IsClosed()) {
-    outgoing_frames_.MarkClosed();
-  }
+  outgoing_frames_.MarkClosed();
   ReleasableMutexLock lock(&mu_);
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
