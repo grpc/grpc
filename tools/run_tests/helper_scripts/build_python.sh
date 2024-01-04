@@ -124,9 +124,9 @@ if [[ "$(inside_venv)" ]]; then
 else
   # Instantiate the virtualenv from the Python version passed in.
   $PYTHON -m pip install --user virtualenv==20.25.0
-  # Use --no-seed to prevent virtualenv from installing seed packages.
-  # Otherwise it might not find cython module while building grpcio.
-  $PYTHON -m virtualenv --no-seed "$VENV"
+  # Skip wheel and setuptools and manually install later. Otherwise we might
+  # not find cython module while building grpcio.
+  $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
   VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
@@ -134,7 +134,7 @@ pip_install() {
   $VENV_PYTHON -m pip install "$@"
 }
 
-$VENV_PYTHON -m ensurepip --upgrade
+pip_install --upgrade pip
 pip_install --upgrade wheel
 pip_install --upgrade setuptools==66.1.0
 

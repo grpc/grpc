@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 # Install Git and basic packages.
 RUN apt-get update -y && apt-get install -y \
@@ -30,4 +30,6 @@ RUN /bin/bash -l -c "rvm use --default ruby-2.7"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.7' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install bundler --no-document"
+# TODO(apolcyn): Bundler v2.4.22 is the last to support ruby 2.7. Latest bundler
+# requires ruby 3.
+RUN /bin/bash -l -c "gem install bundler --no-document -v 2.4.22"

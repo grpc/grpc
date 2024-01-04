@@ -157,7 +157,7 @@ class PromiseEndpoint {
               grpc_slice_buffer_move_first(read_state->buffer.c_slice_buffer(),
                                            num_bytes, ret.c_slice_buffer());
               read_state->complete.store(false, std::memory_order_relaxed);
-              return ret;
+              return std::move(ret);
             }
             read_state->complete.store(false, std::memory_order_relaxed);
             return std::move(read_state->result);

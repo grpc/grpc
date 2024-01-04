@@ -1055,6 +1055,16 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
     _response_deserializer: Optional[DeserializingFunction]
     _context: Any
 
+    __slots__ = [
+        "_channel",
+        "_managed_call",
+        "_method",
+        "_target",
+        "_request_serializer",
+        "_response_deserializer",
+        "_context",
+    ]
+
     # pylint: disable=too-many-arguments
     def __init__(
         self,
@@ -1225,6 +1235,15 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     _response_deserializer: Optional[DeserializingFunction]
     _context: Any
 
+    __slots__ = [
+        "_channel",
+        "_method",
+        "_target",
+        "_request_serializer",
+        "_response_deserializer",
+        "_context",
+    ]
+
     # pylint: disable=too-many-arguments
     def __init__(
         self,
@@ -1313,6 +1332,16 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     _response_deserializer: Optional[DeserializingFunction]
     _context: Any
 
+    __slots__ = [
+        "_channel",
+        "_managed_call",
+        "_method",
+        "_target",
+        "_request_serializer",
+        "_response_deserializer",
+        "_context",
+    ]
+
     # pylint: disable=too-many-arguments
     def __init__(
         self,
@@ -1393,6 +1422,16 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
     _request_serializer: Optional[SerializingFunction]
     _response_deserializer: Optional[DeserializingFunction]
     _context: Any
+
+    __slots__ = [
+        "_channel",
+        "_managed_call",
+        "_method",
+        "_target",
+        "_request_serializer",
+        "_response_deserializer",
+        "_context",
+    ]
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -1554,6 +1593,16 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
     _request_serializer: Optional[SerializingFunction]
     _response_deserializer: Optional[DeserializingFunction]
     _context: Any
+
+    __slots__ = [
+        "_channel",
+        "_managed_call",
+        "_method",
+        "_target",
+        "_request_serializer",
+        "_response_deserializer",
+        "_context",
+    ]
 
     # pylint: disable=too-many-arguments
     def __init__(

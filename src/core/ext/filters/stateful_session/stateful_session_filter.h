@@ -26,6 +26,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -68,16 +69,32 @@ class XdsOverrideHostAttribute
 };
 
 // A filter to provide cookie-based stateful session affinity.
-class StatefulSessionFilter : public ChannelFilter {
+class StatefulSessionFilter
+    : public ImplementChannelFilter<StatefulSessionFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<StatefulSessionFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& md,
+                                 StatefulSessionFilter* filter);
+    void OnServerInitialMetadata(ServerMetadata& md);
+    void OnServerTrailingMetadata(ServerMetadata& md);
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+
+   private:
+    const StatefulSessionMethodParsedConfig::CookieConfig* cookie_config_;
+    XdsOverrideHostAttribute* override_host_attribute_;
+    absl::string_view cluster_name_;
+    absl::string_view cookie_address_list_;
+    bool cluster_changed_;
+    bool perform_filtering_ = false;
+  };
 
  private:
   explicit StatefulSessionFilter(ChannelFilter::Args filter_args);
