@@ -45,7 +45,7 @@ grpc_cc_test(
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:channel_args",
-        "//src/core:chaotic_good_client_transport",
+        "//src/core:chaotic_good_connector",
         "//src/core:chaotic_good_server",
         "//src/core:event_engine_wakeup_scheduler",
         "//src/core:if",
