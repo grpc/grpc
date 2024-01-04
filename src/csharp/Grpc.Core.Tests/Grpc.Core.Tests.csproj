@@ -3,6 +3,7 @@
     <TargetFrameworks>net45;netcoreapp3.1</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NuGetAudit>false</NuGetAudit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
