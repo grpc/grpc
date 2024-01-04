@@ -1306,7 +1306,7 @@ _BAZEL_DEPS_QUERIES = [
     # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds
     # as upb_c_proto_library dependencies.
     'deps("//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
-    'deps(@com_google_protobuf//third_party/utf8_range:utf8_range)'
+    "deps(@com_google_protobuf//third_party/utf8_range:utf8_range)",
 ]
 
 # Step 1: run a bunch of "bazel query --output xml" queries to collect
