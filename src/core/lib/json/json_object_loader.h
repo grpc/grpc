@@ -427,26 +427,6 @@ class AutoLoader<std::unique_ptr<T>> final : public LoadWrapped {
   ~AutoLoader() = default;
 };
 
-// Specializations of AutoLoader for std::shared_ptr<>.
-template <typename T>
-class AutoLoader<std::shared_ptr<T>> final : public LoadWrapped {
- public:
-  void* Emplace(void* dst) const final {
-    auto& p = *static_cast<std::shared_ptr<T>*>(dst);
-    p = std::make_shared<T>();
-    return p.get();
-  }
-  void Reset(void* dst) const final {
-    static_cast<std::shared_ptr<T>*>(dst)->reset();
-  }
-  const LoaderInterface* ElementLoader() const final {
-    return LoaderForType<T>();
-  }
-
- private:
-  ~AutoLoader() = default;
-};
-
 // Specializations of AutoLoader for RefCountedPtr<>.
 template <typename T>
 class AutoLoader<RefCountedPtr<T>> final : public LoadWrapped {
