@@ -679,26 +679,27 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
         }
       }
     }
-    // Return result.
-    if (!errors.ok()) {
-      return errors.status(absl::StatusCode::kInvalidArgument,
-                           "errors validating Cluster resource");
-    }
-    return cds_update;
   }
+  // Return result.
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors validating Cluster resource");
+  }
+  return cds_update;
+}
 
-  void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
-                       const envoy_config_cluster_v3_Cluster* cluster) {
-    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
-        gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-      const upb_MessageDef* msg_type =
-          envoy_config_cluster_v3_Cluster_getmsgdef(context.symtab);
-      char buf[10240];
-      upb_TextEncode(reinterpret_cast<const upb_Message*>(cluster), msg_type,
-                     nullptr, 0, buf, sizeof(buf));
-      gpr_log(GPR_DEBUG, "[xds_client %p] Cluster: %s", context.client, buf);
-    }
+void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
+                     const envoy_config_cluster_v3_Cluster* cluster) {
+  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    const upb_MessageDef* msg_type =
+        envoy_config_cluster_v3_Cluster_getmsgdef(context.symtab);
+    char buf[10240];
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(cluster), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
+    gpr_log(GPR_DEBUG, "[xds_client %p] Cluster: %s", context.client, buf);
   }
+}
 
 }  // namespace
 

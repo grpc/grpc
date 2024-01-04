@@ -328,11 +328,12 @@ class OptionalLabelsIterable : public LabelsIterable {
       if (optional_labels == nullptr) {
         continue;
       }
-      if (optional_labels->find("serviceName") != optional_labels->end()) {
+      if (optional_labels->find("service_name") != optional_labels->end()) {
         optional_labels_[0] = {"csm.service_name",
                                optional_labels->at("serviceName")};
       }
-      if (optional_labels->find("serviceNamespace") != optional_labels->end()) {
+      if (optional_labels->find("service_namespace") !=
+          optional_labels->end()) {
         optional_labels_[1] = {"csm.service_namespace_name",
                                optional_labels->at("serviceNamespace")};
       }

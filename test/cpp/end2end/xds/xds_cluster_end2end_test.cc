@@ -317,12 +317,12 @@ MATCHER(VerifyCsmServiceLabels, "") {
   auto iter = arg.find(OptionalLabelComponent::kXdsServiceLabels);
   if (iter != arg.end()) {
     const auto& xds_service_labels_map = iter->second;
-    if (xds_service_labels_map.find("serviceName") !=
+    if (xds_service_labels_map.find("service_name") !=
             xds_service_labels_map.end() &&
-        xds_service_labels_map.find("serviceNamespace") !=
+        xds_service_labels_map.find("service_namespace") !=
             xds_service_labels_map.end()) {
-      return xds_service_labels_map.at("serviceName") == "myservice" &&
-             xds_service_labels_map.at("serviceNamespace") == "mynamespace";
+      return xds_service_labels_map.at("service_name") == "myservice" &&
+             xds_service_labels_map.at("service_namespace") == "mynamespace";
     }
   }
   return false;
