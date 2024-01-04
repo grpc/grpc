@@ -23,8 +23,8 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 
 #include "absl/strings/str_cat.h"
-#include "frame.h"
 
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/transport/http2_errors.h"
 
