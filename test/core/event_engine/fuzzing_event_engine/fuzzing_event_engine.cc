@@ -548,7 +548,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
       delay_taken = grpc_core::Clamp(task_delays_.front(), Duration::zero(),
                                      max_delay_[static_cast<int>(run_type)]);
       task_delays_.pop();
-    } else if (when == Duration::zero()) {
+    } else if (run_type != RunType::kWrite && when == Duration::zero()) {
       // For zero-duration events, if there is no more delay input from
       // the test case, we default to a small non-zero value to avoid
       // busy loops that prevent us from making forward progress.
