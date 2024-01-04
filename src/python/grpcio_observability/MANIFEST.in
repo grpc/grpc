@@ -1,8 +1,0 @@
-graft src/python/grpcio_observability/grpcio_observability.egg-info
-graft grpc_observability
-graft grpc_root
-graft third_party
-include _parallel_compile_patch.py
-include grpc_version.py
-include observability_lib_deps.py
-include README.rst
