@@ -108,7 +108,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
         }
 
     @staticmethod
-    async def _unary_unary(unused_request, unused_context):
+    async def _unary_unary(unused_request, context):
+        assert context.code() == grpc.StatusCode.OK
         return _RESPONSE
 
     async def _block_forever(self, unused_request, unused_context):
