@@ -19,8 +19,7 @@
 namespace grpc_core {
 
 const grpc_channel_filter FakeStatsClientFilter::kFilter =
-    MakePromiseBasedFilter<FakeStatsClientFilter,
-                           grpc_core::FilterEndpoint::kClient>(
+    MakePromiseBasedFilter<FakeStatsClientFilter, FilterEndpoint::kClient>(
         "fake_stats_client");
 
 absl::StatusOr<FakeStatsClientFilter> FakeStatsClientFilter::Create(
@@ -32,14 +31,12 @@ absl::StatusOr<FakeStatsClientFilter> FakeStatsClientFilter::Create(
   return FakeStatsClientFilter(fake_client_call_tracer_factory);
 }
 
-grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
-FakeStatsClientFilter::MakeCallPromise(
-    grpc_core::CallArgs call_args,
-    grpc_core::NextPromiseFactory next_promise_factory) {
+ArenaPromise<ServerMetadataHandle> FakeStatsClientFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
   FakeClientCallTracer* client_call_tracer =
       fake_client_call_tracer_factory_->CreateFakeClientCallTracer();
   if (client_call_tracer != nullptr) {
-    auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
+    auto* call_context = GetContext<grpc_call_context_element>();
     GPR_ASSERT(
         call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
         nullptr);
@@ -56,12 +53,12 @@ FakeStatsClientFilter::FakeStatsClientFilter(
     : fake_client_call_tracer_factory_(fake_client_call_tracer_factory) {}
 
 void RegisterFakeStatsPlugin() {
-  grpc_core::CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) mutable {
+  CoreConfiguration::RegisterBuilder(
+      [](CoreConfiguration::Builder* builder) mutable {
         builder->channel_init()
             ->RegisterFilter(GRPC_CLIENT_CHANNEL,
                              &FakeStatsClientFilter::kFilter)
-            .If([](const grpc_core::ChannelArgs& args) {
+            .If([](const ChannelArgs& args) {
               return args.GetPointer<FakeClientCallTracerFactory>(
                          GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY) !=
                      nullptr;

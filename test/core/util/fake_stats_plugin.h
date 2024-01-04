@@ -112,20 +112,19 @@ class FakeClientCallTracer : public ClientCallTracer {
 
 class FakeClientCallTracerFactory {
  public:
-  grpc_core::FakeClientCallTracer* CreateFakeClientCallTracer() {
+  FakeClientCallTracer* CreateFakeClientCallTracer() {
     fake_client_call_tracers_.emplace_back(
-        new grpc_core::FakeClientCallTracer(&annotation_logger_));
+        new FakeClientCallTracer(&annotation_logger_));
     return fake_client_call_tracers_.back().get();
   }
 
-  grpc_core::FakeClientCallTracer* GetLastFakeClientCallTracer() {
+  FakeClientCallTracer* GetLastFakeClientCallTracer() {
     return fake_client_call_tracers_.back().get();
   }
 
  private:
   std::vector<std::string> annotation_logger_;
-  std::vector<std::unique_ptr<grpc_core::FakeClientCallTracer>>
-      fake_client_call_tracers_;
+  std::vector<std::unique_ptr<FakeClientCallTracer>> fake_client_call_tracers_;
 };
 
 class FakeStatsClientFilter : public ChannelFilter {

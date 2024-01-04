@@ -7752,6 +7752,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(call_tracer_test
   test/core/channel/call_tracer_test.cc
+  test/core/util/fake_stats_plugin.cc
 )
 target_compile_features(call_tracer_test PUBLIC cxx_std_14)
 target_include_directories(call_tracer_test
@@ -27418,6 +27419,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+    test/core/util/fake_stats_plugin.cc
     test/cpp/end2end/connection_attempt_injector.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_cluster_end2end_test.cc
