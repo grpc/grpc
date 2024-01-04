@@ -176,8 +176,9 @@ static unsigned long openssl_thread_id_cb(void) {
 }
 #endif
 
-static void verified_root_cert_free(void* parent, void* ptr, CRYPTO_EX_DATA* ad,
-                                    int index, long argl, void* argp) {
+static void verified_root_cert_free(void* /*parent*/, void* ptr,
+                                    CRYPTO_EX_DATA* /*ad*/, int /*index*/,
+                                    long /*argl*/, void* /*argp*/) {
   X509_free(static_cast<X509*>(ptr));
 }
 
@@ -966,7 +967,11 @@ static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
   if (success == 0) {
     gpr_log(GPR_INFO, "Could not set verified root cert in SSL's ex_data");
   } else {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
     X509_up_ref(root_cert);
+#else
+    CRYPTO_add(&root_cert->references, 1, CRYPTO_LOCK_X509);
+#endif
   }
   return ret;
 }
