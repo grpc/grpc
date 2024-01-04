@@ -4070,6 +4070,7 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:error",
         "//src/core:experiments",
+        "//src/core:gpr_manual_constructor",
         "//src/core:http2_errors",
         "//src/core:http2_settings",
         "//src/core:init_internally",

@@ -6028,9 +6028,15 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chttp2/transport/http2_settings.h",
     ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/strings",
+        "absl/types:optional",
+    ],
     deps = [
         "http2_errors",
         "useful",
+        "//:chttp2_frame",
         "//:gpr_platform",
     ],
 )
