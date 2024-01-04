@@ -67,7 +67,7 @@ load("@rules_python//python:pip.bzl", "pip_parse")
 
 pip_parse(
     name = "grpc_python_dependencies",
-    requirements_lock = "@com_github_grpc_grpc//:requirements.bazel.txt",	
+    requirements_lock = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
 
 load("@grpc_python_dependencies//:requirements.bzl", "install_deps")
