@@ -73,8 +73,8 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
     if (optional_labels_iterable_ != nullptr) {
       optional_labels_iterable_->ResetIteratorPosition();
       while (const auto& pair = optional_labels_iterable_->Next()) {
-        if (!callback(AbslStrViewToOTelStrView(pair->first),
-                      AbslStrViewToOTelStrView(pair->second))) {
+        if (!callback(AbslStrViewToOpenTelemetryStrView(pair->first),
+                      AbslStrViewToOpenTelemetryStrView(pair->second))) {
           return false;
         }
       }

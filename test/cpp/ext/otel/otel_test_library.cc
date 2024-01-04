@@ -66,8 +66,8 @@ class AddServiceLabelsFilter : public grpc_core::ChannelFilter {
     EXPECT_NE(call_tracer, nullptr);
     auto service_labels =
         std::make_shared<std::map<std::string, std::string>>();
-    (*service_labels)["serviceName"] = service_name_;
-    (*service_labels)["serviceNamespace"] = service_namespace_;
+    (*service_labels)["service_name"] = service_name_;
+    (*service_labels)["service_namespace"] = service_namespace_;
     call_tracer->AddOptionalLabels(
         CallAttemptTracer::OptionalLabelComponent::kXdsServiceLabels,
         service_labels);
