@@ -1150,6 +1150,7 @@ void grpc_tls_credentials_options_set_certificate_verifier(
 /**
  * EXPERIMENTAL API - Subject to change
  *
+ *
  * Sets the options of whether to check the hostname of the peer on a per-call
  * basis. This is usually used in a combination with virtual hosting at the
  * client side, where each individual call on a channel can have a different
