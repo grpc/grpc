@@ -146,11 +146,11 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
-    void AddOptionalLabels(OptionalLabelComponent component,
-                           std::shared_ptr<std::map<std::string, std::string>>
-                               service_labels) override {
+    void AddOptionalLabels(
+        OptionalLabelComponent component,
+        std::shared_ptr<std::map<std::string, std::string>> labels) override {
       for (auto* tracer : tracers_) {
-        tracer->AddOptionalLabels(component, service_labels);
+        tracer->AddOptionalLabels(component, labels);
       }
     }
     std::string TraceId() override { return tracers_[0]->TraceId(); }
