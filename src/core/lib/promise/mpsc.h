@@ -103,14 +103,12 @@ class Center : public RefCounted<Center<T>> {
 
   // Mark that the receiver is closed.
   void ReceiverClosed() {
-    MutexLock lock(&mu_);
+    ReleasableMutexLock lock(&mu_);
+    if (receiver_closed_) return;
     receiver_closed_ = true;
-  }
-
-  // Return whether the receiver is closed.
-  bool IsClosed() {
-    MutexLock lock(&mu_);
-    return receiver_closed_;
+    auto wakeups = send_wakers_.TakeWakeupSet();
+    lock.Release();
+    wakeups.Wakeup();
   }
 
  private:
@@ -173,7 +171,6 @@ class MpscReceiver {
   ~MpscReceiver() {
     if (center_ != nullptr) center_->ReceiverClosed();
   }
-  bool IsClosed() { return center_->IsClosed(); }
   void MarkClosed() {
     if (center_ != nullptr) center_->ReceiverClosed();
   }

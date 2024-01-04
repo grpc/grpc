@@ -277,13 +277,13 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
   auto call2 =
       MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
   transport->StartCall(std::move(call2.handler));
-  call1.initiator.SpawnGuarded("test-send", [initiator =
-                                                 call1.initiator]() mutable {
+  call1.initiator.SpawnGuarded("test-send-1", [initiator =
+                                                   call1.initiator]() mutable {
     return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
                   SendClientToServerMessages(initiator, 1));
   });
-  call2.initiator.SpawnGuarded("test-send", [initiator =
-                                                 call2.initiator]() mutable {
+  call2.initiator.SpawnGuarded("test-send-2", [initiator =
+                                                   call2.initiator]() mutable {
     return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
                   SendClientToServerMessages(initiator, 1));
   });
@@ -292,7 +292,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
   StrictMock<MockFunction<void()>> on_done2;
   EXPECT_CALL(on_done2, Call());
   call1.initiator.SpawnInfallible(
-      "test-read", [&on_done1, initiator = call1.initiator]() mutable {
+      "test-read-1", [&on_done1, initiator = call1.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<ServerMetadataHandle> md) {
@@ -308,7 +308,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
             });
       });
   call2.initiator.SpawnInfallible(
-      "test-read", [&on_done2, initiator = call2.initiator]() mutable {
+      "test-read-2", [&on_done2, initiator = call2.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<ServerMetadataHandle> md) {
