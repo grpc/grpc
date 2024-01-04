@@ -249,14 +249,12 @@ LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
   grpc_core::MutexLock lock(&load_reports_mu_);
   // This condition will be called under lock
   for (size_t i = 0; i < max_attempts; i++) {
-    auto deadline = absl::Now() + poll_timeout;
-    // loop to handle spurious wakeups.
-    do {
-      if (absl::Now() >= deadline) {
+    if (oob_load_reports_.empty()) {
+      load_reports_cv_.WaitWithTimeout(&load_reports_mu_, poll_timeout);
+      if (oob_load_reports_.empty()) {
         return absl::nullopt;
       }
-      load_reports_cv_.WaitWithDeadline(&load_reports_mu_, deadline);
-    } while (oob_load_reports_.empty());
+    }
     auto report = std::move(oob_load_reports_.front());
     oob_load_reports_.pop_front();
     if (predicate(report)) {

@@ -5847,6 +5847,24 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: backend_metrics_lb_policy_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/interop/backend_metrics_lb_policy.h
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - src/cpp/server/orca/orca_service.cc
+  - test/cpp/interop/backend_metrics_lb_policy.cc
+  - test/cpp/interop/backend_metrics_lb_policy_test.cc
+  deps:
+  - gtest
+  - grpc++
+  - grpc_test_util
+  - grpc++_test_config
 - name: backoff_test
   gtest: true
   build: test
