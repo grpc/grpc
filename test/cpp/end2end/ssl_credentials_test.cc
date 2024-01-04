@@ -144,8 +144,8 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
 
     auto creds = grpc::SslCredentials(ssl_options);
     SetTlsVersion(GetParam().tls_version, creds.get());
-    std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
-        server_addr_, grpc::SslCredentials(ssl_options), channel_args);
+    std::shared_ptr<Channel> channel =
+        grpc::CreateCustomChannel(server_addr_, creds, channel_args);
 
     auto stub = grpc::testing::EchoTestService::NewStub(channel);
     grpc::testing::EchoRequest request;
@@ -182,7 +182,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
     EXPECT_EQ(status.message(), "");
   }
 
-  void ExpectTransportSecurityType(
+  void ExpectTransportSecurityTypeIsSsl(
       std::shared_ptr<const AuthContext> auth_context) {
     std::vector<grpc::string_ref> properties = auth_context->FindPropertyValues(
         GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
@@ -190,7 +190,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
     EXPECT_EQ(ToString(properties[0]), GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   }
 
-  void ExpectTransportSecurityLevel(
+  void ExpectTransportSecurityLevelIsPrivacyAndIntegrity(
       std::shared_ptr<const AuthContext> auth_context) {
     std::vector<grpc::string_ref> properties = auth_context->FindPropertyValues(
         GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
@@ -198,24 +198,26 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
     EXPECT_EQ(ToString(properties[0]), "TSI_PRIVACY_AND_INTEGRITY");
   }
 
-  void ExpectPeerCommonName(std::shared_ptr<const AuthContext> auth_context,
-                            absl::string_view common_name) {
+  void ExpectPeerCommonNameEquals(
+      std::shared_ptr<const AuthContext> auth_context,
+      absl::string_view common_name) {
     std::vector<grpc::string_ref> properties =
         auth_context->FindPropertyValues(GRPC_X509_CN_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), 1u);
     EXPECT_EQ(ToString(properties[0]), common_name);
   }
 
-  void ExpectPeerSubject(std::shared_ptr<const AuthContext> auth_context,
-                         absl::string_view subject) {
+  void ExpectPeerSubjectEquals(std::shared_ptr<const AuthContext> auth_context,
+                               absl::string_view subject) {
     std::vector<grpc::string_ref> properties =
         auth_context->FindPropertyValues(GRPC_X509_SUBJECT_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), 1u);
     EXPECT_EQ(ToString(properties[0]), subject);
   }
 
-  void ExpectPeerSubjectAltName(std::shared_ptr<const AuthContext> auth_context,
-                                const absl::flat_hash_set<std::string>& sans) {
+  void ExpectPeerSubjectAltNameEquals(
+      std::shared_ptr<const AuthContext> auth_context,
+      const absl::flat_hash_set<std::string>& sans) {
     std::vector<grpc::string_ref> properties =
         auth_context->FindPropertyValues(GRPC_X509_SAN_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), sans.size());
@@ -223,11 +225,11 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
     for (size_t i = 0; i < properties.size(); ++i) {
       observed_sans.insert(ToString(properties[i]));
     }
-    EXPECT_EQ(sans, observed_sans);
+    EXPECT_EQ(observed_sans, sans);
   }
 
-  void ExpectPeerCertPem(std::shared_ptr<const AuthContext> auth_context,
-                         absl::string_view pem) {
+  void ExpectPeerCertPemEquals(std::shared_ptr<const AuthContext> auth_context,
+                               absl::string_view pem) {
     std::vector<grpc::string_ref> properties =
         auth_context->FindPropertyValues(GRPC_X509_PEM_CERT_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), 1u);
@@ -236,16 +238,17 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
 
   // TODO(mattstevenson88): Check this property when there are >= 2 untrusted
   // certs in the chain.
-  void ExpectPeerCertChainPem(std::shared_ptr<const AuthContext> auth_context,
-                              absl::string_view pem) {
+  void ExpectPeerCertChainPemEquals(
+      std::shared_ptr<const AuthContext> auth_context, absl::string_view pem) {
     std::vector<grpc::string_ref> properties = auth_context->FindPropertyValues(
         GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), 1u);
     EXPECT_EQ(ToString(properties[0]), pem);
   }
 
-  void ExpectPeerDnsSans(std::shared_ptr<const AuthContext> auth_context,
-                         const absl::flat_hash_set<std::string>& dns_sans) {
+  void ExpectPeerDnsSansEquals(
+      std::shared_ptr<const AuthContext> auth_context,
+      const absl::flat_hash_set<std::string>& dns_sans) {
     std::vector<grpc::string_ref> properties =
         auth_context->FindPropertyValues(GRPC_PEER_DNS_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), dns_sans.size());
@@ -253,13 +256,14 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
     for (size_t i = 0; i < properties.size(); ++i) {
       observed_sans.insert(ToString(properties[i]));
     }
-    EXPECT_EQ(dns_sans, observed_sans);
+    EXPECT_EQ(observed_sans, dns_sans);
   }
 
   // TODO(matthewstevenson88): Check this property when there are URI SANs in
   // the peer leaf cert.
-  void ExpectPeerUriSans(std::shared_ptr<const AuthContext> auth_context,
-                         const absl::flat_hash_set<std::string>& uri_sans) {
+  void ExpectPeerUriSansEquals(
+      std::shared_ptr<const AuthContext> auth_context,
+      const absl::flat_hash_set<std::string>& uri_sans) {
     std::vector<grpc::string_ref> properties =
         auth_context->FindPropertyValues(GRPC_PEER_URI_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), uri_sans.size());
@@ -267,13 +271,14 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
     for (size_t i = 0; i < properties.size(); ++i) {
       observed_sans.insert(ToString(properties[i]));
     }
-    EXPECT_EQ(uri_sans, observed_sans);
+    EXPECT_EQ(observed_sans, uri_sans);
   }
 
   // TODO(matthewstevenson88): Check this property when there are email SANs in
   // the peer leaf cert.
-  void ExpectPeerEmailSans(std::shared_ptr<const AuthContext> auth_context,
-                           const absl::flat_hash_set<std::string>& email_sans) {
+  void ExpectPeerEmailSansEquals(
+      std::shared_ptr<const AuthContext> auth_context,
+      const absl::flat_hash_set<std::string>& email_sans) {
     std::vector<grpc::string_ref> properties =
         auth_context->FindPropertyValues(GRPC_PEER_EMAIL_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), email_sans.size());
@@ -281,13 +286,13 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
     for (size_t i = 0; i < properties.size(); ++i) {
       observed_sans.insert(ToString(properties[i]));
     }
-    EXPECT_EQ(email_sans, observed_sans);
+    EXPECT_EQ(observed_sans, email_sans);
   }
 
   // TODO(matthewstevenson88): Check this property when there are IP SANs in
   // the peer leaf cert.
-  void ExpectPeerIpSans(std::shared_ptr<const AuthContext> auth_context,
-                        const absl::flat_hash_set<std::string>& ip_sans) {
+  void ExpectPeerIpSansEquals(std::shared_ptr<const AuthContext> auth_context,
+                              const absl::flat_hash_set<std::string>& ip_sans) {
     std::vector<grpc::string_ref> properties =
         auth_context->FindPropertyValues(GRPC_PEER_IP_PROPERTY_NAME);
     ASSERT_EQ(properties.size(), ip_sans.size());
@@ -295,7 +300,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
     for (size_t i = 0; i < properties.size(); ++i) {
       observed_sans.insert(ToString(properties[i]));
     }
-    EXPECT_EQ(ip_sans, observed_sans);
+    EXPECT_EQ(observed_sans, ip_sans);
   }
 
   // TODO(matthewstevenson88): Check this property when there is a SPIFFE ID in
@@ -335,24 +340,24 @@ TEST_P(SslCredentialsTest, FullHandshake) {
   auto full_handshake_context = DoRpc(ssl_options, cache);
   ExpectOk(full_handshake_context.status());
   ExpectNonResumedSession(*full_handshake_context);
-  ExpectTransportSecurityType(*full_handshake_context);
-  ExpectTransportSecurityLevel(*full_handshake_context);
-  ExpectPeerCommonName(*full_handshake_context, "*.test.google.com");
-  ExpectPeerSubject(
+  ExpectTransportSecurityTypeIsSsl(*full_handshake_context);
+  ExpectTransportSecurityLevelIsPrivacyAndIntegrity(*full_handshake_context);
+  ExpectPeerCommonNameEquals(*full_handshake_context, "*.test.google.com");
+  ExpectPeerSubjectEquals(
       *full_handshake_context,
-      ""
       "CN=*.test.google.com,O=Example\\, Co.,L=Chicago,ST=Illinois,C=US");
-  ExpectPeerSubjectAltName(*full_handshake_context,
-                           {"*.test.google.fr", "waterzooi.test.google.be",
-                            "*.test.youtube.com", "192.168.1.3"});
-  ExpectPeerCertPem(*full_handshake_context, ReadFile(kServerCertPath));
-  ExpectPeerCertChainPem(*full_handshake_context, ReadFile(kServerCertPath));
-  ExpectPeerDnsSans(
+  ExpectPeerSubjectAltNameEquals(
+      *full_handshake_context, {"*.test.google.fr", "waterzooi.test.google.be",
+                                "*.test.youtube.com", "192.168.1.3"});
+  ExpectPeerCertPemEquals(*full_handshake_context, ReadFile(kServerCertPath));
+  ExpectPeerCertChainPemEquals(*full_handshake_context,
+                               ReadFile(kServerCertPath));
+  ExpectPeerDnsSansEquals(
       *full_handshake_context,
       {"*.test.google.fr", "waterzooi.test.google.be", "*.test.youtube.com"});
-  ExpectPeerUriSans(*full_handshake_context, /*uri_sans=*/{});
-  ExpectPeerEmailSans(*full_handshake_context, /*email_sans=*/{});
-  ExpectPeerIpSans(*full_handshake_context, {"192.168.1.3"});
+  ExpectPeerUriSansEquals(*full_handshake_context, /*uri_sans=*/{});
+  ExpectPeerEmailSansEquals(*full_handshake_context, /*email_sans=*/{});
+  ExpectPeerIpSansEquals(*full_handshake_context, {"192.168.1.3"});
   ExpectNoSpiffeId(*full_handshake_context);
   if (GetParam().use_session_cache) {
     EXPECT_EQ(GetSessionCacheSize(cache), 1);
@@ -391,24 +396,26 @@ TEST_P(SslCredentialsTest, ResumedHandshake) {
   auto resumed_handshake_context = DoRpc(ssl_options, cache);
   ExpectOk(resumed_handshake_context.status());
   ExpectResumedSession(*resumed_handshake_context);
-  ExpectTransportSecurityType(*resumed_handshake_context);
-  ExpectTransportSecurityLevel(*resumed_handshake_context);
-  ExpectPeerCommonName(*resumed_handshake_context, "*.test.google.com");
-  ExpectPeerSubject(
+  ExpectTransportSecurityTypeIsSsl(*resumed_handshake_context);
+  ExpectTransportSecurityLevelIsPrivacyAndIntegrity(*resumed_handshake_context);
+  ExpectPeerCommonNameEquals(*resumed_handshake_context, "*.test.google.com");
+  ExpectPeerSubjectEquals(
       *resumed_handshake_context,
-      ""
       "CN=*.test.google.com,O=Example\\, Co.,L=Chicago,ST=Illinois,C=US");
-  ExpectPeerSubjectAltName(*resumed_handshake_context,
-                           {"*.test.google.fr", "waterzooi.test.google.be",
-                            "*.test.youtube.com", "192.168.1.3"});
-  ExpectPeerCertPem(*resumed_handshake_context, ReadFile(kServerCertPath));
-  ExpectPeerCertChainPem(*resumed_handshake_context, ReadFile(kServerCertPath));
-  ExpectPeerDnsSans(
+  ExpectPeerSubjectAltNameEquals(
+      *resumed_handshake_context,
+      {"*.test.google.fr", "waterzooi.test.google.be", "*.test.youtube.com",
+       "192.168.1.3"});
+  ExpectPeerCertPemEquals(*resumed_handshake_context,
+                          ReadFile(kServerCertPath));
+  ExpectPeerCertChainPemEquals(*resumed_handshake_context,
+                               ReadFile(kServerCertPath));
+  ExpectPeerDnsSansEquals(
       *resumed_handshake_context,
       {"*.test.google.fr", "waterzooi.test.google.be", "*.test.youtube.com"});
-  ExpectPeerUriSans(*resumed_handshake_context, /*uri_sans=*/{});
-  ExpectPeerEmailSans(*resumed_handshake_context, /*email_sans=*/{});
-  ExpectPeerIpSans(*resumed_handshake_context, {"192.168.1.3"});
+  ExpectPeerUriSansEquals(*resumed_handshake_context, /*uri_sans=*/{});
+  ExpectPeerEmailSansEquals(*resumed_handshake_context, /*email_sans=*/{});
+  ExpectPeerIpSansEquals(*resumed_handshake_context, {"192.168.1.3"});
   ExpectNoSpiffeId(*resumed_handshake_context);
   EXPECT_EQ(GetSessionCacheSize(cache), 1);
 
