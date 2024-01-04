@@ -1,4 +1,3 @@
 distrib_virtualenv/
-__init__.py
 generated_file_import_test.py
 build/
