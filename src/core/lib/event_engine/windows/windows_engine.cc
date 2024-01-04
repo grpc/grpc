@@ -233,10 +233,9 @@ WindowsEventEngine::GetDNSResolver(
   return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
       std::move(*ares_resolver));
 #else   // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
-  // TODO(yijiem): Implement a basic A/AAAA-only native resolver in
-  // WindowsEventEngine.
-  (void)options;
-  grpc_core::Crash("unimplemented");
+  GRPC_EVENT_ENGINE_DNS_TRACE(
+      "WindowsEventEngine:%p creating NativeWindowsDNSResolver", this);
+  return std::make_unique<NativeWindowsDNSResolver>(shared_from_this());
 #endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 }
 

@@ -2222,6 +2222,22 @@ grpc_cc_library(
         "windows_endpoint",
         "windows_event_engine_listener",
         "windows_iocp",
+        "windows_native_resolver",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "windows_native_resolver",
+    srcs = ["lib/event_engine/windows/native_windows_dns_resolver.cc"],
+    hdrs = ["lib/event_engine/windows/native_windows_dns_resolver.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
