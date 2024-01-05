@@ -1027,6 +1027,9 @@ class ServerTransport {
     // arena must have been previously allocated by CreateArena()
     virtual absl::StatusOr<CallInitiator> CreateCall(
         ClientMetadata& client_initial_metadata, Arena* arena) = 0;
+
+   protected:
+    ~Acceptor() = default;
   };
 
   // Called once slightly after transport setup to register the accept function.

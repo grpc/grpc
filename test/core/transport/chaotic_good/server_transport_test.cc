@@ -90,6 +90,9 @@ class MockAcceptor : public ServerTransport::Acceptor {
   MOCK_METHOD(absl::StatusOr<CallInitiator>, CreateCall,
               (ClientMetadata & client_initial_metadata, Arena* arena),
               (override));
+
+ protected:
+  ~MockAcceptor() = default;
 };
 
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
