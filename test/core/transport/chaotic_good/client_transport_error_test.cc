@@ -60,7 +60,6 @@
 using testing::AtMost;
 using testing::MockFunction;
 using testing::Return;
-using testing::Sequence;
 using testing::StrictMock;
 using testing::WithArgs;
 

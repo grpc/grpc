@@ -51,12 +51,10 @@
 using testing::_;
 using testing::MockFunction;
 using testing::Return;
-using testing::Sequence;
 using testing::StrictMock;
 using testing::WithArgs;
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
-using grpc_event_engine::experimental::EventEngine;
 
 namespace grpc_core {
 namespace chaotic_good {
