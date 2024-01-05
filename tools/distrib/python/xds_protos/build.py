@@ -129,6 +129,8 @@ def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
                     )
                 if return_code != 0:
                     raise Exception("error: {} failed".format(COMPILE_BOTH))
+    # Ensure a deterministic order.
+    TEST_IMPORTS.sort()
     if not compiled_any:
         raise Exception("No proto files found at {}. Did you update git submodules?".format(proto_root, sub_dir))
 
