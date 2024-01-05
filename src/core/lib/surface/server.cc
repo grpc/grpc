@@ -829,7 +829,11 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
 Server::Server(const ChannelArgs& args)
     : channel_args_(args),
       channelz_node_(CreateChannelzNode(args)),
-      server_call_tracer_factory_(ServerCallTracerFactory::Get(args)) {}
+      server_call_tracer_factory_(ServerCallTracerFactory::Get(args)),
+      max_time_in_pending_queue_(Duration::Seconds(
+          channel_args_
+              .GetInt(GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS)
+              .value_or(30))) {}
 
 Server::~Server() {
   // Remove the cq pollsets from the config_fetcher.
