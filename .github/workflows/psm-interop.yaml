@@ -26,14 +26,14 @@ jobs:
         working-directory: 'tools/run_tests/xds_k8s_test_driver'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       # To add this job to required GitHub checks, it's not enough to use
       # the on.pull_request.paths filter. For required checks, the job needs to
       # return the success status, and not be skipped.
       # Using paths-filter action, we skip the setup/test steps when psm interop
       # files are unchanged, and the job returns success.
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50 # v2.11.1
         id: paths_filter
         with:
           filters:  |
@@ -43,7 +43,7 @@ jobs:
               - 'src/proto/grpc/testing/messages.proto'
               - 'src/proto/grpc/testing/test.proto'
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4.7.1
         if: ${{ steps.paths_filter.outputs.psm_interop_src == 'true' }}
         with:
           python-version: "${{ matrix.python_version }}"

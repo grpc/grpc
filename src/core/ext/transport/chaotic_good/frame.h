@@ -43,6 +43,7 @@ class FrameInterface {
                                    absl::BitGenRef bitsrc,
                                    SliceBuffer& slice_buffer) = 0;
   virtual SliceBuffer Serialize(HPackCompressor* encoder) const = 0;
+  virtual std::string ToString() const = 0;
 
  protected:
   static bool EqVal(const Message& a, const Message& b) {
@@ -67,6 +68,7 @@ struct SettingsFrame final : public FrameInterface {
                            absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
   bool operator==(const SettingsFrame&) const { return true; }
 };
@@ -76,15 +78,16 @@ struct ClientFragmentFrame final : public FrameInterface {
                            absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
-  FrameHeader frame_header;
+  uint32_t stream_id;
   ClientMetadataHandle headers;
   MessageHandle message;
+  uint32_t message_padding;
   bool end_of_stream = false;
 
   bool operator==(const ClientFragmentFrame& other) const {
-    return frame_header.stream_id == other.frame_header.stream_id &&
-           EqHdl(headers, other.headers) &&
+    return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
            end_of_stream == other.end_of_stream;
   }
 };
@@ -94,15 +97,17 @@ struct ServerFragmentFrame final : public FrameInterface {
                            absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
-  FrameHeader frame_header;
+  uint32_t stream_id;
   ServerMetadataHandle headers;
   MessageHandle message;
+  uint32_t message_padding;
   ServerMetadataHandle trailers;
 
   bool operator==(const ServerFragmentFrame& other) const {
-    return frame_header.stream_id == other.frame_header.stream_id &&
-           EqHdl(headers, other.headers) && EqHdl(trailers, other.trailers);
+    return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
+           EqHdl(trailers, other.trailers);
   }
 };
 
@@ -111,6 +116,7 @@ struct CancelFrame final : public FrameInterface {
                            absl::BitGenRef bitsrc,
                            SliceBuffer& slice_buffer) override;
   SliceBuffer Serialize(HPackCompressor* encoder) const override;
+  std::string ToString() const override;
 
   uint32_t stream_id;
 

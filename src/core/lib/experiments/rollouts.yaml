@@ -22,6 +22,10 @@
 #              - debug   - the experiment defaults to on in debug builds,
 #                          off in release builds in all platforms.
 #              - true    - the experiment defaults to on in all platforms.
+# requires:    A list of names of experiments that this experiment depends on.
+#              Defaults to the empty list.
+#              If any of the experiments in the required list is determined to
+#              be disabled at runtime, this experiment is disabled at runtime.
 #
 # [OR] the default can be platform specific:
 #  -----------------------------------------
@@ -36,22 +40,14 @@
 #
 # Supported platforms: ios, windows, posix
 
-- name: block_excessive_requests_before_settings_ack
-  default: true
 - name: call_status_override_on_cancellation
   default: debug
 - name: canary_client_privacy
   default: false
-- name: chttp2_batch_requests
-  default: true
-- name: chttp2_offload_on_rst_stream
-  default: true
 - name: client_idleness
   default: true
 - name: client_privacy
   default: false
-- name: combiner_offload_to_event_engine
-  default: true
 - name: event_engine_client
   default:
     # not tested on iOS at all
@@ -78,19 +74,11 @@
   default: false
 - name: http2_stats_fix
   default: true
-- name: jitter_max_idle
-  default: true
 - name: keepalive_fix
   default: false
 - name: keepalive_server_fix
   default: false
-- name: lazier_stream_updates
-  default: true
-- name: memory_pressure_controller
-  default: false
 - name: monitoring_experiment
-  default: true
-- name: overload_protection
   default: true
 - name: peer_state_based_framing
   default: false
@@ -98,13 +86,9 @@
   default: true
 - name: pick_first_happy_eyeballs
   default: true
-- name: ping_on_rst_stream
-  default: true
 - name: promise_based_client_call
   default: false
 - name: promise_based_server_call
-  default: false
-- name: red_max_concurrent_streams
   default: false
 - name: registered_method_lookup_in_transport
   default: true
@@ -118,14 +102,8 @@
   default: false
 - name: schedule_cancellation_over_write
   default: false
-- name: separate_ping_from_keepalive
-  default: true
 - name: server_privacy
   default: false
-- name: settings_timeout
-  default: true
-- name: tarpit
-  default: true
 - name: tcp_frame_size_tuning
   default: false
 - name: tcp_rcv_lowat
@@ -134,8 +112,6 @@
   default: false
 - name: unconstrained_max_quota_buffer_size
   default: false
-- name: uniquely_unowned
-  default: true
 - name: work_serializer_clears_time_cache
   default: true
 - name: work_serializer_dispatch

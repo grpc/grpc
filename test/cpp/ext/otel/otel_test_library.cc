@@ -38,7 +38,7 @@
 namespace grpc {
 namespace testing {
 
-void OTelPluginEnd2EndTest::Init(
+void OpenTelemetryPluginEnd2EndTest::Init(
     const absl::flat_hash_set<absl::string_view>& metric_names,
     opentelemetry::sdk::resource::Resource resource,
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector,
@@ -59,7 +59,7 @@ void OTelPluginEnd2EndTest::Init(
   reader_.reset(new grpc::testing::MockMetricReader);
   meter_provider->AddMetricReader(reader_);
   grpc_core::CoreConfiguration::Reset();
-  grpc::internal::OpenTelemetryPluginBuilder ot_builder;
+  grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
   ot_builder.DisableAllMetrics();
   for (const auto& metric_name : metric_names) {
     ot_builder.EnableMetric(metric_name);
@@ -96,19 +96,20 @@ void OTelPluginEnd2EndTest::Init(
   generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
 }
 
-void OTelPluginEnd2EndTest::TearDown() {
+void OpenTelemetryPluginEnd2EndTest::TearDown() {
   server_->Shutdown();
   grpc_shutdown_blocking();
   delete grpc_core::ServerCallTracerFactory::Get(grpc_core::ChannelArgs());
   grpc_core::ServerCallTracerFactory::RegisterGlobal(nullptr);
 }
 
-void OTelPluginEnd2EndTest::ResetStub(std::shared_ptr<Channel> channel) {
+void OpenTelemetryPluginEnd2EndTest::ResetStub(
+    std::shared_ptr<Channel> channel) {
   stub_ = EchoTestService::NewStub(channel);
   generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
 }
 
-void OTelPluginEnd2EndTest::SendRPC() {
+void OpenTelemetryPluginEnd2EndTest::SendRPC() {
   EchoRequest request;
   request.set_message("foo");
   EchoResponse response;
@@ -116,7 +117,7 @@ void OTelPluginEnd2EndTest::SendRPC() {
   grpc::Status status = stub_->Echo(&context, request, &response);
 }
 
-void OTelPluginEnd2EndTest::SendGenericRPC() {
+void OpenTelemetryPluginEnd2EndTest::SendGenericRPC() {
   grpc::ClientContext context;
   EchoRequest request;
   std::unique_ptr<ByteBuffer> send_buf = SerializeToByteBuffer(&request);
@@ -130,7 +131,7 @@ void OTelPluginEnd2EndTest::SendGenericRPC() {
 
 absl::flat_hash_map<
     std::string, std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
-OTelPluginEnd2EndTest::ReadCurrentMetricsData(
+OpenTelemetryPluginEnd2EndTest::ReadCurrentMetricsData(
     absl::AnyInvocable<
         bool(const absl::flat_hash_map<
              std::string,

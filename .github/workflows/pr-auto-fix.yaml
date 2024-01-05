@@ -12,17 +12,17 @@ jobs:
     steps:
       # Cache bazel build
       - name: Get current time
-        uses: srfrnk/current-time@master
+        uses: srfrnk/current-time@5a4163ad035ccd9a407ec9e519c3b6ba1b633d1e # v1.1.0
         id: current-time
         with:
           format: YYYYWW
       - name: Get current time
-        uses: srfrnk/current-time@master
+        uses: srfrnk/current-time@5a4163ad035ccd9a407ec9e519c3b6ba1b633d1e # v1.1.0
         id: current-time-with-day
         with:
           format: YYYYWWd
       - name: Cache bazel
-        uses: actions/cache@v3
+        uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3.3.2
         env:
           cache-name: bazel-cache
         with:
@@ -38,18 +38,19 @@ jobs:
       # Cancel current runs if they're still running
       # (saves processing on fast pushes)
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.9.1
+        uses: styfle/cancel-workflow-action@01ce38bf961b4e243a6342cbade0dbc8ba3f0432 # 0.12.0
         with:
           access_token: ${{ github.token }}
       # Allow opt-out for some users
       - name: Should I Stay Or Should I Go
-        uses: actions/github-script@v4
+        uses: actions/github-script@e69ef5462fd455e02edcaf4dd7708eda96b9eda0 # v7.0.0
         id: check
         with:
           script: |
             // If you'd like not to run this code on your commits, add your github user id here:
-            NO_AUTOFIX_USERS = []
+            NO_AUTOFIX_USERS = ["copybara-service[bot]"]
             const { owner, repo } = context.repo
+            console.log("Actor: " + context.actor);
             if (NO_AUTOFIX_USERS.includes(context.actor)) {
               console.log('Cancelling');
               const run_id = "${{ github.run_id }}";
@@ -65,7 +66,7 @@ jobs:
         run: test "${{ steps.check.outputs.result }}" = "stay"
       # Setup to run sanity suite
       - name: Install Python Interpreter
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4.7.1
         with:
           python-version: 3.8
       - name: Install Python Packages
@@ -74,7 +75,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install python3-dev
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           submodules: True
       - name: Get the upstream code
@@ -89,7 +90,7 @@ jobs:
         run: ANDROID_NDK_HOME= ${{ github.workspace }}/tools/distrib/sanitize.sh
       # Report back with a PR if things are broken
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38 # v5.0.2
         with:
           delete-branch: true
           branch-suffix: short-commit-hash

@@ -253,7 +253,9 @@ class PickFirst : public LoadBalancingPolicy {
    private:
     // Returns true if all subchannels have seen their initial
     // connectivity state notifications.
-    bool AllSubchannelsSeenInitialState();
+    bool AllSubchannelsSeenInitialState() const {
+      return num_subchannels_seen_initial_notification_ == size();
+    }
 
     // Looks through subchannels_ starting from attempting_index_ to
     // find the first one not currently in TRANSIENT_FAILURE, then
@@ -283,6 +285,8 @@ class PickFirst : public LoadBalancingPolicy {
 
     // TODO(roth): Remove this when we remove the Happy Eyeballs experiment.
     bool in_transient_failure_ = false;
+
+    size_t num_subchannels_seen_initial_notification_ = 0;
 
     // The index into subchannels_ to which we are currently attempting
     // to connect during the initial Happy Eyeballs pass.  Once the
@@ -445,9 +449,9 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     gpr_log(GPR_INFO, "[PF %p] Shutting down previous subchannel list %p", this,
             subchannel_list_.get());
   }
-  subchannel_list_ =
-      MakeOrphanable<SubchannelList>(Ref(DEBUG_LOCATION, "SubchannelList"),
-                                     addresses, latest_update_args_.args);
+  subchannel_list_ = MakeOrphanable<SubchannelList>(
+      RefAsSubclass<PickFirst>(DEBUG_LOCATION, "SubchannelList"), addresses,
+      latest_update_args_.args);
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE and request re-resolution.  Also unset the
   // current selected subchannel.
@@ -695,7 +699,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
       gpr_log(GPR_INFO, "[PF %p] starting health watch", pick_first_.get());
     }
     auto watcher = std::make_unique<HealthWatcher>(
-        pick_first_->Ref(DEBUG_LOCATION, "HealthWatcher"));
+        pick_first_.Ref(DEBUG_LOCATION, "HealthWatcher"));
     pick_first_->health_watcher_ = watcher.get();
     auto health_data_watcher = MakeHealthCheckWatcher(
         pick_first_->work_serializer(),
@@ -804,6 +808,11 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     seen_transient_failure_ = true;
     subchannel_list_->last_failure_ = connectivity_status_;
+  }
+  // If this is the initial connectivity state update for this subchannel,
+  // increment the counter in the subchannel list.
+  if (!old_state.has_value()) {
+    ++subchannel_list_->num_subchannels_seen_initial_notification_;
   }
   // If we haven't yet seen the initial connectivity state notification
   // for all subchannels, do nothing.
@@ -1110,13 +1119,6 @@ void PickFirst::SubchannelList::ResetBackoffLocked() {
   for (auto& sd : subchannels_) {
     sd->ResetBackoffLocked();
   }
-}
-
-bool PickFirst::SubchannelList::AllSubchannelsSeenInitialState() {
-  for (auto& sd : subchannels_) {
-    if (!sd->connectivity_state().has_value()) return false;
-  }
-  return true;
 }
 
 void PickFirst::SubchannelList::StartConnectingNextSubchannel() {

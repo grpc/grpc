@@ -48,17 +48,23 @@ namespace experimental {
 // CsmObservabilityBuilder
 //
 
+CsmObservabilityBuilder::CsmObservabilityBuilder()
+    : builder_(
+          std::make_unique<grpc::internal::OpenTelemetryPluginBuilderImpl>()) {}
+
+CsmObservabilityBuilder::~CsmObservabilityBuilder() = default;
+
 CsmObservabilityBuilder& CsmObservabilityBuilder::SetMeterProvider(
     std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
         meter_provider) {
-  builder_.SetMeterProvider(meter_provider);
+  builder_->SetMeterProvider(meter_provider);
   return *this;
 }
 
 CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetAttributeFilter(
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_attribute_filter) {
-  builder_.SetTargetAttributeFilter(std::move(target_attribute_filter));
+  builder_->SetTargetAttributeFilter(std::move(target_attribute_filter));
   return *this;
 }
 
@@ -66,22 +72,22 @@ CsmObservabilityBuilder&
 CsmObservabilityBuilder::SetGenericMethodAttributeFilter(
     absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
         generic_method_attribute_filter) {
-  builder_.SetGenericMethodAttributeFilter(
+  builder_->SetGenericMethodAttributeFilter(
       std::move(generic_method_attribute_filter));
   return *this;
 }
 
 absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
-  builder_.SetServerSelector([](const grpc_core::ChannelArgs& args) {
+  builder_->SetServerSelector([](const grpc_core::ChannelArgs& args) {
     return args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);
   });
-  builder_.SetTargetSelector(internal::CsmChannelTargetSelector);
-  builder_.SetLabelsInjector(
+  builder_->SetTargetSelector(internal::CsmChannelTargetSelector);
+  builder_->SetLabelsInjector(
       std::make_unique<internal::ServiceMeshLabelsInjector>(
           google::cloud::otel::MakeResourceDetector()
               ->Detect()
               .GetAttributes()));
-  builder_.BuildAndRegisterGlobal();
+  builder_->BuildAndRegisterGlobal();
   return CsmObservability();
 }
 

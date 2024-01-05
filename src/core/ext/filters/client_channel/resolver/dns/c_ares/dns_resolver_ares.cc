@@ -224,7 +224,8 @@ AresClientChannelDNSResolver::~AresClientChannelDNSResolver() {
 
 OrphanablePtr<Orphanable> AresClientChannelDNSResolver::StartRequest() {
   return MakeOrphanable<AresRequestWrapper>(
-      Ref(DEBUG_LOCATION, "dns-resolving"));
+      RefAsSubclass<AresClientChannelDNSResolver>(DEBUG_LOCATION,
+                                                  "dns-resolving"));
 }
 
 void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(

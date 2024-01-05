@@ -37,7 +37,7 @@ _LIST_OF_LANGUAGE_LABELS = [
     "ruby",
 ]
 _LIST_OF_PLATFORM_LABELS = ["linux", "macos", "windows"]
-_LIST_OF_SANITY_TESTS = ["sanity", "clang-tidy", "iwyu"]
+_LIST_OF_SANITY_TESTS = ["sanity", "clang-tidy"]
 
 
 def has_sanity_tests(job):

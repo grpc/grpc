@@ -28,11 +28,14 @@ TEST(StatusFlagTest, Basics) {
   EXPECT_FALSE(StatusCast<absl::Status>(StatusFlag(false)).ok());
   EXPECT_TRUE(ValueOrFailure<int>(42).ok());
   EXPECT_FALSE(ValueOrFailure<int>(Failure{}).ok());
-  EXPECT_TRUE(StatusCast<absl::Status>(ValueOrFailure<int>(42)).ok());
-  EXPECT_FALSE(StatusCast<absl::Status>(ValueOrFailure<int>(Failure{})).ok());
+  EXPECT_TRUE(StatusCast<absl::Status>(ValueOrFailure<int>(42).status()).ok());
+  EXPECT_FALSE(
+      StatusCast<absl::Status>(ValueOrFailure<int>(Failure{}).status()).ok());
   EXPECT_EQ(ValueOrFailure<int>(42).value(), 42);
   EXPECT_EQ(StatusCast<absl::StatusOr<int>>(ValueOrFailure<int>(42)).value(),
             42);
+  EXPECT_TRUE(IsStatusOk(Success{}));
+  EXPECT_FALSE(IsStatusOk(Failure{}));
 }
 
 }  // namespace grpc_core

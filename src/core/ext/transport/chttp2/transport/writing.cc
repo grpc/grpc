@@ -34,6 +34,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -280,8 +281,7 @@ class WriteContext {
                                       t_->settings[GRPC_LOCAL_SETTINGS],
                                       t_->force_send_settings,
                                       GRPC_CHTTP2_NUM_SETTINGS));
-      if (grpc_core::IsSettingsTimeoutEnabled() &&
-          t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
+      if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
         GPR_ASSERT(
             t_->settings_ack_watchdog ==
             grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);
@@ -517,7 +517,7 @@ class StreamWriteContext {
     if (s_->call_tracer) {
       s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
           grpc_core::HttpAnnotation::Type::kHeadWritten,
-          grpc_core::Timestamp::Now(), s_->t->flow_control.stats(),
+          gpr_now(GPR_CLOCK_REALTIME), s_->t->flow_control.stats(),
           s_->flow_control.stats()));
     }
   }
@@ -649,7 +649,7 @@ class StreamWriteContext {
                                    absl::OkStatus());
     if (s_->call_tracer) {
       s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kEnd, grpc_core::Timestamp::Now(),
+          grpc_core::HttpAnnotation::Type::kEnd, gpr_now(GPR_CLOCK_REALTIME),
           s_->t->flow_control.stats(), s_->flow_control.stats()));
     }
   }
@@ -734,9 +734,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
       t->keepalive_timeout != grpc_core::Duration::Infinity()) {
     // Set ping timeout after finishing write so we don't measure our own send
     // time.
-    const auto timeout = grpc_core::IsSeparatePingFromKeepaliveEnabled()
-                             ? t->ping_timeout
-                             : t->keepalive_timeout;
+    const auto timeout = t->ping_timeout;
     auto id = t->ping_callbacks.OnPingTimeout(
         timeout, t->event_engine.get(), [t = t->Ref()] {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -750,8 +748,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
               id.value());
     }
 
-    if (grpc_core::IsSeparatePingFromKeepaliveEnabled() &&
-        t->keepalive_incoming_data_wanted &&
+    if (t->keepalive_incoming_data_wanted &&
         t->keepalive_timeout < t->ping_timeout &&
         t->keepalive_ping_timeout_handle !=
             grpc_event_engine::experimental::EventEngine::TaskHandle::

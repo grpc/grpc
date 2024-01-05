@@ -107,6 +107,7 @@ class TlsCredentialsTest : public ::testing::Test {
   std::string server_addr_;
 };
 
+// NOLINTNEXTLINE(clang-diagnostic-unused-function)
 void DoRpc(const std::string& server_addr,
            const TlsChannelCredentialsOptions& tls_options) {
   std::shared_ptr<Channel> channel =

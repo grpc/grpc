@@ -148,8 +148,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
   }
   auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
-      refresh_duration, reload_error_callback,
-      grpc_event_engine::experimental::GetDefaultEventEngine(),
+      refresh_duration, reload_error_callback, /*event_engine=*/nullptr,
       MakeDirectoryReader(directory));
   // This could be slow to do at startup, but we want to
   // make sure it's done before the provider is used.
@@ -157,10 +156,28 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
   return provider;
 }
 
+DirectoryReloaderCrlProvider::DirectoryReloaderCrlProvider(
+    std::chrono::seconds duration, std::function<void(absl::Status)> callback,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    std::shared_ptr<DirectoryReader> directory_impl)
+    : refresh_duration_(Duration::FromSecondsAsDouble(duration.count())),
+      reload_error_callback_(std::move(callback)),
+      crl_directory_(std::move(directory_impl)) {
+  // Must be called before `GetDefaultEventEngine`
+  grpc_init();
+  if (event_engine == nullptr) {
+    event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
+  } else {
+    event_engine_ = std::move(event_engine);
+  }
+}
+
 DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
   if (refresh_handle_.has_value()) {
     event_engine_->Cancel(refresh_handle_.value());
   }
+  // Call here because we call grpc_init in the constructor
+  grpc_shutdown();
 }
 
 void DirectoryReloaderCrlProvider::UpdateAndStartTimer() {
@@ -209,9 +226,9 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
     // in-place updated in crls_.
     for (auto& kv : new_crls) {
       std::shared_ptr<Crl>& crl = kv.second;
-      // It's not safe to say crl->Issuer() on the LHS and std::move(crl) on the
-      // RHS, because C++ does not guarantee which of those will be executed
-      // first.
+      // It's not safe to say crl->Issuer() on the LHS and std::move(crl) on
+      // the RHS, because C++ does not guarantee which of those will be
+      // executed first.
       std::string issuer(crl->Issuer());
       crls_[std::move(issuer)] = std::move(crl);
     }
