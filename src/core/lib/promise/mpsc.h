@@ -138,9 +138,9 @@ class MpscSender {
   // Resolves to true if sent, false if the receiver was closed (and the value
   // will never be successfully sent).
   auto Send(T t) {
-    return [this, t = std::move(t)]() mutable -> Poll<bool> {
-      if (center_ == nullptr) return false;
-      return center_->PollSend(t);
+    return [center = center_, t = std::move(t)]() mutable -> Poll<bool> {
+      if (center == nullptr) return false;
+      return center->PollSend(t);
     };
   }
 
