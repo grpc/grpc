@@ -284,7 +284,7 @@ test_driver_compile_protos() {
 
 #######################################
 # Installs the test driver and it's requirements.
-# https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#installation
+# https://github.com/grpc/psm-interop#installation
 # Globals:
 #   TEST_DRIVER_REPO_DIR: Populated with the path to the repo containing
 #                         the test driver
