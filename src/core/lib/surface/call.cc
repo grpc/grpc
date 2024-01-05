@@ -4069,7 +4069,7 @@ RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
       arena->New<ServerCallSpine>(server, channel, arena));
 }
 #else
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server*, Channel*) {
+RefCountedPtr<CallSpineInterface> MakeServerCall(Server*, Channel*, Arena*) {
   Crash("not implemented");
 }
 #endif
