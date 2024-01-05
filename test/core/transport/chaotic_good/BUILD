@@ -24,10 +24,10 @@ grpc_package(
 
 grpc_cc_library(
     name = "mock_promise_endpoint",
+    testonly = 1,
     srcs = ["mock_promise_endpoint.cc"],
     hdrs = ["mock_promise_endpoint.h"],
     external_deps = ["gtest"],
-    testonly = 1,
     deps = [
         "//:grpc",
         "//src/core:grpc_promise_endpoint",
