@@ -63,6 +63,8 @@ namespace testing {
 namespace {
 
 using ::testing::HasSubstr;
+using ::testing::IsEmpty;
+using ::testing::UnorderedElementsAre;
 
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
@@ -162,153 +164,23 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
     return context.auth_context();
   }
 
-  void ExpectResumedSession(std::shared_ptr<const AuthContext> auth_context) {
+  static absl::string_view GetAuthContextProperty(
+      const AuthContext& auth_context, const std::string& property) {
     std::vector<grpc::string_ref> properties =
-        auth_context->FindPropertyValues(GRPC_SSL_SESSION_REUSED_PROPERTY);
-    ASSERT_EQ(properties.size(), 1u);
-    EXPECT_EQ("true", ToString(properties[0]));
+        auth_context.FindPropertyValues(property);
+    if (properties.size() != 1) return "";
+    return absl::string_view(properties[0].data(), properties[0].size());
   }
 
-  void ExpectNonResumedSession(
-      std::shared_ptr<const AuthContext> auth_context) {
+  static absl::flat_hash_set<std::string> GetAuthContextPropertyAsSet(
+      const AuthContext& auth_context, const std::string& property) {
     std::vector<grpc::string_ref> properties =
-        auth_context->FindPropertyValues(GRPC_SSL_SESSION_REUSED_PROPERTY);
-    ASSERT_EQ(properties.size(), 1u);
-    EXPECT_EQ("false", ToString(properties[0]));
-  }
-
-  void ExpectOk(const absl::Status& status) {
-    EXPECT_EQ(status.code(), absl::StatusCode::kOk);
-    EXPECT_EQ(status.message(), "");
-  }
-
-  void ExpectTransportSecurityTypeIsSsl(
-      std::shared_ptr<const AuthContext> auth_context) {
-    std::vector<grpc::string_ref> properties = auth_context->FindPropertyValues(
-        GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), 1u);
-    EXPECT_EQ(ToString(properties[0]), GRPC_SSL_TRANSPORT_SECURITY_TYPE);
-  }
-
-  void ExpectTransportSecurityLevelIsPrivacyAndIntegrity(
-      std::shared_ptr<const AuthContext> auth_context) {
-    std::vector<grpc::string_ref> properties = auth_context->FindPropertyValues(
-        GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), 1u);
-    EXPECT_EQ(ToString(properties[0]), "TSI_PRIVACY_AND_INTEGRITY");
-  }
-
-  void ExpectPeerCommonNameEquals(
-      std::shared_ptr<const AuthContext> auth_context,
-      absl::string_view common_name) {
-    std::vector<grpc::string_ref> properties =
-        auth_context->FindPropertyValues(GRPC_X509_CN_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), 1u);
-    EXPECT_EQ(ToString(properties[0]), common_name);
-  }
-
-  void ExpectPeerSubjectEquals(std::shared_ptr<const AuthContext> auth_context,
-                               absl::string_view subject) {
-    std::vector<grpc::string_ref> properties =
-        auth_context->FindPropertyValues(GRPC_X509_SUBJECT_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), 1u);
-    EXPECT_EQ(ToString(properties[0]), subject);
-  }
-
-  void ExpectPeerSubjectAltNameEquals(
-      std::shared_ptr<const AuthContext> auth_context,
-      const absl::flat_hash_set<std::string>& sans) {
-    std::vector<grpc::string_ref> properties =
-        auth_context->FindPropertyValues(GRPC_X509_SAN_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), sans.size());
-    absl::flat_hash_set<std::string> observed_sans;
+        auth_context.FindPropertyValues(property);
+    absl::flat_hash_set<std::string> set;
     for (size_t i = 0; i < properties.size(); ++i) {
-      observed_sans.insert(ToString(properties[i]));
+      set.insert(ToString(properties[i]));
     }
-    EXPECT_EQ(observed_sans, sans);
-  }
-
-  void ExpectPeerCertPemEquals(std::shared_ptr<const AuthContext> auth_context,
-                               absl::string_view pem) {
-    std::vector<grpc::string_ref> properties =
-        auth_context->FindPropertyValues(GRPC_X509_PEM_CERT_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), 1u);
-    EXPECT_EQ(ToString(properties[0]), pem);
-  }
-
-  // TODO(mattstevenson88): Check this property when there are >= 2 untrusted
-  // certs in the chain.
-  void ExpectPeerCertChainPemEquals(
-      std::shared_ptr<const AuthContext> auth_context, absl::string_view pem) {
-    std::vector<grpc::string_ref> properties = auth_context->FindPropertyValues(
-        GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), 1u);
-    EXPECT_EQ(ToString(properties[0]), pem);
-  }
-
-  void ExpectPeerDnsSansEquals(
-      std::shared_ptr<const AuthContext> auth_context,
-      const absl::flat_hash_set<std::string>& dns_sans) {
-    std::vector<grpc::string_ref> properties =
-        auth_context->FindPropertyValues(GRPC_PEER_DNS_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), dns_sans.size());
-    absl::flat_hash_set<std::string> observed_sans;
-    for (size_t i = 0; i < properties.size(); ++i) {
-      observed_sans.insert(ToString(properties[i]));
-    }
-    EXPECT_EQ(observed_sans, dns_sans);
-  }
-
-  // TODO(matthewstevenson88): Check this property when there are URI SANs in
-  // the peer leaf cert.
-  void ExpectPeerUriSansEquals(
-      std::shared_ptr<const AuthContext> auth_context,
-      const absl::flat_hash_set<std::string>& uri_sans) {
-    std::vector<grpc::string_ref> properties =
-        auth_context->FindPropertyValues(GRPC_PEER_URI_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), uri_sans.size());
-    absl::flat_hash_set<std::string> observed_sans;
-    for (size_t i = 0; i < properties.size(); ++i) {
-      observed_sans.insert(ToString(properties[i]));
-    }
-    EXPECT_EQ(observed_sans, uri_sans);
-  }
-
-  // TODO(matthewstevenson88): Check this property when there are email SANs in
-  // the peer leaf cert.
-  void ExpectPeerEmailSansEquals(
-      std::shared_ptr<const AuthContext> auth_context,
-      const absl::flat_hash_set<std::string>& email_sans) {
-    std::vector<grpc::string_ref> properties =
-        auth_context->FindPropertyValues(GRPC_PEER_EMAIL_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), email_sans.size());
-    absl::flat_hash_set<std::string> observed_sans;
-    for (size_t i = 0; i < properties.size(); ++i) {
-      observed_sans.insert(ToString(properties[i]));
-    }
-    EXPECT_EQ(observed_sans, email_sans);
-  }
-
-  // TODO(matthewstevenson88): Check this property when there are IP SANs in
-  // the peer leaf cert.
-  void ExpectPeerIpSansEquals(std::shared_ptr<const AuthContext> auth_context,
-                              const absl::flat_hash_set<std::string>& ip_sans) {
-    std::vector<grpc::string_ref> properties =
-        auth_context->FindPropertyValues(GRPC_PEER_IP_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), ip_sans.size());
-    absl::flat_hash_set<std::string> observed_sans;
-    for (size_t i = 0; i < properties.size(); ++i) {
-      observed_sans.insert(ToString(properties[i]));
-    }
-    EXPECT_EQ(observed_sans, ip_sans);
-  }
-
-  // TODO(matthewstevenson88): Check this property when there is a SPIFFE ID in
-  // the peer leaf cert.
-  void ExpectNoSpiffeId(std::shared_ptr<const AuthContext> auth_context) {
-    std::vector<grpc::string_ref> properties =
-        auth_context->FindPropertyValues(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
-    ASSERT_EQ(properties.size(), 0);
+    return set;
   }
 
   TestServiceImpl service_;
@@ -338,27 +210,50 @@ TEST_P(SslCredentialsTest, FullHandshake) {
   grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
 
   auto full_handshake_context = DoRpc(ssl_options, cache);
-  ExpectOk(full_handshake_context.status());
-  ExpectNonResumedSession(*full_handshake_context);
-  ExpectTransportSecurityTypeIsSsl(*full_handshake_context);
-  ExpectTransportSecurityLevelIsPrivacyAndIntegrity(*full_handshake_context);
-  ExpectPeerCommonNameEquals(*full_handshake_context, "*.test.google.com");
-  ExpectPeerSubjectEquals(
-      *full_handshake_context,
-      "CN=*.test.google.com,O=Example\\, Co.,L=Chicago,ST=Illinois,C=US");
-  ExpectPeerSubjectAltNameEquals(
-      *full_handshake_context, {"*.test.google.fr", "waterzooi.test.google.be",
-                                "*.test.youtube.com", "192.168.1.3"});
-  ExpectPeerCertPemEquals(*full_handshake_context, ReadFile(kServerCertPath));
-  ExpectPeerCertChainPemEquals(*full_handshake_context,
-                               ReadFile(kServerCertPath));
-  ExpectPeerDnsSansEquals(
-      *full_handshake_context,
-      {"*.test.google.fr", "waterzooi.test.google.be", "*.test.youtube.com"});
-  ExpectPeerUriSansEquals(*full_handshake_context, /*uri_sans=*/{});
-  ExpectPeerEmailSansEquals(*full_handshake_context, /*email_sans=*/{});
-  ExpectPeerIpSansEquals(*full_handshake_context, {"192.168.1.3"});
-  ExpectNoSpiffeId(*full_handshake_context);
+  EXPECT_EQ(full_handshake_context.status(), absl::OkStatus());
+  EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                   GRPC_SSL_SESSION_REUSED_PROPERTY),
+            "false");
+  EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                   GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME),
+            GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                   GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME),
+            "TSI_PRIVACY_AND_INTEGRITY");
+  EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                   GRPC_X509_CN_PROPERTY_NAME),
+            "*.test.google.com");
+  EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                   GRPC_X509_SUBJECT_PROPERTY_NAME),
+            "CN=*.test.google.com,O=Example\\, Co.,L=Chicago,ST=Illinois,C=US");
+  EXPECT_THAT(
+      GetAuthContextPropertyAsSet(**full_handshake_context,
+                                  GRPC_X509_SAN_PROPERTY_NAME),
+      UnorderedElementsAre("*.test.google.fr", "waterzooi.test.google.be",
+                           "*.test.youtube.com", "192.168.1.3"));
+  EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                   GRPC_X509_PEM_CERT_PROPERTY_NAME),
+            ReadFile(kServerCertPath));
+  EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                   GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME),
+            ReadFile(kServerCertPath));
+  EXPECT_THAT(
+      GetAuthContextPropertyAsSet(**full_handshake_context,
+                                  GRPC_PEER_DNS_PROPERTY_NAME),
+      UnorderedElementsAre("*.test.google.fr", "waterzooi.test.google.be",
+                           "*.test.youtube.com"));
+  EXPECT_THAT(GetAuthContextPropertyAsSet(**full_handshake_context,
+                                          GRPC_PEER_URI_PROPERTY_NAME),
+              IsEmpty());
+  EXPECT_THAT(GetAuthContextPropertyAsSet(**full_handshake_context,
+                                          GRPC_PEER_EMAIL_PROPERTY_NAME),
+              IsEmpty());
+  EXPECT_THAT(GetAuthContextPropertyAsSet(**full_handshake_context,
+                                          GRPC_PEER_IP_PROPERTY_NAME),
+              UnorderedElementsAre("192.168.1.3"));
+  EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                   GRPC_PEER_SPIFFE_ID_PROPERTY_NAME),
+            "");
   if (GetParam().use_session_cache) {
     EXPECT_EQ(GetSessionCacheSize(cache), 1);
   }
@@ -390,33 +285,56 @@ TEST_P(SslCredentialsTest, ResumedHandshake) {
   grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
 
   auto full_handshake_context = DoRpc(ssl_options, cache);
-  ExpectOk(full_handshake_context.status());
-  ExpectNonResumedSession(*full_handshake_context);
+  EXPECT_EQ(full_handshake_context.status(), absl::OkStatus());
+  EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                   GRPC_SSL_SESSION_REUSED_PROPERTY),
+            "false");
 
   auto resumed_handshake_context = DoRpc(ssl_options, cache);
-  ExpectOk(resumed_handshake_context.status());
-  ExpectResumedSession(*resumed_handshake_context);
-  ExpectTransportSecurityTypeIsSsl(*resumed_handshake_context);
-  ExpectTransportSecurityLevelIsPrivacyAndIntegrity(*resumed_handshake_context);
-  ExpectPeerCommonNameEquals(*resumed_handshake_context, "*.test.google.com");
-  ExpectPeerSubjectEquals(
-      *resumed_handshake_context,
-      "CN=*.test.google.com,O=Example\\, Co.,L=Chicago,ST=Illinois,C=US");
-  ExpectPeerSubjectAltNameEquals(
-      *resumed_handshake_context,
-      {"*.test.google.fr", "waterzooi.test.google.be", "*.test.youtube.com",
-       "192.168.1.3"});
-  ExpectPeerCertPemEquals(*resumed_handshake_context,
-                          ReadFile(kServerCertPath));
-  ExpectPeerCertChainPemEquals(*resumed_handshake_context,
-                               ReadFile(kServerCertPath));
-  ExpectPeerDnsSansEquals(
-      *resumed_handshake_context,
-      {"*.test.google.fr", "waterzooi.test.google.be", "*.test.youtube.com"});
-  ExpectPeerUriSansEquals(*resumed_handshake_context, /*uri_sans=*/{});
-  ExpectPeerEmailSansEquals(*resumed_handshake_context, /*email_sans=*/{});
-  ExpectPeerIpSansEquals(*resumed_handshake_context, {"192.168.1.3"});
-  ExpectNoSpiffeId(*resumed_handshake_context);
+  EXPECT_EQ(resumed_handshake_context.status(), absl::OkStatus());
+  EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
+                                   GRPC_SSL_SESSION_REUSED_PROPERTY),
+            "true");
+  EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
+                                   GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME),
+            GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
+                                   GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME),
+            "TSI_PRIVACY_AND_INTEGRITY");
+  EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
+                                   GRPC_X509_CN_PROPERTY_NAME),
+            "*.test.google.com");
+  EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
+                                   GRPC_X509_SUBJECT_PROPERTY_NAME),
+            "CN=*.test.google.com,O=Example\\, Co.,L=Chicago,ST=Illinois,C=US");
+  EXPECT_THAT(
+      GetAuthContextPropertyAsSet(**resumed_handshake_context,
+                                  GRPC_X509_SAN_PROPERTY_NAME),
+      UnorderedElementsAre("*.test.google.fr", "waterzooi.test.google.be",
+                           "*.test.youtube.com", "192.168.1.3"));
+  EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
+                                   GRPC_X509_PEM_CERT_PROPERTY_NAME),
+            ReadFile(kServerCertPath));
+  EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
+                                   GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME),
+            ReadFile(kServerCertPath));
+  EXPECT_THAT(
+      GetAuthContextPropertyAsSet(**resumed_handshake_context,
+                                  GRPC_PEER_DNS_PROPERTY_NAME),
+      UnorderedElementsAre("*.test.google.fr", "waterzooi.test.google.be",
+                           "*.test.youtube.com"));
+  EXPECT_THAT(GetAuthContextPropertyAsSet(**resumed_handshake_context,
+                                          GRPC_PEER_URI_PROPERTY_NAME),
+              IsEmpty());
+  EXPECT_THAT(GetAuthContextPropertyAsSet(**resumed_handshake_context,
+                                          GRPC_PEER_EMAIL_PROPERTY_NAME),
+              IsEmpty());
+  EXPECT_THAT(GetAuthContextPropertyAsSet(**resumed_handshake_context,
+                                          GRPC_PEER_IP_PROPERTY_NAME),
+              UnorderedElementsAre("192.168.1.3"));
+  EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
+                                   GRPC_PEER_SPIFFE_ID_PROPERTY_NAME),
+            "");
   EXPECT_EQ(GetSessionCacheSize(cache), 1);
 
   grpc_ssl_session_cache_destroy(cache);
@@ -446,12 +364,16 @@ TEST_P(SslCredentialsTest, SequentialResumption) {
   grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
 
   auto full_handshake_context = DoRpc(ssl_options, cache);
-  ExpectOk(full_handshake_context.status());
-  ExpectNonResumedSession(*full_handshake_context);
+  EXPECT_EQ(full_handshake_context.status(), absl::OkStatus());
+  EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                   GRPC_SSL_SESSION_REUSED_PROPERTY),
+            "false");
   for (int i = 0; i < 10; i++) {
     auto resumed_handshake_context = DoRpc(ssl_options, cache);
-    ExpectOk(resumed_handshake_context.status());
-    ExpectResumedSession(*resumed_handshake_context);
+    EXPECT_EQ(resumed_handshake_context.status(), absl::OkStatus());
+    EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
+                                     GRPC_SSL_SESSION_REUSED_PROPERTY),
+              "true");
   }
 
   grpc_ssl_session_cache_destroy(cache);
@@ -481,15 +403,19 @@ TEST_P(SslCredentialsTest, ConcurrentResumption) {
   grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
 
   auto full_handshake_context = DoRpc(ssl_options, cache);
-  ExpectOk(full_handshake_context.status());
-  ExpectNonResumedSession(*full_handshake_context);
+  EXPECT_EQ(full_handshake_context.status(), absl::OkStatus());
+  EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                   GRPC_SSL_SESSION_REUSED_PROPERTY),
+            "false");
   std::vector<std::thread> threads;
   threads.reserve(10);
   for (int i = 0; i < 10; i++) {
     threads.push_back(std::thread([&]() {
       auto resumed_handshake_context = DoRpc(ssl_options, cache);
-      ExpectOk(resumed_handshake_context.status());
-      ExpectResumedSession(*resumed_handshake_context);
+      EXPECT_EQ(resumed_handshake_context.status(), absl::OkStatus());
+      EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
+                                       GRPC_SSL_SESSION_REUSED_PROPERTY),
+                "true");
     }));
   }
   for (auto& t : threads) {
@@ -521,8 +447,10 @@ TEST_P(SslCredentialsTest, ResumptionFailsDueToNoCapacityInCache) {
 
   for (int i = 0; i < 2; ++i) {
     auto full_handshake_context = DoRpc(ssl_options, cache);
-    ExpectOk(full_handshake_context.status());
-    ExpectNonResumedSession(*full_handshake_context);
+    EXPECT_EQ(full_handshake_context.status(), absl::OkStatus());
+    EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
+                                     GRPC_SSL_SESSION_REUSED_PROPERTY),
+              "false");
   }
 
   grpc_ssl_session_cache_destroy(cache);
