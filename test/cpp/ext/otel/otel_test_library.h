@@ -72,7 +72,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
           generic_method_attribute_filter = absl::AnyInvocable<
               bool(absl::string_view /*generic_method*/) const>(),
       std::vector<
-          std::unique_ptr<grpc::experimental::OpenTelemetryPluginOption>>
+          std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
           plugin_options = {});
 
   void TearDown() override;

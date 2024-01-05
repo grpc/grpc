@@ -28,6 +28,8 @@
 #include "absl/strings/string_view.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
+#include <grpcpp/ext/otel_plugin.h>
+
 namespace grpc {
 
 namespace internal {
@@ -98,7 +100,7 @@ class OpenTelemetryPluginOption;
 ///     .SetMeterProvider(provider)
 ///     .AddPluginOption(MakeCsmOpenTelemetryPluginOption())
 ///     .BuildAndRegisterGlobal();
-OpenTelemetryPluginOption* MakeCsmOpenTelemetryPluginOption();
+std::unique_ptr<OpenTelemetryPluginOption> MakeCsmOpenTelemetryPluginOption();
 
 }  // namespace experimental
 }  // namespace grpc

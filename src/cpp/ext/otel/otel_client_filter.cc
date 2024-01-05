@@ -100,12 +100,9 @@ OpenTelemetryClientFilter::MakeCallPromise(
   return next_promise_factory(std::move(call_args));
 }
 
-OpenTelemetryClientFilter::OpenTelemetryClientFilter(std::string target) {
-  for (const auto& plugin_option : OpenTelemetryPluginState().plugin_options) {
-    active_plugin_options_.push_back(
-        plugin_option != nullptr &&
-        plugin_option->IsActiveOnClientChannel(target));
-  }
+OpenTelemetryClientFilter::OpenTelemetryClientFilter(std::string target)
+    : active_plugin_options_view_(
+          ActivePluginOptionsView::MakeForClient(target)) {
   // Use the original target string only if a filter on the attribute is not
   // registered or if the filter returns true, otherwise use "other".
   if (OpenTelemetryPluginState().target_attribute_filter == nullptr ||
@@ -145,18 +142,15 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     injected_labels_ = OpenTelemetryPluginState().labels_injector->GetLabels(
         recv_initial_metadata);
   }
-  for (size_t i = 0; i < OpenTelemetryPluginState().plugin_options.size();
-       ++i) {
-    if (parent_->parent_->PluginOptionActive(i) &&
-        OpenTelemetryPluginState().plugin_options[i]->labels_injector() !=
-            nullptr) {
-      injected_labels_from_plugin_options_.push_back(
-          OpenTelemetryPluginState()
-              .plugin_options[i]
-              ->labels_injector()
-              ->GetLabels(recv_initial_metadata));
-    }
-  }
+  parent_->parent_->active_plugin_options_view().ForEach(
+      [&](const InternalOpenTelemetryPluginOption& plugin_option,
+          size_t /*index*/) {
+        auto* labels_injector = plugin_option.labels_injector();
+        if (labels_injector != nullptr) {
+          injected_labels_from_plugin_options_.push_back(
+              labels_injector->GetLabels(recv_initial_metadata));
+        }
+      });
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
@@ -165,17 +159,14 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     OpenTelemetryPluginState().labels_injector->AddLabels(send_initial_metadata,
                                                           nullptr);
   }
-  for (size_t i = 0; i < OpenTelemetryPluginState().plugin_options.size();
-       ++i) {
-    if (parent_->parent_->PluginOptionActive(i) &&
-        OpenTelemetryPluginState().plugin_options[i]->labels_injector() !=
-            nullptr) {
-      OpenTelemetryPluginState()
-          .plugin_options[i]
-          ->labels_injector()
-          ->AddLabels(send_initial_metadata, nullptr);
-    }
-  }
+  parent_->parent_->active_plugin_options_view().ForEach(
+      [&](const InternalOpenTelemetryPluginOption& plugin_option,
+          size_t /*index*/) {
+        auto* labels_injector = plugin_option.labels_injector();
+        if (labels_injector != nullptr) {
+          labels_injector->AddLabels(send_initial_metadata, nullptr);
+        }
+      });
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordSendMessage(

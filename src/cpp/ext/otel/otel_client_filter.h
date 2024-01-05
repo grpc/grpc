@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {
@@ -50,17 +51,15 @@ class OpenTelemetryClientFilter : public grpc_core::ChannelFilter {
 
   absl::string_view filtered_target() const { return filtered_target_; }
 
-  bool PluginOptionActive(size_t index) const {
-    return active_plugin_options_[index];
+  const ActivePluginOptionsView& active_plugin_options_view() const {
+    return active_plugin_options_view_;
   }
 
  private:
   explicit OpenTelemetryClientFilter(std::string target);
 
   std::string filtered_target_;
-  std::vector<bool>
-      active_plugin_options_;  // bool for whether a corresponding plugin option
-                               // is active on this call tracer.
+  ActivePluginOptionsView active_plugin_options_view_;
 };
 
 }  // namespace internal

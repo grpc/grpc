@@ -156,7 +156,9 @@ OpenTelemetryPluginBuilderImpl::SetServerSelector(
 }
 
 OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::AddPluginOption(
-    std::unique_ptr<experimental::OpenTelemetryPluginOption> option) {
+    std::unique_ptr<InternalOpenTelemetryPluginOption> option) {
+  // We allow a limit of 64 plugin options to be registered at this time.
+  GPR_ASSERT(plugin_options_.size() < 64);
   plugin_options_.push_back(std::move(option));
   return *this;
 }
@@ -322,8 +324,11 @@ OpenTelemetryPluginBuilder::SetGenericMethodAttributeFilter(
 }
 
 OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::AddPluginOption(
-    OpenTelemetryPluginOption* option) {
-  impl_->AddPluginOption(std::unique_ptr<OpenTelemetryPluginOption>(option));
+    std::unique_ptr<OpenTelemetryPluginOption> option) {
+  impl_->AddPluginOption(
+      std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>(
+          static_cast<grpc::internal::InternalOpenTelemetryPluginOption*>(
+              option.release())));
   return *this;
 }
 

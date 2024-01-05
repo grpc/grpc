@@ -703,7 +703,7 @@ class CustomLabelInjector : public grpc::internal::LabelsInjector {
 };
 
 class CustomPluginOption
-    : public grpc::experimental::OpenTelemetryPluginOption {
+    : public grpc::internal::InternalOpenTelemetryPluginOption {
  public:
   CustomPluginOption(bool enabled_on_client, bool enabled_on_server,
                      std::pair<std::string, std::string> label)
@@ -733,8 +733,9 @@ class CustomPluginOption
 };
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
-  std::vector<std::unique_ptr<grpc::experimental::OpenTelemetryPluginOption>>
-      plugin_option_list;
+  std::vector<
+      std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
+      plugin_option_list(1);
   plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
       /*enabled_on_client*/ true, /*enabled_on_server*/ true,
       std::make_pair("key", "value")));
@@ -775,8 +776,9 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
 }
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
-  std::vector<std::unique_ptr<grpc::experimental::OpenTelemetryPluginOption>>
-      plugin_option_list;
+  std::vector<
+      std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
+      plugin_option_list(1);
   plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
       /*enabled_on_client*/ true, /*enabled_on_server*/ false,
       std::make_pair("key", "value")));
@@ -817,8 +819,9 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
 }
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
-  std::vector<std::unique_ptr<grpc::experimental::OpenTelemetryPluginOption>>
-      plugin_option_list;
+  std::vector<
+      std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
+      plugin_option_list(1);
   plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
       /*enabled_on_client*/ false, /*enabled_on_server*/ true,
       std::make_pair("key", "value")));
@@ -856,12 +859,13 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
       data["grpc.server.call.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(server_attributes.size(), 3);
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key")), "value");
-}
+}  // namespace
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
        MultipleEnabledAndDisabledPluginOptions) {
-  std::vector<std::unique_ptr<grpc::experimental::OpenTelemetryPluginOption>>
-      plugin_option_list;
+  std::vector<
+      std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
+      plugin_option_list(5);
   plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
       /*enabled_on_client*/ true, /*enabled_on_server*/ true,
       std::make_pair("key1", "value1")));

@@ -38,7 +38,10 @@ class OpenTelemetryPluginBuilderImpl;
 
 namespace experimental {
 
-class OpenTelemetryPluginOption;
+class OpenTelemetryPluginOption {
+ public:
+  virtual ~OpenTelemetryPluginOption() = default;
+};
 
 /// The most common way to use this API is -
 ///
@@ -102,7 +105,7 @@ class OpenTelemetryPluginBuilder {
   /// present, this type is an opaque type. Ownership of \a option is
   /// transferred when `AddPluginOption` is invoked.
   OpenTelemetryPluginBuilder& AddPluginOption(
-      OpenTelemetryPluginOption* option);
+      std::unique_ptr<OpenTelemetryPluginOption> option);
   /// Registers a global plugin that acts on all channels and servers running on
   /// the process.
   void BuildAndRegisterGlobal();

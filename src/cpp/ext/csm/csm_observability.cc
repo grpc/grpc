@@ -68,7 +68,7 @@ bool CsmChannelTargetSelector(absl::string_view target) {
 }
 
 class CsmOpenTelemetryPluginOption
-    : public grpc::experimental::OpenTelemetryPluginOption {
+    : public grpc::internal::InternalOpenTelemetryPluginOption {
  public:
   CsmOpenTelemetryPluginOption()
       : labels_injector_(std::make_unique<internal::ServiceMeshLabelsInjector>(
@@ -141,8 +141,8 @@ absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
   return CsmObservability();
 }
 
-OpenTelemetryPluginOption* MakeCsmOpenTelemetryPluginOption() {
-  return new grpc::internal::CsmOpenTelemetryPluginOption;
+std::unique_ptr<OpenTelemetryPluginOption> MakeCsmOpenTelemetryPluginOption() {
+  return std::make_unique<grpc::internal::CsmOpenTelemetryPluginOption>();
 }
 
 }  // namespace experimental

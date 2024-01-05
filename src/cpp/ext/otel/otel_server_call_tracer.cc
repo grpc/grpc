@@ -57,13 +57,11 @@ namespace {
 class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
  public:
   explicit OpenTelemetryServerCallTracer(const grpc_core::ChannelArgs& args)
-      : start_time_(absl::Now()) {
-    for (const auto& plugin_option :
-         OpenTelemetryPluginState().plugin_options) {
-      active_plugin_options_.push_back(plugin_option != nullptr &&
-                                       plugin_option->IsActiveOnServer(args));
-    }
-  }
+      : start_time_(absl::Now()),
+        active_plugin_options_view_(
+            ActivePluginOptionsView::MakeForServer(args)),
+        injected_labels_from_plugin_options_(
+            OpenTelemetryPluginState().plugin_options.size()) {}
 
   std::string TraceId() override {
     // Not implemented
@@ -88,18 +86,16 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
       OpenTelemetryPluginState().labels_injector->AddLabels(
           send_initial_metadata, injected_labels_.get());
     }
-    for (size_t i = 0; i < OpenTelemetryPluginState().plugin_options.size();
-         ++i) {
-      if (active_plugin_options_[i] &&
-          OpenTelemetryPluginState().plugin_options[i]->labels_injector() !=
-              nullptr) {
-        OpenTelemetryPluginState()
-            .plugin_options[i]
-            ->labels_injector()
-            ->AddLabels(send_initial_metadata,
-                        injected_labels_from_plugin_options_[i].get());
-      }
-    }
+    active_plugin_options_view_.ForEach(
+        [&](const InternalOpenTelemetryPluginOption& plugin_option,
+            size_t index) {
+          auto* labels_injector = plugin_option.labels_injector();
+          if (labels_injector != nullptr) {
+            labels_injector->AddLabels(
+                send_initial_metadata,
+                injected_labels_from_plugin_options_[index].get());
+          }
+        });
   }
 
   void RecordSendTrailingMetadata(
@@ -167,9 +163,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   grpc_core::Slice path_;
   std::unique_ptr<LabelsIterable> injected_labels_;
   bool registered_method_;
-  std::vector<bool>
-      active_plugin_options_;  // bool for whether a corresponding plugin option
-                               // is active on this call tracer.
+  ActivePluginOptionsView active_plugin_options_view_;
   std::vector<std::unique_ptr<LabelsIterable>>
       injected_labels_from_plugin_options_;
 };
@@ -182,20 +176,15 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     injected_labels_ = OpenTelemetryPluginState().labels_injector->GetLabels(
         recv_initial_metadata);
   }
-  for (size_t i = 0; i < OpenTelemetryPluginState().plugin_options.size();
-       ++i) {
-    if (active_plugin_options_[i] &&
-        OpenTelemetryPluginState().plugin_options[i]->labels_injector() !=
-            nullptr) {
-      injected_labels_from_plugin_options_.push_back(
-          OpenTelemetryPluginState()
-              .plugin_options[i]
-              ->labels_injector()
-              ->GetLabels(recv_initial_metadata));
-    } else {
-      injected_labels_from_plugin_options_.push_back(nullptr);
-    }
-  }
+  active_plugin_options_view_.ForEach(
+      [&](const InternalOpenTelemetryPluginOption& plugin_option,
+          size_t index) {
+        auto* labels_injector = plugin_option.labels_injector();
+        if (labels_injector != nullptr) {
+          injected_labels_from_plugin_options_[index] =
+              labels_injector->GetLabels(recv_initial_metadata);
+        }
+      });
   registered_method_ =
       recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
           .value_or(nullptr) != nullptr;

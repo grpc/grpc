@@ -49,7 +49,8 @@ void OpenTelemetryPluginEnd2EndTest::Init(
         target_attribute_filter,
     absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
         generic_method_attribute_filter,
-    std::vector<std::unique_ptr<grpc::experimental::OpenTelemetryPluginOption>>
+    std::vector<
+        std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
         plugin_options) {
   // We are resetting the MeterProvider and OpenTelemetry plugin at the start
   // of each test to avoid test results from one test carrying over to another
