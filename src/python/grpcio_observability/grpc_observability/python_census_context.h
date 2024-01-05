@@ -278,6 +278,10 @@ inline absl::string_view GetMethod(const char* method) {
   return absl::StripPrefix(absl::string_view(method), "/");
 }
 
+inline absl::string_view GetTarget(const char* target) {
+  return absl::string_view(target);
+}
+
 // Fills a pre-allocated buffer with the value for the grpc-trace-bin header.
 // The buffer must be at least kGrpcTraceBinHeaderLen bytes long.
 void ToGrpcTraceBinHeader(const PythonCensusContext& ctx, uint8_t* out);
