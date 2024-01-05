@@ -81,9 +81,9 @@ system_python(
     minimum_python_version = "3.7",
 )
 
-load("@system_python//:pip.bzl", "pip_parse")
+load("@system_python//:pip.bzl", system_pip_parse = "pip_parse")
 
-pip_parse(
+system_pip_parse(
     name = "pip_deps",
     requirements = "@com_google_protobuf//python:requirements.txt",
     requirements_overrides = {
