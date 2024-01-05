@@ -489,7 +489,7 @@ class Server : public InternallyRefCounted<Server>,
           0,
           channel_args_.GetInt(GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT)
               .value_or(3000)))};
-  Duration max_time_in_pending_queue_{Duration::Seconds(30)};
+  const Duration max_time_in_pending_queue_;
   absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> channels_;
