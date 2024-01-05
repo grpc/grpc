@@ -67,25 +67,26 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 namespace grpc_core {
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &ClientAuthFilter::kFilter)
+      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL, &ClientAuthFilter::kFilter)
+      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   if (IsV3ServerAuthFilterEnabled()) {
     builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_CHANNEL, &ServerAuthFilter::kFilter)
+        ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
         .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
   } else {
     builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_CHANNEL, &LegacyServerAuthFilter::kFilter)
+        ->RegisterFilter<LegacyServerAuthFilter>(GRPC_SERVER_CHANNEL)
         .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
   }
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL,
                        &GrpcServerAuthzFilter::kFilterVtable)
       .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER)
-      .After({&ServerAuthFilter::kFilter, &LegacyServerAuthFilter::kFilter});
+      .After<ServerAuthFilter>()
+      .After<LegacyServerAuthFilter>();
 }
 }  // namespace grpc_core
 

@@ -263,7 +263,9 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - src/core/ext/filters/client_channel/resolver/polling_resolver.h
-  - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h
+  - src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.h
+  - src/core/ext/filters/client_channel/resolver/xds/xds_resolver_attributes.h
+  - src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.h
   - src/core/ext/filters/client_channel/retry_filter.h
   - src/core/ext/filters/client_channel/retry_filter_legacy_call_data.h
   - src/core/ext/filters/client_channel/retry_service_config.h
@@ -1033,10 +1035,12 @@ libs:
   - src/core/lib/load_balancing/subchannel_interface.h
   - src/core/lib/matchers/matchers.h
   - src/core/lib/promise/activity.h
+  - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
@@ -1058,6 +1062,7 @@ libs:
   - src/core/lib/promise/sleep.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
+  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/endpoint_addresses.h
   - src/core/lib/resolver/resolver.h
@@ -1156,6 +1161,7 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/connectivity_state.h
@@ -1169,7 +1175,6 @@ libs:
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
-  - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/tcp_connect_handshaker.h
@@ -1248,7 +1253,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
@@ -1267,7 +1271,9 @@ libs:
   - src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
   - src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
+  - src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
+  - src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc
   - src/core/ext/filters/client_channel/retry_filter.cc
   - src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc
   - src/core/ext/filters/client_channel/retry_service_config.cc
@@ -1958,7 +1964,6 @@ libs:
   - src/core/lib/transport/http_connect_handshaker.cc
   - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
-  - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/tcp_connect_handshaker.cc
   - src/core/lib/transport/timeout_encoding.cc
@@ -2490,10 +2495,12 @@ libs:
   - src/core/lib/load_balancing/lb_policy_registry.h
   - src/core/lib/load_balancing/subchannel_interface.h
   - src/core/lib/promise/activity.h
+  - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
@@ -2515,6 +2522,7 @@ libs:
   - src/core/lib/promise/sleep.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
+  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/endpoint_addresses.h
   - src/core/lib/resolver/resolver.h
@@ -2582,6 +2590,7 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/connectivity_state.h
@@ -2595,7 +2604,6 @@ libs:
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/metadata_compression_traits.h
   - src/core/lib/transport/parsed_metadata.h
-  - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/tcp_connect_handshaker.h
@@ -3005,7 +3013,6 @@ libs:
   - src/core/lib/transport/http_connect_handshaker.cc
   - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
-  - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/tcp_connect_handshaker.cc
   - src/core/lib/transport/timeout_encoding.cc
@@ -4624,10 +4631,12 @@ libs:
   - src/core/lib/load_balancing/subchannel_interface.h
   - src/core/lib/matchers/matchers.h
   - src/core/lib/promise/activity.h
+  - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
@@ -4647,6 +4656,7 @@ libs:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
+  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/endpoint_addresses.h
   - src/core/lib/resolver/resolver.h
@@ -4716,6 +4726,7 @@ libs:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
@@ -7665,12 +7676,10 @@ targets:
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -7695,12 +7704,10 @@ targets:
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -9299,7 +9306,6 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/lib/transport/pid_controller.h
   - third_party/upb/upb/base/internal/log2.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/hash/common.h
@@ -9381,7 +9387,6 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/pid_controller.cc
   - test/core/transport/chttp2/flow_control_test.cc
   - third_party/upb/upb/hash/common.c
   - third_party/upb/upb/message/accessors.c
@@ -12728,38 +12733,6 @@ targets:
   - protobuf
   - grpc_test_util
   uses_polling: false
-- name: pid_controller_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/util/cmdline.h
-  - test/core/util/evaluate_args_test_util.h
-  - test/core/util/fuzzer_util.h
-  - test/core/util/grpc_profiler.h
-  - test/core/util/histogram.h
-  - test/core/util/mock_authorization_endpoint.h
-  - test/core/util/mock_endpoint.h
-  - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
-  - test/core/util/resolve_localhost_ip46.h
-  - test/core/util/slice_splitter.h
-  - test/core/util/tracer_util.h
-  src:
-  - test/core/transport/pid_controller_test.cc
-  - test/core/util/cmdline.cc
-  - test/core/util/fuzzer_util.cc
-  - test/core/util/grpc_profiler.cc
-  - test/core/util/histogram.cc
-  - test/core/util/mock_endpoint.cc
-  - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
-  - test/core/util/resolve_localhost_ip46.cc
-  - test/core/util/slice_splitter.cc
-  - test/core/util/tracer_util.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: ping_abuse_policy_test
   gtest: true
   build: test
@@ -12948,7 +12921,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/join.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
@@ -13149,7 +13121,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/join.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/promise/test_wakeup_schedulers.h
@@ -16153,8 +16124,8 @@ targets:
   - test/core/promise/status_flag_test.cc
   deps:
   - gtest
-  - absl/status:status
   - absl/status:statusor
+  - gpr
   uses_polling: false
 - name: status_helper_test
   gtest: true
@@ -16299,6 +16270,24 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
+- name: switch_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/if.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/switch.h
+  src:
+  - test/core/promise/switch_test.cc
+  deps:
+  - gtest
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
   uses_polling: false
 - name: sync_test
   gtest: true
@@ -17031,10 +17020,12 @@ targets:
   - src/core/lib/load_balancing/lb_policy_registry.h
   - src/core/lib/load_balancing/subchannel_interface.h
   - src/core/lib/promise/activity.h
+  - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
@@ -17054,6 +17045,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
+  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/endpoint_addresses.h
   - src/core/lib/resolver/resolver.h
@@ -17098,6 +17090,7 @@ targets:
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
@@ -18030,8 +18023,10 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_join.h
   src:
@@ -18068,6 +18063,7 @@ targets:
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   src:

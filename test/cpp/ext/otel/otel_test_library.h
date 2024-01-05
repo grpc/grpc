@@ -54,7 +54,7 @@ class MockMetricReader : public opentelemetry::sdk::metrics::MetricReader {
   void OnInitialized() noexcept override {}
 };
 
-class OTelPluginEnd2EndTest : public ::testing::Test {
+class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
  protected:
   // Note that we can't use SetUp() here since we want to send in parameters.
   void Init(

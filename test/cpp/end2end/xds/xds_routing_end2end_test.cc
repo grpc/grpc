@@ -470,6 +470,8 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
 }
 
 TEST_P(LdsRdsTest, NoMatchingRoute) {
+  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration route_config = default_route_config_;
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
@@ -527,6 +529,8 @@ TEST_P(LdsRdsTest, NacksInvalidRouteConfig) {
 // Tests that LDS client should fail RPCs with UNAVAILABLE status code if the
 // matching route has an action other than RouteAction.
 TEST_P(LdsRdsTest, MatchingRouteHasNoRouteAction) {
+  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration route_config = default_route_config_;
   // Set a route with an inappropriate route action
   auto* vhost = route_config.mutable_virtual_hosts(0);
