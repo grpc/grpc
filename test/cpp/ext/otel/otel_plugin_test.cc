@@ -815,7 +815,9 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
   const auto& server_attributes =
       data["grpc.server.call.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(server_attributes.size(), 2);
-  EXPECT_EQ(server_attributes.find("key"), server_attributes.end());
+  EXPECT_THAT(
+      server_attributes,
+      ::testing::Not(::testing::Contains(std::make_pair("key", "value"))));
 }
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
@@ -852,7 +854,9 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
   const auto& attributes =
       data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 3);
-  EXPECT_EQ(attributes.find("key"), attributes.end());
+  EXPECT_THAT(
+      attributes,
+      ::testing::Not(::testing::Contains(std::make_pair("key", "value"))));
   // Verify server side metric
   ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
   const auto& server_attributes =
@@ -911,16 +915,24 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
   EXPECT_EQ(absl::get<std::string>(client_attributes.at("key1")), "value1");
   EXPECT_EQ(absl::get<std::string>(client_attributes.at("key2")), "value2");
   EXPECT_EQ(absl::get<std::string>(client_attributes.at("key3")), "value3");
-  EXPECT_EQ(client_attributes.find("key4"), client_attributes.end());
-  EXPECT_EQ(client_attributes.find("key5"), client_attributes.end());
+  EXPECT_THAT(
+      client_attributes,
+      ::testing::Not(::testing::Contains(std::make_pair("key4", "value4"))));
+  EXPECT_THAT(
+      client_attributes,
+      ::testing::Not(::testing::Contains(std::make_pair("key5", "value5"))));
   // Verify server side metric
   ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
   const auto& server_attributes =
       data["grpc.server.call.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(server_attributes.size(), 5);
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key1")), "value1");
-  EXPECT_EQ(server_attributes.find("key2"), server_attributes.end());
-  EXPECT_EQ(server_attributes.find("key3"), server_attributes.end());
+  EXPECT_THAT(
+      server_attributes,
+      ::testing::Not(::testing::Contains(std::make_pair("key2", "value2"))));
+  EXPECT_THAT(
+      server_attributes,
+      ::testing::Not(::testing::Contains(std::make_pair("key3", "value3"))));
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key4")), "value4");
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key5")), "value5");
 }
