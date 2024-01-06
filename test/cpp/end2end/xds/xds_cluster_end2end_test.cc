@@ -22,8 +22,6 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "gmock/gmock.h"
-#include "google/protobuf/struct.pb.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -45,9 +43,6 @@ using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::cluster::v3::RoutingPriority;
 using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::type::v3::FractionalPercent;
-using ::testing::_;
-using ::testing::AtLeast;
-using ::testing::Return;
 
 using ClientStats = LrsServiceImpl::ClientStats;
 using OptionalLabelComponent =
