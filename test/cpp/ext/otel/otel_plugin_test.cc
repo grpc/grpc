@@ -349,7 +349,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsFalse) {
        opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
-       /*add_service_labels_in_call=*/false,
+       /*labels_to_inject=*/{},
        /*target_selector=*/
        [](absl::string_view /*target*/) { return false; });
   SendRPC();
@@ -369,7 +369,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsTrue) {
        opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
-       /*add_service_labels_in_call=*/false,
+       /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
        /*target_attribute_filter=*/[](absl::string_view /*target*/) {
          return true;
@@ -408,7 +408,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsFalse) {
        opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
-       /*add_service_labels_in_call=*/false,
+       /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
        /*target_attribute_filter=*/
        [server_address = canonical_server_address_](
@@ -478,7 +478,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
        /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
-       /*add_service_labels_in_call=*/false,
+       /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
@@ -519,7 +519,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
        /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
-       /*add_service_labels_in_call=*/false,
+       /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
@@ -589,7 +589,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
        /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
-       /*add_service_labels_in_call=*/false,
+       /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
@@ -629,7 +629,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
        /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
-       /*add_service_labels_in_call=*/false,
+       /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
