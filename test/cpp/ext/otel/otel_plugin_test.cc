@@ -30,7 +30,6 @@
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/cpp/ext/otel/otel_plugin.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
@@ -694,9 +693,7 @@ class CustomLabelInjector : public grpc::internal::LabelsInjector {
   void AddLabels(
       grpc_metadata_batch* /*outgoing_initial_metadata*/,
       grpc::internal::LabelsIterable* /*labels_from_incoming_metadata*/)
-      const override {
-    return;
-  }
+      const override {}
 
  private:
   std::pair<std::string, std::string> label_;
