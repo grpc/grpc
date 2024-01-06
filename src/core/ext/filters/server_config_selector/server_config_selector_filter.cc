@@ -80,9 +80,8 @@ class ServerConfigSelectorFilter final
  private:
   struct State {
     Mutex mu;
-    absl::optional<
-        absl::StatusOr<RefCountedPtr<ServerConfigSelector>>> config_selector
-        ABSL_GUARDED_BY(mu);
+    absl::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+        config_selector ABSL_GUARDED_BY(mu);
   };
   class ServerConfigSelectorWatcher
       : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
