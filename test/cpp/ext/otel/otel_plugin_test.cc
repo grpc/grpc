@@ -681,7 +681,7 @@ class SimpleLabelIterable : public grpc::internal::LabelsIterable {
 
 class CustomLabelInjector : public grpc::internal::LabelsInjector {
  public:
-  CustomLabelInjector(std::pair<std::string, std::string> label)
+  explicit CustomLabelInjector(std::pair<std::string, std::string> label)
       : label_(std::move(label)) {}
   ~CustomLabelInjector() override {}
 
