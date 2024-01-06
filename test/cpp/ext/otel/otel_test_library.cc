@@ -39,9 +39,7 @@
 namespace grpc {
 namespace testing {
 
-#define GRPC_ARG_CSM_SERVICE_NAME "grpc.testing.csm_service_name"
-#define GRPC_ARG_CSM_SERVICE_NAMESPACE_NAME \
-  "grpc.testing.csm_service_namespace_name"
+#define GRPC_ARG_LABELS_TO_INJECT "grpc.testing.labels_to_inject"
 
 // A subchannel filter that adds the service labels for test to the
 // CallAttemptTracer in a call.
@@ -52,8 +50,8 @@ class AddServiceLabelsFilter : public grpc_core::ChannelFilter {
   static absl::StatusOr<AddServiceLabelsFilter> Create(
       const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
     return AddServiceLabelsFilter(
-        args.GetString(GRPC_ARG_CSM_SERVICE_NAME).value(),
-        args.GetString(GRPC_ARG_CSM_SERVICE_NAMESPACE_NAME).value());
+        args.GetPointer<const std::map<std::string, std::string>>(
+            GRPC_ARG_LABELS_TO_INJECT));
   }
 
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
@@ -64,23 +62,19 @@ class AddServiceLabelsFilter : public grpc_core::ChannelFilter {
     auto* call_tracer = static_cast<CallAttemptTracer*>(
         call_context[GRPC_CONTEXT_CALL_TRACER].value);
     EXPECT_NE(call_tracer, nullptr);
-    auto service_labels =
-        std::make_shared<std::map<std::string, std::string>>();
-    (*service_labels)["service_name"] = service_name_;
-    (*service_labels)["service_namespace"] = service_namespace_;
     call_tracer->AddOptionalLabels(
         CallAttemptTracer::OptionalLabelComponent::kXdsServiceLabels,
-        service_labels);
+        std::make_shared<std::map<std::string, std::string>>(
+            *labels_to_inject_));
     return next_promise_factory(std::move(call_args));
   }
 
  private:
-  AddServiceLabelsFilter(absl::string_view service_name,
-                         absl::string_view service_namespace)
-      : service_name_(service_name), service_namespace_(service_namespace) {}
+  AddServiceLabelsFilter(
+      const std::map<std::string, std::string>* labels_to_inject)
+      : labels_to_inject_(labels_to_inject) {}
 
-  std::string service_name_;
-  std::string service_namespace_;
+  const std::map<std::string, std::string>* labels_to_inject_;
 };
 
 const grpc_channel_filter AddServiceLabelsFilter::kFilter =
@@ -92,7 +86,8 @@ void OpenTelemetryPluginEnd2EndTest::Init(
     const absl::flat_hash_set<absl::string_view>& metric_names,
     opentelemetry::sdk::resource::Resource resource,
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector,
-    bool test_no_meter_provider, bool add_service_labels_in_call,
+    bool test_no_meter_provider,
+    const std::map<std::string, std::string>& labels_to_inject,
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_selector,
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
@@ -128,16 +123,14 @@ void OpenTelemetryPluginEnd2EndTest::Init(
       std::move(generic_method_attribute_filter));
   ot_builder.BuildAndRegisterGlobal();
   ChannelArguments channel_args;
-  if (add_service_labels_in_call) {
+  if (!labels_to_inject.empty()) {
+    labels_to_inject_ = labels_to_inject;
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) mutable {
           builder->channel_init()->RegisterFilter(
               GRPC_CLIENT_SUBCHANNEL, &AddServiceLabelsFilter::kFilter);
         });
-    channel_args.SetString(GRPC_ARG_CSM_SERVICE_NAME,
-                           std::string(kServiceName));
-    channel_args.SetString(GRPC_ARG_CSM_SERVICE_NAMESPACE_NAME,
-                           std::string(kServiceNamespaceName));
+    channel_args.SetPointer(GRPC_ARG_LABELS_TO_INJECT, &labels_to_inject_);
   }
   grpc_init();
   grpc::ServerBuilder builder;

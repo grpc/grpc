@@ -63,7 +63,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
           opentelemetry::sdk::resource::Resource::Create({}),
       std::unique_ptr<grpc::internal::LabelsInjector> labels_injector = nullptr,
       bool test_no_meter_provider = false,
-      bool add_service_labels_in_call = false,
+      const std::map<std::string, std::string>& labels_to_inject = {},
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_selector = absl::AnyInvocable<bool(absl::string_view) const>(),
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
@@ -92,8 +92,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
 
   const absl::string_view kMethodName = "grpc.testing.EchoTestService/Echo";
   const absl::string_view kGenericMethodName = "foo/bar";
-  const absl::string_view kServiceName = "my.service";
-  const absl::string_view kServiceNamespaceName = "my.namespace";
+  std::map<std::string, std::string> labels_to_inject_;
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader_;
   std::string server_address_;
   std::string canonical_server_address_;

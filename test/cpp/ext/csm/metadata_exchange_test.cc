@@ -114,7 +114,7 @@ class MetadataExchangeTest
  protected:
   void Init(const absl::flat_hash_set<absl::string_view>& metric_names,
             bool enable_client_side_injector = true,
-            bool add_service_labels_in_call = false) {
+            const std::map<std::string, std::string>& labels_to_inject = {}) {
     const char* kBootstrap =
         "{\"node\": {\"id\": "
         "\"projects/1234567890/networks/mesh:mesh-id/nodes/"
@@ -138,7 +138,7 @@ class MetadataExchangeTest
         /*labels_injector=*/
         std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(
             GetParam().GetTestResource().GetAttributes()),
-        /*test_no_meter_provider=*/false, add_service_labels_in_call,
+        /*test_no_meter_provider=*/false, labels_to_inject,
         /*target_selector=*/
         [enable_client_side_injector](absl::string_view /*target*/) {
           return enable_client_side_injector;
@@ -342,7 +342,8 @@ TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
   Init(/*metric_names=*/{grpc::experimental::OpenTelemetryPluginBuilder::
                              kClientAttemptDurationInstrumentName},
        /*enable_client_side_injector=*/true,
-       /*add_service_labels_in_call=*/true);
+       // Injects CSM service labels to be recorded in the call.
+       {{"service_name", "myservice"}, {"service_namespace", "mynamespace"}});
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto data = ReadCurrentMetricsData(
@@ -353,9 +354,9 @@ TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
   ASSERT_EQ(data[kMetricName].size(), 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_name")),
-            kServiceName);
+            "myservice");
   EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_namespace_name")),
-            kServiceNamespaceName);
+            "mynamespace");
 }
 
 INSTANTIATE_TEST_SUITE_P(

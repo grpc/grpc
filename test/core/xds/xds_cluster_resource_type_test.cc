@@ -1413,20 +1413,15 @@ TEST_F(HostOverrideStatusTest, CanExplicitlySetToEmpty) {
 
 using TelemetryLabelTest = XdsClusterTest;
 
-TEST_F(TelemetryLabelTest, ValidConfig) {
+TEST_F(TelemetryLabelTest, ValidServiceLabelsConfig) {
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  ::google::protobuf::Struct telemetry_labels;
-  ::google::protobuf::Value service_name;
-  service_name.mutable_string_value()->assign("abc");
-  ::google::protobuf::Value service_namespace;
-  service_namespace.mutable_string_value()->assign("xyz");
-  telemetry_labels.mutable_fields()->emplace("service_name", service_name);
-  telemetry_labels.mutable_fields()->emplace("service_namespace",
-                                             service_namespace);
-  cluster.mutable_metadata()->mutable_filter_metadata()->emplace(
-      "com.google.gsm.telemetry_labels", telemetry_labels);
+  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
+  auto& label_map =
+      *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
+  *label_map["service_name"].mutable_string_value() = "abc";
+  *label_map["service_namespace"].mutable_string_value() = "xyz";
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
@@ -1435,9 +1430,63 @@ TEST_F(TelemetryLabelTest, ValidConfig) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.telemetry_labels, ::testing::UnorderedElementsAre(
-                                             Pair("service_name", "abc"),
-                                             Pair("service_namespace", "xyz")));
+  EXPECT_THAT(
+      *resource.telemetry_labels,
+      ::testing::UnorderedElementsAre(Pair("service_name", "abc"),
+                                      Pair("service_namespace", "xyz")));
+}
+
+TEST_F(TelemetryLabelTest, MissingMetadataField) {
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(*resource.telemetry_labels, ::testing::IsEmpty());
+}
+
+TEST_F(TelemetryLabelTest, MissingCsmFilterMetadataField) {
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
+  auto& label_map = *filter_map["some_key"].mutable_fields();
+  *label_map["some_value"].mutable_string_value() = "abc";
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(*resource.telemetry_labels, ::testing::IsEmpty());
+}
+
+TEST_F(TelemetryLabelTest, IgnoreNonStringEntries) {
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
+  auto& label_map =
+      *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
+  label_map["bool_value"].set_bool_value(true);
+  label_map["number_value"].set_number_value(3.14);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(*resource.telemetry_labels, ::testing::IsEmpty());
 }
 
 }  // namespace

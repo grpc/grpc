@@ -77,6 +77,8 @@ TraceFlag grpc_xds_cluster_impl_lb_trace(false, "xds_cluster_impl_lb");
 
 namespace {
 
+using OptionalLabelComponent =
+    ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
 using XdsConfig = XdsDependencyManager::XdsConfig;
 
 //
@@ -207,8 +209,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   class Picker : public SubchannelPicker {
    public:
     Picker(XdsClusterImplLb* xds_cluster_impl_lb,
-           RefCountedPtr<SubchannelPicker> picker,
-           std::shared_ptr<std::map<std::string, std::string>> service_labels);
+           RefCountedPtr<SubchannelPicker> picker);
 
     PickResult Pick(PickArgs args) override;
 
@@ -217,10 +218,10 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
     RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
     uint32_t max_concurrent_requests_;
+    std::shared_ptr<std::map<std::string, std::string>> service_labels_;
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<SubchannelPicker> picker_;
-    std::shared_ptr<std::map<std::string, std::string>> service_labels_;
   };
 
   class Helper
@@ -356,17 +357,15 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
 // XdsClusterImplLb::Picker
 //
 
-XdsClusterImplLb::Picker::Picker(
-    XdsClusterImplLb* xds_cluster_impl_lb,
-    RefCountedPtr<SubchannelPicker> picker,
-    std::shared_ptr<std::map<std::string, std::string>> service_labels)
+XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
+                                 RefCountedPtr<SubchannelPicker> picker)
     : call_counter_(xds_cluster_impl_lb->call_counter_),
       max_concurrent_requests_(
           xds_cluster_impl_lb->cluster_resource_->max_concurrent_requests),
+      service_labels_(xds_cluster_impl_lb->cluster_resource_->telemetry_labels),
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
-      picker_(std::move(picker)),
-      service_labels_(std::move(service_labels)) {
+      picker_(std::move(picker)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] constructed new picker %p",
             xds_cluster_impl_lb, this);
@@ -376,8 +375,6 @@ XdsClusterImplLb::Picker::Picker(
 LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
-  using OptionalLabelComponent =
-      ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
   if (call_state->GetCallAttemptTracer() != nullptr) {
     call_state->GetCallAttemptTracer()->AddOptionalLabels(
         OptionalLabelComponent::kXdsServiceLabels, service_labels_);
@@ -666,10 +663,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // If we're dropping all calls, report READY, regardless of what (or
   // whether) the child has reported.
   if (drop_config_ != nullptr && drop_config_->drop_all()) {
-    auto drop_picker = MakeRefCounted<Picker>(
-        this, picker_,
-        std::make_shared<std::map<std::string, std::string>>(
-            cluster_resource_->telemetry_labels));
+    auto drop_picker = MakeRefCounted<Picker>(this, picker_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity (drop all): "
@@ -682,10 +676,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   }
   // Otherwise, update only if we have a child picker.
   if (picker_ != nullptr) {
-    auto drop_picker = MakeRefCounted<Picker>(
-        this, picker_,
-        std::make_shared<std::map<std::string, std::string>>(
-            cluster_resource_->telemetry_labels));
+    auto drop_picker = MakeRefCounted<Picker>(this, picker_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity: state=%s "

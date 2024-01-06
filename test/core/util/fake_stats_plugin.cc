@@ -18,6 +18,22 @@
 
 namespace grpc_core {
 
+class FakeStatsClientFilter : public ChannelFilter {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<FakeStatsClientFilter> Create(
+      const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/);
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  explicit FakeStatsClientFilter(
+      FakeClientCallTracerFactory* fake_client_call_tracer_factory);
+  FakeClientCallTracerFactory* const fake_client_call_tracer_factory_;
+};
+
 const grpc_channel_filter FakeStatsClientFilter::kFilter =
     MakePromiseBasedFilter<FakeStatsClientFilter, FilterEndpoint::kClient>(
         "fake_stats_client");

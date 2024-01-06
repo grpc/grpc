@@ -146,7 +146,7 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
     // library is free to destroy the object.
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
 
-    // Adds optional labels to be traced by the underlying tracer in a call.
+    // Adds optional labels to be reported by the underlying tracer in a call.
     virtual void AddOptionalLabels(
         OptionalLabelComponent component,
         std::shared_ptr<std::map<std::string, std::string>> labels) = 0;

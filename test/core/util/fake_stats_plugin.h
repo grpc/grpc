@@ -25,6 +25,28 @@
 
 namespace grpc_core {
 
+// Registers a FakeStatsClientFilter as a client channel filter if there is a
+// FakeClientCallTracerFactory in the channel args. This filter will use the
+// FakeClientCallTracerFactory to create and inject a FakeClientCallTracer into
+// the call context.
+// Example usage:
+//   grpc_core::RegisterFakeStatsPlugin();  // before grpc_init()
+//
+//   // Creates a FakeClientCallTracerFactory and adds it into the channel args.
+//   grpc_core::FakeClientCallTracerFactory fake_client_call_tracer_factory;
+//   ChannelArguments channel_args;
+//   channel_args.SetPointer(GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY,
+//                           &fake_client_call_tracer_factory);
+//
+//   // After the system under test has been executed (e.g. an RPC has been
+//   // sent), use the FakeClientCallTracerFactory to verify certain
+//   // expectations.
+//   EXPECT_THAT(fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
+//                   ->GetLastCallAttemptTracer()
+//                   ->GetOptionalLabels(),
+//               VerifyCsmServiceLabels());
+void RegisterFakeStatsPlugin();
+
 class FakeClientCallTracer : public ClientCallTracer {
  public:
   class FakeClientCallAttemptTracer
@@ -63,20 +85,22 @@ class FakeClientCallTracer : public ClientCallTracer {
     void AddOptionalLabels(
         OptionalLabelComponent component,
         std::shared_ptr<std::map<std::string, std::string>> labels) override {
-      optional_labels_.emplace(component, *labels);
+      optional_labels_.emplace(component, labels);
     }
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
     bool IsSampled() override { return false; }
 
-    std::map<OptionalLabelComponent, std::map<std::string, std::string>>
-    GetoptionalLabels() const {
+    const std::map<OptionalLabelComponent,
+                   std::shared_ptr<std::map<std::string, std::string>>>&
+    GetOptionalLabels() const {
       return optional_labels_;
     }
 
    private:
     std::vector<std::string>* annotation_logger_;
-    std::map<OptionalLabelComponent, std::map<std::string, std::string>>
+    std::map<OptionalLabelComponent,
+             std::shared_ptr<std::map<std::string, std::string>>>
         optional_labels_;
   };
 
@@ -126,24 +150,6 @@ class FakeClientCallTracerFactory {
   std::vector<std::string> annotation_logger_;
   std::vector<std::unique_ptr<FakeClientCallTracer>> fake_client_call_tracers_;
 };
-
-class FakeStatsClientFilter : public ChannelFilter {
- public:
-  static const grpc_channel_filter kFilter;
-
-  static absl::StatusOr<FakeStatsClientFilter> Create(
-      const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/);
-
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
-
- private:
-  explicit FakeStatsClientFilter(
-      FakeClientCallTracerFactory* fake_client_call_tracer_factory);
-  FakeClientCallTracerFactory* const fake_client_call_tracer_factory_;
-};
-
-void RegisterFakeStatsPlugin();
 
 class FakeServerCallTracer : public ServerCallTracer {
  public:

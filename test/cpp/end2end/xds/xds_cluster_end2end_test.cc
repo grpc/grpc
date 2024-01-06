@@ -22,6 +22,7 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "gmock/gmock.h"
 #include "google/protobuf/struct.pb.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
@@ -49,6 +50,8 @@ using ::testing::AtLeast;
 using ::testing::Return;
 
 using ClientStats = LrsServiceImpl::ClientStats;
+using OptionalLabelComponent =
+    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
 
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
@@ -311,56 +314,36 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   WaitForBackend(DEBUG_LOCATION, 1);
 }
 
-MATCHER(VerifyCsmServiceLabels, "") {
-  using OptionalLabelComponent =
-      grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
-  auto iter = arg.find(OptionalLabelComponent::kXdsServiceLabels);
-  if (iter != arg.end()) {
-    const auto& xds_service_labels_map = iter->second;
-    if (xds_service_labels_map.find("service_name") !=
-            xds_service_labels_map.end() &&
-        xds_service_labels_map.find("service_namespace") !=
-            xds_service_labels_map.end()) {
-      return xds_service_labels_map.at("service_name") == "myservice" &&
-             xds_service_labels_map.at("service_namespace") == "mynamespace";
-    }
-  }
-  return false;
-}
-
 TEST_P(CdsTest, VerifyCsmServiceLabelsParsing) {
   CreateAndStartBackends(1);
   // Populates EDS resources.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kDefaultClusterName));
-
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Populates service labels to CDS resources.
   auto cluster = default_cluster_;
-  google::protobuf::Struct labels;
-  (*labels.mutable_fields())["service_name"].set_string_value("myservice");
-  (*labels.mutable_fields())["service_namespace"].set_string_value(
-      "mynamespace");
-  (*cluster.mutable_metadata()
-        ->mutable_filter_metadata())["com.google.gsm.telemetry_labels"] =
-      std::move(labels);
-  cluster.mutable_eds_cluster_config()->set_service_name(kDefaultClusterName);
+  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
+  auto& label_map =
+      *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
+  *label_map["service_name"].mutable_string_value() = "myservice";
+  *label_map["service_namespace"].mutable_string_value() = "mynamespace";
   balancer_->ads_service()->SetCdsResource(cluster);
-
   // Injects a fake client call tracer factory.
   grpc_core::FakeClientCallTracerFactory fake_client_call_tracer_factory;
   ChannelArguments channel_args;
   channel_args.SetPointer(GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY,
                           &fake_client_call_tracer_factory);
   ResetStub(/*failover_timeout_ms=*/0, &channel_args);
-
   // Sends an RPC and verifies that the service labels are recorded in the fake
   // client call tracer.
-  EXPECT_TRUE(SendRpc().ok());
+  CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_THAT(fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
                   ->GetLastCallAttemptTracer()
-                  ->GetoptionalLabels(),
-              VerifyCsmServiceLabels());
+                  ->GetOptionalLabels(),
+              ::testing::ElementsAre(::testing::Pair(
+                  OptionalLabelComponent::kXdsServiceLabels,
+                  ::testing::Pointee(::testing::ElementsAre(
+                      ::testing::Pair("service_name", "myservice"),
+                      ::testing::Pair("service_namespace", "mynamespace"))))));
 }
 
 //
