@@ -37,6 +37,12 @@
 
 namespace grpc_core {
 
+const NoInterceptor ClientAuthorityFilter::Call::OnServerInitialMetadata;
+const NoInterceptor ClientAuthorityFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ClientAuthorityFilter::Call::OnClientToServerMessage;
+const NoInterceptor ClientAuthorityFilter::Call::OnServerToClientMessage;
+const NoInterceptor ClientAuthorityFilter::Call::OnFinalize;
+
 absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   absl::optional<absl::string_view> default_authority =
