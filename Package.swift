@@ -2179,7 +2179,7 @@ let package = Package(
         .headerSearchPath("./"),
         .headerSearchPath("include/"),
         .headerSearchPath("third_party/re2/"),
-        .headerSearchPath("third_party/upb/"),
+        .headerSearchPath("third_party/protobuf/"),
         .headerSearchPath("third_party/utf8_range/"),
         .headerSearchPath("third_party/xxhash/"),
         .headerSearchPath("src/core/ext/upb-gen/"),
@@ -2227,7 +2227,7 @@ let package = Package(
       cSettings: [
         .headerSearchPath("./"),
         .headerSearchPath("include/"),
-        .headerSearchPath("third_party/upb/"),
+        .headerSearchPath("third_party/protobuf/"),
         .headerSearchPath("src/core/ext/upb-gen"),
       ]
     ),

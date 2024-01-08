@@ -56,7 +56,7 @@ Pod::Spec.new do |s|
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-gen"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-gen"'\
         ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'\
-        ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/protobuf"'\
         ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
     'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
