@@ -110,3 +110,19 @@ call_credentials = grpc.composite_call_credentials(
     call_credentials_bar)
 stub.FooRpc(request, credentials=call_credentials)
 ```
+
+## Token-based authentication
+
+Instead of `AuthMetadataPlugin`, you can also use token-based authentication
+mechanisms, such as OAuth2 tokens or other customized tokens.
+
+OAuth2 tokens can be obtained using libraries like [google-auth](https://google-auth.readthedocs.io/en/master/user-guide.html):
+
+```Python
+import google.auth
+
+google_credentials, unused_project_id = google.auth.default()
+call_credentials = grpc.access_token_call_credentials(google_credentials.token)
+```
+
+After obtain the token, the rest of the flow is documented in `token_based_auth_client` and `token_based_auth_server`.
