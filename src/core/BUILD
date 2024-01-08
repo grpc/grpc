@@ -2235,7 +2235,6 @@ grpc_cc_library(
     external_deps = ["absl/strings:str_format"],
     deps = [
         "error",
-        "gpr_spinlock",
         "ref_counted_dns_resolver_interface",
         "status_helper",
         "//:event_engine_base_hdrs",
