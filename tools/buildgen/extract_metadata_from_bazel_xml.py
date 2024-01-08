@@ -102,7 +102,7 @@ EXTERNAL_SOURCE_PREFIXES = {
     "@utf8_range": "third_party/protobuf/third_party/utf8_range",
     "@com_googlesource_code_re2": "third_party/re2",
     "@com_google_googletest": "third_party/googletest",
-    "@com_google_protobuf": "third_party/upb",
+    "@com_google_protobuf": "third_party/protobuf",
     "@zlib": "third_party/zlib",
 }
 

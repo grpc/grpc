@@ -2263,17 +2263,17 @@ LIBGRPC_UNSECURE_SRC = \
     third_party/protobuf/third_party/utf8_range/naive.c \
     third_party/protobuf/third_party/utf8_range/range2-neon.c \
     third_party/protobuf/third_party/utf8_range/range2-sse.c \
-    third_party/upb/upb/message/accessors.c \
-    third_party/upb/upb/mini_descriptor/build_enum.c \
-    third_party/upb/upb/mini_descriptor/decode.c \
-    third_party/upb/upb/mini_descriptor/internal/base92.c \
-    third_party/upb/upb/mini_descriptor/internal/encode.c \
-    third_party/upb/upb/mini_descriptor/link.c \
-    third_party/upb/upb/wire/decode.c \
-    third_party/upb/upb/wire/decode_fast.c \
-    third_party/upb/upb/wire/encode.c \
-    third_party/upb/upb/wire/eps_copy_input_stream.c \
-    third_party/upb/upb/wire/reader.c \
+    third_party/protobuf/upb/message/accessors.c \
+    third_party/protobuf/upb/mini_descriptor/build_enum.c \
+    third_party/protobuf/upb/mini_descriptor/decode.c \
+    third_party/protobuf/upb/mini_descriptor/internal/base92.c \
+    third_party/protobuf/upb/mini_descriptor/internal/encode.c \
+    third_party/protobuf/upb/mini_descriptor/link.c \
+    third_party/protobuf/upb/wire/decode.c \
+    third_party/protobuf/upb/wire/decode_fast.c \
+    third_party/protobuf/upb/wire/encode.c \
+    third_party/protobuf/upb/wire/eps_copy_input_stream.c \
+    third_party/protobuf/upb/wire/reader.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
@@ -2458,9 +2458,9 @@ endif
 # deps: []
 # transitive_deps: []
 LIBUPB_SRC = \
-    third_party/upb/upb/base/status.c \
-    third_party/upb/upb/mem/alloc.c \
-    third_party/upb/upb/mem/arena.c \
+    third_party/protobuf/upb/base/status.c \
+    third_party/protobuf/upb/mem/alloc.c \
+    third_party/protobuf/upb/mem/arena.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -2506,17 +2506,17 @@ endif
 # deps: []
 # transitive_deps: []
 LIBUPB_COLLECTIONS_LIB_SRC = \
-    third_party/upb/upb/base/status.c \
-    third_party/upb/upb/hash/common.c \
-    third_party/upb/upb/mem/alloc.c \
-    third_party/upb/upb/mem/arena.c \
-    third_party/upb/upb/message/array.c \
-    third_party/upb/upb/message/map.c \
-    third_party/upb/upb/message/map_sorter.c \
-    third_party/upb/upb/message/message.c \
-    third_party/upb/upb/mini_table/extension_registry.c \
-    third_party/upb/upb/mini_table/internal/message.c \
-    third_party/upb/upb/mini_table/message.c \
+    third_party/protobuf/upb/base/status.c \
+    third_party/protobuf/upb/hash/common.c \
+    third_party/protobuf/upb/mem/alloc.c \
+    third_party/protobuf/upb/mem/arena.c \
+    third_party/protobuf/upb/message/array.c \
+    third_party/protobuf/upb/message/map.c \
+    third_party/protobuf/upb/message/map_sorter.c \
+    third_party/protobuf/upb/message/message.c \
+    third_party/protobuf/upb/mini_table/extension_registry.c \
+    third_party/protobuf/upb/mini_table/internal/message.c \
+    third_party/protobuf/upb/mini_table/message.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -2566,51 +2566,51 @@ LIBUPB_JSON_LIB_SRC = \
     third_party/protobuf/third_party/utf8_range/naive.c \
     third_party/protobuf/third_party/utf8_range/range2-neon.c \
     third_party/protobuf/third_party/utf8_range/range2-sse.c \
-    third_party/upb/upb/base/status.c \
-    third_party/upb/upb/hash/common.c \
-    third_party/upb/upb/json/decode.c \
-    third_party/upb/upb/json/encode.c \
-    third_party/upb/upb/lex/atoi.c \
-    third_party/upb/upb/lex/round_trip.c \
-    third_party/upb/upb/lex/strtod.c \
-    third_party/upb/upb/lex/unicode.c \
-    third_party/upb/upb/mem/alloc.c \
-    third_party/upb/upb/mem/arena.c \
-    third_party/upb/upb/message/accessors.c \
-    third_party/upb/upb/message/array.c \
-    third_party/upb/upb/message/map.c \
-    third_party/upb/upb/message/map_sorter.c \
-    third_party/upb/upb/message/message.c \
-    third_party/upb/upb/mini_descriptor/build_enum.c \
-    third_party/upb/upb/mini_descriptor/decode.c \
-    third_party/upb/upb/mini_descriptor/internal/base92.c \
-    third_party/upb/upb/mini_descriptor/internal/encode.c \
-    third_party/upb/upb/mini_descriptor/link.c \
-    third_party/upb/upb/mini_table/extension_registry.c \
-    third_party/upb/upb/mini_table/internal/message.c \
-    third_party/upb/upb/mini_table/message.c \
-    third_party/upb/upb/reflection/def_pool.c \
-    third_party/upb/upb/reflection/def_type.c \
-    third_party/upb/upb/reflection/desc_state.c \
-    third_party/upb/upb/reflection/enum_def.c \
-    third_party/upb/upb/reflection/enum_reserved_range.c \
-    third_party/upb/upb/reflection/enum_value_def.c \
-    third_party/upb/upb/reflection/extension_range.c \
-    third_party/upb/upb/reflection/field_def.c \
-    third_party/upb/upb/reflection/file_def.c \
-    third_party/upb/upb/reflection/internal/def_builder.c \
-    third_party/upb/upb/reflection/internal/strdup2.c \
-    third_party/upb/upb/reflection/message.c \
-    third_party/upb/upb/reflection/message_def.c \
-    third_party/upb/upb/reflection/message_reserved_range.c \
-    third_party/upb/upb/reflection/method_def.c \
-    third_party/upb/upb/reflection/oneof_def.c \
-    third_party/upb/upb/reflection/service_def.c \
-    third_party/upb/upb/wire/decode.c \
-    third_party/upb/upb/wire/decode_fast.c \
-    third_party/upb/upb/wire/encode.c \
-    third_party/upb/upb/wire/eps_copy_input_stream.c \
-    third_party/upb/upb/wire/reader.c \
+    third_party/protobuf/upb/base/status.c \
+    third_party/protobuf/upb/hash/common.c \
+    third_party/protobuf/upb/json/decode.c \
+    third_party/protobuf/upb/json/encode.c \
+    third_party/protobuf/upb/lex/atoi.c \
+    third_party/protobuf/upb/lex/round_trip.c \
+    third_party/protobuf/upb/lex/strtod.c \
+    third_party/protobuf/upb/lex/unicode.c \
+    third_party/protobuf/upb/mem/alloc.c \
+    third_party/protobuf/upb/mem/arena.c \
+    third_party/protobuf/upb/message/accessors.c \
+    third_party/protobuf/upb/message/array.c \
+    third_party/protobuf/upb/message/map.c \
+    third_party/protobuf/upb/message/map_sorter.c \
+    third_party/protobuf/upb/message/message.c \
+    third_party/protobuf/upb/mini_descriptor/build_enum.c \
+    third_party/protobuf/upb/mini_descriptor/decode.c \
+    third_party/protobuf/upb/mini_descriptor/internal/base92.c \
+    third_party/protobuf/upb/mini_descriptor/internal/encode.c \
+    third_party/protobuf/upb/mini_descriptor/link.c \
+    third_party/protobuf/upb/mini_table/extension_registry.c \
+    third_party/protobuf/upb/mini_table/internal/message.c \
+    third_party/protobuf/upb/mini_table/message.c \
+    third_party/protobuf/upb/reflection/def_pool.c \
+    third_party/protobuf/upb/reflection/def_type.c \
+    third_party/protobuf/upb/reflection/desc_state.c \
+    third_party/protobuf/upb/reflection/enum_def.c \
+    third_party/protobuf/upb/reflection/enum_reserved_range.c \
+    third_party/protobuf/upb/reflection/enum_value_def.c \
+    third_party/protobuf/upb/reflection/extension_range.c \
+    third_party/protobuf/upb/reflection/field_def.c \
+    third_party/protobuf/upb/reflection/file_def.c \
+    third_party/protobuf/upb/reflection/internal/def_builder.c \
+    third_party/protobuf/upb/reflection/internal/strdup2.c \
+    third_party/protobuf/upb/reflection/message.c \
+    third_party/protobuf/upb/reflection/message_def.c \
+    third_party/protobuf/upb/reflection/message_reserved_range.c \
+    third_party/protobuf/upb/reflection/method_def.c \
+    third_party/protobuf/upb/reflection/oneof_def.c \
+    third_party/protobuf/upb/reflection/service_def.c \
+    third_party/protobuf/upb/wire/decode.c \
+    third_party/protobuf/upb/wire/decode_fast.c \
+    third_party/protobuf/upb/wire/encode.c \
+    third_party/protobuf/upb/wire/eps_copy_input_stream.c \
+    third_party/protobuf/upb/wire/reader.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -2660,50 +2660,50 @@ LIBUPB_TEXTFORMAT_LIB_SRC = \
     third_party/protobuf/third_party/utf8_range/naive.c \
     third_party/protobuf/third_party/utf8_range/range2-neon.c \
     third_party/protobuf/third_party/utf8_range/range2-sse.c \
-    third_party/upb/upb/base/status.c \
-    third_party/upb/upb/hash/common.c \
-    third_party/upb/upb/lex/atoi.c \
-    third_party/upb/upb/lex/round_trip.c \
-    third_party/upb/upb/lex/strtod.c \
-    third_party/upb/upb/lex/unicode.c \
-    third_party/upb/upb/mem/alloc.c \
-    third_party/upb/upb/mem/arena.c \
-    third_party/upb/upb/message/accessors.c \
-    third_party/upb/upb/message/array.c \
-    third_party/upb/upb/message/map.c \
-    third_party/upb/upb/message/map_sorter.c \
-    third_party/upb/upb/message/message.c \
-    third_party/upb/upb/mini_descriptor/build_enum.c \
-    third_party/upb/upb/mini_descriptor/decode.c \
-    third_party/upb/upb/mini_descriptor/internal/base92.c \
-    third_party/upb/upb/mini_descriptor/internal/encode.c \
-    third_party/upb/upb/mini_descriptor/link.c \
-    third_party/upb/upb/mini_table/extension_registry.c \
-    third_party/upb/upb/mini_table/internal/message.c \
-    third_party/upb/upb/mini_table/message.c \
-    third_party/upb/upb/reflection/def_pool.c \
-    third_party/upb/upb/reflection/def_type.c \
-    third_party/upb/upb/reflection/desc_state.c \
-    third_party/upb/upb/reflection/enum_def.c \
-    third_party/upb/upb/reflection/enum_reserved_range.c \
-    third_party/upb/upb/reflection/enum_value_def.c \
-    third_party/upb/upb/reflection/extension_range.c \
-    third_party/upb/upb/reflection/field_def.c \
-    third_party/upb/upb/reflection/file_def.c \
-    third_party/upb/upb/reflection/internal/def_builder.c \
-    third_party/upb/upb/reflection/internal/strdup2.c \
-    third_party/upb/upb/reflection/message.c \
-    third_party/upb/upb/reflection/message_def.c \
-    third_party/upb/upb/reflection/message_reserved_range.c \
-    third_party/upb/upb/reflection/method_def.c \
-    third_party/upb/upb/reflection/oneof_def.c \
-    third_party/upb/upb/reflection/service_def.c \
-    third_party/upb/upb/text/encode.c \
-    third_party/upb/upb/wire/decode.c \
-    third_party/upb/upb/wire/decode_fast.c \
-    third_party/upb/upb/wire/encode.c \
-    third_party/upb/upb/wire/eps_copy_input_stream.c \
-    third_party/upb/upb/wire/reader.c \
+    third_party/protobuf/upb/base/status.c \
+    third_party/protobuf/upb/hash/common.c \
+    third_party/protobuf/upb/lex/atoi.c \
+    third_party/protobuf/upb/lex/round_trip.c \
+    third_party/protobuf/upb/lex/strtod.c \
+    third_party/protobuf/upb/lex/unicode.c \
+    third_party/protobuf/upb/mem/alloc.c \
+    third_party/protobuf/upb/mem/arena.c \
+    third_party/protobuf/upb/message/accessors.c \
+    third_party/protobuf/upb/message/array.c \
+    third_party/protobuf/upb/message/map.c \
+    third_party/protobuf/upb/message/map_sorter.c \
+    third_party/protobuf/upb/message/message.c \
+    third_party/protobuf/upb/mini_descriptor/build_enum.c \
+    third_party/protobuf/upb/mini_descriptor/decode.c \
+    third_party/protobuf/upb/mini_descriptor/internal/base92.c \
+    third_party/protobuf/upb/mini_descriptor/internal/encode.c \
+    third_party/protobuf/upb/mini_descriptor/link.c \
+    third_party/protobuf/upb/mini_table/extension_registry.c \
+    third_party/protobuf/upb/mini_table/internal/message.c \
+    third_party/protobuf/upb/mini_table/message.c \
+    third_party/protobuf/upb/reflection/def_pool.c \
+    third_party/protobuf/upb/reflection/def_type.c \
+    third_party/protobuf/upb/reflection/desc_state.c \
+    third_party/protobuf/upb/reflection/enum_def.c \
+    third_party/protobuf/upb/reflection/enum_reserved_range.c \
+    third_party/protobuf/upb/reflection/enum_value_def.c \
+    third_party/protobuf/upb/reflection/extension_range.c \
+    third_party/protobuf/upb/reflection/field_def.c \
+    third_party/protobuf/upb/reflection/file_def.c \
+    third_party/protobuf/upb/reflection/internal/def_builder.c \
+    third_party/protobuf/upb/reflection/internal/strdup2.c \
+    third_party/protobuf/upb/reflection/message.c \
+    third_party/protobuf/upb/reflection/message_def.c \
+    third_party/protobuf/upb/reflection/message_reserved_range.c \
+    third_party/protobuf/upb/reflection/method_def.c \
+    third_party/protobuf/upb/reflection/oneof_def.c \
+    third_party/protobuf/upb/reflection/service_def.c \
+    third_party/protobuf/upb/text/encode.c \
+    third_party/protobuf/upb/wire/decode.c \
+    third_party/protobuf/upb/wire/decode_fast.c \
+    third_party/protobuf/upb/wire/encode.c \
+    third_party/protobuf/upb/wire/eps_copy_input_stream.c \
+    third_party/protobuf/upb/wire/reader.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -2749,9 +2749,9 @@ endif
 # deps: []
 # transitive_deps: []
 LIBUTF8_RANGE_LIB_SRC = \
-    third_party/upb/third_party/utf8_range/naive.c \
-    third_party/upb/third_party/utf8_range/range2-neon.c \
-    third_party/upb/third_party/utf8_range/range2-sse.c \
+    third_party/protobuf/third_party/utf8_range/naive.c \
+    third_party/protobuf/third_party/utf8_range/range2-neon.c \
+    third_party/protobuf/third_party/utf8_range/range2-sse.c \
 
 PUBLIC_HEADERS_C += \
 
