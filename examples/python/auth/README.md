@@ -125,4 +125,4 @@ google_credentials, unused_project_id = google.auth.default()
 call_credentials = grpc.access_token_call_credentials(google_credentials.token)
 ```
 
-After obtain the token, the rest of the flow is documented in `token_based_auth_client` and `token_based_auth_server`.
+After obtaining the token, the rest of the flow is documented in [token_based_auth_client.py](https://github.com/grpc/grpc/tree/master/examples/python/auth/token_based_auth_client.py) and [token_based_auth_server.py](https://github.com/grpc/grpc/tree/master/examples/python/auth/token_based_auth_server.py).

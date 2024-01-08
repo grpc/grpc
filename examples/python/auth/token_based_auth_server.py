@@ -38,7 +38,7 @@ class SignatureValidationInterceptor(grpc.ServerInterceptor):
         def abort(ignored_request, context):
             context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid signature")
 
-        self._abortion = grpc.unary_unary_rpc_method_handler(abort)
+        self._abort_handler = grpc.unary_unary_rpc_method_handler(abort)
 
     def intercept_service(self, continuation, handler_call_details):
         # Example HandlerCallDetails object:
@@ -49,7 +49,7 @@ class SignatureValidationInterceptor(grpc.ServerInterceptor):
         if expected_metadata in handler_call_details.invocation_metadata:
             return continuation(handler_call_details)
         else:
-            return self._abortion
+            return self._abort_handler
 
 
 class SimpleGreeter(helloworld_pb2_grpc.GreeterServicer):
