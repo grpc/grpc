@@ -28,7 +28,6 @@ grpc_cc_library(
     srcs = ["mock_promise_endpoint.cc"],
     hdrs = ["mock_promise_endpoint.h"],
     external_deps = ["gtest"],
-    testonly = 1,
     deps = [
         "//:grpc",
         "//src/core:grpc_promise_endpoint",
