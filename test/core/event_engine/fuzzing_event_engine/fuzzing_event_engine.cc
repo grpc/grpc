@@ -32,9 +32,12 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/posix_engine/native_dns_resolver.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/port.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/port.h"
 
@@ -497,7 +500,11 @@ bool FuzzingEventEngine::IsWorkerThread() { abort(); }
 
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
-  abort();
+#if defined(GRPC_POSIX_SOCKET_TCP)
+  return std::make_unique<NativeDNSResolver>(shared_from_this());
+#else
+  grpc_core::Crash("FuzzingEventEngine::GetDNSResolver Not implemented");
+#endif
 }
 
 void FuzzingEventEngine::Run(Closure* closure) {
