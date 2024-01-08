@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2020 gRPC authors.
+// Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,21 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#include <grpcpp/channel.h>
-#include <grpcpp/test/channel_test_peer.h>
+syntax = "proto3";
 
-#include "src/core/lib/surface/channel.h"
+package frame_fuzzer;
 
-namespace grpc {
-namespace testing {
-
-int ChannelTestPeer::registered_calls() const {
-  return grpc_core::Channel::FromC(channel_->c_channel_)
-      ->TestOnlyRegisteredCalls();
+message Test {
+    bool is_server = 1;
+    bytes control = 2;
+    bytes data = 3;
 }
-
-}  // namespace testing
-}  // namespace grpc

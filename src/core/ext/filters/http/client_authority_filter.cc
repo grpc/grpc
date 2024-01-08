@@ -75,14 +75,13 @@ bool NeedsClientAuthorityFilter(const ChannelArgs& args) {
 
 void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &ClientAuthorityFilter::kFilter)
+      ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_SUBCHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before({&ClientAuthFilter::kFilter});
+      .Before<ClientAuthFilter>();
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &ClientAuthorityFilter::kFilter)
+      ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before({&ClientAuthFilter::kFilter});
+      .Before<ClientAuthFilter>();
 }
 
 }  // namespace grpc_core

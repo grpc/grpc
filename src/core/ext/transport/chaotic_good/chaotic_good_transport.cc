@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2020 gRPC authors.
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,21 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#include <grpcpp/channel.h>
-#include <grpcpp/test/channel_test_peer.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/surface/channel.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 
-namespace grpc {
-namespace testing {
-
-int ChannelTestPeer::registered_calls() const {
-  return grpc_core::Channel::FromC(channel_->c_channel_)
-      ->TestOnlyRegisteredCalls();
-}
-
-}  // namespace testing
-}  // namespace grpc
+namespace grpc_core {}  // namespace grpc_core
