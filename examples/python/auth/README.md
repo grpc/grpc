@@ -114,7 +114,7 @@ stub.FooRpc(request, credentials=call_credentials)
 ## Token-based authentication
 
 Instead of `AuthMetadataPlugin`, you can also use token-based authentication
-mechanisms, such as OAuth2 tokens or other customized tokens.
+mechanisms using OAuth2 tokens or other customized tokens.
 
 OAuth2 tokens can be obtained using libraries like [google-auth](https://google-auth.readthedocs.io/en/master/user-guide.html):
 
