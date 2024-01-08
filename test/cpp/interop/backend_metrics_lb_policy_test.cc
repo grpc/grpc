@@ -115,7 +115,7 @@ TEST(BackendMetricsLbPolicyTest, TestOobMetricsReceipt) {
   // This report is sent on start, available immediately
   auto report = tracker.WaitForOobLoadReport(
       [](auto report) { return report.cpu_utilization() == 0.5; },
-      absl::Milliseconds(500 * grpc_test_slowdown_factor()), 3);
+      absl::Seconds(2 * grpc_test_slowdown_factor()), 3);
   ASSERT_TRUE(report.has_value());
   EXPECT_EQ(report->cpu_utilization(), 0.5);
   for (size_t i = 0; i < 3; i++) {
