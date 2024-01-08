@@ -61,7 +61,9 @@
     # not tested on iOS at all
     ios: broken
     posix: false
-    windows: true
+    # TODO(yijiem): resolve when the WindowsEventEngine DNS Resolver is
+    # implemented
+    windows: broken
 - name: event_engine_listener
   default:
     # not tested on iOS at all
