@@ -120,7 +120,7 @@ TEST(BackendMetricsLbPolicyTest, TestOobMetricsReceipt) {
   ASSERT_TRUE(report.has_value());
   EXPECT_EQ(report->cpu_utilization(), 0.5);
   for (size_t i = 0; i < 3; i++) {
-    // Wait for slightly more that 1 min
+    // Wait for slightly more than 1 min
     report = tracker.WaitForOobLoadReport(
         [](auto report) { return report.cpu_utilization() == 0.5; },
         absl::Milliseconds(1100), 3);
