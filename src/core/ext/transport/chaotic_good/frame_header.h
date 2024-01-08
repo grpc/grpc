@@ -36,7 +36,7 @@ enum class FrameType : uint8_t {
 
 struct FrameHeader {
   FrameType type = FrameType::kCancel;
-  BitSet<2> flags;
+  BitSet<3> flags;
   uint32_t stream_id = 0;
   uint32_t header_length = 0;
   uint32_t message_length = 0;
