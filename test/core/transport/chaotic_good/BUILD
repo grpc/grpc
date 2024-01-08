@@ -24,6 +24,7 @@ grpc_package(
 
 grpc_cc_library(
     name = "mock_promise_endpoint",
+    testonly = 1,
     srcs = ["mock_promise_endpoint.cc"],
     hdrs = ["mock_promise_endpoint.h"],
     external_deps = ["gtest"],
@@ -36,6 +37,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "transport_test",
+    testonly = 1,
     srcs = ["transport_test.cc"],
     hdrs = ["transport_test.h"],
     external_deps = ["gtest"],

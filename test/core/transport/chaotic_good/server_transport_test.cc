@@ -51,12 +51,10 @@
 using testing::_;
 using testing::MockFunction;
 using testing::Return;
-using testing::Sequence;
 using testing::StrictMock;
 using testing::WithArgs;
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
-using grpc_event_engine::experimental::EventEngine;
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -88,6 +86,7 @@ ServerMetadataHandle TestTrailingMetadata() {
 
 class MockAcceptor : public ServerTransport::Acceptor {
  public:
+  virtual ~MockAcceptor() = default;
   MOCK_METHOD(Arena*, CreateArena, (), (override));
   MOCK_METHOD(absl::StatusOr<CallInitiator>, CreateCall,
               (ClientMetadata & client_initial_metadata, Arena* arena),
