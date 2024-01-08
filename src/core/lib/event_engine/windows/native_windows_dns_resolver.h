@@ -29,7 +29,7 @@ namespace experimental {
 // API. Only supports A/AAAA records.
 class NativeWindowsDNSResolver : public EventEngine::DNSResolver {
  public:
-  explicit NativeDNSResolver(std::shared_ptr<EventEngine> event_engine);
+  explicit NativeWindowsDNSResolver(std::shared_ptr<EventEngine> event_engine);
 
   void LookupHostname(
       EventEngine::DNSResolver::LookupHostnameCallback on_resolved,

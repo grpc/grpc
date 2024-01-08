@@ -22,16 +22,20 @@
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/event_engine/windows/native_windows_dns_resolver.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
 absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
-NativeWindowsDNSResolver::LookupHostnameBlocking(
-    absl::string_view name, absl::string_view default_port) {
-  std::vector<ResolvedAddress> addresses;
+LookupHostnameBlocking(absl::string_view name, absl::string_view default_port) {
+  std::vector<EventEngine::ResolvedAddress> addresses;
   // parse name, splitting it into host and port parts
   std::string host;
   std::string port;
@@ -53,10 +57,8 @@ NativeWindowsDNSResolver::LookupHostnameBlocking(
   hints.ai_socktype = SOCK_STREAM;  // stream socket
   hints.ai_flags = AI_PASSIVE;      // for wildcard IP address
   struct addrinfo* result = nullptr;
-  GRPC_SCHEDULING_START_BLOCKING_REGION;
   int getaddrinfo_error =
       getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (getaddrinfo_error != 0) {
     return absl::UnknownError(
         absl::StrFormat("Address lookup failed for %s os_error: %s", name,
@@ -73,7 +75,7 @@ NativeWindowsDNSResolver::LookupHostnameBlocking(
 }
 
 }  // namespace
-NativeWindowsDNSResolver::NativeDNSResolver(
+NativeWindowsDNSResolver::NativeWindowsDNSResolver(
     std::shared_ptr<EventEngine> event_engine)
     : event_engine_(std::move(event_engine)) {}
 

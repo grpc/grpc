@@ -2234,7 +2234,10 @@ grpc_cc_library(
     hdrs = ["lib/event_engine/windows/native_windows_dns_resolver.h"],
     external_deps = ["absl/strings:str_format"],
     deps = [
+        "error",
+        "gpr_spinlock",
         "ref_counted_dns_resolver_interface",
+        "status_helper",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
