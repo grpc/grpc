@@ -32,7 +32,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/posix_engine/native_dns_resolver.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -41,6 +40,9 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/port.h"
 
+#if defined(GRPC_POSIX_SOCKET_TCP)
+#include "src/core/lib/event_engine/posix_engine/native_dns_resolver.h"
+#endif
 // IWYU pragma: no_include <sys/socket.h>
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
