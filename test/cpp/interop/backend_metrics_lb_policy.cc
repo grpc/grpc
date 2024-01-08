@@ -86,6 +86,11 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
   }
 
   absl::Status UpdateLocked(UpdateArgs args) override {
+    auto config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            grpc_core::Json::FromArray({grpc_core::Json::FromObject(
+                {{"pick_first", grpc_core::Json::FromObject({})}})}));
+    args.config = std::move(config.value());
     return delegate_->UpdateLocked(std::move(args));
   }
 
