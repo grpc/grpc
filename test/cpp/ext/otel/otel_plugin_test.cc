@@ -732,7 +732,7 @@ class CustomPluginOption
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
   std::vector<
       std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
-      plugin_option_list(1);
+      plugin_option_list;
   plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
       /*enabled_on_client*/ true, /*enabled_on_server*/ true,
       std::make_pair("key", "value")));
@@ -775,7 +775,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
   std::vector<
       std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
-      plugin_option_list(1);
+      plugin_option_list;
   plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
       /*enabled_on_client*/ true, /*enabled_on_server*/ false,
       std::make_pair("key", "value")));
@@ -812,15 +812,14 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
   const auto& server_attributes =
       data["grpc.server.call.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(server_attributes.size(), 2);
-  EXPECT_THAT(
-      server_attributes,
-      ::testing::Not(::testing::Contains(std::make_pair("key", "value"))));
+  EXPECT_THAT(server_attributes,
+              ::testing::Not(::testing::Contains(::testing::Key("key"))));
 }
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
   std::vector<
       std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
-      plugin_option_list(1);
+      plugin_option_list;
   plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
       /*enabled_on_client*/ false, /*enabled_on_server*/ true,
       std::make_pair("key", "value")));
@@ -851,22 +850,22 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
   const auto& attributes =
       data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 3);
-  EXPECT_THAT(
-      attributes,
-      ::testing::Not(::testing::Contains(std::make_pair("key", "value"))));
+  EXPECT_THAT(attributes,
+              ::testing::Not(::testing::Contains(::testing::Key("key"))));
   // Verify server side metric
   ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
   const auto& server_attributes =
       data["grpc.server.call.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(server_attributes.size(), 3);
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key")), "value");
-}  // namespace
+}
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
        MultipleEnabledAndDisabledPluginOptions) {
   std::vector<
       std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
-      plugin_option_list(5);
+      plugin_option_list;
+  plugin_option_list.reserve(5);
   plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
       /*enabled_on_client*/ true, /*enabled_on_server*/ true,
       std::make_pair("key1", "value1")));
@@ -912,24 +911,20 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
   EXPECT_EQ(absl::get<std::string>(client_attributes.at("key1")), "value1");
   EXPECT_EQ(absl::get<std::string>(client_attributes.at("key2")), "value2");
   EXPECT_EQ(absl::get<std::string>(client_attributes.at("key3")), "value3");
-  EXPECT_THAT(
-      client_attributes,
-      ::testing::Not(::testing::Contains(std::make_pair("key4", "value4"))));
-  EXPECT_THAT(
-      client_attributes,
-      ::testing::Not(::testing::Contains(std::make_pair("key5", "value5"))));
+  EXPECT_THAT(client_attributes,
+              ::testing::Not(::testing::Contains(::testing::Key("key4"))));
+  EXPECT_THAT(client_attributes,
+              ::testing::Not(::testing::Contains(::testing::Key("key5"))));
   // Verify server side metric
   ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
   const auto& server_attributes =
       data["grpc.server.call.duration"][0].attributes.GetAttributes();
   EXPECT_EQ(server_attributes.size(), 5);
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key1")), "value1");
-  EXPECT_THAT(
-      server_attributes,
-      ::testing::Not(::testing::Contains(std::make_pair("key2", "value2"))));
-  EXPECT_THAT(
-      server_attributes,
-      ::testing::Not(::testing::Contains(std::make_pair("key3", "value3"))));
+  EXPECT_THAT(server_attributes,
+              ::testing::Not(::testing::Contains(::testing::Key("key2"))));
+  EXPECT_THAT(server_attributes,
+              ::testing::Not(::testing::Contains(::testing::Key("key3"))));
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key4")), "value4");
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key5")), "value5");
 }

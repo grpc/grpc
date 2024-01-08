@@ -204,6 +204,8 @@ class OpenTelemetryPluginBuilderImpl {
       plugin_options_;
 };
 
+// Creates a convenience wrapper to help iterate over only those plugin options
+// that are active over a given channel/server.
 class ActivePluginOptionsView {
  public:
   static ActivePluginOptionsView MakeForClient(absl::string_view target) {
@@ -216,7 +218,7 @@ class ActivePluginOptionsView {
   static ActivePluginOptionsView MakeForServer(
       const grpc_core::ChannelArgs& args) {
     return ActivePluginOptionsView(
-        [args](const InternalOpenTelemetryPluginOption& plugin_option) {
+        [&args](const InternalOpenTelemetryPluginOption& plugin_option) {
           return plugin_option.IsActiveOnServer(args);
         });
   }

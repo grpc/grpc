@@ -103,7 +103,8 @@ class OpenTelemetryPluginBuilder {
           generic_method_attribute_filter);
   /// Add a plugin option to add to the opentelemetry plugin being built. At
   /// present, this type is an opaque type. Ownership of \a option is
-  /// transferred when `AddPluginOption` is invoked.
+  /// transferred when `AddPluginOption` is invoked. A maximum of 64 plugin
+  /// options can be added.
   OpenTelemetryPluginBuilder& AddPluginOption(
       std::unique_ptr<OpenTelemetryPluginOption> option);
   /// Registers a global plugin that acts on all channels and servers running on

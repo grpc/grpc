@@ -164,6 +164,8 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   std::unique_ptr<LabelsIterable> injected_labels_;
   bool registered_method_;
   ActivePluginOptionsView active_plugin_options_view_;
+  // TODO(yashykt): It's wasteful to do this per call. When we re-haul the stats
+  // infrastructure, this should move to be done per server.
   std::vector<std::unique_ptr<LabelsIterable>>
       injected_labels_from_plugin_options_;
 };
