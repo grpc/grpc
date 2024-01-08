@@ -2279,6 +2279,7 @@ add_library(grpc
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_endpoint.cc
   src/core/lib/event_engine/windows/windows_engine.cc
@@ -3010,6 +3011,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_endpoint.cc
   src/core/lib/event_engine/windows/windows_engine.cc
@@ -4999,6 +5001,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_endpoint.cc
   src/core/lib/event_engine/windows/windows_engine.cc
@@ -24709,6 +24712,7 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_endpoint.cc
   src/core/lib/event_engine/windows/windows_engine.cc

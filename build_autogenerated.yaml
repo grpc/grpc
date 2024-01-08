@@ -911,6 +911,7 @@ libs:
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
@@ -1739,6 +1740,7 @@ libs:
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
@@ -2376,6 +2378,7 @@ libs:
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
@@ -2827,6 +2830,7 @@ libs:
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
@@ -4518,6 +4522,7 @@ libs:
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
@@ -4875,6 +4880,7 @@ libs:
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
@@ -16882,6 +16888,7 @@ targets:
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_endpoint.h
   - src/core/lib/event_engine/windows/windows_engine.h
@@ -17220,6 +17227,7 @@ targets:
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_endpoint.cc
   - src/core/lib/event_engine/windows/windows_engine.cc

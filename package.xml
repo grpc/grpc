@@ -1329,6 +1329,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/grpc_polled_fd_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/iocp.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/iocp.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/native_windows_dns_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/native_windows_dns_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/win_socket.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/win_socket.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_endpoint.cc" role="src" />
