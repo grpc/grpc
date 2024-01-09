@@ -14,7 +14,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl-with-bazel/src/include)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/re2)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/protobuf)
-  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/utf8_range)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/protobuf/third_party/utf8_range)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/xxhash)
 
   LIBS="-lpthread $LIBS"
