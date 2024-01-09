@@ -29,11 +29,8 @@ Poll<ResultOr<T>> PipeTransformer<T>::Start(
   end_ops_ = ops_ + layout->ops.size();
   if (layout->promise_size == 0) {
     // No call state ==> instantaneously ready
-    void* storage;
-    promise_data_ = &storage;
     auto r = InitStep(std::move(input), call_data);
     GPR_ASSERT(r.ready());
-    promise_data_ = nullptr;
     return r;
   }
   promise_data_ =
@@ -89,10 +86,10 @@ template class PipeTransformer<MessageHandle>;
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
-// Filters::StackBuilder
+// CallFilters::StackBuilder
 
-size_t Filters::StackBuilder::OffsetForNextFilter(size_t alignment,
-                                                  size_t size) {
+size_t CallFilters::StackBuilder::OffsetForNextFilter(size_t alignment,
+                                                      size_t size) {
   min_alignment_ = std::max(alignment, min_alignment_);
   if (current_call_offset_ % alignment != 0) {
     current_call_offset_ += alignment - current_call_offset_ % alignment;
@@ -103,9 +100,9 @@ size_t Filters::StackBuilder::OffsetForNextFilter(size_t alignment,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Filters::PipeState
+// CallFilters::PipeState
 
-void Filters::PipeState::BeginPush() {
+void CallFilters::PipeState::BeginPush() {
   switch (state_) {
     case ValueState::kIdle:
       state_ = ValueState::kQueued;
@@ -125,7 +122,7 @@ void Filters::PipeState::BeginPush() {
   }
 }
 
-void Filters::PipeState::AbandonPush() {
+void CallFilters::PipeState::AbandonPush() {
   switch (state_) {
     case ValueState::kQueued:
     case ValueState::kReady:
@@ -141,7 +138,7 @@ void Filters::PipeState::AbandonPush() {
   }
 }
 
-Poll<StatusFlag> Filters::PipeState::PollPush() {
+Poll<StatusFlag> CallFilters::PipeState::PollPush() {
   switch (state_) {
     case ValueState::kIdle:
     // Read completed and new read started => we see waiting here
@@ -157,7 +154,7 @@ Poll<StatusFlag> Filters::PipeState::PollPush() {
   }
 }
 
-Poll<StatusFlag> Filters::PipeState::PollPullValue() {
+Poll<StatusFlag> CallFilters::PipeState::PollPullValue() {
   switch (state_) {
     case ValueState::kIdle:
       state_ = ValueState::kWaiting;
@@ -172,6 +169,23 @@ Poll<StatusFlag> Filters::PipeState::PollPullValue() {
     case ValueState::kClosed:
     case ValueState::kError:
       return Failure{};
+  }
+}
+
+void CallFilters::PipeState::AckPullValue() {
+  switch (state_) {
+    case ValueState::kProcessing:
+      state_ = ValueState::kIdle;
+      wait_send_.Wake();
+      break;
+    case ValueState::kWaiting:
+    case ValueState::kIdle:
+    case ValueState::kQueued:
+    case ValueState::kReady:
+    case ValueState::kClosed:
+      Crash("AckPullValue called in invalid state");
+    case ValueState::kError:
+      break;
   }
 }
 
