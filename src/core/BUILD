@@ -2175,7 +2175,7 @@ grpc_cc_library(
         "forkable",
         "init_internally",
         "iomgr_port",
-        "native_dns_resolver",
+        "native_posix_dns_resolver",
         "no_destruct",
         "posix_event_engine_base_hdrs",
         "posix_event_engine_closure",
@@ -2535,12 +2535,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "native_dns_resolver",
+    name = "native_posix_dns_resolver",
     srcs = [
-        "lib/event_engine/posix_engine/native_dns_resolver.cc",
+        "lib/event_engine/posix_engine/native_posix_dns_resolver.cc",
     ],
     hdrs = [
-        "lib/event_engine/posix_engine/native_dns_resolver.h",
+        "lib/event_engine/posix_engine/native_posix_dns_resolver.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_NATIVE_DNS_RESOLVER_H
-#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_NATIVE_DNS_RESOLVER_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_NATIVE_POSIX_DNS_RESOLVER_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_NATIVE_POSIX_DNS_RESOLVER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -34,9 +34,9 @@ namespace experimental {
 
 // An asynchronous DNS resolver which uses the native platform's getaddrinfo
 // API. Only supports A/AAAA records.
-class NativeDNSResolver : public RefCountedDNSResolverInterface {
+class NativePosixDNSResolver : public RefCountedDNSResolverInterface {
  public:
-  explicit NativeDNSResolver(std::shared_ptr<EventEngine> event_engine);
+  explicit NativePosixDNSResolver(std::shared_ptr<EventEngine> event_engine);
 
   void LookupHostname(
       EventEngine::DNSResolver::LookupHostnameCallback on_resolved,
@@ -58,4 +58,4 @@ class NativeDNSResolver : public RefCountedDNSResolverInterface {
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
-#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_NATIVE_DNS_RESOLVER_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_NATIVE_POSIX_DNS_RESOLVER_H
