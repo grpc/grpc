@@ -1015,7 +1015,7 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
-          _registered_method: Internal Only. A bool representing whether the method
+          _registered_method: Implementation Private. A bool representing whether the method
             is registered.
 
         Returns:
@@ -1040,7 +1040,7 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
-          _registered_method: Internal Only. A bool representing whether the method
+          _registered_method: Implementation Private. A bool representing whether the method
             is registered.
 
         Returns:
@@ -1065,7 +1065,7 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
-          _registered_method: Internal Only. A bool representing whether the method
+          _registered_method: Implementation Private. A bool representing whether the method
             is registered.
 
         Returns:
@@ -1090,7 +1090,7 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
-          _registered_method: Internal Only. A bool representing whether the method
+          _registered_method: Implementation Private. A bool representing whether the method
             is registered.
 
         Returns:
