@@ -37,8 +37,7 @@
 #include "google/protobuf/struct.upb.h"
 #include "opentelemetry/sdk/resource/semantic_conventions.h"
 #include "upb/base/string_view.h"
-#include "upb/mem/arena.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/slice.h>
 
