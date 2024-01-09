@@ -494,6 +494,14 @@ class CallFilters {
 
   auto PushClientInitialMetadata(ClientMetadataHandle md);
   auto PullClientInitialMetadata();
+  auto PushServerInitialMetadata(ServerMetadataHandle md);
+  auto PullServerInitialMetadata();
+  auto PushClientToServerMessage(MessageHandle message);
+  auto PullClientToServerMessage();
+  auto PushServerToClientMessage(MessageHandle message);
+  auto PullServerToClientMessage();
+  auto PushServerTrailingMetadata(ServerMetadataHandle md);
+  auto PullServerTrailingMetadata();
 
  private:
   class PipeState {
@@ -654,6 +662,36 @@ inline auto CallFilters::PushClientInitialMetadata(ClientMetadataHandle md) {
 
 inline auto CallFilters::PullClientInitialMetadata() {
   return ClientInitialMetadataPromises::Pull{this};
+}
+
+inline auto CallFilters::PushServerInitialMetadata(ServerMetadataHandle md) {
+  GPR_ASSERT(md != nullptr);
+  return [p = ServerInitialMetadataPromises::Push{
+              this, std::move(md)}]() mutable { return p(); };
+}
+
+inline auto CallFilters::PullServerInitialMetadata() {
+  return ServerInitialMetadataPromises::Pull{this};
+}
+
+inline auto CallFilters::PushClientToServerMessage(MessageHandle message) {
+  GPR_ASSERT(message != nullptr);
+  return [p = ClientToServerMessagePromises::Push{
+              this, std::move(message)}]() mutable { return p(); };
+}
+
+inline auto CallFilters::PullClientToServerMessage() {
+  return ClientToServerMessagePromises::Pull{this};
+}
+
+inline auto CallFilters::PushServerToClientMessage(MessageHandle message) {
+  GPR_ASSERT(message != nullptr);
+  return [p = ServerToClientMessagePromises::Push{
+              this, std::move(message)}]() mutable { return p(); };
+}
+
+inline auto CallFilters::PullServerToClientMessage() {
+  return ServerToClientMessagePromises::Pull{this};
 }
 
 }  // namespace grpc_core
