@@ -141,7 +141,7 @@ TEST(BackendMetricsLbPolicyTest, TestOobMetricsReceipt) {
       cond.Wait(&mu);
     }
     ASSERT_TRUE(status.has_value());
-    EXPECT_EQ(status->error_code(), grpc::OK);
+    EXPECT_EQ(status->error_code(), grpc::StatusCode::OK);
   }
 }
 
