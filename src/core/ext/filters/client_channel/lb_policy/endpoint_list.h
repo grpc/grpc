@@ -199,7 +199,9 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
 
   // Returns true if all endpoints have seen their initial connectivity
   // state notification.
-  bool AllEndpointsSeenInitialState() const;
+  bool AllEndpointsSeenInitialState() const {
+    return num_endpoints_seen_initial_state_ == size();
+  }
 
  private:
   // Returns the parent policy's helper.  Needed because the accessor
@@ -210,6 +212,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
   RefCountedPtr<LoadBalancingPolicy> policy_;
   const char* tracer_;
   std::vector<OrphanablePtr<Endpoint>> endpoints_;
+  size_t num_endpoints_seen_initial_state_ = 0;
 };
 
 }  // namespace grpc_core

@@ -490,6 +490,54 @@ TEST_F(PartyTest, CanBulkSpawn) {
   n2.WaitForNotification();
 }
 
+TEST_F(PartyTest, AfterCurrentPollWorks) {
+  auto party = MakeRefCounted<TestParty>();
+  Notification n;
+  int state = 0;
+  {
+    Party::BulkSpawner spawner(party.get());
+    // BulkSpawner will schedule and poll this promise first, but the
+    // `AfterCurrentPoll` will pause it.
+    // Then spawn1, spawn2, and spawn3 will run in order (with EXPECT_EQ checks
+    // demonstrating this), at which point the poll will complete, causing
+    // spawn_final to be awoken and scheduled and see the final state.
+    spawner.Spawn(
+        "spawn_final",
+        [&state, &party]() {
+          return Seq(party->AfterCurrentPoll(), [&state]() {
+            EXPECT_EQ(state, 3);
+            return Empty{};
+          });
+        },
+        [&n](Empty) { n.Notify(); });
+    spawner.Spawn(
+        "spawn1",
+        [&state]() {
+          EXPECT_EQ(state, 0);
+          state = 1;
+          return Empty{};
+        },
+        [](Empty) {});
+    spawner.Spawn(
+        "spawn2",
+        [&state]() {
+          EXPECT_EQ(state, 1);
+          state = 2;
+          return Empty{};
+        },
+        [](Empty) {});
+    spawner.Spawn(
+        "spawn3",
+        [&state]() {
+          EXPECT_EQ(state, 2);
+          state = 3;
+          return Empty{};
+        },
+        [](Empty) {});
+  }
+  n.WaitForNotification();
+}
+
 TEST_F(PartyTest, ThreadStressTest) {
   auto party = MakeRefCounted<TestParty>();
   std::vector<std::thread> threads;

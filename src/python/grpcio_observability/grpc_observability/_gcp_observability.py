@@ -118,11 +118,11 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         grpc._observability.observability_deinit()
 
     def create_client_call_tracer(
-        self, method_name: bytes
+        self, method_name: bytes, target: bytes
     ) -> ClientCallTracerCapsule:
         trace_id = b"TRACE_ID"
         capsule = _cyobservability.create_client_call_tracer(
-            method_name, trace_id
+            method_name, target, trace_id
         )
         return capsule
 
@@ -143,9 +143,13 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         pass
 
     def record_rpc_latency(
-        self, method: str, rpc_latency: float, status_code: grpc.StatusCode
+        self,
+        method: str,
+        target: str,
+        rpc_latency: float,
+        status_code: grpc.StatusCode,
     ) -> None:
         status_code = GRPC_STATUS_CODE_TO_STRING.get(status_code, "UNKNOWN")
         _cyobservability._record_rpc_latency(
-            self.exporter, method, rpc_latency, status_code
+            self.exporter, method, target, rpc_latency, status_code
         )
