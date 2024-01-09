@@ -83,6 +83,7 @@ struct ResultOr {
 template <typename R, typename V>
 struct Operator {
   using Result = R;
+  using Arg = V;
   void* channel_data;
   size_t call_offset;
   Poll<R> (*promise_init)(void* promise_data, void* call_data,
@@ -104,10 +105,24 @@ struct Finalizer {
 };
 
 template <typename Op>
+struct AddOp {
+  size_t promise_size;
+  size_t promise_alignment;
+  Op op;
+};
+
+template <typename Op>
 struct Layout {
   size_t promise_size;
   size_t promise_alignment;
   std::vector<Op> ops;
+
+  void MaybeAdd(absl::optional<AddOp<Op>> op) {
+    if (!op.has_value()) return;
+    promise_size = std::max(promise_size, op->promise_size);
+    promise_alignment = std::max(promise_alignment, op->promise_alignment);
+    ops.push_back(std::move(op->op));
+  }
 };
 
 struct StackData {
@@ -120,206 +135,46 @@ struct StackData {
   std::vector<Finalizer> finalizers;
 };
 
-enum class PipeState : uint8_t {
-  // Waiting to be sent
-  kPending,
-  // Sent, but not yet received
-  kQueued,
-  // Trying to receive, but not yet sent
-  kWaiting,
-  // Processing through filters
-  kProcessing,
-  // Closed sending
-  kClosed,
-  // Closed due to failure
-  kError
-};
-
 template <typename T>
-class FallibleRunner {
+class PipeTransformer {
  public:
-  FallibleRunner(void* call_data, T* value,
-                 const Layout<FallibleOperator<T>>& layout,
-                 Latch<ServerMetadataHandle>& cancel_latch)
-      : call_data_(call_data), layout_(&layout), cancel_latch_(&cancel_latch) {
-    if (cancel_latch.is_set()) {
-      state_ = State::kDoneError;
-      return;
-    }
-    if (value->get() == nullptr) {
-      state_ = State::kWaiting;
-      promise_data_ = value;
-      return;
-    }
-    state_ = Start(std::move(*value));
-  }
-
-  ~FallibleRunner() {
-    switch (state_) {
-      case State::kRunning:
-        layout_->ops[index_].early_destroy(promise_data_);
-        gpr_free_aligned(promise_data_);
-        break;
-      case State::kDoneOk: {
-        T(static_cast<typename T::element_type>(promise_data_));
-      } break;
-      case State::kDoneError:
-      case State::kDoneReturned:
-      case State::kWaiting:
-        break;
-    }
-  }
-
-  FallibleRunner(const FallibleRunner&) = delete;
-  FallibleRunner& operator=(const FallibleRunner&) = delete;
-  FallibleRunner(FallibleRunner&& other) noexcept { MoveFrom(other); }
-  FallibleRunner& operator=(FallibleRunner&& other) noexcept {
-    MoveFrom(other);
-    return *this;
-  }
-
-  Poll<ValueOrFailure<T>> operator()() {
-    switch (state_) {
-      case State::kRunning:
-        break;
-      case State::kDoneOk:
-        state_ = State::kDoneReturned;
-        return T(static_cast<typename T::element_type>(promise_data_));
-      case State::kDoneError:
-        state_ = State::kDoneReturned;
-        return Failure{};
-      case State::kDoneReturned:
-        Crash("FallibleRunner called after completion");
-      case State::kWaiting: {
-        auto* value = static_cast<T*>(promise_data_);
-        if (value->get() == nullptr) return Pending{};
-        switch (Start(std::move(*value))) {
-          case State::kRunning:
-            break;
-          case State::kDoneOk:
-            state_ = State::kDoneReturned;
-            return T(static_cast<typename T::element_type>(promise_data_));
-          case State::kDoneError:
-            state_ = State::kDoneReturned;
-            return Failure{};
-          case State::kDoneReturned:
-            Crash("FallibleRunner::Start returned kReturned");
-          case State::kWaiting:
-            Crash("FallibleRunner::Start returned kWaiting");
-        }
-      }
-    }
-    const auto* ops = layout_->ops.data();
-    auto r = ops[index_].poll(promise_data_);
-    while (true) {
-      auto* p = r.value_if_ready();
-      if (p == nullptr) return Pending();
-      if (p->ok == nullptr) {
-        if (!cancel_latch_->is_set()) cancel_latch_->Set(std::move(p->error));
-        gpr_free_aligned(promise_data_);
-        state_ = State::kDoneReturned;
-        return Failure{};
-      }
-      auto value = std::move(r.ok);
-      ++index_;
-      if (index_ == count_) {
-        gpr_free_aligned(promise_data_);
-        state_ = State::kDoneReturned;
-        return std::move(value);
-      }
-      r = ops[index_].promise_init(promise_data_, call_data_,
-                                   ops[index_].channel_data, std::move(value));
-    }
-  }
+  bool IsRunning() const { return promise_data_ != nullptr; }
+  Poll<ResultOr<T>> Start(const Layout<FallibleOperator<T>>* layout, T input,
+                          void* call_data);
+  Poll<ResultOr<T>> Step(void* call_data);
 
  private:
-  enum class State : uint8_t {
-    kWaiting,
-    kRunning,
-    kDoneOk,
-    kDoneError,
-    kDoneReturned,
-  };
+  Poll<ResultOr<T>> InitStep(T input, void* call_data);
+  Poll<ResultOr<T>> ContinueStep(void* call_data);
 
-  void MoveFrom(FallibleRunner&& other) noexcept {
-    call_data_ = other.call_data_;
-    promise_data_ = other.promise_data_;
-    layout_ = other.layout_;
-    cancel_latch_ = other.cancel_latch_;
-    index_ = other.index_;
-    count_ = other.count_;
-    state_ = std::exchange(other.state_, State::kDoneReturned);
-  }
-
-  State Start(T value) {
-    if (count_ == 0) GPR_DEBUG_ASSERT(promise_size == 0);
-    const auto* ops = layout_->ops.data();
-    if (layout_->promise_size == 0) {
-      for (size_t i = 0; i < count_; i++) {
-        auto r = ops[i].promise_init(nullptr, call_data_, ops[i].channel_data);
-        auto* p = r.value_if_ready();
-        GPR_DEBUG_ASSERT(p != nullptr);
-        if (p->ok != nullptr) {
-          value = std::move(r.ok);
-        } else {
-          cancel_latch_->Set(std::move(p->error));
-          return State::kDoneError;
-        }
-      }
-      promise_data_ = value->release();
-      return State::kDoneOk;
-    }
-    promise_data_ =
-        gpr_malloc_aligned(layout_->promise_size, layout_->promise_alignment);
-    for (size_t i = 0; i < count_; i++) {
-      auto r =
-          ops[i].promise_init(promise_data_, call_data_, ops[i].channel_data);
-      auto* p = r.value_if_ready();
-      if (p == nullptr) {
-        index_ = i;
-        return State::kRunning;
-      }
-      if (p->ok != nullptr) {
-        value = std::move(r.ok);
-      } else {
-        cancel_latch_->Set(std::move(p->error));
-        return State::kDoneError;
-      }
-    }
-    gpr_free_aligned(promise_data_);
-    promise_data_ = value->release();
-    return State::kDoneOk;
-  }
-
-  void* call_data_;
-  void* promise_data_;
-  const Layout<FallibleOperator<T>>* layout_;
-  Latch<ServerMetadataHandle>* cancel_latch_;
-  uint8_t index_;
-  uint8_t count_;
-  State state_;
+  void* promise_data_ = nullptr;
+  const FallibleOperator<T>* ops_;
+  const FallibleOperator<T>* end_ops_;
 };
 
 template <typename Op, typename FilterType,
           typename Op::Result (*impl)(typename FilterType::Call* call_data,
                                       FilterType* channel_data,
-                                      ClientMetadataHandle value)>
-Op MakeInstantaneous(FilterType* channel_data, size_t call_offset) {
-  return Op{
-      channel_data,
-      call_offset,
-      [](void* promise_data, void* call_data, void* channel_data, auto value) {
-        return Poll<typename Op::Result>{
-            impl(static_cast<typename FilterType::Call*>(call_data),
-                 static_cast<FilterType*>(channel_data), std::move(value))};
-      },
-      nullptr,
-      nullptr,
-  };
+                                      typename Op::Arg value)>
+AddOp<Op> MakeInstantaneous(FilterType* channel_data, size_t call_offset) {
+  return AddOp<Op>{
+      0, 0,
+      Op{
+          channel_data,
+          call_offset,
+          [](void* promise_data, void* call_data, void* channel_data,
+             auto value) {
+            return Poll<typename Op::Result>{
+                impl(static_cast<typename FilterType::Call*>(call_data),
+                     static_cast<FilterType*>(channel_data), std::move(value))};
+          },
+          nullptr,
+          nullptr,
+      }};
 }
 
 template <typename FilterType>
-absl::optional<FallibleOperator<ClientMetadataHandle>>
+absl::optional<AddOp<FallibleOperator<ClientMetadataHandle>>>
 MakeClientInitialMetadataOp(FilterType* channel_data, size_t call_offset,
                             const NoInterceptor* p) {
   GPR_DEBUG_ASSERT(p == &FilterType::OnClientInitialMetadata);
@@ -327,7 +182,7 @@ MakeClientInitialMetadataOp(FilterType* channel_data, size_t call_offset,
 }
 
 template <typename FilterType>
-absl::optional<FallibleOperator<ClientMetadataHandle>>
+absl::optional<AddOp<FallibleOperator<ClientMetadataHandle>>>
 MakeClientInitialMetadataOp(FilterType* channel_data, size_t call_offset,
                             void (FilterType::Call::*)(ClientMetadata&)) {
   GPR_DEBUG_ASSERT(p == &FilterType::OnClientInitialMetadata);
@@ -340,6 +195,74 @@ MakeClientInitialMetadataOp(FilterType* channel_data, size_t call_offset,
     }
   };
   return MakeInstantaneous<FallibleOperator<ClientMetadataHandle>, FilterType,
+                           &Impl::fn>(channel_data, call_offset);
+}
+
+template <typename FilterType>
+absl::optional<AddOp<FallibleOperator<ServerMetadataHandle>>>
+MakeServerInitialMetadataOp(FilterType* channel_data, size_t call_offset,
+                            void (FilterType::Call::*)(ServerMetadata&)) {
+  GPR_DEBUG_ASSERT(p == &FilterType::OnServerInitialMetadata);
+  struct Impl {
+    static ResultOr<ServerMetadataHandle> fn(
+        typename FilterType::Call* call_data, FilterType* channel_data,
+        ServerMetadataHandle value) {
+      call_data->OnServerInitialMetadata(*value);
+      return {std::move(value), nullptr};
+    }
+  };
+  return MakeInstantaneous<FallibleOperator<ServerMetadataHandle>, FilterType,
+                           &Impl::fn>(channel_data, call_offset);
+}
+
+template <typename FilterType>
+absl::optional<AddOp<FallibleOperator<MessageHandle>>>
+MakeClientToServerMessageOp(FilterType* channel_data, size_t call_offset,
+                            void (FilterType::Call::*)(Message&)) {
+  GPR_DEBUG_ASSERT(p == &FilterType::OnClientToServerMessage);
+  struct Impl {
+    static ResultOr<MessageHandle> fn(typename FilterType::Call* call_data,
+                                      FilterType* channel_data,
+                                      MessageHandle value) {
+      call_data->OnClientToServerMessage(*value);
+      return {std::move(value), nullptr};
+    }
+  };
+  return MakeInstantaneous<FallibleOperator<MessageHandle>, FilterType,
+                           &Impl::fn>(channel_data, call_offset);
+}
+
+template <typename FilterType>
+absl::optional<AddOp<FallibleOperator<MessageHandle>>>
+MakeServerToClientMessageOp(FilterType* channel_data, size_t call_offset,
+                            void (FilterType::Call::*)(Message&)) {
+  GPR_DEBUG_ASSERT(p == &FilterType::OnServerToClientMessage);
+  struct Impl {
+    static ResultOr<MessageHandle> fn(typename FilterType::Call* call_data,
+                                      FilterType* channel_data,
+                                      MessageHandle value) {
+      call_data->OnServerToClientMessage(*value);
+      return {std::move(value), nullptr};
+    }
+  };
+  return MakeInstantaneous<FallibleOperator<MessageHandle>, FilterType,
+                           &Impl::fn>(channel_data, call_offset);
+}
+
+template <typename FilterType>
+absl::optional<AddOp<InfallibleOperator<ServerMetadataHandle>>>
+MakeServerTrailingMetadataOp(FilterType* channel_data, size_t call_offset,
+                             void (FilterType::Call::*)(ServerMetadata&)) {
+  GPR_DEBUG_ASSERT(p == &FilterType::OnServerTrailingMetadata);
+  struct Impl {
+    static ServerMetadataHandle fn(typename FilterType::Call* call_data,
+                                   FilterType* channel_data,
+                                   ServerMetadataHandle value) {
+      call_data->OnServerTrailingMetadata(*value);
+      return value;
+    }
+  };
+  return MakeInstantaneous<InfallibleOperator<ServerMetadataHandle>, FilterType,
                            &Impl::fn>(channel_data, call_offset);
 }
 
@@ -363,6 +286,21 @@ class Filters {
                               sizeof(typename FilterType::Call));
       data_.filters.push_back(
           filters_detail::MakeFilter<FilterType>(filter, call_offset));
+      data_.client_initial_metadata.MaybeAdd(
+          filters_detail::MakeClientInitialMetadataOp(
+              filter, call_offset, &FilterType::OnClientInitialMetadata));
+      data_.server_initial_metadata.MaybeAdd(
+          filters_detail::MakeServerInitialMetadataOp(
+              filter, call_offset, &FilterType::OnServerInitialMetadata));
+      data_.client_to_server_messages.MaybeAdd(
+          filters_detail::MakeClientToServerMessageOp(
+              filter, call_offset, &FilterType::OnClientToServerMessage));
+      data_.server_to_client_messages.MaybeAdd(
+          filters_detail::MakeServerToClientMessageOp(
+              filter, call_offset, &FilterType::OnServerToClientMessage));
+      data_.server_trailing_metadata.MaybeAdd(
+          filters_detail::MakeServerTrailingMetadataOp(
+              filter, call_offset, &FilterType::OnServerTrailingMetadata));
     }
 
    private:
@@ -373,26 +311,167 @@ class Filters {
     filters_detail::StackData data_;
   };
 
+  auto PushClientInitialMetadata(ClientMetadataHandle md);
+  auto PullClientInitialMetadata();
+
  private:
-  RefCountedPtr<Stack> stack_;
+  class PipeState {
+   public:
+    void BeginPush();
+    void AbandonPush();
+    Poll<StatusFlag> PollPush();
+    Poll<StatusFlag> PollPullValue();
+    void AckPullValue();
 
-  filters_detail::PipeState client_initial_metadata_state_ =
-      filters_detail::PipeState::kPending;
-  filters_detail::PipeState server_initial_metadata_state_ =
-      filters_detail::PipeState::kPending;
-  filters_detail::PipeState client_to_server_message_state_ =
-      filters_detail::PipeState::kPending;
-  filters_detail::PipeState server_to_client_message_state_ =
-      filters_detail::PipeState::kPending;
-  filters_detail::PipeState server_trailing_metadata_state_ =
-      filters_detail::PipeState::kPending;
+   private:
+    enum class ValueState : uint8_t {
+      // Nothing sending nor receiving
+      kIdle,
+      // Sent, but not yet received
+      kQueued,
+      // Trying to receive, but not yet sent
+      kWaiting,
+      // Ready to start processing, but not yet started
+      // (we have the value to send through the pipe, the reader is waiting,
+      // but it's not yet been polled)
+      kReady,
+      // Processing through filters
+      kProcessing,
+      // Closed sending
+      kClosed,
+      // Closed due to failure
+      kError
+    };
+    IntraActivityWaiter wait_send_;
+    IntraActivityWaiter wait_recv_;
+    ValueState state_ = ValueState::kIdle;
+  };
 
-  ClientMetadataHandle* client_initial_metadata_;
-  ServerMetadataHandle* server_initial_metadata_;
-  MessageHandle* client_to_server_message_;
-  MessageHandle* server_to_client_message_;
-  ServerMetadataHandle* server_trailing_metadata_;
+  template <PipeState(Filters::*state_ptr), void*(Filters::*push_ptr),
+            typename T,
+            filters_detail::Layout<filters_detail::FallibleOperator<T>>(
+                filters_detail::StackData::*layout_ptr)>
+  class PipePromise {
+   public:
+    class Push {
+     public:
+      Push(Filters* filters, T x) : filters_(filters), value_(std::move(x)) {
+        state().BeginPush();
+        push_slot() = this;
+      }
+      ~Push() {
+        if (filters_ != nullptr) {
+          state().AbandonPush();
+          push_slot() = nullptr;
+        }
+      }
+
+      Push(const Push&) = delete;
+      Push& operator=(const Push&) = delete;
+      Push(Push&& other)
+          : filters_(std::exchange(other.filters_, nullptr)),
+            value_(std::move(other.value_)) {
+        if (filters_ != nullptr) {
+          GPR_DEBUG_ASSERT(push_slot() == &other);
+          push_slot() = this;
+        }
+      }
+
+      Push& operator=(Push&&) = delete;
+
+      Poll<StatusFlag> operator()() { return state().PollPush(); }
+
+      T TakeValue() { return std::move(value_); }
+
+     private:
+      PipeState& state() { return filters_->*state_ptr; }
+      void*& push_slot() { return filters_->*push_ptr; }
+
+      Filters* filters_;
+      T value_;
+    };
+
+    class Pull {
+     public:
+      explicit Pull(Filters* filters) : filters_(filters) {}
+
+      Poll<ValueOrFailure<T>> operator()() {
+        if (transformer_.IsRunning()) {
+          return FinishPipeTransformer(transformer_.Step(filters_->call_data_));
+        }
+        auto p = state().PollPullValue();
+        auto* r = p.value_if_ready();
+        if (r == nullptr) return Pending{};
+        if (!r->ok()) {
+          filters_->CancelDueToFailedPipeOperation();
+          return Failure{};
+        }
+        return FinishPipeTransformer(
+            transformer_.Start(push()->TakeValue(), filters_->call_data_));
+      }
+
+     private:
+      PipeState& state() { return filters_->*state_ptr; }
+      Push* push() { return static_cast<Push*>(filters_->*push_ptr); }
+
+      Poll<ValueOrFailure<T>> FinishPipeTransformer(
+          Poll<filters_detail::ResultOr<T>> p) {
+        auto* r = p.value_if_ready();
+        if (r == nullptr) return Pending{};
+        GPR_DEBUG_ASSERT(!transformer_.IsRunning());
+        state().AckPullValue();
+        if (r->ok != nullptr) return std::move(r->ok);
+        filters_->Cancel(std::move(r->error));
+        return Failure{};
+      }
+
+      Filters* filters_;
+      filters_detail::PipeTransformer<T> transformer_;
+    };
+  };
+
+  void CancelDueToFailedPipeOperation();
+  void Cancel(ServerMetadataHandle error);
+
+  const RefCountedPtr<Stack> stack_;
+
+  PipeState client_initial_metadata_state_;
+  PipeState server_initial_metadata_state_;
+  PipeState client_to_server_message_state_;
+  PipeState server_to_client_message_state_;
+
+  void* call_data_;
+  void* client_initial_metadata_ = nullptr;
+  void* server_initial_metadata_ = nullptr;
+  void* client_to_server_message_ = nullptr;
+  void* server_to_client_message_ = nullptr;
+
+  using ClientInitialMetadataPromises =
+      PipePromise<&Filters::client_initial_metadata_state_,
+                  &Filters::client_initial_metadata_, ClientMetadataHandle,
+                  &filters_detail::StackData::client_initial_metadata>;
+  using ServerInitialMetadataPromises =
+      PipePromise<&Filters::server_initial_metadata_state_,
+                  &Filters::server_initial_metadata_, ServerMetadataHandle,
+                  &filters_detail::StackData::server_initial_metadata>;
+  using ClientToServerMessagePromises =
+      PipePromise<&Filters::client_to_server_message_state_,
+                  &Filters::client_to_server_message_, MessageHandle,
+                  &filters_detail::StackData::client_to_server_messages>;
+  using ServerToClientMessagePromises =
+      PipePromise<&Filters::server_to_client_message_state_,
+                  &Filters::server_to_client_message_, MessageHandle,
+                  &filters_detail::StackData::server_to_client_messages>;
 };
+
+inline auto Filters::PushClientInitialMetadata(ClientMetadataHandle md) {
+  return [p = ClientInitialMetadataPromises::Push{
+              this, std::move(md)}]() mutable { return p(); };
+}
+
+inline auto Filters::PullClientInitialMetadata() {
+  return ClientInitialMetadataPromises::Pull{this};
+}
 
 }  // namespace grpc_core
 
