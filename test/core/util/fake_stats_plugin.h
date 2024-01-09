@@ -30,10 +30,10 @@ namespace grpc_core {
 // FakeClientCallTracerFactory to create and inject a FakeClientCallTracer into
 // the call context.
 // Example usage:
-//   grpc_core::RegisterFakeStatsPlugin();  // before grpc_init()
+//   RegisterFakeStatsPlugin();  // before grpc_init()
 //
 //   // Creates a FakeClientCallTracerFactory and adds it into the channel args.
-//   grpc_core::FakeClientCallTracerFactory fake_client_call_tracer_factory;
+//   FakeClientCallTracerFactory fake_client_call_tracer_factory;
 //   ChannelArguments channel_args;
 //   channel_args.SetPointer(GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY,
 //                           &fake_client_call_tracer_factory);
