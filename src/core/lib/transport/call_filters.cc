@@ -14,13 +14,20 @@
 
 #include "src/core/lib/transport/call_filters.h"
 
-namespace grpc_core {
+#include "transport.h"
 
-namespace filters_detail {
+namespace grpc_core {
 
 namespace {
 void* Offset(void* base, size_t amt) { return static_cast<char*>(base) + amt; }
 }  // namespace
+
+namespace filters_detail {
+
+template <typename T>
+PipeTransformer<T>::~PipeTransformer() {
+  if (promise_data_ != nullptr) gpr_free_aligned(promise_data_);
+}
 
 template <typename T>
 Poll<ResultOr<T>> PipeTransformer<T>::Start(
@@ -78,11 +85,72 @@ Poll<ResultOr<T>> PipeTransformer<T>::ContinueStep(void* call_data) {
   return Pending{};
 }
 
+template <typename T>
+InfalliblePipeTransformer<T>::~InfalliblePipeTransformer() {
+  if (promise_data_ != nullptr) gpr_free_aligned(promise_data_);
+}
+
+template <typename T>
+Poll<T> InfalliblePipeTransformer<T>::Start(
+    const Layout<InfallibleOperator<T>>* layout, T input, void* call_data) {
+  ops_ = layout->ops.data();
+  end_ops_ = ops_ + layout->ops.size();
+  if (layout->promise_size == 0) {
+    // No call state ==> instantaneously ready
+    auto r = InitStep(std::move(input), call_data);
+    GPR_ASSERT(r.ready());
+    return r;
+  }
+  promise_data_ =
+      gpr_malloc_aligned(layout->promise_size, layout->promise_alignment);
+  return InitStep(std::move(input), call_data);
+}
+
+template <typename T>
+Poll<T> InfalliblePipeTransformer<T>::InitStep(T input, void* call_data) {
+  while (true) {
+    if (ops_ == end_ops_) {
+      return ResultOr<T>{std::move(input), nullptr};
+    }
+    auto p =
+        ops_->promise_init(promise_data_, Offset(call_data, ops_->call_offset),
+                           ops_->channel_data, std::move(input));
+    if (auto* r = p.value_if_ready()) {
+      input = std::move(*r);
+      ++ops_;
+      continue;
+    }
+    return Pending{};
+  }
+}
+
+template <typename T>
+Poll<T> InfalliblePipeTransformer<T>::Step(void* call_data) {
+  GPR_DEBUG_ASSERT(promise_data_ != nullptr);
+  auto p = ContinueStep(call_data);
+  if (p.ready()) {
+    gpr_free_aligned(promise_data_);
+    promise_data_ = nullptr;
+  }
+  return p;
+}
+
+template <typename T>
+Poll<T> InfalliblePipeTransformer<T>::ContinueStep(void* call_data) {
+  auto p = ops_->poll(promise_data_);
+  if (auto* r = p.value_if_ready()) {
+    ++ops_;
+    return InitStep(std::move(*r), call_data);
+  }
+  return Pending{};
+}
+
 // Explicit instantiations of some types used in filters.h
 // We'll need to add ServerMetadataHandle to this when it becomes different
 // to ClientMetadataHandle
 template class PipeTransformer<ClientMetadataHandle>;
 template class PipeTransformer<MessageHandle>;
+template class InfalliblePipeTransformer<ServerMetadataHandle>;
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -94,6 +162,22 @@ CallFilters::CallFilters(RefCountedPtr<Stack> stack)
                                     stack->data_.call_data_alignment)) {}
 
 CallFilters::~CallFilters() { gpr_free_aligned(call_data_); }
+
+void CallFilters::Finalize(const grpc_call_final_info* final_info) {
+  for (auto& finalizer : stack_->data_.finalizers) {
+    finalizer.final(Offset(call_data_, finalizer.call_offset),
+                    finalizer.channel_data, final_info);
+  }
+}
+
+void CallFilters::CancelDueToFailedPipeOperation() {
+  // We expect something cancelled before now
+  if (server_trailing_metadata_ == nullptr) return;
+  gpr_log(GPR_DEBUG, "Cancelling due to failed pipe operation");
+  server_trailing_metadata_ =
+      ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation"));
+  server_trailing_metadata_waiter_.Wake();
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters::StackBuilder

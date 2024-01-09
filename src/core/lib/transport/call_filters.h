@@ -134,6 +134,18 @@ struct StackData {
 template <typename T>
 class PipeTransformer {
  public:
+  PipeTransformer() = default;
+  ~PipeTransformer();
+  PipeTransformer(const PipeTransformer&) = delete;
+  PipeTransformer& operator=(const PipeTransformer&) = delete;
+  PipeTransformer(PipeTransformer&& other) {
+    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
+  }
+  PipeTransformer& operator=(PipeTransformer&& other) {
+    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
+    GPR_DEBUG_ASSERT(promise_data_ == nullptr);
+    return *this;
+  }
   bool IsRunning() const { return promise_data_ != nullptr; }
   Poll<ResultOr<T>> Start(const Layout<FallibleOperator<T>>* layout, T input,
                           void* call_data);
@@ -146,6 +158,36 @@ class PipeTransformer {
   void* promise_data_ = nullptr;
   const FallibleOperator<T>* ops_;
   const FallibleOperator<T>* end_ops_;
+};
+
+template <typename T>
+class InfalliblePipeTransformer {
+ public:
+  InfalliblePipeTransformer() = default;
+  ~InfalliblePipeTransformer();
+  InfalliblePipeTransformer(const InfalliblePipeTransformer&) = delete;
+  InfalliblePipeTransformer& operator=(const InfalliblePipeTransformer&) =
+      delete;
+  InfalliblePipeTransformer(InfalliblePipeTransformer&& other) {
+    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
+  }
+  InfalliblePipeTransformer& operator=(InfalliblePipeTransformer&& other) {
+    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
+    GPR_DEBUG_ASSERT(promise_data_ == nullptr);
+    return *this;
+  }
+  bool IsRunning() const { return promise_data_ != nullptr; }
+  Poll<T> Start(const Layout<InfallibleOperator<T>>* layout, T input,
+                void* call_data);
+  Poll<T> Step(void* call_data);
+
+ private:
+  Poll<T> InitStep(T input, void* call_data);
+  Poll<T> ContinueStep(void* call_data);
+
+  void* promise_data_ = nullptr;
+  const InfallibleOperator<T>* ops_;
+  const InfallibleOperator<T>* end_ops_;
 };
 
 template <typename Op, typename FilterType,
@@ -492,16 +534,22 @@ class CallFilters {
   explicit CallFilters(RefCountedPtr<Stack> stack);
   ~CallFilters();
 
-  auto PushClientInitialMetadata(ClientMetadataHandle md);
-  auto PullClientInitialMetadata();
-  auto PushServerInitialMetadata(ServerMetadataHandle md);
-  auto PullServerInitialMetadata();
-  auto PushClientToServerMessage(MessageHandle message);
-  auto PullClientToServerMessage();
-  auto PushServerToClientMessage(MessageHandle message);
-  auto PullServerToClientMessage();
-  auto PushServerTrailingMetadata(ServerMetadataHandle md);
-  auto PullServerTrailingMetadata();
+  GRPC_MUST_USE_RESULT auto PushClientInitialMetadata(ClientMetadataHandle md);
+  GRPC_MUST_USE_RESULT auto PullClientInitialMetadata();
+  GRPC_MUST_USE_RESULT auto PushServerInitialMetadata(ServerMetadataHandle md);
+  GRPC_MUST_USE_RESULT auto PullServerInitialMetadata();
+  GRPC_MUST_USE_RESULT auto PushClientToServerMessage(MessageHandle message);
+  GRPC_MUST_USE_RESULT auto PullClientToServerMessage();
+  GRPC_MUST_USE_RESULT auto PushServerToClientMessage(MessageHandle message);
+  GRPC_MUST_USE_RESULT auto PullServerToClientMessage();
+  void PushServerTrailingMetadata(ServerMetadataHandle md) {
+    GPR_ASSERT(md != nullptr);
+    if (server_trailing_metadata_ != nullptr) return;
+    server_trailing_metadata_ = std::move(md);
+    server_trailing_metadata_waiter_.Wake();
+  }
+  GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata();
+  void Finalize(const grpc_call_final_info* final_info);
 
  private:
   class PipeState {
@@ -611,7 +659,7 @@ class CallFilters {
         GPR_DEBUG_ASSERT(!transformer_.IsRunning());
         state().AckPullValue();
         if (r->ok != nullptr) return std::move(r->ok);
-        filters_->Cancel(std::move(r->error));
+        filters_->PushServerTrailingMetadata(std::move(r->error));
         return Failure{};
       }
 
@@ -620,8 +668,9 @@ class CallFilters {
     };
   };
 
+  class PullServerTrailingMetadata {};
+
   void CancelDueToFailedPipeOperation();
-  void Cancel(ServerMetadataHandle error);
 
   const RefCountedPtr<Stack> stack_;
 
@@ -629,12 +678,14 @@ class CallFilters {
   PipeState server_initial_metadata_state_;
   PipeState client_to_server_message_state_;
   PipeState server_to_client_message_state_;
+  IntraActivityWaiter server_trailing_metadata_waiter_;
 
   void* const call_data_;
   void* client_initial_metadata_ = nullptr;
   void* server_initial_metadata_ = nullptr;
   void* client_to_server_message_ = nullptr;
   void* server_to_client_message_ = nullptr;
+  ServerMetadataHandle server_trailing_metadata_;
 
   using ClientInitialMetadataPromises =
       PipePromise<&CallFilters::client_initial_metadata_state_,
@@ -692,6 +743,19 @@ inline auto CallFilters::PushServerToClientMessage(MessageHandle message) {
 
 inline auto CallFilters::PullServerToClientMessage() {
   return ServerToClientMessagePromises::Pull{this};
+}
+
+inline auto CallFilters::PullServerTrailingMetadata() {
+  return [this,
+          pipe = filters_detail::InfalliblePipeTransformer<
+              ServerMetadataHandle>()]() mutable -> Poll<ServerMetadataHandle> {
+    if (pipe.IsRunning()) {
+      return pipe.Step(call_data_);
+    }
+    if (server_trailing_metadata_ == nullptr) return Pending{};
+    return pipe.Start(&stack_->data_.server_trailing_metadata,
+                      std::move(server_trailing_metadata_), call_data_);
+  };
 }
 
 }  // namespace grpc_core
