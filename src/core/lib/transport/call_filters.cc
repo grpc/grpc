@@ -86,6 +86,16 @@ template class PipeTransformer<MessageHandle>;
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
+// CallFilters
+
+CallFilters::CallFilters(RefCountedPtr<Stack> stack)
+    : stack_(std::move(stack)),
+      call_data_(gpr_malloc_aligned(stack->data_.call_data_size,
+                                    stack->data_.call_data_alignment)) {}
+
+CallFilters::~CallFilters() { gpr_free_aligned(call_data_); }
+
+///////////////////////////////////////////////////////////////////////////////
 // CallFilters::StackBuilder
 
 size_t CallFilters::StackBuilder::OffsetForNextFilter(size_t alignment,
@@ -104,6 +114,11 @@ RefCountedPtr<CallFilters::Stack> CallFilters::StackBuilder::Build() {
     data_.call_data_size += data_.call_data_alignment -
                             data_.call_data_size % data_.call_data_alignment;
   }
+  // server -> client needs to be reversed so that we can iterate all stacks
+  // in the same order
+  data_.server_initial_metadata.Reverse();
+  data_.server_to_client_messages.Reverse();
+  data_.server_trailing_metadata.Reverse();
   return RefCountedPtr<Stack>(new Stack(std::move(data_)));
 }
 

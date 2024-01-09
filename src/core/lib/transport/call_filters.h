@@ -115,6 +115,8 @@ struct Layout {
     promise_alignment = std::max(promise_alignment, filter_promise_alignment);
     ops.push_back(op);
   }
+
+  void Reverse() { std::reverse(ops.begin(), ops.end()); }
 };
 
 struct StackData {
@@ -487,6 +489,9 @@ class CallFilters {
     filters_detail::StackData data_;
   };
 
+  explicit CallFilters(RefCountedPtr<Stack> stack);
+  ~CallFilters();
+
   auto PushClientInitialMetadata(ClientMetadataHandle md);
   auto PullClientInitialMetadata();
 
@@ -617,7 +622,7 @@ class CallFilters {
   PipeState client_to_server_message_state_;
   PipeState server_to_client_message_state_;
 
-  void* call_data_;
+  void* const call_data_;
   void* client_initial_metadata_ = nullptr;
   void* server_initial_metadata_ = nullptr;
   void* client_to_server_message_ = nullptr;
