@@ -543,11 +543,18 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
   const intptr_t id = next_task_id_;
   ++next_task_id_;
   Duration delay_taken = Duration::zero();
-  if (run_type != RunType::kExact && !task_delays_.empty()) {
-    delay_taken = grpc_core::Clamp(task_delays_.front(), Duration::zero(),
-                                   max_delay_[static_cast<int>(run_type)]);
+  if (run_type != RunType::kExact) {
+    if (!task_delays_.empty()) {
+      delay_taken = grpc_core::Clamp(task_delays_.front(), Duration::zero(),
+                                     max_delay_[static_cast<int>(run_type)]);
+      task_delays_.pop();
+    } else if (run_type != RunType::kWrite && when == Duration::zero()) {
+      // For zero-duration events, if there is no more delay input from
+      // the test case, we default to a small non-zero value to avoid
+      // busy loops that prevent us from making forward progress.
+      delay_taken = std::chrono::microseconds(1);
+    }
     when += delay_taken;
-    task_delays_.pop();
   }
   auto task = std::make_shared<Task>(id, std::move(closure));
   tasks_by_id_.emplace(id, task);
