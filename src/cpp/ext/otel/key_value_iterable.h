@@ -50,9 +50,13 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
  public:
   explicit KeyValueIterable(
       LabelsIterable* injected_labels_iterable,
+      const std::vector<std::unique_ptr<LabelsIterable>>&
+          injected_labels_from_plugin_options,
       absl::Span<const std::pair<absl::string_view, absl::string_view>>
           additional_labels)
       : injected_labels_iterable_(injected_labels_iterable),
+        injected_labels_from_plugin_options_(
+            injected_labels_from_plugin_options),
         additional_labels_(additional_labels) {}
 
   bool ForEachKeyValue(opentelemetry::nostd::function_ref<
@@ -68,6 +72,18 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
         }
       }
     }
+    for (const auto& plugin_option_injected_iterable :
+         injected_labels_from_plugin_options_) {
+      if (plugin_option_injected_iterable != nullptr) {
+        plugin_option_injected_iterable->ResetIteratorPosition();
+        while (const auto& pair = plugin_option_injected_iterable->Next()) {
+          if (!callback(AbslStrViewToOpenTelemetryStrView(pair->first),
+                        AbslStrViewToOpenTelemetryStrView(pair->second))) {
+            return false;
+          }
+        }
+      }
+    }
     for (const auto& pair : additional_labels_) {
       if (!callback(AbslStrViewToOpenTelemetryStrView(pair.first),
                     AbslStrViewToOpenTelemetryStrView(pair.second))) {
@@ -78,14 +94,23 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
   }
 
   size_t size() const noexcept override {
-    return (injected_labels_iterable_ != nullptr
-                ? injected_labels_iterable_->Size()
-                : 0) +
-           additional_labels_.size();
+    size_t size = injected_labels_iterable_ != nullptr
+                      ? injected_labels_iterable_->Size()
+                      : 0;
+    for (const auto& plugin_option_injected_iterable :
+         injected_labels_from_plugin_options_) {
+      if (plugin_option_injected_iterable != nullptr) {
+        size += plugin_option_injected_iterable->Size();
+      }
+    }
+    size += additional_labels_.size();
+    return size;
   }
 
  private:
   LabelsIterable* injected_labels_iterable_;
+  const std::vector<std::unique_ptr<LabelsIterable>>&
+      injected_labels_from_plugin_options_;
   absl::Span<const std::pair<absl::string_view, absl::string_view>>
       additional_labels_;
 };
