@@ -404,7 +404,7 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
 }
 
 std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetLabels(
-    grpc_metadata_batch* incoming_initial_metadata) {
+    grpc_metadata_batch* incoming_initial_metadata) const {
   auto peer_metadata =
       incoming_initial_metadata->Take(grpc_core::XEnvoyPeerMetadata());
   return std::make_unique<MeshLabelsIterable>(
@@ -414,7 +414,7 @@ std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetLabels(
 
 void ServiceMeshLabelsInjector::AddLabels(
     grpc_metadata_batch* outgoing_initial_metadata,
-    LabelsIterable* labels_from_incoming_metadata) {
+    LabelsIterable* labels_from_incoming_metadata) const {
   // On the server, if the labels from incoming metadata did not have a
   // non-empty base64 encoded "x-envoy-peer-metadata", do not perform metadata
   // exchange.
