@@ -2253,7 +2253,7 @@ add_library(grpc
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
   src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -2985,7 +2985,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
   src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -4975,7 +4975,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
   src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -24737,7 +24737,7 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
   src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
