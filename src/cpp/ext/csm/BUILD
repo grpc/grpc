@@ -49,7 +49,6 @@ grpc_cc_library(
         "otel/sdk/src/metrics",
         "otel/sdk:headers",
         "upb_base_lib",
-        "upb_lib",
         "upb_mem_lib",
     ],
     language = "c++",
