@@ -198,6 +198,17 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "switch_test",
+    srcs = ["switch_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:switch"],
+)
+
+grpc_cc_test(
     name = "loop_test",
     srcs = ["loop_test.cc"],
     external_deps = ["gtest"],

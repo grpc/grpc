@@ -34,6 +34,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -516,7 +517,7 @@ class StreamWriteContext {
     if (s_->call_tracer) {
       s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
           grpc_core::HttpAnnotation::Type::kHeadWritten,
-          grpc_core::Timestamp::Now(), s_->t->flow_control.stats(),
+          gpr_now(GPR_CLOCK_REALTIME), s_->t->flow_control.stats(),
           s_->flow_control.stats()));
     }
   }
@@ -648,7 +649,7 @@ class StreamWriteContext {
                                    absl::OkStatus());
     if (s_->call_tracer) {
       s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kEnd, grpc_core::Timestamp::Now(),
+          grpc_core::HttpAnnotation::Type::kEnd, gpr_now(GPR_CLOCK_REALTIME),
           s_->t->flow_control.stats(), s_->flow_control.stats()));
     }
   }

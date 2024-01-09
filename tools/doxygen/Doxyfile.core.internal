@@ -2070,8 +2070,8 @@ src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
 src/core/lib/event_engine/posix_engine/internal_errqueue.h \
 src/core/lib/event_engine/posix_engine/lockfree_event.cc \
 src/core/lib/event_engine/posix_engine/lockfree_event.h \
-src/core/lib/event_engine/posix_engine/native_dns_resolver.cc \
-src/core/lib/event_engine/posix_engine/native_dns_resolver.h \
+src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc \
+src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h \
 src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
 src/core/lib/event_engine/posix_engine/posix_endpoint.h \
 src/core/lib/event_engine/posix_engine/posix_engine.cc \
@@ -2127,6 +2127,8 @@ src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc \
 src/core/lib/event_engine/windows/grpc_polled_fd_windows.h \
 src/core/lib/event_engine/windows/iocp.cc \
 src/core/lib/event_engine/windows/iocp.h \
+src/core/lib/event_engine/windows/native_windows_dns_resolver.cc \
+src/core/lib/event_engine/windows/native_windows_dns_resolver.h \
 src/core/lib/event_engine/windows/win_socket.cc \
 src/core/lib/event_engine/windows/win_socket.h \
 src/core/lib/event_engine/windows/windows_endpoint.cc \
@@ -2685,8 +2687,6 @@ src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/metadata_compression_traits.h \
 src/core/lib/transport/parsed_metadata.cc \
 src/core/lib/transport/parsed_metadata.h \
-src/core/lib/transport/pid_controller.cc \
-src/core/lib/transport/pid_controller.h \
 src/core/lib/transport/simple_slice_based_metadata.h \
 src/core/lib/transport/status_conversion.cc \
 src/core/lib/transport/status_conversion.h \

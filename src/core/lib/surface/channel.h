@@ -103,7 +103,6 @@ struct CallRegistrationTable {
   // C++ or other wrapped language Channel that registered these calls).
   std::map<std::pair<std::string, std::string>, RegisteredCall> map
       ABSL_GUARDED_BY(mu);
-  int method_registration_attempts ABSL_GUARDED_BY(mu) = 0;
 };
 
 class Channel : public RefCounted<Channel>,
@@ -148,11 +147,6 @@ class Channel : public RefCounted<Channel>,
   int TestOnlyRegisteredCalls() {
     MutexLock lock(&registration_table_.mu);
     return registration_table_.map.size();
-  }
-
-  int TestOnlyRegistrationAttempts() {
-    MutexLock lock(&registration_table_.mu);
-    return registration_table_.method_registration_attempts;
   }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const {

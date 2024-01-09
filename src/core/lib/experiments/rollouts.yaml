@@ -78,11 +78,7 @@
   default: false
 - name: keepalive_server_fix
   default: false
-- name: memory_pressure_controller
-  default: false
 - name: monitoring_experiment
-  default: true
-- name: overload_protection
   default: true
 - name: peer_state_based_framing
   default: false
@@ -93,8 +89,6 @@
 - name: promise_based_client_call
   default: false
 - name: promise_based_server_call
-  default: false
-- name: red_max_concurrent_streams
   default: false
 - name: registered_method_lookup_in_transport
   default: true

@@ -658,14 +658,9 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
   pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
-  if (IsMemoryPressureControllerEnabled()) {
-    pressure_info.pressure_control_value =
-        pressure_tracker_.AddSampleAndGetControlValue(
-            pressure_info.instantaneous_pressure);
-  } else {
-    pressure_info.pressure_control_value =
-        std::min(pressure_info.instantaneous_pressure, 1.0);
-  }
+  pressure_info.pressure_control_value =
+      pressure_tracker_.AddSampleAndGetControlValue(
+          pressure_info.instantaneous_pressure);
   pressure_info.max_recommended_allocation_size = quota_size / 16;
   return pressure_info;
 }
