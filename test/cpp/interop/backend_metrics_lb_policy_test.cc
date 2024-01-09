@@ -30,6 +30,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -111,20 +112,36 @@ TEST(BackendMetricsLbPolicyTest, TestOobMetricsReceipt) {
   ClientContext ctx;
   SimpleRequest req;
   SimpleResponse res;
-  ASSERT_EQ(stub.UnaryCall(&ctx, req, &res).error_code(), grpc::OK);
+  grpc_core::Mutex mu;
+  grpc_core::CondVar cond;
+  absl::optional<Status> status;
+
+  stub.async()->UnaryCall(&ctx, &req, &res, [&](auto s) {
+    grpc_core::MutexLock lock(&mu);
+    status = s;
+    cond.SignalAll();
+  });
   // This report is sent on start, available immediately
   auto report = tracker.WaitForOobLoadReport(
       [](auto report) { return report.cpu_utilization() == 0.5; },
-      absl::Seconds(2 * grpc_test_slowdown_factor()), 3);
+      absl::Milliseconds(1500), 3);
   ASSERT_TRUE(report.has_value());
   EXPECT_EQ(report->cpu_utilization(), 0.5);
   for (size_t i = 0; i < 3; i++) {
     // Wait for slightly more than 1 min
     report = tracker.WaitForOobLoadReport(
         [](auto report) { return report.cpu_utilization() == 0.5; },
-        absl::Seconds(20 * grpc_test_slowdown_factor()), 3);
+        absl::Milliseconds(1500), 3);
     ASSERT_TRUE(report.has_value());
     EXPECT_EQ(report->cpu_utilization(), 0.5);
+  }
+  {
+    grpc_core::MutexLock lock(&mu);
+    if (!status.has_value()) {
+      cond.Wait(&mu);
+    }
+    ASSERT_TRUE(status.has_value());
+    EXPECT_EQ(status->error_code(), grpc::OK);
   }
 }
 
