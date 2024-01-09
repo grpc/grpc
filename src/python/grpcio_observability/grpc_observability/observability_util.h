@@ -50,8 +50,8 @@ extern std::queue<CensusData>* g_census_data_buffer;
 extern std::mutex g_census_data_buffer_mutex;
 extern std::condition_variable g_census_data_buffer_cv;
 
-void* CreateClientCallTracer(const char* method, const char* trace_id,
-                             const char* parent_span_id);
+void* CreateClientCallTracer(const char* method, const char* target,
+                             const char* trace_id, const char* parent_span_id);
 
 void* CreateServerCallTracerFactory();
 

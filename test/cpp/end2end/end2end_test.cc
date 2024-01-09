@@ -862,12 +862,10 @@ TEST_P(End2endTest, ManyStubs) {
   ResetStub();
   ChannelTestPeer peer(channel_.get());
   int registered_calls_pre = peer.registered_calls();
-  int registration_attempts_pre = peer.registration_attempts();
   for (int i = 0; i < 1000; ++i) {
     grpc::testing::EchoTestService::NewStub(channel_);
   }
   EXPECT_EQ(peer.registered_calls(), registered_calls_pre);
-  EXPECT_GT(peer.registration_attempts(), registration_attempts_pre);
 }
 
 TEST_P(End2endTest, EmptyBinaryMetadata) {

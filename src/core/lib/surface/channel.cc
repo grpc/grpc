@@ -376,7 +376,6 @@ namespace grpc_core {
 
 RegisteredCall* Channel::RegisterCall(const char* method, const char* host) {
   MutexLock lock(&registration_table_.mu);
-  registration_table_.method_registration_attempts++;
   auto key = std::make_pair(std::string(host != nullptr ? host : ""),
                             std::string(method != nullptr ? method : ""));
   auto rc_posn = registration_table_.map.find(key);

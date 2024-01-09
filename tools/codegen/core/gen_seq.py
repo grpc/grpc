@@ -289,6 +289,6 @@ copyright = [line[2:].rstrip() for line in copyright]
 with open("src/core/lib/promise/detail/seq_state.h", "w") as f:
     put_banner([f], copyright)
     print(front_matter, file=f)
-    for n in range(2, 10):
+    for n in range(2, 14):
         print(seq_state.render(n=n), file=f)
     print(end_matter, file=f)

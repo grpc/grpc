@@ -45,7 +45,7 @@
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
-#include "src/core/lib/event_engine/posix_engine/native_dns_resolver.h"
+#include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -571,10 +571,10 @@ PosixEventEngine::GetDNSResolver(
         std::move(*ares_resolver));
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   }
-  GRPC_EVENT_ENGINE_DNS_TRACE("PosixEventEngine:%p creating NativeDNSResolver",
-                              this);
+  GRPC_EVENT_ENGINE_DNS_TRACE(
+      "PosixEventEngine:%p creating NativePosixDNSResolver", this);
   return std::make_unique<PosixEventEngine::PosixDNSResolver>(
-      grpc_core::MakeOrphanable<NativeDNSResolver>(shared_from_this()));
+      grpc_core::MakeOrphanable<NativePosixDNSResolver>(shared_from_this()));
 #endif  // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 }
 
