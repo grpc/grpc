@@ -328,7 +328,7 @@ CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
 endif
 CFLAGS += -g
-CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2 -Ithird_party/protobuf -Isrc/core/ext/upb-gen -Isrc/core/ext/upbdefs-gen -Ithird_party/utf8_range -Ithird_party/xxhash
+CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2 -Ithird_party/protobuf -Isrc/core/ext/upb-gen -Isrc/core/ext/upbdefs-gen -Ithird_party/protobuf/third_party/utf8_range -Ithird_party/xxhash
 COREFLAGS += -fno-exceptions
 LDFLAGS += -g
 

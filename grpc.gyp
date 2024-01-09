@@ -60,7 +60,7 @@
       '-Ithird_party/protobuf',
       '-Isrc/core/ext/upb-gen',
       '-Isrc/core/ext/upbdefs-gen',
-      '-Ithird_party/utf8_range',
+      '-Ithird_party/protobuf/third_party/utf8_range',
       '-Ithird_party/xxhash',
     ],
     'ldflags': [
@@ -141,7 +141,7 @@
             '-Ithird_party/protobuf',
             '-Isrc/core/ext/upb-gen',
             '-Isrc/core/ext/upbdefs-gen',
-            '-Ithird_party/utf8_range',
+            '-Ithird_party/protobuf/third_party/utf8_range',
             '-Ithird_party/xxhash',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
@@ -154,7 +154,7 @@
             '-Ithird_party/protobuf',
             '-Isrc/core/ext/upb-gen',
             '-Isrc/core/ext/upbdefs-gen',
-            '-Ithird_party/utf8_range',
+            '-Ithird_party/protobuf/third_party/utf8_range',
             '-Ithird_party/xxhash',
             '-stdlib=libc++',
             '-std=c++14',
