@@ -89,6 +89,8 @@ absl::flat_hash_set<std::string> BaseMetrics() {
 OpenTelemetryPluginBuilderImpl::OpenTelemetryPluginBuilderImpl()
     : metrics_(BaseMetrics()) {}
 
+OpenTelemetryPluginBuilderImpl::~OpenTelemetryPluginBuilderImpl() = default;
+
 OpenTelemetryPluginBuilderImpl&
 OpenTelemetryPluginBuilderImpl::SetMeterProvider(
     std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider) {
@@ -150,6 +152,14 @@ OpenTelemetryPluginBuilderImpl::SetServerSelector(
     absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
         server_selector) {
   server_selector_ = std::move(server_selector);
+  return *this;
+}
+
+OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::AddPluginOption(
+    std::unique_ptr<InternalOpenTelemetryPluginOption> option) {
+  // We allow a limit of 64 plugin options to be registered at this time.
+  GPR_ASSERT(plugin_options_.size() < 64);
+  plugin_options_.push_back(std::move(option));
   return *this;
 }
 
@@ -239,6 +249,7 @@ void OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
   g_otel_plugin_state_->generic_method_attribute_filter =
       std::move(generic_method_attribute_filter_);
   g_otel_plugin_state_->meter_provider = std::move(meter_provider);
+  g_otel_plugin_state_->plugin_options = std::move(plugin_options_);
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenTelemetryServerCallTracerFactory());
   grpc_core::CoreConfiguration::RegisterBuilder(
@@ -287,6 +298,8 @@ constexpr absl::string_view OpenTelemetryPluginBuilder::
 OpenTelemetryPluginBuilder::OpenTelemetryPluginBuilder()
     : impl_(std::make_unique<internal::OpenTelemetryPluginBuilderImpl>()) {}
 
+OpenTelemetryPluginBuilder::~OpenTelemetryPluginBuilder() = default;
+
 OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetMeterProvider(
     std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider) {
   impl_->SetMeterProvider(std::move(meter_provider));
@@ -307,6 +320,15 @@ OpenTelemetryPluginBuilder::SetGenericMethodAttributeFilter(
         generic_method_attribute_filter) {
   impl_->SetGenericMethodAttributeFilter(
       std::move(generic_method_attribute_filter));
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::AddPluginOption(
+    std::unique_ptr<OpenTelemetryPluginOption> option) {
+  impl_->AddPluginOption(
+      std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>(
+          static_cast<grpc::internal::InternalOpenTelemetryPluginOption*>(
+              option.release())));
   return *this;
 }
 
