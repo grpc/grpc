@@ -1112,6 +1112,7 @@
       'dependencies': [
         'upb_collections_lib',
         'upb',
+        'utf8_range_lib',
         'z',
         'absl/algorithm:container',
         'absl/cleanup:cleanup',
@@ -1519,9 +1520,6 @@
         'src/core/tsi/local_transport_security.cc',
         'src/core/tsi/transport_security.cc',
         'src/core/tsi/transport_security_grpc.cc',
-        'third_party/protobuf/third_party/utf8_range/naive.c',
-        'third_party/protobuf/third_party/utf8_range/range2-neon.c',
-        'third_party/protobuf/third_party/utf8_range/range2-sse.c',
         'third_party/protobuf/upb/message/accessors.c',
         'third_party/protobuf/upb/mini_descriptor/build_enum.c',
         'third_party/protobuf/upb/mini_descriptor/decode.c',
@@ -1634,12 +1632,10 @@
       'target_name': 'upb_json_lib',
       'type': 'static_library',
       'dependencies': [
+        'utf8_range_lib',
       ],
       'sources': [
         'src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c',
-        'third_party/protobuf/third_party/utf8_range/naive.c',
-        'third_party/protobuf/third_party/utf8_range/range2-neon.c',
-        'third_party/protobuf/third_party/utf8_range/range2-sse.c',
         'third_party/protobuf/upb/base/status.c',
         'third_party/protobuf/upb/hash/common.c',
         'third_party/protobuf/upb/json/decode.c',
@@ -1691,12 +1687,10 @@
       'target_name': 'upb_textformat_lib',
       'type': 'static_library',
       'dependencies': [
+        'utf8_range_lib',
       ],
       'sources': [
         'src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c',
-        'third_party/protobuf/third_party/utf8_range/naive.c',
-        'third_party/protobuf/third_party/utf8_range/range2-neon.c',
-        'third_party/protobuf/third_party/utf8_range/range2-sse.c',
         'third_party/protobuf/upb/base/status.c',
         'third_party/protobuf/upb/hash/common.c',
         'third_party/protobuf/upb/lex/atoi.c',
@@ -2014,6 +2008,7 @@
       'dependencies': [
         'upb',
         're2',
+        'utf8_range_lib',
         'z',
         'absl/cleanup:cleanup',
         'absl/container:flat_hash_map',
@@ -2294,9 +2289,6 @@
         'src/core/tsi/alts/handshaker/transport_security_common_api.cc',
         'src/core/tsi/transport_security.cc',
         'src/core/tsi/transport_security_grpc.cc',
-        'third_party/protobuf/third_party/utf8_range/naive.c',
-        'third_party/protobuf/third_party/utf8_range/range2-neon.c',
-        'third_party/protobuf/third_party/utf8_range/range2-sse.c',
         'third_party/protobuf/upb/hash/common.c',
         'third_party/protobuf/upb/message/accessors.c',
         'third_party/protobuf/upb/message/array.c',

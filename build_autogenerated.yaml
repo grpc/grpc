@@ -2617,7 +2617,6 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/generated_code_support.h
   - third_party/protobuf/upb/message/accessors.h
   - third_party/protobuf/upb/message/internal/accessors.h
@@ -3027,9 +3026,6 @@ libs:
   - src/core/tsi/local_transport_security.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/message/accessors.c
   - third_party/protobuf/upb/mini_descriptor/build_enum.c
   - third_party/protobuf/upb/mini_descriptor/decode.c
@@ -3044,6 +3040,7 @@ libs:
   deps:
   - upb_collections_lib
   - upb
+  - utf8_range_lib
   - z
   - absl/algorithm:container
   - absl/cleanup:cleanup
@@ -3279,7 +3276,6 @@ libs:
   public_headers: []
   headers:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/base/descriptor_constants.h
   - third_party/protobuf/upb/base/internal/log2.h
   - third_party/protobuf/upb/base/status.h
@@ -3384,9 +3380,6 @@ libs:
   - third_party/protobuf/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/base/status.c
   - third_party/protobuf/upb/hash/common.c
   - third_party/protobuf/upb/json/decode.c
@@ -3432,14 +3425,14 @@ libs:
   - third_party/protobuf/upb/wire/encode.c
   - third_party/protobuf/upb/wire/eps_copy_input_stream.c
   - third_party/protobuf/upb/wire/reader.c
-  deps: []
+  deps:
+  - utf8_range_lib
 - name: upb_textformat_lib
   build: all
   language: c
   public_headers: []
   headers:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/base/descriptor_constants.h
   - third_party/protobuf/upb/base/internal/log2.h
   - third_party/protobuf/upb/base/status.h
@@ -3543,9 +3536,6 @@ libs:
   - third_party/protobuf/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/base/status.c
   - third_party/protobuf/upb/hash/common.c
   - third_party/protobuf/upb/lex/atoi.c
@@ -3590,7 +3580,8 @@ libs:
   - third_party/protobuf/upb/wire/encode.c
   - third_party/protobuf/upb/wire/eps_copy_input_stream.c
   - third_party/protobuf/upb/wire/reader.c
-  deps: []
+  deps:
+  - utf8_range_lib
 - name: utf8_range_lib
   build: all
   language: c
@@ -4757,7 +4748,6 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/base/internal/log2.h
   - third_party/protobuf/upb/generated_code_support.h
   - third_party/protobuf/upb/hash/common.h
@@ -5074,9 +5064,6 @@ libs:
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/hash/common.c
   - third_party/protobuf/upb/message/accessors.c
   - third_party/protobuf/upb/message/array.c
@@ -5099,6 +5086,7 @@ libs:
   deps:
   - upb
   - re2
+  - utf8_range_lib
   - z
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
@@ -7314,7 +7302,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/base/internal/log2.h
   - third_party/protobuf/upb/generated_code_support.h
   - third_party/protobuf/upb/hash/common.h
@@ -7395,9 +7382,6 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/hash/common.c
   - third_party/protobuf/upb/message/accessors.c
   - third_party/protobuf/upb/message/array.c
@@ -7420,6 +7404,7 @@ targets:
   deps:
   - gtest
   - upb
+  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8735,7 +8720,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/base/internal/log2.h
   - third_party/protobuf/upb/generated_code_support.h
   - third_party/protobuf/upb/hash/common.h
@@ -8809,9 +8793,6 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/hash/common.c
   - third_party/protobuf/upb/message/accessors.c
   - third_party/protobuf/upb/message/array.c
@@ -8834,6 +8815,7 @@ targets:
   deps:
   - gtest
   - upb
+  - utf8_range_lib
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -9297,7 +9279,6 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/base/internal/log2.h
   - third_party/protobuf/upb/generated_code_support.h
   - third_party/protobuf/upb/hash/common.h
@@ -9380,9 +9361,6 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
   - test/core/transport/chttp2/flow_control_test.cc
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/hash/common.c
   - third_party/protobuf/upb/message/accessors.c
   - third_party/protobuf/upb/message/array.c
@@ -9405,6 +9383,7 @@ targets:
   deps:
   - gtest
   - upb
+  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9475,7 +9454,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - test/core/promise/test_wakeup_schedulers.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/base/internal/log2.h
   - third_party/protobuf/upb/generated_code_support.h
   - third_party/protobuf/upb/hash/common.h
@@ -9556,9 +9534,6 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/for_each_test.cc
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/hash/common.c
   - third_party/protobuf/upb/message/accessors.c
   - third_party/protobuf/upb/message/array.c
@@ -9581,6 +9556,7 @@ targets:
   deps:
   - gtest
   - upb
+  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11015,7 +10991,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - test/core/promise/test_context.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/base/internal/log2.h
   - third_party/protobuf/upb/generated_code_support.h
   - third_party/protobuf/upb/hash/common.h
@@ -11096,9 +11071,6 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/interceptor_list_test.cc
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/hash/common.c
   - third_party/protobuf/upb/message/accessors.c
   - third_party/protobuf/upb/message/array.c
@@ -11121,6 +11093,7 @@ targets:
   deps:
   - gtest
   - upb
+  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11649,7 +11622,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - test/core/promise/test_wakeup_schedulers.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/base/internal/log2.h
   - third_party/protobuf/upb/generated_code_support.h
   - third_party/protobuf/upb/hash/common.h
@@ -11730,9 +11702,6 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/map_pipe_test.cc
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/hash/common.c
   - third_party/protobuf/upb/message/accessors.c
   - third_party/protobuf/upb/message/array.c
@@ -11755,6 +11724,7 @@ targets:
   deps:
   - gtest
   - upb
+  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -12616,7 +12586,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/base/internal/log2.h
   - third_party/protobuf/upb/generated_code_support.h
   - third_party/protobuf/upb/hash/common.h
@@ -12690,9 +12659,6 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/hash/common.c
   - third_party/protobuf/upb/message/accessors.c
   - third_party/protobuf/upb/message/array.c
@@ -12715,6 +12681,7 @@ targets:
   deps:
   - gtest
   - upb
+  - utf8_range_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
@@ -17114,7 +17081,6 @@ targets:
   - src/core/lib/transport/transport_fwd.h
   - src/core/lib/uri/uri_parser.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
-  - third_party/protobuf/third_party/utf8_range/utf8_range.h
   - third_party/protobuf/upb/base/internal/log2.h
   - third_party/protobuf/upb/generated_code_support.h
   - third_party/protobuf/upb/hash/common.h
@@ -17413,9 +17379,6 @@ targets:
   - src/core/lib/uri/uri_parser.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - test/core/transport/chaotic_good/frame_test.cc
-  - third_party/protobuf/third_party/utf8_range/naive.c
-  - third_party/protobuf/third_party/utf8_range/range2-neon.c
-  - third_party/protobuf/third_party/utf8_range/range2-sse.c
   - third_party/protobuf/upb/hash/common.c
   - third_party/protobuf/upb/message/accessors.c
   - third_party/protobuf/upb/message/array.c
@@ -17438,6 +17401,7 @@ targets:
   deps:
   - gtest
   - upb
+  - utf8_range_lib
   - z
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map

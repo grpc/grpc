@@ -3209,9 +3209,6 @@ add_library(grpc_unsecure
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/message/accessors.c
   third_party/protobuf/upb/mini_descriptor/build_enum.c
   third_party/protobuf/upb/mini_descriptor/decode.c
@@ -3265,6 +3262,7 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb_collections_lib
   upb
+  utf8_range_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::algorithm_container
   absl::cleanup
@@ -3573,9 +3571,6 @@ endif()
 
 add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/base/status.c
   third_party/protobuf/upb/hash/common.c
   third_party/protobuf/upb/json/decode.c
@@ -3656,6 +3651,7 @@ target_include_directories(upb_json_lib
 )
 target_link_libraries(upb_json_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  utf8_range_lib
 )
 
 
@@ -3673,9 +3669,6 @@ endif()
 
 add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/base/status.c
   third_party/protobuf/upb/hash/common.c
   third_party/protobuf/upb/lex/atoi.c
@@ -3755,6 +3748,7 @@ target_include_directories(upb_textformat_lib
 )
 target_link_libraries(upb_textformat_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  utf8_range_lib
 )
 
 
@@ -5194,9 +5188,6 @@ add_library(grpc_authorization_provider
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/hash/common.c
   third_party/protobuf/upb/message/accessors.c
   third_party/protobuf/upb/message/array.c
@@ -5254,6 +5245,7 @@ target_link_libraries(grpc_authorization_provider
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb
   ${_gRPC_RE2_LIBRARIES}
+  utf8_range_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::cleanup
   absl::flat_hash_map
@@ -8940,9 +8932,6 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/hash/common.c
   third_party/protobuf/upb/message/accessors.c
   third_party/protobuf/upb/message/array.c
@@ -8987,6 +8976,7 @@ target_link_libraries(chunked_vector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -11538,9 +11528,6 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/hash/common.c
   third_party/protobuf/upb/message/accessors.c
   third_party/protobuf/upb/message/array.c
@@ -11585,6 +11572,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::hash
   absl::type_traits
   absl::statusor
@@ -12240,9 +12228,6 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   test/core/transport/chttp2/flow_control_test.cc
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/hash/common.c
   third_party/protobuf/upb/message/accessors.c
   third_party/protobuf/upb/message/array.c
@@ -12287,6 +12272,7 @@ target_link_libraries(flow_control_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -12326,9 +12312,6 @@ add_executable(for_each_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/hash/common.c
   third_party/protobuf/upb/message/accessors.c
   third_party/protobuf/upb/message/array.c
@@ -12373,6 +12356,7 @@ target_link_libraries(for_each_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -15105,9 +15089,6 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/interceptor_list_test.cc
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/hash/common.c
   third_party/protobuf/upb/message/accessors.c
   third_party/protobuf/upb/message/array.c
@@ -15152,6 +15133,7 @@ target_link_libraries(interceptor_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -16030,9 +16012,6 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/map_pipe_test.cc
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/hash/common.c
   third_party/protobuf/upb/message/accessors.c
   third_party/protobuf/upb/message/array.c
@@ -16077,6 +16056,7 @@ target_link_libraries(map_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -17729,9 +17709,6 @@ add_executable(periodic_update_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/hash/common.c
   third_party/protobuf/upb/message/accessors.c
   third_party/protobuf/upb/message/array.c
@@ -17776,6 +17753,7 @@ target_link_libraries(periodic_update_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   absl::function_ref
   absl::hash
   absl::statusor
@@ -24890,9 +24868,6 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/lib/uri/uri_parser.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   test/core/transport/chaotic_good/frame_test.cc
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
   third_party/protobuf/upb/hash/common.c
   third_party/protobuf/upb/message/accessors.c
   third_party/protobuf/upb/message/array.c
@@ -24937,6 +24912,7 @@ target_link_libraries(test_core_transport_chaotic_good_frame_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
+  utf8_range_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::cleanup
   absl::flat_hash_map
@@ -30570,7 +30546,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
-  "-laddress_sorting -lupb -lupb_textformat_lib -lupb_json_lib -lupb_collections_lib"
+  "-laddress_sorting -lupb -lupb_textformat_lib -lupb_json_lib -lutf8_range_lib -lupb_collections_lib"
   "grpc.pc")
 
 # grpc_unsecure .pc file
@@ -30581,7 +30557,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
   "libcares zlib"
   "-lgrpc_unsecure"
-  "-laddress_sorting -lupb -lupb_collections_lib"
+  "-laddress_sorting -lutf8_range_lib -lupb -lupb_collections_lib"
   "grpc_unsecure.pc")
 
 # grpc++ .pc file
@@ -30592,7 +30568,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
-  "-laddress_sorting -lupb -lupb_textformat_lib -lupb_json_lib -lupb_collections_lib"
+  "-laddress_sorting -lupb -lupb_textformat_lib -lupb_json_lib -lutf8_range_lib -lupb_collections_lib"
   "grpc++.pc")
 
 # grpc++_unsecure .pc file
@@ -30603,5 +30579,5 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
-  "-laddress_sorting -lupb -lupb_collections_lib"
+  "-laddress_sorting -lutf8_range_lib -lupb -lupb_collections_lib"
   "grpc++_unsecure.pc")
