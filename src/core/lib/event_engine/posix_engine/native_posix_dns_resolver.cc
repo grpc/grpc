@@ -33,7 +33,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include "src/core/lib/event_engine/posix_engine/native_dns_resolver.h"
+#include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 
@@ -93,10 +93,11 @@ LookupHostnameBlocking(absl::string_view name, absl::string_view default_port) {
 
 }  // namespace
 
-NativeDNSResolver::NativeDNSResolver(std::shared_ptr<EventEngine> event_engine)
+NativePosixDNSResolver::NativePosixDNSResolver(
+    std::shared_ptr<EventEngine> event_engine)
     : event_engine_(std::move(event_engine)) {}
 
-void NativeDNSResolver::LookupHostname(
+void NativePosixDNSResolver::LookupHostname(
     EventEngine::DNSResolver::LookupHostnameCallback on_resolved,
     absl::string_view name, absl::string_view default_port) {
   event_engine_->Run(
@@ -105,7 +106,7 @@ void NativeDNSResolver::LookupHostname(
       });
 }
 
-void NativeDNSResolver::LookupSRV(
+void NativePosixDNSResolver::LookupSRV(
     EventEngine::DNSResolver::LookupSRVCallback on_resolved,
     absl::string_view /* name */) {
   // Not supported
@@ -115,7 +116,7 @@ void NativeDNSResolver::LookupSRV(
   });
 }
 
-void NativeDNSResolver::LookupTXT(
+void NativePosixDNSResolver::LookupTXT(
     EventEngine::DNSResolver::LookupTXTCallback on_resolved,
     absl::string_view /* name */) {
   // Not supported
