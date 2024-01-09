@@ -1448,7 +1448,7 @@ TEST_F(TelemetryLabelTest, MissingMetadataField) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(*resource.telemetry_labels, ::testing::IsEmpty());
+  EXPECT_THAT(resource.telemetry_labels, ::testing::IsNull());
 }
 
 TEST_F(TelemetryLabelTest, MissingCsmFilterMetadataField) {
@@ -1466,7 +1466,7 @@ TEST_F(TelemetryLabelTest, MissingCsmFilterMetadataField) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(*resource.telemetry_labels, ::testing::IsEmpty());
+  EXPECT_THAT(resource.telemetry_labels, ::testing::IsNull());
 }
 
 TEST_F(TelemetryLabelTest, IgnoreNonStringEntries) {
@@ -1478,6 +1478,15 @@ TEST_F(TelemetryLabelTest, IgnoreNonStringEntries) {
       *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
   label_map["bool_value"].set_bool_value(true);
   label_map["number_value"].set_number_value(3.14);
+  *label_map["string_value"].mutable_string_value() = "abc";
+  label_map["null_value"].set_null_value(::google::protobuf::NULL_VALUE);
+  auto& list_value_values =
+      *label_map["list_value"].mutable_list_value()->mutable_values();
+  *list_value_values.Add()->mutable_string_value() = "efg";
+  list_value_values.Add()->set_number_value(3.14);
+  auto& struct_value_fields =
+      *label_map["struct_value"].mutable_struct_value()->mutable_fields();
+  struct_value_fields["bool_value"].set_bool_value(false);
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
@@ -1486,7 +1495,8 @@ TEST_F(TelemetryLabelTest, IgnoreNonStringEntries) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(*resource.telemetry_labels, ::testing::IsEmpty());
+  EXPECT_THAT(*resource.telemetry_labels,
+              ::testing::UnorderedElementsAre(Pair("string_value", "abc")));
 }
 
 }  // namespace

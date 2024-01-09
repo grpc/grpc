@@ -101,10 +101,10 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
-    // The indices of the vector correspond to the OptionalLabelComponent enum.
+    // The indices of the array correspond to the OptionalLabelComponent enum.
     std::array<std::shared_ptr<std::map<std::string, std::string>>,
                static_cast<size_t>(OptionalLabelComponent::kSize)>
-        optional_labels_vector_;
+        optional_labels_array_;
   };
 
   explicit OpenTelemetryCallTracer(OpenTelemetryClientFilter* parent,

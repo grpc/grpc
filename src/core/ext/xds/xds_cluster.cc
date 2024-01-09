@@ -647,30 +647,33 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
         XdsHealthStatus(XdsHealthStatus::kHealthy));
   }
   // Record telemetry labels (if any).
-  cds_update->telemetry_labels =
-      std::make_shared<std::map<std::string, std::string>>();
   const envoy_config_core_v3_Metadata* metadata =
       envoy_config_cluster_v3_Cluster_metadata(cluster);
   if (metadata != nullptr) {
-    google_protobuf_Struct* telemetry_labels;
+    google_protobuf_Struct* telemetry_labels_struct;
     if (envoy_config_core_v3_Metadata_filter_metadata_get(
             metadata,
             StdStringToUpbString(
                 absl::string_view("com.google.csm.telemetry_labels")),
-            &telemetry_labels)) {
-      size_t iter = -1;
-      const google_protobuf_Struct_FieldsEntry* fields_entry = nullptr;
+            &telemetry_labels_struct)) {
+      auto telemetry_labels =
+          std::make_shared<std::map<std::string, std::string>>();
+      size_t iter = kUpb_Map_Begin;
+      const google_protobuf_Struct_FieldsEntry* fields_entry;
       while ((fields_entry = google_protobuf_Struct_fields_next(
-                  telemetry_labels, &iter)) != nullptr) {
+                  telemetry_labels_struct, &iter)) != nullptr) {
         // Adds any entry whose value is a string to telemetry_labels.
         const google_protobuf_Value* value =
             google_protobuf_Struct_FieldsEntry_value(fields_entry);
         if (google_protobuf_Value_has_string_value(value)) {
-          cds_update->telemetry_labels->emplace(
+          telemetry_labels->emplace(
               UpbStringToStdString(
                   google_protobuf_Struct_FieldsEntry_key(fields_entry)),
               UpbStringToStdString(google_protobuf_Value_string_value(value)));
         }
+      }
+      if (!telemetry_labels->empty()) {
+        cds_update->telemetry_labels = std::move(telemetry_labels);
       }
     }
   }

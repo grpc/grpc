@@ -187,7 +187,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
   if (OpenTelemetryPluginState().labels_injector != nullptr) {
     optional_labels =
         OpenTelemetryPluginState().labels_injector->GetLabelsFromOptionalLabels(
-            optional_labels_vector_);
+            optional_labels_array_);
   }
   KeyValueIterable labels(injected_labels_.get(), optional_labels.get(),
                           additional_labels);
@@ -247,7 +247,7 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::StartNewTcpTrace() {
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::AddOptionalLabels(
     OptionalLabelComponent component,
     std::shared_ptr<std::map<std::string, std::string>> optional_labels) {
-  optional_labels_vector_[static_cast<std::size_t>(component)] =
+  optional_labels_array_[static_cast<std::size_t>(component)] =
       std::move(optional_labels);
 }
 

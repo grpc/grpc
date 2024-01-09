@@ -85,7 +85,7 @@ class FakeClientCallTracer : public ClientCallTracer {
     void AddOptionalLabels(
         OptionalLabelComponent component,
         std::shared_ptr<std::map<std::string, std::string>> labels) override {
-      optional_labels_.emplace(component, labels);
+      optional_labels_.emplace(component, std::move(labels));
     }
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
