@@ -76,7 +76,9 @@ UPB_GRPC_GENERATED_INCLUDE = (os.path.join("src", "core", "ext", "upb-gen"),)
 UPBDEFS_GRPC_GENERATED_INCLUDE = (
     os.path.join("src", "core", "ext", "upbdefs-gen"),
 )
-UTF8_RANGE_INCLUDE = (os.path.join("third_party", "protobuf", "third_party", "utf8_range"),)
+UTF8_RANGE_INCLUDE = (
+    os.path.join("third_party", "protobuf", "third_party", "utf8_range"),
+)
 XXHASH_INCLUDE = (os.path.join("third_party", "xxhash"),)
 ZLIB_INCLUDE = (os.path.join("third_party", "zlib"),)
 README = os.path.join(PYTHON_STEM, "README.rst")
