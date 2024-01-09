@@ -76,7 +76,7 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
   }
   template <typename R>
   static R ReturnValue(absl::StatusOr<T>&& status) {
-    return StatusCast<R>(status.status());
+    return FailureStatusCast<R>(status.status());
   }
   template <typename F, typename Elem>
   static auto CallSeqFactory(F& f, Elem&& elem, absl::StatusOr<T> value)
@@ -86,9 +86,24 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(absl::StatusOr<T> prior,
                                             RunNext run_next) {
-    if (!prior.ok()) return StatusCast<Result>(prior.status());
+    if (!prior.ok()) return FailureStatusCast<Result>(prior.status());
     return run_next(std::move(prior));
   }
+};
+
+template <typename T>
+struct AllowGenericTrySeqTraits {
+  static constexpr bool value = true;
+};
+
+template <>
+struct AllowGenericTrySeqTraits<absl::Status> {
+  static constexpr bool value = false;
+};
+
+template <typename T>
+struct AllowGenericTrySeqTraits<absl::StatusOr<T>> {
+  static constexpr bool value = false;
 };
 
 template <typename T, typename AnyType = void>
@@ -107,7 +122,7 @@ template <typename T>
 struct TrySeqTraitsWithSfinae<
     T, absl::enable_if_t<
            std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
-               !TakeValueExists<T>::value,
+               !TakeValueExists<T>::value && AllowGenericTrySeqTraits<T>::value,
            void>> {
   using UnwrappedType = void;
   using WrappedType = T;
@@ -121,7 +136,7 @@ struct TrySeqTraitsWithSfinae<
   }
   template <typename R>
   static R ReturnValue(T&& status) {
-    return StatusCast<R>(std::move(status));
+    return FailureStatusCast<R>(std::move(status));
   }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
@@ -133,7 +148,7 @@ template <typename T>
 struct TrySeqTraitsWithSfinae<
     T, absl::enable_if_t<
            std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
-               TakeValueExists<T>::value,
+               TakeValueExists<T>::value && AllowGenericTrySeqTraits<T>::value,
            void>> {
   using UnwrappedType = decltype(TakeValue(std::declval<T>()));
   using WrappedType = T;
@@ -148,7 +163,7 @@ struct TrySeqTraitsWithSfinae<
   template <typename R>
   static R ReturnValue(T&& status) {
     GPR_DEBUG_ASSERT(!IsStatusOk(status));
-    return StatusCast<R>(status.status());
+    return FailureStatusCast<R>(status.status());
   }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
@@ -170,7 +185,7 @@ struct TrySeqTraitsWithSfinae<absl::Status> {
   }
   template <typename R>
   static R ReturnValue(absl::Status&& status) {
-    return StatusCast<R>(std::move(status));
+    return FailureStatusCast<R>(std::move(status));
   }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(absl::Status prior,

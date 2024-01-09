@@ -291,9 +291,8 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                          return call_initiator.SpawnWaitable(
                              "send_message",
                              [msg = std::move(msg), call_initiator]() mutable {
-                               return call_initiator.CancelIfFails(Map(
-                                   call_initiator.PushMessage(std::move(msg)),
-                                   [](bool r) { return StatusFlag(r); }));
+                               return call_initiator.CancelIfFails(
+                                   call_initiator.PushMessage(std::move(msg)));
                              });
                        });
       });
@@ -317,8 +316,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                           "recv_message",
                           [msg = std::move(msg), call_handler]() mutable {
                             return call_handler.CancelIfFails(
-                                Map(call_handler.PushMessage(std::move(msg)),
-                                    [](bool r) { return StatusFlag(r); }));
+                                call_handler.PushMessage(std::move(msg)));
                           });
                     }),
             ImmediateOkStatus())),
@@ -332,6 +330,12 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
           return Empty{};
         });
   });
+}
+
+CallInitiatorAndHandler MakeCall(
+    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena) {
+  auto spine = CallSpine::Create(event_engine, arena);
+  return {CallInitiator(spine), CallHandler(spine)};
 }
 
 }  // namespace grpc_core

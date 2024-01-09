@@ -29,6 +29,8 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -407,6 +409,21 @@ void ApiFuzzer::Tick() {
   }
 }
 
+namespace {
+
+// If there are more than 1K comma-delimited strings in target, remove
+// the extra ones.
+std::string SanitizeTargetUri(absl::string_view target) {
+  constexpr size_t kMaxCommaDelimitedStrings = 1000;
+  std::vector<absl::string_view> parts = absl::StrSplit(target, ',');
+  if (parts.size() > kMaxCommaDelimitedStrings) {
+    parts.resize(kMaxCommaDelimitedStrings);
+  }
+  return absl::StrJoin(parts, ",");
+}
+
+}  // namespace
+
 ApiFuzzer::Result ApiFuzzer::CreateChannel(
     const api_fuzzer::CreateChannel& create_channel) {
   if (channel_ != nullptr) return Result::kComplete;
@@ -423,8 +440,9 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
         create_channel.has_channel_creds()
             ? ReadChannelCreds(create_channel.channel_creds())
             : grpc_insecure_credentials_create();
-    channel_ = grpc_channel_create(create_channel.target().c_str(), creds,
-                                   args.ToC().get());
+    channel_ =
+        grpc_channel_create(SanitizeTargetUri(create_channel.target()).c_str(),
+                            creds, args.ToC().get());
     grpc_channel_credentials_release(creds);
   }
   GPR_ASSERT(channel_ != nullptr);
