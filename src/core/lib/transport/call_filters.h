@@ -18,9 +18,8 @@
 #include <cstdint>
 #include <memory>
 
-#include "channel_stack.h"
-#include "promise_based_filter.h"
-
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/transport/transport.h"
@@ -404,13 +403,13 @@ void AddServerTrailingMetadataOp(FilterType* channel_data, size_t call_offset,
 }
 
 template <typename FilterType>
-void AddFinalizer(FilterType*, size_t, const NoInterceptor*, StackData&) {
+void AddFinalizer(FilterType*, size_t, const NoInterceptor* p, StackData&) {
   GPR_DEBUG_ASSERT(p == &FilterType::OnFinalize);
 }
 
 template <typename FilterType>
 void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                  void (FilterType::Call::*)(const grpc_call_final_info*),
+                  void (FilterType::Call::*p)(const grpc_call_final_info*),
                   StackData& to) {
   GPR_DEBUG_ASSERT(p == &FilterType::OnFinalize);
   to.finalizers.push_back(Finalizer{
@@ -425,8 +424,8 @@ void AddFinalizer(FilterType* channel_data, size_t call_offset,
 
 template <typename FilterType>
 void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                  void (FilterType::Call::*)(const grpc_call_final_info*,
-                                             FilterType*),
+                  void (FilterType::Call::*p)(const grpc_call_final_info*,
+                                              FilterType*),
                   StackData& to) {
   GPR_DEBUG_ASSERT(p == &FilterType::OnFinalize);
   to.finalizers.push_back(Finalizer{
