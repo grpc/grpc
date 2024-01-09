@@ -31,6 +31,7 @@
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
+#include "envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.h"
 #include "upb/reflection/def.h"
 
 #include <grpc/support/json.h>
@@ -89,6 +90,9 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   // Tls Context used by clients
   CommonTlsContext common_tls_context;
 
+  // Connection idle timeout.  Currently used only for SSA.
+  Duration connection_idle_timeout = Duration::Hours(1);
+
   // Maximum number of outstanding requests can be made to the upstream
   // cluster.
   uint32_t max_concurrent_requests = 1024;
@@ -101,6 +105,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
            lrs_load_reporting_server == other.lrs_load_reporting_server &&
            common_tls_context == other.common_tls_context &&
+           connection_idle_timeout == other.connection_idle_timeout &&
            max_concurrent_requests == other.max_concurrent_requests &&
            outlier_detection == other.outlier_detection &&
            override_host_statuses == other.override_host_statuses;
@@ -126,6 +131,7 @@ class XdsClusterResourceType
     envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab);
     envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(
         symtab);
+    envoy_extensions_upstreams_http_v3_HttpProtocolOptions_getmsgdef(symtab);
   }
 };
 

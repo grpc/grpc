@@ -1,4 +1,4 @@
-// Copyright 2020 The gRPC Authors
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,15 +16,11 @@
 
 syntax = "proto3";
 
-package envoy.config.core.v3;
+package envoy.extensions.upstreams.http.v3;
 
-import "google/protobuf/duration.proto";
+import "src/proto/grpc/testing/xds/v3/protocol.proto";
 
-// [#next-free-field: 5]
 message HttpProtocolOptions {
-  // The connection idle timeout.  Defaults to 1h.
-  google.protobuf.Duration idle_timeout = 1;
-
-  // The maximum duration of a stream.
-  google.protobuf.Duration max_stream_duration = 4;
+  // This contains options common across HTTP/1 and HTTP/2
+  config.core.v3.HttpProtocolOptions common_http_protocol_options = 1;
 }
