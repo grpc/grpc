@@ -1347,6 +1347,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/windows/grpc_polled_fd_windows.h )
   s.files += %w( src/core/lib/event_engine/windows/iocp.cc )
   s.files += %w( src/core/lib/event_engine/windows/iocp.h )
+  s.files += %w( src/core/lib/event_engine/windows/native_windows_dns_resolver.cc )
+  s.files += %w( src/core/lib/event_engine/windows/native_windows_dns_resolver.h )
   s.files += %w( src/core/lib/event_engine/windows/win_socket.cc )
   s.files += %w( src/core/lib/event_engine/windows/win_socket.h )
   s.files += %w( src/core/lib/event_engine/windows/windows_endpoint.cc )
