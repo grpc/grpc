@@ -4063,16 +4063,13 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
 }
 
 RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
-                                                 Channel* channel) {
-  const auto initial_size = channel->CallSizeEstimate();
-  global_stats().IncrementCallInitialSize(initial_size);
-  auto alloc = Arena::CreateWithAlloc(initial_size, sizeof(ServerCallSpine),
-                                      channel->allocator());
-  auto* call = new (alloc.second) ServerCallSpine(server, channel, alloc.first);
-  return RefCountedPtr<ServerCallSpine>(call);
+                                                 Channel* channel,
+                                                 Arena* arena) {
+  return RefCountedPtr<ServerCallSpine>(
+      arena->New<ServerCallSpine>(server, channel, arena));
 }
 #else
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server*, Channel*) {
+RefCountedPtr<CallSpineInterface> MakeServerCall(Server*, Channel*, Arena*) {
   Crash("not implemented");
 }
 #endif
