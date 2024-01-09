@@ -7646,6 +7646,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
@@ -7658,6 +7659,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
@@ -7666,6 +7668,7 @@ targets:
   - test/core/transport/chaotic_good/client_transport_error_test.cc
   deps:
   - gtest
+  - grpc_unsecure
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -7674,24 +7677,29 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/transport/chaotic_good/mock_promise_endpoint.h
+  - test/core/transport/chaotic_good/transport_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chaotic_good/client_transport_test.cc
+  - test/core/transport/chaotic_good/mock_promise_endpoint.cc
+  - test/core/transport/chaotic_good/transport_test.cc
   deps:
   - gtest
   - protobuf
@@ -15568,6 +15576,40 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: server_transport_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/transport/chaotic_good/mock_promise_endpoint.h
+  - test/core/transport/chaotic_good/transport_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/chaotic_good/mock_promise_endpoint.cc
+  - test/core/transport/chaotic_good/server_transport_test.cc
+  - test/core/transport/chaotic_good/transport_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: service_config_end2end_test
   gtest: true
   build: test

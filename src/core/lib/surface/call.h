@@ -160,7 +160,8 @@ template <>
 struct ContextType<CallContext> {};
 
 RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
-                                                 Channel* channel);
+                                                 Channel* channel,
+                                                 Arena* arena);
 
 }  // namespace grpc_core
 

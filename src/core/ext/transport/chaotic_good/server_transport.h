@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_TRANSPORT_H
-#define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_TRANSPORT_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_TRANSPORT_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_TRANSPORT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -22,62 +22,75 @@
 
 #include <cstdint>
 #include <initializer_list>  // IWYU pragma: keep
+#include <iostream>
 #include <map>
 #include <memory>
+#include <optional>
+#include <string>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 
-class ChaoticGoodClientTransport final : public Transport,
-                                         public ClientTransport {
+class ChaoticGoodServerTransport final : public Transport,
+                                         public ServerTransport {
  public:
-  ChaoticGoodClientTransport(
+  ChaoticGoodServerTransport(
+      const ChannelArgs& args,
       std::unique_ptr<PromiseEndpoint> control_endpoint,
       std::unique_ptr<PromiseEndpoint> data_endpoint,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);
-  ~ChaoticGoodClientTransport() override;
+  ~ChaoticGoodServerTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
-  ClientTransport* client_transport() override { return this; }
-  ServerTransport* server_transport() override { return nullptr; }
+  ClientTransport* client_transport() override { return nullptr; }
+  ServerTransport* server_transport() override { return this; }
   absl::string_view GetTransportName() const override { return "chaotic_good"; }
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
@@ -85,34 +98,43 @@ class ChaoticGoodClientTransport final : public Transport,
   grpc_endpoint* GetEndpoint() override { return nullptr; }
   void Orphan() override { delete this; }
 
-  void StartCall(CallHandler call_handler) override;
+  void SetAcceptor(Acceptor* acceptor) override;
   void AbortWithError();
 
  private:
-  // Queue size of each stream pipe is set to 2, so that for each stream read it
-  // will queue at most 2 frames.
-  static const size_t kServerFrameQueueSize = 2;
-  using StreamMap = absl::flat_hash_map<uint32_t, CallHandler>;
+  using StreamMap = absl::flat_hash_map<uint32_t, CallInitiator>;
 
-  uint32_t MakeStream(CallHandler call_handler);
-  absl::optional<CallHandler> LookupStream(uint32_t stream_id);
-  auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
+  absl::Status NewStream(uint32_t stream_id, CallInitiator call_initiator);
+  absl::optional<CallInitiator> LookupStream(uint32_t stream_id);
+  absl::optional<CallInitiator> ExtractStream(uint32_t stream_id);
+  auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone();
-  auto TransportWriteLoop();
   auto TransportReadLoop();
-  // Push one frame into a call
-  auto PushFrameIntoCall(ServerFragmentFrame frame, CallHandler call_handler);
+  auto TransportWriteLoop();
+  // Read different parts of the server frame from control/data endpoints
+  // based on frame header.
+  // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>
+  auto ReadFrameBody(Slice read_buffer);
+  void SendCancel(uint32_t stream_id, absl::Status why);
+  auto DeserializeAndPushFragmentToNewCall(FrameHeader frame_header,
+                                           BufferPair buffers);
+  auto DeserializeAndPushFragmentToExistingCall(FrameHeader frame_header,
+                                                BufferPair buffers);
+  auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
+                                 absl::Status error, ClientFragmentFrame frame);
+  auto PushFragmentIntoCall(CallInitiator call_initiator,
+                            ClientFragmentFrame frame);
 
-  // Max buffer is set to 4, so that for stream writes each time it will queue
-  // at most 2 frames.
-  MpscReceiver<ClientFrame> outgoing_frames_;
+  Acceptor* acceptor_ = nullptr;
+  MpscReceiver<ServerFrame> outgoing_frames_;
   ChaoticGoodTransport transport_;
   // Assigned aligned bytes from setting frame.
   size_t aligned_bytes_ = 64;
   Mutex mu_;
-  uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
+  grpc_event_engine::experimental::MemoryAllocator allocator_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   ActivityPtr writer_;
   ActivityPtr reader_;
 };
@@ -120,4 +142,4 @@ class ChaoticGoodClientTransport final : public Transport,
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_TRANSPORT_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_TRANSPORT_H

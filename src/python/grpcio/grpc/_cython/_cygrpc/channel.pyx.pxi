@@ -101,6 +101,25 @@ cdef class _ChannelState:
     self.connectivity_due = set()
     self.closed_reason = None
 
+cdef class CallHandle:
+
+  def __cinit__(self, _ChannelState channel_state, object method):
+    self.method = method
+    cpython.Py_INCREF(method)
+    # Note that since we always pass None for host, we set the
+    # second-to-last parameter of grpc_channel_register_call to a fixed
+    # NULL value.
+    self.c_call_handle = grpc_channel_register_call(
+      channel_state.c_channel, <const char *>method, NULL, NULL)
+
+  def __dealloc__(self):
+    cpython.Py_DECREF(self.method)
+
+  @property
+  def call_handle(self):
+    return cpython.PyLong_FromVoidPtr(self.c_call_handle)
+
+
 
 cdef tuple _operate(grpc_call *c_call, object operations, object user_tag):
   cdef grpc_call_error c_call_error
@@ -199,7 +218,7 @@ cdef void _call(
     grpc_completion_queue *c_completion_queue, on_success, int flags, method,
     host, object deadline, CallCredentials credentials,
     object operationses_and_user_tags, object metadata,
-    object context) except *:
+    object context, object registered_call_handle) except *:
   """Invokes an RPC.
 
   Args:
@@ -226,6 +245,8 @@ cdef void _call(
       must be present in the first element of this value.
     metadata: The metadata for this call.
     context: Context object for distributed tracing.
+    registered_call_handle: An int representing the call handle of the method, or
+      None if the method is not registered.
   """
   cdef grpc_slice method_slice
   cdef grpc_slice host_slice
@@ -242,10 +263,16 @@ cdef void _call(
       else:
         host_slice = _slice_from_bytes(host)
         host_slice_ptr = &host_slice
-      call_state.c_call = grpc_channel_create_call(
-          channel_state.c_channel, NULL, flags,
-          c_completion_queue, method_slice, host_slice_ptr,
-          _timespec_from_time(deadline), NULL)
+      if registered_call_handle:
+        call_state.c_call = grpc_channel_create_registered_call(
+            channel_state.c_channel, NULL, flags,
+            c_completion_queue, cpython.PyLong_AsVoidPtr(registered_call_handle),
+            _timespec_from_time(deadline), NULL)
+      else:
+        call_state.c_call = grpc_channel_create_call(
+            channel_state.c_channel, NULL, flags,
+            c_completion_queue, method_slice, host_slice_ptr,
+            _timespec_from_time(deadline), NULL)
       grpc_slice_unref(method_slice)
       if host_slice_ptr:
         grpc_slice_unref(host_slice)
@@ -309,7 +336,7 @@ cdef class IntegratedCall:
 cdef IntegratedCall _integrated_call(
     _ChannelState state, int flags, method, host, object deadline,
     object metadata, CallCredentials credentials, operationses_and_user_tags,
-    object context):
+    object context, object registered_call_handle):
   call_state = _CallState()
 
   def on_success(started_tags):
@@ -318,7 +345,8 @@ cdef IntegratedCall _integrated_call(
 
   _call(
       state, call_state, state.c_call_completion_queue, on_success, flags,
-      method, host, deadline, credentials, operationses_and_user_tags, metadata, context)
+      method, host, deadline, credentials, operationses_and_user_tags,
+      metadata, context, registered_call_handle)
 
   return IntegratedCall(state, call_state)
 
@@ -371,7 +399,7 @@ cdef class SegregatedCall:
 cdef SegregatedCall _segregated_call(
     _ChannelState state, int flags, method, host, object deadline,
     object metadata, CallCredentials credentials, operationses_and_user_tags,
-    object context):
+    object context, object registered_call_handle):
   cdef _CallState call_state = _CallState()
   cdef SegregatedCall segregated_call
   cdef grpc_completion_queue *c_completion_queue
@@ -389,7 +417,7 @@ cdef SegregatedCall _segregated_call(
     _call(
         state, call_state, c_completion_queue, on_success, flags, method, host,
         deadline, credentials, operationses_and_user_tags, metadata,
-        context)
+        context, registered_call_handle)
   except:
     _destroy_c_completion_queue(c_completion_queue)
     raise
@@ -486,6 +514,7 @@ cdef class Channel:
         else grpc_insecure_credentials_create())
     self._state.c_channel = grpc_channel_create(
         <char *>target, c_channel_credentials, channel_args.c_args())
+    self._registered_call_handles = {}
     grpc_channel_credentials_release(c_channel_credentials)
 
   def target(self):
@@ -499,10 +528,10 @@ cdef class Channel:
   def integrated_call(
       self, int flags, method, host, object deadline, object metadata,
       CallCredentials credentials, operationses_and_tags,
-      object context = None):
+      object context = None, object registered_call_handle = None):
     return _integrated_call(
         self._state, flags, method, host, deadline, metadata, credentials,
-        operationses_and_tags, context)
+        operationses_and_tags, context, registered_call_handle)
 
   def next_call_event(self):
     def on_success(tag):
@@ -521,10 +550,10 @@ cdef class Channel:
   def segregated_call(
       self, int flags, method, host, object deadline, object metadata,
       CallCredentials credentials, operationses_and_tags,
-      object context = None):
+      object context = None, object registered_call_handle = None):
     return _segregated_call(
         self._state, flags, method, host, deadline, metadata, credentials,
-        operationses_and_tags, context)
+        operationses_and_tags, context, registered_call_handle)
 
   def check_connectivity_state(self, bint try_to_connect):
     with self._state.condition:
@@ -543,3 +572,19 @@ cdef class Channel:
 
   def close_on_fork(self, code, details):
     _close(self, code, details, True)
+
+  def get_registered_call_handle(self, method):
+    """
+    Get or registers a call handler for a method.
+
+    This method is not thread-safe.
+
+    Args:
+      method: Required, the method name for the RPC.
+
+    Returns:
+      The registered call handle pointer in the form of a Python Long. 
+    """
+    if method not in self._registered_call_handles.keys():
+      self._registered_call_handles[method] = CallHandle(self._state, method)
+    return self._registered_call_handles[method].call_handle

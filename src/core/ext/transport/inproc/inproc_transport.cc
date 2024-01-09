@@ -36,8 +36,8 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
                                     public Transport,
                                     public ServerTransport {
  public:
-  void SetAcceptFunction(AcceptFunction accept_function) override {
-    accept_ = std::move(accept_function);
+  void SetAcceptor(Acceptor* acceptor) override {
+    acceptor_ = acceptor;
     ConnectionState expect = ConnectionState::kInitial;
     state_.compare_exchange_strong(expect, ConnectionState::kReady,
                                    std::memory_order_acq_rel,
@@ -92,7 +92,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
       case ConnectionState::kReady:
         break;
     }
-    return accept_(md);
+    return acceptor_->CreateCall(md, acceptor_->CreateArena());
   }
 
  private:
@@ -100,7 +100,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
 
   std::atomic<ConnectionState> state_{ConnectionState::kInitial};
   std::atomic<bool> disconnecting_{false};
-  AcceptFunction accept_;
+  Acceptor* acceptor_;
   absl::Status disconnect_error_;
   Mutex state_tracker_mu_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_tracker_mu_){
