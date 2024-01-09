@@ -118,6 +118,8 @@ struct Layout {
 };
 
 struct StackData {
+  size_t call_data_alignment = 0;
+  size_t call_data_size = 0;
   std::vector<Filter> filters;
   Layout<FallibleOperator<ClientMetadataHandle>> client_initial_metadata;
   Layout<FallibleOperator<ServerMetadataHandle>> server_initial_metadata;
@@ -444,9 +446,13 @@ void AddFinalizer(FilterType* channel_data, size_t call_offset,
 // Execution environment for a stack of filters
 class CallFilters {
  public:
+  class StackBuilder;
+
   class Stack : public RefCounted<Stack> {
    private:
     friend class CallFilters;
+    friend class StackBuilder;
+    explicit Stack(filters_detail::StackData data) : data_(std::move(data)) {}
     const filters_detail::StackData data_;
   };
 
@@ -473,11 +479,11 @@ class CallFilters {
                                    data_);
     }
 
+    RefCountedPtr<Stack> Build();
+
    private:
     size_t OffsetForNextFilter(size_t alignment, size_t size);
 
-    size_t current_call_offset_ = 0;
-    size_t min_alignment_ = 1;
     filters_detail::StackData data_;
   };
 

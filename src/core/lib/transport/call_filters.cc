@@ -90,13 +90,21 @@ template class PipeTransformer<MessageHandle>;
 
 size_t CallFilters::StackBuilder::OffsetForNextFilter(size_t alignment,
                                                       size_t size) {
-  min_alignment_ = std::max(alignment, min_alignment_);
-  if (current_call_offset_ % alignment != 0) {
-    current_call_offset_ += alignment - current_call_offset_ % alignment;
+  data_.call_data_alignment = std::max(data_.call_data_alignment, alignment);
+  if (data_.call_data_size % alignment != 0) {
+    data_.call_data_size += alignment - data_.call_data_size % alignment;
   }
-  const size_t offset = current_call_offset_;
-  current_call_offset_ += size;
+  const size_t offset = data_.call_data_size;
+  data_.call_data_size += size;
   return offset;
+}
+
+RefCountedPtr<CallFilters::Stack> CallFilters::StackBuilder::Build() {
+  if (data_.call_data_size % data_.call_data_alignment != 0) {
+    data_.call_data_size += data_.call_data_alignment -
+                            data_.call_data_size % data_.call_data_alignment;
+  }
+  return RefCountedPtr<Stack>(new Stack(std::move(data_)));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
