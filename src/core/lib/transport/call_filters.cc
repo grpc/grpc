@@ -26,7 +26,10 @@ namespace filters_detail {
 
 template <typename T>
 PipeTransformer<T>::~PipeTransformer() {
-  if (promise_data_ != nullptr) gpr_free_aligned(promise_data_);
+  if (promise_data_ != nullptr) {
+    ops_->early_destroy(promise_data_);
+    gpr_free_aligned(promise_data_);
+  }
 }
 
 template <typename T>
@@ -87,7 +90,10 @@ Poll<ResultOr<T>> PipeTransformer<T>::ContinueStep(void* call_data) {
 
 template <typename T>
 InfalliblePipeTransformer<T>::~InfalliblePipeTransformer() {
-  if (promise_data_ != nullptr) gpr_free_aligned(promise_data_);
+  if (promise_data_ != nullptr) {
+    ops_->early_destroy(promise_data_);
+    gpr_free_aligned(promise_data_);
+  }
 }
 
 template <typename T>
@@ -110,7 +116,7 @@ template <typename T>
 Poll<T> InfalliblePipeTransformer<T>::InitStep(T input, void* call_data) {
   while (true) {
     if (ops_ == end_ops_) {
-      return ResultOr<T>{std::move(input), nullptr};
+      return input;
     }
     auto p =
         ops_->promise_init(promise_data_, Offset(call_data, ops_->call_offset),
@@ -156,12 +162,24 @@ template class InfalliblePipeTransformer<ServerMetadataHandle>;
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters
 
+CallFilters::CallFilters() : stack_(nullptr), call_data_(nullptr) {}
+
 CallFilters::CallFilters(RefCountedPtr<Stack> stack)
     : stack_(std::move(stack)),
       call_data_(gpr_malloc_aligned(stack->data_.call_data_size,
                                     stack->data_.call_data_alignment)) {}
 
-CallFilters::~CallFilters() { gpr_free_aligned(call_data_); }
+CallFilters::~CallFilters() {
+  if (call_data_ != nullptr) gpr_free_aligned(call_data_);
+}
+
+void CallFilters::SetStack(RefCountedPtr<Stack> stack) {
+  if (call_data_ != nullptr) gpr_free_aligned(call_data_);
+  stack_ = std::move(stack);
+  call_data_ = gpr_malloc_aligned(stack->data_.call_data_size,
+                                  stack->data_.call_data_alignment);
+  stack_waiter_.Wake();
+}
 
 void CallFilters::Finalize(const grpc_call_final_info* final_info) {
   for (auto& finalizer : stack_->data_.finalizers) {
