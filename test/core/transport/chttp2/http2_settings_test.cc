@@ -372,6 +372,76 @@ TEST(Http2SettingsTest, WireIdToNameWorks) {
   EXPECT_EQ(Http2Settings::WireIdToName(65029), "UNKNOWN (65029)");
 }
 
+TEST(Http2SettingsTest, ApplyHeaderTableSizeWorks) {
+  Http2Settings settings;
+  EXPECT_EQ(settings.Apply(1, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.header_table_size(), 1u);
+  EXPECT_EQ(settings.Apply(1, 0x7fffffff), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.header_table_size(), 0x7fffffffu);
+}
+
+TEST(Http2SettingsTest, ApplyEnablePushWorks) {
+  Http2Settings settings;
+  EXPECT_EQ(settings.Apply(2, 0), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.enable_push(), false);
+  EXPECT_EQ(settings.Apply(2, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.enable_push(), true);
+  EXPECT_EQ(settings.Apply(2, 2), GRPC_HTTP2_PROTOCOL_ERROR);
+}
+
+TEST(Http2SettingsTest, ApplyMaxConcurrentStreamsWorks) {
+  Http2Settings settings;
+  EXPECT_EQ(settings.Apply(3, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.max_concurrent_streams(), 1u);
+  EXPECT_EQ(settings.Apply(3, 0x7fffffff), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.max_concurrent_streams(), 0x7fffffffu);
+}
+
+TEST(Http2SettingsTest, ApplyInitialWindowSizeWorks) {
+  Http2Settings settings;
+  EXPECT_EQ(settings.Apply(4, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.initial_window_size(), 1u);
+  EXPECT_EQ(settings.Apply(4, 0x7fffffff), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.initial_window_size(), 0x7fffffffu);
+}
+
+TEST(Http2SettingsTest, ApplyMaxFrameSizeWorks) {
+  Http2Settings settings;
+  EXPECT_EQ(settings.Apply(5, 16384), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.max_frame_size(), 16384u);
+  EXPECT_EQ(settings.Apply(5, 16777215), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.max_frame_size(), 16777215);
+  EXPECT_EQ(settings.Apply(5, 16383), GRPC_HTTP2_PROTOCOL_ERROR);
+  EXPECT_EQ(settings.Apply(5, 16777216), GRPC_HTTP2_PROTOCOL_ERROR);
+}
+
+TEST(Http2SettingsTest, ApplyMaxHeaderListSizeWorks) {
+  Http2Settings settings;
+  EXPECT_EQ(settings.Apply(6, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.max_header_list_size(), 1u);
+  EXPECT_EQ(settings.Apply(6, 0x7fffffff), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.max_header_list_size(), 16777216);
+}
+
+TEST(Http2SettingsTest, ApplyAllowTrueBinaryMetadataWorks) {
+  Http2Settings settings;
+  EXPECT_EQ(settings.Apply(65027, 0), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.allow_true_binary_metadata(), false);
+  EXPECT_EQ(settings.Apply(65027, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.allow_true_binary_metadata(), true);
+  EXPECT_EQ(settings.Apply(65027, 2), GRPC_HTTP2_PROTOCOL_ERROR);
+}
+
+TEST(Http2SettingsTest, ApplyPreferredReceiveCryptoMessageSizeWorks) {
+  Http2Settings settings;
+  EXPECT_EQ(settings.Apply(65028, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.preferred_receive_crypto_message_size(), 16384u);
+  EXPECT_EQ(settings.Apply(65028, 0x7fffffff), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.preferred_receive_crypto_message_size(), 0x7fffffffu);
+  EXPECT_EQ(settings.Apply(65028, 0x80000000), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.preferred_receive_crypto_message_size(), 0x7fffffffu);
+}
+
 namespace {
 MATCHER_P(SettingsFrame, settings, "") {
   if (!arg.has_value()) {
