@@ -3075,6 +3075,7 @@ grpc_cc_library(
     deps = [
         "dual_ref_counted",
         "grpc_service_config",
+        "metadata_batch",
         "ref_counted",
         "service_config_parser",
         "useful",
@@ -5432,6 +5433,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_trace",
         "//:orphanable",
+        "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:work_serializer",
