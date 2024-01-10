@@ -87,11 +87,30 @@ class ChannelInit {
     // Ensure that this filter is placed *after* the filters listed here.
     // By Build() time all filters listed here must also be registered against
     // the same channel stack type as this registration.
+    template <typename Filter>
+    FilterRegistration& After() {
+      return After({&Filter::kFilter});
+    }
+    // Ensure that this filter is placed *before* the filters listed here.
+    // By Build() time all filters listed here must also be registered against
+    // the same channel stack type as this registration.
+    template <typename Filter>
+    FilterRegistration& Before() {
+      return Before({&Filter::kFilter});
+    }
+
+    // Ensure that this filter is placed *after* the filters listed here.
+    // By Build() time all filters listed here must also be registered against
+    // the same channel stack type as this registration.
+    // TODO(ctiller): remove in favor of the version that does not mention
+    // grpc_channel_filter
     FilterRegistration& After(
         std::initializer_list<const grpc_channel_filter*> filters);
     // Ensure that this filter is placed *before* the filters listed here.
     // By Build() time all filters listed here must also be registered against
     // the same channel stack type as this registration.
+    // TODO(ctiller): remove in favor of the version that does not mention
+    // grpc_channel_filter
     FilterRegistration& Before(
         std::initializer_list<const grpc_channel_filter*> filters);
     // Add a predicate for this filters inclusion.
@@ -145,9 +164,16 @@ class ChannelInit {
     // This occurs first during channel build time.
     // The FilterRegistration methods can be called to declaratively define
     // properties of the filter being registered.
+    // TODO(ctiller): remove in favor of the version that does not mention
+    // grpc_channel_filter
     FilterRegistration& RegisterFilter(grpc_channel_stack_type type,
                                        const grpc_channel_filter* filter,
                                        SourceLocation registration_source = {});
+    template <typename Filter>
+    FilterRegistration& RegisterFilter(
+        grpc_channel_stack_type type, SourceLocation registration_source = {}) {
+      return RegisterFilter(type, &Filter::kFilter, registration_source);
+    }
 
     // Register a post processor for the builder.
     // These run after the main graph has been placed into the builder.

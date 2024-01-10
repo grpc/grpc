@@ -95,6 +95,30 @@ struct StatusCastImpl<absl::Status, const StatusFlag&> {
   }
 };
 
+template <typename T>
+struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
+  static absl::StatusOr<T> Cast(StatusFlag flag) {
+    GPR_DEBUG_ASSERT(!flag.ok());
+    return absl::CancelledError();
+  }
+};
+
+template <typename T>
+struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag&> {
+  static absl::StatusOr<T> Cast(StatusFlag flag) {
+    GPR_DEBUG_ASSERT(!flag.ok());
+    return absl::CancelledError();
+  }
+};
+
+template <typename T>
+struct FailureStatusCastImpl<absl::StatusOr<T>, const StatusFlag&> {
+  static absl::StatusOr<T> Cast(StatusFlag flag) {
+    GPR_DEBUG_ASSERT(!flag.ok());
+    return absl::CancelledError();
+  }
+};
+
 // A value if an operation was successful, or a failure flag if not.
 template <typename T>
 class ValueOrFailure {

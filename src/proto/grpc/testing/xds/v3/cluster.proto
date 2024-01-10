@@ -251,6 +251,8 @@ message Cluster {
   // maybe by allowing LRS to go on the ADS stream, or maybe by moving some of the negotiation
   // from the LRS stream here.]
   core.v3.ConfigSource lrs_server = 42;
+
+  core.v3.TypedExtensionConfig upstream_config = 48;
 }
 
 // Extensible load balancing policy configuration.

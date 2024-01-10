@@ -104,8 +104,8 @@ absl::StatusOr<ServerCallTracerFilter> ServerCallTracerFilter::Create(
 }  // namespace
 
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterFilter(GRPC_SERVER_CHANNEL,
-                                          &ServerCallTracerFilter::kFilter);
+  builder->channel_init()->RegisterFilter<ServerCallTracerFilter>(
+      GRPC_SERVER_CHANNEL);
 }
 
 }  // namespace grpc_core

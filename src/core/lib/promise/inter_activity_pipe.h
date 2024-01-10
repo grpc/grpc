@@ -113,9 +113,9 @@ class InterActivityPipe {
       if (center_ != nullptr) center_->MarkClosed();
     }
 
-    bool IsClose() { return center_->IsClosed(); }
+    bool IsClosed() { return center_->IsClosed(); }
 
-    void MarkClose() {
+    void MarkClosed() {
       if (center_ != nullptr) center_->MarkClosed();
     }
 
@@ -144,6 +144,12 @@ class InterActivityPipe {
 
     auto Next() {
       return [center = center_]() { return center->Next(); };
+    }
+
+    bool IsClose() { return center_->IsClosed(); }
+
+    void MarkClose() {
+      if (center_ != nullptr) center_->MarkClosed();
     }
 
    private:

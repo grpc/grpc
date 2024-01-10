@@ -169,6 +169,11 @@ struct CopyConstructors {
     return Out(grpc_slice_from_copied_buffer(p, len));
   }
 
+  static Out FromCopiedBuffer(const uint8_t* p, size_t len) {
+    return Out(
+        grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(p), len));
+  }
+
   template <typename Buffer>
   static Out FromCopiedBuffer(const Buffer& buffer) {
     return FromCopiedBuffer(reinterpret_cast<const char*>(buffer.data()),
