@@ -57,6 +57,8 @@ namespace {
 class ServiceConfigChannelArgFilter
     : public ImplementChannelFilter<ServiceConfigChannelArgFilter> {
  public:
+  static const grpc_channel_filter kFilter;
+
   static absl::StatusOr<ServiceConfigChannelArgFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args) {
     return ServiceConfigChannelArgFilter(args);
@@ -114,7 +116,7 @@ void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
                                              method_configs);
 }
 
-const grpc_channel_filter kServiceConfigChannelArgFilter =
+const grpc_channel_filter ServiceConfigChannelArgFilter::kFilter =
     MakePromiseBasedFilter<ServiceConfigChannelArgFilter,
                            FilterEndpoint::kClient>(
         "service_config_channel_arg");
@@ -125,7 +127,7 @@ void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &kServiceConfigChannelArgFilter)
+                       &ServiceConfigChannelArgFilter::kFilter)
       .ExcludeFromMinimalStack()
       .IfHasChannelArg(GRPC_ARG_SERVICE_CONFIG)
       .Before<ClientMessageSizeFilter>();
