@@ -126,8 +126,8 @@ const grpc_channel_filter ServiceConfigChannelArgFilter::kFilter =
 void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &ServiceConfigChannelArgFilter::kFilter)
+      ->RegisterFilter<ServiceConfigChannelArgFilter>(
+          GRPC_CLIENT_DIRECT_CHANNEL)
       .ExcludeFromMinimalStack()
       .IfHasChannelArg(GRPC_ARG_SERVICE_CONFIG)
       .Before<ClientMessageSizeFilter>();
