@@ -37,7 +37,7 @@ namespace grpc_core {
 class GrpcServerAuthzFilter final
     : public ImplementChannelFilter<GrpcServerAuthzFilter> {
  public:
-  static const grpc_channel_filter kFilterVtable;
+  static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<GrpcServerAuthzFilter> Create(const ChannelArgs& args,
                                                       ChannelFilter::Args);
