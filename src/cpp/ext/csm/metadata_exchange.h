@@ -51,9 +51,13 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
                  LabelsIterable* labels_from_incoming_metadata) const override;
 
   // Add optional labels to the traced calls.
-  std::unique_ptr<LabelsIterable> GetLabelsFromOptionalLabels(
+  bool AddOptionalLabels(
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels) const override;
+          optional_labels,
+      opentelemetry::nostd::function_ref<
+          bool(opentelemetry::nostd::string_view,
+               opentelemetry::common::AttributeValue)>
+          callback) const override;
 
  private:
   std::vector<std::pair<absl::string_view, std::string>> local_labels_;

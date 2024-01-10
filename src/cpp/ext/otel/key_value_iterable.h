@@ -74,6 +74,10 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
         }
       }
     }
+    if (!OpenTelemetryPluginState().labels_injector->AddOptionalLabels(
+            <>, callback)) {
+      return false;
+    }
     if (optional_labels_iterable_ != nullptr) {
       optional_labels_iterable_->ResetIteratorPosition();
       while (const auto& pair = optional_labels_iterable_->Next()) {

@@ -82,9 +82,13 @@ class LabelsInjector {
 
   // Add optional labels to the traced calls. Each entry in the span corresponds
   // to the CallAttemptTracer::OptionalLabelComponent enum.
-  virtual std::unique_ptr<LabelsIterable> GetLabelsFromOptionalLabels(
+  virtual bool AddOptionalLabels(
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels) const = 0;
+          optional_labels,
+      opentelemetry::nostd::function_ref<
+          bool(opentelemetry::nostd::string_view,
+               opentelemetry::common::AttributeValue)>
+          callback) const = 0;
 };
 
 class InternalOpenTelemetryPluginOption
