@@ -1379,7 +1379,6 @@ grpc_cc_library(
         "//src/core:lib/transport/status_conversion.cc",
         "//src/core:lib/transport/transport.cc",
         "//src/core:lib/transport/transport_op_string.cc",
-        "//src/core:lib/transport/call_filters.cc",
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
@@ -1466,7 +1465,6 @@ grpc_cc_library(
         "//src/core:lib/transport/error_utils.h",
         "//src/core:lib/transport/status_conversion.h",
         "//src/core:lib/transport/transport.h",
-        "//src/core:lib/transport/call_filters.h",
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
