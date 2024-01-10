@@ -70,7 +70,7 @@ class AddServiceLabelsFilter : public grpc_core::ChannelFilter {
   }
 
  private:
-  AddServiceLabelsFilter(
+  explicit AddServiceLabelsFilter(
       const std::map<std::string, std::string>* labels_to_inject)
       : labels_to_inject_(labels_to_inject) {}
 
