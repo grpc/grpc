@@ -13,8 +13,7 @@
 // limitations under the License.
 
 #include "src/core/lib/transport/call_filters.h"
-
-#include "transport.h"
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
 

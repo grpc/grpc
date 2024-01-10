@@ -6648,8 +6648,12 @@ grpc_cc_library(
     ],
     deps = [
         "call_final_info",
+        "message",
+        "metadata",
         "ref_counted",
-        "//:grpc_base",
+        "status_flag",
+        "//:gpr",
+        "//:promise",
         "//:ref_counted_ptr",
     ],
 )
@@ -6671,6 +6675,35 @@ grpc_cc_library(
         "slice",
         "time",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "metadata",
+    srcs = [
+        "lib/transport/metadata.cc",
+    ],
+    hdrs = [
+        "lib/transport/metadata.h",
+    ],
+    deps = [
+        "error_utils",
+        "metadata_batch",
+    ],
+)
+
+grpc_cc_library(
+    name = "message",
+    srcs = [
+        "lib/transport/message.cc",
+    ],
+    hdrs = [
+        "lib/transport/message.h",
+    ],
+    deps = [
+        "arena",
+        "slice_buffer",
+        "//:grpc_public_hdrs",
     ],
 )
 

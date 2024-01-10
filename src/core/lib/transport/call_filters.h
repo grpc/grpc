@@ -18,13 +18,17 @@
 #include <cstdint>
 #include <memory>
 
-#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/transport/call_final_info.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/message.h"
+#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
+
+struct NoInterceptor {};
 
 namespace filters_detail {
 
