@@ -446,7 +446,8 @@ bool ServiceMeshLabelsInjector::AddOptionalLabels(
   absl::string_view service_namespace = "unknown";
   // Performs JSON label name format to CSM Observability Metric spec format
   // conversion.
-  if (!optional_labels_span.empty()) {
+  if (optional_labels_span.size() >
+      static_cast<size_t>(OptionalLabelComponent::kXdsServiceLabels)) {
     const auto& optional_labels = optional_labels_span[static_cast<size_t>(
         OptionalLabelComponent::kXdsServiceLabels)];
     if (optional_labels != nullptr) {
