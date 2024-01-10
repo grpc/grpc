@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CALL_FINAL_STATS_H
-#define CALL_FINAL_STATS_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FINAL_INFO_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FINAL_INFO_H
+
+#include <grpc/support/port_platform.h>
 
 #include <cstdint>
 
@@ -49,4 +51,4 @@ struct grpc_call_final_info {
   const char* error_string = nullptr;
 };
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FINAL_INFO_H
