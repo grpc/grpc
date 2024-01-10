@@ -446,3 +446,20 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "http2_settings_test",
+    srcs = [
+        "http2_settings_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:http2_settings",
+        "//test/core/util:grpc_test_util",
+    ],
+)

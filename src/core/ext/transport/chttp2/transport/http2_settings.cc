@@ -32,7 +32,7 @@ namespace grpc_core {
 
 void Http2Settings::Diff(
     bool is_first_send, const Http2Settings& old,
-    absl::FunctionRef<void(uint16_t key, uint32_t value)> cb) {
+    absl::FunctionRef<void(uint16_t key, uint32_t value)> cb) const {
   if (header_table_size_ != old.header_table_size_) {
     cb(kHeaderTableSizeWireId, header_table_size_);
   }

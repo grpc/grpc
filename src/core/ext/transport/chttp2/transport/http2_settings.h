@@ -47,7 +47,7 @@ class Http2Settings {
   };
 
   void Diff(bool is_first_send, const Http2Settings& old,
-            absl::FunctionRef<void(uint16_t key, uint32_t value)> cb);
+            absl::FunctionRef<void(uint16_t key, uint32_t value)> cb) const;
   GRPC_MUST_USE_RESULT grpc_http2_error_code Apply(uint16_t key,
                                                    uint32_t value);
   uint32_t header_table_size() const { return header_table_size_; }
@@ -113,7 +113,7 @@ class Http2Settings {
 
   static std::string WireIdToName(uint16_t wire_id);
 
-  bool operator==(const Http2Settings& rhs) {
+  bool operator==(const Http2Settings& rhs) const {
     return header_table_size_ == rhs.header_table_size_ &&
            max_concurrent_streams_ == rhs.max_concurrent_streams_ &&
            initial_window_size_ == rhs.initial_window_size_ &&
@@ -124,6 +124,8 @@ class Http2Settings {
            enable_push_ == rhs.enable_push_ &&
            allow_true_binary_metadata_ == rhs.allow_true_binary_metadata_;
   }
+
+  bool operator!=(const Http2Settings& rhs) const { return !operator==(rhs); }
 
  private:
   uint32_t header_table_size_ = 4096;
