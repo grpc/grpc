@@ -81,6 +81,7 @@
 namespace grpc_core {
 namespace chaotic_good {
 namespace testing {
+using grpc_event_engine::experimental::EventEngine;
 class ChaoticGoodServerTest : public ::testing::Test {
  public:
   ChaoticGoodServerTest() {

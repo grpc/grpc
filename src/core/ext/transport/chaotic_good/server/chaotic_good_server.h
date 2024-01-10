@@ -60,8 +60,6 @@
 
 namespace grpc_core {
 namespace chaotic_good {
-using grpc_event_engine::experimental::EventEngine;
-
 class ChaoticGoodServerListener
     : public Server::ListenerInterface,
       public std::enable_shared_from_this<ChaoticGoodServerListener> {
@@ -79,7 +77,9 @@ class ChaoticGoodServerListener
    public:
     ActiveConnection(std::shared_ptr<ChaoticGoodServerListener> listener);
     ~ActiveConnection();
-    void Start(std::unique_ptr<EventEngine::Endpoint> endpoint);
+    void Start(
+        std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+            endpoint);
     const ChannelArgs& args() const { return listener_->args(); }
     void GenerateConnectionID();
 
@@ -88,12 +88,18 @@ class ChaoticGoodServerListener
      public:
       HandshakingState(std::shared_ptr<ActiveConnection> connection);
       ~HandshakingState(){};
-      void Start(std::unique_ptr<EventEngine::Endpoint> endpoint);
+      void Start(std::unique_ptr<
+                 grpc_event_engine::experimental::EventEngine::Endpoint>
+                     endpoint);
 
      private:
+      static auto EndpointReadSettingsFrame(
+          std::shared_ptr<HandshakingState> self);
+      static auto EndpointWriteSettingsFrame(
+          std::shared_ptr<HandshakingState> self, bool is_control_endpoint);
       static void OnHandshakeDone(void* arg, grpc_error_handle error);
-      static ActivityPtr OnReceive(HandshakingState* self);
-      Timestamp GetConnectionDeadline(const ChannelArgs& args);
+
+      Timestamp GetConnectionDeadline();
       std::shared_ptr<ActiveConnection> connection_;
       std::shared_ptr<HandshakeManager> handshake_mgr_;
       ScopedArenaPtr arena_;
@@ -125,10 +131,11 @@ class ChaoticGoodServerListener
 
  private:
   Server* server_;
-  const ChannelArgs& args_;
+  ChannelArgs args_;
   grpc_event_engine::experimental::ChannelArgsEndpointConfig config_;
-  std::shared_ptr<EventEngine> event_engine_;
-  std::unique_ptr<EventEngine::Listener> ee_listener_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>
+      ee_listener_;
   Mutex mu_;
   // Map of connection id to endpoints connectivity.
   std::map<std::string,

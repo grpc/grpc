@@ -51,14 +51,12 @@
 
 namespace grpc_core {
 namespace chaotic_good {
-using grpc_event_engine::experimental::EventEngine;
 class ChaoticGoodConnector
     : public SubchannelConnector,
       public std::enable_shared_from_this<ChaoticGoodConnector> {
  public:
   ChaoticGoodConnector();
   ~ChaoticGoodConnector() override;
-
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
   void Shutdown(grpc_error_handle error) override {
     MutexLock lock(&mu_);
@@ -69,8 +67,16 @@ class ChaoticGoodConnector
   };
 
  private:
+  static auto DataEndpointReadSettingsFrame(
+      std::shared_ptr<ChaoticGoodConnector> self);
+  static auto DataEndpointWriteSettingsFrame(
+      std::shared_ptr<ChaoticGoodConnector> self);
+  static auto ControlEndpointReadSettingsFrame(
+      std::shared_ptr<ChaoticGoodConnector> self);
+  static auto ControlEndpointWriteSettingsFrame(
+      std::shared_ptr<ChaoticGoodConnector> self);
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
-  static ActivityPtr ReceiveSettingsFrame(ChaoticGoodConnector* self);
+
   Mutex mu_;
   Args args_;
   Result* result_ ABSL_GUARDED_BY(mu_);
@@ -85,15 +91,15 @@ class ChaoticGoodConnector
   absl::StatusOr<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
       resolved_addr_;
   grpc_event_engine::experimental::ChannelArgsEndpointConfig ee_config_;
-  EventEngine::Duration timeout_;
+  grpc_event_engine::experimental::EventEngine::Duration timeout_;
   std::shared_ptr<promise_detail::Context<Arena>> context_;
   std::shared_ptr<PromiseEndpoint> control_endpoint_;
   std::shared_ptr<PromiseEndpoint> data_endpoint_;
   ActivityPtr connect_activity_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::shared_ptr<HandshakeManager> handshake_mgr_;
-  std::unique_ptr<HPackCompressor> hpack_compressor_;
-  std::unique_ptr<HPackParser> hpack_parser_;
+  HPackCompressor hpack_compressor_;
+  HPackParser hpack_parser_;
   std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>> data_endpoint_latch_;
   std::shared_ptr<WaitForCallback> wait_for_data_endpoint_callback_;
   Slice connection_id_;
