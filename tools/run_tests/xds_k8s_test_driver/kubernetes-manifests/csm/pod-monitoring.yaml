@@ -3,7 +3,9 @@ apiVersion: monitoring.googleapis.com/v1
 kind: PodMonitoring
 metadata:
   namespace: ${namespace_name}
-  name: ${deployment_id}-gmp
+  name: ${pod_monitoring_name}
+  labels:
+    owner: xds-k8s-interop-test
 spec:
   selector:
     matchLabels:
