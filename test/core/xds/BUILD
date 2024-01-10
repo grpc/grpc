@@ -306,6 +306,7 @@ grpc_cc_test(
         "//src/core:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:http_protocol_options_proto",
         "//src/proto/grpc/testing/xds/v3:round_robin_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",

@@ -747,15 +747,13 @@ void RoundRobin::RoundRobinEndpointList::RoundRobinEndpoint::OnStateUpdate(
   auto* rr_endpoint_list = endpoint_list<RoundRobinEndpointList>();
   auto* round_robin = policy<RoundRobin>();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_INFO,
-            "[RR %p] connectivity changed for child %p, endpoint_list %p "
-            "(index %" PRIuPTR " of %" PRIuPTR
-            "): prev_state=%s new_state=%s "
-            "(%s)",
-            round_robin, this, rr_endpoint_list, Index(),
-            rr_endpoint_list->size(),
-            (old_state.has_value() ? ConnectivityStateName(*old_state) : "N/A"),
-            ConnectivityStateName(new_state), status.ToString().c_str());
+    gpr_log(
+        GPR_INFO,
+        "[RR %p] connectivity changed for child %p, endpoint_list %p "
+        "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s (%s)",
+        round_robin, this, rr_endpoint_list, Index(), rr_endpoint_list->size(),
+        (old_state.has_value() ? ConnectivityStateName(*old_state) : "N/A"),
+        ConnectivityStateName(new_state), status.ToString().c_str());
   }
   if (new_state == GRPC_CHANNEL_IDLE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
