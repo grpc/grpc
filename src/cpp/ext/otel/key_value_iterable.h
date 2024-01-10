@@ -82,12 +82,15 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
             optional_labels_, callback)) {
       return false;
     }
-    active_plugin_options_view_->ForEach(
-        [callback, this](const InternalOpenTelemetryPluginOption& plugin_option,
-                         size_t index) {
-          return plugin_option.labels_injector()->AddOptionalLabels(
-              optional_labels_, callback);
-        });
+    if (active_plugin_options_view_ != nullptr) {
+      active_plugin_options_view_->ForEach(
+          [callback, this](
+              const InternalOpenTelemetryPluginOption& plugin_option,
+              size_t index) {
+            return plugin_option.labels_injector()->AddOptionalLabels(
+                optional_labels_, callback);
+          });
+    }
     for (const auto& plugin_option_injected_iterable :
          injected_labels_from_plugin_options_) {
       if (plugin_option_injected_iterable != nullptr) {
