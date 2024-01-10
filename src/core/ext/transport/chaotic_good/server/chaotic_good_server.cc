@@ -224,7 +224,6 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                   std::string(
                       self->connection_->connection_type_.as_string_view()) ==
                   "control";
-              std::shared_ptr<Slice> connection_id_;
               if (!is_control_endpoint) {
                 // Get connection id for data endpoint.
                 self->connection_->connection_id_ =
