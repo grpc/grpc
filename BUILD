@@ -4306,6 +4306,16 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_extensions_upstreams_http_upb",
+    deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_upstreams_http_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_service_discovery_upb",
     deps = ["@envoy_api//envoy/service/discovery/v3:pkg"],
 )

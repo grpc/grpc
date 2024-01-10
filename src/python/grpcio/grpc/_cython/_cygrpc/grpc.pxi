@@ -433,6 +433,12 @@ cdef extern from "grpc/grpc.h":
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *completion_queue, grpc_slice method,
     const grpc_slice *host, gpr_timespec deadline, void *reserved) nogil
+  void *grpc_channel_register_call(
+    grpc_channel *channel, const char *method, const char *host, void *reserved) nogil
+  grpc_call *grpc_channel_create_registered_call(
+    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
+    grpc_completion_queue *completion_queue, void* registered_call_handle,
+    gpr_timespec deadline, void *reserved) nogil
   grpc_connectivity_state grpc_channel_check_connectivity_state(
       grpc_channel *channel, int try_to_connect) nogil
   void grpc_channel_watch_connectivity_state(
