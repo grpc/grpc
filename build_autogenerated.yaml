@@ -488,6 +488,8 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb.h
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.h
   - src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb.h
   - src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.h
   - src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb.h
@@ -727,6 +729,7 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.h
@@ -883,7 +886,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.h
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
@@ -1415,6 +1418,7 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c
   - src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c
   - src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c
   - src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c
@@ -1573,6 +1577,7 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.c
@@ -1713,7 +1718,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -2350,7 +2355,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.h
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
@@ -2803,7 +2808,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -4494,7 +4499,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.h
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
@@ -4853,7 +4858,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -18077,8 +18082,10 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/health_check.proto
+  - src/proto/grpc/testing/xds/v3/http_protocol_options.proto
   - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
   - src/proto/grpc/testing/xds/v3/regex.proto
   - src/proto/grpc/testing/xds/v3/round_robin.proto
   - src/proto/grpc/testing/xds/v3/string.proto

@@ -258,6 +258,8 @@ message Cluster {
   // will need the information. For instance, if the metadata is intended for
   // the Router filter, the filter name should be specified as ``envoy.filters.http.router``.
   core.v3.Metadata metadata = 25;
+  
+  core.v3.TypedExtensionConfig upstream_config = 48;
 }
 
 // Extensible load balancing policy configuration.
