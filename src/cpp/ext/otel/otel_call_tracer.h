@@ -105,6 +105,8 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     std::array<std::shared_ptr<std::map<std::string, std::string>>,
                static_cast<size_t>(OptionalLabelComponent::kSize)>
         optional_labels_array_;
+    std::vector<std::unique_ptr<LabelsIterable>>
+        injected_labels_from_plugin_options_;
   };
 
   explicit OpenTelemetryCallTracer(OpenTelemetryClientFilter* parent,

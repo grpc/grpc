@@ -859,7 +859,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         args->server->server_call_tracer_factory() != nullptr) {
       auto* server_call_tracer =
           args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
-              arena);
+              arena, args->server->channel_args());
       if (server_call_tracer != nullptr) {
         // Note that we are setting both
         // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
@@ -3426,7 +3426,7 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   if (args->server->server_call_tracer_factory() != nullptr) {
     auto* server_call_tracer =
         args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
-            arena);
+            arena, args->server->channel_args());
     if (server_call_tracer != nullptr) {
       // Note that we are setting both
       // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
@@ -4063,17 +4063,13 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
 }
 
 RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
-                                                 Channel* channel) {
-  const auto initial_size = channel->CallSizeEstimate();
-  global_stats().IncrementCallInitialSize(initial_size);
-  auto alloc = Arena::CreateWithAlloc(initial_size, sizeof(ServerCallSpine),
-                                      channel->allocator());
-  auto* call = new (alloc.second) ServerCallSpine(server, channel, alloc.first);
-  return RefCountedPtr<ServerCallSpine>(call);
+                                                 Channel* channel,
+                                                 Arena* arena) {
+  return RefCountedPtr<ServerCallSpine>(
+      arena->New<ServerCallSpine>(server, channel, arena));
 }
 #else
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
-                                                 Channel* channel) {
+RefCountedPtr<CallSpineInterface> MakeServerCall(Server*, Channel*, Arena*) {
   Crash("not implemented");
 }
 #endif

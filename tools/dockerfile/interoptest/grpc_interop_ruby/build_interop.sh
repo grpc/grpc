@@ -30,4 +30,4 @@ cd /var/local/git/grpc
 rvm --default use ruby-2.7
 
 # build Ruby interop client and server
-(cd src/ruby && gem install bundler && bundle && bundle exec rake compile)
+(cd src/ruby && gem install bundler -v 2.4.22 && bundle && bundle exec rake compile)
