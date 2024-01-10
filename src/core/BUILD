@@ -6624,6 +6624,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_final_info",
+    srcs = [
+        "lib/transport/call_final_info.cc",
+    ],
+    hdrs = [
+        "lib/transport/call_final_info.h",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "call_filters",
     srcs = [
         "lib/transport/call_filters.cc",
@@ -6632,6 +6646,7 @@ grpc_cc_library(
         "lib/transport/call_filters.h",
     ],
     deps = [
+        "call_final_info",
         "ref_counted",
         "//:grpc_base",
         "//:ref_counted_ptr",
