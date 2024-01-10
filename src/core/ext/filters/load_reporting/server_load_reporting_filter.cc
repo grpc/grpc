@@ -244,11 +244,9 @@ void ServerLoadReportingFilter::Call::OnFinalize(
         GetStatusTagForStatus(final_info->final_status)}});
 }
 
-namespace {
-const grpc_channel_filter kFilter =
+const grpc_channel_filter ServerLoadReportingFilter::kFilter =
     MakePromiseBasedFilter<ServerLoadReportingFilter, FilterEndpoint::kServer>(
         "server_load_reporting");
-}  // namespace
 
 // TODO(juanlishen): We should register the filter during grpc initialization
 // time once OpenCensus is compatible with our build system. For now, we force
@@ -266,7 +264,7 @@ struct ServerLoadReportingFilterStaticRegistrar {
       grpc::load_reporter::MeasureEndLatencyMs();
       grpc::load_reporter::MeasureOtherCallMetric();
       builder->channel_init()
-          ->RegisterFilter(GRPC_SERVER_CHANNEL, &kFilter)
+          ->RegisterFilter<ServerLoadReportingFilter>(GRPC_SERVER_CHANNEL)
           .IfChannelArg(GRPC_ARG_ENABLE_LOAD_REPORTING, false);
     });
   }
