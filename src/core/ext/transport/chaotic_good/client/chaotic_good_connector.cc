@@ -84,11 +84,8 @@ ChaoticGoodConnector::ChaoticGoodConnector()
       resource_quota_(ResourceQuota::Default()),
       memory_allocator_(
           memory_quota_->CreateMemoryAllocator("chaotic_good_connector")),
-      arena_(MakeScopedArena(initial_arena_size, &memory_allocator_)),
       timeout_(EventEngine::Duration(60)),
-      context_(
-          std::make_shared<promise_detail::Context<Arena>>((arena_.get()))),
-      event_engine_(grpc_event_engine::experimental::CreateEventEngine()),
+      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
       handshake_mgr_(std::make_shared<HandshakeManager>()),
       data_endpoint_latch_(
           std::make_shared<Latch<std::shared_ptr<PromiseEndpoint>>>()),
@@ -135,7 +132,8 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
         SettingsFrame frame;
         // frame.header set connectiion_type: control
         ClientMetadataHandle metadata =
-            self->arena_->MakePooled<ClientMetadata>(self->arena_.get());
+            GetContext<Arena>()->MakePooled<ClientMetadata>(
+                GetContext<Arena>());
         metadata->Set(ChaoticGoodConnectionTypeMetadata(),
                       Slice::FromCopiedString("data"));
         auto connection_type =
@@ -180,7 +178,7 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
               BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
               auto status = frame.Deserialize(
                   &self->hpack_parser_, *frame_header, absl::BitGenRef(bitgen),
-                  self->arena_.get(), std::move(buffer_pair));
+                  GetContext<Arena>(), std::move(buffer_pair));
               GPR_ASSERT(status.ok());
               self->connection_id_ =
                   frame.headers->get_pointer(ChaoticGoodConnectionIdMetadata())
@@ -238,7 +236,8 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
         SettingsFrame frame;
         // frame.header set connectiion_type: control
         ClientMetadataHandle metadata =
-            self->arena_->MakePooled<ClientMetadata>(self->arena_.get());
+            GetContext<Arena>()->MakePooled<ClientMetadata>(
+                GetContext<Arena>());
         metadata->Set(ChaoticGoodConnectionTypeMetadata(),
                       Slice::FromCopiedString("control"));
         auto connection_type =
@@ -252,12 +251,11 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
 void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                                    grpc_closure* notify) {
   {
-    ReleasableMutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     result_ = result;
     if (is_shutdown_) {
       auto error = GRPC_ERROR_CREATE("connector shutdown");
       MaybeNotify(DEBUG_LOCATION, notify, error);
-      lock.Release();
       return;
     }
   }
@@ -292,7 +290,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       static_cast<ChaoticGoodConnector*>(args->user_data)->shared_from_this();
   // Start receiving setting frames;
   {
-    ReleasableMutexLock lock(&self->mu_);
+    MutexLock lock(&self->mu_);
     if (!error.ok() || self->is_shutdown_) {
       if (error.ok()) {
         error = GRPC_ERROR_CREATE("connector shutdown");
@@ -307,7 +305,6 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       }
       self->result_->Reset();
       MaybeNotify(DEBUG_LOCATION, self->notify_, error);
-      lock.Release();
       return;
     }
   }
@@ -332,16 +329,14 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
           }
           MaybeNotify(DEBUG_LOCATION, self->notify_, status);
         },
-        self->arena_.get(), self->event_engine_.get());
+        MakeScopedArena(self->initial_arena_size_, &self->memory_allocator_),
+        self->event_engine_.get());
   } else {
     // Handshaking succeeded but there is no endpoint.
-    {
-      ReleasableMutexLock lock(&self->mu_);
-      self->result_->Reset();
-      auto error = GRPC_ERROR_CREATE("handshake complete with empty endpoint.");
-      MaybeNotify(DEBUG_LOCATION, self->notify_, error);
-      lock.Release();
-    }
+    MutexLock lock(&self->mu_);
+    self->result_->Reset();
+    auto error = GRPC_ERROR_CREATE("handshake complete with empty endpoint.");
+    MaybeNotify(DEBUG_LOCATION, self->notify_, error);
   }
   MutexLock lock(&self->mu_);
   if (self->handshake_mgr_ != nullptr) {

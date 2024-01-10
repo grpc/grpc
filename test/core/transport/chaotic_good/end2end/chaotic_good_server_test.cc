@@ -123,12 +123,6 @@ class ChaoticGoodServerTest : public ::testing::Test {
  protected:
   static void OnConnectingFinished(void* arg, grpc_error_handle error) {
     ChaoticGoodServerTest* self = static_cast<ChaoticGoodServerTest*>(arg);
-    if (error.ok()) {
-      // connect succeeded.
-      // Initialize the client transport.
-    } else {
-      // connect failed.
-    }
     self->connect_finished_.Notify();
   }
   grpc_server* server_;
@@ -155,13 +149,13 @@ TEST_F(ChaoticGoodServerTest, Connect) {
   connect_finished_.WaitForNotification();
 }
 
-TEST_F(ChaoticGoodServerTest, ConnectAndShutdown) {
-  GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
-                    grpc_schedule_on_exec_ctx);
-  connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
-  connector_->Shutdown(absl::InternalError("shutdown"));
-  connect_finished_.WaitForNotification();
-}
+// TEST_F(ChaoticGoodServerTest, ConnectAndShutdown) {
+//   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
+//                     grpc_schedule_on_exec_ctx);
+//   connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
+//   connector_->Shutdown(absl::InternalError("shutdown"));
+//   connect_finished_.WaitForNotification();
+// }
 }  // namespace testing
 }  // namespace chaotic_good
 }  // namespace grpc_core

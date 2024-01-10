@@ -86,7 +86,7 @@ ChaoticGoodServerListener::ChaoticGoodServerListener(Server* server,
     : server_(server),
       args_(args),
       config_(args_),
-      event_engine_(grpc_event_engine::experimental::CreateEventEngine()) {}
+      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
 
 ChaoticGoodServerListener::~ChaoticGoodServerListener() {}
 
@@ -138,8 +138,6 @@ ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
       memory_allocator_(
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "connection")),
-      arena_(MakeScopedArena(1024, &memory_allocator_)),
-      context_(arena_.get()),
       hpack_compressor_(std::make_unique<HPackCompressor>()),
       hpack_parser_(std::make_unique<HPackParser>()),
       connection_deadline_(Duration::Seconds(5)) {}
@@ -174,9 +172,7 @@ void ChaoticGoodServerListener::ActiveConnection::GenerateConnectionID() {
 ChaoticGoodServerListener::ActiveConnection::HandshakingState::HandshakingState(
     std::shared_ptr<ActiveConnection> connection)
     : connection_(connection),
-      handshake_mgr_(std::make_shared<HandshakeManager>()),
-      arena_(connection_->arena_.get()),
-      context_(arena_.get()) {}
+      handshake_mgr_(std::make_shared<HandshakeManager>()) {}
 
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::Start(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
@@ -215,10 +211,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
               // Deserialize frame from read buffer.
               absl::BitGen bitgen;
               BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
-              auto status =
-                  frame.Deserialize(self->connection_->hpack_parser_.get(),
-                                    frame_header, absl::BitGenRef(bitgen),
-                                    self->arena_.get(), std::move(buffer_pair));
+              auto status = frame.Deserialize(
+                  self->connection_->hpack_parser_.get(), frame_header,
+                  absl::BitGenRef(bitgen), GetContext<Arena>(),
+                  std::move(buffer_pair));
               GPR_ASSERT(status.ok());
               self->connection_->connection_type_ =
                   frame.headers

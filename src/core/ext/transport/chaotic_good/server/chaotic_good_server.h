@@ -102,15 +102,11 @@ class ChaoticGoodServerListener
       Timestamp GetConnectionDeadline();
       std::shared_ptr<ActiveConnection> connection_;
       std::shared_ptr<HandshakeManager> handshake_mgr_;
-      ScopedArenaPtr arena_;
-      promise_detail::Context<Arena> context_;
     };
 
    private:
     std::shared_ptr<ChaoticGoodServerListener> listener_;
     MemoryAllocator memory_allocator_;
-    ScopedArenaPtr arena_;
-    promise_detail::Context<Arena> context_;
     std::shared_ptr<HandshakingState> handshaking_state_;
     ActivityPtr receive_settings_activity_;
     std::shared_ptr<PromiseEndpoint> endpoint_;

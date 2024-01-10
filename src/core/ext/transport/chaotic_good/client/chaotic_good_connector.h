@@ -85,14 +85,12 @@ class ChaoticGoodConnector
   ChannelArgs channel_args_;
   std::unique_ptr<MemoryQuota> memory_quota_;
   ResourceQuotaRefPtr resource_quota_;
-  size_t initial_arena_size = 1024;
+  size_t initial_arena_size_ = 1024;
   MemoryAllocator memory_allocator_;
-  ScopedArenaPtr arena_;
   absl::StatusOr<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
       resolved_addr_;
   grpc_event_engine::experimental::ChannelArgsEndpointConfig ee_config_;
   grpc_event_engine::experimental::EventEngine::Duration timeout_;
-  std::shared_ptr<promise_detail::Context<Arena>> context_;
   std::shared_ptr<PromiseEndpoint> control_endpoint_;
   std::shared_ptr<PromiseEndpoint> data_endpoint_;
   ActivityPtr connect_activity_;
