@@ -6382,6 +6382,7 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
     ],
 )

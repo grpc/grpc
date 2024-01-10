@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/map.h"
@@ -82,6 +83,8 @@ class PromiseEndpoint {
       write_state_->waker = Activity::current()->MakeNonOwningWaker();
       completed = endpoint_->Write(
           [write_state = write_state_](absl::Status status) {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
             write_state->Complete(std::move(status));
           },
           &write_state_->buffer, nullptr /* uses default arguments */);
@@ -124,6 +127,8 @@ class PromiseEndpoint {
       read_state_->waker = Activity::current()->MakeNonOwningWaker();
       if (endpoint_->Read(
               [read_state = read_state_, num_bytes](absl::Status status) {
+                ApplicationCallbackExecCtx callback_exec_ctx;
+                ExecCtx exec_ctx;
                 read_state->Complete(std::move(status), num_bytes);
               },
               &read_state_->pending_buffer, &read_args)) {
