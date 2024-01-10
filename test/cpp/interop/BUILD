@@ -532,6 +532,22 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_test(
+    name = "backend_metrics_lb_policy_test",
+    srcs = [
+        "backend_metrics_lb_policy_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        ":backend_metrics_lb_policy",
+        "//:grpc++",
+        "//:grpcpp_orca_service",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
+)
+
 grpc_cc_library(
     name = "rpc_behavior_lb_policy",
     srcs = [

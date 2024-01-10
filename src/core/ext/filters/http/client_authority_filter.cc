@@ -37,6 +37,12 @@
 
 namespace grpc_core {
 
+const NoInterceptor ClientAuthorityFilter::Call::OnServerInitialMetadata;
+const NoInterceptor ClientAuthorityFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ClientAuthorityFilter::Call::OnClientToServerMessage;
+const NoInterceptor ClientAuthorityFilter::Call::OnServerToClientMessage;
+const NoInterceptor ClientAuthorityFilter::Call::OnFinalize;
+
 absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   absl::optional<absl::string_view> default_authority =
@@ -49,17 +55,12 @@ absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
   return ClientAuthorityFilter(Slice::FromCopiedString(*default_authority));
 }
 
-ArenaPromise<ServerMetadataHandle> ClientAuthorityFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ClientAuthorityFilter::Call::OnClientInitialMetadata(
+    ClientMetadata& md, ClientAuthorityFilter* filter) {
   // If no authority is set, set the default authority.
-  if (call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata()) ==
-      nullptr) {
-    call_args.client_initial_metadata->Set(HttpAuthorityMetadata(),
-                                           default_authority_.Ref());
+  if (md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
+    md.Set(HttpAuthorityMetadata(), filter->default_authority_.Ref());
   }
-  // We have no asynchronous work, so we can just ask the next promise to run,
-  // passing down initial_metadata.
-  return next_promise_factory(std::move(call_args));
 }
 
 const grpc_channel_filter ClientAuthorityFilter::kFilter =
@@ -75,14 +76,13 @@ bool NeedsClientAuthorityFilter(const ChannelArgs& args) {
 
 void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &ClientAuthorityFilter::kFilter)
+      ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_SUBCHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before({&ClientAuthFilter::kFilter});
+      .Before<ClientAuthFilter>();
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &ClientAuthorityFilter::kFilter)
+      ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before({&ClientAuthFilter::kFilter});
+      .Before<ClientAuthFilter>();
 }
 
 }  // namespace grpc_core

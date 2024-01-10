@@ -62,7 +62,7 @@ class ObservabilityPlugin(
 
     @abc.abstractmethod
     def create_client_call_tracer(
-        self, method_name: bytes
+        self, method_name: bytes, target: bytes
     ) -> ClientCallTracerCapsule:
         """Creates a ClientCallTracerCapsule.
 
@@ -75,6 +75,7 @@ class ObservabilityPlugin(
 
         Args:
         method_name: The method name of the call in byte format.
+        target: The channel target of the call in byte format.
 
         Returns:
         A PyCapsule which stores a ClientCallTracer object.
@@ -140,7 +141,7 @@ class ObservabilityPlugin(
 
     @abc.abstractmethod
     def record_rpc_latency(
-        self, method: str, rpc_latency: float, status_code: Any
+        self, method: str, target: str, rpc_latency: float, status_code: Any
     ) -> None:
         """Record the latency of the RPC.
 
@@ -149,7 +150,8 @@ class ObservabilityPlugin(
 
         Args:
         method: The fully-qualified name of the RPC method being invoked.
-        rpc_latency: The latency for the RPC, equals to the time between
+        target: The target name of the RPC method being invoked.
+        rpc_latency: The latency for the RPC in seconds, equals to the time between
          when the client invokes the RPC and when the client receives the status.
         status_code: An element of grpc.StatusCode in string format representing the
          final status for the RPC.
@@ -280,4 +282,6 @@ def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
             return
         rpc_latency_s = state.rpc_end_time - state.rpc_start_time
         rpc_latency_ms = rpc_latency_s * 1000
-        plugin.record_rpc_latency(state.method, rpc_latency_ms, state.code)
+        plugin.record_rpc_latency(
+            state.method, state.target, rpc_latency_ms, state.code
+        )

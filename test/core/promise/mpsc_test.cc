@@ -95,6 +95,8 @@ TEST(MpscTest, SendingLotsOfThingsGivesPushback) {
   EXPECT_EQ(NowOrNever(sender.Send(MakePayload(1))), true);
   EXPECT_EQ(NowOrNever(sender.Send(MakePayload(2))), absl::nullopt);
   activity1.Deactivate();
+
+  EXPECT_CALL(activity1, WakeupRequested());
 }
 
 TEST(MpscTest, ReceivingAfterBlockageWakesUp) {

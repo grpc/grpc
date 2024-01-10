@@ -43,6 +43,7 @@ INSTALL_REQUIRES = (
     "grpcio-status>={version}".format(version=grpc_version.VERSION),
     "grpcio-tools>={version}".format(version=grpc_version.VERSION),
     "grpcio-health-checking>={version}".format(version=grpc_version.VERSION),
+    "grpcio-observability>={version}".format(version=grpc_version.VERSION),
     "xds-protos>={version}".format(version=grpc_version.VERSION),
     "oauth2client>=1.4.7",
     "protobuf>=4.21.6rc1,!=4.22.0.*",

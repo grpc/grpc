@@ -218,7 +218,7 @@ class Server : public InternallyRefCounted<Server>,
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
 
-  class ChannelData {
+  class ChannelData final : public ServerTransport::Acceptor {
    public:
     ChannelData() = default;
     ~ChannelData();
@@ -240,6 +240,10 @@ class Server : public InternallyRefCounted<Server>,
     static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
         grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory);
     void InitCall(RefCountedPtr<CallSpineInterface> call);
+
+    Arena* CreateArena() override;
+    absl::StatusOr<CallInitiator> CreateCall(
+        ClientMetadata& client_initial_metadata, Arena* arena) override;
 
    private:
     class ConnectivityWatcher;
@@ -489,7 +493,7 @@ class Server : public InternallyRefCounted<Server>,
           0,
           channel_args_.GetInt(GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT)
               .value_or(3000)))};
-  Duration max_time_in_pending_queue_{Duration::Seconds(30)};
+  const Duration max_time_in_pending_queue_;
   absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> channels_;
