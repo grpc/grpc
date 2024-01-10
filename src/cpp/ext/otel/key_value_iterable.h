@@ -86,7 +86,7 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
       active_plugin_options_view_->ForEach(
           [callback, this](
               const InternalOpenTelemetryPluginOption& plugin_option,
-              size_t index) {
+              size_t /*index*/) {
             return plugin_option.labels_injector()->AddOptionalLabels(
                 optional_labels_, callback);
           });
@@ -130,7 +130,7 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
     if (active_plugin_options_view_ != nullptr) {
       active_plugin_options_view_->ForEach(
           [&size, this](const InternalOpenTelemetryPluginOption& plugin_option,
-                        size_t index) {
+                        size_t /*index*/) {
             size += plugin_option.labels_injector()->GetOptionalLabelsSize(
                 optional_labels_);
           });
