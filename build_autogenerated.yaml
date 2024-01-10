@@ -10680,6 +10680,16 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: http2_settings_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/http2_settings_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: http2_stats_test
   gtest: true
   build: test

@@ -124,10 +124,6 @@ bool operator==(const KeyValue& a, const Http2SettingsFrame::Setting& b) {
   return a.first == b.id && a.second == b.value;
 }
 
-bool operator==(const Http2SettingsFrame::Setting& a, const KeyValue& b) {
-  return b.first == a.id && b.second == a.value;
-}
-
 }  // namespace
 
 TEST(Http2SettingsTest, DiffOnFreshlyInitializedSettings) {
@@ -380,6 +376,10 @@ namespace {
 MATCHER_P(SettingsFrame, settings, "") {
   if (!arg.has_value()) {
     *result_listener << "Expected a settings frame, got nothing";
+    return false;
+  }
+  if (arg->ack) {
+    *result_listener << "Expected a settings frame, got an ack";
     return false;
   }
   if (arg->settings.size() != settings.size()) {
