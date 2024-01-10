@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import warnings
-
 from cpython.version cimport PY_MAJOR_VERSION, PY_MINOR_VERSION
 
 TYPE_METADATA_STRING = "Tuple[Tuple[str, Union[str, bytes]]...]"
