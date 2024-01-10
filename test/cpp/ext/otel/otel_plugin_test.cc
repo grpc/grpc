@@ -713,6 +713,12 @@ class CustomLabelInjector : public grpc::internal::LabelsInjector {
     return true;
   }
 
+  size_t GetOptionalLabelsSize(
+      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+          optional_labels_span) const override {
+    return 0;
+  }
+
  private:
   std::pair<std::string, std::string> label_;
 };
