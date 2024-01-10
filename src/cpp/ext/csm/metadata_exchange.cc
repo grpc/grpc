@@ -49,6 +49,7 @@
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/cpp/ext/otel/key_value_iterable.h"
 
 namespace grpc {
 namespace internal {
@@ -318,53 +319,6 @@ class MeshLabelsIterable : public LabelsIterable {
 constexpr std::array<MeshLabelsIterable::GkeAttribute, 6>
     MeshLabelsIterable::kGkeAttributeList;
 
-class OptionalLabelsIterable : public LabelsIterable {
- public:
-  explicit OptionalLabelsIterable(
-      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels_span) {
-    // Performs JSON label name format to Service Labels spec format conversion.
-    for (const auto& optional_labels : optional_labels_span) {
-      if (optional_labels == nullptr) {
-        continue;
-      }
-      if (optional_labels->find("service_name") != optional_labels->end()) {
-        optional_labels_[0] = {"csm.service_name",
-                               optional_labels->at("service_name")};
-      }
-      if (optional_labels->find("service_namespace") !=
-          optional_labels->end()) {
-        optional_labels_[1] = {"csm.service_namespace_name",
-                               optional_labels->at("service_namespace")};
-      }
-    }
-  }
-
-  // Returns the key-value label at the current position or absl::nullopt if the
-  // iterator has reached the end.
-  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
-      override {
-    if (pos_ == Size()) {
-      return absl::nullopt;
-    }
-    return optional_labels_[pos_++];
-  }
-
-  size_t Size() const override { return optional_labels_.size(); }
-
-  // Resets position of iterator to the start.
-  void ResetIteratorPosition() override { pos_ = 0; }
-
- private:
-  // According to the CSM Observability Metric spec, if the control plane fails
-  // to provide these labels, the client will set their values to "unknown".
-  // These default values are set below.
-  absl::InlinedVector<std::pair<std::string, std::string>, 2> optional_labels_ =
-      {{"csm.service_name", "unknown"},
-       {"csm.service_namespace_name", "unknown"}};
-  uint32_t pos_ = 0;
-};
-
 }  // namespace
 
 // Returns the mesh ID by reading and parsing the bootstrap file. Returns
@@ -474,11 +428,35 @@ void ServiceMeshLabelsInjector::AddLabels(
                                  serialized_labels_to_send_.Ref());
 }
 
-std::unique_ptr<LabelsIterable>
-ServiceMeshLabelsInjector::GetLabelsFromOptionalLabels(
+bool ServiceMeshLabelsInjector::AddOptionalLabels(
     absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-        optional_labels) const {
-  return std::make_unique<OptionalLabelsIterable>(optional_labels);
+        optional_labels_span,
+    opentelemetry::nostd::function_ref<
+        bool(opentelemetry::nostd::string_view,
+             opentelemetry::common::AttributeValue)>
+        callback) const {
+  // According to the CSM Observability Metric spec, if the control plane fails
+  // to provide these labels, the client will set their values to "unknown".
+  // These default values are set below.
+  absl::string_view service_name = "unknown";
+  absl::string_view service_namespace = "unknown";
+  // Performs JSON label name format to CSM Observability Metric spec format
+  // conversion.
+  for (const auto& optional_labels : optional_labels_span) {
+    if (optional_labels == nullptr) {
+      continue;
+    }
+    if (optional_labels->find("service_name") != optional_labels->end()) {
+      service_name = optional_labels->at("service_name");
+    }
+    if (optional_labels->find("service_namespace") != optional_labels->end()) {
+      service_namespace = optional_labels->at("service_namespace");
+    }
+  }
+  return callback("csm.service_name",
+                  AbslStrViewToOpenTelemetryStrView(service_name)) &&
+         callback("csm.service_namespace_name",
+                  AbslStrViewToOpenTelemetryStrView(service_namespace));
 }
 
 }  // namespace internal

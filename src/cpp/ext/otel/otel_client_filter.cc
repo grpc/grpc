@@ -132,8 +132,8 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     // avoid recording a subset of injected labels here.
     OpenTelemetryPluginState().client.attempt.started->Add(
         1, KeyValueIterable(/*injected_labels_iterable=*/nullptr,
-                            /*optional_labels_iterable=*/nullptr, {},
-                            additional_labels));
+                            /*active_plugin_options_view=*/nullptr, {},
+                            additional_labels, /*optional_labels_span=*/{}));
   }
 }
 
@@ -207,15 +207,10 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
            {OpenTelemetryStatusKey(),
             grpc_status_code_to_string(
                 static_cast<grpc_status_code>(status.code()))}}};
-  std::unique_ptr<LabelsIterable> optional_labels;
-  if (OpenTelemetryPluginState().labels_injector != nullptr) {
-    optional_labels =
-        OpenTelemetryPluginState().labels_injector->GetLabelsFromOptionalLabels(
-            optional_labels_array_);
-  }
-  KeyValueIterable labels(injected_labels_.get(), optional_labels.get(),
+  KeyValueIterable labels(injected_labels_.get(),
+                          &parent_->parent_->active_plugin_options_view(),
                           injected_labels_from_plugin_options_,
-                          additional_labels);
+                          additional_labels, optional_labels_array_);
   if (OpenTelemetryPluginState().client.attempt.duration != nullptr) {
     OpenTelemetryPluginState().client.attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,

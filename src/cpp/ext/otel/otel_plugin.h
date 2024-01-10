@@ -80,11 +80,12 @@ class LabelsInjector {
       grpc_metadata_batch* outgoing_initial_metadata,
       LabelsIterable* labels_from_incoming_metadata) const = 0;
 
-  // Add optional labels to the traced calls. Each entry in the span corresponds
-  // to the CallAttemptTracer::OptionalLabelComponent enum.
+  // Adds optional labels to the traced calls. Each entry in the span
+  // corresponds to the CallAttemptTracer::OptionalLabelComponent enum. Returns
+  // false when callback returns false.
   virtual bool AddOptionalLabels(
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels,
+          optional_labels_span,
       opentelemetry::nostd::function_ref<
           bool(opentelemetry::nostd::string_view,
                opentelemetry::common::AttributeValue)>

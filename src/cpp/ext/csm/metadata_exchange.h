@@ -53,7 +53,7 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
   // Add optional labels to the traced calls.
   bool AddOptionalLabels(
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels,
+          optional_labels_span,
       opentelemetry::nostd::function_ref<
           bool(opentelemetry::nostd::string_view,
                opentelemetry::common::AttributeValue)>
