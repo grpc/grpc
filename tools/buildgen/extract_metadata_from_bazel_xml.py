@@ -895,6 +895,13 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         if not test.startswith("test/cpp/util:channelz_sampler_test")
     ]
 
+    # chaotic good not supported outside bazel
+    tests = [
+        test
+        for test in tests
+        if not test.startswith("test/core/transport/chaotic_good")
+    ]
+
     # we don't need to generate fuzzers outside of bazel
     tests = [test for test in tests if not test.endswith("_fuzzer")]
 

@@ -467,7 +467,7 @@ bool PrivateGenerator::PrintStub(
           out->Print(
               method_dict,
               "response_deserializer=$ResponseModuleAndClass$.FromString,\n");
-          out->Print(")\n");
+          out->Print("_registered_method=True)\n");
         }
       }
     }
@@ -642,22 +642,27 @@ bool PrivateGenerator::PrintServiceClass(
         args_dict["ArityMethodName"] = arity_method_name;
         args_dict["PackageQualifiedService"] = package_qualified_service_name;
         args_dict["Method"] = method->name();
-        out->Print(args_dict,
-                   "return "
-                   "grpc.experimental.$ArityMethodName$($RequestParameter$, "
-                   "target, '/$PackageQualifiedService$/$Method$',\n");
+        out->Print(args_dict, "return grpc.experimental.$ArityMethodName$(\n");
         {
           IndentScope continuation_indent(out);
           StringMap serializer_dict;
+          out->Print(args_dict, "$RequestParameter$,\n");
+          out->Print("target,\n");
+          out->Print(args_dict, "'/$PackageQualifiedService$/$Method$',\n");
           serializer_dict["RequestModuleAndClass"] = request_module_and_class;
           serializer_dict["ResponseModuleAndClass"] = response_module_and_class;
           out->Print(serializer_dict,
                      "$RequestModuleAndClass$.SerializeToString,\n");
           out->Print(serializer_dict, "$ResponseModuleAndClass$.FromString,\n");
-          out->Print("options, channel_credentials,\n");
-          out->Print(
-              "insecure, call_credentials, compression, wait_for_ready, "
-              "timeout, metadata)\n");
+          out->Print("options,\n");
+          out->Print("channel_credentials,\n");
+          out->Print("insecure,\n");
+          out->Print("call_credentials,\n");
+          out->Print("compression,\n");
+          out->Print("wait_for_ready,\n");
+          out->Print("timeout,\n");
+          out->Print("metadata,\n");
+          out->Print("_registered_method=True)\n");
         }
       }
     }

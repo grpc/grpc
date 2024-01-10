@@ -49,6 +49,8 @@
 #include "test/core/util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
+// CRL Providers not supported for <1.1
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
 namespace grpc {
 namespace testing {
 namespace {
@@ -279,6 +281,8 @@ TEST_F(CrlProviderTest, CrlProviderValidReloaderProvider) {
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
