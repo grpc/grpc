@@ -50,18 +50,18 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
  public:
   explicit KeyValueIterable(
       LabelsIterable* injected_labels_iterable,
-      const ActivePluginOptionsView* active_plugin_options_view,
       const std::vector<std::unique_ptr<LabelsIterable>>&
           injected_labels_from_plugin_options,
       absl::Span<const std::pair<absl::string_view, absl::string_view>>
           additional_labels,
+      const ActivePluginOptionsView* active_plugin_options_view,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
           optional_labels_span)
       : injected_labels_iterable_(injected_labels_iterable),
-        active_plugin_options_view_(active_plugin_options_view),
         injected_labels_from_plugin_options_(
             injected_labels_from_plugin_options),
         additional_labels_(additional_labels),
+        active_plugin_options_view_(active_plugin_options_view),
         optional_labels_(optional_labels_span) {}
 
   bool ForEachKeyValue(opentelemetry::nostd::function_ref<
@@ -123,19 +123,28 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
       }
     }
     size += additional_labels_.size();
-    for (const auto& optional_labels : optional_labels_) {
-      size += optional_labels->size();
+    if (OpenTelemetryPluginState().labels_injector != nullptr) {
+      size += OpenTelemetryPluginState().labels_injector->GetOptionalLabelsSize(
+          optional_labels_);
+    }
+    if (active_plugin_options_view_ != nullptr) {
+      active_plugin_options_view_->ForEach(
+          [&size, this](const InternalOpenTelemetryPluginOption& plugin_option,
+                        size_t index) {
+            size += plugin_option.labels_injector()->GetOptionalLabelsSize(
+                optional_labels_);
+          });
     }
     return size;
   }
 
  private:
   LabelsIterable* injected_labels_iterable_;
-  const ActivePluginOptionsView* active_plugin_options_view_;
   const std::vector<std::unique_ptr<LabelsIterable>>&
       injected_labels_from_plugin_options_;
   absl::Span<const std::pair<absl::string_view, absl::string_view>>
       additional_labels_;
+  const ActivePluginOptionsView* active_plugin_options_view_;
   absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
       optional_labels_;
 };

@@ -90,6 +90,12 @@ class LabelsInjector {
           bool(opentelemetry::nostd::string_view,
                opentelemetry::common::AttributeValue)>
           callback) const = 0;
+
+  // Gets the size of the actual optional labels that the Plugin is going to
+  // produce through the AddOptionalLabels method.
+  virtual size_t GetOptionalLabelsSize(
+      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+          optional_labels_span) const = 0;
 };
 
 class InternalOpenTelemetryPluginOption

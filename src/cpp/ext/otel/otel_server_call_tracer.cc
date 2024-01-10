@@ -196,9 +196,9 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
     OpenTelemetryPluginState().server.call.started->Add(
-        1, KeyValueIterable(/*injected_labels_iterable=*/nullptr,
-                            /*active_plugin_options_view=*/nullptr, {},
-                            additional_labels, {}));
+        1, KeyValueIterable(/*injected_labels_iterable=*/nullptr, {},
+                            additional_labels,
+                            /*active_plugin_options_view=*/nullptr, {}));
   }
 }
 
@@ -217,10 +217,10 @@ void OpenTelemetryServerCallTracer::RecordEnd(
            {OpenTelemetryStatusKey(),
             grpc_status_code_to_string(final_info->final_status)}}};
   // Currently we do not have any optional labels on the server side.
-  KeyValueIterable labels(injected_labels_.get(),
-                          /*active_plugin_options_view=*/nullptr,
-                          injected_labels_from_plugin_options_,
-                          additional_labels, /*optional_labels_span=*/{});
+  KeyValueIterable labels(
+      injected_labels_.get(), injected_labels_from_plugin_options_,
+      additional_labels,
+      /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{});
   if (OpenTelemetryPluginState().server.call.duration != nullptr) {
     OpenTelemetryPluginState().server.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,

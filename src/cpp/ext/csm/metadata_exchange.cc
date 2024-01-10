@@ -42,6 +42,7 @@
 
 #include <grpc/slice.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -53,6 +54,9 @@
 
 namespace grpc {
 namespace internal {
+
+using OptionalLabelComponent =
+    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
 
 namespace {
 
@@ -442,21 +446,26 @@ bool ServiceMeshLabelsInjector::AddOptionalLabels(
   absl::string_view service_namespace = "unknown";
   // Performs JSON label name format to CSM Observability Metric spec format
   // conversion.
-  for (const auto& optional_labels : optional_labels_span) {
-    if (optional_labels == nullptr) {
-      continue;
-    }
-    if (optional_labels->find("service_name") != optional_labels->end()) {
-      service_name = optional_labels->at("service_name");
-    }
-    if (optional_labels->find("service_namespace") != optional_labels->end()) {
-      service_namespace = optional_labels->at("service_namespace");
+  if (!optional_labels_span.empty()) {
+    const auto& optional_labels = optional_labels_span[static_cast<size_t>(
+        OptionalLabelComponent::kXdsServiceLabels)];
+    if (optional_labels != nullptr) {
+      auto it = optional_labels->find("service_name");
+      if (it != optional_labels->end()) service_name = it->second;
+      it = optional_labels->find("service_namespace");
+      if (it != optional_labels->end()) service_namespace = it->second;
     }
   }
   return callback("csm.service_name",
                   AbslStrViewToOpenTelemetryStrView(service_name)) &&
          callback("csm.service_namespace_name",
                   AbslStrViewToOpenTelemetryStrView(service_namespace));
+}
+
+size_t ServiceMeshLabelsInjector::GetOptionalLabelsSize(
+    absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>)
+    const {
+  return 2;
 }
 
 }  // namespace internal
