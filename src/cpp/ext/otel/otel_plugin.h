@@ -76,15 +76,15 @@ class LabelsInjector {
   // to the peer. On the server side, \a labels_from_incoming_metadata returned
   // from `GetLabels` should be provided as input here. On the client side, this
   // should be nullptr.
-
-  virtual void AddLabels(grpc_metadata_batch* outgoing_initial_metadata,
-                         LabelsIterable* labels_from_incoming_metadata) = 0;
+  virtual void AddLabels(
+      grpc_metadata_batch* outgoing_initial_metadata,
+      LabelsIterable* labels_from_incoming_metadata) const = 0;
 
   // Add optional labels to the traced calls. Each entry in the span corresponds
   // to the CallAttemptTracer::OptionalLabelComponent enum.
   virtual std::unique_ptr<LabelsIterable> GetLabelsFromOptionalLabels(
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels) = 0;
+          optional_labels) const = 0;
 };
 
 class InternalOpenTelemetryPluginOption

@@ -477,7 +477,7 @@ void ServiceMeshLabelsInjector::AddLabels(
 std::unique_ptr<LabelsIterable>
 ServiceMeshLabelsInjector::GetLabelsFromOptionalLabels(
     absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-        optional_labels) {
+        optional_labels) const {
   return std::make_unique<OptionalLabelsIterable>(optional_labels);
 }
 
