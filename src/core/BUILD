@@ -3475,6 +3475,7 @@ grpc_cc_library(
         "closure",
         "env",
         "error",
+        "error_utils",
         "grpc_external_account_credentials",
         "grpc_lb_xds_channel_args",
         "grpc_oauth2_credentials",
@@ -3630,6 +3631,7 @@ grpc_cc_library(
         "closure",
         "context",
         "error",
+        "error_utils",
         "httpcli_ssl_credentials",
         "json",
         "json_reader",
@@ -3685,6 +3687,7 @@ grpc_cc_library(
         "closure",
         "env",
         "error",
+        "error_utils",
         "grpc_oauth2_credentials",
         "httpcli_ssl_credentials",
         "json",
@@ -3948,6 +3951,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_type",
         "closure",
+        "connectivity_state",
         "error",
         "exec_ctx_wakeup_scheduler",
         "experiments",
@@ -4246,6 +4250,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_type",
         "closure",
+        "connectivity_state",
         "context",
         "delegating_helper",
         "error",
@@ -4348,9 +4353,11 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "connectivity_state",
         "delegating_helper",
         "dual_ref_counted",
         "error",
+        "error_utils",
         "grpc_fake_credentials",
         "json",
         "json_args",
@@ -4487,6 +4494,7 @@ grpc_cc_library(
         "channel_creds_registry",
         "channel_fwd",
         "closure",
+        "connectivity_state",
         "default_event_engine",
         "env",
         "envoy_admin_upb",
@@ -4533,6 +4541,7 @@ grpc_cc_library(
         "envoy_type_matcher_upb",
         "envoy_type_upb",
         "error",
+        "error_utils",
         "google_rpc_status_upb",
         "grpc_audit_logging",
         "grpc_fake_credentials",
@@ -4569,6 +4578,7 @@ grpc_cc_library(
         "rls_config_upbdefs",
         "slice",
         "slice_refcount",
+        "status_conversion",
         "status_helper",
         "time",
         "unique_type_name",
@@ -4771,6 +4781,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "connectivity_state",
         "delegating_helper",
         "grpc_backend_metric_data",
         "grpc_lb_xds_channel_args",
@@ -4814,6 +4825,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "connectivity_state",
         "delegating_helper",
         "grpc_resolver_xds_attributes",
         "json",
@@ -4924,6 +4936,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "connectivity_state",
         "error",
         "iomgr_fwd",
         "pollset_set",
@@ -5029,6 +5042,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "connectivity_state",
         "experiments",
         "health_check_client",
         "iomgr_fwd",
@@ -5052,6 +5066,59 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
+        "//:work_serializer",
+    ],
+)
+
+grpc_cc_library(
+    name = "status_conversion",
+    srcs = ["lib/transport/status_conversion.cc"],
+    hdrs = ["lib/transport/status_conversion.h"],
+    deps = [
+        "http2_errors",
+        "time",
+        "//:gpr_platform",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "error_utils",
+    srcs = ["lib/transport/error_utils.cc"],
+    hdrs = [
+        "lib/transport/error_utils.h",
+    ],
+    external_deps = ["absl/status"],
+    deps = [
+        "error",
+        "http2_errors",
+        "status_conversion",
+        "status_helper",
+        "time",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "connectivity_state",
+    srcs = [
+        "lib/transport/connectivity_state.cc",
+    ],
+    hdrs = [
+        "lib/transport/connectivity_state.h",
+    ],
+    external_deps = ["absl/status"],
+    deps = [
+        "closure",
+        "error",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:ref_counted_ptr",
         "//:work_serializer",
     ],
 )
@@ -5084,6 +5151,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "connectivity_state",
         "delegating_helper",
         "error",
         "grpc_lb_policy_pick_first",
@@ -5132,6 +5200,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "connectivity_state",
         "experiments",
         "grpc_lb_subchannel_list",
         "json",
@@ -5187,6 +5256,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "connectivity_state",
         "experiments",
         "grpc_backend_metric_data",
         "grpc_lb_subchannel_list",
@@ -5254,6 +5324,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "connectivity_state",
         "delegating_helper",
         "experiments",
         "grpc_outlier_detection_header",
@@ -5298,6 +5369,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "connectivity_state",
         "delegating_helper",
         "grpc_lb_address_filtering",
         "json",
@@ -5342,6 +5414,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "connectivity_state",
         "delegating_helper",
         "grpc_lb_address_filtering",
         "json",
@@ -5389,6 +5462,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "connectivity_state",
         "delegating_helper",
         "error",
         "experiments",
@@ -6089,6 +6163,7 @@ grpc_cc_library(
         "channel_stack_type",
         "closure",
         "error",
+        "error_utils",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "resolved_address",
@@ -6137,6 +6212,7 @@ grpc_cc_library(
         "channel_args_endpoint_config",
         "closure",
         "error",
+        "error_utils",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",
@@ -6189,6 +6265,7 @@ grpc_cc_library(
         "channel_args_preconditioning",
         "channel_stack_type",
         "closure",
+        "connectivity_state",
         "error",
         "experiments",
         "iomgr_fwd",
