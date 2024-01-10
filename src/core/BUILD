@@ -4740,6 +4740,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "delegating_helper",
+        "env",
         "grpc_lb_address_filtering",
         "grpc_lb_xds_channel_args",
         "grpc_outlier_detection_header",

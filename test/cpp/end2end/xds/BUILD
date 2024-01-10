@@ -197,6 +197,7 @@ grpc_cc_test(
         "//:grpc_resolver_fake",
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/end2end:connection_attempt_injector",
     ],
 )

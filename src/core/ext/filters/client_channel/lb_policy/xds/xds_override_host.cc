@@ -889,12 +889,14 @@ void XdsOverrideHostLb::UpdateAddressMap(
     addresses.reserve(endpoint.addresses().size());
     for (const auto& address : endpoint.addresses()) {
       auto key = grpc_sockaddr_to_string(&address, /*normalize=*/false);
-      if (key.ok()) {
+      if (!key.ok()) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
           gpr_log(GPR_INFO,
-                  "[xds_override_host_lb %p] endpoint %s: adding map key %s",
-                  this, endpoint.ToString().c_str(), key->c_str());
+                  "[xds_override_host_lb %p] no key for endpoint address; "
+                  "not adding to map",
+                  this);
         }
+      } else {
         addresses.push_back(*std::move(key));
       }
     }
