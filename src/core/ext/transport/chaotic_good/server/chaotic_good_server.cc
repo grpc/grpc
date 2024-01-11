@@ -93,7 +93,7 @@ ChaoticGoodServerListener::~ChaoticGoodServerListener() {}
 absl::StatusOr<int> ChaoticGoodServerListener::Bind(const char* addr) {
   EventEngine::Listener::AcceptCallback accept_cb =
       [self = shared_from_this()](std::unique_ptr<EventEngine::Endpoint> ep,
-                                  MemoryAllocator memory_allocator) {
+                                  MemoryAllocator) {
         MutexLock lock(&self->mu_);
         self->connection_ = std::make_shared<ActiveConnection>(self);
         self->connection_->Start(std::move(ep));
@@ -134,10 +134,7 @@ absl::Status ChaoticGoodServerListener::StartListening() {
 
 ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     std::shared_ptr<ChaoticGoodServerListener> listener)
-    : listener_(listener),
-      memory_allocator_(
-          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-              "connection")) {}
+    : listener_(listener) {}
 
 ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
   listener_.reset();
@@ -346,6 +343,9 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
           args->endpoint),
       SliceBuffer());
+  auto memory_allocator =
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "server_connection");
   self->connection_->receive_settings_activity_ = MakeActivity(
       TrySeq(EndpointReadSettingsFrame(self),
              [self](bool is_control_endpoint) {
@@ -360,22 +360,19 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         }
       },
       MakeScopedArena(self->connection_->initial_arena_size_,
-                      &self->connection_->memory_allocator_),
+                      &memory_allocator),
       grpc_event_engine::experimental::GetDefaultEventEngine().get());
 }
 
 Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     GetConnectionDeadline() {
-  if (!connection_->args().Contains(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)) {
-    return Timestamp::Now() + Duration::Seconds(5);
-  } else {
+  if (connection_->args().Contains(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)) {
     return Timestamp::Now() +
-           std::max(Duration::Seconds(5),
-                    connection_->args()
-                        .GetDurationFromIntMillis(
-                            GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
-                        .value());
+           connection_->args()
+               .GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
+               .value();
   }
+  return Timestamp::Now() + connection_->connection_deadline_;
 }
 }  // namespace chaotic_good
 }  // namespace grpc_core

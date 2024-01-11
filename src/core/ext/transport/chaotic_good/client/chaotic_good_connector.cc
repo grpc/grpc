@@ -79,19 +79,14 @@ void MaybeNotify(const DebugLocation& location, grpc_closure* notify,
 }
 }  // namespace
 ChaoticGoodConnector::ChaoticGoodConnector()
-    : channel_args_(ChannelArgs()),
-      memory_quota_(std::make_unique<MemoryQuota>("chaotic_good_connector")),
-      resource_quota_(ResourceQuota::Default()),
-      memory_allocator_(
-          memory_quota_->CreateMemoryAllocator("chaotic_good_connector")),
-      timeout_(EventEngine::Duration(60)),
-      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
+    : event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
       handshake_mgr_(std::make_shared<HandshakeManager>()),
       data_endpoint_latch_(
           std::make_shared<Latch<std::shared_ptr<PromiseEndpoint>>>()),
       wait_for_data_endpoint_callback_(std::make_shared<WaitForCallback>()) {
   channel_args_ = channel_args_.SetObject(event_engine_);
-  channel_args_ = channel_args_.Set(GRPC_ARG_RESOURCE_QUOTA, resource_quota_);
+  channel_args_ =
+      channel_args_.Set(GRPC_ARG_RESOURCE_QUOTA, ResourceQuota::Default());
   ee_config_ =
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args_);
 }
@@ -159,8 +154,9 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
   self->event_engine_->Connect(
       std::move(on_data_endpoint_connect), *self->resolved_addr_,
       self->ee_config_,
-      self->memory_quota_->CreateMemoryAllocator("data_endpoint_connection"),
-      self->timeout_);
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "data_endpoint_connection"),
+      EventEngine::Duration(self->timeout_));
 
   return TrySeq(
       self->wait_for_data_endpoint_callback_->MakeWaitPromise(),
@@ -173,7 +169,7 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
                         DataEndpointReadSettingsFrame(self),
                         []() -> absl::Status { return absl::OkStatus(); });
                   }),
-           TrySeq(Sleep(Timestamp::Now() + Duration::Seconds(5)),
+           TrySeq(Sleep(Timestamp::Now() + Duration::Seconds(self->timeout_)),
                   []() -> absl::Status {
                     return absl::DeadlineExceededError(
                         "Data endpoint connect deadline excced.");
@@ -274,8 +270,9 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
       };
   event_engine_->Connect(
       std::move(on_connect), *resolved_addr_, ee_config_,
-      memory_quota_->CreateMemoryAllocator("control_endpoint_connection"),
-      timeout_);
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "data_endpoint_connection"),
+      EventEngine::Duration(timeout_));
 }
 
 void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
@@ -309,7 +306,9 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         grpc_event_engine::experimental::
             grpc_take_wrapped_event_engine_endpoint(args->endpoint),
         SliceBuffer());
-
+    auto memory_allocator =
+        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+            "connect_activity");
     self->connect_activity_ = MakeActivity(
         TrySeq(ControlEndpointWriteSettingsFrame(self),
                ControlEndpointReadSettingsFrame(self),
@@ -323,7 +322,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
           }
           MaybeNotify(DEBUG_LOCATION, self->notify_, status);
         },
-        MakeScopedArena(self->initial_arena_size_, &self->memory_allocator_),
+        MakeScopedArena(self->initial_arena_size_, &memory_allocator),
         self->event_engine_.get());
   } else {
     // Handshaking succeeded but there is no endpoint.

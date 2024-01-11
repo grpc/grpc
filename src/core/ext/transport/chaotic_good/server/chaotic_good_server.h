@@ -116,7 +116,6 @@ class ChaoticGoodServerListener
 
    private:
     std::shared_ptr<ChaoticGoodServerListener> listener_;
-    MemoryAllocator memory_allocator_;
     size_t initial_arena_size_ = 1024;
     Duration connection_deadline_ = Duration::Seconds(5);
     std::shared_ptr<HandshakingState> handshaking_state_;
@@ -146,8 +145,8 @@ class ChaoticGoodServerListener
       ee_listener_;
   Mutex mu_;
   // Map of connection id to endpoints connectivity.
-  std::map<std::string,
-           std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>>>
+  absl::flat_hash_map<std::string,
+                      std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>>>
       connectivity_map_ ABSL_GUARDED_BY(mu_);
   std::shared_ptr<ActiveConnection> connection_ ABSL_GUARDED_BY(mu_);
 };
