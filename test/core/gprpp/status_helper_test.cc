@@ -25,7 +25,7 @@
 #include "gmock/gmock.h"
 #include "google/rpc/status.upb.h"
 #include "gtest/gtest.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 namespace grpc_core {
 namespace {
