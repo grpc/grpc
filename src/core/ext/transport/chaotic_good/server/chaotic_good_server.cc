@@ -157,7 +157,7 @@ ChaoticGoodServerListener::ActiveConnection::GenerateConnectionIDLocked() {
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   std::uniform_int_distribution<> distribution(0, charset.size() - 1);
   random_string.reserve(random_length);
-  for (size_t i = 0; i < random_length; ++i) {
+  for (int i = 0; i < random_length; i++) {
     random_string += charset[distribution(bitgen_)];
   }
   return random_string;

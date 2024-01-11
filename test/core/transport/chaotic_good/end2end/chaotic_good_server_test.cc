@@ -93,7 +93,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
     StartServer();
     ConstructConnector();
   }
-  ~ChaoticGoodServerTest() { core_server_->StopListening(); }
+  ~ChaoticGoodServerTest() override { core_server_->StopListening(); }
 
   void StartServer() {
     port_ = grpc_pick_unused_port_or_die();
@@ -149,13 +149,13 @@ TEST_F(ChaoticGoodServerTest, Connect) {
   connect_finished_.WaitForNotification();
 }
 
-// TEST_F(ChaoticGoodServerTest, ConnectAndShutdown) {
-//   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
-//                     grpc_schedule_on_exec_ctx);
-//   connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
-//   connector_->Shutdown(absl::InternalError("shutdown"));
-//   connect_finished_.WaitForNotification();
-// }
+TEST_F(ChaoticGoodServerTest, ConnectAndShutdown) {
+  GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
+                    grpc_schedule_on_exec_ctx);
+  connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
+  connector_->Shutdown(absl::InternalError("shutdown"));
+  connect_finished_.WaitForNotification();
+}
 }  // namespace testing
 }  // namespace chaotic_good
 }  // namespace grpc_core

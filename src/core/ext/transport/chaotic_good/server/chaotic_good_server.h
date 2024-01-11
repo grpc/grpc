@@ -129,12 +129,11 @@ class ChaoticGoodServerListener
   };
 
   // Overridden to initialize listener but not actually used.
-  void Start(Server* server,
-             const std::vector<grpc_pollset*>* pollsets) override{};
+  void Start(Server*, const std::vector<grpc_pollset*>*) override{};
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return nullptr;
   }
-  void SetOnDestroyDone(grpc_closure* on_destroy_done) override{};
+  void SetOnDestroyDone(grpc_closure*) override{};
 
  private:
   Server* server_;
