@@ -41,19 +41,17 @@ constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
 //
 
 XdsDependencyManager::XdsConfig::ClusterConfig::ClusterConfig(
-    std::string cluster_name, std::shared_ptr<const XdsClusterResource> cluster,
+    std::shared_ptr<const XdsClusterResource> cluster,
     std::shared_ptr<const XdsEndpointResource> endpoints,
     std::string resolution_note)
-    : cluster_name(std::move(cluster_name)),
-      cluster(std::move(cluster)),
+    : cluster(std::move(cluster)),
       children(absl::in_place_type_t<EndpointConfig>(), std::move(endpoints),
                std::move(resolution_note)) {}
 
 XdsDependencyManager::XdsConfig::ClusterConfig::ClusterConfig(
-    std::string cluster_name, std::shared_ptr<const XdsClusterResource> cluster,
+    std::shared_ptr<const XdsClusterResource> cluster,
     std::vector<absl::string_view> leaf_clusters)
-    : cluster_name(std::move(cluster_name)),
-      cluster(std::move(cluster)),
+    : cluster(std::move(cluster)),
       children(absl::in_place_type_t<AggregateConfig>(),
                std::move(leaf_clusters)) {}
 
@@ -75,9 +73,6 @@ std::string XdsDependencyManager::XdsConfig::ToString() const {
     } else {
       parts.push_back(
           absl::StrCat("      {\n"
-                       "        name: \"",
-                       p.second->cluster_name,
-                       "\"\n"
                        "        cluster: {",
                        p.second->cluster->ToString(), "}\n"));
       Match(
@@ -794,8 +789,7 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
           return false;
         }
         // Populate cluster config.
-        cluster_config.emplace(std::string(name), *state.update,
-                               eds_state.update.endpoints,
+        cluster_config.emplace(*state.update, eds_state.update.endpoints,
                                eds_state.update.resolution_note);
         if (leaf_clusters != nullptr) (*leaf_clusters)->push_back(name);
         return true;
@@ -845,8 +839,7 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
           return false;
         }
         // Populate cluster config.
-        cluster_config.emplace(std::string(name), *state.update,
-                               dns_state.update.endpoints,
+        cluster_config.emplace(*state.update, dns_state.update.endpoints,
                                dns_state.update.resolution_note);
         if (leaf_clusters != nullptr) (*leaf_clusters)->push_back(name);
         return true;
@@ -901,8 +894,7 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
         // at the root of the tree, because we need to make sure the list
         // of underlying cluster names stays alive so that the leaf cluster
         // list of the root aggregate cluster can point to those strings.
-        aggregate_cluster_config.emplace(std::string(name),
-                                         std::move(cluster_resource),
+        aggregate_cluster_config.emplace(std::move(cluster_resource),
                                          std::move(*child_leaf_clusters));
         return have_all_resources;
       });

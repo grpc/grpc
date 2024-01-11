@@ -86,25 +86,6 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
                                                              : nullptr);
 }
 
-static void move64bits(uint64_t* from, uint64_t* to) {
-  *to += *from;
-  *from = 0;
-}
-
-void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats* from,
-                                       grpc_transport_one_way_stats* to) {
-  move64bits(&from->framing_bytes, &to->framing_bytes);
-  move64bits(&from->data_bytes, &to->data_bytes);
-  move64bits(&from->header_bytes, &to->header_bytes);
-}
-
-void grpc_transport_move_stats(grpc_transport_stream_stats* from,
-                               grpc_transport_stream_stats* to) {
-  grpc_transport_move_one_way_stats(&from->incoming, &to->incoming);
-  grpc_transport_move_one_way_stats(&from->outgoing, &to->outgoing);
-  to->latency = std::exchange(from->latency, gpr_inf_future(GPR_TIMESPAN));
-}
-
 namespace grpc_core {
 void Transport::SetPollingEntity(grpc_stream* stream,
                                  grpc_polling_entity* pollset_or_pollset_set) {
@@ -291,9 +272,8 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                          return call_initiator.SpawnWaitable(
                              "send_message",
                              [msg = std::move(msg), call_initiator]() mutable {
-                               return call_initiator.CancelIfFails(Map(
-                                   call_initiator.PushMessage(std::move(msg)),
-                                   [](bool r) { return StatusFlag(r); }));
+                               return call_initiator.CancelIfFails(
+                                   call_initiator.PushMessage(std::move(msg)));
                              });
                        });
       });
@@ -317,8 +297,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                           "recv_message",
                           [msg = std::move(msg), call_handler]() mutable {
                             return call_handler.CancelIfFails(
-                                Map(call_handler.PushMessage(std::move(msg)),
-                                    [](bool r) { return StatusFlag(r); }));
+                                call_handler.PushMessage(std::move(msg)));
                           });
                     }),
             ImmediateOkStatus())),
@@ -332,6 +311,12 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
           return Empty{};
         });
   });
+}
+
+CallInitiatorAndHandler MakeCall(
+    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena) {
+  auto spine = CallSpine::Create(event_engine, arena);
+  return {CallInitiator(spine), CallHandler(spine)};
 }
 
 }  // namespace grpc_core

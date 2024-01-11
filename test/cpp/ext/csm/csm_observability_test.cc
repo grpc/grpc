@@ -22,6 +22,7 @@
 #include "gtest/gtest.h"
 
 #include <grpcpp/ext/csm_observability.h>
+#include <grpcpp/ext/otel_plugin.h>
 
 #include "src/core/lib/gprpp/env.h"
 #include "test/core/util/test_config.h"
@@ -60,6 +61,12 @@ TEST(CsmChannelTargetSelectorTest, XdsTargetsWithNonTDAuthority) {
 TEST(CsmChannelTargetSelectorTest, XdsTargetsWithTDAuthority) {
   EXPECT_TRUE(internal::CsmChannelTargetSelector(
       "xds://traffic-director-global.xds.googleapis.com/foo"));
+}
+
+TEST(CsmPluginOptionTest, Basic) {
+  OpenTelemetryPluginBuilder()
+      .AddPluginOption(experimental::MakeCsmOpenTelemetryPluginOption())
+      .BuildAndRegisterGlobal();
 }
 
 }  // namespace

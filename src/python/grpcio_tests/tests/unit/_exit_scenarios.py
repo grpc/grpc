@@ -210,14 +210,20 @@ if __name__ == "__main__":
         method = TEST_TO_METHOD[args.scenario]
 
         if args.scenario == IN_FLIGHT_UNARY_UNARY_CALL:
-            multi_callable = channel.unary_unary(method)
+            multi_callable = channel.unary_unary(
+                method,
+                _registered_method=True,
+            )
             future = multi_callable.future(REQUEST)
             result, call = multi_callable.with_call(REQUEST)
         elif (
             args.scenario == IN_FLIGHT_UNARY_STREAM_CALL
             or args.scenario == IN_FLIGHT_PARTIAL_UNARY_STREAM_CALL
         ):
-            multi_callable = channel.unary_stream(method)
+            multi_callable = channel.unary_stream(
+                method,
+                _registered_method=True,
+            )
             response_iterator = multi_callable(REQUEST)
             for response in response_iterator:
                 pass
@@ -225,7 +231,10 @@ if __name__ == "__main__":
             args.scenario == IN_FLIGHT_STREAM_UNARY_CALL
             or args.scenario == IN_FLIGHT_PARTIAL_STREAM_UNARY_CALL
         ):
-            multi_callable = channel.stream_unary(method)
+            multi_callable = channel.stream_unary(
+                method,
+                _registered_method=True,
+            )
             future = multi_callable.future(infinite_request_iterator())
             result, call = multi_callable.with_call(
                 iter([REQUEST] * test_constants.STREAM_LENGTH)
@@ -234,7 +243,10 @@ if __name__ == "__main__":
             args.scenario == IN_FLIGHT_STREAM_STREAM_CALL
             or args.scenario == IN_FLIGHT_PARTIAL_STREAM_STREAM_CALL
         ):
-            multi_callable = channel.stream_stream(method)
+            multi_callable = channel.stream_stream(
+                method,
+                _registered_method=True,
+            )
             response_iterator = multi_callable(infinite_request_iterator())
             for response in response_iterator:
                 pass

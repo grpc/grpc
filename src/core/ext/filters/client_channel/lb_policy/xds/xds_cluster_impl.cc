@@ -37,6 +37,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
@@ -76,6 +77,8 @@ TraceFlag grpc_xds_cluster_impl_lb_trace(false, "xds_cluster_impl_lb");
 
 namespace {
 
+using OptionalLabelComponent =
+    ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
 using XdsConfig = XdsDependencyManager::XdsConfig;
 
 //
@@ -215,6 +218,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
     RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
     uint32_t max_concurrent_requests_;
+    std::shared_ptr<std::map<std::string, std::string>> service_labels_;
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<SubchannelPicker> picker_;
@@ -358,6 +362,7 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
     : call_counter_(xds_cluster_impl_lb->call_counter_),
       max_concurrent_requests_(
           xds_cluster_impl_lb->cluster_resource_->max_concurrent_requests),
+      service_labels_(xds_cluster_impl_lb->cluster_resource_->telemetry_labels),
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
       picker_(std::move(picker)) {
@@ -369,6 +374,11 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
 
 LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
+  auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
+  if (call_state->GetCallAttemptTracer() != nullptr) {
+    call_state->GetCallAttemptTracer()->AddOptionalLabels(
+        OptionalLabelComponent::kXdsServiceLabels, service_labels_);
+  }
   // Handle EDS drops.
   const std::string* drop_category;
   if (drop_config_ != nullptr && drop_config_->ShouldDrop(&drop_category)) {

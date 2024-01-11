@@ -1155,6 +1155,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c \
@@ -1313,6 +1314,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.c \
@@ -1453,7 +1455,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
-    src/core/lib/event_engine/posix_engine/native_dns_resolver.cc \
+    src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc \
     src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
@@ -1480,6 +1482,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc \
     src/core/lib/event_engine/windows/iocp.cc \
+    src/core/lib/event_engine/windows/native_windows_dns_resolver.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
@@ -1698,6 +1701,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -2034,7 +2038,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
-    src/core/lib/event_engine/posix_engine/native_dns_resolver.cc \
+    src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc \
     src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
@@ -2061,6 +2065,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc \
     src/core/lib/event_engine/windows/iocp.cc \
+    src/core/lib/event_engine/windows/native_windows_dns_resolver.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
@@ -2240,6 +2245,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -3469,6 +3475,7 @@ src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/common.upb_minita
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c: $(OPENSSL_DEP)
+src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c: $(OPENSSL_DEP)
@@ -3608,6 +3615,7 @@ src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/common.upbdef
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.c: $(OPENSSL_DEP)

@@ -39,7 +39,7 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
                              public Orphanable {
  public:
   struct XdsConfig : public RefCounted<XdsConfig> {
-    // Listener resource.
+    // Listener resource.  Always non-null.
     std::shared_ptr<const XdsListenerResource> listener;
     // RouteConfig resource.  Will be populated even if RouteConfig is
     // inlined into the Listener resource.
@@ -47,15 +47,11 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
     // Virtual host.  Points into route_config.  Will always be non-null.
     const XdsRouteConfigResource::VirtualHost* virtual_host;
 
-    // Cluster map.  A cluster will have a non-OK status if either
-    // (a) there was an error and we did not already have a valid
-    // resource or (b) the resource does not exist.
     struct ClusterConfig {
-      // Cluster name and resource.
-      std::string cluster_name;
+      // Cluster resource.  Always non-null.
       std::shared_ptr<const XdsClusterResource> cluster;
-      // Endpoint info.  If there was an error, endpoints will be null
-      // and resolution_note will be set.  Not used for aggregate clusters.
+      // Endpoint info for EDS and LOGICAL_DNS clusters.  If there was an
+      // error, endpoints will be null and resolution_note will be set.
       struct EndpointConfig {
         std::shared_ptr<const XdsEndpointResource> endpoints;
         std::string resolution_note;
@@ -82,20 +78,20 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
       absl::variant<EndpointConfig, AggregateConfig> children;
 
       // Ctor for leaf clusters.
-      ClusterConfig(std::string cluster_name,
-                    std::shared_ptr<const XdsClusterResource> cluster,
+      ClusterConfig(std::shared_ptr<const XdsClusterResource> cluster,
                     std::shared_ptr<const XdsEndpointResource> endpoints,
                     std::string resolution_note);
       // Ctor for aggregate clusters.
-      ClusterConfig(std::string cluster_name,
-                    std::shared_ptr<const XdsClusterResource> cluster,
+      ClusterConfig(std::shared_ptr<const XdsClusterResource> cluster,
                     std::vector<absl::string_view> leaf_clusters);
 
       bool operator==(const ClusterConfig& other) const {
-        return cluster_name == other.cluster_name && cluster == other.cluster &&
-               children == other.children;
+        return cluster == other.cluster && children == other.children;
       }
     };
+    // Cluster map.  A cluster will have a non-OK status if either
+    // (a) there was an error and we did not already have a valid
+    // resource or (b) the resource does not exist.
     absl::flat_hash_map<std::string, absl::StatusOr<ClusterConfig>> clusters;
 
     std::string ToString() const;
