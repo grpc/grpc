@@ -132,15 +132,7 @@ class XdsClient::XdsChannel::AdsCall : public InternallyRefCounted<AdsCall> {
   bool HasSubscribedResources() const;
 
  private:
-  class AdsReadDelayHandle : public ReadDelayHandle {
-   public:
-    explicit AdsReadDelayHandle(RefCountedPtr<AdsCall> ads_call)
-        : ads_call_(std::move(ads_call)) {}
-    ~AdsReadDelayHandle() override;
-
-   private:
-    RefCountedPtr<AdsCall> ads_call_;
-  };
+  class AdsReadDelayHandle;
 
   class AdsResponseParser : public XdsApi::AdsResponseParserInterface {
    public:
@@ -701,11 +693,21 @@ void XdsClient::XdsChannel::RetryableCall<T>::OnRetryTimer() {
 // XdsClient::XdsChannel::AdsCall::AdsReadDelayHandle
 //
 
-XdsClient::XdsChannel::AdsCall::AdsReadDelayHandle::~AdsReadDelayHandle() {
-  MutexLock lock(&ads_call_->xds_client()->mu_);
-  auto call = ads_call_->streaming_call_.get();
-  if (call != nullptr) call->StartRecvMessage();
-}
+class XdsClient::XdsChannel::AdsCall::AdsReadDelayHandle
+    : public XdsClient::ReadDelayHandle {
+ public:
+  explicit AdsReadDelayHandle(RefCountedPtr<AdsCall> ads_call)
+      : ads_call_(std::move(ads_call)) {}
+
+  ~AdsReadDelayHandle() override {
+    MutexLock lock(&ads_call_->xds_client()->mu_);
+    auto call = ads_call_->streaming_call_.get();
+    if (call != nullptr) call->StartRecvMessage();
+  }
+
+ private:
+  RefCountedPtr<AdsCall> ads_call_;
+};
 
 //
 // XdsClient::XdsChannel::AdsCall::AdsResponseParser
@@ -961,8 +963,9 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
 void XdsClient::XdsChannel::AdsCall::Orphan() {
   state_map_.clear();
   // Note that the initial ref is held by the StreamEventHandler, which
-  // will be destroyed when call_ is destroyed, which may not happen
-  // here, since there may be other refs held to call_ by internal callbacks.
+  // will be destroyed when streaming_call_ is destroyed, which may not happen
+  // here, since there may be other refs held to streaming_call_ by internal
+  // callbacks.
   streaming_call_.reset();
 }
 
