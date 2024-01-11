@@ -216,8 +216,6 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
              self = self](SliceBuffer buffer) mutable {
               // Read Setting frame.
               SettingsFrame frame;
-              // Initialized to get this_cpu() info in global_stat().
-              ExecCtx exec_ctx;
               // Deserialize frame from read buffer.
               BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
               auto status = frame.Deserialize(

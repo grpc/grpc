@@ -201,9 +201,6 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
                  self = self](SliceBuffer buffer) {
                   // Deserialize setting frame.
                   SettingsFrame frame;
-                  // Initialized to get this_cpu() info in
-                  // global_stat().
-                  ExecCtx exec_ctx;
                   BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
                   auto status = frame.Deserialize(
                       &self->hpack_parser_, frame_header,
