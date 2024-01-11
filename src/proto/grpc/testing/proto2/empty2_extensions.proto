@@ -14,9 +14,9 @@
 
 syntax = "proto2";
 
-import "src/proto/grpc/testing/proto2/empty2.proto";
-
 package grpc.testing.proto2;
+
+import "src/proto/grpc/testing/proto2/empty2.proto";
 
 // Fill emptiness with music.
 extend grpc.testing.proto2.EmptyWithExtensions {
