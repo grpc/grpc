@@ -110,51 +110,83 @@ auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
         // Read setting frame;
         // Parse frame header
         GPR_ASSERT(self->data_endpoint_ != nullptr);
-        auto frame_header_ = std::make_shared<FrameHeader>(
+        auto frame_header_ =
             FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
-                                   GRPC_SLICE_START_PTR(slice.c_slice())))
-                .value());
-        auto frame_header_length = frame_header_->GetFrameLength();
-        return self->data_endpoint_->Read(frame_header_length);
-      },
-      [](SliceBuffer buffer) {
-        // TODO(ladynana): Initial client transport.
-        return absl::OkStatus();
+                GRPC_SLICE_START_PTR(slice.c_slice())));
+        return If(
+            frame_header_.ok(),
+            [frame_header_ = *frame_header_, self = self]() {
+              auto frame_header_length = frame_header_.GetFrameLength();
+              return TrySeq(self->data_endpoint_->Read(frame_header_length),
+                            []() { return absl::OkStatus(); });
+            },
+            [status = frame_header_.status()]() { return status; });
       });
 }
 
 auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
     std::shared_ptr<ChaoticGoodConnector> self) {
   GPR_ASSERT(self->data_endpoint_ != nullptr);
+  return TrySeq([self = self]() mutable {
+    // Serialize setting frame.
+    SettingsFrame frame;
+    // frame.header set connectiion_type: control
+    ClientMetadataHandle metadata =
+        GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
+    metadata->Set(ChaoticGoodConnectionTypeMetadata(),
+                  Slice::FromCopiedString("data"));
+    metadata->Set(ChaoticGoodConnectionIdMetadata(),
+                  self->connection_id_.Ref());
+    frame.headers = std::move(metadata);
+    auto write_buffer = frame.Serialize(&self->hpack_compressor_);
+    return self->data_endpoint_->Write(std::move(write_buffer.control));
+  });
+}
+
+auto ChaoticGoodConnector::WaitForDataEndpointSetup(
+    std::shared_ptr<ChaoticGoodConnector> self) {
+  // Data endpoint on_connect callback.
+  grpc_event_engine::experimental::EventEngine::OnConnectCallback
+      on_data_endpoint_connect =
+          [self = self](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
+                            endpoint) mutable {
+            self->data_endpoint_latch_->Set(std::make_shared<PromiseEndpoint>(
+                std::move(endpoint.value()), SliceBuffer()));
+            auto cb = self->wait_for_data_endpoint_callback_->MakeCallback();
+            // Wake up wait_for_data_endpoint_callback_.
+            cb();
+          };
+  self->event_engine_->Connect(
+      std::move(on_data_endpoint_connect), *self->resolved_addr_,
+      self->ee_config_,
+      self->memory_quota_->CreateMemoryAllocator("data_endpoint_connection"),
+      self->timeout_);
+
   return TrySeq(
-      [self = self]() mutable {
-        // Serialize setting frame.
-        SettingsFrame frame;
-        // frame.header set connectiion_type: control
-        ClientMetadataHandle metadata =
-            GetContext<Arena>()->MakePooled<ClientMetadata>(
-                GetContext<Arena>());
-        metadata->Set(ChaoticGoodConnectionTypeMetadata(),
-                      Slice::FromCopiedString("data"));
-        auto connection_type =
-            metadata->get_pointer(ChaoticGoodConnectionTypeMetadata())->Ref();
-        metadata->Set(ChaoticGoodConnectionIdMetadata(),
-                      self->connection_id_.Ref());
-        frame.headers = std::move(metadata);
-        auto write_buffer = frame.Serialize(&self->hpack_compressor_);
-        return self->data_endpoint_->Write(std::move(write_buffer.control));
-      },
-      []() { return absl::OkStatus(); });
+      self->wait_for_data_endpoint_callback_->MakeWaitPromise(),
+      Race(TrySeq(self->data_endpoint_latch_->Wait(),
+                  [self = self](
+                      std::shared_ptr<PromiseEndpoint> data_endpoint) mutable {
+                    self->data_endpoint_.swap(data_endpoint);
+                    return TrySeq(
+                        DataEndpointWriteSettingsFrame(self),
+                        DataEndpointReadSettingsFrame(self),
+                        []() -> absl::Status { return absl::OkStatus(); });
+                  }),
+           TrySeq(Sleep(Timestamp::Now() + Duration::Seconds(5)),
+                  []() -> absl::Status {
+                    return absl::DeadlineExceededError(
+                        "Data endpoint connect deadline excced.");
+                  })));
 }
 
 auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
     std::shared_ptr<ChaoticGoodConnector> self) {
   GPR_ASSERT(self->control_endpoint_ != nullptr);
   return TrySeq(
-      [self = self]() {
-        GPR_ASSERT(Activity::current() != nullptr);
-        GPR_ASSERT(Activity::current() == self->connect_activity_->current());
-        return Activity::current();
+      []() {
+        // TODO(ladynana): find a way to resolve SeqState to actual value.
+        return absl::OkStatus();
       },
       [self = self]() {
         return self->control_endpoint_->ReadSlice(
@@ -162,91 +194,53 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
       },
       [self = self](Slice slice) mutable {
         // Parse frame header
-        auto frame_header = std::make_shared<FrameHeader>(
-            FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
-                                   GRPC_SLICE_START_PTR(slice.c_slice())))
-                .value());
-        return TrySeq(
-            self->control_endpoint_->Read(frame_header->GetFrameLength()),
-            [frame_header = frame_header, self = self](SliceBuffer buffer) {
-              // Deserialize setting frame.
-              SettingsFrame frame;
-              // Initialized to get this_cpu() info in
-              // global_stat().
-              ExecCtx exec_ctx;
-              BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
-              auto status = frame.Deserialize(
-                  &self->hpack_parser_, *frame_header,
-                  absl::BitGenRef(self->bitgen_), GetContext<Arena>(),
-                  std::move(buffer_pair));
-              GPR_ASSERT(status.ok());
-              self->connection_id_ =
-                  frame.headers->get_pointer(ChaoticGoodConnectionIdMetadata())
-                      ->Ref();
-              // Data endpoint on_connect callback.
-              grpc_event_engine::experimental::EventEngine::OnConnectCallback
-                  on_data_endpoint_connect =
-                      [self = self](
-                          absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
-                              endpoint) mutable {
-                        self->data_endpoint_latch_->Set(
-                            std::make_shared<PromiseEndpoint>(
-                                std::move(endpoint.value()), SliceBuffer()));
-                        auto cb = self->wait_for_data_endpoint_callback_
-                                      ->MakeCallback();
-                        // Wake up wait_for_data_endpoint_callback_.
-                        cb();
-                      };
-              self->event_engine_->Connect(
-                  std::move(on_data_endpoint_connect), *self->resolved_addr_,
-                  self->ee_config_,
-                  self->memory_quota_->CreateMemoryAllocator(
-                      "data_endpoint_connection"),
-                  self->timeout_);
-
-              return self->wait_for_data_endpoint_callback_->MakeWaitPromise();
-            },
-            Race(TrySeq(self->data_endpoint_latch_->Wait(),
-                        [self = self](std::shared_ptr<PromiseEndpoint>
-                                          data_endpoint) mutable {
-                          self->data_endpoint_.swap(data_endpoint);
-                          return TrySeq(
-                              TryJoin<absl::StatusOr>(
-                                  DataEndpointReadSettingsFrame(self),
-                                  DataEndpointWriteSettingsFrame(self)),
-                              []() -> absl::Status {
-                                return absl::OkStatus();
-                              });
-                        }),
-                 TrySeq(Sleep(Timestamp::Now() + Duration::Seconds(5)),
-                        []() -> absl::Status {
-                          return absl::DeadlineExceededError(
-                              "Data endpoint connect deadline excced.");
-                        })),
-            []() { return absl::OkStatus(); });
+        auto frame_header = FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
+            GRPC_SLICE_START_PTR(slice.c_slice())));
+        return If(
+            frame_header.ok(),
+            TrySeq(
+                self->control_endpoint_->Read(frame_header->GetFrameLength()),
+                [frame_header = *frame_header,
+                 self = self](SliceBuffer buffer) {
+                  // Deserialize setting frame.
+                  SettingsFrame frame;
+                  // Initialized to get this_cpu() info in
+                  // global_stat().
+                  ExecCtx exec_ctx;
+                  BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
+                  auto status = frame.Deserialize(
+                      &self->hpack_parser_, frame_header,
+                      absl::BitGenRef(self->bitgen_), GetContext<Arena>(),
+                      std::move(buffer_pair));
+                  GPR_ASSERT(status.ok());
+                  self->connection_id_ =
+                      frame.headers
+                          ->get_pointer(ChaoticGoodConnectionIdMetadata())
+                          ->Ref();
+                  return absl::OkStatus();
+                },
+                WaitForDataEndpointSetup(self)),
+            [status = frame_header.status()]() { return status; });
       });
 }
 
 auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
     std::shared_ptr<ChaoticGoodConnector> self) {
-  return TrySeq(
-      [self = self]() mutable {
-        GPR_ASSERT(self->control_endpoint_ != nullptr);
-        // Serialize setting frame.
-        SettingsFrame frame;
-        // frame.header set connectiion_type: control
-        ClientMetadataHandle metadata =
-            GetContext<Arena>()->MakePooled<ClientMetadata>(
-                GetContext<Arena>());
-        metadata->Set(ChaoticGoodConnectionTypeMetadata(),
-                      Slice::FromCopiedString("control"));
-        auto connection_type =
-            metadata->get_pointer(ChaoticGoodConnectionTypeMetadata())->Ref();
-        frame.headers = std::move(metadata);
-        auto write_buffer = frame.Serialize(&self->hpack_compressor_);
-        return self->control_endpoint_->Write(std::move(write_buffer.control));
-      },
-      []() { return absl::OkStatus(); });
+  return TrySeq([self = self]() mutable {
+    GPR_ASSERT(self->control_endpoint_ != nullptr);
+    // Serialize setting frame.
+    SettingsFrame frame;
+    // frame.header set connectiion_type: control
+    ClientMetadataHandle metadata =
+        GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
+    metadata->Set(ChaoticGoodConnectionTypeMetadata(),
+                  Slice::FromCopiedString("control"));
+    auto connection_type =
+        metadata->get_pointer(ChaoticGoodConnectionTypeMetadata())->Ref();
+    frame.headers = std::move(metadata);
+    auto write_buffer = frame.Serialize(&self->hpack_compressor_);
+    return self->control_endpoint_->Write(std::move(write_buffer.control));
+  });
 }
 void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                                    grpc_closure* notify) {

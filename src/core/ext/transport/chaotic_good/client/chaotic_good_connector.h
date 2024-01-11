@@ -77,6 +77,8 @@ class ChaoticGoodConnector
       std::shared_ptr<ChaoticGoodConnector> self);
   static auto ControlEndpointWriteSettingsFrame(
       std::shared_ptr<ChaoticGoodConnector> self);
+  static auto WaitForDataEndpointSetup(
+      std::shared_ptr<ChaoticGoodConnector> self);
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
 
   Mutex mu_;

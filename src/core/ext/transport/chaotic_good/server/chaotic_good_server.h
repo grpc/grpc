@@ -100,6 +100,13 @@ class ChaoticGoodServerListener
           std::shared_ptr<HandshakingState> self);
       static auto EndpointWriteSettingsFrame(
           std::shared_ptr<HandshakingState> self, bool is_control_endpoint);
+      static auto WaitForDataEndpointSetup(
+          std::shared_ptr<HandshakingState> self);
+      static auto ControlEndpointWriteSettingsFrame(
+          std::shared_ptr<HandshakingState> self);
+      static auto DataEndpointWriteSettingsFrame(
+          std::shared_ptr<HandshakingState> self);
+
       static void OnHandshakeDone(void* arg, grpc_error_handle error);
 
       Timestamp GetConnectionDeadline();

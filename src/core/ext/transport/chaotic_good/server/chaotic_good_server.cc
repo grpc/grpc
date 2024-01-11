@@ -182,11 +182,9 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::Start(
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     EndpointReadSettingsFrame(std::shared_ptr<HandshakingState> self) {
   return TrySeq(
-      [self = self]() {
-        GPR_ASSERT(Activity::current() != nullptr);
-        GPR_ASSERT(Activity::current() ==
-                   self->connection_->receive_settings_activity_->current());
-        return Activity::current();
+      []() {
+        // TODO(ladynana): find a way to resolve SeqState to actual value.
+        return absl::OkStatus();
       },
       [self = self]() {
         return self->connection_->endpoint_->ReadSlice(
@@ -233,17 +231,47 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
-    EndpointWriteSettingsFrame(std::shared_ptr<HandshakingState> self,
-                               bool is_control_endpoint) {
-  return If(
-      is_control_endpoint,
-      // connection_type = control
+    WaitForDataEndpointSetup(std::shared_ptr<HandshakingState> self) {
+  return Race(
+      TrySeq(
+          []() {
+            // TODO(ladynana): find a way to resolve SeqState to actual value.
+            return absl::OkStatus();
+          },
+          [self = self]() mutable {
+            MutexLock lock(&self->connection_->listener_->mu_);
+            auto latch =
+                self->connection_->listener_->connectivity_map_
+                    .find(std::string(
+                        self->connection_->connection_id_.as_string_view()))
+                    ->second;
+            return latch->Wait();
+          },
+          [](std::shared_ptr<PromiseEndpoint> ret) -> absl::Status {
+            GPR_ASSERT(ret != nullptr);
+            // TODO(ladynana): initialize server transport.
+            return absl::OkStatus();
+          }),
+      // Set timeout for waiting data endpoint connect.
+      TrySeq(
+          // []() {
+          Sleep(Timestamp::Now() + self->connection_->connection_deadline_),
+          [self = self]() mutable -> absl::Status {
+            MutexLock lock(&self->connection_->listener_->mu_);
+            // Delete connection id from map when timeout;
+            self->connection_->listener_->connectivity_map_.erase(std::string(
+                self->connection_->connection_id_.as_string_view()));
+            return absl::DeadlineExceededError("Deadline exceeded.");
+          }));
+}
+
+auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
+    ControlEndpointWriteSettingsFrame(std::shared_ptr<HandshakingState> self) {
+  return TrySeq(
       [self = self]() {
         self->connection_->GenerateConnectionID();
-        // Add a wait latch for data endpoint to connect.
         {
           MutexLock lock(&self->connection_->listener_->mu_);
-          // Add latch to map;
           self->connection_->listener_->connectivity_map_.insert(
               std::pair<
                   std::string,
@@ -251,53 +279,6 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                   self->connection_->connection_id_.as_string_view(),
                   std::make_shared<Latch<std::shared_ptr<PromiseEndpoint>>>()));
         }
-        return Race(
-            TrySeq(
-                [self = self]() mutable {
-                  SettingsFrame frame;
-                  ClientMetadataHandle metadata =
-                      GetContext<Arena>()->MakePooled<ClientMetadata>(
-                          GetContext<Arena>());
-                  metadata->Set(ChaoticGoodConnectionIdMetadata(),
-                                self->connection_->connection_id_.Ref());
-                  frame.headers = std::move(metadata);
-                  auto write_buffer =
-                      frame.Serialize(&self->connection_->hpack_compressor_);
-                  return self->connection_->endpoint_->Write(
-                      std::move(write_buffer.control));
-                },
-                [self = self]() mutable {
-                  MutexLock lock(&self->connection_->listener_->mu_);
-                  auto latch =
-                      self->connection_->listener_->connectivity_map_
-                          .find(std::string(self->connection_->connection_id_
-                                                .as_string_view()))
-                          ->second;
-                  return latch->Wait();
-                },
-                [](std::shared_ptr<PromiseEndpoint> ret) -> absl::Status {
-                  GPR_ASSERT(ret != nullptr);
-                  // TODO(ladynana): initialize server transport.
-                  return absl::OkStatus();
-                }),
-            // Set timeout for waiting data endpoint connect.
-            TrySeq(
-                // []() {
-                Sleep(Timestamp::Now() +
-                      self->connection_->connection_deadline_),
-                [self = self]() mutable -> absl::Status {
-                  MutexLock lock(&self->connection_->listener_->mu_);
-                  // Delete connection id from map when timeout;
-                  self->connection_->listener_->connectivity_map_.erase(
-                      std::string(
-                          self->connection_->connection_id_.as_string_view()));
-                  return absl::DeadlineExceededError(
-                      Timestamp::Now().ToString());
-                }));
-      },
-      // connection_type = data.
-      TrySeq([self = self]() mutable {
-        // Send data endpoint setting frame
         SettingsFrame frame;
         ClientMetadataHandle metadata =
             GetContext<Arena>()->MakePooled<ClientMetadata>(
@@ -307,19 +288,42 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         frame.headers = std::move(metadata);
         auto write_buffer =
             frame.Serialize(&self->connection_->hpack_compressor_);
-        return TrySeq(
-            self->connection_->endpoint_->Write(
-                std::move(write_buffer.control)),
-            [self = self]() mutable {
-              MutexLock lock(&self->connection_->listener_->mu_);
-              // Set endpoint to latch
-              self->connection_->listener_->connectivity_map_
-                  .find(std::string(
-                      self->connection_->connection_id_.as_string_view()))
-                  ->second->Set(std::move(self->connection_->endpoint_));
-              return absl::OkStatus();
-            });
-      }));
+        return self->connection_->endpoint_->Write(
+            std::move(write_buffer.control));
+      },
+      WaitForDataEndpointSetup(self));
+}
+
+auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
+    DataEndpointWriteSettingsFrame(std::shared_ptr<HandshakingState> self) {
+  return TrySeq([self = self]() mutable {
+    // Send data endpoint setting frame
+    SettingsFrame frame;
+    ClientMetadataHandle metadata =
+        GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
+    metadata->Set(ChaoticGoodConnectionIdMetadata(),
+                  self->connection_->connection_id_.Ref());
+    frame.headers = std::move(metadata);
+    auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
+    return TrySeq(
+        self->connection_->endpoint_->Write(std::move(write_buffer.control)),
+        [self = self]() mutable {
+          MutexLock lock(&self->connection_->listener_->mu_);
+          // Set endpoint to latch
+          self->connection_->listener_->connectivity_map_
+              .find(std::string(
+                  self->connection_->connection_id_.as_string_view()))
+              ->second->Set(std::move(self->connection_->endpoint_));
+          return absl::OkStatus();
+        });
+  });
+}
+
+auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
+    EndpointWriteSettingsFrame(std::shared_ptr<HandshakingState> self,
+                               bool is_control_endpoint) {
+  return If(is_control_endpoint, ControlEndpointWriteSettingsFrame(self),
+            DataEndpointWriteSettingsFrame(self));
 }
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(void* arg, grpc_error_handle error) {
