@@ -404,7 +404,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
             old_cluster_config, *new_cluster_config, endpoint_config);
         // Populate addresses and resolution_note for child policy.
         update_args.addresses = std::make_shared<PriorityEndpointIterator>(
-            new_cluster_config->cluster_name, endpoint_config.endpoints,
+            cluster_name_, endpoint_config.endpoints,
             child_name_state_.priority_child_numbers);
         update_args.resolution_note = endpoint_config.resolution_note;
         // Construct child policy config.
@@ -476,8 +476,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
       locality_child_map;
   std::map<size_t, std::set<XdsLocalityName*, XdsLocalityName::Less>>
       child_locality_map;
-  if (old_cluster != nullptr &&
-      old_cluster->cluster_name == new_cluster.cluster_name) {
+  if (old_cluster != nullptr) {
     auto* old_endpoint_config =
         absl::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
             &old_cluster->children);
@@ -579,9 +578,8 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
       GetUpdatePriorityList(endpoint_config.endpoints.get());
   for (size_t priority = 0; priority < priority_list.size(); ++priority) {
     // Add priority entry, with the appropriate child name.
-    std::string child_name =
-        MakeChildPolicyName(new_cluster.cluster_name,
-                            child_name_state_.priority_child_numbers[priority]);
+    std::string child_name = MakeChildPolicyName(
+        cluster_name_, child_name_state_.priority_child_numbers[priority]);
     priority_priorities.emplace_back(Json::FromString(child_name));
     Json::Object child_config = {{"config", xds_lb_policy}};
     if (!is_logical_dns) {
@@ -600,7 +598,7 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
   Json xds_override_host_policy = Json::FromArray({Json::FromObject({
       {"xds_override_host_experimental",
        Json::FromObject({
-           {"clusterName", Json::FromString(new_cluster.cluster_name)},
+           {"clusterName", Json::FromString(cluster_name_)},
            {"childPolicy", std::move(priority_policy)},
        })},
   })});
@@ -608,7 +606,7 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
   Json xds_cluster_impl_policy = Json::FromArray({Json::FromObject({
       {"xds_cluster_impl_experimental",
        Json::FromObject({
-           {"clusterName", Json::FromString(new_cluster.cluster_name)},
+           {"clusterName", Json::FromString(cluster_name_)},
            {"childPolicy", std::move(xds_override_host_policy)},
        })},
   })});
