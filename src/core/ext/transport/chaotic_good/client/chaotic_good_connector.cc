@@ -132,6 +132,7 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
                   Slice::FromCopiedString("data"));
     metadata->Set(ChaoticGoodConnectionIdMetadata(),
                   self->connection_id_.Ref());
+    metadata->Set(ChaoticGoodDataAlignmentMetadata(), self->data_alignment_);
     frame.headers = std::move(metadata);
     auto write_buffer = frame.Serialize(&self->hpack_compressor_);
     return self->data_endpoint_->Write(std::move(write_buffer.control));

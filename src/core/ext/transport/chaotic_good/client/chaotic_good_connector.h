@@ -104,6 +104,7 @@ class ChaoticGoodConnector
   std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>> data_endpoint_latch_;
   std::shared_ptr<WaitForCallback> wait_for_data_endpoint_callback_;
   Slice connection_id_;
+  int32_t data_alignment_ = 64;
 };
 }  // namespace chaotic_good
 }  // namespace grpc_core

@@ -125,6 +125,7 @@ class ChaoticGoodServerListener
     HPackParser hpack_parser_;
     absl::BitGen bitgen_;
     Slice connection_id_;
+    int32_t data_alignment_;
   };
 
   // Overridden to initialize listener but not actually used.

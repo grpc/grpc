@@ -384,6 +384,14 @@ struct GrpcPreviousRpcAttemptsMetadata
   static absl::string_view key() { return "grpc-previous-rpc-attempts"; }
 };
 
+// Chaotic-good data-alignment metadata trait.
+struct ChaoticGoodDataAlignmentMetadata
+    : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static constexpr bool kRepeatable = false;
+  using CompressionTraits = NoCompressionCompressor;
+  static absl::string_view key() { return "chaotic-good-data-alignment"; }
+};
+
 // grpc-retry-pushback-ms metadata trait.
 struct GrpcRetryPushbackMsMetadata {
   static constexpr bool kRepeatable = false;
@@ -1522,6 +1530,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
     grpc_core::XEnvoyPeerMetadata, grpc_core::ChaoticGoodConnectionTypeMetadata,
     grpc_core::ChaoticGoodConnectionIdMetadata,
+    grpc_core::ChaoticGoodDataAlignmentMetadata,
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,

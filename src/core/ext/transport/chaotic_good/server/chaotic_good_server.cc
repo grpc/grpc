@@ -232,11 +232,14 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                           ->Ref()
                           .as_string_view()) == "control";
               if (!is_control_endpoint) {
-                // Get connection id for data endpoint.
+                // Get connection-id and data-alignment for data endpoint.
                 self->connection_->connection_id_ =
                     frame.headers
                         ->get_pointer(ChaoticGoodConnectionIdMetadata())
                         ->Ref();
+                self->connection_->data_alignment_ =
+                    frame.headers->get(ChaoticGoodDataAlignmentMetadata())
+                        .value();
               }
               return is_control_endpoint;
             });
@@ -309,6 +312,8 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                 GetContext<Arena>());
         metadata->Set(ChaoticGoodConnectionIdMetadata(),
                       self->connection_->connection_id_.Ref());
+        metadata->Set(ChaoticGoodDataAlignmentMetadata(),
+                      self->connection_->data_alignment_);
         frame.headers = std::move(metadata);
         auto write_buffer =
             frame.Serialize(&self->connection_->hpack_compressor_);
