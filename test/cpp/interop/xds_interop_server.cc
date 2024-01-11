@@ -54,9 +54,10 @@ void EnableCsmObservability() {
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
   meter_provider->AddMetricReader(std::move(prometheus_exporter));
-  grpc::experimental::CsmObservabilityBuilder observability;
-  observability.SetMeterProvider(std::move(meter_provider));
-  auto status = observability.BuildAndRegister();
+  grpc::experimental::OpenTelemetryPluginBuilder()
+      .AddPluginOption(grpc::experimental::MakeCsmOpenTelemetryPluginOption())
+      .SetMeterProvider(std::move(meter_provider))
+      .BuildAndRegisterGlobal();
 }
 
 int main(int argc, char** argv) {
