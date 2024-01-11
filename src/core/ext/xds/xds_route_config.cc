@@ -52,7 +52,7 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "re2/re2.h"
 #include "upb/base/string_view.h"
-#include "upb/collections/map.h"
+#include "upb/message/map.h"
 #include "upb/text/encode.h"
 
 #include <grpc/status.h>

@@ -20,7 +20,7 @@
 
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 bool grpc_gcp_rpc_protocol_versions_set_max(
     grpc_gcp_rpc_protocol_versions* versions, uint32_t max_major,

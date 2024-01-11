@@ -1074,15 +1074,20 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "address_sorting",
     },
-    "@com_google_protobuf//upb:upb": {
+    "@com_google_protobuf//upb:base": {
         "language": "c",
         "build": "all",
-        "_RENAME": "upb",
+        "_RENAME": "upb_base_lib",
     },
-    "@com_google_protobuf//upb/collections:collections": {
+    "@com_google_protobuf//upb:mem": {
         "language": "c",
         "build": "all",
-        "_RENAME": "upb_collections_lib",
+        "_RENAME": "upb_mem_lib",
+    },
+    "@com_google_protobuf//upb:message": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_message_lib",
     },
     "@com_google_protobuf//upb/json:json": {
         "language": "c",
