@@ -22,35 +22,43 @@
 
 #include <functional>
 #include <memory>
+#include <string_view>
 #include <utility>
+
+#include "absl/strings/str_cat.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -78,39 +86,31 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this, nullptr);
   // Start ops on the call.
   grpc_call_error call_error;
-  grpc_op ops[3];
+  grpc_op ops[2];
   memset(ops, 0, sizeof(ops));
-  // Send initial metadata.  No callback for this, since we don't really
-  // care when it finishes.
+  // Send initial metadata.
   grpc_op* op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
               GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op->reserved = nullptr;
-  op++;
-  call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-  // Start a batch with recv_initial_metadata and recv_message.
-  op = ops;
+  ++op;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata =
       &initial_metadata_recv_;
   op->flags = 0;
   op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &recv_message_payload_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  Ref(DEBUG_LOCATION, "OnResponseReceived").release();
-  GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this, nullptr);
+  ++op;
+  // Ref will be released in the callback
+  GRPC_CLOSURE_INIT(
+      &on_recv_initial_metadata_, OnRecvInitialMetadata,
+      this->Ref(DEBUG_LOCATION, "OnRecvInitialMetadata").release(), nullptr);
   call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), &on_response_received_);
+      call_, ops, static_cast<size_t>(op - ops), &on_recv_initial_metadata_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Start a batch for recv_trailing_metadata.
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv_;
@@ -118,7 +118,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   op->data.recv_status_on_client.status_details = &status_details_;
   op->flags = 0;
   op->reserved = nullptr;
-  op++;
+  ++op;
   // This callback signals the end of the call, so it relies on the initial
   // ref instead of a new ref. When it's invoked, it's the initial ref that is
   // unreffed.
@@ -126,15 +126,15 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
+  GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this, nullptr);
 }
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     ~GrpcStreamingCall() {
-  grpc_metadata_array_destroy(&initial_metadata_recv_);
   grpc_metadata_array_destroy(&trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
-  grpc_slice_unref_internal(status_details_);
+  CSliceUnref(status_details_);
   GPR_ASSERT(call_ != nullptr);
   grpc_call_unref(call_);
 }
@@ -155,7 +155,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
   // Create payload.
   grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
   send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
-  grpc_slice_unref_internal(slice);
+  CSliceUnref(slice);
   // Send the message.
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -168,54 +168,58 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    OnRequestSent(void* arg, grpc_error_handle error) {
-  auto* self = static_cast<GrpcStreamingCall*>(arg);
-  // Clean up the sent message.
-  grpc_byte_buffer_destroy(self->send_message_payload_);
-  self->send_message_payload_ = nullptr;
-  // Invoke request handler.
-  self->event_handler_->OnRequestSent(GRPC_ERROR_IS_NONE(error));
-  // Drop the ref.
-  self->Unref(DEBUG_LOCATION, "OnRequestSent");
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    OnResponseReceived(void* arg, grpc_error_handle /*error*/) {
-  auto* self = static_cast<GrpcStreamingCall*>(arg);
-  // If there was no payload, then we received status before we received
-  // another message, so we stop reading.
-  if (self->recv_message_payload_ == nullptr) {
-    self->Unref(DEBUG_LOCATION, "OnResponseReceived");
-    return;
-  }
-  // Process the response.
-  grpc_byte_buffer_reader bbr;
-  grpc_byte_buffer_reader_init(&bbr, self->recv_message_payload_);
-  grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
-  grpc_byte_buffer_reader_destroy(&bbr);
-  grpc_byte_buffer_destroy(self->recv_message_payload_);
-  self->recv_message_payload_ = nullptr;
-  self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
-  grpc_slice_unref_internal(response_slice);
-  // Keep reading.
+    StartRecvMessage() {
+  Ref(DEBUG_LOCATION, "StartRecvMessage").release();
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_MESSAGE;
-  op.data.recv_message.recv_message = &self->recv_message_payload_;
-  GPR_ASSERT(self->call_ != nullptr);
-  // Reuses the "OnResponseReceived" ref taken in ctor.
-  const grpc_call_error call_error = grpc_call_start_batch_and_execute(
-      self->call_, &op, 1, &self->on_response_received_);
+  op.data.recv_message.recv_message = &recv_message_payload_;
+  GPR_ASSERT(call_ != nullptr);
+  const grpc_call_error call_error =
+      grpc_call_start_batch_and_execute(call_, &op, 1, &on_response_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/) {
+  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
+  grpc_metadata_array_destroy(&self->initial_metadata_recv_);
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    OnRequestSent(void* arg, grpc_error_handle error) {
+  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
+  // Clean up the sent message.
+  grpc_byte_buffer_destroy(self->send_message_payload_);
+  self->send_message_payload_ = nullptr;
+  // Invoke request handler.
+  self->event_handler_->OnRequestSent(error.ok());
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    OnResponseReceived(void* arg, grpc_error_handle /*error*/) {
+  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
+  // If there was no payload, then we received status before we received
+  // another message, so we stop reading.
+  if (self->recv_message_payload_ != nullptr) {
+    // Process the response.
+    grpc_byte_buffer_reader bbr;
+    grpc_byte_buffer_reader_init(&bbr, self->recv_message_payload_);
+    grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
+    grpc_byte_buffer_reader_destroy(&bbr);
+    grpc_byte_buffer_destroy(self->recv_message_payload_);
+    self->recv_message_payload_ = nullptr;
+    self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
+    CSliceUnref(response_slice);
+  }
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     OnStatusReceived(void* arg, grpc_error_handle /*error*/) {
-  auto* self = static_cast<GrpcStreamingCall*>(arg);
+  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
   self->event_handler_->OnStatusReceived(
       absl::Status(static_cast<absl::StatusCode>(self->status_code_),
                    StringViewFromSlice(self->status_details_)));
-  self->Unref(DEBUG_LOCATION, "OnStatusReceived");
 }
 
 //
@@ -233,7 +237,9 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
     if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      on_connectivity_failure_(status);
+      on_connectivity_failure_(absl::Status(
+          status.code(),
+          absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
     }
   }
 
@@ -247,11 +253,11 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 namespace {
 
 grpc_channel* CreateXdsChannel(const ChannelArgs& args,
-                               const XdsBootstrap::XdsServer& server) {
+                               const GrpcXdsBootstrap::GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-          server.channel_creds_type, server.channel_creds_config);
-  return grpc_channel_create(server.server_uri.c_str(), channel_creds.get(),
+          server.channel_creds_config());
+  return grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
                              args.ToC().get());
 }
 
@@ -268,7 +274,9 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     std::function<void(absl::Status)> on_connectivity_failure,
     absl::Status* status)
     : factory_(factory) {
-  channel_ = CreateXdsChannel(factory->args_, server);
+  channel_ = CreateXdsChannel(
+      factory->args_,
+      static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(server));
   GPR_ASSERT(channel_ != nullptr);
   if (IsLameChannel(channel_)) {
     *status = absl::UnavailableError("xds client has a lame channel");
@@ -284,7 +292,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
 }
 
 GrpcXdsTransportFactory::GrpcXdsTransport::~GrpcXdsTransport() {
-  grpc_channel_destroy(channel_);
+  grpc_channel_destroy_internal(channel_);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {
@@ -294,7 +302,14 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {
     GPR_ASSERT(client_channel != nullptr);
     client_channel->RemoveConnectivityWatcher(watcher_);
   }
-  Unref();
+  // Do an async hop before unreffing.  This avoids a deadlock upon
+  // shutdown in the case where the xDS channel is itself an xDS channel
+  // (e.g., when using one control plane to find another control plane).
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([this]() {
+    ApplicationCallbackExecCtx application_exec_ctx;
+    ExecCtx exec_ctx;
+    Unref();
+  });
 }
 
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
@@ -302,8 +317,9 @@ GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler) {
   return MakeOrphanable<GrpcStreamingCall>(
-      factory_->Ref(DEBUG_LOCATION, "StreamingCall"), channel_, method,
-      std::move(event_handler));
+      factory_->RefAsSubclass<GrpcXdsTransportFactory>(DEBUG_LOCATION,
+                                                       "StreamingCall"),
+      channel_, method, std::move(event_handler));
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {
@@ -327,14 +343,14 @@ GrpcXdsTransportFactory::GrpcXdsTransportFactory(const ChannelArgs& args)
       interested_parties_(grpc_pollset_set_create()) {
   // Calling grpc_init to ensure gRPC does not shut down until the XdsClient is
   // destroyed.
-  grpc_init();
+  InitInternally();
 }
 
 GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
   grpc_pollset_set_destroy(interested_parties_);
   // Calling grpc_shutdown to ensure gRPC does not shut down until the XdsClient
   // is destroyed.
-  grpc_shutdown();
+  ShutdownInternally();
 }
 
 OrphanablePtr<XdsTransportFactory::XdsTransport>

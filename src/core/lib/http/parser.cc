@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -23,6 +23,8 @@
 #include <string.h>
 
 #include <algorithm>
+
+#include "absl/status/status.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -42,51 +44,50 @@ static grpc_error_handle handle_response_line(grpc_http_parser* parser) {
   uint8_t* end = beg + parser->cur_line_length;
 
   if (cur == end || *cur++ != 'H') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'H'");
+    return GRPC_ERROR_CREATE("Expected 'H'");
   }
   if (cur == end || *cur++ != 'T') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'T'");
+    return GRPC_ERROR_CREATE("Expected 'T'");
   }
   if (cur == end || *cur++ != 'T') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'T'");
+    return GRPC_ERROR_CREATE("Expected 'T'");
   }
   if (cur == end || *cur++ != 'P') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'P'");
+    return GRPC_ERROR_CREATE("Expected 'P'");
   }
   if (cur == end || *cur++ != '/') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected '/'");
+    return GRPC_ERROR_CREATE("Expected '/'");
   }
   if (cur == end || *cur++ != '1') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected '1'");
+    return GRPC_ERROR_CREATE("Expected '1'");
   }
   if (cur == end || *cur++ != '.') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected '.'");
+    return GRPC_ERROR_CREATE("Expected '.'");
   }
   if (cur == end || *cur < '0' || *cur++ > '1') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Expected HTTP/1.0 or HTTP/1.1");
+    return GRPC_ERROR_CREATE("Expected HTTP/1.0 or HTTP/1.1");
   }
   if (cur == end || *cur++ != ' ') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected ' '");
+    return GRPC_ERROR_CREATE("Expected ' '");
   }
   if (cur == end || *cur < '1' || *cur++ > '9') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected status code");
+    return GRPC_ERROR_CREATE("Expected status code");
   }
   if (cur == end || *cur < '0' || *cur++ > '9') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected status code");
+    return GRPC_ERROR_CREATE("Expected status code");
   }
   if (cur == end || *cur < '0' || *cur++ > '9') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected status code");
+    return GRPC_ERROR_CREATE("Expected status code");
   }
   parser->http.response->status =
       (cur[-3] - '0') * 100 + (cur[-2] - '0') * 10 + (cur[-1] - '0');
   if (cur == end || *cur++ != ' ') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected ' '");
+    return GRPC_ERROR_CREATE("Expected ' '");
   }
 
-  /* we don't really care about the status code message */
+  // we don't really care about the status code message
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle handle_request_line(grpc_http_parser* parser) {
@@ -99,8 +100,7 @@ static grpc_error_handle handle_request_line(grpc_http_parser* parser) {
   while (cur != end && *cur++ != ' ') {
   }
   if (cur == end) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No method on HTTP request line");
+    return GRPC_ERROR_CREATE("No method on HTTP request line");
   }
   parser->http.request->method =
       buf2str(beg, static_cast<size_t>(cur - beg - 1));
@@ -109,30 +109,29 @@ static grpc_error_handle handle_request_line(grpc_http_parser* parser) {
   while (cur != end && *cur++ != ' ') {
   }
   if (cur == end) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No path on HTTP request line");
+    return GRPC_ERROR_CREATE("No path on HTTP request line");
   }
   parser->http.request->path = buf2str(beg, static_cast<size_t>(cur - beg - 1));
 
   if (cur == end || *cur++ != 'H') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'H'");
+    return GRPC_ERROR_CREATE("Expected 'H'");
   }
   if (cur == end || *cur++ != 'T') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'T'");
+    return GRPC_ERROR_CREATE("Expected 'T'");
   }
   if (cur == end || *cur++ != 'T') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'T'");
+    return GRPC_ERROR_CREATE("Expected 'T'");
   }
   if (cur == end || *cur++ != 'P') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'P'");
+    return GRPC_ERROR_CREATE("Expected 'P'");
   }
   if (cur == end || *cur++ != '/') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected '/'");
+    return GRPC_ERROR_CREATE("Expected '/'");
   }
   vers_major = static_cast<uint8_t>(*cur++ - '1' + 1);
   ++cur;
   if (cur == end) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "End of line in HTTP version string");
+    return GRPC_ERROR_CREATE("End of line in HTTP version string");
   }
   vers_minor = static_cast<uint8_t>(*cur++ - '1' + 1);
 
@@ -142,22 +141,21 @@ static grpc_error_handle handle_request_line(grpc_http_parser* parser) {
     } else if (vers_minor == 1) {
       parser->http.request->version = GRPC_HTTP_HTTP11;
     } else {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      return GRPC_ERROR_CREATE(
           "Expected one of HTTP/1.0, HTTP/1.1, or HTTP/2.0");
     }
   } else if (vers_major == 2) {
     if (vers_minor == 0) {
       parser->http.request->version = GRPC_HTTP_HTTP20;
     } else {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      return GRPC_ERROR_CREATE(
           "Expected one of HTTP/1.0, HTTP/1.1, or HTTP/2.0");
     }
   } else {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Expected one of HTTP/1.0, HTTP/1.1, or HTTP/2.0");
+    return GRPC_ERROR_CREATE("Expected one of HTTP/1.0, HTTP/1.1, or HTTP/2.0");
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle handle_first_line(grpc_http_parser* parser) {
@@ -167,8 +165,7 @@ static grpc_error_handle handle_first_line(grpc_http_parser* parser) {
     case GRPC_HTTP_RESPONSE:
       return handle_response_line(parser);
   }
-  GPR_UNREACHABLE_CODE(
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Should never reach here"));
+  GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
 }
 
 static grpc_error_handle add_header(grpc_http_parser* parser) {
@@ -179,13 +176,12 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
   size_t size = 0;
   grpc_http_header** hdrs = nullptr;
   grpc_http_header hdr = {nullptr, nullptr};
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   GPR_ASSERT(cur != end);
 
   if (*cur == ' ' || *cur == '\t') {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Continued header lines not supported yet");
+    error = GRPC_ERROR_CREATE("Continued header lines not supported yet");
     goto done;
   }
 
@@ -193,13 +189,12 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
     cur++;
   }
   if (cur == end) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Didn't find ':' in header string");
+    error = GRPC_ERROR_CREATE("Didn't find ':' in header string");
     goto done;
   }
   GPR_ASSERT(cur >= beg);
   hdr.key = buf2str(beg, static_cast<size_t>(cur - beg));
-  cur++; /* skip : */
+  cur++;  // skip :
 
   while (cur != end && (*cur == ' ' || *cur == '\t')) {
     cur++;
@@ -235,7 +230,7 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
   (*hdrs)[(*hdr_count)++] = hdr;
 
 done:
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_free(hdr.key);
     gpr_free(hdr.value);
   }
@@ -248,7 +243,7 @@ static grpc_error_handle finish_line(grpc_http_parser* parser,
   switch (parser->state) {
     case GRPC_HTTP_FIRST_LINE:
       err = handle_first_line(parser);
-      if (!GRPC_ERROR_IS_NONE(err)) return err;
+      if (!err.ok()) return err;
       parser->state = GRPC_HTTP_HEADERS;
       break;
     case GRPC_HTTP_HEADERS:
@@ -263,19 +258,18 @@ static grpc_error_handle finish_line(grpc_http_parser* parser,
         break;
       } else {
         err = add_header(parser);
-        if (!GRPC_ERROR_IS_NONE(err)) {
+        if (!err.ok()) {
           return err;
         }
       }
       break;
     case GRPC_HTTP_BODY:
     case GRPC_HTTP_END:
-      GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Should never reach here"));
+      GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
   }
 
   parser->cur_line_length = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle addbyte_body(grpc_http_parser* parser, uint8_t byte) {
@@ -298,10 +292,9 @@ static grpc_error_handle addbyte_body(grpc_http_parser* parser, uint8_t byte) {
           parser->http.response->chunk_length *= 16;
           parser->http.response->chunk_length += byte - 'A' + 10;
         } else {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Expected chunk size in hexadecimal");
+          return GRPC_ERROR_CREATE("Expected chunk size in hexadecimal");
         }
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       case GRPC_HTTP_CHUNKED_IGNORE_ALL_UNTIL_LF:
         if (byte == '\n') {
           if (parser->http.response->chunk_length == 0) {
@@ -310,30 +303,28 @@ static grpc_error_handle addbyte_body(grpc_http_parser* parser, uint8_t byte) {
             parser->http.response->chunked_state = GRPC_HTTP_CHUNKED_BODY;
           }
         }
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       case GRPC_HTTP_CHUNKED_BODY:
         if (parser->http.response->chunk_length == 0) {
           if (byte != '\r') {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Expected '\\r\\n' after chunk body");
+            return GRPC_ERROR_CREATE("Expected '\\r\\n' after chunk body");
           }
           parser->http.response->chunked_state = GRPC_HTTP_CHUNKED_CONSUME_LF;
           parser->http.response->chunk_length = 0;
-          return GRPC_ERROR_NONE;
+          return absl::OkStatus();
         } else {
           parser->http.response->chunk_length--;
-          /* fallback to the normal body appending code below */
+          // fallback to the normal body appending code below
         }
         break;
       case GRPC_HTTP_CHUNKED_CONSUME_LF:
         if (byte != '\n') {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Expected '\\r\\n' after chunk body");
+          return GRPC_ERROR_CREATE("Expected '\\r\\n' after chunk body");
         }
         parser->http.response->chunked_state = GRPC_HTTP_CHUNKED_LENGTH;
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       case GRPC_HTTP_CHUNKED_PLAIN:
-        /* avoiding warning; just fallback to normal codepath */
+        // avoiding warning; just fallback to normal codepath
         break;
     }
     body_length = &parser->http.response->body_length;
@@ -342,18 +333,17 @@ static grpc_error_handle addbyte_body(grpc_http_parser* parser, uint8_t byte) {
     body_length = &parser->http.request->body_length;
     body = &parser->http.request->body;
   } else {
-    GPR_UNREACHABLE_CODE(
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Should never reach here"));
+    GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
   }
 
   if (*body_length == parser->body_capacity) {
-    parser->body_capacity = std::max(size_t(8), parser->body_capacity * 3 / 2);
+    parser->body_capacity = std::max(size_t{8}, parser->body_capacity * 3 / 2);
     *body = static_cast<char*>(gpr_realloc(*body, parser->body_capacity));
   }
   (*body)[*body_length] = static_cast<char>(byte);
   (*body_length)++;
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static bool check_line(grpc_http_parser* parser) {
@@ -391,21 +381,20 @@ static grpc_error_handle addbyte(grpc_http_parser* parser, uint8_t byte,
           gpr_log(GPR_ERROR, "HTTP header max line length (%d) exceeded",
                   GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
         }
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "HTTP header max line length exceeded");
+        return GRPC_ERROR_CREATE("HTTP header max line length exceeded");
       }
       parser->cur_line[parser->cur_line_length] = byte;
       parser->cur_line_length++;
       if (check_line(parser)) {
         return finish_line(parser, found_body_start);
       }
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     case GRPC_HTTP_BODY:
       return addbyte_body(parser, byte);
     case GRPC_HTTP_END:
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexpected byte after end");
+      return GRPC_ERROR_CREATE("Unexpected byte after end");
   }
-  GPR_UNREACHABLE_CODE(return GRPC_ERROR_NONE);
+  GPR_UNREACHABLE_CODE(return absl::OkStatus());
 }
 
 void grpc_http_parser_init(grpc_http_parser* parser, grpc_http_type type,
@@ -448,15 +437,15 @@ grpc_error_handle grpc_http_parser_parse(grpc_http_parser* parser,
     bool found_body_start = false;
     grpc_error_handle err =
         addbyte(parser, GRPC_SLICE_START_PTR(slice)[i], &found_body_start);
-    if (!GRPC_ERROR_IS_NONE(err)) return err;
+    if (!err.ok()) return err;
     if (found_body_start && start_of_body != nullptr) *start_of_body = i + 1;
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_http_parser_eof(grpc_http_parser* parser) {
   if ((parser->state != GRPC_HTTP_BODY) && (parser->state != GRPC_HTTP_END)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Did not finish headers");
+    return GRPC_ERROR_CREATE("Did not finish headers");
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }

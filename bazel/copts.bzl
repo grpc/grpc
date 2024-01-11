@@ -45,6 +45,7 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wtautological-overlap-compare",
     "-Wthread-safety-analysis",
     "-Wthread-safety-beta",
+    "-Wunused-but-set-variable",
     "-Wunused-comparison",
     "-Wvla",
     # -Wextra compatibility between gcc and clang

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -26,9 +26,8 @@
 
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
-#include "upb/upb.h"
+#include "upb/base/string_view.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -60,15 +59,16 @@ grpc_slice grpc_grpclb_request_encode(
 
 }  // namespace
 
-grpc_slice GrpcLbRequestCreate(const char* lb_service_name, upb_Arena* arena) {
+grpc_slice GrpcLbRequestCreate(absl::string_view lb_service_name,
+                               upb_Arena* arena) {
   grpc_lb_v1_LoadBalanceRequest* req = grpc_lb_v1_LoadBalanceRequest_new(arena);
   grpc_lb_v1_InitialLoadBalanceRequest* initial_request =
       grpc_lb_v1_LoadBalanceRequest_mutable_initial_request(req, arena);
-  size_t name_len = std::min(strlen(lb_service_name),
-                             size_t(GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH));
+  size_t name_len = std::min(lb_service_name.size(),
+                             size_t{GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH});
   grpc_lb_v1_InitialLoadBalanceRequest_set_name(
       initial_request,
-      upb_StringView_FromDataAndSize(lb_service_name, name_len));
+      upb_StringView_FromDataAndSize(lb_service_name.data(), name_len));
   return grpc_grpclb_request_encode(req, arena);
 }
 

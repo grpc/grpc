@@ -17,10 +17,9 @@ import abc
 
 from google.protobuf import descriptor
 import grpc
-import six
 
 
-class UnaryUnaryChannelRpc(six.with_metaclass(abc.ABCMeta)):
+class UnaryUnaryChannelRpc(abc.ABC):
     """Fixture for a unary-unary RPC invoked by a system under test.
 
     Enables users to "play server" for the RPC.
@@ -54,7 +53,7 @@ class UnaryUnaryChannelRpc(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class UnaryStreamChannelRpc(six.with_metaclass(abc.ABCMeta)):
+class UnaryStreamChannelRpc(abc.ABC):
     """Fixture for a unary-stream RPC invoked by a system under test.
 
     Enables users to "play server" for the RPC.
@@ -96,7 +95,7 @@ class UnaryStreamChannelRpc(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class StreamUnaryChannelRpc(six.with_metaclass(abc.ABCMeta)):
+class StreamUnaryChannelRpc(abc.ABC):
     """Fixture for a stream-unary RPC invoked by a system under test.
 
     Enables users to "play server" for the RPC.
@@ -150,7 +149,7 @@ class StreamUnaryChannelRpc(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class StreamStreamChannelRpc(six.with_metaclass(abc.ABCMeta)):
+class StreamStreamChannelRpc(abc.ABC):
     """Fixture for a stream-stream RPC invoked by a system under test.
 
     Enables users to "play server" for the RPC.
@@ -212,7 +211,7 @@ class StreamStreamChannelRpc(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class Channel(six.with_metaclass(abc.ABCMeta, grpc.Channel)):
+class Channel(grpc.Channel, metaclass=abc.ABCMeta):
     """A grpc.Channel double with which to test a system that invokes RPCs."""
 
     @abc.abstractmethod
@@ -292,7 +291,7 @@ class Channel(six.with_metaclass(abc.ABCMeta, grpc.Channel)):
         raise NotImplementedError()
 
 
-class UnaryUnaryServerRpc(six.with_metaclass(abc.ABCMeta)):
+class UnaryUnaryServerRpc(abc.ABC):
     """Fixture for a unary-unary RPC serviced by a system under test.
 
     Enables users to "play client" for the RPC.
@@ -328,7 +327,7 @@ class UnaryUnaryServerRpc(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class UnaryStreamServerRpc(six.with_metaclass(abc.ABCMeta)):
+class UnaryStreamServerRpc(abc.ABC):
     """Fixture for a unary-stream RPC serviced by a system under test.
 
     Enables users to "play client" for the RPC.
@@ -376,7 +375,7 @@ class UnaryStreamServerRpc(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class StreamUnaryServerRpc(six.with_metaclass(abc.ABCMeta)):
+class StreamUnaryServerRpc(abc.ABC):
     """Fixture for a stream-unary RPC serviced by a system under test.
 
     Enables users to "play client" for the RPC.
@@ -427,7 +426,7 @@ class StreamUnaryServerRpc(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class StreamStreamServerRpc(six.with_metaclass(abc.ABCMeta)):
+class StreamStreamServerRpc(abc.ABC):
     """Fixture for a stream-stream RPC serviced by a system under test.
 
     Enables users to "play client" for the RPC.
@@ -490,12 +489,13 @@ class StreamStreamServerRpc(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class Server(six.with_metaclass(abc.ABCMeta)):
+class Server(abc.ABC):
     """A server with which to test a system that services RPCs."""
 
     @abc.abstractmethod
-    def invoke_unary_unary(self, method_descriptor, invocation_metadata,
-                           request, timeout):
+    def invoke_unary_unary(
+        self, method_descriptor, invocation_metadata, request, timeout
+    ):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:
@@ -512,8 +512,9 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def invoke_unary_stream(self, method_descriptor, invocation_metadata,
-                            request, timeout):
+    def invoke_unary_stream(
+        self, method_descriptor, invocation_metadata, request, timeout
+    ):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:
@@ -530,8 +531,9 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def invoke_stream_unary(self, method_descriptor, invocation_metadata,
-                            timeout):
+    def invoke_stream_unary(
+        self, method_descriptor, invocation_metadata, timeout
+    ):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:
@@ -547,8 +549,9 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def invoke_stream_stream(self, method_descriptor, invocation_metadata,
-                             timeout):
+    def invoke_stream_stream(
+        self, method_descriptor, invocation_metadata, timeout
+    ):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:
@@ -564,7 +567,7 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class Time(six.with_metaclass(abc.ABCMeta)):
+class Time(abc.ABC):
     """A simulation of time.
 
     Implementations needn't be connected with real time as provided by the
@@ -641,6 +644,7 @@ def strict_real_time():
       A Time backed by the "system" (Python interpreter's) time.
     """
     from grpc_testing import _time
+
     return _time.StrictRealTime()
 
 
@@ -660,6 +664,7 @@ def strict_fake_time(now):
       A Time that simulates the passage of time.
     """
     from grpc_testing import _time
+
     return _time.StrictFakeTime(now)
 
 
@@ -676,6 +681,7 @@ def channel(service_descriptors, time):
       A Channel for use in tests.
     """
     from grpc_testing import _channel
+
     return _channel.testing_channel(service_descriptors, time)
 
 
@@ -693,4 +699,5 @@ def server_from_dictionary(descriptors_to_servicers, time):
       A Server for use in tests.
     """
     from grpc_testing import _server
+
     return _server.server_from_dictionary(descriptors_to_servicers, time)

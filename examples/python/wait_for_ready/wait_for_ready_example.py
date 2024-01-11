@@ -22,7 +22,8 @@ import threading
 import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
-    "helloworld.proto")
+    "helloworld.proto"
+)
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
@@ -34,30 +35,31 @@ def get_free_loopback_tcp_port():
         tcp_socket = socket.socket(socket.AF_INET6)
     else:
         tcp_socket = socket.socket(socket.AF_INET)
-    tcp_socket.bind(('', 0))
+    tcp_socket.bind(("", 0))
     address_tuple = tcp_socket.getsockname()
     yield "localhost:%s" % (address_tuple[1])
     tcp_socket.close()
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
-
     def SayHello(self, request, unused_context):
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
 
 
 def create_server(server_address):
     server = grpc.server(futures.ThreadPoolExecutor())
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     bound_port = server.add_insecure_port(server_address)
-    assert bound_port == int(server_address.split(':')[-1])
+    assert bound_port == int(server_address.split(":")[-1])
     return server
 
 
 def process(stub, wait_for_ready=None):
     try:
-        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'),
-                                 wait_for_ready=wait_for_ready)
+        response = stub.SayHello(
+            helloworld_pb2.HelloRequest(name="you"),
+            wait_for_ready=wait_for_ready,
+        )
         message = response.message
     except grpc.RpcError as rpc_error:
         assert rpc_error.code() == grpc.StatusCode.UNAVAILABLE
@@ -65,19 +67,24 @@ def process(stub, wait_for_ready=None):
         message = rpc_error
     else:
         assert wait_for_ready
-    _LOGGER.info("Wait-for-ready %s, client received: %s",
-                 "enabled" if wait_for_ready else "disabled", message)
+    _LOGGER.info(
+        "Wait-for-ready %s, client received: %s",
+        "enabled" if wait_for_ready else "disabled",
+        message,
+    )
 
 
 def main():
     # Pick a random free port
     with get_free_loopback_tcp_port() as server_address:
-
         # Register connectivity event to notify main thread
         transient_failure_event = threading.Event()
 
         def wait_for_transient_failure(channel_connectivity):
-            if channel_connectivity == grpc.ChannelConnectivity.TRANSIENT_FAILURE:
+            if (
+                channel_connectivity
+                == grpc.ChannelConnectivity.TRANSIENT_FAILURE
+            ):
                 transient_failure_event.set()
 
         # Create gRPC channel
@@ -86,12 +93,14 @@ def main():
         stub = helloworld_pb2_grpc.GreeterStub(channel)
 
         # Fire an RPC without wait_for_ready
-        thread_disabled_wait_for_ready = threading.Thread(target=process,
-                                                          args=(stub, False))
+        thread_disabled_wait_for_ready = threading.Thread(
+            target=process, args=(stub, False)
+        )
         thread_disabled_wait_for_ready.start()
         # Fire an RPC with wait_for_ready
-        thread_enabled_wait_for_ready = threading.Thread(target=process,
-                                                         args=(stub, True))
+        thread_enabled_wait_for_ready = threading.Thread(
+            target=process, args=(stub, True)
+        )
         thread_enabled_wait_for_ready.start()
 
     # Wait for the channel entering TRANSIENT FAILURE state.
@@ -108,6 +117,6 @@ def main():
     channel.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     main()

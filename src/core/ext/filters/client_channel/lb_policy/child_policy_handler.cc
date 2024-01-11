@@ -18,7 +18,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 
-#include <cstring>
 #include <memory>
 #include <string>
 
@@ -26,15 +25,17 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -44,74 +45,70 @@ namespace grpc_core {
 //
 
 class ChildPolicyHandler::Helper
-    : public LoadBalancingPolicy::ChannelControlHelper {
+    : public LoadBalancingPolicy::ParentOwningDelegatingChannelControlHelper<
+          ChildPolicyHandler> {
  public:
   explicit Helper(RefCountedPtr<ChildPolicyHandler> parent)
-      : parent_(std::move(parent)) {}
-
-  ~Helper() override { parent_.reset(DEBUG_LOCATION, "Helper"); }
+      : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const ChannelArgs& args) override {
-    if (parent_->shutting_down_) return nullptr;
+      const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+      const ChannelArgs& args) override {
+    if (parent()->shutting_down_) return nullptr;
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
-    return parent_->channel_control_helper()->CreateSubchannel(
-        std::move(address), args);
+    return parent()->channel_control_helper()->CreateSubchannel(
+        address, per_address_args, args);
   }
 
   void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                   std::unique_ptr<SubchannelPicker> picker) override {
-    if (parent_->shutting_down_) return;
+                   RefCountedPtr<SubchannelPicker> picker) override {
+    if (parent()->shutting_down_) return;
     // If this request is from the pending child policy, ignore it until
     // it reports something other than CONNECTING, at which point we swap it
     // into place.
     if (CalledByPendingChild()) {
-      if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
+      if (GRPC_TRACE_FLAG_ENABLED(*(parent()->tracer_))) {
         gpr_log(GPR_INFO,
                 "[child_policy_handler %p] helper %p: pending child policy %p "
                 "reports state=%s (%s)",
-                parent_.get(), this, child_, ConnectivityStateName(state),
+                parent(), this, child_, ConnectivityStateName(state),
                 status.ToString().c_str());
       }
       if (state == GRPC_CHANNEL_CONNECTING) return;
       grpc_pollset_set_del_pollset_set(
-          parent_->child_policy_->interested_parties(),
-          parent_->interested_parties());
-      parent_->child_policy_ = std::move(parent_->pending_child_policy_);
+          parent()->child_policy_->interested_parties(),
+          parent()->interested_parties());
+      parent()->child_policy_ = std::move(parent()->pending_child_policy_);
     } else if (!CalledByCurrentChild()) {
       // This request is from an outdated child, so ignore it.
       return;
     }
-    parent_->channel_control_helper()->UpdateState(state, status,
-                                                   std::move(picker));
+    parent()->channel_control_helper()->UpdateState(state, status,
+                                                    std::move(picker));
   }
 
   void RequestReresolution() override {
-    if (parent_->shutting_down_) return;
+    if (parent()->shutting_down_) return;
     // Only forward re-resolution requests from the most recent child,
     // since that's the one that will be receiving any update we receive
     // from the resolver.
     const LoadBalancingPolicy* latest_child_policy =
-        parent_->pending_child_policy_ != nullptr
-            ? parent_->pending_child_policy_.get()
-            : parent_->child_policy_.get();
+        parent()->pending_child_policy_ != nullptr
+            ? parent()->pending_child_policy_.get()
+            : parent()->child_policy_.get();
     if (child_ != latest_child_policy) return;
-    if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
-      gpr_log(GPR_INFO, "[child_policy_handler %p] started name re-resolving",
-              parent_.get());
+    if (GRPC_TRACE_FLAG_ENABLED(*(parent()->tracer_))) {
+      gpr_log(GPR_INFO, "[child_policy_handler %p] requesting re-resolution",
+              parent());
     }
-    parent_->channel_control_helper()->RequestReresolution();
-  }
-
-  absl::string_view GetAuthority() override {
-    return parent_->channel_control_helper()->GetAuthority();
+    parent()->channel_control_helper()->RequestReresolution();
   }
 
   void AddTraceEvent(TraceSeverity severity,
                      absl::string_view message) override {
-    if (parent_->shutting_down_) return;
+    if (parent()->shutting_down_) return;
     if (!CalledByPendingChild() && !CalledByCurrentChild()) return;
-    parent_->channel_control_helper()->AddTraceEvent(severity, message);
+    parent()->channel_control_helper()->AddTraceEvent(severity, message);
   }
 
   void set_child(LoadBalancingPolicy* child) { child_ = child; }
@@ -119,15 +116,14 @@ class ChildPolicyHandler::Helper
  private:
   bool CalledByPendingChild() const {
     GPR_ASSERT(child_ != nullptr);
-    return child_ == parent_->pending_child_policy_.get();
+    return child_ == parent()->pending_child_policy_.get();
   }
 
   bool CalledByCurrentChild() const {
     GPR_ASSERT(child_ != nullptr);
-    return child_ == parent_->child_policy_.get();
+    return child_ == parent()->child_policy_.get();
   };
 
-  RefCountedPtr<ChildPolicyHandler> parent_;
   LoadBalancingPolicy* child_ = nullptr;
 };
 
@@ -161,7 +157,7 @@ void ChildPolicyHandler::ShutdownLocked() {
   }
 }
 
-void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
+absl::Status ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -230,7 +226,8 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
     if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
       gpr_log(GPR_INFO,
               "[child_policy_handler %p] creating new %schild policy %s", this,
-              child_policy_ == nullptr ? "" : "pending ", args.config->name());
+              child_policy_ == nullptr ? "" : "pending ",
+              std::string(args.config->name()).c_str());
     }
     auto& lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
@@ -252,7 +249,7 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
-  policy_to_update->UpdateLocked(std::move(args));
+  return policy_to_update->UpdateLocked(std::move(args));
 }
 
 void ChildPolicyHandler::ExitIdleLocked() {
@@ -274,8 +271,9 @@ void ChildPolicyHandler::ResetBackoffLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
-    const char* child_policy_name, const ChannelArgs& args) {
-  Helper* helper = new Helper(Ref(DEBUG_LOCATION, "Helper"));
+    absl::string_view child_policy_name, const ChannelArgs& args) {
+  Helper* helper =
+      new Helper(RefAsSubclass<ChildPolicyHandler>(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.channel_control_helper =
@@ -284,14 +282,15 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       CreateLoadBalancingPolicy(child_policy_name, std::move(lb_policy_args));
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
-    gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", child_policy_name);
+    gpr_log(GPR_ERROR, "could not create LB policy \"%s\"",
+            std::string(child_policy_name).c_str());
     return nullptr;
   }
   helper->set_child(lb_policy.get());
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO,
             "[child_policy_handler %p] created new LB policy \"%s\" (%p)", this,
-            child_policy_name, lb_policy.get());
+            std::string(child_policy_name).c_str(), lb_policy.get());
   }
   channel_control_helper()->AddTraceEvent(
       ChannelControlHelper::TRACE_INFO,
@@ -304,14 +303,15 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
 bool ChildPolicyHandler::ConfigChangeRequiresNewPolicyInstance(
     LoadBalancingPolicy::Config* old_config,
     LoadBalancingPolicy::Config* new_config) const {
-  return strcmp(old_config->name(), new_config->name()) != 0;
+  return old_config->name() != new_config->name();
 }
 
 OrphanablePtr<LoadBalancingPolicy>
 ChildPolicyHandler::CreateLoadBalancingPolicy(
-    const char* name, LoadBalancingPolicy::Args args) const {
-  return LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      name, std::move(args));
+    absl::string_view name, LoadBalancingPolicy::Args args) const {
+  return CoreConfiguration::Get()
+      .lb_policy_registry()
+      .CreateLoadBalancingPolicy(name, std::move(args));
 }
 
 }  // namespace grpc_core

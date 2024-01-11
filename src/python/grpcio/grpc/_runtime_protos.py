@@ -13,21 +13,28 @@
 # limitations under the License.
 
 import sys
+import types
+from typing import Tuple, Union
 
 _REQUIRED_SYMBOLS = ("_protos", "_services", "_protos_and_services")
 _MINIMUM_VERSION = (3, 5, 0)
 
-_UNINSTALLED_TEMPLATE = "Install the grpcio-tools package (1.32.0+) to use the {} function."
-_VERSION_ERROR_TEMPLATE = "The {} function is only on available on Python 3.X interpreters."
+_UNINSTALLED_TEMPLATE = (
+    "Install the grpcio-tools package (1.32.0+) to use the {} function."
+)
+_VERSION_ERROR_TEMPLATE = (
+    "The {} function is only on available on Python 3.X interpreters."
+)
 
 
-def _has_runtime_proto_symbols(mod):
+def _has_runtime_proto_symbols(mod: types.ModuleType) -> bool:
     return all(hasattr(mod, sym) for sym in _REQUIRED_SYMBOLS)
 
 
-def _is_grpc_tools_importable():
+def _is_grpc_tools_importable() -> bool:
     try:
-        import grpc_tools  # pylint: disable=unused-import
+        import grpc_tools  # pylint: disable=unused-import # pytype: disable=import-error
+
         return True
     except ImportError as e:
         # NOTE: It's possible that we're encountering a transitive ImportError, so
@@ -37,7 +44,9 @@ def _is_grpc_tools_importable():
         return False
 
 
-def _call_with_lazy_import(fn_name, protobuf_path):
+def _call_with_lazy_import(
+    fn_name: str, protobuf_path: str
+) -> Union[types.ModuleType, Tuple[types.ModuleType, types.ModuleType]]:
     """Calls one of the three functions, lazily importing grpc_tools.
 
     Args:
@@ -52,9 +61,10 @@ def _call_with_lazy_import(fn_name, protobuf_path):
     else:
         if not _is_grpc_tools_importable():
             raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
-        import grpc_tools.protoc
+        import grpc_tools.protoc  # pytype: disable=import-error
+
         if _has_runtime_proto_symbols(grpc_tools.protoc):
-            fn = getattr(grpc_tools.protoc, '_' + fn_name)
+            fn = getattr(grpc_tools.protoc, "_" + fn_name)
             return fn(protobuf_path)
         else:
             raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))

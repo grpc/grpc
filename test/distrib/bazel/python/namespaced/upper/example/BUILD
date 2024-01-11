@@ -112,16 +112,16 @@ py_grpc_library(
 # in the following directory layout for python, which needs to properly be added to the imports.
 #
 # No Import or Strip (Can't compile if there are any proto dependencies)
-# bazel-out/darwin-fastbuild/bin/namespaced/upper/example/namespaced_example_pb2.py
+# bazel-bin/namespaced/upper/example/namespaced_example_pb2.py
 #
 # No import Prefix (Can't compile if there are any proto dependencies)
-# bazel-out/darwin-fastbuild/bin/namespaced/upper/example/_virtual_imports/namespaced_example_proto/namespaced_example_pb2.py
+# bazel-bin/namespaced/upper/example/_virtual_imports/namespaced_example_proto/namespaced_example_pb2.py
 #
 # No strip prefix (Can't compile if there are any proto dependencies)
-# bazel-out/darwin-fastbuild/bin/namespaced/upper/example/_virtual_imports/namespaced_example_proto/upper/example/namespaced/upper/example/namespaced_example_pb2.py
+# bazel-bin/namespaced/upper/example/_virtual_imports/namespaced_example_proto/upper/example/namespaced/upper/example/namespaced_example_pb2.py
 #
 # Both Import and Strip
-# bazel-out/darwin-fastbuild/bin/namespaced/upper/example/_virtual_imports/namespaced_example_proto/upper/example/namespaced_example_pb2.py
+# bazel-bin/namespaced/upper/example/_virtual_imports/namespaced_example_proto/upper/example/namespaced_example_pb2.py
 
 py_test(
     name = "import_no_strip_test",

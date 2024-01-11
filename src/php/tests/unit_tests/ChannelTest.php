@@ -19,14 +19,20 @@
 
 class ChannelTest extends \PHPUnit\Framework\TestCase
 {
+    private $channel;
+    private $channel1;
+    private $channel2;
+    private $channel3;
+
     public function setUp(): void
     {
     }
 
     public function tearDown(): void
     {
-        if (!empty($this->channel)) {
-            $this->channel->close();
+        foreach ([$this->channel, $this->channel1, $this->channel2, $this->channel3] as $channel)
+        if (!empty($channel)) {
+            $channel->close();
         }
     }
 

@@ -49,19 +49,7 @@ grpc_cc_library(
     deps = [
         "//:grpc_base",
         "//:grpc_transport_chttp2",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_cronet_plugin_registry",
-    srcs = [
-        "plugin_registry/grpc_cronet_plugin_registry.cc",
-    ],
-    language = "c++",
-    deps = [
-        ":grpc_transport_cronet_client_secure",
-        "//:grpc_base",
-        "//:grpc_http_filters",
-        "//:grpc_transport_chttp2_client_connector",
+        "//src/core:channel_args",
+        "//src/core:closure",
     ],
 )

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_ROUTING_H
-#define GRPC_CORE_EXT_XDS_XDS_ROUTING_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ROUTING_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_ROUTING_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,13 +27,14 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -82,15 +83,15 @@ class XdsRouting {
       std::string* concatenated_value);
 
   struct GeneratePerHttpFilterConfigsResult {
-    // Map of field name to list of elements for that field
+    // Map of service config field name to list of elements for that field.
     std::map<std::string, std::vector<std::string>> per_filter_configs;
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    // Guaranteed to be empty if error is not GRPC_ERROR_NONE
     ChannelArgs args;
   };
 
   // Generates a map of per_filter_configs. \a args is consumed.
-  static GeneratePerHttpFilterConfigsResult GeneratePerHTTPFilterConfigs(
+  static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
+  GeneratePerHTTPFilterConfigs(
+      const XdsHttpFilterRegistry& http_filter_registry,
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
       const XdsRouteConfigResource::VirtualHost& vhost,
@@ -102,4 +103,4 @@ class XdsRouting {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_ROUTING_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_ROUTING_H

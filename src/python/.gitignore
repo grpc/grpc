@@ -1,4 +1,7 @@
-gens/
+build/
+grpc_root/
+third_party/
 *_pb2.py
+*_pb2.pyi
 *_pb2_grpc.py
 *.egg-info/

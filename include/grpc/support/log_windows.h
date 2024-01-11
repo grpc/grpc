@@ -19,7 +19,7 @@
 #ifndef GRPC_SUPPORT_LOG_WINDOWS_H
 #define GRPC_SUPPORT_LOG_WINDOWS_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {

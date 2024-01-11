@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -46,9 +46,8 @@ namespace grpc_core {
 
 class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
  public:
-  XdsCertificateVerifier(
-      RefCountedPtr<XdsCertificateProvider> xds_certificate_provider,
-      std::string cluster_name);
+  explicit XdsCertificateVerifier(
+      RefCountedPtr<XdsCertificateProvider> xds_certificate_provider);
 
   bool Verify(grpc_tls_custom_verification_check_request* request,
               std::function<void(absl::Status)>,
@@ -61,7 +60,6 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
   int CompareImpl(const grpc_tls_certificate_verifier* other) const override;
 
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
-  std::string cluster_name_;
 };
 
 class XdsCredentials final : public grpc_channel_credentials {
@@ -111,4 +109,4 @@ bool TestOnlyXdsVerifySubjectAlternativeNames(
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H */
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H

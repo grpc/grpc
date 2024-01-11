@@ -17,6 +17,8 @@ syntax = "proto3";
 package api_fuzzer;
 
 import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
+import "test/core/util/fuzz_config_vars.proto";
+import "test/core/util/fuzzing_channel_args.proto";
 
 message Empty {}
 
@@ -30,17 +32,6 @@ message StringSlice {
     reserved 2;
     reserved "intern";
     string value = 1;
-}
-
-message ResourceQuota {}
-
-message ChannelArg {
-    string key = 1;
-    oneof value {
-        string str = 2;
-        int64 i = 3;
-        ResourceQuota resource_quota = 4;
-    }
 }
 
 message CredArtifact {
@@ -87,26 +78,33 @@ message ChannelCreds {
     }
 }
 
+message ServerCreds {
+    oneof type {
+        Empty insecure_creds = 1;
+        Empty null = 2;
+    }    
+}
+
 message Metadatum {
     StringSlice key = 1;
     ByteSlice value = 2;
 }
 
-message ChannelAction {
-  uint64 add_n_bytes_writable = 1;
-  uint64 add_n_bytes_readable = 2;
-  uint64 wait_ms = 3;
-}
-
 message CreateChannel {
     string target = 1;
-    repeated ChannelArg channel_args = 2;
+    grpc.testing.FuzzingChannelArgs channel_args = 2;
     ChannelCreds channel_creds = 3;
-    repeated ChannelAction channel_actions = 4;
+    bool inproc = 4;
+}
+
+message Http2ServerPort {
+    int32 port = 1;
+    ServerCreds server_creds = 2;
 }
 
 message CreateServer {
-    repeated ChannelArg channel_args = 1;
+    grpc.testing.FuzzingChannelArgs channel_args = 1;
+    repeated Http2ServerPort http2_ports = 2;
 }
 
 message CreateCall {
@@ -187,10 +185,12 @@ message Action {
         Empty request_call = 20;
         Empty destroy_call = 21;
         uint32 resize_resource_quota = 22;
+        uint32 sleep_ms = 23;
     }
 }
 
 message Msg {
     repeated Action actions = 1;
     fuzzing_event_engine.Actions event_engine_actions = 2;
+    grpc.testing.FuzzConfigVars config_vars = 3;
 }

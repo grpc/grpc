@@ -17,7 +17,6 @@ from grpc_testing import _common
 
 
 class ServicerContext(grpc.ServicerContext):
-
     def __init__(self, rpc, time, deadline):
         self._rpc = rpc
         self._time = time
@@ -61,17 +60,20 @@ class ServicerContext(grpc.ServicerContext):
 
     def send_initial_metadata(self, initial_metadata):
         initial_metadata_sent = self._rpc.send_initial_metadata(
-            _common.fuss_with_metadata(initial_metadata))
+            _common.fuss_with_metadata(initial_metadata)
+        )
         if not initial_metadata_sent:
             raise ValueError(
-                'ServicerContext.send_initial_metadata called too late!')
+                "ServicerContext.send_initial_metadata called too late!"
+            )
 
     def disable_next_message_compression(self):
         raise NotImplementedError()
 
     def set_trailing_metadata(self, trailing_metadata):
         self._rpc.set_trailing_metadata(
-            _common.fuss_with_metadata(trailing_metadata))
+            _common.fuss_with_metadata(trailing_metadata)
+        )
 
     def abort(self, code, details):
         with self._rpc._condition:

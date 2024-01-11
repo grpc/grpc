@@ -1,35 +1,41 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <dirent.h>
-#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <sys/types.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <gtest/gtest.h>
+#include <algorithm>
+#include <string>
+#include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
@@ -47,7 +53,7 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   // down before calling LLVMFuzzerTestOneInput(), because most
   // implementations of that function will initialize and shutdown gRPC
   // internally.
-  gpr_log(GPR_INFO, "Example file: %s", GetParam().c_str());
+  fprintf(stderr, "Example file: %s\n", GetParam().c_str());
   grpc_slice buffer;
   squelch = false;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
@@ -55,7 +61,7 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   size_t length = GRPC_SLICE_LENGTH(buffer);
   void* data = gpr_malloc(length);
   if (length > 0) {
-    memcpy(data, GPR_SLICE_START_PTR(buffer), length);
+    memcpy(data, GRPC_SLICE_START_PTR(buffer), length);
   }
   grpc_slice_unref(buffer);
   LLVMFuzzerTestOneInput(static_cast<uint8_t*>(data), length);
@@ -77,12 +83,13 @@ class ExampleGenerator
         examples_.push_back(absl::GetFlag(FLAGS_file));
       }
       if (!absl::GetFlag(FLAGS_directory).empty()) {
-        char* test_srcdir = gpr_getenv("TEST_SRCDIR");
-        gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"", test_srcdir);
+        auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
+        gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"",
+                test_srcdir.has_value() ? test_srcdir->c_str() : "(null)");
         std::string directory = absl::GetFlag(FLAGS_directory);
-        if (test_srcdir != nullptr) {
+        if (test_srcdir.has_value()) {
           directory =
-              test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
+              *test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
         }
         gpr_log(GPR_DEBUG, "Using corpus directory: %s", directory.c_str());
         DIR* dp;
@@ -101,7 +108,6 @@ class ExampleGenerator
           perror("Couldn't open the directory");
           abort();
         }
-        gpr_free(test_srcdir);
       }
     }
     // Make sure we don't succeed without doing anything, which caused

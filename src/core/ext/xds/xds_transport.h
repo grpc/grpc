@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_TRANSPORT_H
-#define GRPC_CORE_EXT_XDS_XDS_TRANSPORT_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_TRANSPORT_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_TRANSPORT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -58,6 +58,9 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
       // Only one message will be in flight at a time; subsequent
       // messages will not be sent until this one is done.
       virtual void SendMessage(std::string payload) = 0;
+
+      // Starts a recv_message operation on the stream.
+      virtual void StartRecvMessage() = 0;
     };
 
     // Create a streaming call on this transport for the specified method.
@@ -83,4 +86,4 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_TRANSPORT_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_TRANSPORT_H

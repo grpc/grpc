@@ -30,13 +30,17 @@ def transitive_deps(lib_map, node):
     start = node
 
     def recursive_helper(node):
-        if node is None:
-            return
         for dep in node.get("deps", []):
             if dep not in seen:
                 seen.add(dep)
                 next_node = lib_map.get(dep)
-                recursive_helper(next_node)
+                if next_node:
+                    recursive_helper(next_node)
+                else:
+                    # For some deps, the corrensponding library entry doesn't exist,
+                    # but we still want to preserve the dependency so that the build
+                    # system can provide custom handling for that depdendency.
+                    result.append(dep)
         if node is not start:
             result.insert(0, node["name"])
 
@@ -51,17 +55,18 @@ def mako_plugin(dictionary):
     transitive_deps property to each with the transitive closure of those
     dependency lists. The result list is sorted in a topological ordering.
     """
-    lib_map = {lib['name']: lib for lib in dictionary.get('libs')}
+    lib_map = {lib["name"]: lib for lib in dictionary.get("libs")}
 
     for target_name, target_list in list(dictionary.items()):
         for target in target_list:
             if isinstance(target, dict):
-                if 'deps' in target or target_name == 'libs':
-                    if not 'deps' in target:
+                if "deps" in target or target_name == "libs":
+                    if not "deps" in target:
                         # make sure all the libs have the "deps" field populated
-                        target['deps'] = []
-                    target['transitive_deps'] = transitive_deps(lib_map, target)
+                        target["deps"] = []
+                    target["transitive_deps"] = transitive_deps(lib_map, target)
 
-    python_dependencies = dictionary.get('python_dependencies')
-    python_dependencies['transitive_deps'] = transitive_deps(
-        lib_map, python_dependencies)
+    python_dependencies = dictionary.get("python_dependencies")
+    python_dependencies["transitive_deps"] = transitive_deps(
+        lib_map, python_dependencies
+    )

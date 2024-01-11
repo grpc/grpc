@@ -29,9 +29,11 @@ Contains macros used throughout the repo.
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
-load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
+load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES")
+load("//bazel:test_experiments.bzl", "TEST_EXPERIMENTS", "TEST_EXPERIMENT_ENABLES")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
+load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epoll1", "poll"]
@@ -69,6 +71,12 @@ def _get_external_deps(external_deps):
             ret.append("//third_party/objective_c/Cronet:cronet_c_for_grpc")
         elif dep.startswith("absl/"):
             ret.append("@com_google_absl//" + dep)
+        elif dep.startswith("google/"):
+            ret.append("@com_google_googleapis//" + dep)
+        elif dep.startswith("otel/"):
+            ret.append(dep.replace("otel/", "@io_opentelemetry_cpp//"))
+        elif dep.startswith("google_cloud_cpp"):
+            ret.append(dep.replace("google_cloud_cpp", "@google_cloud_cpp//"))
         else:
             ret.append("//external:" + dep)
     return ret
@@ -82,7 +90,6 @@ def _update_visibility(visibility):
     PUBLIC = ["//visibility:public"]
     PRIVATE = ["//:__subpackages__"]
     VISIBILITY_TARGETS = {
-        "alt_gpr_base_legacy": PRIVATE,
         "alt_grpc++_base_legacy": PRIVATE,
         "alt_grpc_base_legacy": PRIVATE,
         "alt_grpc++_base_unsecure_legacy": PRIVATE,
@@ -92,19 +99,29 @@ def _update_visibility(visibility):
         "cli": PRIVATE,
         "debug_location": PRIVATE,
         "endpoint_tests": PRIVATE,
+        "exec_ctx": PRIVATE,
         "grpclb": PRIVATE,
+        "grpc_experiments": PRIVATE,
         "grpc_opencensus_plugin": PUBLIC,
+        "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
         "grpc++_test": PRIVATE,
         "http": PRIVATE,
         "httpcli": PRIVATE,
-        "iomgr_timer": PRIVATE,
+        "iomgr_internal_errqueue": PRIVATE,
+        "iomgr_buffer_list": PRIVATE,
+        "json_reader_legacy": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
+        "tcp_tracer": PRIVATE,
         "trace": PRIVATE,
         "tsi_interface": PRIVATE,
         "tsi": PRIVATE,
         "xds": PRIVATE,
+        "xds_client_core": PRIVATE,
+        "grpc_python_observability": PRIVATE,
+        "event_engine_base_hdrs": PRIVATE,
+        "useful": PRIVATE,
     }
     final_visibility = []
     for rule in visibility:
@@ -131,6 +148,7 @@ def grpc_cc_library(
         alwayslink = 0,
         data = [],
         tags = [],
+        linkopts = [],
         linkstatic = False):
     """An internal wrapper around cc_library.
 
@@ -150,13 +168,14 @@ def grpc_cc_library(
       alwayslink: Whether to enable alwayslink on the cc_library.
       data: Data dependencies.
       tags: Tags to apply to the rule.
+      linkopts: Extra libraries to link.
       linkstatic: Whether to enable linkstatic on the cc_library.
     """
     visibility = _update_visibility(visibility)
     copts = []
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
-    linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
+    linkopts = linkopts + if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
     if select_deps:
         for select_deps_entry in select_deps:
             deps += select(select_deps_entry)
@@ -176,10 +195,6 @@ def grpc_cc_library(
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],
-                  }) +
-                  select({
-                      "//:disable_use_abseil_status": ["GRPC_ERROR_IS_NOT_ABSEIL_STATUS=1"],
-                      "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,
         deps = deps + _get_external_deps(external_deps),
@@ -188,9 +203,10 @@ def grpc_cc_library(
         testonly = testonly,
         linkopts = linkopts,
         includes = [
+            "api/include",
             "include",
-            "src/core/ext/upb-generated",  # Once upb code-gen issue is resolved, remove this.
-            "src/core/ext/upbdefs-generated",  # Once upb code-gen issue is resolved, remove this.
+            "src/core/ext/upb-gen",  # Once upb code-gen issue is resolved, remove this.
+            "src/core/ext/upbdefs-gen",  # Once upb code-gen issue is resolved, remove this.
         ],
         alwayslink = alwayslink,
         data = data,
@@ -263,8 +279,8 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclude_pollers, uses_event_engine):
-    """Common logic used to parameterize tests for every poller and EventEngine.
+def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
+    """Common logic used to parameterize tests for every poller and EventEngine and experiment.
 
     Args:
         name: base name of the test
@@ -272,7 +288,9 @@ def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclud
         deps: base deps
         tags: base tags
         args: base args
+        flaky: base flaky
         exclude_pollers: list of poller names to exclude for this set of tests.
+        uses_polling: set to False if the test is not sensitive to polling methodology.
         uses_event_engine: set to False if the test is not sensitive to
             EventEngine implementation differences
 
@@ -281,56 +299,161 @@ def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclud
     """
     poller_config = []
 
-    # On linux we run the same test with the default EventEngine, once for each
-    # poller
-    for poller in POLLERS:
-        if poller in exclude_pollers:
-            continue
-        poller_config.append({
-            "name": name + "@poller=" + poller,
-            "srcs": srcs,
-            "deps": deps,
-            "tags": (tags + EVENT_ENGINES["default"]["tags"] + [
-                "no_windows",
-                "no_mac",
-                "bazel_only",
-            ]),
-            "args": args + ["--poller=" + poller],
-        })
+    if not uses_polling:
+        tags = tags + ["no_uses_polling"]
 
-    # Now generate one test for each subsequent EventEngine, all using the
-    # default poller. These tests will have `@engine=<name>` appended to the
-    # test target name. If a test target name has no `@engine=<name>` component,
-    # that indicates that the default EventEngine is being used.
-    if not uses_event_engine:
-        # The poller tests exercise the default engine on Linux. This test
-        # handles other platforms.
         poller_config.append({
             "name": name,
             "srcs": srcs,
             "deps": deps,
-            "tags": tags + ["no_linux"],
+            "tags": tags,
             "args": args,
+            "flaky": flaky,
+            "env": {},
         })
     else:
-        for engine_name, engine in EVENT_ENGINES.items():
-            test_name = name + "@engine=" + engine_name
-            test_tags = tags + engine["tags"] + ["bazel_only"]
-            test_args = args + ["--engine=" + engine_name]
-            if engine_name == "default":
-                # The poller tests exercise the default engine on Linux.
-                # This test handles other platforms.
-                test_name = name
-                test_tags = tags + engine["tags"] + ["no_linux"]
-                test_args = args
+        # On linux we run the same test with the default EventEngine, once for each
+        # poller
+        for poller in POLLERS:
+            if poller in exclude_pollers:
+                continue
             poller_config.append({
-                "name": test_name,
+                "name": name + "@poller=" + poller,
                 "srcs": srcs,
                 "deps": deps,
-                "tags": test_tags,
-                "args": test_args,
+                "tags": (tags + EVENT_ENGINES["default"]["tags"] + [
+                    "no_windows",
+                    "no_mac",
+                    "bazel_only",
+                ]),
+                "args": args,
+                "env": {
+                    "GRPC_POLL_STRATEGY": poller,
+                },
+                "flaky": flaky,
             })
-    return poller_config
+
+        # Now generate one test for each subsequent EventEngine, all using the
+        # default poller. These tests will have `@engine=<name>` appended to the
+        # test target name. If a test target name has no `@engine=<name>` component,
+        # that indicates that the default EventEngine is being used.
+        if not uses_event_engine:
+            # The poller tests exercise the default engine on Linux. This test
+            # handles other platforms.
+            poller_config.append({
+                "name": name,
+                "srcs": srcs,
+                "deps": deps,
+                "tags": tags + ["no_linux"],
+                "args": args,
+                "env": {},
+                "flaky": flaky,
+            })
+        else:
+            for engine_name, engine in EVENT_ENGINES.items():
+                test_name = name + "@engine=" + engine_name
+                test_tags = tags + engine["tags"] + ["bazel_only"]
+                test_args = args + ["--engine=" + engine_name]
+                if engine_name == "default":
+                    # The poller tests exercise the default engine on Linux.
+                    # This test handles other platforms.
+                    test_name = name
+                    test_tags = tags + engine["tags"] + ["no_linux"]
+                    test_args = args
+                poller_config.append({
+                    "name": test_name,
+                    "srcs": srcs,
+                    "deps": deps,
+                    "tags": test_tags,
+                    "args": test_args,
+                    "env": {},
+                    "flaky": flaky,
+                })
+
+    experiments = {}
+
+    # buildifier: disable=uninitialized
+    def _populate_experiments_platform_config(config, platform_experiments_map):
+        for platform, experiments_on_platform in platform_experiments_map.items():
+            for mode, tag_to_experiments in experiments_on_platform.items():
+                if mode not in config:
+                    config[mode] = {}
+                for tag in tags:
+                    if tag not in tag_to_experiments:
+                        continue
+                    for experiment in tag_to_experiments[tag]:
+                        if experiment not in config[mode]:
+                            config[mode][experiment] = []
+                        config[mode][experiment].append(platform)
+
+    _populate_experiments_platform_config(experiments, EXPERIMENTS)
+    _populate_experiments_platform_config(experiments, TEST_EXPERIMENTS)
+
+    mode_config = {
+        # format: <mode>: (enabled_target_tags, disabled_target_tags)
+        "on": (None, []),
+        "off": ([], None),
+    }
+
+    must_have_tags = [
+        # We don't run experiments on cmake builds
+        "bazel_only",
+        # Nor on mac
+        "no_mac",
+        # Nor on arm64
+        "no_arm64",
+    ]
+
+    def _update_experiments_platform_test_tags(tags, platforms):
+        if "posix" not in platforms:
+            if "no_linux" not in tags:
+                tags.append("no_linux")
+            if "no_mac" not in tags:
+                tags.append("no_mac")
+        if "windows" not in platforms:
+            if "no_windows" not in tags:
+                tags.append("no_windows")
+        if "ios" not in platforms:
+            if "no_test_ios" not in tags:
+                tags.append("no_test_ios")
+        return tags
+
+    experiment_config = list(poller_config)
+    experiment_enables = {k: v for k, v in EXPERIMENT_ENABLES.items() + TEST_EXPERIMENT_ENABLES.items()}
+    for mode, config in mode_config.items():
+        enabled_tags, disabled_tags = config
+        if enabled_tags != None:
+            for experiment in experiments[mode].keys():
+                for config in poller_config:
+                    config = dict(config)
+                    config["name"] = config["name"] + "@experiment=" + experiment
+                    env = dict(config["env"])
+                    env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
+                    env["GRPC_CI_EXPERIMENTS"] = "1"
+                    config["env"] = env
+                    tags = config["tags"] + ["experiment_variation"]
+                    for tag in must_have_tags + enabled_tags:
+                        if tag not in tags:
+                            tags = tags + [tag]
+                    config["tags"] = _update_experiments_platform_test_tags(tags, experiments[mode][experiment])
+                    config["flaky"] = True
+                    experiment_config.append(config)
+        if disabled_tags != None:
+            for experiment in experiments[mode].keys():
+                for config in poller_config:
+                    config = dict(config)
+                    config["name"] = config["name"] + "@experiment=no_" + experiment
+                    env = dict(config["env"])
+                    env["GRPC_EXPERIMENTS"] = "-" + experiment
+                    env["GRPC_CI_EXPERIMENTS"] = "1"
+                    config["env"] = env
+                    tags = config["tags"] + ["experiment_variation"]
+                    for tag in must_have_tags + disabled_tags:
+                        if tag not in tags:
+                            tags = tags + [tag]
+                    config["tags"] = _update_experiments_platform_test_tags(tags, experiments[mode][experiment])
+                    experiment_config.append(config)
+    return experiment_config
 
 def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True):
     """A cc_test target for use in the gRPC repo.
@@ -362,7 +485,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
 
-    core_deps = deps + _get_external_deps(external_deps)
+    core_deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"]
 
     # Test args for all tests
     test_args = {
@@ -374,38 +497,29 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_compatible_with": exec_compatible_with,
         "exec_properties": exec_properties,
         "shard_count": shard_count,
-        "flaky": flaky,
         "linkstatic": linkstatic,
     }
 
-    if "grpc-fuzzer" not in tags:
+    if "grpc-fuzzer" not in tags and "no_test_ios" not in tags:
         ios_cc_test(
             name = name,
             srcs = srcs,
             tags = tags,
             deps = core_deps,
             args = args,
+            flaky = True,
             **test_args
         )
-    if not uses_polling:
-        # the test behavior doesn't depend on polling, just generate the test
-        native.cc_test(
-            name = name,
-            srcs = srcs,
-            tags = tags + ["no_uses_polling"],
-            deps = core_deps,
-            args = args,
-            **test_args
-        )
-        return
 
-    for poller_config in expand_tests_for_each_poller_and_engine(name, srcs, core_deps, tags, args, exclude_pollers, uses_event_engine):
+    for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
         native.cc_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
             deps = poller_config["deps"],
             tags = poller_config["tags"],
             args = poller_config["args"],
+            env = poller_config["env"],
+            flaky = poller_config["flaky"],
             **test_args
         )
 
@@ -438,7 +552,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         data = data,
         testonly = testonly,
         linkshared = linkshared,
-        deps = deps + _get_external_deps(external_deps),
+        deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"],
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
@@ -452,8 +566,15 @@ def grpc_generate_one_off_targets():
         name = "grpc_objc",
         actual = "//:grpc",
     )
+    native.config_setting(
+        name = "windows_other",
+        values = {"define": "GRPC_WINDOWS_OTHER=1"},
+    )
 
 def grpc_generate_objc_one_off_targets():
+    pass
+
+def grpc_generate_one_off_internal_targets():
     pass
 
 def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True):
@@ -485,25 +606,17 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         "exec_compatible_with": exec_compatible_with,
         "exec_properties": exec_properties,
         "shard_count": shard_count,
-        "flaky": flaky,
     }
-    if not uses_polling:
-        native.sh_test(
-            name = name,
-            srcs = srcs,
-            args = args,
-            tags = tags,
-            **test_args
-        )
-        return
 
-    for poller_config in expand_tests_for_each_poller_and_engine(name, srcs, [], tags, args, exclude_pollers, uses_event_engine):
+    for poller_config in expand_tests(name, srcs, [], tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
         native.sh_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
             deps = poller_config["deps"],
             tags = poller_config["tags"],
             args = poller_config["args"],
+            env = poller_config["env"],
+            flaky = poller_config["flaky"],
             **test_args
         )
 
@@ -561,10 +674,13 @@ def grpc_objc_library(
         name,
         srcs = [],
         hdrs = [],
+        non_arc_srcs = [],
         textual_hdrs = [],
+        testonly = False,
         data = [],
         deps = [],
         defines = [],
+        sdk_frameworks = [],
         includes = [],
         visibility = ["//visibility:public"]):
     """The grpc version of objc_library, only used for the Objective-C library compilation
@@ -573,9 +689,12 @@ def grpc_objc_library(
         name: name of target
         hdrs: public headers
         srcs: all source files (.m)
+        non_arc_srcs: list of Objective-C files that DO NOT use ARC.
         textual_hdrs: private headers
+        testonly: Whether the binary is for tests only.
         data: any other bundle resources
         defines: preprocessors
+        sdk_frameworks: sdks
         includes: added to search path, always [the path to objc directory]
         deps: dependencies
         visibility: visibility, default to public
@@ -585,11 +704,15 @@ def grpc_objc_library(
         name = name,
         hdrs = hdrs,
         srcs = srcs,
+        non_arc_srcs = non_arc_srcs,
         textual_hdrs = textual_hdrs,
+        copts = GRPC_DEFAULT_COPTS + ["-ObjC++", "-std=gnu++14"],
+        testonly = testonly,
         data = data,
         deps = deps,
         defines = defines,
         includes = includes,
+        sdk_frameworks = sdk_frameworks,
         visibility = visibility,
     )
 

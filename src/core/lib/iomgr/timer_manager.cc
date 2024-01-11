@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/timer.h"
 
@@ -40,6 +41,8 @@ extern grpc_core::TraceFlag grpc_timer_check_trace;
 static gpr_mu g_mu;
 // are we multi-threaded
 static bool g_threaded;
+// should we start multi-threaded
+static bool g_start_threaded = true;
 // cv to wait until a thread is needed
 static gpr_cv g_cv_wait;
 // cv for notification when threading ends
@@ -172,11 +175,11 @@ static bool wait_until(grpc_core::Timestamp next) {
     // g_timed_waiter_generation
     uint64_t my_timed_waiter_generation = g_timed_waiter_generation - 1;
 
-    /* If there's no timed waiter, we should become one: that waiter waits only
-       until the next timer should expire. All other timer threads wait forever
-       unless their 'next' is earlier than the current timed-waiter's deadline
-       (in which case the thread with earlier 'next' takes over as the new timed
-       waiter) */
+    // If there's no timed waiter, we should become one: that waiter waits only
+    // until the next timer should expire. All other timer threads wait forever
+    // unless their 'next' is earlier than the current timed-waiter's deadline
+    // (in which case the thread with earlier 'next' takes over as the new timed
+    // waiter)
     if (next != grpc_core::Timestamp::InfFuture()) {
       if (!g_has_timed_waiter || (next < g_timed_waiter_deadline)) {
         my_timed_waiter_generation = ++g_timed_waiter_generation;
@@ -184,8 +187,7 @@ static bool wait_until(grpc_core::Timestamp next) {
         g_timed_waiter_deadline = next;
 
         if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-          grpc_core::Duration wait_time =
-              next - grpc_core::ExecCtx::Get()->Now();
+          grpc_core::Duration wait_time = next - grpc_core::Timestamp::Now();
           gpr_log(GPR_INFO, "sleep for a %" PRId64 " milliseconds",
                   wait_time.millis());
         }
@@ -238,15 +240,15 @@ static void timer_main_loop() {
         run_some_timers();
         break;
       case GRPC_TIMERS_NOT_CHECKED:
-        /* This case only happens under contention, meaning more than one timer
-           manager thread checked timers concurrently.
+        // This case only happens under contention, meaning more than one timer
+        // manager thread checked timers concurrently.
 
-           If that happens, we're guaranteed that some other thread has just
-           checked timers, and this will avalanche into some other thread seeing
-           empty timers and doing a timed sleep.
+        // If that happens, we're guaranteed that some other thread has just
+        // checked timers, and this will avalanche into some other thread seeing
+        // empty timers and doing a timed sleep.
 
-           Consequently, we can just sleep forever here and be happy at some
-           saved wakeup cycles. */
+        // Consequently, we can just sleep forever here and be happy at some
+        // saved wakeup cycles.
         if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
           gpr_log(GPR_INFO, "timers not checked: expect another thread to");
         }
@@ -309,7 +311,7 @@ void grpc_timer_manager_init(void) {
   g_has_timed_waiter = false;
   g_timed_waiter_deadline = grpc_core::Timestamp::InfFuture();
 
-  start_threads();
+  if (g_start_threaded) start_threads();
 }
 
 static void stop_threads(void) {
@@ -349,6 +351,10 @@ void grpc_timer_manager_set_threading(bool enabled) {
   } else {
     stop_threads();
   }
+}
+
+void grpc_timer_manager_set_start_threaded(bool enabled) {
+  g_start_threaded = enabled;
 }
 
 void grpc_kick_poller(void) {

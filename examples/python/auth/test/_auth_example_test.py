@@ -24,15 +24,15 @@ from examples.python.auth import async_customized_auth_server
 from examples.python.auth import customized_auth_client
 from examples.python.auth import customized_auth_server
 
-_SERVER_ADDR_TEMPLATE = 'localhost:%d'
+_SERVER_ADDR_TEMPLATE = "localhost:%d"
 
 
 class AuthExampleTest(unittest.TestCase):
-
     def test_successful_call(self):
         with customized_auth_server.run_server(0) as (_, port):
             with customized_auth_client.create_client_channel(
-                    _SERVER_ADDR_TEMPLATE % port) as channel:
+                _SERVER_ADDR_TEMPLATE % port
+            ) as channel:
                 customized_auth_client.send_rpc(channel)
         # No unhandled exception raised, test passed!
 
@@ -45,18 +45,20 @@ class AuthExampleTest(unittest.TestCase):
     def test_no_call_credential(self):
         with customized_auth_server.run_server(0) as (_, port):
             channel_credential = grpc.ssl_channel_credentials(
-                _credentials.ROOT_CERTIFICATE)
-            with grpc.secure_channel(_SERVER_ADDR_TEMPLATE % port,
-                                     channel_credential) as channel:
+                _credentials.ROOT_CERTIFICATE
+            )
+            with grpc.secure_channel(
+                _SERVER_ADDR_TEMPLATE % port, channel_credential
+            ) as channel:
                 resp = customized_auth_client.send_rpc(channel)
                 self.assertEqual(resp.code(), grpc.StatusCode.UNAUTHENTICATED)
 
     def test_successful_call_asyncio(self):
-
         async def test_body():
             server, port = await async_customized_auth_server.run_server(0)
             channel = async_customized_auth_client.create_client_channel(
-                _SERVER_ADDR_TEMPLATE % port)
+                _SERVER_ADDR_TEMPLATE % port
+            )
             await async_customized_auth_client.send_rpc(channel)
             await channel.close()
             await server.stop(0)
@@ -65,5 +67,5 @@ class AuthExampleTest(unittest.TestCase):
         asyncio.get_event_loop().run_until_complete(test_body())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

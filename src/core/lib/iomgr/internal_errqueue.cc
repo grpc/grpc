@@ -16,7 +16,7 @@
 
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
-#include <grpc/impl/codegen/log.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -27,6 +27,8 @@
 #include <string.h>
 #include <sys/utsname.h>
 
+#include "src/core/lib/gprpp/strerror.h"
+
 namespace grpc_core {
 
 bool KernelSupportsErrqueue() {
@@ -36,7 +38,7 @@ bool KernelSupportsErrqueue() {
     // least 4.0.0
     struct utsname buffer;
     if (uname(&buffer) != 0) {
-      gpr_log(GPR_ERROR, "uname: %s", strerror(errno));
+      gpr_log(GPR_ERROR, "uname: %s", StrError(errno).c_str());
       return false;
     }
     char* release = buffer.release;

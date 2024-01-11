@@ -1,24 +1,30 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/slice/percent_encoding.h"
 
-#include <grpc/grpc.h>
+#include <stddef.h>
+
+#include <memory>
+#include <utility>
+
+#include "gtest/gtest.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -62,8 +68,8 @@ static void test_vector(const char* raw, size_t raw_length, const char* encoded,
   gpr_free(raw2encoded_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(raw_slice == encoded2raw_permissive_slice);
-  GPR_ASSERT(encoded_slice == raw2encoded_slice);
+  ASSERT_EQ(raw_slice, encoded2raw_permissive_slice);
+  ASSERT_EQ(encoded_slice, raw2encoded_slice);
 }
 
 static void test_nonconformant_vector(const char* encoded,
@@ -93,12 +99,10 @@ static void test_nonconformant_vector(const char* encoded,
           encoded2raw_permissive_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(permissive_unencoded_slice == encoded2raw_permissive_slice);
+  ASSERT_EQ(permissive_unencoded_slice, encoded2raw_permissive_slice);
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
+TEST(PercentEncodingTest, MainTest) {
   TEST_VECTOR(
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~",
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~",
@@ -117,6 +121,11 @@ int main(int argc, char** argv) {
   TEST_NONCONFORMANT_VECTOR("%A", "%A");
   TEST_NONCONFORMANT_VECTOR("%AG", "%AG");
   TEST_NONCONFORMANT_VECTOR("\0", "\0");
-  grpc_shutdown();
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }

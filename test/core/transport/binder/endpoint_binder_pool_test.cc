@@ -24,7 +24,6 @@
 
 #include "absl/memory/memory.h"
 
-#include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
 
@@ -37,7 +36,7 @@ class CallbackChecker {
 
 TEST(EndpointBinderPoolTest, AddBeforeGet) {
   EndpointBinderPool pool;
-  auto b = absl::make_unique<grpc_binder::MockBinder>();
+  auto b = std::make_unique<grpc_binder::MockBinder>();
   CallbackChecker cc;
   pool.AddEndpointBinder("test", std::move(b));
   // TODO(mingcl): Use pointer matcher to verify it is `b` being passed back
@@ -49,7 +48,7 @@ TEST(EndpointBinderPoolTest, AddBeforeGet) {
 
 TEST(EndpointBinderPoolTest, GetBeforeAdd) {
   EndpointBinderPool pool;
-  auto b = absl::make_unique<grpc_binder::MockBinder>();
+  auto b = std::make_unique<grpc_binder::MockBinder>();
   CallbackChecker cc;
   EXPECT_CALL(cc, Cb(testing::_)).Times(0);
   pool.GetEndpointBinder(
@@ -60,7 +59,7 @@ TEST(EndpointBinderPoolTest, GetBeforeAdd) {
 
 TEST(EndpointBinderPoolTest, ExpectNotCalled) {
   EndpointBinderPool pool;
-  auto b = absl::make_unique<grpc_binder::MockBinder>();
+  auto b = std::make_unique<grpc_binder::MockBinder>();
   CallbackChecker cc;
   EXPECT_CALL(cc, Cb(testing::_)).Times(0);
   pool.GetEndpointBinder(

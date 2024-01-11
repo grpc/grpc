@@ -21,6 +21,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/sync_abseil.h>  // IWYU pragma: export
+#include <grpc/support/sync_generic.h>
+
+#ifdef GPR_ABSEIL_SYNC
+
+typedef intptr_t gpr_mu;
+typedef intptr_t gpr_cv;
+typedef int32_t gpr_once;
+
+#define GPR_ONCE_INIT 0
+
+#endif
 
 #endif /* GRPC_SUPPORT_SYNC_ABSEIL_H */

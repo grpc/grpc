@@ -17,16 +17,20 @@ import errno
 import os
 import socket
 
-_DEFAULT_SOCK_OPTIONS = (socket.SO_REUSEADDR,
-                         socket.SO_REUSEPORT) if os.name != 'nt' else (
-                             socket.SO_REUSEADDR,)
+_DEFAULT_SOCK_OPTIONS = (
+    (socket.SO_REUSEADDR, socket.SO_REUSEPORT)
+    if os.name != "nt"
+    else (socket.SO_REUSEADDR,)
+)
 _UNRECOVERABLE_ERRNOS = (errno.EADDRINUSE, errno.ENOSR)
 
 
-def get_socket(bind_address='localhost',
-               port=0,
-               listen=True,
-               sock_options=_DEFAULT_SOCK_OPTIONS):
+def get_socket(
+    bind_address="localhost",
+    port=0,
+    listen=True,
+    sock_options=_DEFAULT_SOCK_OPTIONS,
+):
     """Opens a socket.
 
     Useful for reserving a port for a system-under-test.
@@ -47,7 +51,7 @@ def get_socket(bind_address='localhost',
     if socket.has_ipv6:
         address_families = (socket.AF_INET6, socket.AF_INET)
     else:
-        address_families = (socket.AF_INET)
+        address_families = socket.AF_INET
     for address_family in address_families:
         try:
             sock = socket.socket(address_family, socket.SOCK_STREAM)
@@ -68,15 +72,20 @@ def get_socket(bind_address='localhost',
         except socket.error:  # pylint: disable=duplicate-except
             sock.close()
             continue
-    raise RuntimeError("Failed to bind to {} with sock_options {}".format(
-        bind_address, sock_options))
+    raise RuntimeError(
+        "Failed to bind to {} with sock_options {}".format(
+            bind_address, sock_options
+        )
+    )
 
 
 @contextlib.contextmanager
-def bound_socket(bind_address='localhost',
-                 port=0,
-                 listen=True,
-                 sock_options=_DEFAULT_SOCK_OPTIONS):
+def bound_socket(
+    bind_address="localhost",
+    port=0,
+    listen=True,
+    sock_options=_DEFAULT_SOCK_OPTIONS,
+):
     """Opens a socket bound to an arbitrary port.
 
     Useful for reserving a port for a system-under-test.
@@ -92,10 +101,12 @@ def bound_socket(bind_address='localhost',
         - the address to which the socket is bound
         - the port to which the socket is bound
     """
-    host, port, sock = get_socket(bind_address=bind_address,
-                                  port=port,
-                                  listen=listen,
-                                  sock_options=sock_options)
+    host, port, sock = get_socket(
+        bind_address=bind_address,
+        port=port,
+        listen=listen,
+        sock_options=sock_options,
+    )
     try:
         yield host, port
     finally:

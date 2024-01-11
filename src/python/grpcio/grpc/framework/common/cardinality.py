@@ -20,7 +20,7 @@ import enum
 class Cardinality(enum.Enum):
     """Describes the streaming semantics of an RPC method."""
 
-    UNARY_UNARY = 'request-unary/response-unary'
-    UNARY_STREAM = 'request-unary/response-streaming'
-    STREAM_UNARY = 'request-streaming/response-unary'
-    STREAM_STREAM = 'request-streaming/response-streaming'
+    UNARY_UNARY = "request-unary/response-unary"
+    UNARY_STREAM = "request-unary/response-streaming"
+    STREAM_UNARY = "request-streaming/response-unary"
+    STREAM_STREAM = "request-streaming/response-streaming"

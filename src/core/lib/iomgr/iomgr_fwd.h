@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_IOMGR_IOMGR_FWD_H
-#define GRPC_CORE_LIB_IOMGR_IOMGR_FWD_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_IOMGR_FWD_H
+#define GRPC_SRC_CORE_LIB_IOMGR_IOMGR_FWD_H
 
 // A bunch of forward declarations that are useful to higher level things that
 // don't want to depend on all of iomgr.
@@ -21,5 +21,6 @@
 #include <grpc/support/port_platform.h>
 
 typedef struct grpc_pollset_set grpc_pollset_set;
+typedef struct grpc_pollset grpc_pollset;
 
-#endif  // GRPC_CORE_LIB_IOMGR_IOMGR_FWD_H
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_IOMGR_FWD_H

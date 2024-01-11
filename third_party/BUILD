@@ -10,7 +10,6 @@ exports_files([
     "six.BUILD",
     "enum34.BUILD",
     "futures.BUILD",
-    "libuv.BUILD",
     "protobuf.patch",
     "rules_python.patch",
     "protoc-gen-validate.patch",

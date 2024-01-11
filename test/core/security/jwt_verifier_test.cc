@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 
@@ -28,16 +28,18 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "src/core/lib/slice/b64.h"
 #include "test/core/util/test_config.h"
 
 using grpc_core::Json;
 
-/* This JSON key was generated with the GCE console and revoked immediately.
-   The identifiers have been changed as well.
-   Maximum size for a string literal is 509 chars in C89, yay!  */
+// This JSON key was generated with the GCE console and revoked immediately.
+// The identifiers have been changed as well.
+// Maximum size for a string literal is 509 chars in C89, yay!
 static const char json_key_str_part1[] =
     "{ \"private_key\": \"-----BEGIN PRIVATE KEY-----"
     "\\nMIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAOEvJsnoHnyHkXcp\\n7mJE"
@@ -68,7 +70,7 @@ static const char json_key_str_part3_for_google_email_issuer[] =
     "com\", \"client_id\": "
     "\"777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent."
     "com\", \"type\": \"service_account\" }";
-/* Trick our JWT library into issuing a JWT with iss=accounts.google.com. */
+// Trick our JWT library into issuing a JWT with iss=accounts.google.com.
 static const char json_key_str_part3_for_url_issuer[] =
     "\"private_key_id\": \"e6b5137873db8d2ef81e06a47289e6434ec8a165\", "
     "\"client_email\": \"accounts.google.com\", "
@@ -142,7 +144,7 @@ static const char expired_claims[] =
     "  \"iss\": \"blah.foo.com\","
     "  \"sub\": \"juju@blah.foo.com\","
     "  \"jti\": \"jwtuniqueid\","
-    "  \"iat\": 100," /* Way back in the past... */
+    "  \"iat\": 100,"  // Way back in the past...
     "  \"exp\": 120,"
     "  \"nbf\": 60,"
     "  \"foo\": \"bar\"}";
@@ -163,7 +165,7 @@ static const char claims_with_bad_subject[] =
 
 static const char invalid_claims[] =
     "{ \"aud\": \"https://foo.com\","
-    "  \"iss\": 46," /* Issuer cannot be a number. */
+    "  \"iss\": 46,"  // Issuer cannot be a number.
     "  \"sub\": \"juju@blah.foo.com\","
     "  \"jti\": \"jwtuniqueid\","
     "  \"foo\": \"bar\"}";
@@ -194,8 +196,8 @@ TEST(JwtVerifierTest, JwtIssuerEmailDomain) {
   d = grpc_jwt_issuer_email_domain("bar.blah@baz.blah.foo.com");
   ASSERT_STREQ(d, "foo.com");
 
-  /* This is not a very good parser but make sure we do not crash on these weird
-     inputs. */
+  // This is not a very good parser but make sure we do not crash on these weird
+  // inputs.
   d = grpc_jwt_issuer_email_domain("@foo");
   ASSERT_STREQ(d, "foo");
   d = grpc_jwt_issuer_email_domain("bar@.");
@@ -208,18 +210,13 @@ TEST(JwtVerifierTest, JwtIssuerEmailDomain) {
 
 TEST(JwtVerifierTest, ClaimsSuccess) {
   grpc_jwt_claims* claims;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(claims_without_time_constraint, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-  }
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  auto json = grpc_core::JsonParse(claims_without_time_constraint);
+  ASSERT_TRUE(json.ok()) << json.status();
+  ASSERT_EQ(json->type(), Json::Type::kObject);
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json);
+  claims = grpc_jwt_claims_from_json(*json);
   ASSERT_NE(claims, nullptr);
-  ASSERT_EQ(*grpc_jwt_claims_json(claims), json);
+  ASSERT_EQ(*grpc_jwt_claims_json(claims), *json);
   ASSERT_STREQ(grpc_jwt_claims_audience(claims), "https://foo.com");
   ASSERT_STREQ(grpc_jwt_claims_issuer(claims), "blah.foo.com");
   ASSERT_STREQ(grpc_jwt_claims_subject(claims), "juju@blah.foo.com");
@@ -231,21 +228,16 @@ TEST(JwtVerifierTest, ClaimsSuccess) {
 
 TEST(JwtVerifierTest, ExpiredClaimsFailure) {
   grpc_jwt_claims* claims;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(expired_claims, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-  }
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  auto json = grpc_core::JsonParse(expired_claims);
+  ASSERT_TRUE(json.ok()) << json.status();
+  ASSERT_EQ(json->type(), Json::Type::kObject);
   gpr_timespec exp_iat = {100, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_exp = {120, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_nbf = {60, 0, GPR_CLOCK_REALTIME};
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json);
+  claims = grpc_jwt_claims_from_json(*json);
   ASSERT_NE(claims, nullptr);
-  ASSERT_EQ(*grpc_jwt_claims_json(claims), json);
+  ASSERT_EQ(*grpc_jwt_claims_json(claims), *json);
   ASSERT_STREQ(grpc_jwt_claims_audience(claims), "https://foo.com");
   ASSERT_STREQ(grpc_jwt_claims_issuer(claims), "blah.foo.com");
   ASSERT_STREQ(grpc_jwt_claims_subject(claims), "juju@blah.foo.com");
@@ -253,37 +245,26 @@ TEST(JwtVerifierTest, ExpiredClaimsFailure) {
   ASSERT_EQ(gpr_time_cmp(grpc_jwt_claims_issued_at(claims), exp_iat), 0);
   ASSERT_EQ(gpr_time_cmp(grpc_jwt_claims_expires_at(claims), exp_exp), 0);
   ASSERT_EQ(gpr_time_cmp(grpc_jwt_claims_not_before(claims), exp_nbf), 0);
-
   ASSERT_EQ(grpc_jwt_claims_check(claims, "https://foo.com"),
             GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE);
   grpc_jwt_claims_destroy(claims);
 }
 
 TEST(JwtVerifierTest, InvalidClaimsFailure) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(invalid_claims, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-  }
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  auto json = grpc_core::JsonParse(invalid_claims);
+  ASSERT_TRUE(json.ok()) << json.status();
+  ASSERT_EQ(json->type(), Json::Type::kObject);
   grpc_core::ExecCtx exec_ctx;
-  ASSERT_EQ(grpc_jwt_claims_from_json(json), nullptr);
+  ASSERT_EQ(grpc_jwt_claims_from_json(*json), nullptr);
 }
 
 TEST(JwtVerifierTest, BadAudienceClaimsFailure) {
   grpc_jwt_claims* claims;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(claims_without_time_constraint, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-  }
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  auto json = grpc_core::JsonParse(claims_without_time_constraint);
+  ASSERT_TRUE(json.ok()) << json.status();
+  ASSERT_EQ(json->type(), Json::Type::kObject);
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json);
+  claims = grpc_jwt_claims_from_json(*json);
   ASSERT_NE(claims, nullptr);
   ASSERT_EQ(grpc_jwt_claims_check(claims, "https://bar.com"),
             GRPC_JWT_VERIFIER_BAD_AUDIENCE);
@@ -292,16 +273,11 @@ TEST(JwtVerifierTest, BadAudienceClaimsFailure) {
 
 TEST(JwtVerifierTest, BadSubjectClaimsFailure) {
   grpc_jwt_claims* claims;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(claims_with_bad_subject, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-  }
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  auto json = grpc_core::JsonParse(claims_with_bad_subject);
+  ASSERT_TRUE(json.ok()) << json.status();
+  ASSERT_EQ(json->type(), Json::Type::kObject);
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json);
+  claims = grpc_jwt_claims_from_json(*json);
   ASSERT_NE(claims, nullptr);
   ASSERT_EQ(grpc_jwt_claims_check(claims, "https://foo.com"),
             GRPC_JWT_VERIFIER_BAD_SUBJECT);
@@ -369,7 +345,7 @@ static int httpcli_get_google_keys_for_email(
                "/robot/v1/metadata/x509/"
                "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                "gserviceaccount.com");
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
@@ -414,7 +390,7 @@ static int httpcli_get_custom_keys_for_email(
   *response = http_response(200, gpr_strdup(good_jwk_set));
   EXPECT_STREQ(host, "keys.bar.com");
   EXPECT_STREQ(path, "/jwk/foo@bar.com");
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
@@ -450,7 +426,7 @@ static int httpcli_get_jwk_set(const grpc_http_request* /*request*/,
   *response = http_response(200, gpr_strdup(good_jwk_set));
   EXPECT_STREQ(host, "www.googleapis.com");
   EXPECT_STREQ(path, "/oauth2/v3/certs");
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
@@ -465,7 +441,7 @@ static int httpcli_get_openid_config(const grpc_http_request* /*request*/,
   grpc_core::HttpRequest::SetOverride(httpcli_get_jwk_set,
                                       httpcli_post_should_not_be_called,
                                       httpcli_put_should_not_be_called);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
@@ -507,7 +483,7 @@ static int httpcli_get_bad_json(const grpc_http_request* /* request */,
                                 grpc_closure* on_done,
                                 grpc_http_response* response) {
   *response = http_response(200, gpr_strdup("{\"bad\": \"stuff\"}"));
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
@@ -571,7 +547,7 @@ static void corrupt_jwt_sig(char* jwt) {
   }
   ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(sig));
   sig_bytes = GRPC_SLICE_START_PTR(sig);
-  (*sig_bytes)++; /* Corrupt first byte. */
+  (*sig_bytes)++;  // Corrupt first byte.
   bad_b64_sig = grpc_base64_encode(GRPC_SLICE_START_PTR(sig),
                                    GRPC_SLICE_LENGTH(sig), 1, 0);
   memcpy(last_dot + 1, bad_b64_sig, strlen(bad_b64_sig));
@@ -642,9 +618,9 @@ TEST(JwtVerifierTest, JwtVerifierBadFormat) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-/* find verification key: bad jks, cannot find key in jks */
-/* bad signature custom provided email*/
-/* bad key */
+// find verification key: bad jks, cannot find key in jks
+// bad signature custom provided email
+// bad key
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

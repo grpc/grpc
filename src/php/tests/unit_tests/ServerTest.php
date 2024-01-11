@@ -19,6 +19,8 @@
 
 class ServerTest extends \PHPUnit\Framework\TestCase
 {
+    private $server;
+
     public function setUp(): void
     {
         $this->server = null;

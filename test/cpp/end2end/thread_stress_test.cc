@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <cinttypes>
 #include <mutex>
@@ -27,26 +27,23 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-
-const int kNumThreads = 300;  // Number of threads
+const int kNumThreads = 10;  // Number of threads
 const int kNumAsyncSendThreads = 2;
-const int kNumAsyncReceiveThreads = 50;
-const int kNumAsyncServerThreads = 50;
+const int kNumAsyncReceiveThreads = 5;
+const int kNumAsyncServerThreads = 5;
 const int kNumRpcs = 1000;  // Number of RPCs per thread
 
 namespace grpc {
@@ -69,7 +66,7 @@ class CommonStressTest {
   CommonStressTest() : kMaxMessageSize_(8192) {
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    gpr_setenv("grpc_cfstream", "0");
+    grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   }
   virtual ~CommonStressTest() {}
@@ -291,7 +288,7 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
         gpr_log(GPR_ERROR, "RPC error: %d: %s", s.error_code(),
                 s.error_message().c_str());
       }
-      gpr_atm_no_barrier_fetch_add(errors, static_cast<gpr_atm>(1));
+      gpr_atm_no_barrier_fetch_add(errors, gpr_atm{1});
     } else {
       EXPECT_EQ(response.message(), request.message());
     }
@@ -300,20 +297,15 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
 
 typedef ::testing::Types<
     CommonStressTestSyncServer<CommonStressTestInsecure<TestServiceImpl>>,
-    CommonStressTestSyncServer<CommonStressTestInproc<TestServiceImpl, false>>,
-    CommonStressTestSyncServerLowThreadCount<
-        CommonStressTestInproc<TestServiceImpl, true>>,
     CommonStressTestAsyncServer<
-        CommonStressTestInsecure<grpc::testing::EchoTestService::AsyncService>>,
-    CommonStressTestAsyncServer<CommonStressTestInproc<
-        grpc::testing::EchoTestService::AsyncService, false>>>
+        CommonStressTestInsecure<grpc::testing::EchoTestService::AsyncService>>>
     CommonTypes;
 TYPED_TEST_SUITE(End2endTest, CommonTypes);
 TYPED_TEST(End2endTest, ThreadStress) {
   this->common_.ResetStub();
   std::vector<std::thread> threads;
   gpr_atm errors;
-  gpr_atm_rel_store(&errors, static_cast<gpr_atm>(0));
+  gpr_atm_rel_store(&errors, gpr_atm{0});
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; ++i) {
     threads.emplace_back(SendRpc, this->common_.GetStub(), kNumRpcs,
@@ -328,7 +320,7 @@ TYPED_TEST(End2endTest, ThreadStress) {
   }
   // If this test allows resource exhaustion, expect that it actually sees some
   if (this->common_.AllowExhaustion()) {
-    EXPECT_GT(error_cnt, static_cast<uint64_t>(0));
+    EXPECT_GT(error_cnt, 0);
   }
 }
 

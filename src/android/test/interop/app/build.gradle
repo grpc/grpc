@@ -2,9 +2,11 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 26
+    ndkVersion "25.1.8937393"
     defaultConfig {
         applicationId "io.grpc.android.interop.cpp"
         minSdkVersion 21
+        // noinspection ExpiredTargetSDKVersion
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -27,6 +29,8 @@ android {
                 arguments '-DgRPC_BUILD_CODEGEN=off'
                 arguments '-DPROTOBUF_PROTOC_EXECUTABLE=' + protoc
                 arguments '-DgRPC_CPP_PLUGIN_EXECUTABLE=' + grpc_cpp_plugin
+                arguments '-Dprotobuf_INSTALL=OFF'
+                arguments '-Dutf8_range_ENABLE_INSTALL=OFF'
             }
         }
         ndk {

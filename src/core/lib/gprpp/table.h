@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_TABLE_H
-#define GRPC_CORE_LIB_GPRPP_TABLE_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_TABLE_H
+#define GRPC_SRC_CORE_LIB_GPRPP_TABLE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -219,7 +219,7 @@ class Table {
 
   // Check if this table has index I.
   template <size_t I>
-      absl::enable_if_t < I<sizeof...(Ts), bool> has() const {
+  absl::enable_if_t<(I < sizeof...(Ts)), bool> has() const {
     return present_bits_.is_set(I);
   }
 
@@ -316,6 +316,14 @@ class Table {
   template <typename F>
   void ForEach(F f) const {
     ForEachImpl(std::move(f), absl::make_index_sequence<sizeof...(Ts)>());
+  }
+
+  // Iterate through each set field in the table if it exists in Vs, in the
+  // order of Vs.
+  template <typename F, typename... Vs>
+  void ForEachIn(F f) const {
+    ForEachImpl(std::move(f),
+                absl::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
   }
 
   // Count the number of set fields in the table
@@ -441,4 +449,4 @@ class Table {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_TABLE_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_TABLE_H

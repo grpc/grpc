@@ -21,6 +21,10 @@
 #include <string>
 #include <thread>
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 
@@ -29,6 +33,8 @@
 #else
 #include "helloworld.grpc.pb.h"
 #endif
+
+ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
 using grpc::Server;
 using grpc::ServerAsyncResponseWriter;
@@ -49,8 +55,8 @@ class ServerImpl final {
   }
 
   // There is no shutdown handling in this code.
-  void Run() {
-    std::string server_address("0.0.0.0:50051");
+  void Run(uint16_t port) {
+    std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
 
     ServerBuilder builder;
     // Listen on the given address without any authentication mechanism.
@@ -164,8 +170,9 @@ class ServerImpl final {
 };
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
   ServerImpl server;
-  server.Run();
+  server.Run(absl::GetFlag(FLAGS_port));
 
   return 0;
 }

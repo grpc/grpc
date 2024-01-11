@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "src/compiler/config.h"
+#include "src/compiler/proto_parser_helper.h"
 
 namespace grpc_generator {
 
@@ -245,9 +246,9 @@ inline std::string GenerateCommentsWithPrefix(
     if (elem.empty()) {
       oss << prefix << "\n";
     } else if (elem[0] == ' ') {
-      oss << prefix << elem << "\n";
+      oss << prefix << EscapeVariableDelimiters(elem) << "\n";
     } else {
-      oss << prefix << " " << elem << "\n";
+      oss << prefix << " " << EscapeVariableDelimiters(elem) << "\n";
     }
   }
   return oss.str();

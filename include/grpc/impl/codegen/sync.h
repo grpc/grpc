@@ -21,48 +21,9 @@
 
 // IWYU pragma: private, include <grpc/support/sync.h>
 
-/** Synchronization primitives for GPR.
+#include <grpc/support/port_platform.h>
 
-   The type  gpr_mu              provides a non-reentrant mutex (lock).
-
-   The type  gpr_cv              provides a condition variable.
-
-   The type  gpr_once            provides for one-time initialization.
-
-   The type gpr_event            provides one-time-setting, reading, and
-                                 waiting of a void*, with memory barriers.
-
-   The type gpr_refcount         provides an object reference counter,
-                                 with memory barriers suitable to control
-                                 object lifetimes.
-
-   The type gpr_stats_counter    provides an atomic statistics counter. It
-                                 provides no memory barriers.
- */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* Platform-specific type declarations of gpr_mu and gpr_cv.   */
-#include <grpc/impl/codegen/port_platform.h>
-
-#include <grpc/impl/codegen/sync_generic.h>  // IWYU pragma: export
-
-#if defined(GPR_CUSTOM_SYNC)
-#include <grpc/impl/codegen/sync_custom.h>  // IWYU pragma: export
-#elif defined(GPR_ABSEIL_SYNC)
-#include <grpc/impl/codegen/sync_abseil.h>  // IWYU pragma: export
-#elif defined(GPR_POSIX_SYNC)
-#include <grpc/impl/codegen/sync_posix.h>  // IWYU pragma: export
-#elif defined(GPR_WINDOWS)
-#include <grpc/impl/codegen/sync_windows.h>  // IWYU pragma: export
-#else
-#error Unable to determine platform for sync
-#endif
-
-#ifdef __cplusplus
-}
-#endif
+/// TODO(chengyuc): Remove this file after solving compatibility.
+#include <grpc/support/sync.h>
 
 #endif /* GRPC_IMPL_CODEGEN_SYNC_H */

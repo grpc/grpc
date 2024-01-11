@@ -1,108 +1,58 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #include "upb/util/compare.h"
 
 #include <stdint.h>
 
-#include <string_view>
+#include <initializer_list>
+#include <string>
+#include <variant>
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+#include "upb/wire/internal/swap.h"
+#include "upb/wire/types.h"
 
 struct UnknownField;
 
 using UnknownFields = std::vector<UnknownField>;
 
-enum class UnknownFieldType {
-  kVarint,
-  kLongVarint,  // Over-encoded to have distinct wire format.
-  kDelimited,
-  kFixed64,
-  kFixed32,
-  kGroup,
+struct Varint {
+  explicit Varint(uint64_t _val) : val(_val) {}
+  uint64_t val;
 };
-
-union UnknownFieldValue {
-  uint64_t varint;
-  uint64_t fixed64;
-  uint32_t fixed32;
-  // NULL-terminated (strings must not have embedded NULL).
-  const char* delimited;
-  UnknownFields* group;
+struct LongVarint {
+  explicit LongVarint(uint64_t _val) : val(_val) {}
+  uint64_t val;  // Over-encoded.
 };
-
-struct TypeAndValue {
-  UnknownFieldType type;
-  UnknownFieldValue value;
+struct Delimited {
+  explicit Delimited(std::string _val) : val(_val) {}
+  std::string val;
+};
+struct Fixed64 {
+  explicit Fixed64(uint64_t _val) : val(_val) {}
+  uint64_t val;
+};
+struct Fixed32 {
+  explicit Fixed32(uint32_t _val) : val(_val) {}
+  uint32_t val;
+};
+struct Group {
+  Group(std::initializer_list<UnknownField> _val);
+  UnknownFields val;
 };
 
 struct UnknownField {
   uint32_t field_number;
-  TypeAndValue value;
+  std::variant<Varint, LongVarint, Delimited, Fixed64, Fixed32, Group> value;
 };
 
-TypeAndValue Varint(uint64_t val) {
-  TypeAndValue ret{UnknownFieldType::kVarint};
-  ret.value.varint = val;
-  return ret;
-}
-
-TypeAndValue LongVarint(uint64_t val) {
-  TypeAndValue ret{UnknownFieldType::kLongVarint};
-  ret.value.varint = val;
-  return ret;
-}
-
-TypeAndValue Fixed64(uint64_t val) {
-  TypeAndValue ret{UnknownFieldType::kFixed64};
-  ret.value.fixed64 = val;
-  return ret;
-}
-
-TypeAndValue Fixed32(uint32_t val) {
-  TypeAndValue ret{UnknownFieldType::kFixed32};
-  ret.value.fixed32 = val;
-  return ret;
-}
-
-TypeAndValue Delimited(const char* val) {
-  TypeAndValue ret{UnknownFieldType::kDelimited};
-  ret.value.delimited = val;
-  return ret;
-}
-
-TypeAndValue Group(UnknownFields nested) {
-  TypeAndValue ret{UnknownFieldType::kGroup};
-  ret.value.group = &nested;
-  return ret;
-}
+Group::Group(std::initializer_list<UnknownField> _val) : val(_val) {}
 
 void EncodeVarint(uint64_t val, std::string* str) {
   do {
@@ -114,45 +64,33 @@ void EncodeVarint(uint64_t val, std::string* str) {
 }
 
 std::string ToBinaryPayload(const UnknownFields& fields) {
-  static const upb_WireType wire_types[] = {
-      kUpb_WireType_Varint, kUpb_WireType_Varint, kUpb_WireType_Delimited,
-      kUpb_WireType_64Bit,  kUpb_WireType_32Bit,  kUpb_WireType_StartGroup,
-  };
   std::string ret;
 
   for (const auto& field : fields) {
-    uint32_t tag = field.field_number << 3 |
-                   (wire_types[static_cast<int>(field.value.type)]);
-    EncodeVarint(tag, &ret);
-    switch (field.value.type) {
-      case UnknownFieldType::kVarint:
-        EncodeVarint(field.value.value.varint, &ret);
-        break;
-      case UnknownFieldType::kLongVarint:
-        EncodeVarint(field.value.value.varint, &ret);
-        ret.back() |= 0x80;
-        ret.push_back(0);
-        break;
-      case UnknownFieldType::kDelimited:
-        EncodeVarint(strlen(field.value.value.delimited), &ret);
-        ret.append(field.value.value.delimited);
-        break;
-      case UnknownFieldType::kFixed64: {
-        uint64_t val = _upb_BigEndian_Swap64(field.value.value.fixed64);
-        ret.append(reinterpret_cast<const char*>(&val), sizeof(val));
-        break;
-      }
-      case UnknownFieldType::kFixed32: {
-        uint32_t val = _upb_BigEndian_Swap32(field.value.value.fixed32);
-        ret.append(reinterpret_cast<const char*>(&val), sizeof(val));
-        break;
-      }
-      case UnknownFieldType::kGroup: {
-        uint32_t end_tag = field.field_number << 3 | kUpb_WireType_EndGroup;
-        ret.append(ToBinaryPayload(*field.value.value.group));
-        EncodeVarint(end_tag, &ret);
-        break;
-      }
+    if (const auto* val = std::get_if<Varint>(&field.value)) {
+      EncodeVarint(field.field_number << 3 | kUpb_WireType_Varint, &ret);
+      EncodeVarint(val->val, &ret);
+    } else if (const auto* val = std::get_if<LongVarint>(&field.value)) {
+      EncodeVarint(field.field_number << 3 | kUpb_WireType_Varint, &ret);
+      EncodeVarint(val->val, &ret);
+      ret.back() |= 0x80;
+      ret.push_back(0);
+    } else if (const auto* val = std::get_if<Delimited>(&field.value)) {
+      EncodeVarint(field.field_number << 3 | kUpb_WireType_Delimited, &ret);
+      EncodeVarint(val->val.size(), &ret);
+      ret.append(val->val);
+    } else if (const auto* val = std::get_if<Fixed64>(&field.value)) {
+      EncodeVarint(field.field_number << 3 | kUpb_WireType_64Bit, &ret);
+      uint64_t swapped = _upb_BigEndian_Swap64(val->val);
+      ret.append(reinterpret_cast<const char*>(&swapped), sizeof(swapped));
+    } else if (const auto* val = std::get_if<Fixed32>(&field.value)) {
+      EncodeVarint(field.field_number << 3 | kUpb_WireType_32Bit, &ret);
+      uint32_t swapped = _upb_BigEndian_Swap32(val->val);
+      ret.append(reinterpret_cast<const char*>(&swapped), sizeof(swapped));
+    } else if (const auto* val = std::get_if<Group>(&field.value)) {
+      EncodeVarint(field.field_number << 3 | kUpb_WireType_StartGroup, &ret);
+      ret.append(ToBinaryPayload(val->val));
+      EncodeVarint(field.field_number << 3 | kUpb_WireType_EndGroup, &ret);
     }
   }
 

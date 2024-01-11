@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 
@@ -26,6 +26,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -102,6 +103,7 @@ TEST(SslSessionCacheTest, LruCache) {
   {
     RefCountedPtr<tsi::SslSessionLRUCache> cache =
         tsi::SslSessionLRUCache::Create(3);
+    EXPECT_EQ(cache->Size(), 0);
     tsi::SslSessionPtr sess2 = tracker.NewSession(2);
     SSL_SESSION* sess2_ptr = sess2.get();
     cache->Put("first.dropbox.com", std::move(sess2));
@@ -140,6 +142,45 @@ TEST(SslSessionCacheTest, LruCache) {
   }
   // Cache destructor destroys all sessions.
   EXPECT_EQ(tracker.AliveCount(), 0);
+}
+
+TEST(SslSessionCacheTest, PutAndGet) {
+  // Set up an empty cache and an SSL session.
+  SSL_CTX* ssl_ctx = SSL_CTX_new(TLS_method());
+  tsi::SslSessionPtr ssl_session_ptr(SSL_SESSION_new(ssl_ctx));
+  RefCountedPtr<tsi::SslSessionLRUCache> cache =
+      tsi::SslSessionLRUCache::Create(1);
+  EXPECT_EQ(cache->Size(), 0);
+  // Put the SSL session in the cache.
+  cache->Put("foo.domain", std::move(ssl_session_ptr));
+  EXPECT_EQ(cache->Size(), 1);
+  // Get a copy of the SSL session from the cache.
+  EXPECT_EQ(cache->Size(), 1);
+  EXPECT_NE(cache->Get("foo.domain"), nullptr);
+  // Try to put a null SSL session in the cache and check that it was not
+  // successful.
+  cache->Put("foo.domain.2", /*session=*/nullptr);
+  EXPECT_EQ(cache->Size(), 1);
+  EXPECT_NE(cache->Get("foo.domain"), nullptr);
+  EXPECT_EQ(cache->Get("foo.domain.2"), nullptr);
+  // Cleanup.
+  SSL_CTX_free(ssl_ctx);
+}
+
+TEST(SslSessionCacheTest, CapacityZeroCache) {
+  // Set up an empty cache and an SSL session.
+  SSL_CTX* ssl_ctx = SSL_CTX_new(TLS_method());
+  tsi::SslSessionPtr ssl_session_ptr(SSL_SESSION_new(ssl_ctx));
+  RefCountedPtr<tsi::SslSessionLRUCache> cache =
+      tsi::SslSessionLRUCache::Create(0);
+  EXPECT_EQ(cache->Size(), 0);
+  // Try to put the SSL session in the cache and check that it was not
+  // successful.
+  cache->Put("foo.domain", std::move(ssl_session_ptr));
+  EXPECT_EQ(cache->Size(), 0);
+  EXPECT_EQ(cache->Get("foo.domain"), nullptr);
+  // Cleanup.
+  SSL_CTX_free(ssl_ctx);
 }
 
 }  // namespace

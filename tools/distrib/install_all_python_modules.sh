@@ -13,25 +13,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO: Integrate this into CI to avoid bitrot.
+
 echo "It's recommended that you run this script from a virtual environment."
+
+function maybe_run_command () {
+  if python setup.py --help-commands | grep "$1" &>/dev/null; then
+    python setup.py "$1";
+  fi
+}
 
 set -e
 
 BASEDIR=$(dirname "$0")
 BASEDIR=$(realpath "$BASEDIR")/../..
 
+PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_tests"
+
 (cd "$BASEDIR";
-  pip install --upgrade cython;
+  pip install --upgrade "cython<3.0.0rc1";
   python setup.py install;
   pushd tools/distrib/python/grpcio_tools;
     ../make_grpcio_tools.py
     GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
   popd;
+  pushd src/python/grpcio_observability;
+    ./make_grpcio_observability.py
+    GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+  popd;
+  pushd tools/distrib/python/xds_protos;
+    GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+  popd;
   pushd src/python;
-    for PACKAGE in ./grpcio_*; do
+    for PACKAGE in ${PACKAGES}; do
       pushd "${PACKAGE}";
-        python setup.py preprocess;
-        python setup.py install;
+        python setup.py clean;
+        maybe_run_command preprocess
+        maybe_run_command build_package_protos
+        python -m pip install .;
       popd;
     done
   popd;

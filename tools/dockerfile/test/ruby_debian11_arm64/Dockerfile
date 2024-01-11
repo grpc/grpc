@@ -53,6 +53,15 @@ RUN apt-get update && apt-get install -y \
   zip \
   && apt-get clean
 
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
+
 #====================
 # run_tests.py python dependencies
 
@@ -86,14 +95,15 @@ RUN apt-get update && apt-get install -y gnupg2 && apt-get clean
 RUN gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
-# Install Ruby 2.5
+# Install Ruby 2.7
 RUN apt-get update && apt-get install -y procps && apt-get clean
-RUN /bin/bash -l -c "rvm install ruby-2.5"
-RUN /bin/bash -l -c "rvm use --default ruby-2.5"
+# "--disable-binary" is a workaround for https://github.com/rvm/rvm/issues/4975
+RUN /bin/bash -l -c "rvm install ruby-2.7 --disable-binary"
+RUN /bin/bash -l -c "rvm use --default ruby-2.7"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.5' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install bundler --no-document -v 1.9"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.7' >> ~/.bashrc"
+RUN /bin/bash -l -c "gem install bundler --no-document"
 
 #=================
 # Install cmake
@@ -106,21 +116,21 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
     && tar -zxf ccache.tar.gz \
-    && cd ccache-4.5.1 \
+    && cd ccache-4.7.5 \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
     && make -j4 && make install \
     && cd ../.. \
-    && rm -rf ccache-4.5.1 ccache.tar.gz
+    && rm -rf ccache-4.7.5 ccache.tar.gz
 
 
 RUN mkdir /var/local/jenkins
 
-
-# Seems required by XDS interop tests.
+# Required by XDS interop test harness.
 RUN python3 -m pip install virtualenv==16.7.9
+
 
 # Define the default command.
 CMD ["bash"]

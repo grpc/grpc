@@ -1,0 +1,2 @@
+# Required by XDS interop test harness.
+RUN python3 -m pip install virtualenv==16.7.9

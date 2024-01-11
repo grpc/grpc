@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_INSECURE_INSECURE_SECURITY_CONNECTOR_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_INSECURE_INSECURE_SECURITY_CONNECTOR_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_INSECURE_INSECURE_SECURITY_CONNECTOR_H
+#define GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_INSECURE_INSECURE_SECURITY_CONNECTOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -67,14 +67,12 @@ class InsecureChannelSecurityConnector
                        grpc_pollset_set* /* interested_parties */,
                        HandshakeManager* handshake_manager) override;
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* ep, const ChannelArgs& /*args*/,
                   RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other_sc) const override;
 };
@@ -90,19 +88,16 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
                        grpc_pollset_set* /* interested_parties */,
                        HandshakeManager* handshake_manager) override;
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* ep, const ChannelArgs& /*args*/,
                   RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other) const override;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_INSECURE_INSECURE_SECURITY_CONNECTOR_H \
-        */
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_INSECURE_INSECURE_SECURITY_CONNECTOR_H

@@ -20,12 +20,18 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <memory>
 #include <tuple>
-#include <type_traits>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/utility/utility.h"
+
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
@@ -36,15 +42,97 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/trace.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
+namespace {
 // Maximum number of bytes an allocator will request from a quota in one step.
 // Larger allocations than this will require multiple allocation requests.
-static constexpr size_t kMaxReplenishBytes = 1024 * 1024;
+constexpr size_t kMaxReplenishBytes = 1024 * 1024;
 
 // Minimum number of bytes an allocator will request from a quota in one step.
-static constexpr size_t kMinReplenishBytes = 4096;
+constexpr size_t kMinReplenishBytes = 4096;
+
+class MemoryQuotaTracker {
+ public:
+  static MemoryQuotaTracker& Get() {
+    static MemoryQuotaTracker* tracker = new MemoryQuotaTracker();
+    return *tracker;
+  }
+
+  void Add(std::shared_ptr<BasicMemoryQuota> quota) {
+    MutexLock lock(&mu_);
+    // Common usage is that we only create a few (one or two) quotas.
+    // We'd like to ensure that we don't OOM if more are added - and
+    // using a weak_ptr here, whilst nicely braindead, does run that
+    // risk.
+    // If usage patterns change sufficiently we'll likely want to
+    // change this class to have a more sophisticated data structure
+    // and probably a Remove() method.
+    GatherAndGarbageCollect();
+    quotas_.push_back(quota);
+  }
+
+  std::vector<std::shared_ptr<BasicMemoryQuota>> All() {
+    MutexLock lock(&mu_);
+    return GatherAndGarbageCollect();
+  }
+
+ private:
+  MemoryQuotaTracker() {}
+
+  std::vector<std::shared_ptr<BasicMemoryQuota>> GatherAndGarbageCollect()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    std::vector<std::weak_ptr<BasicMemoryQuota>> new_quotas;
+    std::vector<std::shared_ptr<BasicMemoryQuota>> all_quotas;
+    for (const auto& quota : quotas_) {
+      auto p = quota.lock();
+      if (p == nullptr) continue;
+      new_quotas.push_back(quota);
+      all_quotas.push_back(p);
+    }
+    quotas_.swap(new_quotas);
+    return all_quotas;
+  }
+
+  Mutex mu_;
+  std::vector<std::weak_ptr<BasicMemoryQuota>> quotas_ ABSL_GUARDED_BY(mu_);
+};
+
+// Reference count for a slice allocated by MemoryAllocator::MakeSlice.
+// Takes care of releasing memory back when the slice is destroyed.
+class SliceRefCount : public grpc_slice_refcount {
+ public:
+  SliceRefCount(
+      std::shared_ptr<
+          grpc_event_engine::experimental::internal::MemoryAllocatorImpl>
+          allocator,
+      size_t size)
+      : grpc_slice_refcount(Destroy),
+        allocator_(std::move(allocator)),
+        size_(size) {
+    // Nothing to do here.
+  }
+  ~SliceRefCount() {
+    allocator_->Release(size_);
+    allocator_.reset();
+  }
+
+ private:
+  static void Destroy(grpc_slice_refcount* p) {
+    auto* rc = static_cast<SliceRefCount*>(p);
+    rc->~SliceRefCount();
+    free(rc);
+  }
+
+  std::shared_ptr<
+      grpc_event_engine::experimental::internal::MemoryAllocatorImpl>
+      allocator_;
+  size_t size_;
+};
+
+}  // namespace
 
 //
 // Reclaimer
@@ -157,9 +245,11 @@ Poll<RefCountedPtr<ReclaimerQueue::Handle>> ReclaimerQueue::PollNext() {
 //
 
 GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
-    std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name)
-    : memory_quota_(memory_quota), name_(std::move(name)) {
-  memory_quota_->Take(taken_bytes_);
+    std::shared_ptr<BasicMemoryQuota> memory_quota)
+    : memory_quota_(memory_quota) {
+  memory_quota_->Take(
+      /*allocator=*/this, taken_bytes_);
+  memory_quota_->AddNewAllocator(this);
 }
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
@@ -170,6 +260,7 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
+  memory_quota_->RemoveAllocator(this);
   std::shared_ptr<BasicMemoryQuota> memory_quota;
   OrphanablePtr<ReclaimerQueue::Handle>
       reclamation_handles[kNumReclamationPasses];
@@ -179,7 +270,7 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
     shutdown_ = true;
     memory_quota = memory_quota_;
     for (size_t i = 0; i < kNumReclamationPasses; i++) {
-      reclamation_handles[i] = absl::exchange(reclamation_handles_[i], nullptr);
+      reclamation_handles[i] = std::exchange(reclamation_handles_[i], nullptr);
     }
   }
 }
@@ -189,12 +280,17 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   // inlined asserts.
   GPR_ASSERT(request.min() <= request.max());
   GPR_ASSERT(request.max() <= MemoryRequest::max_allowed_size());
+  size_t old_free = free_bytes_.load(std::memory_order_relaxed);
+
   while (true) {
     // Attempt to reserve memory from our pool.
     auto reservation = TryReserve(request);
     if (reservation.has_value()) {
+      size_t new_free = free_bytes_.load(std::memory_order_relaxed);
+      memory_quota_->MaybeMoveAllocator(this, old_free, new_free);
       return *reservation;
     }
+
     // If that failed, grab more from the quota and retry.
     Replenish();
   }
@@ -207,11 +303,10 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
   // Scale the request down according to memory pressure if we have that
   // flexibility.
   if (scaled_size_over_min != 0) {
-    const auto pressure_and_max_recommended_allocation_size =
-        memory_quota_->InstantaneousPressureAndMaxRecommendedAllocationSize();
-    double pressure = pressure_and_max_recommended_allocation_size.first;
+    const auto pressure_info = memory_quota_->GetPressureInfo();
+    double pressure = pressure_info.pressure_control_value;
     size_t max_recommended_allocation_size =
-        pressure_and_max_recommended_allocation_size.second;
+        pressure_info.max_recommended_allocation_size;
     // Reduce allocation size proportional to the pressure > 80% usage.
     if (pressure > 0.8) {
       scaled_size_over_min =
@@ -249,16 +344,19 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
 
 void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
   size_t free = free_bytes_.load(std::memory_order_relaxed);
-  const size_t kReduceToSize = kMaxQuotaBufferSize / 2;
-  while (true) {
-    if (free <= kReduceToSize) return;
-    size_t ret = free - kReduceToSize;
-    if (free_bytes_.compare_exchange_weak(free, kReduceToSize,
+  while (free > 0) {
+    size_t ret = 0;
+    if (!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
+        free > kMaxQuotaBufferSize / 2) {
+      ret = std::max(ret, free - kMaxQuotaBufferSize / 2);
+    }
+    ret = std::max(ret, free > 8192 ? free / 2 : free);
+    const size_t new_free = free - ret;
+    if (free_bytes_.compare_exchange_weak(free, new_free,
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-        gpr_log(GPR_INFO, "[%p|%s] Early return %" PRIdPTR " bytes", this,
-                name_.c_str(), ret);
+        gpr_log(GPR_INFO, "[%p] Early return %" PRIdPTR " bytes", this, ret);
       }
       GPR_ASSERT(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
       memory_quota_->Return(ret);
@@ -273,40 +371,24 @@ void GrpcMemoryAllocatorImpl::Replenish() {
   auto amount = Clamp(taken_bytes_.load(std::memory_order_relaxed) / 3,
                       kMinReplenishBytes, kMaxReplenishBytes);
   // Take the requested amount from the quota.
-  memory_quota_->Take(amount);
+  memory_quota_->Take(
+      /*allocator=*/this, amount);
   // Record that we've taken it.
   taken_bytes_.fetch_add(amount, std::memory_order_relaxed);
   // Add the taken amount to the free pool.
   free_bytes_.fetch_add(amount, std::memory_order_acq_rel);
-  // See if we can add ourselves as a reclaimer.
-  MaybeRegisterReclaimer();
 }
 
-void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimer() {
-  // If the reclaimer is already registered, then there's nothing to do.
-  if (registered_reclaimer_.exchange(true, std::memory_order_relaxed)) {
-    return;
-  }
-  MutexLock lock(&reclaimer_mu_);
-  if (shutdown_) return;
-  // Grab references to the things we'll need
-  auto self = shared_from_this();
-  std::weak_ptr<EventEngineMemoryAllocatorImpl> self_weak{self};
-  registered_reclaimer_ = true;
-  InsertReclaimer(0, [self_weak](absl::optional<ReclamationSweep> sweep) {
-    if (!sweep.has_value()) return;
-    auto self = self_weak.lock();
-    if (self == nullptr) return;
-    auto* p = static_cast<GrpcMemoryAllocatorImpl*>(self.get());
-    p->registered_reclaimer_.store(false, std::memory_order_relaxed);
-    // Figure out how many bytes we can return to the quota.
-    size_t return_bytes = p->free_bytes_.exchange(0, std::memory_order_acq_rel);
-    if (return_bytes == 0) return;
-    // Subtract that from our outstanding balance.
-    p->taken_bytes_.fetch_sub(return_bytes);
-    // And return them to the quota.
-    p->memory_quota_->Return(return_bytes);
-  });
+grpc_slice GrpcMemoryAllocatorImpl::MakeSlice(MemoryRequest request) {
+  auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
+  void* p = malloc(size);
+  new (p) SliceRefCount(shared_from_this(), size);
+  grpc_slice slice;
+  slice.refcount = static_cast<SliceRefCount*>(p);
+  slice.data.refcounted.bytes =
+      static_cast<uint8_t*>(p) + sizeof(SliceRefCount);
+  slice.data.refcounted.length = size - sizeof(SliceRefCount);
+  return slice;
 }
 
 //
@@ -319,7 +401,6 @@ class BasicMemoryQuota::WaitForSweepPromise {
                       uint64_t token)
       : memory_quota_(std::move(memory_quota)), token_(token) {}
 
-  struct Empty {};
   Poll<Empty> operator()() {
     if (memory_quota_->reclamation_counter_.load(std::memory_order_relaxed) !=
         token_) {
@@ -334,8 +415,12 @@ class BasicMemoryQuota::WaitForSweepPromise {
   uint64_t token_;
 };
 
+BasicMemoryQuota::BasicMemoryQuota(std::string name) : name_(std::move(name)) {}
+
 void BasicMemoryQuota::Start() {
   auto self = shared_from_this();
+
+  MemoryQuotaTracker::Get().Add(self);
 
   // Reclamation loop:
   // basically, wait until we are in overcommit (free_bytes_ < 0), and then:
@@ -358,16 +443,15 @@ void BasicMemoryQuota::Start() {
             return std::make_tuple(name, std::move(f));
           };
         };
-        return Race(Map(self->reclaimers_[0].Next(), annotate("compact")),
-                    Map(self->reclaimers_[1].Next(), annotate("benign")),
-                    Map(self->reclaimers_[2].Next(), annotate("idle")),
-                    Map(self->reclaimers_[3].Next(), annotate("destructive")));
+        return Race(Map(self->reclaimers_[0].Next(), annotate("benign")),
+                    Map(self->reclaimers_[1].Next(), annotate("idle")),
+                    Map(self->reclaimers_[2].Next(), annotate("destructive")));
       },
       [self](
           std::tuple<const char*, RefCountedPtr<ReclaimerQueue::Handle>> arg) {
         auto reclaimer = std::move(std::get<1>(arg));
         if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-          double free = std::max(intptr_t(0), self->free_bytes_.load());
+          double free = std::max(intptr_t{0}, self->free_bytes_.load());
           size_t quota_size = self->quota_size_.load();
           gpr_log(GPR_INFO,
                   "RQ: %s perform %s reclamation. Available free bytes: %f, "
@@ -408,11 +492,11 @@ void BasicMemoryQuota::SetSize(size_t new_size) {
     Return(new_size - old_size);
   } else {
     // We're shrinking the quota.
-    Take(old_size - new_size);
+    Take(/*allocator=*/nullptr, old_size - new_size);
   }
 }
 
-void BasicMemoryQuota::Take(size_t amount) {
+void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
   GPR_DEBUG_ASSERT(amount <= std::numeric_limits<intptr_t>::max());
@@ -421,6 +505,25 @@ void BasicMemoryQuota::Take(size_t amount) {
   // If we push into overcommit, awake the reclaimer.
   if (prior >= 0 && prior < static_cast<intptr_t>(amount)) {
     if (reclaimer_activity_ != nullptr) reclaimer_activity_->ForceWakeup();
+  }
+
+  if (IsFreeLargeAllocatorEnabled()) {
+    if (allocator == nullptr) return;
+    GrpcMemoryAllocatorImpl* chosen_allocator = nullptr;
+    // Use calling allocator's shard index to choose shard.
+    auto& shard = big_allocators_.shards[allocator->IncrementShardIndex() %
+                                         big_allocators_.shards.size()];
+
+    if (shard.shard_mu.TryLock()) {
+      if (!shard.allocators.empty()) {
+        chosen_allocator = *shard.allocators.begin();
+      }
+      shard.shard_mu.Unlock();
+    }
+
+    if (chosen_allocator != nullptr) {
+      chosen_allocator->ReturnFree();
+    }
   }
 }
 
@@ -431,7 +534,7 @@ void BasicMemoryQuota::FinishReclamation(uint64_t token, Waker waker) {
                                                    std::memory_order_relaxed,
                                                    std::memory_order_relaxed)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      double free = std::max(intptr_t(0), free_bytes_.load());
+      double free = std::max(intptr_t{0}, free_bytes_.load());
       size_t quota_size = quota_size_.load();
       gpr_log(GPR_INFO,
               "RQ: %s reclamation complete. Available free bytes: %f, "
@@ -446,33 +549,258 @@ void BasicMemoryQuota::Return(size_t amount) {
   free_bytes_.fetch_add(amount, std::memory_order_relaxed);
 }
 
-std::pair<double, size_t>
-BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() const {
+void BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "Adding allocator %p", allocator);
+  }
+
+  AllocatorBucket::Shard& shard = small_allocators_.SelectShard(allocator);
+
+  {
+    MutexLock l(&shard.shard_mu);
+    shard.allocators.emplace(allocator);
+  }
+}
+
+void BasicMemoryQuota::RemoveAllocator(GrpcMemoryAllocatorImpl* allocator) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "Removing allocator %p", allocator);
+  }
+
+  AllocatorBucket::Shard& small_shard =
+      small_allocators_.SelectShard(allocator);
+
+  {
+    MutexLock l(&small_shard.shard_mu);
+    if (small_shard.allocators.erase(allocator) == 1) {
+      return;
+    }
+  }
+
+  AllocatorBucket::Shard& big_shard = big_allocators_.SelectShard(allocator);
+
+  {
+    MutexLock l(&big_shard.shard_mu);
+    big_shard.allocators.erase(allocator);
+  }
+}
+
+void BasicMemoryQuota::MaybeMoveAllocator(GrpcMemoryAllocatorImpl* allocator,
+                                          size_t old_free_bytes,
+                                          size_t new_free_bytes) {
+  while (true) {
+    if (new_free_bytes < kSmallAllocatorThreshold) {
+      // Still in small bucket. No move.
+      if (old_free_bytes < kSmallAllocatorThreshold) return;
+      MaybeMoveAllocatorBigToSmall(allocator);
+    } else if (new_free_bytes > kBigAllocatorThreshold) {
+      // Still in big bucket. No move.
+      if (old_free_bytes > kBigAllocatorThreshold) return;
+      MaybeMoveAllocatorSmallToBig(allocator);
+    } else {
+      // Somewhere between thresholds. No move.
+      return;
+    }
+
+    // Loop to make sure move is eventually stable.
+    old_free_bytes = new_free_bytes;
+    new_free_bytes = allocator->GetFreeBytes();
+  }
+}
+
+void BasicMemoryQuota::MaybeMoveAllocatorBigToSmall(
+    GrpcMemoryAllocatorImpl* allocator) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "Moving allocator %p to small", allocator);
+  }
+
+  AllocatorBucket::Shard& old_shard = big_allocators_.SelectShard(allocator);
+
+  {
+    MutexLock l(&old_shard.shard_mu);
+    if (old_shard.allocators.erase(allocator) == 0) return;
+  }
+
+  AllocatorBucket::Shard& new_shard = small_allocators_.SelectShard(allocator);
+
+  {
+    MutexLock l(&new_shard.shard_mu);
+    new_shard.allocators.emplace(allocator);
+  }
+}
+
+void BasicMemoryQuota::MaybeMoveAllocatorSmallToBig(
+    GrpcMemoryAllocatorImpl* allocator) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "Moving allocator %p to big", allocator);
+  }
+
+  AllocatorBucket::Shard& old_shard = small_allocators_.SelectShard(allocator);
+
+  {
+    MutexLock l(&old_shard.shard_mu);
+    if (old_shard.allocators.erase(allocator) == 0) return;
+  }
+
+  AllocatorBucket::Shard& new_shard = big_allocators_.SelectShard(allocator);
+
+  {
+    MutexLock l(&new_shard.shard_mu);
+    new_shard.allocators.emplace(allocator);
+  }
+}
+
+BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   double free = free_bytes_.load();
   if (free < 0) free = 0;
   size_t quota_size = quota_size_.load();
   double size = quota_size;
-  if (size < 1) return std::make_pair(1.0, 1);
-  double pressure = (size - free) / size;
-  if (pressure < 0.0) pressure = 0.0;
-  if (pressure > 1.0) pressure = 1.0;
-  return std::make_pair(pressure, quota_size / 16);
+  if (size < 1) return PressureInfo{1, 1, 1};
+  PressureInfo pressure_info;
+  pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
+  pressure_info.pressure_control_value =
+      pressure_tracker_.AddSampleAndGetControlValue(
+          pressure_info.instantaneous_pressure);
+  pressure_info.max_recommended_allocation_size = quota_size / 16;
+  return pressure_info;
 }
+
+//
+// PressureTracker
+//
+
+namespace memory_quota_detail {
+
+double PressureController::Update(double error) {
+  bool is_low = error < 0;
+  bool was_low = std::exchange(last_was_low_, is_low);
+  double new_control;  // leave unset to compiler can note bad branches
+  if (is_low && was_low) {
+    // Memory pressure is too low this round, and was last round too.
+    // If we have reached the min reporting value last time, then we will report
+    // the same value again this time and can start to increase the ticks_same_
+    // counter.
+    if (last_control_ == min_) {
+      ticks_same_++;
+      if (ticks_same_ >= max_ticks_same_) {
+        // If it's been the same for too long, reduce the min reported value
+        // down towards zero.
+        min_ /= 2.0;
+        ticks_same_ = 0;
+      }
+    }
+    // Target the min reporting value.
+    new_control = min_;
+  } else if (!is_low && !was_low) {
+    // Memory pressure is high, and was high previously.
+    ticks_same_++;
+    if (ticks_same_ >= max_ticks_same_) {
+      // It's been high for too long, increase the max reporting value up
+      // towards 1.0.
+      max_ = (1.0 + max_) / 2.0;
+      ticks_same_ = 0;
+    }
+    // Target the max reporting value.
+    new_control = max_;
+  } else if (is_low) {
+    // Memory pressure is low, but was high last round.
+    // Target the min reporting value, but first update it to be closer to the
+    // current max (that we've been reporting lately).
+    // In this way the min will gradually climb towards the max as we find a
+    // stable point.
+    // If this is too high, then we'll eventually move it back towards zero.
+    ticks_same_ = 0;
+    min_ = (min_ + max_) / 2.0;
+    new_control = min_;
+  } else {
+    // Memory pressure is high, but was low last round.
+    // Target the max reporting value, but first update it to be closer to the
+    // last reported value.
+    // The first switchover will have last_control_ being 0, and max_ being 2,
+    // so we'll immediately choose 1.0 which will tend to really slow down
+    // progress.
+    // If we end up targetting too low, we'll eventually move it back towards
+    // 1.0 after max_ticks_same_ ticks.
+    ticks_same_ = 0;
+    max_ = (last_control_ + max_) / 2.0;
+    new_control = max_;
+  }
+  // If the control value is decreasing we do it slowly. This avoids rapid
+  // oscillations.
+  // (If we want a control value that's higher than the last one we snap
+  // immediately because it's likely that memory pressure is growing unchecked).
+  if (new_control < last_control_) {
+    new_control =
+        std::max(new_control, last_control_ - max_reduction_per_tick_ / 1000.0);
+  }
+  last_control_ = new_control;
+  return new_control;
+}
+
+std::string PressureController::DebugString() const {
+  return absl::StrCat(last_was_low_ ? "low" : "high", " min=", min_,
+                      " max=", max_, " ticks=", ticks_same_,
+                      " last_control=", last_control_);
+}
+
+double PressureTracker::AddSampleAndGetControlValue(double sample) {
+  static const double kSetPoint = 0.95;
+
+  double max_so_far = max_this_round_.load(std::memory_order_relaxed);
+  if (sample > max_so_far) {
+    max_this_round_.compare_exchange_weak(max_so_far, sample,
+                                          std::memory_order_relaxed,
+                                          std::memory_order_relaxed);
+  }
+  // If memory pressure is almost done, immediately hit the brakes and report
+  // full memory usage.
+  if (sample >= 0.99) {
+    report_.store(1.0, std::memory_order_relaxed);
+  }
+  update_.Tick([&](Duration) {
+    // Reset the round tracker with the new sample.
+    const double current_estimate =
+        max_this_round_.exchange(sample, std::memory_order_relaxed);
+    double report;
+    if (current_estimate > 0.99) {
+      // Under very high memory pressure we... just max things out.
+      report = controller_.Update(1e99);
+    } else {
+      report = controller_.Update(current_estimate - kSetPoint);
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+      gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf controller:%s",
+              current_estimate, report, controller_.DebugString().c_str());
+    }
+    report_.store(report, std::memory_order_relaxed);
+  });
+  return report_.load(std::memory_order_relaxed);
+}
+
+}  // namespace memory_quota_detail
 
 //
 // MemoryQuota
 //
 
-MemoryAllocator MemoryQuota::CreateMemoryAllocator(absl::string_view name) {
-  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
-      memory_quota_, absl::StrCat(memory_quota_->name(), "/allocator/", name));
+MemoryAllocator MemoryQuota::CreateMemoryAllocator(
+    GRPC_UNUSED absl::string_view name) {
+  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
   return MemoryAllocator(std::move(impl));
 }
 
-MemoryOwner MemoryQuota::CreateMemoryOwner(absl::string_view name) {
-  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
-      memory_quota_, absl::StrCat(memory_quota_->name(), "/owner/", name));
+MemoryOwner MemoryQuota::CreateMemoryOwner() {
+  // Note: we will likely want to add a name or some way to distinguish
+  // between memory owners once resource quota is fully rolled out and we need
+  // full metrics. One thing to note, however, is that manipulating the name
+  // here (e.g. concatenation) can add significant memory increase when many
+  // owners are created.
+  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
   return MemoryOwner(std::move(impl));
+}
+
+std::vector<std::shared_ptr<BasicMemoryQuota>> AllMemoryQuotas() {
+  return MemoryQuotaTracker::Get().All();
 }
 
 }  // namespace grpc_core

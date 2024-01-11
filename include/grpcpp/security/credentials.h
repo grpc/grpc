@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SECURITY_CREDENTIALS_H
 #define GRPCPP_SECURITY_CREDENTIALS_H
@@ -25,11 +25,11 @@
 
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/channel.h>
-#include <grpcpp/impl/codegen/client_interceptor.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
@@ -54,12 +54,6 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
-
-GRPC_DEPRECATED(
-    "Use grpc::XdsCredentials instead. The experimental version will be "
-    "deleted after the 1.41 release.")
-std::shared_ptr<ChannelCredentials> XdsCredentials(
-    const std::shared_ptr<ChannelCredentials>& fallback_creds);
 }  // namespace experimental
 
 /// Builds XDS Credentials.
@@ -72,11 +66,8 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
 /// for all the calls on that channel.
 ///
 /// \see https://grpc.io/docs/guides/auth.html
-class ChannelCredentials : private grpc::GrpcLibraryCodegen {
+class ChannelCredentials : private grpc::internal::GrpcLibrary {
  public:
-  ChannelCredentials();
-  ~ChannelCredentials() override;
-
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
@@ -129,11 +120,8 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
 /// authenticate with a server for a given call on a channel.
 ///
 /// \see https://grpc.io/docs/guides/auth.html
-class CallCredentials : private grpc::GrpcLibraryCodegen {
+class CallCredentials : private grpc::internal::GrpcLibrary {
  public:
-  CallCredentials();
-  ~CallCredentials() override;
-
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;
   virtual grpc::string DebugString() {

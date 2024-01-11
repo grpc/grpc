@@ -23,7 +23,7 @@ from typing import Any, List, Mapping, Union
 
 def import_python_module(path: str) -> types.ModuleType:
     """Imports the Python file at the given path, returns a module object."""
-    module_name = os.path.basename(path).replace('.py', '')
+    module_name = os.path.basename(path).replace(".py", "")
     spec = importlib.util.spec_from_file_location(module_name, path)
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
@@ -59,7 +59,7 @@ def merge_json(dst: Union[Mapping, List], add: Union[Mapping, List]) -> None:
     if isinstance(dst, dict) and isinstance(add, dict):
         for k, v in list(add.items()):
             if k in dst:
-                if k.startswith('#'):
+                if k.startswith("#"):
                     continue
                 merge_json(dst[k], v)
             else:
@@ -68,5 +68,6 @@ def merge_json(dst: Union[Mapping, List], add: Union[Mapping, List]) -> None:
         dst.extend(add)
     else:
         raise TypeError(
-            'Tried to merge incompatible objects %s %s\n\n%r\n\n%r' %
-            (type(dst).__name__, type(add).__name__, dst, add))
+            "Tried to merge incompatible objects %s %s\n\n%r\n\n%r"
+            % (type(dst).__name__, type(add).__name__, dst, add)
+        )

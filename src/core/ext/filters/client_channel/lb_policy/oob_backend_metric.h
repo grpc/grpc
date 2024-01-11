@@ -14,16 +14,16 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OOB_BACKEND_METRIC_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OOB_BACKEND_METRIC_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OOB_BACKEND_METRIC_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OOB_BACKEND_METRIC_H
 
 #include <grpc/support/port_platform.h>
 
 #include <memory>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 
 namespace grpc_core {
 
@@ -38,7 +38,7 @@ namespace grpc_core {
 // subchannel like this:
 //   subchannel->AddDataWatcher(
 //       MakeOobBackendMetricWatcher(
-//           absl::make_unique<MyOobBackendMetricWatcherSubclass>(...)));
+//           std::make_unique<MyOobBackendMetricWatcherSubclass>(...)));
 
 class OobBackendMetricWatcher {
  public:
@@ -54,4 +54,4 @@ MakeOobBackendMetricWatcher(Duration report_interval,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OOB_BACKEND_METRIC_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OOB_BACKEND_METRIC_H

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_API_H
-#define GRPC_CORE_EXT_XDS_XDS_API_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_API_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_API_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,24 +29,21 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "envoy/admin/v3/config_dump.upb.h"
-#include "upb/def.hpp"
+#include "envoy/admin/v3/config_dump_shared.upb.h"
+#include "upb/mem/arena.h"
+#include "upb/reflection/def.hpp"
 
-#include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 
 class XdsClient;
 
 // TODO(roth): When we have time, split this into multiple pieces:
-// - a common upb-based parsing framework (combine with XdsEncodingContext)
 // - ADS request/response handling
 // - LRS request/response handling
 // - CSDS response generation
@@ -70,9 +67,17 @@ class XdsApi {
     virtual absl::Status ProcessAdsResponseFields(AdsResponseFields fields) = 0;
 
     // Called to parse each individual resource in the ADS response.
-    virtual void ParseResource(const XdsEncodingContext& context, size_t idx,
+    // Note that resource_name is non-empty only when the resource was
+    // wrapped in a Resource wrapper proto.
+    virtual void ParseResource(upb_Arena* arena, size_t idx,
                                absl::string_view type_url,
+                               absl::string_view resource_name,
                                absl::string_view serialized_resource) = 0;
+
+    // Called when a resource is wrapped in a Resource wrapper proto but
+    // we fail to parse the Resource wrapper.
+    virtual void ResourceWrapperParsingFailed(size_t idx,
+                                              absl::string_view message) = 0;
   };
 
   struct ClusterLoadReport {
@@ -143,37 +148,33 @@ class XdsApi {
                 "");
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
-         const CertificateProviderStore::PluginDefinitionMap* map,
-         upb::SymbolTable* symtab);
+         upb::DefPool* def_pool, std::string user_agent_name,
+         std::string user_agent_version);
 
   // Creates an ADS request.
-  // Takes ownership of \a error.
-  std::string CreateAdsRequest(const XdsBootstrap::XdsServer& server,
-                               absl::string_view type_url,
+  std::string CreateAdsRequest(absl::string_view type_url,
                                absl::string_view version,
                                absl::string_view nonce,
                                const std::vector<std::string>& resource_names,
-                               grpc_error_handle error, bool populate_node);
+                               absl::Status status, bool populate_node);
 
   // Returns non-OK when failing to deserialize response message.
   // Otherwise, all events are reported to the parser.
-  absl::Status ParseAdsResponse(const XdsBootstrap::XdsServer& server,
-                                absl::string_view encoded_response,
+  absl::Status ParseAdsResponse(absl::string_view encoded_response,
                                 AdsResponseParserInterface* parser);
 
   // Creates an initial LRS request.
-  std::string CreateLrsInitialRequest(const XdsBootstrap::XdsServer& server);
+  std::string CreateLrsInitialRequest();
 
   // Creates an LRS request sending a client-side load report.
   std::string CreateLrsRequest(ClusterLoadReportMap cluster_load_report_map);
 
-  // Parses the LRS response and returns \a
-  // load_reporting_interval for client-side load reporting. If there is any
-  // error, the output config is invalid.
-  grpc_error_handle ParseLrsResponse(absl::string_view encoded_response,
-                                     bool* send_all_clusters,
-                                     std::set<std::string>* cluster_names,
-                                     Duration* load_reporting_interval);
+  // Parses the LRS response and populates send_all_clusters,
+  // cluster_names, and load_reporting_interval.
+  absl::Status ParseLrsResponse(absl::string_view encoded_response,
+                                bool* send_all_clusters,
+                                std::set<std::string>* cluster_names,
+                                Duration* load_reporting_interval);
 
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(
@@ -183,14 +184,11 @@ class XdsApi {
   XdsClient* client_;
   TraceFlag* tracer_;
   const XdsBootstrap::Node* node_;  // Do not own.
-  const CertificateProviderStore::PluginDefinitionMap*
-      certificate_provider_definition_map_;  // Do not own.
-  upb::SymbolTable* symtab_;                 // Do not own.
-  const std::string build_version_;
+  upb::DefPool* def_pool_;          // Do not own.
   const std::string user_agent_name_;
   const std::string user_agent_version_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_API_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_API_H

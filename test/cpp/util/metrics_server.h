@@ -1,22 +1,22 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *is % allowed in string
- */
-#ifndef GRPC_TEST_CPP_METRICS_SERVER_H
-#define GRPC_TEST_CPP_METRICS_SERVER_H
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// is % allowed in string
+//
+#ifndef GRPC_TEST_CPP_UTIL_METRICS_SERVER_H
+#define GRPC_TEST_CPP_UTIL_METRICS_SERVER_H
 
 #include <map>
 #include <mutex>
@@ -26,27 +26,27 @@
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
 
-/*
- * This implements a Metrics server defined in
- * src/proto/grpc/testing/metrics.proto. Any
- * test service can use this to export Metrics (TODO (sreek): Only Gauges for
- * now).
- *
- * Example:
- *    MetricsServiceImpl metricsImpl;
- *    ..
- *    // Create QpsGauge(s). Note: QpsGauges can be created even after calling
- *    // 'StartServer'.
- *    QpsGauge qps_gauge1 = metricsImpl.CreateQpsGauge("foo", is_present);
- *    // qps_gauge1 can now be used anywhere in the program by first making a
- *    // one-time call qps_gauge1.Reset() and then calling qps_gauge1.Incr()
- *    // every time to increment a query counter
- *
- *    ...
- *    // Create the metrics server
- *    std::unique_ptr<grpc::Server> server = metricsImpl.StartServer(port);
- *    server->Wait(); // Note: This is blocking.
- */
+//
+// This implements a Metrics server defined in
+// src/proto/grpc/testing/metrics.proto. Any
+// test service can use this to export Metrics (TODO (sreek): Only Gauges for
+// now).
+//
+// Example:
+//    MetricsServiceImpl metricsImpl;
+//    ..
+//    // Create QpsGauge(s). Note: QpsGauges can be created even after calling
+//    // 'StartServer'.
+//    QpsGauge qps_gauge1 = metricsImpl.CreateQpsGauge("foo", is_present);
+//    // qps_gauge1 can now be used anywhere in the program by first making a
+//    // one-time call qps_gauge1.Reset() and then calling qps_gauge1.Incr()
+//    // every time to increment a query counter
+//
+//    ...
+//    // Create the metrics server
+//    std::unique_ptr<grpc::Server> server = metricsImpl.StartServer(port);
+//    server->Wait(); // Note: This is blocking.
+//
 namespace grpc {
 namespace testing {
 
@@ -95,4 +95,4 @@ class MetricsServiceImpl final : public MetricsService::Service {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_METRICS_SERVER_H
+#endif  // GRPC_TEST_CPP_UTIL_METRICS_SERVER_H

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <time.h>
 
@@ -36,6 +36,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -92,7 +93,7 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
       gpr_atm* should_exit) {
     EchoResponse response;
     response.set_message(kLargeString);
-    while (gpr_atm_acq_load(should_exit) == static_cast<gpr_atm>(0)) {
+    while (gpr_atm_acq_load(should_exit) == gpr_atm{0}) {
       struct timespec tv = {0, 1000000};  // 1 ms
       struct timespec rem;
       // TODO (vpai): Mark this blocking
@@ -110,7 +111,7 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
       ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     gpr_atm should_exit;
-    gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(0));
+    gpr_atm_rel_store(&should_exit, gpr_atm{0});
 
     std::thread sender(
         std::bind(&TestServiceImpl::BidiStream_Sender, stream, &should_exit));
@@ -123,7 +124,7 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
         tv = rem;
       };
     }
-    gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(1));
+    gpr_atm_rel_store(&should_exit, gpr_atm{1});
     sender.join();
     return Status::OK;
   }

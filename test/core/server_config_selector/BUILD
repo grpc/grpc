@@ -30,7 +30,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_server_config_selector",
+        "//src/core:channel_args",
+        "//src/core:grpc_server_config_selector",
         "//test/core/util:grpc_test_util",
     ],
 )

@@ -1,29 +1,29 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/backoff/backoff.h"
 
 #include <algorithm>
+#include <memory>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -49,11 +49,11 @@ TEST(BackOffTest, ConstantBackOff) {
   BackOff backoff(options);
 
   grpc_core::Timestamp next_attempt_start_time = backoff.NextAttemptTime();
-  EXPECT_EQ(next_attempt_start_time - grpc_core::ExecCtx::Get()->Now(),
+  EXPECT_EQ(next_attempt_start_time - grpc_core::Timestamp::Now(),
             initial_backoff);
   for (int i = 0; i < 10000; i++) {
     next_attempt_start_time = backoff.NextAttemptTime();
-    EXPECT_EQ(next_attempt_start_time - grpc_core::ExecCtx::Get()->Now(),
+    EXPECT_EQ(next_attempt_start_time - grpc_core::Timestamp::Now(),
               initial_backoff);
   }
 }
@@ -71,7 +71,7 @@ TEST(BackOffTest, MinConnect) {
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
   grpc_core::Timestamp next = backoff.NextAttemptTime();
-  EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
+  EXPECT_EQ(next - grpc_core::Timestamp::Now(), initial_backoff);
 }
 
 TEST(BackOffTest, NoJitterBackOff) {
@@ -148,7 +148,7 @@ TEST(BackOffTest, JitterBackOff) {
 
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Timestamp next = backoff.NextAttemptTime();
-  EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
+  EXPECT_EQ(next - grpc_core::Timestamp::Now(), initial_backoff);
 
   auto expected_next_lower_bound = grpc_core::Duration::Milliseconds(
       static_cast<double>(current_backoff.millis()) * (1 - jitter));
@@ -160,7 +160,7 @@ TEST(BackOffTest, JitterBackOff) {
     // next-now must be within (jitter*100)% of the current backoff (which
     // increases by * multiplier up to max_backoff).
     const grpc_core::Duration timeout_millis =
-        next - grpc_core::ExecCtx::Get()->Now();
+        next - grpc_core::Timestamp::Now();
     EXPECT_GE(timeout_millis, expected_next_lower_bound);
     EXPECT_LE(timeout_millis, expected_next_upper_bound);
     current_backoff = std::min(

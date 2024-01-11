@@ -21,6 +21,8 @@
     autoconf automake build-essential git libtool curl ${'\\'}
     zlib1g-dev ${'\\'}
     && apt-get clean
+  
+  <%include file="../../git_avoid_dubious_ownership_error.include"/>
 
   # install php pthreads from source
   # TODO(jtattermusch): is this really needed?
@@ -38,9 +40,7 @@
   <%include file="../../cmake.include"/>
   <%include file="../../ccache.include"/>
   <%include file="../../run_tests_addons.include"/>
-
-  # Seems required by XDS interop tests.
-  RUN python3 -m pip install virtualenv==16.7.9
+  <%include file="../../xds_interop_deps.include"/>
 
   # Define the default command.
   CMD ["bash"]

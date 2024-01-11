@@ -1,27 +1,30 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* This benchmark exists to show that byte-buffer copy is size-independent */
+// This benchmark exists to show that byte-buffer copy is size-independent
 
 #include <memory>
 
 #include <benchmark/benchmark.h>
 
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/slice.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/byte_buffer.h>
 
@@ -55,29 +58,24 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
   std::vector<grpc_slice> slices;
   for (int i = 0; i < num_slices; ++i) {
     std::unique_ptr<char[]> buf(new char[kSliceSize]);
-    slices.emplace_back(g_core_codegen_interface->grpc_slice_from_copied_buffer(
-        buf.get(), kSliceSize));
+    slices.emplace_back(grpc_slice_from_copied_buffer(buf.get(), kSliceSize));
   }
-  grpc_byte_buffer* bb = g_core_codegen_interface->grpc_raw_byte_buffer_create(
-      slices.data(), num_slices);
+  grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(slices.data(), num_slices);
   grpc_byte_buffer_reader reader;
-  GPR_ASSERT(
-      g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {
     grpc_slice* slice;
-    if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
-            &reader, &slice))) {
-      g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
-      GPR_ASSERT(
-          g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+    if (GPR_UNLIKELY(!grpc_byte_buffer_reader_peek(&reader, &slice))) {
+      grpc_byte_buffer_reader_destroy(&reader);
+      GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
       continue;
     }
   }
 
-  g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
-  g_core_codegen_interface->grpc_byte_buffer_destroy(bb);
+  grpc_byte_buffer_reader_destroy(&reader);
+  grpc_byte_buffer_destroy(bb);
   for (auto& slice : slices) {
-    g_core_codegen_interface->grpc_slice_unref(slice);
+    grpc_slice_unref(slice);
   }
 }
 BENCHMARK(BM_ByteBufferReader_Next)->Ranges({{64 * 1024, 1024 * 1024}});
@@ -88,29 +86,24 @@ static void BM_ByteBufferReader_Peek(benchmark::State& state) {
   std::vector<grpc_slice> slices;
   for (int i = 0; i < num_slices; ++i) {
     std::unique_ptr<char[]> buf(new char[kSliceSize]);
-    slices.emplace_back(g_core_codegen_interface->grpc_slice_from_copied_buffer(
-        buf.get(), kSliceSize));
+    slices.emplace_back(grpc_slice_from_copied_buffer(buf.get(), kSliceSize));
   }
-  grpc_byte_buffer* bb = g_core_codegen_interface->grpc_raw_byte_buffer_create(
-      slices.data(), num_slices);
+  grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(slices.data(), num_slices);
   grpc_byte_buffer_reader reader;
-  GPR_ASSERT(
-      g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {
     grpc_slice* slice;
-    if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
-            &reader, &slice))) {
-      g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
-      GPR_ASSERT(
-          g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+    if (GPR_UNLIKELY(!grpc_byte_buffer_reader_peek(&reader, &slice))) {
+      grpc_byte_buffer_reader_destroy(&reader);
+      GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
       continue;
     }
   }
 
-  g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
-  g_core_codegen_interface->grpc_byte_buffer_destroy(bb);
+  grpc_byte_buffer_reader_destroy(&reader);
+  grpc_byte_buffer_destroy(bb);
   for (auto& slice : slices) {
-    g_core_codegen_interface->grpc_slice_unref(slice);
+    grpc_slice_unref(slice);
   }
 }
 BENCHMARK(BM_ByteBufferReader_Peek)->Ranges({{64 * 1024, 1024 * 1024}});

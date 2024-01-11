@@ -51,7 +51,6 @@ py_library(
     deps = [
         ":benchmark_client",
         ":benchmark_servicer",
-        "//src/proto/grpc/core:stats_py_pb2",
         "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
         "//src/proto/grpc/testing:control_py_pb2",
         "//src/proto/grpc/testing:payloads_py_pb2",

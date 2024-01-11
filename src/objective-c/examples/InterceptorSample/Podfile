@@ -1,11 +1,6 @@
-platform :ios, '9.0'
+platform :ios, '10.0'
 
 install! 'cocoapods', :deterministic_uuids => false
-
-# Default to use framework, so that providing no 'FRAMEWORK' env parameter works consistently
-# for all Samples, specifically because Swift only supports framework.
-# Only effective for examples/
-use_frameworks! if ENV['FRAMEWORKS'] != 'NO'
 
 ROOT_DIR = '../../../..'
 

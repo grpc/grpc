@@ -80,8 +80,10 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++",
+        "//:subprocess",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -113,6 +115,8 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++_unsecure",
+        "//:subprocess",
+        "//test/core/util:grpc_test_util_base",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -330,6 +334,7 @@ grpc_cc_binary(
     srcs = ["channelz_sampler.cc"],
     external_deps = [
         "absl/flags:flag",
+        "absl/strings",
     ],
     language = "c++",
     tags = [
@@ -356,6 +361,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     tags = [
         "no_mac",  # cmake does not build channelz_sampler in Basic Tests C/C++ MacOS test
         "no_test_android",  # android_cc_test doesn't work with data dependency.
@@ -370,7 +376,6 @@ grpc_cc_test(
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:test_proto",
         "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
         "//test/cpp/util:test_util",
     ],
 )
@@ -388,5 +393,51 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "proto_buffer_reader_test",
+    srcs = [
+        "proto_buffer_reader_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "proto_buffer_writer_test",
+    srcs = [
+        "proto_buffer_writer_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "get_grpc_test_runfile_dir",
+    srcs = [
+        "get_grpc_test_runfile_dir.cc",
+    ],
+    hdrs = [
+        "get_grpc_test_runfile_dir.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    deps = [
+        "//src/core:env",
     ],
 )

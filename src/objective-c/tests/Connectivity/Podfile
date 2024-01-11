@@ -1,5 +1,5 @@
 install! 'cocoapods', :deterministic_uuids => false
-platform :ios, '9.0'
+platform :ios, '10.0'
 
 # Location of gRPC's repo root relative to this file.
 GRPC_LOCAL_SRC = '../../../..'

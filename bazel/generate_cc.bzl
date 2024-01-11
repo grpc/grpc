@@ -143,7 +143,7 @@ def generate_cc_impl(ctx):
         f = ctx.attr.well_known_protos.files.to_list()[0].dirname
         if f != "external/com_google_protobuf/src/google/protobuf":
             print(
-                "Error: Only @com_google_protobuf//:well_known_protos is supported",
+                "Error: Only @com_google_protobuf//:well_known_type_protos is supported",
             )  # buildifier: disable=print
         else:
             # f points to "external/com_google_protobuf/src/google/protobuf"
@@ -163,7 +163,7 @@ def generate_cc_impl(ctx):
         use_default_shell_env = True,
     )
 
-    return struct(files = depset(out_files))  # buildifier: disable=rule-impl-return
+    return DefaultInfo(files = depset(out_files))
 
 _generate_cc = rule(
     attrs = {
@@ -175,7 +175,7 @@ _generate_cc = rule(
         "plugin": attr.label(
             executable = True,
             providers = ["files_to_run"],
-            cfg = "host",
+            cfg = "exec",
         ),
         "flags": attr.string_list(
             mandatory = False,
@@ -189,7 +189,7 @@ _generate_cc = rule(
         "_protoc": attr.label(
             default = Label("//external:protocol_compiler"),
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
     },
     # We generate .h files, so we need to output to genfiles.
@@ -200,7 +200,7 @@ _generate_cc = rule(
 def generate_cc(well_known_protos, **kwargs):
     if well_known_protos:
         _generate_cc(
-            well_known_protos = "@com_google_protobuf//:well_known_protos",
+            well_known_protos = "@com_google_protobuf//:well_known_type_protos",
             **kwargs
         )
     else:

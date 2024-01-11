@@ -22,7 +22,7 @@ syntax = "proto3";
 // Ignored detached comment
 // The comments in this file are not meant for readability
 // but rather to test to make sure that the code generator
-// properly preserves comments on files, services, and RPCs
+// properly preserves comments on files, services, and RPCs.
 
 // Ignored package leading comment
 package grpc.testing;
@@ -35,6 +35,8 @@ message Response {
 // ServiceA detached comment 1
 
 // ServiceA detached comment 2
+
+// Comments may contain special characters like "^[a-z0-9-]{1,63}$" and $$
 
 // ServiceA leading comment 1
 service ServiceA {

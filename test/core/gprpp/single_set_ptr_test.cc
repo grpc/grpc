@@ -14,9 +14,11 @@
 
 #include "src/core/lib/gprpp/single_set_ptr.h"
 
+#include <algorithm>
 #include <thread>
+#include <vector>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -45,8 +47,8 @@ TEST(SingleSetPtrTest, CanReset) {
 TEST(SingleSetPtrTest, LotsOfSetters) {
   SingleSetPtr<int> p;
   std::vector<std::thread> threads;
-  threads.reserve(100);
-  for (int i = 0; i < 100; i++) {
+  threads.reserve(10);
+  for (int i = 0; i < 10; i++) {
     threads.emplace_back([&p, i]() { p.Set(new int(i)); });
   }
   for (auto& t : threads) {

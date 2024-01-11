@@ -18,29 +18,30 @@ import os
 import re
 import sys
 
-os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
+os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
 errors = 0
 tracers = []
-pattern = re.compile("GRPC_TRACER_INITIALIZER\((true|false), \"(.*)\"\)")
-for root, dirs, files in os.walk('src/core'):
+pattern = re.compile('GRPC_TRACER_INITIALIZER\((true|false), "(.*)"\)')
+for root, dirs, files in os.walk("src/core"):
     for filename in files:
         path = os.path.join(root, filename)
-        if os.path.splitext(path)[1] != '.c':
+        if os.path.splitext(path)[1] != ".c":
             continue
         with open(path) as f:
             text = f.read()
         for o in pattern.findall(text):
             tracers.append(o[1])
 
-with open('doc/environment_variables.md') as f:
+with open("doc/environment_variables.md") as f:
     text = f.read()
 
 for t in tracers:
     if t not in text:
-        print((
-            "ERROR: tracer \"%s\" is not mentioned in doc/environment_variables.md"
-            % t))
+        print(
+            'ERROR: tracer "%s" is not mentioned in'
+            " doc/environment_variables.md" % t
+        )
         errors += 1
 
 assert errors == 0

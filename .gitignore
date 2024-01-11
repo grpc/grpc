@@ -1,5 +1,6 @@
 # C/C++ build outputs
 .build/
+build/
 bins
 gens
 libs
@@ -16,13 +17,14 @@ cython_debug/
 dist/
 htmlcov/
 py3*/
-python_build/
+pyb/
 python_pylint_venv/
 src/python/grpcio_*/=*
 src/python/grpcio_*/build/
 src/python/grpcio_*/LICENSE
 src/python/grpcio_status/grpc_status/google/rpc/status.proto
-yapf_virtual_environment/
+black_virtual_environment/
+isort_virtual_environment/
 
 # Node installation output
 node_modules
@@ -53,6 +55,7 @@ coverage
 
 # vim temp files
 .*.swp
+.*.swo
 
 # Makefile's cache
 cache.mk
@@ -178,3 +181,6 @@ iwyu_build/
 # fuzzer logs
 fuzz-*.log
 
+# bazel module files (MODULE.bazel will need to be removed here)
+MODULE.bazel
+MODULE.bazel.lock

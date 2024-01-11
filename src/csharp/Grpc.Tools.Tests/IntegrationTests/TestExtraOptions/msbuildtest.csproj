@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+     Note: common properties and targets for tests are imported from the
+     Directory.Build.props and Directory.Build.targets files in the parent directoty
+  -->
+
+  <!-- The protobuf compiler settings to test -->
+  <!-- Test various optional options are passed to protoc and plugin -->
+  <ItemGroup>
+    <Protobuf Include="file.proto" 
+      AdditionalProtocArguments="--plugin=protoc-gen-myplugin=D:\myplugin.exe;--myplugin_out=."
+      OutputOptions="--outOpt1=foo;--outOpt2=bar"
+      GrpcOutputOptions="--grpcOpt1=one;--grpcOpt2=two;--grpcOpt3=three"
+    />
+  </ItemGroup>
+  
+</Project>

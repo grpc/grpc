@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <net/if.h>
 #include <string.h>
@@ -22,6 +22,10 @@
 
 #include <string>
 
+#include <gtest/gtest.h>
+
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
@@ -30,14 +34,16 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
@@ -67,7 +73,7 @@ void args_init(args_struct* args) {
 }
 
 void args_finish(args_struct* args) {
-  GPR_ASSERT(gpr_event_wait(&args->ev, test_deadline()));
+  ASSERT_TRUE(gpr_event_wait(&args->ev, test_deadline()));
   args->thd.Join();
   // Don't need to explicitly destruct args->thd since
   // args is actually going to be destructed, not just freed
@@ -98,11 +104,10 @@ static void actually_poll(void* argsp) {
       if (args->done) {
         break;
       }
-      grpc_core::Duration time_left =
-          deadline - grpc_core::ExecCtx::Get()->Now();
+      grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
       gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done,
               time_left.millis());
-      GPR_ASSERT(time_left >= grpc_core::Duration::Zero());
+      ASSERT_GE(time_left, grpc_core::Duration::Zero());
       grpc_pollset_worker* worker = nullptr;
       GRPC_LOG_IF_ERROR(
           "pollset_work",
@@ -121,8 +126,8 @@ namespace {
 
 void MustSucceed(args_struct* args,
                  absl::StatusOr<std::vector<grpc_resolved_address>> result) {
-  GPR_ASSERT(result.ok());
-  GPR_ASSERT(!result->empty());
+  ASSERT_TRUE(result.ok());
+  ASSERT_FALSE(result->empty());
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
@@ -161,7 +166,7 @@ static void test_named_and_numeric_scope_ids(void) {
       break;
     }
   }
-  GPR_ASSERT(strlen(arbitrary_interface_name) > 0);
+  ASSERT_GT(strlen(arbitrary_interface_name), 0);
   // Test resolution of an ipv6 address with a named scope ID
   gpr_log(GPR_DEBUG, "test resolution with a named scope ID");
   std::string target_with_named_scope_id =
@@ -175,45 +180,36 @@ static void test_named_and_numeric_scope_ids(void) {
   resolve_address_must_succeed(target_with_numeric_scope_id.c_str());
 }
 
-int main(int argc, char** argv) {
+ABSL_FLAG(std::string, resolver, "", "Resolver type (ares or native)");
+
+TEST(ResolveAddressUsingAresResolverPosixTest, MainTest) {
   // First set the resolver type based off of --resolver
-  const char* resolver_type = nullptr;
-  gpr_cmdline* cl = gpr_cmdline_create("resolve address test");
-  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
-                         &resolver_type);
+  std::string resolver_type = absl::GetFlag(FLAGS_resolver);
   // In case that there are more than one argument on the command line,
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
-  gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (strlen(resolver.get()) != 0) {
-    gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            resolver.get());
-  }
-  if (resolver_type != nullptr && gpr_stricmp(resolver_type, "native") == 0) {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
-  } else if (resolver_type != nullptr &&
-             gpr_stricmp(resolver_type, "ares") == 0) {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
+  grpc_core::ConfigVars::Overrides overrides;
+  if (resolver_type == "native") {
+    overrides.dns_resolver = "native";
+  } else if (resolver_type == "ares") {
+    overrides.dns_resolver = "ares";
   } else {
-    gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
-    abort();
+    gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
+    ASSERT_TRUE(false);
   }
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
+  grpc_core::ConfigVars::SetOverrides(overrides);
 
+  grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
     test_named_and_numeric_scope_ids();
-    // c-ares resolver doesn't support UDS (ability for native DNS resolver
-    // to handle this is only expected to be used by servers, which
-    // unconditionally use the native DNS resolver).
-    grpc_core::UniquePtr<char> resolver =
-        GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   }
-  gpr_cmdline_destroy(cl);
-
   grpc_shutdown();
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  absl::ParseCommandLine(argc, argv);
+  return RUN_ALL_TESTS();
 }

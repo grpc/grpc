@@ -23,6 +23,8 @@ import "src/proto/grpc/testing/messages.proto";
 
 package grpc.testing;
 
+option java_package = "io.grpc.testing.integration";
+
 // A simple service to test the various types of RPCs and experiment with
 // performance with various types of payload.
 service TestService {
@@ -89,10 +91,22 @@ service LoadBalancerStatsService {
       returns (LoadBalancerAccumulatedStatsResponse) {}
 }
 
+// Hook service. Used to keep Kubernetes from shutting the pod down.
+service HookService {
+  // Sends a request that will "hang" until the return status is set by a call
+  // to a SetReturnStatus
+  rpc Hook(grpc.testing.Empty) returns (grpc.testing.Empty);
+  // Sets a return status for pending and upcoming calls to Hook
+  rpc SetReturnStatus(SetReturnStatusRequest) returns (grpc.testing.Empty);
+  // Clears the return status. Incoming calls to Hook will "hang"
+  rpc ClearReturnStatus(grpc.testing.Empty) returns (grpc.testing.Empty);
+}
+
 // A service to remotely control health status of an xDS test server.
 service XdsUpdateHealthService {
   rpc SetServing(grpc.testing.Empty) returns (grpc.testing.Empty);
   rpc SetNotServing(grpc.testing.Empty) returns (grpc.testing.Empty);
+  rpc SendHookRequest(HookRequest) returns (HookResponse);
 }
 
 // A service to dynamically update the configuration of an xDS test client.

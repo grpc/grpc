@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_JNI_UTILS_H
-#define GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_JNI_UTILS_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_CLIENT_JNI_UTILS_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_CLIENT_JNI_UTILS_H
 
 #if defined(ANDROID) || defined(__ANDROID__)
 
@@ -55,4 +55,4 @@ bool IsSignatureMatch(JNIEnv* env, jobject context, int uid1, int uid2);
 
 #endif
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_JNI_UTILS_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_CLIENT_JNI_UTILS_H

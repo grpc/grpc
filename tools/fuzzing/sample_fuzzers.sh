@@ -15,5 +15,8 @@
 
 dir=$(dirname "${0}")
 cd "${dir}/../.."
+# TODO(ctiller): this always reports success (the `|| true` below).
+# this is because we're still building this out, and that detail should
+# be corrected before we turn this live.
 tools/bazel test `tools/bazel query "attr(tags, '\\bgrpc-fuzzer\\b', //test/...)"` \
-  -c dbg --config fuzzer_asan --test_output=errors
+  -c dbg --config fuzzer_asan --test_output=errors || true

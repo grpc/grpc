@@ -27,7 +27,7 @@ target 'TvTests' do
 end
 
 target 'MacTests' do
-  platform :osx, '10.13'
+  platform :osx, '10.12'
   grpc_deps
 end
 
@@ -36,22 +36,21 @@ end
   InteropTests
 ).each do |target_name|
   target target_name do
-    platform :ios, '9.0'
+    platform :ios, '10.0'
     grpc_deps
   end
 end
 
 target 'CronetTests' do
-  platform :ios, '9.0'
+  platform :ios, '10.0'
   grpc_deps
 
   pod 'gRPC/GRPCCoreCronet',           :path => GRPC_LOCAL_SRC
   pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
-  pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
 end
 
 target 'PerfTests' do
-  platform :ios, '9.0'
+  platform :ios, '10.0'
   grpc_deps
 
   pod 'gRPC/GRPCCoreCronet',           :path => GRPC_LOCAL_SRC

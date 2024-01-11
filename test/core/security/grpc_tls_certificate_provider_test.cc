@@ -27,6 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
@@ -134,23 +135,20 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override {
       MutexLock lock(&state_->mu);
-      GPR_ASSERT(!GRPC_ERROR_IS_NONE(root_cert_error) ||
-                 !GRPC_ERROR_IS_NONE(identity_cert_error));
+      GPR_ASSERT(!root_cert_error.ok() || !identity_cert_error.ok());
       std::string root_error_str;
       std::string identity_error_str;
-      if (!GRPC_ERROR_IS_NONE(root_cert_error)) {
+      if (!root_cert_error.ok()) {
         GPR_ASSERT(grpc_error_get_str(
-            root_cert_error, GRPC_ERROR_STR_DESCRIPTION, &root_error_str));
+            root_cert_error, StatusStrProperty::kDescription, &root_error_str));
       }
-      if (!GRPC_ERROR_IS_NONE(identity_cert_error)) {
+      if (!identity_cert_error.ok()) {
         GPR_ASSERT(grpc_error_get_str(identity_cert_error,
-                                      GRPC_ERROR_STR_DESCRIPTION,
+                                      StatusStrProperty::kDescription,
                                       &identity_error_str));
       }
       state_->error_queue.emplace_back(std::move(root_error_str),
                                        std::move(identity_error_str));
-      GRPC_ERROR_UNREF(root_cert_error);
-      GRPC_ERROR_UNREF(identity_cert_error);
     }
 
    private:
@@ -178,7 +176,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     // The TlsCertificatesTestWatcher dtor will set WatcherState::watcher back
     // to nullptr to indicate that it's been destroyed.
     auto watcher =
-        absl::make_unique<TlsCertificatesTestWatcher>(&watchers_.back());
+        std::make_unique<TlsCertificatesTestWatcher>(&watchers_.back());
     distributor_->WatchTlsCertificates(std::move(watcher),
                                        std::move(root_cert_name),
                                        std::move(identity_cert_name));
@@ -394,9 +392,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedBothCerts) {
   // Create temporary files and copy cert data into it.
-  auto tmp_root_cert = absl::make_unique<TmpFile>(root_cert_);
-  auto tmp_identity_key = absl::make_unique<TmpFile>(private_key_);
-  auto tmp_identity_cert = absl::make_unique<TmpFile>(cert_chain_);
+  auto tmp_root_cert = std::make_unique<TmpFile>(root_cert_);
+  auto tmp_identity_key = std::make_unique<TmpFile>(private_key_);
+  auto tmp_identity_cert = std::make_unique<TmpFile>(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key->name(),
                                           tmp_identity_cert->name(),
@@ -428,7 +426,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedRootCerts) {
   // Create temporary files and copy cert data into it.
-  auto tmp_root_cert = absl::make_unique<TmpFile>(root_cert_);
+  auto tmp_root_cert = std::make_unique<TmpFile>(root_cert_);
   TmpFile tmp_identity_key(private_key_);
   TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
@@ -461,8 +459,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedIdentityCerts) {
   // Create temporary files and copy cert data into it.
   TmpFile tmp_root_cert(root_cert_);
-  auto tmp_identity_key = absl::make_unique<TmpFile>(private_key_);
-  auto tmp_identity_cert = absl::make_unique<TmpFile>(cert_chain_);
+  auto tmp_identity_key = std::make_unique<TmpFile>(private_key_);
+  auto tmp_identity_cert = std::make_unique<TmpFile>(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key->name(),
                                           tmp_identity_cert->name(),
@@ -488,6 +486,13 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
   // Clean up.
   CancelWatch(watcher_state_1);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderTooShortRefreshIntervalIsOverwritten) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 0);
+  ASSERT_THAT(provider.TestOnlyGetRefreshIntervalSecond(), 1);
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {

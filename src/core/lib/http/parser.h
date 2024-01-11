@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_HTTP_PARSER_H
-#define GRPC_CORE_LIB_HTTP_PARSER_H
+#ifndef GRPC_SRC_CORE_LIB_HTTP_PARSER_H
+#define GRPC_SRC_CORE_LIB_HTTP_PARSER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,10 +29,10 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 
-/* Maximum length of a header string of the form 'Key: Value\r\n' */
+// Maximum length of a header string of the form 'Key: Value\r\n'
 #define GRPC_HTTP_PARSER_MAX_HEADER_LENGTH 4096
 
-/* A single header to be passed in a request */
+// A single header to be passed in a request
 typedef struct grpc_http_header {
   char* key;
   char* value;
@@ -65,32 +65,32 @@ typedef enum {
   GRPC_HTTP_REQUEST,
 } grpc_http_type;
 
-/* A request */
+// A request
 typedef struct grpc_http_request {
-  /* Method of the request (e.g. GET, POST) */
+  // Method of the request (e.g. GET, POST)
   char* method;
-  /* The path of the resource to fetch (only used for parsed requests) */
+  // The path of the resource to fetch (only used for parsed requests)
   char* path;
-  /* HTTP version to use */
+  // HTTP version to use
   grpc_http_version version;
-  /* Headers attached to the request */
+  // Headers attached to the request
   size_t hdr_count;
   grpc_http_header* hdrs;
-  /* Body: length and contents; contents are NOT null-terminated */
+  // Body: length and contents; contents are NOT null-terminated
   size_t body_length;
   char* body;
 } grpc_http_request;
 
-/* A response */
+// A response
 typedef struct grpc_http_response {
-  /* HTTP status code */
+  // HTTP status code
   int status = 0;
-  /* Headers: count and key/values */
+  // Headers: count and key/values
   size_t hdr_count = 0;
   grpc_http_header* hdrs = nullptr;
-  /* Body: length and contents; contents are NOT null-terminated */
+  // Body: length and contents; contents are NOT null-terminated
   size_t body_length = 0;
-  /* State of the chunked parser. Only valid for the response. */
+  // State of the chunked parser. Only valid for the response.
   grpc_http_parser_chunked_state chunked_state = GRPC_HTTP_CHUNKED_PLAIN;
   size_t chunk_length = 0;
   char* body = nullptr;
@@ -116,7 +116,7 @@ void grpc_http_parser_init(grpc_http_parser* parser, grpc_http_type type,
                            void* request_or_response);
 void grpc_http_parser_destroy(grpc_http_parser* parser);
 
-/* Sets \a start_of_body to the offset in \a slice of the start of the body. */
+// Sets \a start_of_body to the offset in \a slice of the start of the body.
 grpc_error_handle grpc_http_parser_parse(grpc_http_parser* parser,
                                          const grpc_slice& slice,
                                          size_t* start_of_body);
@@ -127,4 +127,4 @@ void grpc_http_response_destroy(grpc_http_response* response);
 
 extern grpc_core::TraceFlag grpc_http1_trace;
 
-#endif /* GRPC_CORE_LIB_HTTP_PARSER_H */
+#endif  // GRPC_SRC_CORE_LIB_HTTP_PARSER_H

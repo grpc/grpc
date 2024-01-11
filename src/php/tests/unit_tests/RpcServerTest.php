@@ -25,6 +25,9 @@ require_once(dirname(__FILE__) . '/../../lib/Grpc/RpcServer.php');
 
 class RpcServerTest extends \PHPUnit\Framework\TestCase
 {
+    private $server;
+    private $mockService;
+
     public function setUp(): void
     {
         $this->server = new \Grpc\RpcServer();

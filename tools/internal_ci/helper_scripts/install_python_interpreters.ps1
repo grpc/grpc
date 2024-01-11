@@ -3,6 +3,10 @@
 
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
+# Disable progress bar to avoid getting the
+# '"Access is denied" 0x5 occurred while reading the console output buffer'
+# error when running on kokoro (i.e. in non-interactive mode)
+$global:ProgressPreference = 'SilentlyContinue'
 
 trap {
     $ErrorActionPreference = "Continue"
@@ -111,3 +115,37 @@ $Python310x64Config = @{
     PythonInstallerHash = "9ea305690dbfd424a632b6a659347c1e"
 }
 Install-Python @Python310x64Config
+
+# Python 3.11
+$Python311x86Config = @{
+    PythonVersion = "3.11.0"
+    PythonInstaller = "python-3.11.0rc1"
+    PythonInstallPath = "C:\Python311_32bit"
+    PythonInstallerHash = "d2e5420e53d9e71c82b4a19763dbaa12"
+}
+Install-Python @Python311x86Config
+
+$Python311x64Config = @{
+    PythonVersion = "3.11.0"
+    PythonInstaller = "python-3.11.0rc1-amd64"
+    PythonInstallPath = "C:\Python311"
+    PythonInstallerHash = "5943d8702e40a5ccd62e5a8d4c8852aa"
+}
+Install-Python @Python311x64Config
+
+# Python 3.12
+$Python312x86Config = @{
+    PythonVersion = "3.12.0"
+    PythonInstaller = "python-3.12.0rc2"
+    PythonInstallPath = "C:\Python312_32bit"
+    PythonInstallerHash = "c7bfbde3b07a7bd013043640ca475b8c"
+}
+Install-Python @Python312x86Config
+
+$Python312x64Config = @{
+    PythonVersion = "3.12.0"
+    PythonInstaller = "python-3.12.0rc2-amd64"
+    PythonInstallPath = "C:\Python312"
+    PythonInstallerHash = "ea1993b5227fa4c8f45a06f5fbdd23b3"
+}
+Install-Python @Python312x64Config

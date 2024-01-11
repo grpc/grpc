@@ -14,11 +14,23 @@
 // limitations under the License.
 //
 
-#include <deque>
+#ifndef GRPC_TEST_CORE_UTIL_TLS_UTILS_H
+#define GRPC_TEST_CORE_UTIL_TLS_UTILS_H
 
+#include <deque>
+#include <string>
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
+
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -131,6 +143,41 @@ class AsyncExternalVerifier {
   std::deque<Request> queue_ ABSL_GUARDED_BY(mu_);
 };
 
+// A synchronous external verifier implementation that verifies configured
+// properties exist with the correct values. Note that it will delete itself in
+// Destruct(), so create it like
+// ```
+// auto* verifier_ = new PeerPropertyExternalVerifier(...);
+// ```
+// and no need to delete it later. This is basically to keep consistent with the
+// semantics in AsyncExternalVerifier.
+class PeerPropertyExternalVerifier {
+ public:
+  explicit PeerPropertyExternalVerifier(
+      std::string expected_verified_root_cert_subject)
+      : expected_verified_root_cert_subject_(
+            std::move(expected_verified_root_cert_subject)),
+        base_{this, Verify, Cancel, Destruct} {}
+
+  grpc_tls_certificate_verifier_external* base() { return &base_; }
+
+ private:
+  static int Verify(void* user_data,
+                    grpc_tls_custom_verification_check_request* request,
+                    grpc_tls_on_custom_verification_check_done_cb callback,
+                    void* callback_arg, grpc_status_code* sync_status,
+                    char** sync_error_details);
+
+  static void Cancel(void*, grpc_tls_custom_verification_check_request*) {}
+
+  static void Destruct(void* user_data);
+
+  std::string expected_verified_root_cert_subject_;
+  grpc_tls_certificate_verifier_external base_;
+};
+
 }  // namespace testing
 
 }  // namespace grpc_core
+
+#endif  // GRPC_TEST_CORE_UTIL_TLS_UTILS_H

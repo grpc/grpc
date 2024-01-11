@@ -25,23 +25,22 @@ from tests.unit import resources
 from tests.unit.beta import test_utilities
 from tests.unit.framework.common import test_constants
 
-_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
+_SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 
-_PER_RPC_CREDENTIALS_METADATA_KEY = b'my-call-credentials-metadata-key'
-_PER_RPC_CREDENTIALS_METADATA_VALUE = b'my-call-credentials-metadata-value'
+_PER_RPC_CREDENTIALS_METADATA_KEY = b"my-call-credentials-metadata-key"
+_PER_RPC_CREDENTIALS_METADATA_VALUE = b"my-call-credentials-metadata-value"
 
-_GROUP = 'group'
-_UNARY_UNARY = 'unary-unary'
-_UNARY_STREAM = 'unary-stream'
-_STREAM_UNARY = 'stream-unary'
-_STREAM_STREAM = 'stream-stream'
+_GROUP = "group"
+_UNARY_UNARY = "unary-unary"
+_UNARY_STREAM = "unary-stream"
+_STREAM_UNARY = "stream-unary"
+_STREAM_STREAM = "stream-stream"
 
-_REQUEST = b'abc'
-_RESPONSE = b'123'
+_REQUEST = b"abc"
+_RESPONSE = b"123"
 
 
 class _Servicer(object):
-
     def __init__(self):
         self._condition = threading.Condition()
         self._peer = None
@@ -101,7 +100,6 @@ class _Servicer(object):
 
 
 class _BlockingIterator(object):
-
     def __init__(self, upstream):
         self._condition = threading.Condition()
         self._upstream = upstream
@@ -133,24 +131,33 @@ class _BlockingIterator(object):
 
 
 def _metadata_plugin(context, callback):
-    callback([
-        (_PER_RPC_CREDENTIALS_METADATA_KEY, _PER_RPC_CREDENTIALS_METADATA_VALUE)
-    ], None)
+    callback(
+        [
+            (
+                _PER_RPC_CREDENTIALS_METADATA_KEY,
+                _PER_RPC_CREDENTIALS_METADATA_VALUE,
+            )
+        ],
+        None,
+    )
 
 
 class BetaFeaturesTest(unittest.TestCase):
-
     def setUp(self):
         self._servicer = _Servicer()
         method_implementations = {
-            (_GROUP, _UNARY_UNARY):
-                utilities.unary_unary_inline(self._servicer.unary_unary),
-            (_GROUP, _UNARY_STREAM):
-                utilities.unary_stream_inline(self._servicer.unary_stream),
-            (_GROUP, _STREAM_UNARY):
-                utilities.stream_unary_inline(self._servicer.stream_unary),
-            (_GROUP, _STREAM_STREAM):
-                utilities.stream_stream_inline(self._servicer.stream_stream),
+            (_GROUP, _UNARY_UNARY): utilities.unary_unary_inline(
+                self._servicer.unary_unary
+            ),
+            (_GROUP, _UNARY_STREAM): utilities.unary_stream_inline(
+                self._servicer.unary_stream
+            ),
+            (_GROUP, _STREAM_UNARY): utilities.stream_unary_inline(
+                self._servicer.stream_unary
+            ),
+            (_GROUP, _STREAM_STREAM): utilities.stream_stream_inline(
+                self._servicer.stream_stream
+            ),
         }
 
         cardinalities = {
@@ -161,29 +168,36 @@ class BetaFeaturesTest(unittest.TestCase):
         }
 
         server_options = implementations.server_options(
-            thread_pool_size=test_constants.POOL_SIZE)
-        self._server = implementations.server(method_implementations,
-                                              options=server_options)
-        server_credentials = implementations.ssl_server_credentials([
-            (
-                resources.private_key(),
-                resources.certificate_chain(),
-            ),
-        ])
-        port = self._server.add_secure_port('[::]:0', server_credentials)
+            thread_pool_size=test_constants.POOL_SIZE
+        )
+        self._server = implementations.server(
+            method_implementations, options=server_options
+        )
+        server_credentials = implementations.ssl_server_credentials(
+            [
+                (
+                    resources.private_key(),
+                    resources.certificate_chain(),
+                ),
+            ]
+        )
+        port = self._server.add_secure_port("[::]:0", server_credentials)
         self._server.start()
         self._channel_credentials = implementations.ssl_channel_credentials(
-            resources.test_root_certificates())
+            resources.test_root_certificates()
+        )
         self._call_credentials = implementations.metadata_call_credentials(
-            _metadata_plugin)
+            _metadata_plugin
+        )
         channel = test_utilities.not_really_secure_channel(
-            'localhost', port, self._channel_credentials, _SERVER_HOST_OVERRIDE)
+            "localhost", port, self._channel_credentials, _SERVER_HOST_OVERRIDE
+        )
         stub_options = implementations.stub_options(
-            thread_pool_size=test_constants.POOL_SIZE)
-        self._dynamic_stub = implementations.dynamic_stub(channel,
-                                                          _GROUP,
-                                                          cardinalities,
-                                                          options=stub_options)
+            thread_pool_size=test_constants.POOL_SIZE
+        )
+        self._dynamic_stub = implementations.dynamic_stub(
+            channel, _GROUP, cardinalities, options=stub_options
+        )
 
     def tearDown(self):
         self._dynamic_stub = None
@@ -191,46 +205,56 @@ class BetaFeaturesTest(unittest.TestCase):
 
     def test_unary_unary(self):
         call_options = interfaces.grpc_call_options(
-            disable_compression=True, credentials=self._call_credentials)
-        response = getattr(self._dynamic_stub,
-                           _UNARY_UNARY)(_REQUEST,
-                                         test_constants.LONG_TIMEOUT,
-                                         protocol_options=call_options)
+            disable_compression=True, credentials=self._call_credentials
+        )
+        response = getattr(self._dynamic_stub, _UNARY_UNARY)(
+            _REQUEST, test_constants.LONG_TIMEOUT, protocol_options=call_options
+        )
         self.assertEqual(_RESPONSE, response)
         self.assertIsNotNone(self._servicer.peer())
         invocation_metadata = [
             (metadatum.key, metadatum.value)
             for metadatum in self._servicer._invocation_metadata
         ]
-        self.assertIn((_PER_RPC_CREDENTIALS_METADATA_KEY,
-                       _PER_RPC_CREDENTIALS_METADATA_VALUE),
-                      invocation_metadata)
+        self.assertIn(
+            (
+                _PER_RPC_CREDENTIALS_METADATA_KEY,
+                _PER_RPC_CREDENTIALS_METADATA_VALUE,
+            ),
+            invocation_metadata,
+        )
 
     def test_unary_stream(self):
         call_options = interfaces.grpc_call_options(
-            disable_compression=True, credentials=self._call_credentials)
+            disable_compression=True, credentials=self._call_credentials
+        )
         response_iterator = getattr(self._dynamic_stub, _UNARY_STREAM)(
-            _REQUEST,
-            test_constants.LONG_TIMEOUT,
-            protocol_options=call_options)
+            _REQUEST, test_constants.LONG_TIMEOUT, protocol_options=call_options
+        )
         self._servicer.block_until_serviced()
         self.assertIsNotNone(self._servicer.peer())
         invocation_metadata = [
             (metadatum.key, metadatum.value)
             for metadatum in self._servicer._invocation_metadata
         ]
-        self.assertIn((_PER_RPC_CREDENTIALS_METADATA_KEY,
-                       _PER_RPC_CREDENTIALS_METADATA_VALUE),
-                      invocation_metadata)
+        self.assertIn(
+            (
+                _PER_RPC_CREDENTIALS_METADATA_KEY,
+                _PER_RPC_CREDENTIALS_METADATA_VALUE,
+            ),
+            invocation_metadata,
+        )
 
     def test_stream_unary(self):
         call_options = interfaces.grpc_call_options(
-            credentials=self._call_credentials)
+            credentials=self._call_credentials
+        )
         request_iterator = _BlockingIterator(iter((_REQUEST,)))
         response_future = getattr(self._dynamic_stub, _STREAM_UNARY).future(
             request_iterator,
             test_constants.LONG_TIMEOUT,
-            protocol_options=call_options)
+            protocol_options=call_options,
+        )
         response_future.protocol_context().disable_next_request_compression()
         request_iterator.allow()
         response_future.protocol_context().disable_next_request_compression()
@@ -242,18 +266,24 @@ class BetaFeaturesTest(unittest.TestCase):
             (metadatum.key, metadatum.value)
             for metadatum in self._servicer._invocation_metadata
         ]
-        self.assertIn((_PER_RPC_CREDENTIALS_METADATA_KEY,
-                       _PER_RPC_CREDENTIALS_METADATA_VALUE),
-                      invocation_metadata)
+        self.assertIn(
+            (
+                _PER_RPC_CREDENTIALS_METADATA_KEY,
+                _PER_RPC_CREDENTIALS_METADATA_VALUE,
+            ),
+            invocation_metadata,
+        )
 
     def test_stream_stream(self):
         call_options = interfaces.grpc_call_options(
-            credentials=self._call_credentials)
+            credentials=self._call_credentials
+        )
         request_iterator = _BlockingIterator(iter((_REQUEST,)))
         response_iterator = getattr(self._dynamic_stub, _STREAM_STREAM)(
             request_iterator,
             test_constants.SHORT_TIMEOUT,
-            protocol_options=call_options)
+            protocol_options=call_options,
+        )
         response_iterator.protocol_context().disable_next_request_compression()
         request_iterator.allow()
         response = next(response_iterator)
@@ -266,24 +296,31 @@ class BetaFeaturesTest(unittest.TestCase):
             (metadatum.key, metadatum.value)
             for metadatum in self._servicer._invocation_metadata
         ]
-        self.assertIn((_PER_RPC_CREDENTIALS_METADATA_KEY,
-                       _PER_RPC_CREDENTIALS_METADATA_VALUE),
-                      invocation_metadata)
+        self.assertIn(
+            (
+                _PER_RPC_CREDENTIALS_METADATA_KEY,
+                _PER_RPC_CREDENTIALS_METADATA_VALUE,
+            ),
+            invocation_metadata,
+        )
 
 
 class ContextManagementAndLifecycleTest(unittest.TestCase):
-
     def setUp(self):
         self._servicer = _Servicer()
         self._method_implementations = {
-            (_GROUP, _UNARY_UNARY):
-                utilities.unary_unary_inline(self._servicer.unary_unary),
-            (_GROUP, _UNARY_STREAM):
-                utilities.unary_stream_inline(self._servicer.unary_stream),
-            (_GROUP, _STREAM_UNARY):
-                utilities.stream_unary_inline(self._servicer.stream_unary),
-            (_GROUP, _STREAM_STREAM):
-                utilities.stream_stream_inline(self._servicer.stream_stream),
+            (_GROUP, _UNARY_UNARY): utilities.unary_unary_inline(
+                self._servicer.unary_unary
+            ),
+            (_GROUP, _UNARY_STREAM): utilities.unary_stream_inline(
+                self._servicer.unary_stream
+            ),
+            (_GROUP, _STREAM_UNARY): utilities.stream_unary_inline(
+                self._servicer.stream_unary
+            ),
+            (_GROUP, _STREAM_STREAM): utilities.stream_stream_inline(
+                self._servicer.stream_stream
+            ),
         }
 
         self._cardinalities = {
@@ -294,41 +331,49 @@ class ContextManagementAndLifecycleTest(unittest.TestCase):
         }
 
         self._server_options = implementations.server_options(
-            thread_pool_size=test_constants.POOL_SIZE)
-        self._server_credentials = implementations.ssl_server_credentials([
-            (
-                resources.private_key(),
-                resources.certificate_chain(),
-            ),
-        ])
+            thread_pool_size=test_constants.POOL_SIZE
+        )
+        self._server_credentials = implementations.ssl_server_credentials(
+            [
+                (
+                    resources.private_key(),
+                    resources.certificate_chain(),
+                ),
+            ]
+        )
         self._channel_credentials = implementations.ssl_channel_credentials(
-            resources.test_root_certificates())
+            resources.test_root_certificates()
+        )
         self._stub_options = implementations.stub_options(
-            thread_pool_size=test_constants.POOL_SIZE)
+            thread_pool_size=test_constants.POOL_SIZE
+        )
 
     def test_stub_context(self):
-        server = implementations.server(self._method_implementations,
-                                        options=self._server_options)
-        port = server.add_secure_port('[::]:0', self._server_credentials)
+        server = implementations.server(
+            self._method_implementations, options=self._server_options
+        )
+        port = server.add_secure_port("[::]:0", self._server_credentials)
         server.start()
 
         channel = test_utilities.not_really_secure_channel(
-            'localhost', port, self._channel_credentials, _SERVER_HOST_OVERRIDE)
-        dynamic_stub = implementations.dynamic_stub(channel,
-                                                    _GROUP,
-                                                    self._cardinalities,
-                                                    options=self._stub_options)
+            "localhost", port, self._channel_credentials, _SERVER_HOST_OVERRIDE
+        )
+        dynamic_stub = implementations.dynamic_stub(
+            channel, _GROUP, self._cardinalities, options=self._stub_options
+        )
         for _ in range(100):
             with dynamic_stub:
                 pass
         for _ in range(10):
             with dynamic_stub:
                 call_options = interfaces.grpc_call_options(
-                    disable_compression=True)
-                response = getattr(dynamic_stub,
-                                   _UNARY_UNARY)(_REQUEST,
-                                                 test_constants.LONG_TIMEOUT,
-                                                 protocol_options=call_options)
+                    disable_compression=True
+                )
+                response = getattr(dynamic_stub, _UNARY_UNARY)(
+                    _REQUEST,
+                    test_constants.LONG_TIMEOUT,
+                    protocol_options=call_options,
+                )
                 self.assertEqual(_RESPONSE, response)
                 self.assertIsNotNone(self._servicer.peer())
 
@@ -336,20 +381,22 @@ class ContextManagementAndLifecycleTest(unittest.TestCase):
 
     def test_server_lifecycle(self):
         for _ in range(100):
-            server = implementations.server(self._method_implementations,
-                                            options=self._server_options)
-            port = server.add_secure_port('[::]:0', self._server_credentials)
+            server = implementations.server(
+                self._method_implementations, options=self._server_options
+            )
+            port = server.add_secure_port("[::]:0", self._server_credentials)
             server.start()
             server.stop(test_constants.SHORT_TIMEOUT).wait()
         for _ in range(100):
-            server = implementations.server(self._method_implementations,
-                                            options=self._server_options)
-            server.add_secure_port('[::]:0', self._server_credentials)
-            server.add_insecure_port('[::]:0')
+            server = implementations.server(
+                self._method_implementations, options=self._server_options
+            )
+            server.add_secure_port("[::]:0", self._server_credentials)
+            server.add_insecure_port("[::]:0")
             with server:
                 server.stop(test_constants.SHORT_TIMEOUT)
             server.stop(test_constants.SHORT_TIMEOUT)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

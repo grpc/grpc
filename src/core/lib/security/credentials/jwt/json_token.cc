@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -23,28 +23,34 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <map>
 #include <string>
+#include <utility>
 
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
 using grpc_core::Json;
 
-/* --- Constants. --- */
+// --- Constants. ---
 
-/* 1 hour max. */
+// 1 hour max.
 gpr_timespec grpc_max_auth_token_lifetime() {
   gpr_timespec out;
   out.tv_sec = 3600;
@@ -56,12 +62,12 @@ gpr_timespec grpc_max_auth_token_lifetime() {
 #define GRPC_JWT_RSA_SHA256_ALGORITHM "RS256"
 #define GRPC_JWT_TYPE "JWT"
 
-/* --- Override for testing. --- */
+// --- Override for testing. ---
 
 static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override =
     nullptr;
 
-/* --- grpc_auth_json_key. --- */
+// --- grpc_auth_json_key. ---
 
 int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key) {
   return (json_key != nullptr) &&
@@ -73,11 +79,11 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   BIO* bio = nullptr;
   const char* prop_value;
   int success = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
-  if (json.type() == Json::Type::JSON_NULL) {
+  if (json.type() == Json::Type::kNull) {
     gpr_log(GPR_ERROR, "Invalid json.");
     goto end;
   }
@@ -109,8 +115,12 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
     gpr_log(GPR_ERROR, "Could not write into openssl BIO.");
     goto end;
   }
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   result.private_key =
       PEM_read_bio_RSAPrivateKey(bio, nullptr, nullptr, const_cast<char*>(""));
+#else
+  result.private_key = PEM_read_bio_PrivateKey(bio, nullptr, nullptr, nullptr);
+#endif
   if (result.private_key == nullptr) {
     gpr_log(GPR_ERROR, "Could not deserialize private key.");
     goto end;
@@ -125,9 +135,14 @@ end:
 
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
     const char* json_string) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(json_string, &error);
-  GRPC_LOG_IF_ERROR("JSON key parsing", error);
+  Json json;
+  auto json_or = grpc_core::JsonParse(json_string);
+  if (!json_or.ok()) {
+    gpr_log(GPR_ERROR, "JSON key parsing error: %s",
+            json_or.status().ToString().c_str());
+  } else {
+    json = std::move(*json_or);
+  }
   return grpc_auth_json_key_create_from_json(json);
 }
 
@@ -147,20 +162,24 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key) {
     json_key->client_email = nullptr;
   }
   if (json_key->private_key != nullptr) {
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     RSA_free(json_key->private_key);
+#else
+    EVP_PKEY_free(json_key->private_key);
+#endif
     json_key->private_key = nullptr;
   }
 }
 
-/* --- jwt encoding and signature. --- */
+// --- jwt encoding and signature. ---
 
 static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
-  Json json = Json::Object{
-      {"alg", algorithm},
-      {"typ", GRPC_JWT_TYPE},
-      {"kid", key_id},
-  };
-  std::string json_str = json.Dump();
+  Json json = Json::FromObject({
+      {"alg", Json::FromString(algorithm)},
+      {"typ", Json::FromString(GRPC_JWT_TYPE)},
+      {"kid", Json::FromString(key_id)},
+  });
+  std::string json_str = grpc_core::JsonDump(json);
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 
@@ -175,20 +194,20 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
   }
 
   Json::Object object = {
-      {"iss", json_key->client_email},
-      {"aud", audience},
-      {"iat", now.tv_sec},
-      {"exp", expiration.tv_sec},
+      {"iss", Json::FromString(json_key->client_email)},
+      {"aud", Json::FromString(audience)},
+      {"iat", Json::FromNumber(now.tv_sec)},
+      {"exp", Json::FromNumber(expiration.tv_sec)},
   };
   if (scope != nullptr) {
-    object["scope"] = scope;
+    object["scope"] = Json::FromString(scope);
   } else {
-    /* Unscoped JWTs need a sub field. */
-    object["sub"] = json_key->client_email;
+    // Unscoped JWTs need a sub field.
+    object["sub"] = Json::FromString(json_key->client_email);
   }
 
-  Json json(object);
-  std::string json_str = json.Dump();
+  std::string json_str =
+      grpc_core::JsonDump(Json::FromObject(std::move(object)));
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 
@@ -226,7 +245,9 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
                                    const char* to_sign) {
   const EVP_MD* md = openssl_digest_from_algorithm(signature_algorithm);
   EVP_MD_CTX* md_ctx = nullptr;
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   EVP_PKEY* key = EVP_PKEY_new();
+#endif
   size_t sig_len = 0;
   unsigned char* sig = nullptr;
   char* result = nullptr;
@@ -236,8 +257,13 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
     gpr_log(GPR_ERROR, "Could not create MD_CTX");
     goto end;
   }
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   EVP_PKEY_set1_RSA(key, json_key->private_key);
   if (EVP_DigestSignInit(md_ctx, nullptr, md, nullptr, key) != 1) {
+#else
+  if (EVP_DigestSignInit(md_ctx, nullptr, md, nullptr, json_key->private_key) !=
+      1) {
+#endif
     gpr_log(GPR_ERROR, "DigestInit failed.");
     goto end;
   }
@@ -257,7 +283,9 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
   result = grpc_base64_encode(sig, sig_len, 1, 0);
 
 end:
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   if (key != nullptr) EVP_PKEY_free(key);
+#endif
   if (md_ctx != nullptr) EVP_MD_CTX_destroy(md_ctx);
   if (sig != nullptr) gpr_free(sig);
   return result;

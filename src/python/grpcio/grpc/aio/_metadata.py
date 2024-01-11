@@ -108,7 +108,7 @@ class Metadata(abc.Mapping):
             return tuple(self) == other
         return NotImplemented  # pytype: disable=bad-return-type
 
-    def __add__(self, other: Any) -> 'Metadata':
+    def __add__(self, other: Any) -> "Metadata":
         if isinstance(other, self.__class__):
             return Metadata(*(tuple(self) + tuple(other)))
         if isinstance(other, tuple):

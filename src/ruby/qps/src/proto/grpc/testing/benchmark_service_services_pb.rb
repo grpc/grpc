@@ -48,6 +48,8 @@ module Grpc
         # Two-sided unbounded streaming between server to client
         # Both sides send the content of their own choice to the other
         rpc :StreamingBothWays, stream(::Grpc::Testing::SimpleRequest), stream(::Grpc::Testing::SimpleResponse)
+        # Get the memory usage of process before server is made
+        rpc :GetBeforeSnapshot, ::Grpc::Testing::SimpleRequest, ::Grpc::Testing::MemorySize
       end
 
       Stub = Service.rpc_stub_class

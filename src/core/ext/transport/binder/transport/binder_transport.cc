@@ -35,6 +35,8 @@
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -97,40 +99,29 @@ static void grpc_binder_unref_transport(grpc_binder_transport* t) {
 
 static void register_stream_locked(void* arg, grpc_error_handle /*error*/) {
   RegisterStreamArgs* args = static_cast<RegisterStreamArgs*>(arg);
-  args->gbt->registered_stream[args->gbs->GetTxCode()] = args->gbs;
+  args->transport->registered_stream[args->stream->GetTxCode()] = args->stream;
 }
 
-static int init_stream(grpc_transport* gt, grpc_stream* gs,
-                       grpc_stream_refcount* refcount, const void* server_data,
-                       grpc_core::Arena* arena) {
-  GPR_TIMER_SCOPE("init_stream", 0);
-  gpr_log(GPR_INFO, "%s = %p %p %p %p %p", __func__, gt, gs, refcount,
+void grpc_binder_transport::InitStream(grpc_stream* gs,
+                                       grpc_stream_refcount* refcount,
+                                       const void* server_data,
+                                       grpc_core::Arena* arena) {
+  gpr_log(GPR_INFO, "%s = %p %p %p %p %p", __func__, this, gs, refcount,
           server_data, arena);
   // Note that this function is not locked and may be invoked concurrently
-  grpc_binder_transport* t = reinterpret_cast<grpc_binder_transport*>(gt);
-  new (gs) grpc_binder_stream(t, refcount, server_data, arena,
-                              t->NewStreamTxCode(), t->is_client);
+  new (gs) grpc_binder_stream(this, refcount, server_data, arena,
+                              NewStreamTxCode(), is_client);
 
   // `grpc_binder_transport::registered_stream` should only be updated in
   // combiner
-  grpc_binder_stream* gbs = reinterpret_cast<grpc_binder_stream*>(gs);
-  gbs->register_stream_args.gbs = gbs;
-  gbs->register_stream_args.gbt = t;
+  grpc_binder_stream* stream = reinterpret_cast<grpc_binder_stream*>(gs);
+  stream->register_stream_args.stream = stream;
+  stream->register_stream_args.transport = this;
   grpc_core::ExecCtx exec_ctx;
-  t->combiner->Run(
-      GRPC_CLOSURE_INIT(&gbs->register_stream_closure, register_stream_locked,
-                        &gbs->register_stream_args, nullptr),
-      GRPC_ERROR_NONE);
-
-  return 0;
-}
-
-static void set_pollset(grpc_transport* gt, grpc_stream* gs, grpc_pollset* gp) {
-  gpr_log(GPR_INFO, "%s = %p %p %p", __func__, gt, gs, gp);
-}
-
-static void set_pollset_set(grpc_transport*, grpc_stream*, grpc_pollset_set*) {
-  gpr_log(GPR_INFO, __func__);
+  combiner->Run(GRPC_CLOSURE_INIT(&stream->register_stream_closure,
+                                  register_stream_locked,
+                                  &stream->register_stream_args, nullptr),
+                absl::OkStatus());
 }
 
 static void AssignMetadata(grpc_metadata_batch* mb,
@@ -146,40 +137,38 @@ static void AssignMetadata(grpc_metadata_batch* mb,
   }
 }
 
-static void cancel_stream_locked(grpc_binder_transport* gbt,
-                                 grpc_binder_stream* gbs,
+static void cancel_stream_locked(grpc_binder_transport* transport,
+                                 grpc_binder_stream* stream,
                                  grpc_error_handle error) {
   gpr_log(GPR_INFO, "cancel_stream_locked");
-  if (!gbs->is_closed) {
-    GPR_ASSERT(GRPC_ERROR_IS_NONE(gbs->cancel_self_error));
-    gbs->is_closed = true;
-    gbs->cancel_self_error = GRPC_ERROR_REF(error);
-    gbt->transport_stream_receiver->CancelStream(gbs->tx_code);
-    gbt->registered_stream.erase(gbs->tx_code);
-    if (gbs->recv_initial_metadata_ready != nullptr) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, gbs->recv_initial_metadata_ready,
-                              GRPC_ERROR_REF(error));
-      gbs->recv_initial_metadata_ready = nullptr;
-      gbs->recv_initial_metadata = nullptr;
-      gbs->trailing_metadata_available = nullptr;
-    }
-    if (gbs->recv_message_ready != nullptr) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, gbs->recv_message_ready,
-                              GRPC_ERROR_REF(error));
-      gbs->recv_message_ready = nullptr;
-      gbs->recv_message->reset();
-      gbs->recv_message = nullptr;
-      gbs->call_failed_before_recv_message = nullptr;
-    }
-    if (gbs->recv_trailing_metadata_finished != nullptr) {
+  if (!stream->is_closed) {
+    GPR_ASSERT(stream->cancel_self_error.ok());
+    stream->is_closed = true;
+    stream->cancel_self_error = error;
+    transport->transport_stream_receiver->CancelStream(stream->tx_code);
+    transport->registered_stream.erase(stream->tx_code);
+    if (stream->recv_initial_metadata_ready != nullptr) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                              gbs->recv_trailing_metadata_finished,
-                              GRPC_ERROR_REF(error));
-      gbs->recv_trailing_metadata_finished = nullptr;
-      gbs->recv_trailing_metadata = nullptr;
+                              stream->recv_initial_metadata_ready, error);
+      stream->recv_initial_metadata_ready = nullptr;
+      stream->recv_initial_metadata = nullptr;
+      stream->trailing_metadata_available = nullptr;
+    }
+    if (stream->recv_message_ready != nullptr) {
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, stream->recv_message_ready,
+                              error);
+      stream->recv_message_ready = nullptr;
+      stream->recv_message->reset();
+      stream->recv_message = nullptr;
+      stream->call_failed_before_recv_message = nullptr;
+    }
+    if (stream->recv_trailing_metadata_finished != nullptr) {
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                              stream->recv_trailing_metadata_finished, error);
+      stream->recv_trailing_metadata_finished = nullptr;
+      stream->recv_trailing_metadata = nullptr;
     }
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 static bool ContainsAuthorityAndPath(const grpc_binder::Metadata& metadata) {
@@ -199,50 +188,53 @@ static bool ContainsAuthorityAndPath(const grpc_binder::Metadata& metadata) {
 static void recv_initial_metadata_locked(void* arg,
                                          grpc_error_handle /*error*/) {
   RecvInitialMetadataArgs* args = static_cast<RecvInitialMetadataArgs*>(arg);
-  grpc_binder_stream* gbs = args->gbs;
+  grpc_binder_stream* stream = args->stream;
 
   gpr_log(GPR_INFO,
           "recv_initial_metadata_locked is_client = %d is_closed = %d",
-          gbs->is_client, gbs->is_closed);
+          stream->is_client, stream->is_closed);
 
-  if (!gbs->is_closed) {
+  if (!stream->is_closed) {
     grpc_error_handle error = [&] {
-      GPR_ASSERT(gbs->recv_initial_metadata);
-      GPR_ASSERT(gbs->recv_initial_metadata_ready);
+      GPR_ASSERT(stream->recv_initial_metadata);
+      GPR_ASSERT(stream->recv_initial_metadata_ready);
       if (!args->initial_metadata.ok()) {
         gpr_log(GPR_ERROR, "Failed to parse initial metadata");
         return absl_status_to_grpc_error(args->initial_metadata.status());
       }
-      if (!gbs->is_client) {
+      if (!stream->is_client) {
         // For server, we expect :authority and :path in initial metadata.
         if (!ContainsAuthorityAndPath(*args->initial_metadata)) {
-          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          return GRPC_ERROR_CREATE(
               "Missing :authority or :path in initial metadata");
         }
       }
-      AssignMetadata(gbs->recv_initial_metadata, *args->initial_metadata);
-      return GRPC_ERROR_NONE;
+      AssignMetadata(stream->recv_initial_metadata, *args->initial_metadata);
+      return absl::OkStatus();
     }();
-
-    grpc_closure* cb = gbs->recv_initial_metadata_ready;
-    gbs->recv_initial_metadata_ready = nullptr;
-    gbs->recv_initial_metadata = nullptr;
+    if (stream->t->registered_method_matcher_cb != nullptr) {
+      stream->t->registered_method_matcher_cb(
+          stream->t->accept_stream_user_data, stream->recv_initial_metadata);
+    }
+    grpc_closure* cb = stream->recv_initial_metadata_ready;
+    stream->recv_initial_metadata_ready = nullptr;
+    stream->recv_initial_metadata = nullptr;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
   }
-  GRPC_BINDER_STREAM_UNREF(gbs, "recv_initial_metadata");
+  GRPC_BINDER_STREAM_UNREF(stream, "recv_initial_metadata");
 }
 
 static void recv_message_locked(void* arg, grpc_error_handle /*error*/) {
   RecvMessageArgs* args = static_cast<RecvMessageArgs*>(arg);
-  grpc_binder_stream* gbs = args->gbs;
+  grpc_binder_stream* stream = args->stream;
 
   gpr_log(GPR_INFO, "recv_message_locked is_client = %d is_closed = %d",
-          gbs->is_client, gbs->is_closed);
+          stream->is_client, stream->is_closed);
 
-  if (!gbs->is_closed) {
+  if (!stream->is_closed) {
     grpc_error_handle error = [&] {
-      GPR_ASSERT(gbs->recv_message);
-      GPR_ASSERT(gbs->recv_message_ready);
+      GPR_ASSERT(stream->recv_message);
+      GPR_ASSERT(stream->recv_message_ready);
       if (!args->message.ok()) {
         gpr_log(GPR_ERROR, "Failed to receive message");
         if (args->message.status().message() ==
@@ -251,70 +243,70 @@ static void recv_message_locked(void* arg, grpc_error_handle /*error*/) {
           gpr_log(GPR_ERROR, "message cancelled gracefully");
           // Cancelled because we've already received trailing metadata.
           // It's not an error in this case.
-          return GRPC_ERROR_NONE;
+          return absl::OkStatus();
         } else {
           return absl_status_to_grpc_error(args->message.status());
         }
       }
       grpc_core::SliceBuffer buf;
       buf.Append(grpc_core::Slice(grpc_slice_from_cpp_string(*args->message)));
-      *gbs->recv_message = std::move(buf);
-      return GRPC_ERROR_NONE;
+      *stream->recv_message = std::move(buf);
+      return absl::OkStatus();
     }();
 
-    if (!GRPC_ERROR_IS_NONE(error) &&
-        gbs->call_failed_before_recv_message != nullptr) {
-      *gbs->call_failed_before_recv_message = true;
+    if (!error.ok() && stream->call_failed_before_recv_message != nullptr) {
+      *stream->call_failed_before_recv_message = true;
     }
-    grpc_closure* cb = gbs->recv_message_ready;
-    gbs->recv_message_ready = nullptr;
-    gbs->recv_message = nullptr;
+    grpc_closure* cb = stream->recv_message_ready;
+    stream->recv_message_ready = nullptr;
+    stream->recv_message = nullptr;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
   }
 
-  GRPC_BINDER_STREAM_UNREF(gbs, "recv_message");
+  GRPC_BINDER_STREAM_UNREF(stream, "recv_message");
 }
 
 static void recv_trailing_metadata_locked(void* arg,
                                           grpc_error_handle /*error*/) {
   RecvTrailingMetadataArgs* args = static_cast<RecvTrailingMetadataArgs*>(arg);
-  grpc_binder_stream* gbs = args->gbs;
+  grpc_binder_stream* stream = args->stream;
 
   gpr_log(GPR_INFO,
           "recv_trailing_metadata_locked is_client = %d is_closed = %d",
-          gbs->is_client, gbs->is_closed);
+          stream->is_client, stream->is_closed);
 
-  if (!gbs->is_closed) {
+  if (!stream->is_closed) {
     grpc_error_handle error = [&] {
-      GPR_ASSERT(gbs->recv_trailing_metadata);
-      GPR_ASSERT(gbs->recv_trailing_metadata_finished);
+      GPR_ASSERT(stream->recv_trailing_metadata);
+      GPR_ASSERT(stream->recv_trailing_metadata_finished);
       if (!args->trailing_metadata.ok()) {
         gpr_log(GPR_ERROR, "Failed to receive trailing metadata");
         return absl_status_to_grpc_error(args->trailing_metadata.status());
       }
-      if (!gbs->is_client) {
+      if (!stream->is_client) {
         // Client will not send non-empty trailing metadata.
         if (!args->trailing_metadata.value().empty()) {
           gpr_log(GPR_ERROR, "Server receives non-empty trailing metadata.");
-          return GRPC_ERROR_CANCELLED;
+          return absl::CancelledError();
         }
       } else {
-        AssignMetadata(gbs->recv_trailing_metadata, *args->trailing_metadata);
+        AssignMetadata(stream->recv_trailing_metadata,
+                       *args->trailing_metadata);
         // Append status to metadata
         // TODO(b/192208695): See if we can avoid to manually put status
         // code into the header
         gpr_log(GPR_INFO, "status = %d", args->status);
-        gbs->recv_trailing_metadata->Set(
+        stream->recv_trailing_metadata->Set(
             grpc_core::GrpcStatusMetadata(),
             static_cast<grpc_status_code>(args->status));
       }
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }();
 
-    if (gbs->is_client || gbs->trailing_metadata_sent) {
-      grpc_closure* cb = gbs->recv_trailing_metadata_finished;
-      gbs->recv_trailing_metadata_finished = nullptr;
-      gbs->recv_trailing_metadata = nullptr;
+    if (stream->is_client || stream->trailing_metadata_sent) {
+      grpc_closure* cb = stream->recv_trailing_metadata_finished;
+      stream->recv_trailing_metadata_finished = nullptr;
+      stream->recv_trailing_metadata = nullptr;
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
     } else {
       // According to transport explaineer - "Server extra: This op shouldn't
@@ -323,10 +315,10 @@ static void recv_trailing_metadata_locked(void* arg,
       //
       // We haven't sent trailing metadata yet, so we have to delay completing
       // the recv_trailing_metadata callback.
-      gbs->need_to_call_trailing_metadata_callback = true;
+      stream->need_to_call_trailing_metadata_callback = true;
     }
   }
-  GRPC_BINDER_STREAM_UNREF(gbs, "recv_trailing_metadata");
+  GRPC_BINDER_STREAM_UNREF(stream, "recv_trailing_metadata");
 }
 
 namespace grpc_binder {
@@ -375,37 +367,53 @@ class MetadataEncoder {
 }  // namespace
 }  // namespace grpc_binder
 
+static void accept_stream_locked(void* gt, grpc_error_handle /*error*/) {
+  grpc_binder_transport* transport = static_cast<grpc_binder_transport*>(gt);
+  if (transport->accept_stream_fn) {
+    gpr_log(GPR_INFO, "Accepting a stream");
+    // must pass in a non-null value.
+    (*transport->accept_stream_fn)(transport->accept_stream_user_data,
+                                   transport, transport);
+  } else {
+    ++transport->accept_stream_fn_called_count_;
+    gpr_log(GPR_INFO, "accept_stream_fn not set, current count = %d",
+            transport->accept_stream_fn_called_count_);
+  }
+}
+
 static void perform_stream_op_locked(void* stream_op,
                                      grpc_error_handle /*error*/) {
   grpc_transport_stream_op_batch* op =
       static_cast<grpc_transport_stream_op_batch*>(stream_op);
-  grpc_binder_stream* gbs =
+  grpc_binder_stream* stream =
       static_cast<grpc_binder_stream*>(op->handler_private.extra_arg);
-  grpc_binder_transport* gbt = gbs->t;
+  grpc_binder_transport* transport = stream->t;
   if (op->cancel_stream) {
     // TODO(waynetu): Is this true?
     GPR_ASSERT(!op->send_initial_metadata && !op->send_message &&
                !op->send_trailing_metadata && !op->recv_initial_metadata &&
                !op->recv_message && !op->recv_trailing_metadata);
-    gpr_log(GPR_INFO, "cancel_stream is_client = %d", gbs->is_client);
-    if (!gbs->is_client) {
+    gpr_log(GPR_INFO, "cancel_stream is_client = %d", stream->is_client);
+    if (!stream->is_client) {
       // Send trailing metadata to inform the other end about the cancellation,
       // regardless if we'd already done that or not.
-      auto cancel_tx = absl::make_unique<grpc_binder::Transaction>(
-          gbs->GetTxCode(), gbt->is_client);
+      auto cancel_tx = std::make_unique<grpc_binder::Transaction>(
+          stream->GetTxCode(), transport->is_client);
       cancel_tx->SetSuffix(grpc_binder::Metadata{});
       cancel_tx->SetStatus(1);
-      absl::Status status = gbt->wire_writer->RpcCall(std::move(cancel_tx));
+      (void)transport->wire_writer->RpcCall(std::move(cancel_tx));
     }
-    cancel_stream_locked(gbt, gbs, op->payload->cancel_stream.cancel_error);
+    cancel_stream_locked(transport, stream,
+                         op->payload->cancel_stream.cancel_error);
     if (op->on_complete != nullptr) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete,
+                              absl::OkStatus());
     }
-    GRPC_BINDER_STREAM_UNREF(gbs, "perform_stream_op");
+    GRPC_BINDER_STREAM_UNREF(stream, "perform_stream_op");
     return;
   }
 
-  if (gbs->is_closed) {
+  if (stream->is_closed) {
     if (op->send_message) {
       // Reset the send_message payload to prevent memory leaks.
       op->payload->send_message.send_message->Clear();
@@ -414,37 +422,38 @@ static void perform_stream_op_locked(void* stream_op,
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_REF(gbs->cancel_self_error));
+          stream->cancel_self_error);
     }
     if (op->recv_message) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                               op->payload->recv_message.recv_message_ready,
-                              GRPC_ERROR_REF(gbs->cancel_self_error));
+                              stream->cancel_self_error);
     }
     if (op->recv_trailing_metadata) {
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-          GRPC_ERROR_REF(gbs->cancel_self_error));
+          stream->cancel_self_error);
     }
     if (op->on_complete != nullptr) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete,
-                              GRPC_ERROR_REF(gbs->cancel_self_error));
+                              stream->cancel_self_error);
     }
-    GRPC_BINDER_STREAM_UNREF(gbs, "perform_stream_op");
+    GRPC_BINDER_STREAM_UNREF(stream, "perform_stream_op");
     return;
   }
 
-  int tx_code = gbs->tx_code;
+  int tx_code = stream->tx_code;
   auto tx =
-      absl::make_unique<grpc_binder::Transaction>(tx_code, gbt->is_client);
+      std::make_unique<grpc_binder::Transaction>(tx_code, transport->is_client);
 
   if (op->send_initial_metadata) {
     gpr_log(GPR_INFO, "send_initial_metadata");
     grpc_binder::Metadata init_md;
     auto batch = op->payload->send_initial_metadata.send_initial_metadata;
 
-    grpc_binder::MetadataEncoder encoder(gbt->is_client, tx.get(), &init_md);
+    grpc_binder::MetadataEncoder encoder(transport->is_client, tx.get(),
+                                         &init_md);
     batch->Encode(&encoder);
     tx->SetPrefix(init_md);
   }
@@ -458,7 +467,7 @@ static void perform_stream_op_locked(void* stream_op,
     auto batch = op->payload->send_trailing_metadata.send_trailing_metadata;
     grpc_binder::Metadata trailing_metadata;
 
-    grpc_binder::MetadataEncoder encoder(gbt->is_client, tx.get(),
+    grpc_binder::MetadataEncoder encoder(transport->is_client, tx.get(),
                                          &trailing_metadata);
     batch->Encode(&encoder);
 
@@ -468,86 +477,91 @@ static void perform_stream_op_locked(void* stream_op,
   }
   if (op->recv_initial_metadata) {
     gpr_log(GPR_INFO, "recv_initial_metadata");
-    gbs->recv_initial_metadata_ready =
+    stream->recv_initial_metadata_ready =
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    gbs->recv_initial_metadata =
+    stream->recv_initial_metadata =
         op->payload->recv_initial_metadata.recv_initial_metadata;
-    gbs->trailing_metadata_available =
+    stream->trailing_metadata_available =
         op->payload->recv_initial_metadata.trailing_metadata_available;
-    GRPC_BINDER_STREAM_REF(gbs, "recv_initial_metadata");
-    gbt->transport_stream_receiver->RegisterRecvInitialMetadata(
-        tx_code, [tx_code, gbs,
-                  gbt](absl::StatusOr<grpc_binder::Metadata> initial_metadata) {
+    GRPC_BINDER_STREAM_REF(stream, "recv_initial_metadata");
+    transport->transport_stream_receiver->RegisterRecvInitialMetadata(
+        tx_code, [tx_code, stream, transport](
+                     absl::StatusOr<grpc_binder::Metadata> initial_metadata) {
           grpc_core::ExecCtx exec_ctx;
-          gbs->recv_initial_metadata_args.tx_code = tx_code;
-          gbs->recv_initial_metadata_args.initial_metadata =
+          stream->recv_initial_metadata_args.tx_code = tx_code;
+          stream->recv_initial_metadata_args.initial_metadata =
               std::move(initial_metadata);
-          gbt->combiner->Run(
-              GRPC_CLOSURE_INIT(&gbs->recv_initial_metadata_closure,
+          transport->combiner->Run(
+              GRPC_CLOSURE_INIT(&stream->recv_initial_metadata_closure,
                                 recv_initial_metadata_locked,
-                                &gbs->recv_initial_metadata_args, nullptr),
-              GRPC_ERROR_NONE);
+                                &stream->recv_initial_metadata_args, nullptr),
+              absl::OkStatus());
         });
   }
   if (op->recv_message) {
     gpr_log(GPR_INFO, "recv_message");
-    gbs->recv_message_ready = op->payload->recv_message.recv_message_ready;
-    gbs->recv_message = op->payload->recv_message.recv_message;
-    gbs->call_failed_before_recv_message =
+    stream->recv_message_ready = op->payload->recv_message.recv_message_ready;
+    stream->recv_message = op->payload->recv_message.recv_message;
+    stream->call_failed_before_recv_message =
         op->payload->recv_message.call_failed_before_recv_message;
-    GRPC_BINDER_STREAM_REF(gbs, "recv_message");
-    gbt->transport_stream_receiver->RegisterRecvMessage(
-        tx_code, [tx_code, gbs, gbt](absl::StatusOr<std::string> message) {
+    if (op->payload->recv_message.flags != nullptr) {
+      *op->payload->recv_message.flags = 0;
+    }
+    GRPC_BINDER_STREAM_REF(stream, "recv_message");
+    transport->transport_stream_receiver->RegisterRecvMessage(
+        tx_code,
+        [tx_code, stream, transport](absl::StatusOr<std::string> message) {
           grpc_core::ExecCtx exec_ctx;
-          gbs->recv_message_args.tx_code = tx_code;
-          gbs->recv_message_args.message = std::move(message);
-          gbt->combiner->Run(
-              GRPC_CLOSURE_INIT(&gbs->recv_message_closure, recv_message_locked,
-                                &gbs->recv_message_args, nullptr),
-              GRPC_ERROR_NONE);
+          stream->recv_message_args.tx_code = tx_code;
+          stream->recv_message_args.message = std::move(message);
+          transport->combiner->Run(
+              GRPC_CLOSURE_INIT(&stream->recv_message_closure,
+                                recv_message_locked, &stream->recv_message_args,
+                                nullptr),
+              absl::OkStatus());
         });
   }
   if (op->recv_trailing_metadata) {
     gpr_log(GPR_INFO, "recv_trailing_metadata");
-    gbs->recv_trailing_metadata_finished =
+    stream->recv_trailing_metadata_finished =
         op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    gbs->recv_trailing_metadata =
+    stream->recv_trailing_metadata =
         op->payload->recv_trailing_metadata.recv_trailing_metadata;
-    GRPC_BINDER_STREAM_REF(gbs, "recv_trailing_metadata");
-    gbt->transport_stream_receiver->RegisterRecvTrailingMetadata(
-        tx_code, [tx_code, gbs, gbt](
+    GRPC_BINDER_STREAM_REF(stream, "recv_trailing_metadata");
+    transport->transport_stream_receiver->RegisterRecvTrailingMetadata(
+        tx_code, [tx_code, stream, transport](
                      absl::StatusOr<grpc_binder::Metadata> trailing_metadata,
                      int status) {
           grpc_core::ExecCtx exec_ctx;
-          gbs->recv_trailing_metadata_args.tx_code = tx_code;
-          gbs->recv_trailing_metadata_args.trailing_metadata =
+          stream->recv_trailing_metadata_args.tx_code = tx_code;
+          stream->recv_trailing_metadata_args.trailing_metadata =
               std::move(trailing_metadata);
-          gbs->recv_trailing_metadata_args.status = status;
-          gbt->combiner->Run(
-              GRPC_CLOSURE_INIT(&gbs->recv_trailing_metadata_closure,
+          stream->recv_trailing_metadata_args.status = status;
+          transport->combiner->Run(
+              GRPC_CLOSURE_INIT(&stream->recv_trailing_metadata_closure,
                                 recv_trailing_metadata_locked,
-                                &gbs->recv_trailing_metadata_args, nullptr),
-              GRPC_ERROR_NONE);
+                                &stream->recv_trailing_metadata_args, nullptr),
+              absl::OkStatus());
         });
   }
   // Only send transaction when there's a send op presented.
-  absl::Status status = absl::OkStatus();
+  absl::Status status;
   if (op->send_initial_metadata || op->send_message ||
       op->send_trailing_metadata) {
-    status = gbt->wire_writer->RpcCall(std::move(tx));
-    if (!gbs->is_client && op->send_trailing_metadata) {
-      gbs->trailing_metadata_sent = true;
+    status = transport->wire_writer->RpcCall(std::move(tx));
+    if (!stream->is_client && op->send_trailing_metadata) {
+      stream->trailing_metadata_sent = true;
       // According to transport explaineer - "Server extra: This op shouldn't
       // actually be considered complete until the server has also sent trailing
       // metadata to provide the other side with final status"
       //
       // Because we've done sending trailing metadata here, we can safely
       // complete the recv_trailing_metadata callback here.
-      if (gbs->need_to_call_trailing_metadata_callback) {
-        grpc_closure* cb = gbs->recv_trailing_metadata_finished;
-        gbs->recv_trailing_metadata_finished = nullptr;
-        grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
-        gbs->need_to_call_trailing_metadata_callback = false;
+      if (stream->need_to_call_trailing_metadata_callback) {
+        grpc_closure* cb = stream->recv_trailing_metadata_finished;
+        stream->recv_trailing_metadata_finished = nullptr;
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
+        stream->need_to_call_trailing_metadata_callback = false;
       }
     }
   }
@@ -556,173 +570,160 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->on_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete,
                             absl_status_to_grpc_error(status));
-    gpr_log(GPR_INFO, "on_complete closure schuduled");
+    gpr_log(GPR_INFO, "on_complete closure scheduled");
   }
-  GRPC_BINDER_STREAM_UNREF(gbs, "perform_stream_op");
+  GRPC_BINDER_STREAM_UNREF(stream, "perform_stream_op");
 }
 
-static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
-                              grpc_transport_stream_op_batch* op) {
-  GPR_TIMER_SCOPE("perform_stream_op", 0);
-  grpc_binder_transport* gbt = reinterpret_cast<grpc_binder_transport*>(gt);
-  grpc_binder_stream* gbs = reinterpret_cast<grpc_binder_stream*>(gs);
-  gpr_log(GPR_INFO, "%s = %p %p %p is_client = %d", __func__, gt, gs, op,
-          gbs->is_client);
-  GRPC_BINDER_STREAM_REF(gbs, "perform_stream_op");
-  op->handler_private.extra_arg = gbs;
-  gbt->combiner->Run(GRPC_CLOSURE_INIT(&op->handler_private.closure,
-                                       perform_stream_op_locked, op, nullptr),
-                     GRPC_ERROR_NONE);
+void grpc_binder_transport::PerformStreamOp(
+    grpc_stream* gs, grpc_transport_stream_op_batch* op) {
+  grpc_binder_stream* stream = reinterpret_cast<grpc_binder_stream*>(gs);
+  gpr_log(GPR_INFO, "%s = %p %p %p is_client = %d", __func__, this, gs, op,
+          stream->is_client);
+  GRPC_BINDER_STREAM_REF(stream, "perform_stream_op");
+  op->handler_private.extra_arg = stream;
+  combiner->Run(GRPC_CLOSURE_INIT(&op->handler_private.closure,
+                                  perform_stream_op_locked, op, nullptr),
+                absl::OkStatus());
 }
 
-static void close_transport_locked(grpc_binder_transport* gbt) {
-  gbt->state_tracker.SetState(GRPC_CHANNEL_SHUTDOWN, absl::OkStatus(),
-                              "transport closed due to disconnection/goaway");
-  while (!gbt->registered_stream.empty()) {
+static void close_transport_locked(grpc_binder_transport* transport) {
+  transport->state_tracker.SetState(
+      GRPC_CHANNEL_SHUTDOWN, absl::OkStatus(),
+      "transport closed due to disconnection/goaway");
+  while (!transport->registered_stream.empty()) {
     cancel_stream_locked(
-        gbt, gbt->registered_stream.begin()->second,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("transport closed"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+        transport, transport->registered_stream.begin()->second,
+        grpc_error_set_int(GRPC_ERROR_CREATE("transport closed"),
+                           grpc_core::StatusIntProperty::kRpcStatus,
+                           GRPC_STATUS_UNAVAILABLE));
   }
 }
 
 static void perform_transport_op_locked(void* transport_op,
                                         grpc_error_handle /*error*/) {
   grpc_transport_op* op = static_cast<grpc_transport_op*>(transport_op);
-  grpc_binder_transport* gbt =
+  grpc_binder_transport* transport =
       static_cast<grpc_binder_transport*>(op->handler_private.extra_arg);
   // TODO(waynetu): Should we lock here to avoid data race?
   if (op->start_connectivity_watch != nullptr) {
-    gbt->state_tracker.AddWatcher(op->start_connectivity_watch_state,
-                                  std::move(op->start_connectivity_watch));
+    transport->state_tracker.AddWatcher(
+        op->start_connectivity_watch_state,
+        std::move(op->start_connectivity_watch));
   }
   if (op->stop_connectivity_watch != nullptr) {
-    gbt->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
+    transport->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
   }
   if (op->set_accept_stream) {
-    gbt->accept_stream_fn = op->set_accept_stream_fn;
-    gbt->accept_stream_user_data = op->set_accept_stream_user_data;
+    transport->accept_stream_user_data = op->set_accept_stream_user_data;
+    transport->accept_stream_fn = op->set_accept_stream_fn;
+    transport->registered_method_matcher_cb =
+        op->set_registered_method_matcher_fn;
+    gpr_log(GPR_DEBUG, "accept_stream_fn_called_count_ = %d",
+            transport->accept_stream_fn_called_count_);
+    while (transport->accept_stream_fn_called_count_ > 0) {
+      --transport->accept_stream_fn_called_count_;
+      transport->combiner->Run(
+          GRPC_CLOSURE_CREATE(accept_stream_locked, transport, nullptr),
+          absl::OkStatus());
+    }
   }
   if (op->on_consumed) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
   }
   bool do_close = false;
-  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) {
+  if (!op->disconnect_with_error.ok()) {
     do_close = true;
-    GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
-  if (!GRPC_ERROR_IS_NONE(op->goaway_error)) {
+  if (!op->goaway_error.ok()) {
     do_close = true;
-    GRPC_ERROR_UNREF(op->goaway_error);
   }
   if (do_close) {
-    close_transport_locked(gbt);
+    close_transport_locked(transport);
   }
-  GRPC_BINDER_UNREF_TRANSPORT(gbt, "perform_transport_op");
+  GRPC_BINDER_UNREF_TRANSPORT(transport, "perform_transport_op");
 }
 
-static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
+void grpc_binder_transport::PerformOp(grpc_transport_op* op) {
   gpr_log(GPR_INFO, __func__);
-  grpc_binder_transport* gbt = reinterpret_cast<grpc_binder_transport*>(gt);
-  op->handler_private.extra_arg = gbt;
-  GRPC_BINDER_REF_TRANSPORT(gbt, "perform_transport_op");
-  gbt->combiner->Run(
-      GRPC_CLOSURE_INIT(&op->handler_private.closure,
-                        perform_transport_op_locked, op, nullptr),
-      GRPC_ERROR_NONE);
+  op->handler_private.extra_arg = this;
+  GRPC_BINDER_REF_TRANSPORT(this, "perform_transport_op");
+  combiner->Run(GRPC_CLOSURE_INIT(&op->handler_private.closure,
+                                  perform_transport_op_locked, op, nullptr),
+                absl::OkStatus());
 }
 
 static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {
-  grpc_binder_stream* gbs = static_cast<grpc_binder_stream*>(sp);
-  grpc_binder_transport* gbt = gbs->t;
+  grpc_binder_stream* stream = static_cast<grpc_binder_stream*>(sp);
+  grpc_binder_transport* transport = stream->t;
   cancel_stream_locked(
-      gbt, gbs,
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("destroy stream"),
-                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
-  gbs->~grpc_binder_stream();
+      transport, stream,
+      grpc_error_set_int(GRPC_ERROR_CREATE("destroy stream"),
+                         grpc_core::StatusIntProperty::kRpcStatus,
+                         GRPC_STATUS_UNAVAILABLE));
+  stream->~grpc_binder_stream();
 }
 
-static void destroy_stream(grpc_transport* /*gt*/, grpc_stream* gs,
-                           grpc_closure* then_schedule_closure) {
+void grpc_binder_transport::DestroyStream(grpc_stream* gs,
+                                          grpc_closure* then_schedule_closure) {
   gpr_log(GPR_INFO, __func__);
-  grpc_binder_stream* gbs = reinterpret_cast<grpc_binder_stream*>(gs);
-  gbs->destroy_stream_then_closure = then_schedule_closure;
-  gbs->t->combiner->Run(GRPC_CLOSURE_INIT(&gbs->destroy_stream,
-                                          destroy_stream_locked, gbs, nullptr),
-                        GRPC_ERROR_NONE);
+  grpc_binder_stream* stream = reinterpret_cast<grpc_binder_stream*>(gs);
+  stream->destroy_stream_then_closure = then_schedule_closure;
+  stream->t->combiner->Run(
+      GRPC_CLOSURE_INIT(&stream->destroy_stream, destroy_stream_locked, stream,
+                        nullptr),
+      absl::OkStatus());
 }
 
 static void destroy_transport_locked(void* gt, grpc_error_handle /*error*/) {
-  grpc_binder_transport* gbt = static_cast<grpc_binder_transport*>(gt);
-  close_transport_locked(gbt);
+  grpc_binder_transport* transport = static_cast<grpc_binder_transport*>(gt);
+  close_transport_locked(transport);
   // Release the references held by the transport.
-  gbt->wire_reader = nullptr;
-  gbt->transport_stream_receiver = nullptr;
-  gbt->wire_writer = nullptr;
-  GRPC_BINDER_UNREF_TRANSPORT(gbt, "transport destroyed");
+  transport->wire_reader = nullptr;
+  transport->transport_stream_receiver = nullptr;
+  transport->wire_writer = nullptr;
+  GRPC_BINDER_UNREF_TRANSPORT(transport, "transport destroyed");
 }
 
-static void destroy_transport(grpc_transport* gt) {
+void grpc_binder_transport::Orphan() {
   gpr_log(GPR_INFO, __func__);
-  grpc_binder_transport* gbt = reinterpret_cast<grpc_binder_transport*>(gt);
-  gbt->combiner->Run(
-      GRPC_CLOSURE_CREATE(destroy_transport_locked, gbt, nullptr),
-      GRPC_ERROR_NONE);
+  combiner->Run(GRPC_CLOSURE_CREATE(destroy_transport_locked, this, nullptr),
+                absl::OkStatus());
 }
 
-static grpc_endpoint* get_endpoint(grpc_transport*) {
+grpc_endpoint* grpc_binder_transport::GetEndpoint() {
   gpr_log(GPR_INFO, __func__);
   return nullptr;
 }
 
-// See grpc_transport_vtable declaration for meaning of each field
-static const grpc_transport_vtable vtable = {sizeof(grpc_binder_stream),
-                                             "binder",
-                                             init_stream,
-                                             nullptr,
-                                             set_pollset,
-                                             set_pollset_set,
-                                             perform_stream_op,
-                                             perform_transport_op,
-                                             destroy_stream,
-                                             destroy_transport,
-                                             get_endpoint};
-
-static const grpc_transport_vtable* get_vtable() { return &vtable; }
-
-static void accept_stream_locked(void* gt, grpc_error_handle /*error*/) {
-  grpc_binder_transport* gbt = static_cast<grpc_binder_transport*>(gt);
-  if (gbt->accept_stream_fn) {
-    // must pass in a non-null value.
-    (*gbt->accept_stream_fn)(gbt->accept_stream_user_data, &gbt->base, gbt);
-  }
+size_t grpc_binder_transport::SizeOfStream() const {
+  return sizeof(grpc_binder_stream);
 }
 
 grpc_binder_transport::grpc_binder_transport(
     std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy)
     : is_client(is_client),
-      combiner(grpc_combiner_create()),
+      combiner(grpc_combiner_create(
+          grpc_event_engine::experimental::GetDefaultEventEngine())),
       state_tracker(
           is_client ? "binder_transport_client" : "binder_transport_server",
           GRPC_CHANNEL_READY),
       refs(1, nullptr) {
   gpr_log(GPR_INFO, __func__);
-  base.vtable = get_vtable();
   transport_stream_receiver =
       std::make_shared<grpc_binder::TransportStreamReceiverImpl>(
           is_client, /*accept_stream_callback=*/[this] {
             grpc_core::ExecCtx exec_ctx;
             combiner->Run(
                 GRPC_CLOSURE_CREATE(accept_stream_locked, this, nullptr),
-                GRPC_ERROR_NONE);
+                absl::OkStatus());
           });
   // WireReader holds a ref to grpc_binder_transport.
   GRPC_BINDER_REF_TRANSPORT(this, "wire reader");
   wire_reader = grpc_core::MakeOrphanable<grpc_binder::WireReaderImpl>(
       transport_stream_receiver, is_client, security_policy,
-      /*on_destruct_callback=*/
+      // on_destruct_callback=
       [this] {
         // Unref transport when destructed.
         GRPC_BINDER_UNREF_TRANSPORT(this, "wire reader");
@@ -734,7 +735,7 @@ grpc_binder_transport::~grpc_binder_transport() {
   GRPC_COMBINER_UNREF(combiner, "binder_transport");
 }
 
-grpc_transport* grpc_create_binder_transport_client(
+grpc_core::Transport* grpc_create_binder_transport_client(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy) {
@@ -746,10 +747,10 @@ grpc_transport* grpc_create_binder_transport_client(
   grpc_binder_transport* t = new grpc_binder_transport(
       std::move(endpoint_binder), /*is_client=*/true, security_policy);
 
-  return &t->base;
+  return t;
 }
 
-grpc_transport* grpc_create_binder_transport_server(
+grpc_core::Transport* grpc_create_binder_transport_server(
     std::unique_ptr<grpc_binder::Binder> client_binder,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy) {
@@ -761,6 +762,6 @@ grpc_transport* grpc_create_binder_transport_server(
   grpc_binder_transport* t = new grpc_binder_transport(
       std::move(client_binder), /*is_client=*/false, security_policy);
 
-  return &t->base;
+  return t;
 }
 #endif

@@ -90,6 +90,16 @@ py_library(
 )
 
 py_library(
+    name = "_typing",
+    srcs = ["_typing.py"],
+)
+
+py_library(
+    name = "_observability",
+    srcs = ["_observability.py"],
+)
+
+py_library(
     name = "grpcio",
     srcs = ["__init__.py"],
     data = [
@@ -97,22 +107,20 @@ py_library(
     ],
     imports = ["../"],
     deps = [
-        ":aio",
-        ":utilities",
-        ":auth",
-        ":plugin_wrapping",
-        ":channel",
-        ":interceptor",
-        ":server",
-        ":compression",
-        ":_simple_stubs",
+        ":_observability",
         ":_runtime_protos",
+        ":_simple_stubs",
+        ":_typing",
+        ":aio",
+        ":auth",
+        ":channel",
+        ":compression",
+        ":interceptor",
+        ":plugin_wrapping",
+        ":server",
+        ":utilities",
         "//src/python/grpcio/grpc/_cython:cygrpc",
         "//src/python/grpcio/grpc/experimental",
         "//src/python/grpcio/grpc/framework",
-        "@six//:six",
-    ] + select({
-        "//conditions:default": ["@enum34//:enum34"],
-        "//:python3": [],
-    }),
+    ],
 )

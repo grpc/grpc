@@ -131,7 +131,6 @@ py_library(
             "//src/python/grpcio/grpc:grpcio",
             "//src/python/grpcio_tests/tests/testing",
             "//src/python/grpcio_tests/tests/unit/framework/common",
-            "@six",
         ],
     )
     for test_file_name in GRPCIO_TESTS_UNIT
@@ -152,6 +151,5 @@ internal_py_grpc_test(
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/testing",
         "//tools/distrib/python/grpcio_tools:grpc_tools",
-        "@six",
     ],
 )

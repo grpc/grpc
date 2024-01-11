@@ -22,13 +22,18 @@
 
 namespace grpc_core {
 
-bool PeriodicUpdate::MaybeEndPeriod() {
+bool PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
+  if (period_start_ == Timestamp::ProcessEpoch()) {
+    period_start_ = Timestamp::Now();
+    updates_remaining_.store(1, std::memory_order_release);
+    return false;
+  }
   // updates_remaining_ just reached 0 and the thread calling this function was
   // the decrementer that got us there.
   // We can now safely mutate any non-atomic mutable variables (we've got a
   // guarantee that no other thread will), and by the time this function returns
   // we must store a postive number into updates_remaining_.
-  auto now = ExecCtx::Get()->Now();
+  auto now = Timestamp::Now();
   Duration time_so_far = now - period_start_;
   if (time_so_far < period_) {
     // At most double the number of updates remaining until the next period.
@@ -53,7 +58,7 @@ bool PeriodicUpdate::MaybeEndPeriod() {
     // we simply discard those decrements.
     updates_remaining_.store(better_guess - expected_updates_per_period_,
                              std::memory_order_release);
-    // Not quite done, return false, try for longer.
+    // Not quite done, return, try for longer.
     return false;
   }
   // Finished period, start a new one and return true.
@@ -64,6 +69,7 @@ bool PeriodicUpdate::MaybeEndPeriod() {
       period_.seconds() * expected_updates_per_period_ / time_so_far.seconds();
   if (expected_updates_per_period_ < 1) expected_updates_per_period_ = 1;
   period_start_ = now;
+  f(time_so_far);
   updates_remaining_.store(expected_updates_per_period_,
                            std::memory_order_release);
   return true;

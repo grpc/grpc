@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -25,7 +25,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/slice/slice.h"
 
 static uint8_t decode_table[] = {
     0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,
@@ -196,7 +196,7 @@ grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input) {
     char* s = grpc_slice_to_c_string(input);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
-    grpc_slice_unref_internal(output);
+    grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }
   GPR_ASSERT(ctx.output_cur == GRPC_SLICE_END_PTR(output));
@@ -217,7 +217,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
             "grpc_chttp2_base64_decode_with_length has a length of %d, which "
             "has a tail of 1 byte.\n",
             static_cast<int>(input_length));
-    grpc_slice_unref_internal(output);
+    grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }
 
@@ -229,7 +229,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
         "than the max possible output length %d.\n",
         static_cast<int>(output_length),
         static_cast<int>(input_length / 4 * 3 + tail_xtra[input_length % 4]));
-    grpc_slice_unref_internal(output);
+    grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }
 
@@ -243,7 +243,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
     char* s = grpc_slice_to_c_string(input);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
-    grpc_slice_unref_internal(output);
+    grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }
   GPR_ASSERT(ctx.output_cur == GRPC_SLICE_END_PTR(output));

@@ -20,11 +20,64 @@
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 
+#include "absl/strings/str_cat.h"
+
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
 namespace grpc_core {
+
+//
+// CertificateProviderStore::PluginDefinition
+//
+
+const JsonLoaderInterface*
+CertificateProviderStore::PluginDefinition::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<PluginDefinition>()
+          .Field("plugin_name", &PluginDefinition::plugin_name)
+          .Finish();
+  return loader;
+}
+
+void CertificateProviderStore::PluginDefinition::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  // Check that plugin is supported.
+  CertificateProviderFactory* factory = nullptr;
+  if (!plugin_name.empty()) {
+    ValidationErrors::ScopedField field(errors, ".plugin_name");
+    factory = CoreConfiguration::Get()
+                  .certificate_provider_registry()
+                  .LookupCertificateProviderFactory(plugin_name);
+    if (factory == nullptr) {
+      errors->AddError(absl::StrCat("Unrecognized plugin name: ", plugin_name));
+      return;  // No point checking config.
+    }
+  }
+  // Parse the config field.
+  {
+    ValidationErrors::ScopedField field(errors, ".config");
+    auto it = json.object().find("config");
+    // The config field is optional; if not present, we use an empty JSON
+    // object.
+    Json::Object config_json;
+    if (it != json.object().end()) {
+      if (it->second.type() != Json::Type::kObject) {
+        errors->AddError("is not an object");
+        return;  // No point parsing config.
+      } else {
+        config_json = it->second.object();
+      }
+    }
+    if (factory == nullptr) return;
+    // Use plugin to validate and parse config.
+    config = factory->CreateCertificateProviderConfig(
+        Json::FromObject(std::move(config_json)), args, errors);
+  }
+}
 
 //
 // CertificateProviderStore::CertificateProviderWrapper
@@ -53,7 +106,8 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
       certificate_providers_map_.insert({result->key(), result.get()});
     }
   } else {
-    result = it->second->RefIfNonZero();
+    result =
+        it->second->RefIfNonZero().TakeAsSubclass<CertificateProviderWrapper>();
     if (result == nullptr) {
       result = CreateCertificateProviderLocked(key);
       it->second = result.get();
@@ -70,8 +124,10 @@ CertificateProviderStore::CreateCertificateProviderLocked(
     return nullptr;
   }
   CertificateProviderFactory* factory =
-      CertificateProviderRegistry::LookupCertificateProviderFactory(
-          plugin_config_it->second.plugin_name);
+      CoreConfiguration::Get()
+          .certificate_provider_registry()
+          .LookupCertificateProviderFactory(
+              plugin_config_it->second.plugin_name);
   if (factory == nullptr) {
     // This should never happen since an entry is only inserted in the
     // plugin_config_map_ if the corresponding factory was found when parsing

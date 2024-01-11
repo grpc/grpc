@@ -23,11 +23,10 @@ from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 from tests_gevent.unit._test_server import start_test_server
 
-_UNARY_CALL_METHOD_WITH_SLEEP = '/grpc.testing.TestService/UnaryCallWithSleep'
+_UNARY_CALL_METHOD_WITH_SLEEP = "/grpc.testing.TestService/UnaryCallWithSleep"
 
 
 class CloseChannelTest(unittest.TestCase):
-
     def setUp(self):
         self._server_target, self._server = start_test_server()
         self._channel = grpc.insecure_channel(self._server_target)
@@ -66,6 +65,7 @@ class CloseChannelTest(unittest.TestCase):
             _UNARY_CALL_METHOD_WITH_SLEEP,
             request_serializer=messages_pb2.SimpleRequest.SerializeToString,
             response_deserializer=messages_pb2.SimpleResponse.FromString,
+            _registered_method=True,
         )
         greenlet = group.spawn(self._run_client, UnaryCallWithSleep)
         # release loop so that greenlet can take control
@@ -79,6 +79,7 @@ class CloseChannelTest(unittest.TestCase):
             _UNARY_CALL_METHOD_WITH_SLEEP,
             request_serializer=messages_pb2.SimpleRequest.SerializeToString,
             response_deserializer=messages_pb2.SimpleResponse.FromString,
+            _registered_method=True,
         )
         greenlet = group.spawn(self._run_client, UnaryCallWithSleep)
         # release loop so that greenlet can take control
@@ -101,5 +102,5 @@ class CloseChannelTest(unittest.TestCase):
         sys.__excepthook__(exctype, value, tb)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

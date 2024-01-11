@@ -22,17 +22,13 @@
 #include <thread>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
@@ -238,13 +234,18 @@ void LrsServiceImpl::Shutdown() {
   gpr_log(GPR_INFO, "LRS[%p]: shut down", this);
 }
 
-std::vector<LrsServiceImpl::ClientStats> LrsServiceImpl::WaitForLoadReport() {
+std::vector<LrsServiceImpl::ClientStats> LrsServiceImpl::WaitForLoadReport(
+    absl::Duration timeout) {
+  timeout *= grpc_test_slowdown_factor();
   grpc_core::MutexLock lock(&load_report_mu_);
   grpc_core::CondVar cv;
   if (result_queue_.empty()) {
     load_report_cond_ = &cv;
     while (result_queue_.empty()) {
-      cv.Wait(&load_report_mu_);
+      if (cv.WaitWithTimeout(&load_report_mu_, timeout)) {
+        gpr_log(GPR_ERROR, "timed out waiting for load report");
+        return {};
+      }
     }
     load_report_cond_ = nullptr;
   }

@@ -19,5 +19,7 @@ from grpc import *  # pylint: disable=wildcard-import,unused-wildcard-import
 _AFTER_IMPORT = tuple(globals())
 
 GRPC_ELEMENTS = tuple(
-    element for element in _AFTER_IMPORT
-    if element not in _BEFORE_IMPORT and element != '_BEFORE_IMPORT')
+    element
+    for element in _AFTER_IMPORT
+    if element not in _BEFORE_IMPORT and element != "_BEFORE_IMPORT"
+)

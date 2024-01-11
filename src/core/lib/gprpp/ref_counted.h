@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_GPRPP_REF_COUNTED_H
-#define GRPC_CORE_LIB_GPRPP_REF_COUNTED_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_H
+#define GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_H
 
 #include <grpc/support/port_platform.h>
 
@@ -45,12 +45,14 @@ class RefCount {
  public:
   using Value = intptr_t;
 
+  RefCount() : RefCount(1) {}
+
   // `init` is the initial refcount stored in this object.
   //
   // `trace` is a string to be logged with trace events; if null, no
   // trace logging will be done.  Tracing is a no-op in non-debug builds.
   explicit RefCount(
-      Value init = 1,
+      Value init,
       const char*
 #ifndef NDEBUG
           // Leave unnamed if NDEBUG to avoid unused parameter warning
@@ -213,41 +215,34 @@ class NonPolymorphicRefCount {
 };
 
 // Behavior of RefCounted<> upon ref count reaching 0.
-enum UnrefBehavior {
-  // Default behavior: Delete the object.
-  kUnrefDelete,
-  // Do not delete the object upon unref.  This is useful in cases where all
-  // existing objects must be tracked in a registry but the object's entry in
-  // the registry cannot be removed from the object's dtor due to
-  // synchronization issues.  In this case, the registry can be cleaned up
-  // later by identifying entries for which RefIfNonZero() returns null.
-  kUnrefNoDelete,
-  // Call the object's dtor but do not delete it.  This is useful for cases
-  // where the object is stored in memory allocated elsewhere (e.g., the call
-  // arena).
-  kUnrefCallDtor,
+
+// Default behavior: Delete the object.
+struct UnrefDelete {
+  template <typename T>
+  void operator()(T* p) const {
+    delete p;
+  }
 };
 
-namespace internal {
-template <typename T, UnrefBehavior UnrefBehaviorArg>
-class Delete;
+// Do not delete the object upon unref.  This is useful in cases where all
+// existing objects must be tracked in a registry but the object's entry in
+// the registry cannot be removed from the object's dtor due to
+// synchronization issues.  In this case, the registry can be cleaned up
+// later by identifying entries for which RefIfNonZero() returns null.
+struct UnrefNoDelete {
+  template <typename T>
+  void operator()(T* /*p*/) const {}
+};
 
-template <typename T>
-class Delete<T, kUnrefDelete> {
- public:
-  explicit Delete(T* t) { delete t; }
+// Call the object's dtor but do not delete it.  This is useful for cases
+// where the object is stored in memory allocated elsewhere (e.g., the call
+// arena).
+struct UnrefCallDtor {
+  template <typename T>
+  void operator()(T* p) const {
+    p->~T();
+  }
 };
-template <typename T>
-class Delete<T, kUnrefNoDelete> {
- public:
-  explicit Delete(T* /*t*/) {}
-};
-template <typename T>
-class Delete<T, kUnrefCallDtor> {
- public:
-  explicit Delete(T* t) { t->~T(); }
-};
-}  // namespace internal
 
 // A base class for reference-counted objects.
 // New objects should be created via new and start with a refcount of 1.
@@ -276,54 +271,94 @@ class Delete<T, kUnrefCallDtor> {
 //    ch->Unref();
 //
 template <typename Child, typename Impl = PolymorphicRefCount,
-          UnrefBehavior UnrefBehaviorArg = kUnrefDelete>
+          typename UnrefBehavior = UnrefDelete>
 class RefCounted : public Impl {
  public:
   using RefCountedChildType = Child;
 
+  // Not copyable nor movable.
+  RefCounted(const RefCounted&) = delete;
+  RefCounted& operator=(const RefCounted&) = delete;
+
   // Note: Depending on the Impl used, this dtor can be implicitly virtual.
   ~RefCounted() = default;
 
-  RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
+  // Ref() for mutable types.
+  GRPC_MUST_USE_RESULT RefCountedPtr<Child> Ref() {
     IncrementRefCount();
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
-
-  RefCountedPtr<Child> Ref(const DebugLocation& location,
-                           const char* reason) GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT RefCountedPtr<Child> Ref(const DebugLocation& location,
+                                                const char* reason) {
     IncrementRefCount(location, reason);
     return RefCountedPtr<Child>(static_cast<Child*>(this));
+  }
+
+  // Ref() for const types.
+  GRPC_MUST_USE_RESULT RefCountedPtr<const Child> Ref() const {
+    IncrementRefCount();
+    return RefCountedPtr<const Child>(static_cast<const Child*>(this));
+  }
+  GRPC_MUST_USE_RESULT RefCountedPtr<const Child> Ref(
+      const DebugLocation& location, const char* reason) const {
+    IncrementRefCount(location, reason);
+    return RefCountedPtr<const Child>(static_cast<const Child*>(this));
+  }
+
+  template <
+      typename Subclass,
+      std::enable_if_t<std::is_base_of<Child, Subclass>::value, bool> = true>
+  RefCountedPtr<Subclass> RefAsSubclass() {
+    IncrementRefCount();
+    return RefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+  }
+  template <
+      typename Subclass,
+      std::enable_if_t<std::is_base_of<Child, Subclass>::value, bool> = true>
+  RefCountedPtr<Subclass> RefAsSubclass(const DebugLocation& location,
+                                        const char* reason) {
+    IncrementRefCount(location, reason);
+    return RefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+  }
+
+  // RefIfNonZero() for mutable types.
+  GRPC_MUST_USE_RESULT RefCountedPtr<Child> RefIfNonZero() {
+    return RefCountedPtr<Child>(refs_.RefIfNonZero() ? static_cast<Child*>(this)
+                                                     : nullptr);
+  }
+  GRPC_MUST_USE_RESULT RefCountedPtr<Child> RefIfNonZero(
+      const DebugLocation& location, const char* reason) {
+    return RefCountedPtr<Child>(refs_.RefIfNonZero(location, reason)
+                                    ? static_cast<Child*>(this)
+                                    : nullptr);
+  }
+
+  // RefIfNonZero() for const types.
+  GRPC_MUST_USE_RESULT RefCountedPtr<const Child> RefIfNonZero() const {
+    return RefCountedPtr<const Child>(
+        refs_.RefIfNonZero() ? static_cast<const Child*>(this) : nullptr);
+  }
+  GRPC_MUST_USE_RESULT RefCountedPtr<const Child> RefIfNonZero(
+      const DebugLocation& location, const char* reason) const {
+    return RefCountedPtr<const Child>(refs_.RefIfNonZero(location, reason)
+                                          ? static_cast<const Child*>(this)
+                                          : nullptr);
   }
 
   // TODO(roth): Once all of our code is converted to C++ and can use
   // RefCountedPtr<> instead of manual ref-counting, make this method
   // private, since it will only be used by RefCountedPtr<>, which is a
   // friend of this class.
-  void Unref() {
+  void Unref() const {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
+      unref_behavior_(static_cast<const Child*>(this));
     }
   }
-  void Unref(const DebugLocation& location, const char* reason) {
+  void Unref(const DebugLocation& location, const char* reason) const {
     if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
+      unref_behavior_(static_cast<const Child*>(this));
     }
   }
-
-  RefCountedPtr<Child> RefIfNonZero() GRPC_MUST_USE_RESULT {
-    return RefCountedPtr<Child>(refs_.RefIfNonZero() ? static_cast<Child*>(this)
-                                                     : nullptr);
-  }
-  RefCountedPtr<Child> RefIfNonZero(const DebugLocation& location,
-                                    const char* reason) GRPC_MUST_USE_RESULT {
-    return RefCountedPtr<Child>(refs_.RefIfNonZero(location, reason)
-                                    ? static_cast<Child*>(this)
-                                    : nullptr);
-  }
-
-  // Not copyable nor movable.
-  RefCounted(const RefCounted&) = delete;
-  RefCounted& operator=(const RefCounted&) = delete;
 
  protected:
   // Note: Tracing is a no-op on non-debug builds.
@@ -331,19 +366,26 @@ class RefCounted : public Impl {
                       intptr_t initial_refcount = 1)
       : refs_(initial_refcount, trace) {}
 
+  // Note: Tracing is a no-op on non-debug builds.
+  explicit RefCounted(UnrefBehavior b, const char* trace = nullptr,
+                      intptr_t initial_refcount = 1)
+      : refs_(initial_refcount, trace), unref_behavior_(b) {}
+
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
   template <typename T>
   friend class RefCountedPtr;
 
-  void IncrementRefCount() { refs_.Ref(); }
-  void IncrementRefCount(const DebugLocation& location, const char* reason) {
+  void IncrementRefCount() const { refs_.Ref(); }
+  void IncrementRefCount(const DebugLocation& location,
+                         const char* reason) const {
     refs_.Ref(location, reason);
   }
 
-  RefCount refs_;
+  mutable RefCount refs_;
+  GPR_NO_UNIQUE_ADDRESS UnrefBehavior unref_behavior_;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_REF_COUNTED_H */
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_H

@@ -14,28 +14,26 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
 grpc_arg CreateGrpclbBalancerAddressesArg(
-    const ServerAddressList* address_list);
+    const EndpointAddressesList* endpoint_list);
 GRPC_MUST_USE_RESULT
 ChannelArgs SetGrpcLbBalancerAddresses(const ChannelArgs& args,
-                                       ServerAddressList address_list);
-const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
+                                       EndpointAddressesList endpoint_list);
+const EndpointAddressesList* FindGrpclbBalancerAddressesInChannelArgs(
     const ChannelArgs& args);
 
 }  // namespace grpc_core
 
-#endif /*                                                                         \
-GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H \
-        */
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_BALANCER_ADDRESSES_H

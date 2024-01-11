@@ -14,7 +14,7 @@
 #ifndef GRPC_EVENT_ENGINE_INTERNAL_MEMORY_ALLOCATOR_IMPL_H
 #define GRPC_EVENT_ENGINE_INTERNAL_MEMORY_ALLOCATOR_IMPL_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 #include <memory>
@@ -49,6 +49,12 @@ class MemoryAllocatorImpl
   /// succeed at reserving the some number of bytes between request.min() and
   /// request.max() inclusively.
   virtual size_t Reserve(MemoryRequest request) = 0;
+
+  /// Allocate a slice, using MemoryRequest to size the number of returned
+  /// bytes. For a variable length request, check the returned slice length to
+  /// verify how much memory was allocated. Takes care of reserving memory for
+  /// any relevant control structures also.
+  virtual grpc_slice MakeSlice(MemoryRequest request) = 0;
 
   /// Release some bytes that were previously reserved.
   /// If more bytes are released than were reserved, we will have undefined

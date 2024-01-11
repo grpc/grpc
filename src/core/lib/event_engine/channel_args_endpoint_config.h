@@ -11,33 +11,39 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_ENDPOINT_CONFIG_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_ENDPOINT_CONFIG_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_ENDPOINT_CONFIG_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_ENDPOINT_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
-#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/channel/channel_args.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-/// A readonly \a EndpointConfig based on grpc_channel_args. This class does not
-/// take ownership of the grpc_endpoint_args*, and instances of this class
-/// should not be used after the underlying args are destroyed.
 class ChannelArgsEndpointConfig : public EndpointConfig {
  public:
-  explicit ChannelArgsEndpointConfig(const grpc_channel_args* args)
+  ChannelArgsEndpointConfig() = default;
+  explicit ChannelArgsEndpointConfig(const grpc_core::ChannelArgs& args)
       : args_(args) {}
-  Setting Get(absl::string_view key) const override;
+  ChannelArgsEndpointConfig(const ChannelArgsEndpointConfig& config) = default;
+  ChannelArgsEndpointConfig& operator=(const ChannelArgsEndpointConfig& other) =
+      default;
+  absl::optional<int> GetInt(absl::string_view key) const override;
+  absl::optional<absl::string_view> GetString(
+      absl::string_view key) const override;
+  void* GetVoidPointer(absl::string_view key) const override;
 
  private:
-  const grpc_channel_args* args_;
+  grpc_core::ChannelArgs args_;
 };
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_ENDPOINT_CONFIG_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_ENDPOINT_CONFIG_H

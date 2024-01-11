@@ -359,7 +359,8 @@ extern const char *kCFStreamVarName;
   NSMutableArray<NSString *> *addrs = [NSMutableArray arrayWithCapacity:kNumAddrs];
   NSMutableArray<RMTTestService *> *services = [NSMutableArray arrayWithCapacity:kNumAddrs];
   for (int i = 0; i < kNumAddrs; ++i) {
-    addrs[i] = [NSString stringWithFormat:@"127.0.0.%d", (i + 1)];
+    // http://readme.localtest.me/
+    addrs[i] = [NSString stringWithFormat:@"%d.localtest.me", (i + 1)];
     NSString *hostWithPort = [NSString stringWithFormat:@"%@:%@", addrs[i], port];
     services[i] = [RMTTestService serviceWithHost:hostWithPort];
   }

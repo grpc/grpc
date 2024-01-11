@@ -20,40 +20,20 @@ package envoy.config.endpoint.v3;
 
 import "src/proto/grpc/testing/xds/v3/address.proto";
 import "src/proto/grpc/testing/xds/v3/base.proto";
+import "src/proto/grpc/testing/xds/v3/health_check.proto";
 import "src/proto/grpc/testing/xds/v3/percent.proto";
 
 import "google/protobuf/wrappers.proto";
 
 // [#protodoc-title: Endpoints]
 
-// Endpoint health status.
-enum HealthStatus {
-  // The health status is not known. This is interpreted by Envoy as *HEALTHY*.
-  UNKNOWN = 0;
-
-  // Healthy.
-  HEALTHY = 1;
-
-  // Unhealthy.
-  UNHEALTHY = 2;
-
-  // Connection draining in progress. E.g.,
-  // `<https://aws.amazon.com/blogs/aws/elb-connection-draining-remove-instances-from-service-with-care/>`_
-  // or
-  // `<https://cloud.google.com/compute/docs/load-balancing/enabling-connection-draining>`_.
-  // This is interpreted by Envoy as *UNHEALTHY*.
-  DRAINING = 3;
-
-  // Health check timed out. This is part of HDS and is interpreted by Envoy as
-  // *UNHEALTHY*.
-  TIMEOUT = 4;
-
-  // Degraded.
-  DEGRADED = 5;
-}
-
 // Upstream host identifier.
 message Endpoint {
+  message AdditionalAddress {
+    // Additional address that is associated with the endpoint.
+    core.v3.Address address = 1;
+  }
+
   // The upstream host address.
   //
   // .. attention::
@@ -64,6 +44,13 @@ message Endpoint {
   //   in the Address). For LOGICAL or STRICT DNS, it is expected to be hostname,
   //   and will be resolved via DNS.
   core.v3.Address address = 1;
+
+  // An ordered list of addresses that together with `address` comprise the
+  // list of addresses for an endpoint. The address given in the `address` is
+  // prepended to this list. It is assumed that the list must already be
+  // sorted by preference order of the addresses. This will only be supported
+  // for STATIC and EDS clusters.
+  repeated AdditionalAddress additional_addresses = 4;
 }
 
 // An Endpoint that Envoy can route traffic to.
@@ -75,7 +62,7 @@ message LbEndpoint {
   }
 
   // Optional health status when known and supplied by EDS server.
-  HealthStatus health_status = 2;
+  core.v3.HealthStatus health_status = 2;
 
   // The optional load balancing weight of the upstream host; at least 1.
   // Envoy uses the load balancing weight in some of the built in load

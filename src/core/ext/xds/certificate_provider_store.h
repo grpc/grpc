@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
-#define GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
+#define GRPC_SRC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,13 +30,16 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/ext/xds/certificate_provider_factory.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
@@ -49,6 +52,10 @@ class CertificateProviderStore
   struct PluginDefinition {
     std::string plugin_name;
     RefCountedPtr<CertificateProviderFactory::Config> config;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
+                      ValidationErrors* errors);
   };
 
   // Maps plugin instance (opaque) name to plugin defition.
@@ -88,10 +95,6 @@ class CertificateProviderStore
       return certificate_provider_->distributor();
     }
 
-    grpc_pollset_set* interested_parties() const override {
-      return certificate_provider_->interested_parties();
-    }
-
     int CompareImpl(const grpc_tls_certificate_provider* other) const override {
       // TODO(yashykt): This should probably delegate to the `Compare` method of
       // the wrapped certificate_provider_ object.
@@ -127,4 +130,4 @@ class CertificateProviderStore
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -26,28 +26,26 @@
 
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_split.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_poll_strategy, "all",
-    "Declares which polling engines to try when starting gRPC. "
-    "This is a comma-separated list of engines, which are tried in priority "
-    "order first -> last.")
-
 grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
-    false, "polling"); /* Disabled by default */
+    false, "polling");  // Disabled by default
 
-/* Traces fd create/close operations */
+// Traces fd create/close operations
 grpc_core::DebugOnlyTraceFlag grpc_fd_trace(false, "fd_trace");
 grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
@@ -62,8 +60,8 @@ grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 #define GRPC_POLLING_API_TRACE(...)
 #endif  // NDEBUG
 
-/** Default poll() function - a pointer so that it can be overridden by some
- *  tests */
+/// Default poll() function - a pointer so that it can be overridden by some
+/// tests
 #ifndef GPR_AIX
 grpc_poll_function_type grpc_poll_function = poll;
 #else
@@ -103,40 +101,14 @@ static const grpc_event_engine_vtable* g_vtables[] = {
     nullptr,
 };
 
-static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
-  size_t n = *ns;
-  size_t np = n + 1;
-  char* s;
-  size_t len;
-  GPR_ASSERT(end >= beg);
-  len = static_cast<size_t>(end - beg);
-  s = static_cast<char*>(gpr_malloc(len + 1));
-  memcpy(s, beg, len);
-  s[len] = 0;
-  *ss = static_cast<char**>(gpr_realloc(*ss, sizeof(char**) * np));
-  (*ss)[n] = s;
-  *ns = np;
+static bool is(absl::string_view want, absl::string_view have) {
+  return want == "all" || want == have;
 }
 
-static void split(const char* s, char*** ss, size_t* ns) {
-  const char* c = strchr(s, ',');
-  if (c == nullptr) {
-    add(s, s + strlen(s), ss, ns);
-  } else {
-    add(s, c, ss, ns);
-    split(c + 1, ss, ns);
-  }
-}
-
-static bool is(const char* want, const char* have) {
-  return 0 == strcmp(want, "all") || 0 == strcmp(want, have);
-}
-
-static void try_engine(const char* engine) {
+static void try_engine(absl::string_view engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_vtables); i++) {
     if (g_vtables[i] != nullptr && is(engine, g_vtables[i]->name) &&
-        g_vtables[i]->check_engine_available(
-            0 == strcmp(engine, g_vtables[i]->name))) {
+        g_vtables[i]->check_engine_available(engine == g_vtables[i]->name)) {
       g_event_engine = g_vtables[i];
       gpr_log(GPR_DEBUG, "Using polling engine: %s", g_event_engine->name);
       return;
@@ -144,7 +116,7 @@ static void try_engine(const char* engine) {
   }
 }
 
-/* Call this before calling grpc_event_engine_init() */
+// Call this before calling grpc_event_engine_init()
 void grpc_register_event_engine_factory(const grpc_event_engine_vtable* vtable,
                                         bool add_at_head) {
   const grpc_event_engine_vtable** first_null = nullptr;
@@ -164,32 +136,22 @@ void grpc_register_event_engine_factory(const grpc_event_engine_vtable* vtable,
   *(add_at_head ? first_null : last_null) = vtable;
 }
 
-/*If grpc_event_engine_init() has been called, returns the poll_strategy_name.
- * Otherwise, returns nullptr. */
+// If grpc_event_engine_init() has been called, returns the poll_strategy_name.
+//  Otherwise, returns nullptr.
 const char* grpc_get_poll_strategy_name() { return g_event_engine->name; }
 
 void grpc_event_engine_init(void) {
   gpr_once_init(&g_choose_engine, []() {
-    grpc_core::UniquePtr<char> value =
-        GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-
-    char** strings = nullptr;
-    size_t nstrings = 0;
-    split(value.get(), &strings, &nstrings);
-
-    for (size_t i = 0; g_event_engine == nullptr && i < nstrings; i++) {
-      try_engine(strings[i]);
+    auto value = grpc_core::ConfigVars::Get().PollStrategy();
+    for (auto trial : absl::StrSplit(value, ',')) {
+      try_engine(trial);
+      if (g_event_engine != nullptr) return;
     }
-
-    for (size_t i = 0; i < nstrings; i++) {
-      gpr_free(strings[i]);
-    }
-    gpr_free(strings);
 
     if (g_event_engine == nullptr) {
-      gpr_log(GPR_ERROR, "No event engine could be initialized from %s",
-              value.get());
-      abort();
+      grpc_core::Crash(
+          absl::StrFormat("No event engine could be initialized from %s",
+                          std::string(value).c_str()));
     }
   });
   g_event_engine->init_engine();
@@ -198,7 +160,7 @@ void grpc_event_engine_init(void) {
 void grpc_event_engine_shutdown(void) { g_event_engine->shutdown_engine(); }
 
 bool grpc_event_engine_can_track_errors(void) {
-  /* Only track errors if platform supports errqueue. */
+  // Only track errors if platform supports errqueue.
   return grpc_core::KernelSupportsErrqueue() && g_event_engine->can_track_err;
 }
 
@@ -225,6 +187,12 @@ void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   GRPC_FD_TRACE("grpc_fd_orphan, fd:%d closed", grpc_fd_wrapped_fd(fd));
 
   g_event_engine->fd_orphan(fd, on_done, release_fd, reason);
+}
+
+void grpc_fd_set_pre_allocated(grpc_fd* fd) {
+  GRPC_POLLING_API_TRACE("fd_set_pre_allocated(%d)", grpc_fd_wrapped_fd(fd));
+  GRPC_FD_TRACE("fd_set_pre_allocated(%d)", grpc_fd_wrapped_fd(fd));
+  g_event_engine->fd_set_pre_allocated(fd);
 }
 
 void grpc_fd_shutdown(grpc_fd* fd, grpc_error_handle why) {

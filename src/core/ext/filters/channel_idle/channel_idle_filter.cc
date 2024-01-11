@@ -19,23 +19,28 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
-#include <stdlib.h>
-
 #include <functional>
 #include <utility>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/per_cpu.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -45,16 +50,27 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
+const NoInterceptor ChannelIdleFilter::Call::OnClientInitialMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnServerInitialMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnClientToServerMessage;
+const NoInterceptor ChannelIdleFilter::Call::OnServerToClientMessage;
+const NoInterceptor ChannelIdleFilter::Call::OnFinalize;
+
 namespace {
-// TODO(ctiller): The idle filter was disabled in client channel by default
-// due to b/143502997. Now the bug is fixed enable the filter by default.
-const auto kDefaultIdleTimeout = Duration::Infinity();
+
+// TODO(roth): This can go back to being a constant when the experiment
+// is removed.
+Duration DefaultIdleTimeout() {
+  if (IsClientIdlenessEnabled()) return Duration::Minutes(30);
+  return Duration::Infinity();
+}
 
 // If these settings change, make sure that we are not sending a GOAWAY for
 // inproc transport, since a GOAWAY to inproc ends up destroying the transport.
@@ -77,7 +93,7 @@ namespace {
 
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
-      .value_or(kDefaultIdleTimeout);
+      .value_or(DefaultIdleTimeout());
 }
 
 }  // namespace
@@ -92,10 +108,8 @@ struct MaxAgeFilter::Config {
            max_connection_idle != Duration::Infinity();
   }
 
-  /* A random jitter of +/-10% will be added to MAX_CONNECTION_AGE to spread out
-     connection storms. Note that the MAX_CONNECTION_AGE option without jitter
-     would not create connection storms by itself, but if there happened to be a
-     connection storm it could cause it to repeat at a fixed period. */
+  // A random jitter of +/-10% will be added to MAX_CONNECTION_AGE and
+  // MAX_CONNECTION_IDLE to spread out reconnection storms.
   static Config FromChannelArgs(const ChannelArgs& args) {
     const Duration args_max_age =
         args.GetDurationFromIntMillis(GRPC_ARG_MAX_CONNECTION_AGE_MS)
@@ -106,14 +120,23 @@ struct MaxAgeFilter::Config {
     const Duration args_max_age_grace =
         args.GetDurationFromIntMillis(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS)
             .value_or(kDefaultMaxConnectionAgeGrace);
-    /* generate a random number between 1 - kMaxConnectionAgeJitter and
-       1 + kMaxConnectionAgeJitter */
-    const double multiplier =
-        rand() * kMaxConnectionAgeJitter * 2.0 / RAND_MAX + 1.0 -
-        kMaxConnectionAgeJitter;
-    /* GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
-       will not be cast to int implicitly before the comparison. */
-    return Config{args_max_age * multiplier, args_max_idle, args_max_age_grace};
+    // generate a random number between 1 - kMaxConnectionAgeJitter and
+    // 1 + kMaxConnectionAgeJitter
+    struct BitGen {
+      Mutex mu;
+      absl::BitGen bit_gen ABSL_GUARDED_BY(mu);
+      double MakeUniformDouble(double min, double max) {
+        MutexLock lock(&mu);
+        return absl::Uniform(bit_gen, min, max);
+      }
+    };
+    static NoDestruct<PerCpu<BitGen>> bit_gen(PerCpuOptions().SetMaxShards(8));
+    const double multiplier = bit_gen->this_cpu().MakeUniformDouble(
+        1.0 - kMaxConnectionAgeJitter, 1.0 + kMaxConnectionAgeJitter);
+    // GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
+    // will not be cast to int implicitly before the comparison.
+    return Config{args_max_age * multiplier, args_max_idle * multiplier,
+                  args_max_age_grace};
   }
 };
 
@@ -158,7 +181,7 @@ void MaxAgeFilter::PostInit() {
   auto* startup =
       new StartupClosure{this->channel_stack()->Ref(), this, grpc_closure{}};
   GRPC_CLOSURE_INIT(&startup->closure, run_startup, startup, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &startup->closure, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, &startup->closure, absl::OkStatus());
 
   auto channel_stack = this->channel_stack()->Ref();
 
@@ -167,7 +190,7 @@ void MaxAgeFilter::PostInit() {
     max_age_activity_.Set(MakeActivity(
         TrySeq(
             // First sleep until the max connection age
-            Sleep(ExecCtx::Get()->Now() + max_connection_age_),
+            Sleep(Timestamp::Now() + max_connection_age_),
             // Then send a goaway.
             [this] {
               GRPC_CHANNEL_STACK_REF(this->channel_stack(),
@@ -177,8 +200,8 @@ void MaxAgeFilter::PostInit() {
                 auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
                 grpc_transport_op* op = grpc_make_transport_op(nullptr);
                 op->goaway_error = grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_age"),
-                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_NO_ERROR);
+                    GRPC_ERROR_CREATE("max_age"),
+                    StatusIntProperty::kHttp2Error, GRPC_HTTP2_NO_ERROR);
                 grpc_channel_element* elem =
                     grpc_channel_stack_element(channel_stack, 0);
                 elem->filter->start_transport_op(elem, op);
@@ -187,36 +210,27 @@ void MaxAgeFilter::PostInit() {
               ExecCtx::Run(
                   DEBUG_LOCATION,
                   GRPC_CLOSURE_CREATE(fn, this->channel_stack(), nullptr),
-                  GRPC_ERROR_NONE);
+                  absl::OkStatus());
               return Immediate(absl::OkStatus());
             },
             // Sleep for the grace period
             [this] {
-              return Sleep(ExecCtx::Get()->Now() + max_connection_age_grace_);
+              return Sleep(Timestamp::Now() + max_connection_age_grace_);
             }),
-        ExecCtxWakeupScheduler(), [channel_stack, this](absl::Status status) {
+        ExecCtxWakeupScheduler(),
+        [channel_stack, this](absl::Status status) {
           // OnDone -- close the connection if the promise completed
           // successfully.
           // (if it did not, it was cancelled)
           if (status.ok()) CloseChannel();
-        }));
+        },
+        channel_stack->EventEngine()));
   }
-}
-
-// Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
-  IncreaseCallCount();
-  return ArenaPromise<ServerMetadataHandle>(
-      [decrementer = Decrementer(this),
-       next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
-  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) Shutdown();
+  if (!op->disconnect_with_error.ok()) Shutdown();
   // Pass the op to the next filter.
   return false;
 }
@@ -246,7 +260,7 @@ void ChannelIdleFilter::StartIdleTimer() {
   auto channel_stack = channel_stack_->Ref();
   auto timeout = client_idle_timeout_;
   auto promise = Loop([timeout, idle_filter_state]() {
-    return TrySeq(Sleep(ExecCtx::Get()->Now() + timeout),
+    return TrySeq(Sleep(Timestamp::Now() + timeout),
                   [idle_filter_state]() -> Poll<LoopCtl<absl::Status>> {
                     if (idle_filter_state->CheckTimer()) {
                       return Continue{};
@@ -255,17 +269,19 @@ void ChannelIdleFilter::StartIdleTimer() {
                     }
                   });
   });
-  activity_.Set(MakeActivity(std::move(promise), ExecCtxWakeupScheduler{},
-                             [channel_stack, this](absl::Status status) {
-                               if (status.ok()) CloseChannel();
-                             }));
+  activity_.Set(MakeActivity(
+      std::move(promise), ExecCtxWakeupScheduler{},
+      [channel_stack, this](absl::Status status) {
+        if (status.ok()) CloseChannel();
+      },
+      channel_stack->EventEngine()));
 }
 
 void ChannelIdleFilter::CloseChannel() {
   auto* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
-      GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
+      GRPC_ERROR_CREATE("enter idle"),
+      StatusIntProperty::ChannelConnectivityState, GRPC_CHANNEL_IDLE);
   // Pass the transport op down to the channel stack.
   auto* elem = grpc_channel_stack_element(channel_stack_, 0);
   elem->filter->start_transport_op(elem, op);
@@ -278,25 +294,18 @@ const grpc_channel_filter MaxAgeFilter::kFilter =
     MakePromiseBasedFilter<MaxAgeFilter, FilterEndpoint::kServer>("max_age");
 
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto channel_args = builder->channel_args();
-        if (!channel_args.WantMinimalStack() &&
-            GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
-          builder->PrependFilter(&ClientIdleFilter::kFilter);
-        }
-        return true;
+  if (!IsV3ChannelIdleFiltersEnabled()) return;
+  builder->channel_init()
+      ->RegisterFilter<ClientIdleFilter>(GRPC_CLIENT_CHANNEL)
+      .ExcludeFromMinimalStack()
+      .If([](const ChannelArgs& channel_args) {
+        return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
-  builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto channel_args = builder->channel_args();
-        if (!channel_args.WantMinimalStack() &&
-            MaxAgeFilter::Config::FromChannelArgs(channel_args).enable()) {
-          builder->PrependFilter(&MaxAgeFilter::kFilter);
-        }
-        return true;
+  builder->channel_init()
+      ->RegisterFilter<MaxAgeFilter>(GRPC_SERVER_CHANNEL)
+      .ExcludeFromMinimalStack()
+      .If([](const ChannelArgs& channel_args) {
+        return MaxAgeFilter::Config::FromChannelArgs(channel_args).enable();
       });
 }
 

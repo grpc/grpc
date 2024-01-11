@@ -16,11 +16,11 @@
 from tests.testing.proto import requests_pb2
 from tests.testing.proto import services_pb2
 
-SERVICE_NAME = 'tests_of_grpc_testing.FirstService'
-UNARY_UNARY_METHOD_NAME = 'UnUn'
-UNARY_STREAM_METHOD_NAME = 'UnStre'
-STREAM_UNARY_METHOD_NAME = 'StreUn'
-STREAM_STREAM_METHOD_NAME = 'StreStre'
+SERVICE_NAME = "tests_of_grpc_testing.FirstService"
+UNARY_UNARY_METHOD_NAME = "UnUn"
+UNARY_STREAM_METHOD_NAME = "UnStre"
+STREAM_UNARY_METHOD_NAME = "StreUn"
+STREAM_STREAM_METHOD_NAME = "StreStre"
 
 UNARY_UNARY_REQUEST = requests_pb2.Up(first_up_field=2)
 ERRONEOUS_UNARY_UNARY_REQUEST = requests_pb2.Up(first_up_field=3)

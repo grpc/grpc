@@ -13,28 +13,26 @@
 # limitations under the License.
 """Utilities for working with callables."""
 
-import abc
+from abc import ABC
 import collections
 import enum
 import functools
 import logging
 
-import six
-
 _LOGGER = logging.getLogger(__name__)
 
 
-class Outcome(six.with_metaclass(abc.ABCMeta)):
+class Outcome(ABC):
     """A sum type describing the outcome of some call.
 
-  Attributes:
-    kind: One of Kind.RETURNED or Kind.RAISED respectively indicating that the
-      call returned a value or raised an exception.
-    return_value: The value returned by the call. Must be present if kind is
-      Kind.RETURNED.
-    exception: The exception raised by the call. Must be present if kind is
-      Kind.RAISED.
-  """
+    Attributes:
+      kind: One of Kind.RETURNED or Kind.RAISED respectively indicating that the
+        call returned a value or raised an exception.
+      return_value: The value returned by the call. Must be present if kind is
+        Kind.RETURNED.
+      exception: The exception raised by the call. Must be present if kind is
+        Kind.RAISED.
+    """
 
     @enum.unique
     class Kind(enum.Enum):
@@ -45,15 +43,19 @@ class Outcome(six.with_metaclass(abc.ABCMeta)):
 
 
 class _EasyOutcome(
-        collections.namedtuple('_EasyOutcome',
-                               ['kind', 'return_value', 'exception']), Outcome):
+    collections.namedtuple(
+        "_EasyOutcome", ["kind", "return_value", "exception"]
+    ),
+    Outcome,
+):
     """A trivial implementation of Outcome."""
 
 
 def _call_logging_exceptions(behavior, message, *args, **kwargs):
     try:
-        return _EasyOutcome(Outcome.Kind.RETURNED, behavior(*args, **kwargs),
-                            None)
+        return _EasyOutcome(
+            Outcome.Kind.RETURNED, behavior(*args, **kwargs), None
+        )
     except Exception as e:  # pylint: disable=broad-except
         _LOGGER.exception(message)
         return _EasyOutcome(Outcome.Kind.RAISED, None, e)
@@ -62,16 +64,16 @@ def _call_logging_exceptions(behavior, message, *args, **kwargs):
 def with_exceptions_logged(behavior, message):
     """Wraps a callable in a try-except that logs any exceptions it raises.
 
-  Args:
-    behavior: Any callable.
-    message: A string to log if the behavior raises an exception.
+    Args:
+      behavior: Any callable.
+      message: A string to log if the behavior raises an exception.
 
-  Returns:
-    A callable that when executed invokes the given behavior. The returned
-      callable takes the same arguments as the given behavior but returns a
-      future.Outcome describing whether the given behavior returned a value or
-      raised an exception.
-  """
+    Returns:
+      A callable that when executed invokes the given behavior. The returned
+        callable takes the same arguments as the given behavior but returns a
+        future.Outcome describing whether the given behavior returned a value or
+        raised an exception.
+    """
 
     @functools.wraps(behavior)
     def wrapped_behavior(*args, **kwargs):
@@ -83,14 +85,14 @@ def with_exceptions_logged(behavior, message):
 def call_logging_exceptions(behavior, message, *args, **kwargs):
     """Calls a behavior in a try-except that logs any exceptions it raises.
 
-  Args:
-    behavior: Any callable.
-    message: A string to log if the behavior raises an exception.
-    *args: Positional arguments to pass to the given behavior.
-    **kwargs: Keyword arguments to pass to the given behavior.
+    Args:
+      behavior: Any callable.
+      message: A string to log if the behavior raises an exception.
+      *args: Positional arguments to pass to the given behavior.
+      **kwargs: Keyword arguments to pass to the given behavior.
 
-  Returns:
-    An Outcome describing whether the given behavior returned a value or raised
-      an exception.
-  """
+    Returns:
+      An Outcome describing whether the given behavior returned a value or raised
+        an exception.
+    """
     return _call_logging_exceptions(behavior, message, *args, **kwargs)

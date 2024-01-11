@@ -1,31 +1,30 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Benchmark gRPC end2end in various configurations */
+// Benchmark gRPC end2end in various configurations
 
-#ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
-#define TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
 
 #include <sstream>
 
 #include <benchmark/benchmark.h>
 
-#include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -33,9 +32,9 @@
 namespace grpc {
 namespace testing {
 
-/*******************************************************************************
- * BENCHMARKING KERNELS
- */
+//******************************************************************************
+// BENCHMARKING KERNELS
+//
 
 static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
@@ -74,7 +73,6 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     recv_response.Clear();
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
@@ -104,7 +102,6 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
                         fixture->cq(), fixture->cq(), tag(slot));
   }
-  fixture->Finish(state);
   fixture.reset();
   server_env[0]->~ServerEnv();
   server_env[1]->~ServerEnv();
@@ -114,4 +111,4 @@ static void BM_UnaryPingPong(benchmark::State& state) {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H

@@ -87,7 +87,7 @@ void ExternalCertificateVerifier::OnVerifyDone(
     }
   }
   if (callback != nullptr) {
-    absl::Status return_status = absl::OkStatus();
+    absl::Status return_status;
     if (status != GRPC_STATUS_OK) {
       return_status =
           absl::Status(static_cast<absl::StatusCode>(status), error_details);

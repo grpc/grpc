@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -23,6 +23,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
@@ -61,7 +62,11 @@ class SslSessionLRUCache::Node {
 };
 
 SslSessionLRUCache::SslSessionLRUCache(size_t capacity) : capacity_(capacity) {
-  GPR_ASSERT(capacity > 0);
+  if (capacity == 0) {
+    gpr_log(
+        GPR_ERROR,
+        "SslSessionLRUCache capacity is zero. SSL sessions cannot be resumed.");
+  }
 }
 
 SslSessionLRUCache::~SslSessionLRUCache() {
@@ -93,6 +98,10 @@ SslSessionLRUCache::Node* SslSessionLRUCache::FindLocked(
 }
 
 void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
+  if (session == nullptr) {
+    gpr_log(GPR_ERROR, "Attempted to put null SSL session in session cache.");
+    return;
+  }
   grpc_core::MutexLock lock(&lock_);
   Node* node = FindLocked(key);
   if (node != nullptr) {

@@ -15,9 +15,9 @@
 
 #include "test/core/event_engine/test_init.h"
 
-#include "absl/strings/str_cat.h"
+#include <string>
 
-#include <grpc/support/log.h>
+#include "absl/strings/str_cat.h"
 
 namespace grpc_event_engine {
 namespace experimental {

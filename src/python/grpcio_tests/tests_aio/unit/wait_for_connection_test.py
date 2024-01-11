@@ -29,8 +29,8 @@ from tests_aio.unit._constants import UNREACHABLE_TARGET
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
 
-_REQUEST = b'\x01\x02\x03'
-_TEST_METHOD = '/test/Test'
+_REQUEST = b"\x01\x02\x03"
+_TEST_METHOD = "/test/Test"
 
 _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7
@@ -64,7 +64,8 @@ class TestWaitForConnection(AioTestBase):
         request = messages_pb2.StreamingOutputCallRequest()
         for _ in range(_NUM_STREAM_RESPONSES):
             request.response_parameters.append(
-                messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
+                messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+            )
 
         call = self._stub.StreamingOutputCall(request)
 
@@ -74,8 +75,9 @@ class TestWaitForConnection(AioTestBase):
         response_cnt = 0
         async for response in call:
             response_cnt += 1
-            self.assertIs(type(response),
-                          messages_pb2.StreamingOutputCallResponse)
+            self.assertIs(
+                type(response), messages_pb2.StreamingOutputCallResponse
+            )
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         self.assertEqual(_NUM_STREAM_RESPONSES, response_cnt)
@@ -87,7 +89,7 @@ class TestWaitForConnection(AioTestBase):
         # No exception raised and no message swallowed.
         await call.wait_for_connection()
 
-        payload = messages_pb2.Payload(body=b'\0' * _REQUEST_PAYLOAD_SIZE)
+        payload = messages_pb2.Payload(body=b"\0" * _REQUEST_PAYLOAD_SIZE)
         request = messages_pb2.StreamingInputCallRequest(payload=payload)
 
         for _ in range(_NUM_STREAM_RESPONSES):
@@ -96,8 +98,10 @@ class TestWaitForConnection(AioTestBase):
 
         response = await call
         self.assertIsInstance(response, messages_pb2.StreamingInputCallResponse)
-        self.assertEqual(_NUM_STREAM_RESPONSES * _REQUEST_PAYLOAD_SIZE,
-                         response.aggregated_payload_size)
+        self.assertEqual(
+            _NUM_STREAM_RESPONSES * _REQUEST_PAYLOAD_SIZE,
+            response.aggregated_payload_size,
+        )
 
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
@@ -109,13 +113,15 @@ class TestWaitForConnection(AioTestBase):
 
         request = messages_pb2.StreamingOutputCallRequest()
         request.response_parameters.append(
-            messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
+            messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+        )
 
         for _ in range(_NUM_STREAM_RESPONSES):
             await call.write(request)
             response = await call.read()
-            self.assertIsInstance(response,
-                                  messages_pb2.StreamingOutputCallResponse)
+            self.assertIsInstance(
+                response, messages_pb2.StreamingOutputCallResponse
+            )
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         await call.done_writing()
@@ -155,6 +161,6 @@ class TestWaitForConnection(AioTestBase):
         self.assertEqual(grpc.StatusCode.UNAVAILABLE, rpc_error.code())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

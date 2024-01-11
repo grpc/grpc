@@ -14,19 +14,22 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
-#define GRPC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <memory>
-#include <string>
+#include <utility>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "upb/arena.h"
-#include "upb/def.h"
-#include "upb/upb.h"
+#include "upb/mem/arena.h"
+#include "upb/reflection/def.h"
+
+#include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
@@ -34,40 +37,61 @@ class XdsClusterSpecifierPluginImpl {
  public:
   virtual ~XdsClusterSpecifierPluginImpl() = default;
 
+  // Returns the config proto message name.
+  virtual absl::string_view ConfigProtoName() const = 0;
+
   // Loads the proto message into the upb symtab.
   virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
 
   // Returns the LB policy config in JSON form.
-  virtual absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      upb_StringView serialized_plugin_config, upb_Arena* arena,
-      upb_DefPool* symtab) const = 0;
+  virtual Json GenerateLoadBalancingPolicyConfig(
+      XdsExtension extension, upb_Arena* arena, upb_DefPool* symtab,
+      ValidationErrors* errors) const = 0;
 };
 
 class XdsRouteLookupClusterSpecifierPlugin
     : public XdsClusterSpecifierPluginImpl {
+  absl::string_view ConfigProtoName() const override;
+
   void PopulateSymtab(upb_DefPool* symtab) const override;
 
-  absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      upb_StringView serialized_plugin_config, upb_Arena* arena,
-      upb_DefPool* symtab) const override;
+  Json GenerateLoadBalancingPolicyConfig(
+      XdsExtension extension, upb_Arena* arena, upb_DefPool* symtab,
+      ValidationErrors* errors) const override;
 };
 
 class XdsClusterSpecifierPluginRegistry {
  public:
-  static void RegisterPlugin(
-      std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
-      absl::string_view config_proto_type_name);
+  XdsClusterSpecifierPluginRegistry();
 
-  static void PopulateSymtab(upb_DefPool* symtab);
+  // Not copyable.
+  XdsClusterSpecifierPluginRegistry(const XdsClusterSpecifierPluginRegistry&) =
+      delete;
+  XdsClusterSpecifierPluginRegistry& operator=(
+      const XdsClusterSpecifierPluginRegistry&) = delete;
 
-  static const XdsClusterSpecifierPluginImpl* GetPluginForType(
-      absl::string_view config_proto_type_name);
+  // Movable.
+  XdsClusterSpecifierPluginRegistry(
+      XdsClusterSpecifierPluginRegistry&& other) noexcept
+      : registry_(std::move(other.registry_)) {}
+  XdsClusterSpecifierPluginRegistry& operator=(
+      XdsClusterSpecifierPluginRegistry&& other) noexcept {
+    registry_ = std::move(other.registry_);
+    return *this;
+  }
 
-  // Global init and shutdown.
-  static void Init();
-  static void Shutdown();
+  void RegisterPlugin(std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin);
+
+  void PopulateSymtab(upb_DefPool* symtab) const;
+
+  const XdsClusterSpecifierPluginImpl* GetPluginForType(
+      absl::string_view config_proto_type_name) const;
+
+ private:
+  std::map<absl::string_view, std::unique_ptr<XdsClusterSpecifierPluginImpl>>
+      registry_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H

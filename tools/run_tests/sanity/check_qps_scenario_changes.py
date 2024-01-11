@@ -18,17 +18,19 @@ import os
 import subprocess
 import sys
 
-os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../../test/cpp/qps'))
-subprocess.check_call(['./json_run_localhost_scenario_gen.py'])
-subprocess.check_call(['./qps_json_driver_scenario_gen.py'])
-subprocess.check_call(['buildifier', '-v', '-r', '.'])
+os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../../test/cpp/qps"))
+subprocess.check_call(["./json_run_localhost_scenario_gen.py"])
+subprocess.check_call(["./qps_json_driver_scenario_gen.py"])
+subprocess.check_call(["buildifier", "-v", "-r", "."])
 
-output = subprocess.check_output(['git', 'status', '--porcelain']).decode()
-qps_json_driver_bzl = 'test/cpp/qps/qps_json_driver_scenarios.bzl'
-json_run_localhost_bzl = 'test/cpp/qps/json_run_localhost_scenarios.bzl'
+output = subprocess.check_output(["git", "status", "--porcelain"]).decode()
+qps_json_driver_bzl = "test/cpp/qps/qps_json_driver_scenarios.bzl"
+json_run_localhost_bzl = "test/cpp/qps/json_run_localhost_scenarios.bzl"
 
 if qps_json_driver_bzl in output or json_run_localhost_bzl in output:
-    print('qps benchmark scenarios have been updated, please commit '
-          'test/cpp/qps/qps_json_driver_scenarios.bzl and/or '
-          'test/cpp/qps/json_run_localhost_scenarios.bzl')
+    print(
+        "qps benchmark scenarios have been updated, please commit "
+        "test/cpp/qps/qps_json_driver_scenarios.bzl and/or "
+        "test/cpp/qps/json_run_localhost_scenarios.bzl"
+    )
     sys.exit(1)

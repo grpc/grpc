@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_TRANSPORT_GRPC_H
-#define GRPC_CORE_EXT_XDS_XDS_TRANSPORT_GRPC_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_TRANSPORT_GRPC_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_TRANSPORT_GRPC_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,7 +25,7 @@
 
 #include "absl/status/status.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 
@@ -100,7 +100,10 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
 
   void SendMessage(std::string payload) override;
 
+  void StartRecvMessage() override;
+
  private:
+  static void OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/);
   static void OnRequestSent(void* arg, grpc_error_handle error);
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);
   static void OnStatusReceived(void* arg, grpc_error_handle /*error*/);
@@ -114,6 +117,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
 
   // recv_initial_metadata
   grpc_metadata_array initial_metadata_recv_;
+  grpc_closure on_recv_initial_metadata_;
 
   // send_message
   grpc_byte_buffer* send_message_payload_ = nullptr;
@@ -132,4 +136,4 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_TRANSPORT_GRPC_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_TRANSPORT_GRPC_H

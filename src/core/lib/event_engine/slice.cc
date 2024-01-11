@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/slice/slice.h"
+
 #include <stdint.h>
 
 #include <string>
@@ -25,14 +27,13 @@
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
-#include "src/core/lib/slice/slice_refcount_base.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 namespace slice_detail {
 
-uint32_t BaseSlice::Hash() const { return grpc_slice_hash_internal(slice_); }
+uint32_t BaseSlice::Hash() const { return grpc_slice_hash(slice_); }
 
 template <>
 MutableSlice CopyConstructors<MutableSlice>::FromCopiedString(std::string s) {
@@ -51,7 +52,7 @@ MutableSlice::MutableSlice(const grpc_slice& slice)
   GPR_DEBUG_ASSERT(slice.refcount == nullptr || slice.refcount->IsUnique());
 }
 
-MutableSlice::~MutableSlice() { grpc_slice_unref_internal(c_slice()); }
+MutableSlice::~MutableSlice() { grpc_core::CSliceUnref(c_slice()); }
 
 Slice Slice::TakeOwned() {
   if (c_slice().refcount == nullptr) {
@@ -70,7 +71,7 @@ Slice Slice::AsOwned() const {
   if (c_slice().refcount == grpc_slice_refcount::NoopRefcount()) {
     return Slice(grpc_slice_copy(c_slice()));
   }
-  return Slice(grpc_slice_ref_internal(c_slice()));
+  return Slice(grpc_core::CSliceRef(c_slice()));
 }
 
 MutableSlice Slice::TakeMutable() {
@@ -84,15 +85,15 @@ MutableSlice Slice::TakeMutable() {
   return MutableSlice(grpc_slice_copy(c_slice()));
 }
 
-Slice::~Slice() { grpc_slice_unref_internal(c_slice()); }
+Slice::~Slice() { grpc_core::CSliceUnref(c_slice()); }
 
-Slice Slice::Ref() const { return Slice(grpc_slice_ref_internal(c_slice())); }
+Slice Slice::Ref() const { return Slice(grpc_core::CSliceRef(c_slice())); }
 
 Slice Slice::FromRefcountAndBytes(grpc_slice_refcount* r, const uint8_t* begin,
                                   const uint8_t* end) {
   grpc_slice out;
   out.refcount = r;
-  if (r != grpc_slice_refcount::NoopRefcount()) r->Ref();
+  if (r != grpc_slice_refcount::NoopRefcount()) r->Ref({});
   out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
   out.data.refcounted.length = end - begin;
   return Slice(out);

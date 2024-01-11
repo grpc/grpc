@@ -16,10 +16,9 @@
 
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 
-#include <set>
+#include <memory>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "test/core/util/test_config.h"
 
@@ -70,6 +69,24 @@ TEST(DualRefCounted, RefIfNonZero) {
     EXPECT_EQ(foop.get(), nullptr);
   }
   foo->WeakUnref();
+}
+
+TEST(DualRefCounted, RefAndWeakRefAsSubclass) {
+  class Bar : public Foo {};
+  Foo* foo = new Bar();
+  RefCountedPtr<Bar> barp = foo->RefAsSubclass<Bar>();
+  barp.release();
+  barp = foo->RefAsSubclass<Bar>(DEBUG_LOCATION, "test");
+  barp.release();
+  WeakRefCountedPtr<Bar> weak_barp = foo->WeakRefAsSubclass<Bar>();
+  weak_barp.release();
+  weak_barp = foo->WeakRefAsSubclass<Bar>(DEBUG_LOCATION, "test");
+  weak_barp.release();
+  foo->WeakUnref();
+  foo->WeakUnref();
+  foo->Unref();
+  foo->Unref();
+  foo->Unref();
 }
 
 class FooWithTracing : public DualRefCounted<FooWithTracing> {

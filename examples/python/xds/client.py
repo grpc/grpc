@@ -35,19 +35,20 @@ def run(server_address, secure):
         channel = grpc.insecure_channel(server_address)
     with channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
-        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name="you"))
         print("Greeter client received: " + response.message)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=_DESCRIPTION)
-    parser.add_argument("server",
-                        default=None,
-                        help="The address of the server.")
+    parser.add_argument(
+        "server", default=None, help="The address of the server."
+    )
     parser.add_argument(
         "--xds-creds",
         action="store_true",
-        help="If specified, uses xDS credentials to connect to the server.")
+        help="If specified, uses xDS credentials to connect to the server.",
+    )
     args = parser.parse_args()
     logging.basicConfig()
     run(args.server, args.xds_creds)

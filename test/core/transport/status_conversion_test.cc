@@ -1,43 +1,46 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/transport/status_conversion.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include <memory>
+
+#include "gtest/gtest.h"
+
+#include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 #define GRPC_STATUS_TO_HTTP2_ERROR(a, b) \
-  GPR_ASSERT(grpc_status_to_http2_error(a) == (b))
-#define HTTP2_ERROR_TO_GRPC_STATUS(a, deadline, b)                   \
-  do {                                                               \
-    grpc_core::ExecCtx exec_ctx;                                     \
-    GPR_ASSERT(grpc_http2_error_to_grpc_status(a, deadline) == (b)); \
-                                                                     \
+  ASSERT_EQ(grpc_status_to_http2_error(a), (b))
+#define HTTP2_ERROR_TO_GRPC_STATUS(a, deadline, b)                \
+  do {                                                            \
+    grpc_core::ExecCtx exec_ctx;                                  \
+    ASSERT_EQ(grpc_http2_error_to_grpc_status(a, deadline), (b)); \
+                                                                  \
   } while (0)
 #define GRPC_STATUS_TO_HTTP2_STATUS(a, b) \
-  GPR_ASSERT(grpc_status_to_http2_status(a) == (b))
+  ASSERT_EQ(grpc_status_to_http2_status(a), (b))
 #define HTTP2_STATUS_TO_GRPC_STATUS(a, b) \
-  GPR_ASSERT(grpc_http2_status_to_grpc_status(a) == (b))
+  ASSERT_EQ(grpc_http2_status_to_grpc_status(a), (b))
 
-static void test_grpc_status_to_http2_error() {
+TEST(StatusConversionTest, TestGrpcStatusToHttp2Error) {
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_OK, GRPC_HTTP2_NO_ERROR);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_CANCELLED, GRPC_HTTP2_CANCEL);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNKNOWN, GRPC_HTTP2_INTERNAL_ERROR);
@@ -66,7 +69,7 @@ static void test_grpc_status_to_http2_error() {
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DATA_LOSS, GRPC_HTTP2_INTERNAL_ERROR);
 }
 
-static void test_grpc_status_to_http2_status() {
+TEST(StatusConversionTest, TestGrpcStatusToHttp2Status) {
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_OK, 200);
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_CANCELLED, 200);
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_UNKNOWN, 200);
@@ -86,7 +89,7 @@ static void test_grpc_status_to_http2_status() {
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_DATA_LOSS, 200);
 }
 
-static void test_http2_error_to_grpc_status() {
+TEST(StatusConversionTest, TestHttp2ErrorToGrpcStatus) {
   const grpc_core::Timestamp before_deadline =
       grpc_core::Timestamp::InfFuture();
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_NO_ERROR, before_deadline,
@@ -150,7 +153,7 @@ static void test_http2_error_to_grpc_status() {
                              GRPC_STATUS_PERMISSION_DENIED);
 }
 
-static void test_http2_status_to_grpc_status() {
+TEST(StatusConversionTest, TestHttp2StatusToGrpcStatus) {
   HTTP2_STATUS_TO_GRPC_STATUS(200, GRPC_STATUS_OK);
   HTTP2_STATUS_TO_GRPC_STATUS(400, GRPC_STATUS_INTERNAL);
   HTTP2_STATUS_TO_GRPC_STATUS(401, GRPC_STATUS_UNAUTHENTICATED);
@@ -166,21 +169,16 @@ static void test_http2_status_to_grpc_status() {
   HTTP2_STATUS_TO_GRPC_STATUS(504, GRPC_STATUS_UNAVAILABLE);
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-
-  test_grpc_status_to_http2_error();
-  test_grpc_status_to_http2_status();
-  test_http2_error_to_grpc_status();
-  test_http2_status_to_grpc_status();
-
-  /* check all status values can be converted */
+TEST(StatusConversionTest, TestGrpcHttp2StatusToGrpcStatusAll) {
+  // check all status values can be converted
   for (int i = 0; i <= 999; i++) {
     grpc_http2_status_to_grpc_status(i);
   }
+}
 
-  grpc_shutdown();
-
-  return 0;
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }

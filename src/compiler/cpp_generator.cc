@@ -54,6 +54,7 @@ std::string FilenameIdentifier(const std::string& filename) {
   }
   return result;
 }
+
 }  // namespace
 
 template <class T, size_t N>
@@ -137,23 +138,23 @@ std::string GetHeaderIncludes(grpc_generator::File* file,
     }
     static const char* headers_strs[] = {
         "functional",
-        "grpcpp/impl/codegen/async_generic_service.h",
-        "grpcpp/impl/codegen/async_stream.h",
-        "grpcpp/impl/codegen/async_unary_call.h",
-        "grpcpp/impl/codegen/client_callback.h",
-        "grpcpp/impl/codegen/client_context.h",
-        "grpcpp/impl/codegen/completion_queue.h",
-        "grpcpp/impl/codegen/message_allocator.h",
-        "grpcpp/impl/codegen/method_handler.h",
-        "grpcpp/impl/codegen/proto_utils.h",
-        "grpcpp/impl/codegen/rpc_method.h",
-        "grpcpp/impl/codegen/server_callback.h",
-        "grpcpp/impl/codegen/server_callback_handlers.h",
-        "grpcpp/impl/codegen/server_context.h",
-        "grpcpp/impl/codegen/service_type.h",
-        "grpcpp/impl/codegen/status.h",
-        "grpcpp/impl/codegen/stub_options.h",
-        "grpcpp/impl/codegen/sync_stream.h",
+        "grpcpp/generic/async_generic_service.h",
+        "grpcpp/support/async_stream.h",
+        "grpcpp/support/async_unary_call.h",
+        "grpcpp/support/client_callback.h",
+        "grpcpp/client_context.h",
+        "grpcpp/completion_queue.h",
+        "grpcpp/support/message_allocator.h",
+        "grpcpp/support/method_handler.h",
+        "grpcpp/impl/proto_utils.h",
+        "grpcpp/impl/rpc_method.h",
+        "grpcpp/support/server_callback.h",
+        "grpcpp/impl/server_callback_handlers.h",
+        "grpcpp/server_context.h",
+        "grpcpp/impl/service_type.h",
+        "grpcpp/support/status.h",
+        "grpcpp/support/stub_options.h",
+        "grpcpp/support/sync_stream.h",
     };
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
@@ -1648,19 +1649,19 @@ std::string GetSourceIncludes(grpc_generator::File* file,
     std::map<std::string, std::string> vars;
     static const char* headers_strs[] = {
         "functional",
-        "grpcpp/impl/codegen/async_stream.h",
-        "grpcpp/impl/codegen/async_unary_call.h",
-        "grpcpp/impl/codegen/channel_interface.h",
-        "grpcpp/impl/codegen/client_unary_call.h",
-        "grpcpp/impl/codegen/client_callback.h",
-        "grpcpp/impl/codegen/message_allocator.h",
-        "grpcpp/impl/codegen/method_handler.h",
-        "grpcpp/impl/codegen/rpc_service_method.h",
-        "grpcpp/impl/codegen/server_callback.h",
-        "grpcpp/impl/codegen/server_callback_handlers.h",
-        "grpcpp/impl/codegen/server_context.h",
-        "grpcpp/impl/codegen/service_type.h",
-        "grpcpp/impl/codegen/sync_stream.h"};
+        "grpcpp/support/async_stream.h",
+        "grpcpp/support/async_unary_call.h",
+        "grpcpp/impl/channel_interface.h",
+        "grpcpp/impl/client_unary_call.h",
+        "grpcpp/support/client_callback.h",
+        "grpcpp/support/message_allocator.h",
+        "grpcpp/support/method_handler.h",
+        "grpcpp/impl/rpc_service_method.h",
+        "grpcpp/support/server_callback.h",
+        "grpcpp/impl/server_callback_handlers.h",
+        "grpcpp/server_context.h",
+        "grpcpp/impl/service_type.h",
+        "grpcpp/support/sync_stream.h"};
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
@@ -2147,6 +2148,7 @@ std::string GetMockPrologue(grpc_generator::File* file,
     std::map<std::string, std::string> vars;
 
     vars["filename"] = file->filename();
+    vars["filename_identifier"] = FilenameIdentifier(file->filename());
     vars["filename_base"] = file->filename_without_ext();
     vars["message_header_ext"] = params.message_header_extension.empty()
                                      ? kCppGeneratorMessageHeaderExt
@@ -2158,6 +2160,9 @@ std::string GetMockPrologue(grpc_generator::File* file,
                    "// If you make any local change, they will be lost.\n");
     printer->Print(vars, "// source: $filename$\n\n");
 
+    printer->Print(vars, "#ifndef GRPC_MOCK_$filename_identifier$__INCLUDED\n");
+    printer->Print(vars, "#define GRPC_MOCK_$filename_identifier$__INCLUDED\n");
+    printer->Print(vars, "\n");
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
     printer->Print(vars, "#include \"$filename_base$$service_header_ext$\"\n");
     if (params.include_import_headers) {
@@ -2184,8 +2189,8 @@ std::string GetMockIncludes(grpc_generator::File* file,
     std::map<std::string, std::string> vars;
 
     static const char* headers_strs[] = {
-        "grpcpp/impl/codegen/async_stream.h",
-        "grpcpp/impl/codegen/sync_stream.h",
+        "grpcpp/support/async_stream.h",
+        "grpcpp/support/sync_stream.h",
     };
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
@@ -2350,20 +2355,27 @@ std::string GetMockServices(grpc_generator::File* file,
 
 std::string GetMockEpilogue(grpc_generator::File* file,
                             const Parameters& /*params*/) {
-  std::string temp;
+  std::string output;
+  {
+    // Scope the output stream so it closes and finalizes output to the string.
+    auto printer = file->CreatePrinter(&output);
+    std::map<std::string, std::string> vars;
+    vars["filename_identifier"] = FilenameIdentifier(file->filename());
 
-  if (!file->package().empty()) {
-    std::vector<std::string> parts = file->package_parts();
-
-    for (auto part = parts.begin(); part != parts.end(); part++) {
-      temp.append("} // namespace ");
-      temp.append(*part);
-      temp.append("\n");
+    if (!file->package().empty()) {
+      std::vector<std::string> parts = file->package_parts();
+      for (auto part = parts.rbegin(); part != parts.rend(); part++) {
+        vars["part"] = *part;
+        printer->Print(vars, "}  // namespace $part$\n");
+      }
+      printer->Print(vars, "\n");
     }
-    temp.append("\n");
-  }
 
-  return temp;
+    printer->Print(vars, "\n");
+    printer->Print(vars,
+                   "#endif  // GRPC_MOCK_$filename_identifier$__INCLUDED\n");
+  }
+  return output;
 }
 
 }  // namespace grpc_cpp_generator

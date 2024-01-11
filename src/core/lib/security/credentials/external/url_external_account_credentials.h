@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_URL_EXTERNAL_ACCOUNT_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_URL_EXTERNAL_ACCOUNT_CREDENTIALS_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_URL_EXTERNAL_ACCOUNT_CREDENTIALS_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_URL_EXTERNAL_ACCOUNT_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -23,6 +23,8 @@
 #include <map>
 #include <string>
 #include <vector>
+
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -48,6 +50,8 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) override;
 
+  absl::string_view CredentialSourceType() override;
+
   static void OnRetrieveSubjectToken(void* arg, grpc_error_handle error);
   void OnRetrieveSubjectTokenInternal(grpc_error_handle error);
 
@@ -68,4 +72,4 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_URL_EXTERNAL_ACCOUNT_CREDENTIALS_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_URL_EXTERNAL_ACCOUNT_CREDENTIALS_H

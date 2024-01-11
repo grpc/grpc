@@ -25,23 +25,26 @@ from tests.interop import service
 from tests.unit import test_common
 
 
-@unittest.skipIf(sys.version_info[0] < 3,
-                 'ProtoBuf descriptor has moved on from Python2')
-class InsecureIntraopTest(_intraop_test_case.IntraopTestCase,
-                          unittest.TestCase):
-
+@unittest.skipIf(
+    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
+)
+class InsecureIntraopTest(
+    _intraop_test_case.IntraopTestCase, unittest.TestCase
+):
     def setUp(self):
         self.server = test_common.test_server()
-        test_pb2_grpc.add_TestServiceServicer_to_server(service.TestService(),
-                                                        self.server)
-        port = self.server.add_insecure_port('[::]:0')
+        test_pb2_grpc.add_TestServiceServicer_to_server(
+            service.TestService(), self.server
+        )
+        port = self.server.add_insecure_port("[::]:0")
         self.server.start()
         self.stub = test_pb2_grpc.TestServiceStub(
-            grpc.insecure_channel('localhost:{}'.format(port)))
+            grpc.insecure_channel("localhost:{}".format(port))
+        )
 
     def tearDown(self):
         self.server.stop(None)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

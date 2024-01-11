@@ -65,9 +65,11 @@ class TcpProxy(object):
 
     def start(self):
         _, self._port, self._listen_socket = get_socket(
-            bind_address=self._bind_address)
-        self._proxy_socket = _init_proxy_socket(self._gateway_address,
-                                                self._gateway_port)
+            bind_address=self._bind_address
+        )
+        self._proxy_socket = _init_proxy_socket(
+            self._gateway_address, self._gateway_port
+        )
         self._thread.start()
 
     def get_port(self):
@@ -92,7 +94,7 @@ class TcpProxy(object):
                 else:
                     self._client_sockets.remove(socket_to_read)
             else:
-                raise RuntimeError('Unidentified socket appeared in read set.')
+                raise RuntimeError("Unidentified socket appeared in read set.")
 
     def _handle_writes(self, sockets_to_write):
         for socket_to_write in sockets_to_write:
@@ -108,11 +110,15 @@ class TcpProxy(object):
     def _run_proxy(self):
         while not self._stop_event.is_set():
             expected_reads = (self._listen_socket, self._proxy_socket) + tuple(
-                self._client_sockets)
+                self._client_sockets
+            )
             expected_writes = expected_reads
             sockets_to_read, sockets_to_write, _ = select.select(
-                expected_reads, expected_writes, (),
-                _TCP_PROXY_TIMEOUT.total_seconds())
+                expected_reads,
+                expected_writes,
+                (),
+                _TCP_PROXY_TIMEOUT.total_seconds(),
+            )
             self._handle_reads(sockets_to_read)
             self._handle_writes(sockets_to_write)
         for client_socket in self._client_sockets:

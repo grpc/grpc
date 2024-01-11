@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
-load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 licenses(["notice"])
 
@@ -172,9 +172,6 @@ grpc_proto_library(
     name = "stats_proto",
     srcs = ["stats.proto"],
     has_services = False,
-    deps = [
-        "//src/proto/grpc/core:stats_proto",
-    ],
 )
 
 grpc_proto_library(
@@ -257,7 +254,6 @@ py_grpc_library(
 proto_library(
     name = "stats_descriptor",
     srcs = ["stats.proto"],
-    deps = ["//src/proto/grpc/core:stats_descriptor"],
 )
 
 py_proto_library(

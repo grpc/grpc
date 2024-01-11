@@ -114,14 +114,14 @@ class MockOpBatch {
       : id_(id), flag_(flag), seq_num_(seq_num) {
     if (flag_ & kFlagPrefix) {
       initial_metadata_callback_ =
-          absl::make_unique<MockInitialMetadataCallback>(id_, seq_num_);
+          std::make_unique<MockInitialMetadataCallback>(id_, seq_num_);
     }
     if (flag_ & kFlagMessageData) {
-      message_callback_ = absl::make_unique<MockMessageCallback>(id_, seq_num_);
+      message_callback_ = std::make_unique<MockMessageCallback>(id_, seq_num_);
     }
     if (flag_ & kFlagSuffix) {
       trailing_metadata_callback_ =
-          absl::make_unique<MockTrailingMetadataCallback>(id_, seq_num_);
+          std::make_unique<MockTrailingMetadataCallback>(id_, seq_num_);
     }
   }
 

@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 namespace grpc_core {
 namespace hpack_constants {
@@ -33,9 +34,14 @@ static constexpr uint32_t EntriesForBytes(uint32_t bytes) noexcept {
   return (bytes + kEntryOverhead - 1) / kEntryOverhead;
 }
 
+static constexpr size_t SizeForEntry(size_t key_length,
+                                     size_t value_length) noexcept {
+  return key_length + value_length + kEntryOverhead;
+}
+
 static constexpr uint32_t kInitialTableEntries =
     EntriesForBytes(kInitialTableSize);
 }  // namespace hpack_constants
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Provides distutils command classes for the GRPC Python setup process."""
+"""Provides setuptools command classes for the GRPC Python setup process."""
 
 import os
 import shutil
@@ -19,16 +19,17 @@ import shutil
 import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-CHANNELZ_PROTO = os.path.join(ROOT_DIR,
-                              '../../proto/grpc/channelz/channelz.proto')
-LICENSE = os.path.join(ROOT_DIR, '../../../LICENSE')
+CHANNELZ_PROTO = os.path.join(
+    ROOT_DIR, "../../proto/grpc/channelz/channelz.proto"
+)
+LICENSE = os.path.join(ROOT_DIR, "../../../LICENSE")
 
 
 class Preprocess(setuptools.Command):
     """Command to copy proto modules from grpc/src/proto and LICENSE from
     the root directory"""
 
-    description = ''
+    description = ""
     user_options = []
 
     def initialize_options(self):
@@ -41,15 +42,16 @@ class Preprocess(setuptools.Command):
         if os.path.isfile(CHANNELZ_PROTO):
             shutil.copyfile(
                 CHANNELZ_PROTO,
-                os.path.join(ROOT_DIR, 'grpc_channelz/v1/channelz.proto'))
+                os.path.join(ROOT_DIR, "grpc_channelz/v1/channelz.proto"),
+            )
         if os.path.isfile(LICENSE):
-            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, 'LICENSE'))
+            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
 
 
 class BuildPackageProtos(setuptools.Command):
     """Command to generate project *_pb2.py modules from proto files."""
 
-    description = 'build grpc protobuf modules'
+    description = "build grpc protobuf modules"
     user_options = []
 
     def initialize_options(self):
@@ -64,4 +66,5 @@ class BuildPackageProtos(setuptools.Command):
         # to `self.distribution.package_dir` (and get a key error if it's not
         # there).
         from grpc_tools import command
-        command.build_package_protos(self.distribution.package_dir[''])
+
+        command.build_package_protos(self.distribution.package_dir[""])

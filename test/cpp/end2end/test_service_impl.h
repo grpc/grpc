@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_TEST_CPP_END2END_TEST_SERVICE_IMPL_H
 #define GRPC_TEST_CPP_END2END_TEST_SERVICE_IMPL_H
@@ -33,7 +33,9 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
 
 namespace grpc {
@@ -88,19 +90,25 @@ void ServerTryCancel(ServerContext* context);
 class TestServiceSignaller {
  public:
   void ClientWaitUntilRpcStarted() {
+    gpr_log(GPR_DEBUG, "*** enter ClientWaitUntilRpcStarted ***");
     std::unique_lock<std::mutex> lock(mu_);
     cv_rpc_started_.wait(lock, [this] { return rpc_started_; });
+    gpr_log(GPR_DEBUG, "*** leave ClientWaitUntilRpcStarted ***");
   }
   void ServerWaitToContinue() {
+    gpr_log(GPR_DEBUG, "*** enter ServerWaitToContinue ***");
     std::unique_lock<std::mutex> lock(mu_);
     cv_server_continue_.wait(lock, [this] { return server_should_continue_; });
+    gpr_log(GPR_DEBUG, "*** leave ServerWaitToContinue ***");
   }
   void SignalClientThatRpcStarted() {
+    gpr_log(GPR_DEBUG, "*** SignalClientThatRpcStarted ***");
     std::unique_lock<std::mutex> lock(mu_);
     rpc_started_ = true;
     cv_rpc_started_.notify_one();
   }
   void SignalServerToContinue() {
+    gpr_log(GPR_DEBUG, "*** SignalServerToContinue ***");
     std::unique_lock<std::mutex> lock(mu_);
     server_should_continue_ = true;
     cv_server_continue_.notify_one();
@@ -131,10 +139,11 @@ class TestMultipleServiceImpl : public RpcService {
 
     // A bit of sleep to make sure that short deadline tests fail
     if (request->has_param() && request->param().server_sleep_us() > 0) {
-      gpr_sleep_until(
-          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                       gpr_time_from_micros(request->param().server_sleep_us(),
-                                            GPR_TIMESPAN)));
+      gpr_sleep_until(gpr_time_add(
+          gpr_now(GPR_CLOCK_MONOTONIC),
+          gpr_time_from_micros(
+              request->param().server_sleep_us() * grpc_test_slowdown_factor(),
+              GPR_TIMESPAN)));
     }
 
     if (request->has_param() && request->param().server_die()) {
@@ -176,7 +185,8 @@ class TestMultipleServiceImpl : public RpcService {
       while (!context->IsCancelled()) {
         gpr_sleep_until(gpr_time_add(
             gpr_now(GPR_CLOCK_REALTIME),
-            gpr_time_from_micros(request->param().client_cancel_after_us(),
+            gpr_time_from_micros(request->param().client_cancel_after_us() *
+                                     grpc_test_slowdown_factor(),
                                  GPR_TIMESPAN)));
       }
       {
@@ -188,7 +198,8 @@ class TestMultipleServiceImpl : public RpcService {
                request->param().server_cancel_after_us()) {
       gpr_sleep_until(gpr_time_add(
           gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(request->param().server_cancel_after_us(),
+          gpr_time_from_micros(request->param().server_cancel_after_us() *
+                                   grpc_test_slowdown_factor(),
                                GPR_TIMESPAN)));
       return Status::CANCELLED;
     } else if (!request->has_param() ||

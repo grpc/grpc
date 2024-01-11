@@ -12,37 +12,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-xDS Test Client.
-
-TODO(sergiitk): separate XdsTestClient and KubernetesClientRunner to individual
-modules.
+Provides an interface to xDS Test Client running remotely.
 """
 import datetime
 import functools
 import logging
+import time
 from typing import Iterable, List, Optional
 
+import framework.errors
 from framework.helpers import retryers
-from framework.infrastructure import gcp
-from framework.infrastructure import k8s
 import framework.rpc
 from framework.rpc import grpc_channelz
 from framework.rpc import grpc_csds
 from framework.rpc import grpc_testing
-from framework.test_app import base_runner
 
 logger = logging.getLogger(__name__)
 
 # Type aliases
 _timedelta = datetime.timedelta
 _LoadBalancerStatsServiceClient = grpc_testing.LoadBalancerStatsServiceClient
-_XdsUpdateClientConfigureServiceClient = grpc_testing.XdsUpdateClientConfigureServiceClient
+_XdsUpdateClientConfigureServiceClient = (
+    grpc_testing.XdsUpdateClientConfigureServiceClient
+)
 _ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
 _ChannelzChannel = grpc_channelz.Channel
+_ChannelzChannelData = grpc_channelz.ChannelData
 _ChannelzChannelState = grpc_channelz.ChannelState
 _ChannelzSubchannel = grpc_channelz.Subchannel
 _ChannelzSocket = grpc_channelz.Socket
 _CsdsClient = grpc_csds.CsdsClient
+
+# Use in get_load_balancer_stats request to request all metadata.
+REQ_LB_STATS_METADATA_ALL = ("*",)
+
+DEFAULT_TD_XDS_URI = "trafficdirector.googleapis.com:443"
 
 
 class XdsTestClient(framework.rpc.grpc.GrpcApp):
@@ -51,52 +55,73 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
     https://github.com/grpc/grpc/blob/master/doc/xds-test-descriptions.md#client
     """
 
-    def __init__(self,
-                 *,
-                 ip: str,
-                 rpc_port: int,
-                 server_target: str,
-                 rpc_host: Optional[str] = None,
-                 maintenance_port: Optional[int] = None):
+    # A unique string identifying each client replica. Used in logging.
+    hostname: str
+
+    def __init__(
+        self,
+        *,
+        ip: str,
+        rpc_port: int,
+        server_target: str,
+        hostname: str,
+        rpc_host: Optional[str] = None,
+        maintenance_port: Optional[int] = None,
+    ):
         super().__init__(rpc_host=(rpc_host or ip))
         self.ip = ip
         self.rpc_port = rpc_port
         self.server_target = server_target
         self.maintenance_port = maintenance_port or rpc_port
+        self.hostname = hostname
 
     @property
     @functools.lru_cache(None)
     def load_balancer_stats(self) -> _LoadBalancerStatsServiceClient:
-        return _LoadBalancerStatsServiceClient(self._make_channel(
-            self.rpc_port))
+        return _LoadBalancerStatsServiceClient(
+            self._make_channel(self.rpc_port),
+            log_target=f"{self.hostname}:{self.rpc_port}",
+        )
 
     @property
     @functools.lru_cache(None)
     def update_config(self):
         return _XdsUpdateClientConfigureServiceClient(
-            self._make_channel(self.rpc_port))
+            self._make_channel(self.rpc_port),
+            log_target=f"{self.hostname}:{self.rpc_port}",
+        )
 
     @property
     @functools.lru_cache(None)
     def channelz(self) -> _ChannelzServiceClient:
-        return _ChannelzServiceClient(self._make_channel(self.maintenance_port))
+        return _ChannelzServiceClient(
+            self._make_channel(self.maintenance_port),
+            log_target=f"{self.hostname}:{self.maintenance_port}",
+        )
 
     @property
     @functools.lru_cache(None)
     def csds(self) -> _CsdsClient:
-        return _CsdsClient(self._make_channel(self.maintenance_port))
+        return _CsdsClient(
+            self._make_channel(self.maintenance_port),
+            log_target=f"{self.hostname}:{self.maintenance_port}",
+        )
 
     def get_load_balancer_stats(
         self,
         *,
         num_rpcs: int,
+        metadata_keys: Optional[tuple[str, ...]] = None,
         timeout_sec: Optional[int] = None,
     ) -> grpc_testing.LoadBalancerStatsResponse:
         """
         Shortcut to LoadBalancerStatsServiceClient.get_client_stats()
         """
         return self.load_balancer_stats.get_client_stats(
-            num_rpcs=num_rpcs, timeout_sec=timeout_sec)
+            num_rpcs=num_rpcs,
+            timeout_sec=timeout_sec,
+            metadata_keys=metadata_keys,
+        )
 
     def get_load_balancer_accumulated_stats(
         self,
@@ -105,42 +130,105 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
     ) -> grpc_testing.LoadBalancerAccumulatedStatsResponse:
         """Shortcut to LoadBalancerStatsServiceClient.get_client_accumulated_stats()"""
         return self.load_balancer_stats.get_client_accumulated_stats(
-            timeout_sec=timeout_sec)
+            timeout_sec=timeout_sec
+        )
 
-    def wait_for_active_server_channel(self) -> _ChannelzChannel:
+    def wait_for_server_channel_ready(
+        self,
+        *,
+        timeout: Optional[_timedelta] = None,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
         """Wait for the channel to the server to transition to READY.
 
         Raises:
             GrpcApp.NotFound: If the channel never transitioned to READY.
         """
-        return self.wait_for_server_channel_state(_ChannelzChannelState.READY)
+        try:
+            return self.wait_for_server_channel_state(
+                _ChannelzChannelState.READY,
+                timeout=timeout,
+                rpc_deadline=rpc_deadline,
+            )
+        except retryers.RetryError as retry_err:
+            if isinstance(retry_err.exception(), self.ChannelNotFound):
+                retry_err.add_note(
+                    framework.errors.FrameworkError.note_blanket_error(
+                        "The client couldn't connect to the server."
+                    )
+                )
+            raise
+
+    def wait_for_active_xds_channel(
+        self,
+        *,
+        xds_server_uri: Optional[str] = None,
+        timeout: Optional[_timedelta] = None,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
+        """Wait until the xds channel is active or timeout.
+
+        Raises:
+            GrpcApp.NotFound: If the channel to xds never transitioned to active.
+        """
+        try:
+            return self.wait_for_xds_channel_active(
+                xds_server_uri=xds_server_uri,
+                timeout=timeout,
+                rpc_deadline=rpc_deadline,
+            )
+        except retryers.RetryError as retry_err:
+            if isinstance(retry_err.exception(), self.ChannelNotFound):
+                retry_err.add_note(
+                    framework.errors.FrameworkError.note_blanket_error(
+                        "The client couldn't connect to the xDS control plane."
+                    )
+                )
+            raise
 
     def get_active_server_channel_socket(self) -> _ChannelzSocket:
         channel = self.find_server_channel_with_state(
-            _ChannelzChannelState.READY)
+            _ChannelzChannelState.READY
+        )
         # Get the first subchannel of the active channel to the server.
         logger.debug(
-            'Retrieving client -> server socket, '
-            'channel_id: %s, subchannel: %s', channel.ref.channel_id,
-            channel.subchannel_ref[0].name)
+            (
+                "[%s] Retrieving client -> server socket, "
+                "channel_id: %s, subchannel: %s"
+            ),
+            self.hostname,
+            channel.ref.channel_id,
+            channel.subchannel_ref[0].name,
+        )
         subchannel, *subchannels = list(
-            self.channelz.list_channel_subchannels(channel))
+            self.channelz.list_channel_subchannels(channel)
+        )
         if subchannels:
-            logger.warning('Unexpected subchannels: %r', subchannels)
+            logger.warning(
+                "[%s] Unexpected subchannels: %r", self.hostname, subchannels
+            )
         # Get the first socket of the subchannel
         socket, *sockets = list(
-            self.channelz.list_subchannels_sockets(subchannel))
+            self.channelz.list_subchannels_sockets(subchannel)
+        )
         if sockets:
-            logger.warning('Unexpected sockets: %r', subchannels)
-        logger.debug('Found client -> server socket: %s', socket.ref.name)
+            logger.warning(
+                "[%s] Unexpected sockets: %r", self.hostname, subchannels
+            )
+        logger.debug(
+            "[%s] Found client -> server socket: %s",
+            self.hostname,
+            socket.ref.name,
+        )
         return socket
 
     def wait_for_server_channel_state(
-            self,
-            state: _ChannelzChannelState,
-            *,
-            timeout: Optional[_timedelta] = None,
-            rpc_deadline: Optional[_timedelta] = None) -> _ChannelzChannel:
+        self,
+        state: _ChannelzChannelState,
+        *,
+        timeout: Optional[_timedelta] = None,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
         # When polling for a state, prefer smaller wait times to avoid
         # exhausting all allowed time on a single long RPC.
         if rpc_deadline is None:
@@ -150,244 +238,298 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         retryer = retryers.exponential_retryer_with_timeout(
             wait_min=_timedelta(seconds=10),
             wait_max=_timedelta(seconds=25),
-            timeout=_timedelta(minutes=5) if timeout is None else timeout)
+            timeout=_timedelta(minutes=5) if timeout is None else timeout,
+        )
 
-        logger.info('Waiting for client %s to report a %s channel to %s',
-                    self.ip, _ChannelzChannelState.Name(state),
-                    self.server_target)
-        channel = retryer(self.find_server_channel_with_state,
-                          state,
-                          rpc_deadline=rpc_deadline)
-        logger.info('Client %s channel to %s transitioned to state %s:\n%s',
-                    self.ip, self.server_target,
-                    _ChannelzChannelState.Name(state), channel)
+        logger.info(
+            "[%s] Waiting to report a %s channel to %s",
+            self.hostname,
+            _ChannelzChannelState.Name(state),
+            self.server_target,
+        )
+        channel = retryer(
+            self.find_server_channel_with_state,
+            state,
+            rpc_deadline=rpc_deadline,
+        )
+        logger.info(
+            "[%s] Channel to %s transitioned to state %s: %s",
+            self.hostname,
+            self.server_target,
+            _ChannelzChannelState.Name(state),
+            _ChannelzServiceClient.channel_repr(channel),
+        )
         return channel
 
-    def find_server_channel_with_state(
-            self,
-            state: _ChannelzChannelState,
-            *,
-            rpc_deadline: Optional[_timedelta] = None,
-            check_subchannel=True) -> _ChannelzChannel:
+    def wait_for_xds_channel_active(
+        self,
+        *,
+        xds_server_uri: Optional[str] = None,
+        timeout: Optional[_timedelta] = None,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
+        if not xds_server_uri:
+            xds_server_uri = DEFAULT_TD_XDS_URI
+        # When polling for a state, prefer smaller wait times to avoid
+        # exhausting all allowed time on a single long RPC.
+        if rpc_deadline is None:
+            rpc_deadline = _timedelta(seconds=30)
+
+        retryer = retryers.exponential_retryer_with_timeout(
+            wait_min=_timedelta(seconds=10),
+            wait_max=_timedelta(seconds=25),
+            timeout=_timedelta(minutes=5) if timeout is None else timeout,
+        )
+
+        logger.info(
+            "[%s] ADS: Waiting for active calls to xDS control plane to %s",
+            self.hostname,
+            xds_server_uri,
+        )
+        channel = retryer(
+            self.find_active_xds_channel,
+            xds_server_uri=xds_server_uri,
+            rpc_deadline=rpc_deadline,
+        )
+        logger.info(
+            "[%s] ADS: Detected active calls to xDS control plane %s",
+            self.hostname,
+            xds_server_uri,
+        )
+        return channel
+
+    def find_active_xds_channel(
+        self,
+        xds_server_uri: str,
+        *,
+        rpc_deadline: Optional[_timedelta] = None,
+    ) -> _ChannelzChannel:
         rpc_params = {}
         if rpc_deadline is not None:
-            rpc_params['deadline_sec'] = rpc_deadline.total_seconds()
+            rpc_params["deadline_sec"] = rpc_deadline.total_seconds()
 
-        for channel in self.get_server_channels(**rpc_params):
+        for channel in self.find_channels(xds_server_uri, **rpc_params):
+            logger.info(
+                "[%s] xDS control plane channel: %s",
+                self.hostname,
+                _ChannelzServiceClient.channel_repr(channel),
+            )
+
+            try:
+                channel_upd = self.check_channel_in_flight_calls(
+                    channel, **rpc_params
+                )
+                logger.info(
+                    "[%s] Detected active calls to xDS control plane %s,"
+                    " channel: %s",
+                    self.hostname,
+                    xds_server_uri,
+                    _ChannelzServiceClient.channel_repr(channel_upd),
+                )
+                return channel_upd
+            except self.NotFound:
+                # Continue checking other channels to the same target on
+                # not found.
+                continue
+            except framework.rpc.grpc.RpcError as err:
+                # Logged at 'info' and not at 'warning' because this method is
+                # expected to be called in a retryer. If this error eventually
+                # causes the retryer to fail, it will be logged fully at 'error'
+                logger.info(
+                    "[%s] Unexpected error while checking xDS control plane"
+                    " channel %s: %r",
+                    self.hostname,
+                    _ChannelzServiceClient.channel_repr(channel),
+                    err,
+                )
+                raise
+
+        raise self.ChannelNotActive(
+            f"[{self.hostname}] Client has no"
+            f" active channel with xDS control plane {xds_server_uri}",
+            src=self.hostname,
+            dst=xds_server_uri,
+        )
+
+    def find_server_channel_with_state(
+        self,
+        expected_state: _ChannelzChannelState,
+        *,
+        rpc_deadline: Optional[_timedelta] = None,
+        check_subchannel=True,
+    ) -> _ChannelzChannel:
+        rpc_params = {}
+        if rpc_deadline is not None:
+            rpc_params["deadline_sec"] = rpc_deadline.total_seconds()
+
+        expected_state_name: str = _ChannelzChannelState.Name(expected_state)
+        target: str = self.server_target
+
+        for channel in self.find_channels(target, **rpc_params):
             channel_state: _ChannelzChannelState = channel.data.state.state
-            logger.info('Server channel: %s, state: %s', channel.ref.name,
-                        _ChannelzChannelState.Name(channel_state))
-            if channel_state is state:
+            logger.info(
+                "[%s] Server channel: %s",
+                self.hostname,
+                _ChannelzServiceClient.channel_repr(channel),
+            )
+            if channel_state is expected_state:
                 if check_subchannel:
                     # When requested, check if the channel has at least
                     # one subchannel in the requested state.
                     try:
                         subchannel = self.find_subchannel_with_state(
-                            channel, state, **rpc_params)
-                        logger.info('Found subchannel in state %s: %s',
-                                    _ChannelzChannelState.Name(state),
-                                    subchannel)
+                            channel, expected_state, **rpc_params
+                        )
+                        logger.info(
+                            "[%s] Found subchannel in state %s: %s",
+                            self.hostname,
+                            expected_state_name,
+                            _ChannelzServiceClient.subchannel_repr(subchannel),
+                        )
                     except self.NotFound as e:
                         # Otherwise, keep searching.
                         logger.info(e.message)
                         continue
                 return channel
 
-        raise self.NotFound(
-            f'Client has no {_ChannelzChannelState.Name(state)} channel with '
-            'the server')
+        raise self.ChannelNotFound(
+            f"[{self.hostname}] Client has no"
+            f" {expected_state_name} channel with server {target}",
+            src=self.hostname,
+            dst=target,
+            expected_state=expected_state,
+        )
 
-    def get_server_channels(self, **kwargs) -> Iterable[_ChannelzChannel]:
-        return self.channelz.find_channels_for_target(self.server_target,
-                                                      **kwargs)
+    def find_channels(
+        self,
+        target: str,
+        **rpc_params,
+    ) -> Iterable[_ChannelzChannel]:
+        return self.channelz.find_channels_for_target(target, **rpc_params)
 
-    def find_subchannel_with_state(self, channel: _ChannelzChannel,
-                                   state: _ChannelzChannelState,
-                                   **kwargs) -> _ChannelzSubchannel:
+    def find_subchannel_with_state(
+        self, channel: _ChannelzChannel, state: _ChannelzChannelState, **kwargs
+    ) -> _ChannelzSubchannel:
         subchannels = self.channelz.list_channel_subchannels(channel, **kwargs)
         for subchannel in subchannels:
             if subchannel.data.state.state is state:
                 return subchannel
 
         raise self.NotFound(
-            f'Not found a {_ChannelzChannelState.Name(state)} '
-            f'subchannel for channel_id {channel.ref.channel_id}')
+            f"[{self.hostname}] Not found "
+            f"a {_ChannelzChannelState.Name(state)} subchannel "
+            f"for channel_id {channel.ref.channel_id}"
+        )
 
-    def find_subchannels_with_state(self, state: _ChannelzChannelState,
-                                    **kwargs) -> List[_ChannelzSubchannel]:
+    def find_subchannels_with_state(
+        self, state: _ChannelzChannelState, **kwargs
+    ) -> List[_ChannelzSubchannel]:
         subchannels = []
         for channel in self.channelz.find_channels_for_target(
-                self.server_target, **kwargs):
+            self.server_target, **kwargs
+        ):
             for subchannel in self.channelz.list_channel_subchannels(
-                    channel, **kwargs):
+                channel, **kwargs
+            ):
                 if subchannel.data.state.state is state:
                     subchannels.append(subchannel)
         return subchannels
 
+    def check_channel_in_flight_calls(
+        self,
+        channel: _ChannelzChannel,
+        *,
+        wait_between_checks: Optional[_timedelta] = None,
+        **rpc_params,
+    ) -> Optional[_ChannelzChannel]:
+        """Checks if the channel has calls that started, but didn't complete.
 
-class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
+        We consider the channel is active if channel is in READY state and
+        calls_started is greater than calls_failed.
 
-    def __init__(  # pylint: disable=too-many-locals
-            self,
-            k8s_namespace,
-            *,
-            deployment_name,
-            image_name,
-            td_bootstrap_image,
-            gcp_api_manager: gcp.api.GcpApiManager,
-            gcp_project: str,
-            gcp_service_account: str,
-            xds_server_uri=None,
-            network='default',
-            service_account_name=None,
-            stats_port=8079,
-            deployment_template='client.deployment.yaml',
-            service_account_template='service-account.yaml',
-            reuse_namespace=False,
-            namespace_template=None,
-            debug_use_port_forwarding=False,
-            enable_workload_identity=True):
-        super().__init__(k8s_namespace, namespace_template, reuse_namespace)
+        This method address race where a call to the xDS control plane server
+        has just started and a channelz request comes in before the call has
+        had a chance to fail.
 
-        # Settings
-        self.deployment_name = deployment_name
-        self.image_name = image_name
-        self.stats_port = stats_port
-        # xDS bootstrap generator
-        self.td_bootstrap_image = td_bootstrap_image
-        self.xds_server_uri = xds_server_uri
-        self.network = network
-        self.deployment_template = deployment_template
-        self.debug_use_port_forwarding = debug_use_port_forwarding
-        self.enable_workload_identity = enable_workload_identity
-        # Service account settings:
-        # Kubernetes service account
-        if self.enable_workload_identity:
-            self.service_account_name = service_account_name or deployment_name
-            self.service_account_template = service_account_template
-        else:
-            self.service_account_name = None
-            self.service_account_template = None
-        # GCP.
-        self.gcp_project = gcp_project
-        self.gcp_ui_url = gcp_api_manager.gcp_ui_url
-        # GCP service account to map to Kubernetes service account
-        self.gcp_service_account = gcp_service_account
-        # GCP IAM API used to grant allow workload service accounts permission
-        # to use GCP service account identity.
-        self.gcp_iam = gcp.iam.IamV1(gcp_api_manager, gcp_project)
+        With channels to the xDS control plane, the channel can be READY but the
+        calls could be failing to initialize, f.e. due to a failure to fetch
+        OAUTH2 token. To increase the confidence that we have a valid channel
+        with working OAUTH2 tokens, we check whether the channel is in a READY
+        state with active calls twice with an interval of 2 seconds between the
+        two attempts. If the OAUTH2 token is not valid, the call would fail and
+        be caught in either the first attempt, or the second attempt. It is
+        possible that between the two attempts, a call fails and a new call is
+        started, so we also test for equality between the started calls of the
+        two channelz results.
 
-        # Mutable state
-        self.deployment: Optional[k8s.V1Deployment] = None
-        self.service_account: Optional[k8s.V1ServiceAccount] = None
-        self.port_forwarder: Optional[k8s.PortForwarder] = None
+        There still exists a possibility that a call fails on fetching OAUTH2
+        token after 2 seconds (maybe because there is a slowdown in the
+        system.) If such a case is observed, consider increasing the interval
+        from 2 seconds to 5 seconds.
 
-    # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
-    def run(  # pylint: disable=arguments-differ
-            self,
-            *,
-            server_target,
-            rpc='UnaryCall',
-            qps=25,
-            metadata='',
-            secure_mode=False,
-            config_mesh=None,
-            print_response=False) -> XdsTestClient:
-        logger.info(
-            'Deploying xDS test client "%s" to k8s namespace %s: '
-            'server_target=%s rpc=%s qps=%s metadata=%r secure_mode=%s '
-            'print_response=%s', self.deployment_name, self.k8s_namespace.name,
-            server_target, rpc, qps, metadata, secure_mode, print_response)
-        self._logs_explorer_link(deployment_name=self.deployment_name,
-                                 namespace_name=self.k8s_namespace.name,
-                                 gcp_project=self.gcp_project,
-                                 gcp_ui_url=self.gcp_ui_url)
+        Returns updated channel on success, or None on failure.
+        """
+        if not self.calc_calls_in_flight(channel):
+            return None
 
-        super().run()
+        if not wait_between_checks:
+            wait_between_checks = _timedelta(seconds=2)
 
-        if self.enable_workload_identity:
-            # Allow Kubernetes service account to use the GCP service account
-            # identity.
-            self._grant_workload_identity_user(
-                gcp_iam=self.gcp_iam,
-                gcp_service_account=self.gcp_service_account,
-                service_account_name=self.service_account_name)
-
-            # Create service account
-            self.service_account = self._create_service_account(
-                self.service_account_template,
-                service_account_name=self.service_account_name,
-                namespace_name=self.k8s_namespace.name,
-                gcp_service_account=self.gcp_service_account)
-
-        # Always create a new deployment
-        self.deployment = self._create_deployment(
-            self.deployment_template,
-            deployment_name=self.deployment_name,
-            image_name=self.image_name,
-            namespace_name=self.k8s_namespace.name,
-            service_account_name=self.service_account_name,
-            td_bootstrap_image=self.td_bootstrap_image,
-            xds_server_uri=self.xds_server_uri,
-            network=self.network,
-            stats_port=self.stats_port,
-            server_target=server_target,
-            rpc=rpc,
-            qps=qps,
-            metadata=metadata,
-            secure_mode=secure_mode,
-            config_mesh=config_mesh,
-            print_response=print_response)
-
-        self._wait_deployment_with_available_replicas(self.deployment_name)
-
-        # Load test client pod. We need only one client at the moment
-        pod = self.k8s_namespace.list_deployment_pods(self.deployment)[0]
-        self._wait_pod_started(pod.metadata.name)
-        pod_ip = pod.status.pod_ip
-        rpc_port = self.stats_port
-        rpc_host = None
-
-        # Experimental, for local debugging.
-        if self.debug_use_port_forwarding:
-            logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
-                        pod_ip, self.stats_port)
-            self.port_forwarder = self.k8s_namespace.port_forward_pod(
-                pod, remote_port=self.stats_port)
-            rpc_port = self.port_forwarder.local_port
-            rpc_host = self.port_forwarder.local_address
-
-        return XdsTestClient(ip=pod_ip,
-                             rpc_port=rpc_port,
-                             server_target=server_target,
-                             rpc_host=rpc_host)
-
-    def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
-        if self.port_forwarder:
-            self.port_forwarder.close()
-            self.port_forwarder = None
-        if self.deployment or force:
-            self._delete_deployment(self.deployment_name)
-            self.deployment = None
-        if self.enable_workload_identity and (self.service_account or force):
-            self._revoke_workload_identity_user(
-                gcp_iam=self.gcp_iam,
-                gcp_service_account=self.gcp_service_account,
-                service_account_name=self.service_account_name)
-            self._delete_service_account(self.service_account_name)
-            self.service_account = None
-        super().cleanup(force=force_namespace and force)
+        # Load the channel second time after the timeout.
+        time.sleep(wait_between_checks.total_seconds())
+        channel_upd: _ChannelzChannel = self.channelz.get_channel(
+            channel.ref.channel_id, **rpc_params
+        )
+        if (
+            not self.calc_calls_in_flight(channel_upd)
+            or channel.data.calls_started != channel_upd.data.calls_started
+        ):
+            return None
+        return channel_upd
 
     @classmethod
-    def make_namespace_name(cls,
-                            resource_prefix: str,
-                            resource_suffix: str,
-                            name: str = 'client') -> str:
-        """A helper to make consistent XdsTestClient kubernetes namespace name
-        for given resource prefix and suffix.
+    def calc_calls_in_flight(cls, channel: _ChannelzChannel) -> int:
+        cdata: _ChannelzChannelData = channel.data
+        if cdata.state.state is not _ChannelzChannelState.READY:
+            return 0
 
-        Note: the idea is to intentionally produce different namespace name for
-        the test server, and the test client, as that closely mimics real-world
-        deployments.
-        """
-        return cls._make_namespace_name(resource_prefix, resource_suffix, name)
+        return cdata.calls_started - cdata.calls_succeeded - cdata.calls_failed
+
+    class ChannelNotFound(framework.rpc.grpc.GrpcApp.NotFound):
+        """Channel with expected status not found"""
+
+        src: str
+        dst: str
+        expected_state: object
+
+        def __init__(
+            self,
+            message: str,
+            *,
+            src: str,
+            dst: str,
+            expected_state: _ChannelzChannelState,
+            **kwargs,
+        ):
+            self.src = src
+            self.dst = dst
+            self.expected_state = expected_state
+            super().__init__(message, src, dst, expected_state, **kwargs)
+
+    class ChannelNotActive(framework.rpc.grpc.GrpcApp.NotFound):
+        """No active channel was found"""
+
+        src: str
+        dst: str
+
+        def __init__(
+            self,
+            message: str,
+            *,
+            src: str,
+            dst: str,
+            **kwargs,
+        ):
+            self.src = src
+            self.dst = dst
+            super().__init__(message, src, dst, **kwargs)

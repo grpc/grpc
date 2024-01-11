@@ -35,7 +35,7 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     deps = [
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc++_binder",
     ],
 )
@@ -49,6 +49,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -68,6 +69,7 @@ grpc_cc_library(
         "//:grpc++_base",
         "//:grpc++_binder",
         "//:grpc_base",
+        "//src/core:channel_args",
     ],
 )
 
@@ -79,8 +81,14 @@ grpc_cc_test(
         "absl/time",
         "gtest",
     ],
+    flaky = True,
     language = "C++",
     tags = [
+        # Flaky on windows
+        "no_windows",
+        "no_mac",
+        "no_test_ios",
+
         # Known race between stream creation and cancellation
         "notsan",
     ],
@@ -99,6 +107,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_test_ios"],
     deps = [
         "//:grpc++",
         "//:grpc++_binder",

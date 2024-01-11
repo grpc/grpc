@@ -40,13 +40,13 @@ class ClientRunner:
 
 
 class OpenLoopClientRunner(ClientRunner):
-
     def __init__(self, client, interval_generator):
         super(OpenLoopClientRunner, self).__init__(client)
         self._is_running = False
         self._interval_generator = interval_generator
-        self._dispatch_thread = threading.Thread(target=self._dispatch_requests,
-                                                 args=())
+        self._dispatch_thread = threading.Thread(
+            target=self._dispatch_requests, args=()
+        )
 
     def start(self):
         self._is_running = True
@@ -66,7 +66,6 @@ class OpenLoopClientRunner(ClientRunner):
 
 
 class ClosedLoopClientRunner(ClientRunner):
-
     def __init__(self, client, request_count, no_ping_pong):
         super(ClosedLoopClientRunner, self).__init__(client)
         self._is_running = False

@@ -42,6 +42,12 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>.grpc.testing.EchoStatus response_status = 7;</code>
      */
     protected $response_status = null;
+    /**
+     * If set the server should update this metrics report data at the OOB server.
+     *
+     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_oob_report = 8;</code>
+     */
+    protected $orca_oob_report = null;
 
     /**
      * Constructor.
@@ -54,12 +60,14 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      *           If response_type is RANDOM, the payload from each response in the stream
      *           might be of different types. This is to simulate a mixed type of payload
      *           stream.
-     *     @type \Grpc\Testing\ResponseParameters[]|\Google\Protobuf\Internal\RepeatedField $response_parameters
+     *     @type array<\Grpc\Testing\ResponseParameters>|\Google\Protobuf\Internal\RepeatedField $response_parameters
      *           Configuration for each expected response message.
      *     @type \Grpc\Testing\Payload $payload
      *           Optional input payload sent along with the request.
      *     @type \Grpc\Testing\EchoStatus $response_status
      *           Whether server should return a given status
+     *     @type \Grpc\Testing\TestOrcaReport $orca_oob_report
+     *           If set the server should update this metrics report data at the OOB server.
      * }
      */
     public function __construct($data = NULL) {
@@ -114,7 +122,7 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * Configuration for each expected response message.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.ResponseParameters response_parameters = 2;</code>
-     * @param \Grpc\Testing\ResponseParameters[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @param array<\Grpc\Testing\ResponseParameters>|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
      */
     public function setResponseParameters($var)
@@ -193,6 +201,42 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\EchoStatus::class);
         $this->response_status = $var;
+
+        return $this;
+    }
+
+    /**
+     * If set the server should update this metrics report data at the OOB server.
+     *
+     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_oob_report = 8;</code>
+     * @return \Grpc\Testing\TestOrcaReport|null
+     */
+    public function getOrcaOobReport()
+    {
+        return $this->orca_oob_report;
+    }
+
+    public function hasOrcaOobReport()
+    {
+        return isset($this->orca_oob_report);
+    }
+
+    public function clearOrcaOobReport()
+    {
+        unset($this->orca_oob_report);
+    }
+
+    /**
+     * If set the server should update this metrics report data at the OOB server.
+     *
+     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_oob_report = 8;</code>
+     * @param \Grpc\Testing\TestOrcaReport $var
+     * @return $this
+     */
+    public function setOrcaOobReport($var)
+    {
+        GPBUtil::checkMessage($var, \Grpc\Testing\TestOrcaReport::class);
+        $this->orca_oob_report = $var;
 
         return $this;
     }

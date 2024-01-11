@@ -14,11 +14,12 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_IMPL_H
-#define GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_IMPL_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_IMPL_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_IMPL_H
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <utility>
 
 #include "absl/strings/string_view.h"
 
@@ -30,25 +31,29 @@ namespace grpc_core {
 
 // Base class for XdsResourceType implementations.
 // Handles all down-casting logic for a particular resource type struct.
+// ResourceTypeStruct must inherit from XdsResourceType::ResourceData
+// and must implement operator==().
 template <typename Subclass, typename ResourceTypeStruct>
 class XdsResourceTypeImpl : public XdsResourceType {
  public:
-  struct ResourceDataSubclass : public ResourceData {
-    ResourceTypeStruct resource;
-  };
+  using ResourceType = ResourceTypeStruct;
 
   // XdsClient watcher that handles down-casting.
   class WatcherInterface : public XdsClient::ResourceWatcherInterface {
    public:
-    virtual void OnResourceChanged(ResourceTypeStruct listener) = 0;
+    virtual void OnResourceChanged(
+        std::shared_ptr<const ResourceType> resource,
+        RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) = 0;
 
    private:
     // Get result from XdsClient generic watcher interface, perform
-    // down-casting, and invoke the caller's OnListenerChanged() method.
+    // down-casting, and invoke the caller's OnResourceChanged() method.
     void OnGenericResourceChanged(
-        const XdsResourceType::ResourceData* resource) override {
+        std::shared_ptr<const XdsResourceType::ResourceData> resource,
+        RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
       OnResourceChanged(
-          static_cast<const ResourceDataSubclass*>(resource)->resource);
+          std::static_pointer_cast<const ResourceType>(std::move(resource)),
+          std::move(read_delay_handle));
     }
   };
 
@@ -73,19 +78,11 @@ class XdsResourceTypeImpl : public XdsResourceType {
 
   bool ResourcesEqual(const ResourceData* r1,
                       const ResourceData* r2) const override {
-    return static_cast<const ResourceDataSubclass*>(r1)->resource ==
-           static_cast<const ResourceDataSubclass*>(r2)->resource;
-  }
-
-  std::unique_ptr<ResourceData> CopyResource(
-      const ResourceData* resource) const override {
-    auto* resource_copy = new ResourceDataSubclass();
-    resource_copy->resource =
-        static_cast<const ResourceDataSubclass*>(resource)->resource;
-    return std::unique_ptr<ResourceData>(resource_copy);
+    return *static_cast<const ResourceType*>(r1) ==
+           *static_cast<const ResourceType*>(r2);
   }
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_IMPL_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_IMPL_H

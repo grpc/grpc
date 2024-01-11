@@ -1,23 +1,24 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
@@ -35,9 +36,12 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -47,9 +51,12 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
+
+using ::grpc_event_engine::experimental::EndpointConfig;
 
 struct async_connect {
   gpr_mu mu;
@@ -62,9 +69,9 @@ struct async_connect {
   std::string addr_str;
   grpc_endpoint** ep;
   grpc_closure* closure;
-  grpc_channel_args* channel_args;
   int64_t connection_handle;
   bool connect_cancelled;
+  grpc_core::PosixTcpOptions options;
 };
 
 struct ConnectionShard {
@@ -90,32 +97,37 @@ void grpc_tcp_client_global_init() {
   gpr_once_init(&g_tcp_client_posix_init, do_tcp_client_global_init);
 }
 
-static grpc_error_handle prepare_socket(const grpc_resolved_address* addr,
-                                        int fd,
-                                        const grpc_channel_args* channel_args) {
-  grpc_error_handle err = GRPC_ERROR_NONE;
+static grpc_error_handle prepare_socket(
+    const grpc_resolved_address* addr, int fd,
+    const grpc_core::PosixTcpOptions& options) {
+  grpc_error_handle err;
 
   GPR_ASSERT(fd >= 0);
 
   err = grpc_set_socket_nonblocking(fd, 1);
-  if (!GRPC_ERROR_IS_NONE(err)) goto error;
+  if (!err.ok()) goto error;
   err = grpc_set_socket_cloexec(fd, 1);
-  if (!GRPC_ERROR_IS_NONE(err)) goto error;
-  if (!grpc_is_unix_socket(addr)) {
+  if (!err.ok()) goto error;
+  if (options.tcp_receive_buffer_size != options.kReadBufferSizeUnset) {
+    err = grpc_set_socket_rcvbuf(fd, options.tcp_receive_buffer_size);
+    if (!err.ok()) goto error;
+  }
+  if (!grpc_is_unix_socket(addr) && !grpc_is_vsock(addr)) {
     err = grpc_set_socket_low_latency(fd, 1);
-    if (!GRPC_ERROR_IS_NONE(err)) goto error;
+    if (!err.ok()) goto error;
     err = grpc_set_socket_reuse_addr(fd, 1);
-    if (!GRPC_ERROR_IS_NONE(err)) goto error;
-    err = grpc_set_socket_tcp_user_timeout(fd, channel_args,
-                                           true /* is_client */);
-    if (!GRPC_ERROR_IS_NONE(err)) goto error;
+    if (!err.ok()) goto error;
+    err = grpc_set_socket_dscp(fd, options.dscp);
+    if (!err.ok()) goto error;
+    err = grpc_set_socket_tcp_user_timeout(fd, options, true /* is_client */);
+    if (!err.ok()) goto error;
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
-  if (!GRPC_ERROR_IS_NONE(err)) goto error;
+  if (!err.ok()) goto error;
 
   err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                                          channel_args);
-  if (!GRPC_ERROR_IS_NONE(err)) goto error;
+                                          options);
+  if (!err.ok()) goto error;
 
   goto done;
 
@@ -132,26 +144,30 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   async_connect* ac = static_cast<async_connect*>(acp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            ac->addr_str.c_str(), grpc_error_std_string(error).c_str());
+            ac->addr_str.c_str(), grpc_core::StatusToString(error).c_str());
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
-    grpc_fd_shutdown(
-        ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
+    grpc_fd_shutdown(ac->fd, GRPC_ERROR_CREATE("connect() timed out"));
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
-    grpc_channel_args_destroy(ac->channel_args);
     delete ac;
   }
 }
 
-grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_channel_args* channel_args,
+static grpc_endpoint* grpc_tcp_client_create_from_fd(
+    grpc_fd* fd, const grpc_core::PosixTcpOptions& options,
     absl::string_view addr_str) {
-  return grpc_tcp_create(fd, channel_args, addr_str);
+  return grpc_tcp_create(fd, options, addr_str);
+}
+
+grpc_endpoint* grpc_tcp_create_from_fd(
+    grpc_fd* fd, const grpc_event_engine::experimental::EndpointConfig& config,
+    absl::string_view addr_str) {
+  return grpc_tcp_create(fd, TcpOptionsFromEndpointConfig(config), addr_str);
 }
 
 static void on_writable(void* acp, grpc_error_handle error) {
@@ -165,11 +181,9 @@ static void on_writable(void* acp, grpc_error_handle error) {
   std::string addr_str = ac->addr_str;
   grpc_fd* fd;
 
-  (void)GRPC_ERROR_REF(error);
-
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
-            ac->addr_str.c_str(), grpc_error_std_string(error).c_str());
+            ac->addr_str.c_str(), grpc_core::StatusToString(error).c_str());
   }
 
   gpr_mu_lock(&ac->mu);
@@ -182,15 +196,15 @@ static void on_writable(void* acp, grpc_error_handle error) {
   grpc_timer_cancel(&ac->alarm);
 
   gpr_mu_lock(&ac->mu);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, "Timeout occurred");
+  if (!error.ok()) {
+    error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kOsError,
+                               "Timeout occurred");
     goto finish;
   }
 
   if (connect_cancelled) {
     // The callback should not get scheduled in this case.
-    error = GRPC_ERROR_NONE;
+    error = absl::OkStatus();
     goto finish;
   }
 
@@ -207,35 +221,35 @@ static void on_writable(void* acp, grpc_error_handle error) {
   switch (so_error) {
     case 0:
       grpc_pollset_set_del_fd(ac->interested_parties, fd);
-      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args, ac->addr_str);
+      *ep = grpc_tcp_client_create_from_fd(fd, ac->options, ac->addr_str);
       fd = nullptr;
       break;
     case ENOBUFS:
-      /* We will get one of these errors if we have run out of
-         memory in the kernel for the data structures allocated
-         when you connect a socket.  If this happens it is very
-         likely that if we wait a little bit then try again the
-         connection will work (since other programs or this
-         program will close their network connections and free up
-         memory).  This does _not_ indicate that there is anything
-         wrong with the server we are connecting to, this is a
-         local problem.
+      // We will get one of these errors if we have run out of
+      // memory in the kernel for the data structures allocated
+      // when you connect a socket.  If this happens it is very
+      // likely that if we wait a little bit then try again the
+      // connection will work (since other programs or this
+      // program will close their network connections and free up
+      // memory).  This does _not_ indicate that there is anything
+      // wrong with the server we are connecting to, this is a
+      // local problem.
 
-         If you are looking at this code, then chances are that
-         your program or another program on the same computer
-         opened too many network connections.  The "easy" fix:
-         don't do that! */
+      // If you are looking at this code, then chances are that
+      // your program or another program on the same computer
+      // opened too many network connections.  The "easy" fix:
+      // don't do that!
       gpr_log(GPR_ERROR, "kernel out of buffers");
       gpr_mu_unlock(&ac->mu);
       grpc_fd_notify_on_write(fd, &ac->write_closure);
       return;
     case ECONNREFUSED:
-      /* This error shouldn't happen for anything other than connect(). */
+      // This error shouldn't happen for anything other than connect().
       error = GRPC_OS_ERROR(so_error, "connect");
       break;
     default:
-      /* We don't really know which syscall triggered the problem here,
-         so punt by reporting getsockopt(). */
+      // We don't really know which syscall triggered the problem here,
+      // so punt by reporting getsockopt().
       error = GRPC_OS_ERROR(so_error, "getsockopt(SO_ERROR)");
       break;
   }
@@ -256,20 +270,22 @@ finish:
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     std::string str;
-    bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
+    bool ret = grpc_error_get_str(
+        error, grpc_core::StatusStrProperty::kDescription, &str);
     GPR_ASSERT(ret);
     std::string description =
         absl::StrCat("Failed to connect to remote host: ", str);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, description);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
+    error = grpc_error_set_str(
+        error, grpc_core::StatusStrProperty::kDescription, description);
+    error = grpc_error_set_str(
+        error, grpc_core::StatusStrProperty::kTargetAddress, addr_str);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
     // populated *inside* the lock.
     gpr_mu_destroy(&ac->mu);
-    grpc_channel_args_destroy(ac->channel_args);
     delete ac;
   }
   // Push async connect closure to the executor since this may actually be
@@ -277,56 +293,54 @@ finish:
   // between the core shutdown mu and the connector mu (b/188239051)
   if (!connect_cancelled) {
     grpc_core::Executor::Run(closure, error);
-  } else if (!GRPC_ERROR_IS_NONE(error)) {
-    // Unref the error here because it is not used.
-    (void)GRPC_ERROR_UNREF(error);
   }
 }
 
 grpc_error_handle grpc_tcp_client_prepare_fd(
-    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_resolved_address* mapped_addr, int* fd) {
+    const grpc_core::PosixTcpOptions& options,
+    const grpc_resolved_address* addr, grpc_resolved_address* mapped_addr,
+    int* fd) {
   grpc_dualstack_mode dsmode;
   grpc_error_handle error;
   *fd = -1;
-  /* Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
-     v6. */
+  // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
+  // v6.
   if (!grpc_sockaddr_to_v4mapped(addr, mapped_addr)) {
-    /* addr is v4 mapped to v6 or v6. */
+    // addr is v4 mapped to v6 or v6.
     memcpy(mapped_addr, addr, sizeof(*mapped_addr));
   }
   error =
       grpc_create_dualstack_socket(mapped_addr, SOCK_STREAM, 0, &dsmode, fd);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     return error;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
-    /* Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4. */
+    // Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4.
     if (!grpc_sockaddr_is_v4mapped(addr, mapped_addr)) {
       memcpy(mapped_addr, addr, sizeof(*mapped_addr));
     }
   }
-  if ((error = prepare_socket(mapped_addr, *fd, channel_args)) !=
-      GRPC_ERROR_NONE) {
+  if ((error = prepare_socket(mapped_addr, *fd, options)) != absl::OkStatus()) {
     return error;
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 int64_t grpc_tcp_client_create_from_prepared_fd(
     grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
-    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_core::Timestamp deadline, grpc_endpoint** ep) {
+    const grpc_core::PosixTcpOptions& options,
+    const grpc_resolved_address* addr, grpc_core::Timestamp deadline,
+    grpc_endpoint** ep) {
   int err;
   do {
     err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr),
                   addr->len);
   } while (err < 0 && errno == EINTR);
+  int connect_errno = (err < 0) ? errno : 0;
 
   auto addr_uri = grpc_sockaddr_to_uri(addr);
   if (!addr_uri.ok()) {
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_uri.status().ToString());
+    grpc_error_handle error = GRPC_ERROR_CREATE(addr_uri.status().ToString());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
   }
@@ -334,7 +348,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   std::string name = absl::StrCat("tcp-client:", addr_uri.value());
   grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
   int64_t connection_id = 0;
-  if (errno == EWOULDBLOCK || errno == EINPROGRESS) {
+  if (connect_errno == EWOULDBLOCK || connect_errno == EINPROGRESS) {
     // Connection is still in progress.
     connection_id = g_connection_id.fetch_add(1, std::memory_order_acq_rel);
   }
@@ -342,16 +356,16 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   if (err >= 0) {
     // Connection already succeded. Return 0 to discourage any cancellation
     // attempts.
-    *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, addr_uri.value());
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+    *ep = grpc_tcp_client_create_from_fd(fdobj, options, addr_uri.value());
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
     return 0;
   }
-  if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
+  if (connect_errno != EWOULDBLOCK && connect_errno != EINPROGRESS) {
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
-    grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                               addr_uri.value());
+    grpc_error_handle error = GRPC_OS_ERROR(connect_errno, "connect");
+    error = grpc_error_set_str(
+        error, grpc_core::StatusStrProperty::kTargetAddress, addr_uri.value());
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
@@ -371,7 +385,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
                     grpc_schedule_on_exec_ctx);
-  ac->channel_args = grpc_channel_args_copy(channel_args);
+  ac->options = options;
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
@@ -395,24 +409,32 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
 
 static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                            grpc_pollset_set* interested_parties,
-                           const grpc_channel_args* channel_args,
+                           const EndpointConfig& config,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::event_engine_tcp_client_connect(
+        closure, ep, config, addr, deadline);
+  }
   grpc_resolved_address mapped_addr;
+  grpc_core::PosixTcpOptions options(TcpOptionsFromEndpointConfig(config));
   int fd = -1;
   grpc_error_handle error;
   *ep = nullptr;
-  if ((error = grpc_tcp_client_prepare_fd(channel_args, addr, &mapped_addr,
-                                          &fd)) != GRPC_ERROR_NONE) {
+  if ((error = grpc_tcp_client_prepare_fd(options, addr, &mapped_addr, &fd)) !=
+      absl::OkStatus()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
   }
-  return grpc_tcp_client_create_from_prepared_fd(interested_parties, closure,
-                                                 fd, channel_args, &mapped_addr,
-                                                 deadline, ep);
+  return grpc_tcp_client_create_from_prepared_fd(
+      interested_parties, closure, fd, options, &mapped_addr, deadline, ep);
 }
 
 static bool tcp_cancel_connect(int64_t connection_handle) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::
+        event_engine_tcp_client_cancel_connect(connection_handle);
+  }
   if (connection_handle <= 0) {
     return false;
   }
@@ -450,7 +472,7 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
     // Shutdown the fd. This would cause on_writable to run as soon as possible.
     // We dont need to pass a custom error here because it wont be used since
     // the on_connect_closure is not run if connect cancellation is successfull.
-    grpc_fd_shutdown(ac->fd, GRPC_ERROR_NONE);
+    grpc_fd_shutdown(ac->fd, absl::OkStatus());
   }
   bool done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -458,7 +480,6 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
     // This is safe even outside the lock, because "done", the sentinel, is
     // populated *inside* the lock.
     gpr_mu_destroy(&ac->mu);
-    grpc_channel_args_destroy(ac->channel_args);
     delete ac;
   }
   return connection_cancel_success;

@@ -27,8 +27,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:avl",
-        "//test/core/util:grpc_suppressions",
+        "//src/core:avl",
     ],
 )
 
@@ -42,7 +41,7 @@ grpc_proto_fuzzer(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:avl",
+        "//src/core:avl",
         "//test/core/util:grpc_test_util",
     ],
 )

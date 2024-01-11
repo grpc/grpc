@@ -53,8 +53,9 @@ def _get_substring_hamming_distance(candidate, target):
     if len(target) > len(candidate):
         raise ValueError("Candidate must be at least as long as target.")
     for i in range(len(candidate) - len(target) + 1):
-        distance = _get_hamming_distance(candidate[i:i + len(target)].lower(),
-                                         target.lower())
+        distance = _get_hamming_distance(
+            candidate[i : i + len(target)].lower(), target.lower()
+        )
         if min_distance is None or distance < min_distance:
             min_distance = distance
     return min_distance
@@ -63,7 +64,7 @@ def _get_substring_hamming_distance(candidate, target):
 def _get_hash(secret):
     hasher = hashlib.sha1()
     hasher.update(secret)
-    return base64.b64encode(hasher.digest()).decode('ascii')
+    return base64.b64encode(hasher.digest()).decode("ascii")
 
 
 class ResourceLimitExceededError(Exception):
@@ -80,7 +81,7 @@ def _bytestrings_of_length(length):
       All bytestrings of length `length`.
     """
     for digits in itertools.product(range(_BYTE_MAX), repeat=length):
-        yield b''.join(struct.pack('B', i) for i in digits)
+        yield b"".join(struct.pack("B", i) for i in digits)
 
 
 def _all_bytestrings():
@@ -92,15 +93,18 @@ def _all_bytestrings():
       All bytestrings in ascending order of length.
     """
     for bytestring in itertools.chain.from_iterable(
-            _bytestrings_of_length(length) for length in itertools.count()):
+        _bytestrings_of_length(length) for length in itertools.count()
+    ):
         yield bytestring
 
 
-def search(target,
-           ideal_distance,
-           stop_event,
-           maximum_hashes,
-           interesting_hamming_distance=None):
+def search(
+    target,
+    ideal_distance,
+    stop_event,
+    maximum_hashes,
+    interesting_hamming_distance=None,
+):
     """Find candidate strings.
 
     Search through the space of all bytestrings, in order of increasing length,
@@ -130,18 +134,23 @@ def search(target,
             return
         candidate_hash = _get_hash(secret)
         distance = _get_substring_hamming_distance(candidate_hash, target)
-        if interesting_hamming_distance is not None and distance <= interesting_hamming_distance:
+        if (
+            interesting_hamming_distance is not None
+            and distance <= interesting_hamming_distance
+        ):
             # Surface interesting candidates, but don't stop.
             yield hash_name_pb2.HashNameResponse(
                 secret=base64.b64encode(secret),
                 hashed_name=candidate_hash,
-                hamming_distance=distance)
+                hamming_distance=distance,
+            )
         elif distance <= ideal_distance:
             # Yield ideal candidate and end the stream.
             yield hash_name_pb2.HashNameResponse(
                 secret=base64.b64encode(secret),
                 hashed_name=candidate_hash,
-                hamming_distance=distance)
+                hamming_distance=distance,
+            )
             return
         hashes_computed += 1
         if hashes_computed == maximum_hashes:

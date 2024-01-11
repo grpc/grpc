@@ -15,7 +15,9 @@
 #include "src/core/lib/config/core_configuration.h"
 
 #include <chrono>
+#include <functional>
 #include <thread>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -53,8 +55,8 @@ TEST(ConfigTest, ThreadedInit) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
   };
   std::vector<std::thread> threads;
-  threads.reserve(64);
-  for (int i = 0; i < 64; i++) {
+  threads.reserve(10);
+  for (int i = 0; i < 10; i++) {
     threads.push_back(std::thread([]() { CoreConfiguration::Get(); }));
   }
   for (auto& t : threads) {

@@ -22,7 +22,7 @@ In addition, when handling requests, if the initial request metadata contains th
  - If the value matches `sleep-<int>`, the server should wait the specified number of seconds before resuming behavior matching and RPC processing.
  - If the value matches `keep-open`, the server should never respond to the request and behavior matching ends.
  - If the value matches `error-code-<int>`, the server should respond with the specified status code and behavior matching ends.
- - If the value matches `success-on-retry-attempt-<int>`, and the value of the `grpc-previous-rpc-attempts` metadata field is equal to the specified number, the normal RPC processing should resume and behavior matching ends.
+ - If the value matches `succeed-on-retry-attempt-<int>`, and the value of the `grpc-previous-rpc-attempts` metadata field is equal to the specified number, the normal RPC processing should resume and behavior matching ends.
  - A value can have a prefix `hostname=<string>` followed by a space. In that case, the rest of the value should only be applied if the specified hostname matches the server's hostname.
 
 The `rpc-behavior` header value can have multiple options separated by commas. In that case, the value should be split by commas and the options should be applied in the order specified. If a request has multiple `rpc-behavior` metadata values, each one should be processed that way in order.
@@ -780,3 +780,55 @@ backends and all requests end with the `OK` status.
 3.  The test driver removes the client configuration to send metadata. The
 driver asserts that during some 10-second interval, traffic is equally
 distributed among the five backends, and all requests end with the `OK` status.
+
+### custom_lb
+This test verifies that a custom load balancer policy can be configured in the
+client. It also verifies that when given a list of policies the client can
+ignore a bad one and try the next one on the list until it finds a good one.
+
+Client parameters:
+
+1.  --num_channels=1
+2.  --qps=100
+
+Load balancer configuration:
+
+One MIG with a single backend.
+
+The `backendService` will have the following `localityLbPolicies` entry:
+```json
+[ 
+  {
+    "customPolicy": {
+      "name": "test.ThisLoadBalancerDoesNotExist",
+      "data": "{ \"foo\": \"bar\" }"
+    }
+  },
+  {
+    "customPolicy": {
+      "name": "test.RpcBehaviorLoadBalancer",
+      "data": "{ \"rpcBehavior\": \"error-code-15\" }"
+    }
+  }
+]
+```
+
+The client **should not** implement the `test.ThisLoadBalancerDoesNotExist`, but
+it **should** implement `test.RpcBehaviorLoadBalancer`. The
+`RpcBehaviorLoadBalancer` implementation should set the rpcBehavior request
+header based on the configuration it is provided. The `rpcBehavior` field value
+in the config should be used as the header value.
+
+Assert:
+
+1. The first custom policy is ignored as the client does not have an
+implementation for it.
+2. The second policy, that **is** implemented by the client, has been applied
+by the client. This can be asserted by confirming that each request has
+failed with the configured error code 15 (DATA_LOSS). We should get this error
+because the test server knows to look for the `rpcBehavior` header and fail
+a request with a provided error code.
+
+Note that while this test is for load balancing, we can get by with a single
+backend as our test load balancer does not perform any actual load balancing,
+instead only applying the `rpcBehavior` header to each request.

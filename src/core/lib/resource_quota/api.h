@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_API_H
-#define GRPC_CORE_LIB_RESOURCE_QUOTA_API_H
+#ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_API_H
+#define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_API_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -36,8 +37,13 @@ constexpr size_t kResourceQuotaChannelSize = 34 * 1024;
 // UB if not set.
 ResourceQuotaRefPtr ResourceQuotaFromChannelArgs(const grpc_channel_args* args);
 
+// Retrieve the resource quota from the EndpointConfig.
+// Returns nullptr if not set.
+ResourceQuotaRefPtr ResourceQuotaFromEndpointConfig(
+    const grpc_event_engine::experimental::EndpointConfig& config);
+
 void RegisterResourceQuota(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_RESOURCE_QUOTA_API_H
+#endif  // GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_API_H

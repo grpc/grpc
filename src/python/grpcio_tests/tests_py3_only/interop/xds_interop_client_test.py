@@ -59,41 +59,49 @@ def _set_union(a: Iterable, b: Iterable) -> Set:
 def _start_python_with_args(
     file: str, args: List[str]
 ) -> Tuple[subprocess.Popen, tempfile.TemporaryFile, tempfile.TemporaryFile]:
-    with tempfile.TemporaryFile(mode='r') as stdout:
-        with tempfile.TemporaryFile(mode='r') as stderr:
-            proc = subprocess.Popen((sys.executable, file) + tuple(args),
-                                    stdout=stdout,
-                                    stderr=stderr)
+    with tempfile.TemporaryFile(mode="r") as stdout:
+        with tempfile.TemporaryFile(mode="r") as stderr:
+            proc = subprocess.Popen(
+                (sys.executable, file) + tuple(args),
+                stdout=stdout,
+                stderr=stderr,
+            )
             yield proc, stdout, stderr
 
 
-def _dump_stream(process_name: str, stream_name: str,
-                 stream: tempfile.TemporaryFile):
+def _dump_stream(
+    process_name: str, stream_name: str, stream: tempfile.TemporaryFile
+):
     sys.stderr.write(f"{process_name} {stream_name}:\n")
     stream.seek(0)
     sys.stderr.write(stream.read())
 
 
-def _dump_streams(process_name: str, stdout: tempfile.TemporaryFile,
-                  stderr: tempfile.TemporaryFile):
+def _dump_streams(
+    process_name: str,
+    stdout: tempfile.TemporaryFile,
+    stderr: tempfile.TemporaryFile,
+):
     _dump_stream(process_name, "stdout", stdout)
     _dump_stream(process_name, "stderr", stderr)
     sys.stderr.write(f"End {process_name} output.\n")
 
 
 def _index_accumulated_stats(
-    response: messages_pb2.LoadBalancerAccumulatedStatsResponse
+    response: messages_pb2.LoadBalancerAccumulatedStatsResponse,
 ) -> Mapping[str, Mapping[int, int]]:
     indexed = collections.defaultdict(lambda: collections.defaultdict(int))
     for _, method_str in _METHODS:
         for status in response.stats_per_method[method_str].result.keys():
             indexed[method_str][status] = response.stats_per_method[
-                method_str].result[status]
+                method_str
+            ].result[status]
     return indexed
 
 
-def _subtract_indexed_stats(a: Mapping[str, Mapping[int, int]],
-                            b: Mapping[str, Mapping[int, int]]):
+def _subtract_indexed_stats(
+    a: Mapping[str, Mapping[int, int]], b: Mapping[str, Mapping[int, int]]
+):
     c = collections.defaultdict(lambda: collections.defaultdict(int))
     all_methods = _set_union(a.keys(), b.keys())
     for method in all_methods:
@@ -103,26 +111,29 @@ def _subtract_indexed_stats(a: Mapping[str, Mapping[int, int]],
     return c
 
 
-def _collect_stats(stats_port: int,
-                   duration: int) -> Mapping[str, Mapping[int, int]]:
+def _collect_stats(
+    stats_port: int, duration: int
+) -> Mapping[str, Mapping[int, int]]:
     settings = {
         "target": f"localhost:{stats_port}",
         "insecure": True,
     }
     response = test_pb2_grpc.LoadBalancerStatsService.GetClientAccumulatedStats(
-        messages_pb2.LoadBalancerAccumulatedStatsRequest(), **settings)
+        messages_pb2.LoadBalancerAccumulatedStatsRequest(), **settings
+    )
     before = _index_accumulated_stats(response)
     time.sleep(duration)
     response = test_pb2_grpc.LoadBalancerStatsService.GetClientAccumulatedStats(
-        messages_pb2.LoadBalancerAccumulatedStatsRequest(), **settings)
+        messages_pb2.LoadBalancerAccumulatedStatsRequest(), **settings
+    )
     after = _index_accumulated_stats(response)
     return _subtract_indexed_stats(after, before)
 
 
 class XdsInteropClientTest(unittest.TestCase):
-
-    def _assert_client_consistent(self, server_port: int, stats_port: int,
-                                  qps: int, num_channels: int):
+    def _assert_client_consistent(
+        self, server_port: int, stats_port: int, qps: int, num_channels: int
+    ):
         settings = {
             "target": f"localhost:{stats_port}",
             "insecure": True,
@@ -131,7 +142,8 @@ class XdsInteropClientTest(unittest.TestCase):
             target_method, target_method_str = _METHODS[i % len(_METHODS)]
             test_pb2_grpc.XdsUpdateClientConfigureService.Configure(
                 messages_pb2.ClientConfigureRequest(types=[target_method]),
-                **settings)
+                **settings,
+            )
             delta = _collect_stats(stats_port, _ITERATION_DURATION_SECONDS)
             logging.info("Delta: %s", delta)
             for _, method_str in _METHODS:
@@ -145,27 +157,34 @@ class XdsInteropClientTest(unittest.TestCase):
         _, server_port, socket = framework_common.get_socket()
 
         with _start_python_with_args(
-                _SERVER_PATH,
-            [f"--port={server_port}", f"--maintenance_port={server_port}"
-            ]) as (server, server_stdout, server_stderr):
+            _SERVER_PATH,
+            [f"--port={server_port}", f"--maintenance_port={server_port}"],
+        ) as (server, server_stdout, server_stderr):
             # Send RPC to server to make sure it's running.
             logging.info("Sending RPC to server.")
-            test_pb2_grpc.TestService.EmptyCall(empty_pb2.Empty(),
-                                                f"localhost:{server_port}",
-                                                insecure=True,
-                                                wait_for_ready=True)
+            test_pb2_grpc.TestService.EmptyCall(
+                empty_pb2.Empty(),
+                f"localhost:{server_port}",
+                insecure=True,
+                wait_for_ready=True,
+            )
             logging.info("Server successfully started.")
             socket.close()
             _, stats_port, stats_socket = framework_common.get_socket()
-            with _start_python_with_args(_CLIENT_PATH, [
+            with _start_python_with_args(
+                _CLIENT_PATH,
+                [
                     f"--server=localhost:{server_port}",
-                    f"--stats_port={stats_port}", f"--qps={_QPS}",
-                    f"--num_channels={_NUM_CHANNELS}"
-            ]) as (client, client_stdout, client_stderr):
+                    f"--stats_port={stats_port}",
+                    f"--qps={_QPS}",
+                    f"--num_channels={_NUM_CHANNELS}",
+                ],
+            ) as (client, client_stdout, client_stderr):
                 stats_socket.close()
                 try:
-                    self._assert_client_consistent(server_port, stats_port,
-                                                   _QPS, _NUM_CHANNELS)
+                    self._assert_client_consistent(
+                        server_port, stats_port, _QPS, _NUM_CHANNELS
+                    )
                 except:
                     _dump_streams("server", server_stdout, server_stderr)
                     _dump_streams("client", client_stdout, client_stderr)
@@ -177,6 +196,6 @@ class XdsInteropClientTest(unittest.TestCase):
                     client.wait(timeout=_SUBPROCESS_TIMEOUT_SECONDS)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

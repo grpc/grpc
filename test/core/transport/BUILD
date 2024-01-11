@@ -46,6 +46,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -60,6 +61,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -74,6 +76,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -92,22 +95,26 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "pid_controller_test",
-    srcs = ["pid_controller_test.cc"],
+    name = "promise_endpoint_test",
+    srcs = ["promise_endpoint_test.cc"],
     external_deps = [
         "gtest",
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//src/core:activity",
+        "//src/core:grpc_promise_endpoint",
+        "//src/core:join",
+        "//src/core:seq",
+        "//test/core/promise:test_wakeup_schedulers",
     ],
 )
 
 grpc_cc_test(
     name = "status_conversion_test",
     srcs = ["status_conversion_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -115,6 +122,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -131,5 +139,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

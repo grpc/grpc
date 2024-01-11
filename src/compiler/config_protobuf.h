@@ -50,11 +50,13 @@
 #endif
 
 #ifndef GRPC_CUSTOM_CSHARP_GETCLASSNAME
-#include <google/protobuf/compiler/csharp/csharp_names.h>
+#include <google/protobuf/compiler/csharp/names.h>
 #define GRPC_CUSTOM_CSHARP_GETCLASSNAME \
   ::google::protobuf::compiler::csharp::GetClassName
 #define GRPC_CUSTOM_CSHARP_GETFILENAMESPACE \
   ::google::protobuf::compiler::csharp::GetFileNamespace
+#define GRPC_CUSTOM_CSHARP_GETOUTPUTFILE \
+  ::google::protobuf::compiler::csharp::GetOutputFile
 #define GRPC_CUSTOM_CSHARP_GETREFLECTIONCLASSNAME \
   ::google::protobuf::compiler::csharp::GetReflectionClassName
 #endif

@@ -20,6 +20,9 @@ echo "!TIME!: prepare_build_windows.bat started"
 @rem set path to CMake
 set PATH=C:\tools\msys64\usr\bin;C:\Python37;C:\Program Files\CMake\bin;%PATH%
 
+@rem Print image ID of the windows kokoro image being used.
+cat C:\image_id.txt
+
 @rem create "python3" link that normally doesn't exist
 dir C:\Python37\
 mklink C:\Python37\python3.exe C:\Python37\python.exe
@@ -52,7 +55,7 @@ nasm
 
 @rem Install ccache
 mkdir C:\ccache
-curl -sSL --fail -o C:\ccache\ccache.exe https://storage.googleapis.com/grpc-build-helper/ccache-4.6-windows-64/ccache.exe || goto :error
+curl -sSL --fail -o C:\ccache\ccache.exe https://storage.googleapis.com/grpc-build-helper/ccache-4.8-windows-64/ccache.exe || goto :error
 set PATH=C:\ccache;%PATH%
 ccache --version
 
@@ -77,6 +80,10 @@ set PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
 set NUGET_XMLDOC_MODE=skip
 set DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
 set DOTNET_CLI_TELEMETRY_OPTOUT=true
+
+@rem Workaround https://github.com/NuGet/Home/issues/11099 that exhibits
+@rem on windows workers as "The repository primary signature's timestamping certificate is not trusted by the trust provider"
+set NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY=3,1000
 
 @rem Only install Python interpreters if we are running Python tests
 If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (

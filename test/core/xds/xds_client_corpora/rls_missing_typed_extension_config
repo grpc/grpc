@@ -1,0 +1,26 @@
+bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:-257\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+actions {
+  start_watch {
+    resource_type {
+      route_config {
+      }
+    }
+  }
+}
+actions {
+  send_message_to_client {
+    stream_id {
+      ads {
+      }
+    }
+    response {
+      version_info: "grpc.lookup.v1.RouteLookup"
+      resources {
+        type_url: "envoy.config.route.v3.RouteConfiguration"
+        value: "\010\001b\000"
+      }
+      type_url: "envoy.config.route.v3.RouteConfiguration"
+      nonce: "/@\001\000\\\000\000x141183468234106731687303715884105729"
+    }
+  }
+}

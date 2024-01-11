@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -50,6 +50,8 @@ struct grpc_tls_certificate_verifier
                       absl::Status* sync_status) = 0;
   // Operations that will be performed when a request is cancelled.
   // This is only needed when in async mode.
+  // TODO(roth): This needs to take an absl::Status argument so that we
+  // can pass the cancellation status through to the check_peer callback.
   virtual void Cancel(grpc_tls_custom_verification_check_request* request) = 0;
 
   // Compares this grpc_tls_certificate_verifier object with \a other.
@@ -165,4 +167,4 @@ class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H

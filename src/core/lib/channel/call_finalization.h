@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
-#define GRPC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
 
 #include <grpc/support/port_platform.h>
 
 #include <utility>
-
-#include "absl/utility/utility.h"
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"
@@ -38,7 +36,7 @@ class CallFinalization {
  public:
   // Add a step to the finalization context.
   // Takes a callable with a signature compatible with:
-  // (const grpc_call_final_info&) -> void.
+  // (const grpc_call_final_info*) -> void.
   // Finalizers are run in the reverse order they are added.
   template <typename F>
   void Add(F&& t) {
@@ -47,7 +45,7 @@ class CallFinalization {
   }
 
   void Run(const grpc_call_final_info* final_info) {
-    if (Finalizer* f = absl::exchange(first_, nullptr)) f->Run(final_info);
+    if (Finalizer* f = std::exchange(first_, nullptr)) f->Run(final_info);
   }
 
  private:
@@ -87,4 +85,4 @@ struct ContextType<CallFinalization> {};
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H

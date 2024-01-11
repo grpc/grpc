@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_UTILS_NDK_BINDER_H
-#define GRPC_CORE_EXT_TRANSPORT_BINDER_UTILS_NDK_BINDER_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_UTILS_NDK_BINDER_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_UTILS_NDK_BINDER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -102,6 +102,6 @@ jobject AIBinder_toJavaBinder(JNIEnv* env, AIBinder* binder);
 
 }  // namespace grpc_binder
 
-#endif /*GPR_SUPPORT_BINDER_TRANSPORT*/
+#endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_UTILS_NDK_BINDER_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_UTILS_NDK_BINDER_H

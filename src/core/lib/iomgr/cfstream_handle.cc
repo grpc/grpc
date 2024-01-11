@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -81,15 +81,14 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
       stream_error = CFReadStreamCopyError(stream);
       error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "read error"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
       CFRelease(stream_error);
-      handle->open_event_.SetShutdown(GRPC_ERROR_REF(error));
-      handle->write_event_.SetShutdown(GRPC_ERROR_REF(error));
-      handle->read_event_.SetShutdown(GRPC_ERROR_REF(error));
-      GRPC_ERROR_UNREF(error);
+      handle->open_event_.SetShutdown(error);
+      handle->write_event_.SetShutdown(error);
+      handle->read_event_.SetShutdown(error);
       break;
     default:
-      GPR_UNREACHABLE_CODE(return );
+      GPR_UNREACHABLE_CODE(return);
   }
 }
 void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
@@ -116,15 +115,14 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
       stream_error = CFWriteStreamCopyError(stream);
       error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write error"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
       CFRelease(stream_error);
-      handle->open_event_.SetShutdown(GRPC_ERROR_REF(error));
-      handle->write_event_.SetShutdown(GRPC_ERROR_REF(error));
-      handle->read_event_.SetShutdown(GRPC_ERROR_REF(error));
-      GRPC_ERROR_UNREF(error);
+      handle->open_event_.SetShutdown(error);
+      handle->write_event_.SetShutdown(error);
+      handle->read_event_.SetShutdown(error);
       break;
     default:
-      GPR_UNREACHABLE_CODE(return );
+      GPR_UNREACHABLE_CODE(return);
   }
 }
 
@@ -172,10 +170,9 @@ void CFStreamHandle::NotifyOnWrite(grpc_closure* closure) {
 }
 
 void CFStreamHandle::Shutdown(grpc_error_handle error) {
-  open_event_.SetShutdown(GRPC_ERROR_REF(error));
-  read_event_.SetShutdown(GRPC_ERROR_REF(error));
-  write_event_.SetShutdown(GRPC_ERROR_REF(error));
-  GRPC_ERROR_UNREF(error);
+  open_event_.SetShutdown(error);
+  read_event_.SetShutdown(error);
+  write_event_.SetShutdown(error);
 }
 
 void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
@@ -191,7 +188,7 @@ void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
 void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
-    gpr_log(GPR_DEBUG,
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "CFStream Handle unref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,
             reason, val, val - 1);
   }
@@ -202,9 +199,9 @@ void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
 
 #else
 
-/* Creating a phony function so that the grpc_cfstream library will be
- * non-empty.
- */
+// Creating a phony function so that the grpc_cfstream library will be
+// non-empty.
+//
 void CFStreamPhony() {}
 
 #endif

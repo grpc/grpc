@@ -14,6 +14,7 @@
 
 import contextlib
 import importlib
+import itertools
 import os
 from os import path
 import pkgutil
@@ -28,47 +29,46 @@ from grpc.beta import interfaces
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
 from grpc_tools import protoc
-from six import moves
 
 from tests.unit.framework.common import test_constants
 
-_RELATIVE_PROTO_PATH = 'relative_proto_path'
-_RELATIVE_PYTHON_OUT = 'relative_python_out'
+_RELATIVE_PROTO_PATH = "relative_proto_path"
+_RELATIVE_PYTHON_OUT = "relative_python_out"
 
 _PROTO_FILES_PATH_COMPONENTS = (
     (
-        'beta_grpc_plugin_test',
-        'payload',
-        'test_payload.proto',
+        "beta_grpc_plugin_test",
+        "payload",
+        "test_payload.proto",
     ),
     (
-        'beta_grpc_plugin_test',
-        'requests',
-        'r',
-        'test_requests.proto',
+        "beta_grpc_plugin_test",
+        "requests",
+        "r",
+        "test_requests.proto",
     ),
     (
-        'beta_grpc_plugin_test',
-        'responses',
-        'test_responses.proto',
+        "beta_grpc_plugin_test",
+        "responses",
+        "test_responses.proto",
     ),
     (
-        'beta_grpc_plugin_test',
-        'service',
-        'test_service.proto',
+        "beta_grpc_plugin_test",
+        "service",
+        "test_service.proto",
     ),
 )
 
-_PAYLOAD_PB2 = 'beta_grpc_plugin_test.payload.test_payload_pb2'
-_REQUESTS_PB2 = 'beta_grpc_plugin_test.requests.r.test_requests_pb2'
-_RESPONSES_PB2 = 'beta_grpc_plugin_test.responses.test_responses_pb2'
-_SERVICE_PB2 = 'beta_grpc_plugin_test.service.test_service_pb2'
+_PAYLOAD_PB2 = "beta_grpc_plugin_test.payload.test_payload_pb2"
+_REQUESTS_PB2 = "beta_grpc_plugin_test.requests.r.test_requests_pb2"
+_RESPONSES_PB2 = "beta_grpc_plugin_test.responses.test_responses_pb2"
+_SERVICE_PB2 = "beta_grpc_plugin_test.service.test_service_pb2"
 
 # Identifiers of entities we expect to find in the generated module.
-SERVICER_IDENTIFIER = 'BetaTestServiceServicer'
-STUB_IDENTIFIER = 'BetaTestServiceStub'
-SERVER_FACTORY_IDENTIFIER = 'beta_create_TestService_server'
-STUB_FACTORY_IDENTIFIER = 'beta_create_TestService_stub'
+SERVICER_IDENTIFIER = "BetaTestServiceServicer"
+STUB_IDENTIFIER = "BetaTestServiceStub"
+SERVER_FACTORY_IDENTIFIER = "beta_create_TestService_server"
+STUB_FACTORY_IDENTIFIER = "beta_create_TestService_stub"
 
 
 @contextlib.contextmanager
@@ -82,7 +82,7 @@ def _system_path(path_insertion):
 def _create_directory_tree(root, path_components_sequence):
     created = set()
     for path_components in path_components_sequence:
-        thus_far = ''
+        thus_far = ""
         for path_component in path_components:
             relative_path = path.join(thus_far, path_component)
             if relative_path not in created:
@@ -94,21 +94,22 @@ def _create_directory_tree(root, path_components_sequence):
 def _massage_proto_content(raw_proto_content):
     imports_substituted = raw_proto_content.replace(
         b'import "tests/protoc_plugin/protos/',
-        b'import "beta_grpc_plugin_test/')
+        b'import "beta_grpc_plugin_test/',
+    )
     package_statement_substituted = imports_substituted.replace(
-        b'package grpc_protoc_plugin;', b'package beta_grpc_protoc_plugin;')
+        b"package grpc_protoc_plugin;", b"package beta_grpc_protoc_plugin;"
+    )
     return package_statement_substituted
 
 
 def _packagify(directory):
     for subdirectory, _, _ in os.walk(directory):
-        init_file_name = path.join(subdirectory, '__init__.py')
-        with open(init_file_name, 'wb') as init_file:
-            init_file.write(b'')
+        init_file_name = path.join(subdirectory, "__init__.py")
+        with open(init_file_name, "wb") as init_file:
+            init_file.write(b"")
 
 
 class _ServicerMethods(object):
-
     def __init__(self, payload_pb2, responses_pb2):
         self._condition = threading.Condition()
         self._paused = False
@@ -143,7 +144,7 @@ class _ServicerMethods(object):
     def UnaryCall(self, request, unused_rpc_context):
         response = self._responses_pb2.SimpleResponse()
         response.payload.payload_type = self._payload_pb2.COMPRESSABLE
-        response.payload.payload_compressable = 'a' * request.response_size
+        response.payload.payload_compressable = "a" * request.response_size
         self._control()
         return response
 
@@ -151,7 +152,7 @@ class _ServicerMethods(object):
         for parameter in request.response_parameters:
             response = self._responses_pb2.StreamingOutputCallResponse()
             response.payload.payload_type = self._payload_pb2.COMPRESSABLE
-            response.payload.payload_compressable = 'a' * parameter.size
+            response.payload.payload_compressable = "a" * parameter.size
             self._control()
             yield response
 
@@ -169,7 +170,7 @@ class _ServicerMethods(object):
             for parameter in request.response_parameters:
                 response = self._responses_pb2.StreamingOutputCallResponse()
                 response.payload.payload_type = self._payload_pb2.COMPRESSABLE
-                response.payload.payload_compressable = 'a' * parameter.size
+                response.payload.payload_compressable = "a" * parameter.size
                 self._control()
                 yield response
 
@@ -179,7 +180,7 @@ class _ServicerMethods(object):
             for parameter in request.response_parameters:
                 response = self._responses_pb2.StreamingOutputCallResponse()
                 response.payload.payload_type = self._payload_pb2.COMPRESSABLE
-                response.payload.payload_compressable = 'a' * parameter.size
+                response.payload.payload_compressable = "a" * parameter.size
                 self._control()
                 responses.append(response)
         for response in responses:
@@ -190,18 +191,17 @@ class _ServicerMethods(object):
 def _CreateService(payload_pb2, responses_pb2, service_pb2):
     """Provides a servicer backend and a stub.
 
-  The servicer is just the implementation of the actual servicer passed to the
-  face player of the python RPC implementation; the two are detached.
+    The servicer is just the implementation of the actual servicer passed to the
+    face player of the python RPC implementation; the two are detached.
 
-  Yields:
-    A (servicer_methods, stub) pair where servicer_methods is the back-end of
-      the service bound to the stub and stub is the stub on which to invoke
-      RPCs.
-  """
+    Yields:
+      A (servicer_methods, stub) pair where servicer_methods is the back-end of
+        the service bound to the stub and stub is the stub on which to invoke
+        RPCs.
+    """
     servicer_methods = _ServicerMethods(payload_pb2, responses_pb2)
 
     class Servicer(getattr(service_pb2, SERVICER_IDENTIFIER)):
-
         def UnaryCall(self, request, context):
             return servicer_methods.UnaryCall(request, context)
 
@@ -219,9 +219,9 @@ def _CreateService(payload_pb2, responses_pb2, service_pb2):
 
     servicer = Servicer()
     server = getattr(service_pb2, SERVER_FACTORY_IDENTIFIER)(servicer)
-    port = server.add_insecure_port('[::]:0')
+    port = server.add_insecure_port("[::]:0")
     server.start()
-    channel = implementations.insecure_channel('localhost', port)
+    channel = implementations.insecure_channel("localhost", port)
     stub = getattr(service_pb2, STUB_FACTORY_IDENTIFIER)(channel)
     yield servicer_methods, stub
     server.stop(0)
@@ -231,24 +231,24 @@ def _CreateService(payload_pb2, responses_pb2, service_pb2):
 def _CreateIncompleteService(service_pb2):
     """Provides a servicer backend that fails to implement methods and its stub.
 
-  The servicer is just the implementation of the actual servicer passed to the
-  face player of the python RPC implementation; the two are detached.
-  Args:
-    service_pb2: The service_pb2 module generated by this test.
-  Yields:
-    A (servicer_methods, stub) pair where servicer_methods is the back-end of
-      the service bound to the stub and stub is the stub on which to invoke
-      RPCs.
-  """
+    The servicer is just the implementation of the actual servicer passed to the
+    face player of the python RPC implementation; the two are detached.
+    Args:
+      service_pb2: The service_pb2 module generated by this test.
+    Yields:
+      A (servicer_methods, stub) pair where servicer_methods is the back-end of
+        the service bound to the stub and stub is the stub on which to invoke
+        RPCs.
+    """
 
     class Servicer(getattr(service_pb2, SERVICER_IDENTIFIER)):
         pass
 
     servicer = Servicer()
     server = getattr(service_pb2, SERVER_FACTORY_IDENTIFIER)(servicer)
-    port = server.add_insecure_port('[::]:0')
+    port = server.add_insecure_port("[::]:0")
     server.start()
-    channel = implementations.insecure_channel('localhost', port)
+    channel = implementations.insecure_channel("localhost", port)
     stub = getattr(service_pb2, STUB_FACTORY_IDENTIFIER)(channel)
     yield None, stub
     server.stop(0)
@@ -258,7 +258,7 @@ def _streaming_input_request_iterator(payload_pb2, requests_pb2):
     for _ in range(3):
         request = requests_pb2.StreamingInputCallRequest()
         request.payload.payload_type = payload_pb2.COMPRESSABLE
-        request.payload.payload_compressable = 'a'
+        request.payload.payload_compressable = "a"
         yield request
 
 
@@ -284,13 +284,13 @@ def _full_duplex_request_iterator(requests_pb2):
 class PythonPluginTest(unittest.TestCase):
     """Test case for the gRPC Python protoc-plugin.
 
-  While reading these tests, remember that the futures API
-  (`stub.method.future()`) only gives futures for the *response-unary*
-  methods and does not exist for response-streaming methods.
-  """
+    While reading these tests, remember that the futures API
+    (`stub.method.future()`) only gives futures for the *response-unary*
+    methods and does not exist for response-streaming methods.
+    """
 
     def setUp(self):
-        self._directory = tempfile.mkdtemp(dir='.')
+        self._directory = tempfile.mkdtemp(dir=".")
         self._proto_path = path.join(self._directory, _RELATIVE_PROTO_PATH)
         self._python_out = path.join(self._directory, _RELATIVE_PYTHON_OUT)
 
@@ -305,12 +305,14 @@ class PythonPluginTest(unittest.TestCase):
         self._proto_file_names = set()
         for proto_file_path_components in _PROTO_FILES_PATH_COMPONENTS:
             raw_proto_content = pkgutil.get_data(
-                'tests.protoc_plugin.protos',
-                path.join(*proto_file_path_components[1:]))
+                "tests.protoc_plugin.protos",
+                path.join(*proto_file_path_components[1:]),
+            )
             massaged_proto_content = _massage_proto_content(raw_proto_content)
-            proto_file_name = path.join(self._proto_path,
-                                        *proto_file_path_components)
-            with open(proto_file_name, 'wb') as proto_file:
+            proto_file_name = path.join(
+                self._proto_path, *proto_file_path_components
+            )
+            with open(proto_file_name, "wb") as proto_file:
                 proto_file.write(massaged_proto_content)
             self._proto_file_names.add(proto_file_name)
 
@@ -319,10 +321,10 @@ class PythonPluginTest(unittest.TestCase):
 
     def _protoc(self):
         args = [
-            '',
-            '--proto_path={}'.format(self._proto_path),
-            '--python_out={}'.format(self._python_out),
-            '--grpc_python_out=grpc_1_0:{}'.format(self._python_out),
+            "",
+            "--proto_path={}".format(self._proto_path),
+            "--python_out={}".format(self._python_out),
+            "--grpc_python_out=grpc_1_0:{}".format(self._python_out),
         ] + list(self._proto_file_names)
         protoc_exit_code = protoc.main(args)
         self.assertEqual(0, protoc_exit_code)
@@ -340,18 +342,22 @@ class PythonPluginTest(unittest.TestCase):
 
         # check that we can access the generated module and its members.
         self.assertIsNotNone(
-            getattr(self._service_pb2, SERVICER_IDENTIFIER, None))
+            getattr(self._service_pb2, SERVICER_IDENTIFIER, None)
+        )
         self.assertIsNotNone(getattr(self._service_pb2, STUB_IDENTIFIER, None))
         self.assertIsNotNone(
-            getattr(self._service_pb2, SERVER_FACTORY_IDENTIFIER, None))
+            getattr(self._service_pb2, SERVER_FACTORY_IDENTIFIER, None)
+        )
         self.assertIsNotNone(
-            getattr(self._service_pb2, STUB_FACTORY_IDENTIFIER, None))
+            getattr(self._service_pb2, STUB_FACTORY_IDENTIFIER, None)
+        )
 
     def testUpDown(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ):
             self._requests_pb2.SimpleRequest(response_size=13)
 
     def testIncompleteServicer(self):
@@ -362,50 +368,57 @@ class PythonPluginTest(unittest.TestCase):
             try:
                 stub.UnaryCall(request, test_constants.LONG_TIMEOUT)
             except face.AbortionError as error:
-                self.assertEqual(interfaces.StatusCode.UNIMPLEMENTED,
-                                 error.code)
+                self.assertEqual(
+                    interfaces.StatusCode.UNIMPLEMENTED, error.code
+                )
 
     def testUnaryCall(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             request = self._requests_pb2.SimpleRequest(response_size=13)
             response = stub.UnaryCall(request, test_constants.LONG_TIMEOUT)
-        expected_response = methods.UnaryCall(request, 'not a real context!')
+        expected_response = methods.UnaryCall(request, "not a real context!")
         self.assertEqual(expected_response, response)
 
     def testUnaryCallFuture(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             request = self._requests_pb2.SimpleRequest(response_size=13)
             # Check that the call does not block waiting for the server to respond.
             with methods.pause():
                 response_future = stub.UnaryCall.future(
-                    request, test_constants.LONG_TIMEOUT)
+                    request, test_constants.LONG_TIMEOUT
+                )
             response = response_future.result()
-        expected_response = methods.UnaryCall(request, 'not a real RpcContext!')
+        expected_response = methods.UnaryCall(request, "not a real RpcContext!")
         self.assertEqual(expected_response, response)
 
     def testUnaryCallFutureExpired(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             request = self._requests_pb2.SimpleRequest(response_size=13)
             with methods.pause():
                 response_future = stub.UnaryCall.future(
-                    request, test_constants.SHORT_TIMEOUT)
+                    request, test_constants.SHORT_TIMEOUT
+                )
                 with self.assertRaises(face.ExpirationError):
                     response_future.result()
 
     def testUnaryCallFutureCancelled(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             request = self._requests_pb2.SimpleRequest(response_size=13)
             with methods.pause():
                 response_future = stub.UnaryCall.future(request, 1)
@@ -415,48 +428,58 @@ class PythonPluginTest(unittest.TestCase):
     def testUnaryCallFutureFailed(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             request = self._requests_pb2.SimpleRequest(response_size=13)
             with methods.fail():
                 response_future = stub.UnaryCall.future(
-                    request, test_constants.LONG_TIMEOUT)
+                    request, test_constants.LONG_TIMEOUT
+                )
                 self.assertIsNotNone(response_future.exception())
 
     def testStreamingOutputCall(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             request = _streaming_output_request(self._requests_pb2)
-            responses = stub.StreamingOutputCall(request,
-                                                 test_constants.LONG_TIMEOUT)
+            responses = stub.StreamingOutputCall(
+                request, test_constants.LONG_TIMEOUT
+            )
             expected_responses = methods.StreamingOutputCall(
-                request, 'not a real RpcContext!')
-            for expected_response, response in moves.zip_longest(
-                    expected_responses, responses):
+                request, "not a real RpcContext!"
+            )
+            for expected_response, response in itertools.zip_longest(
+                expected_responses, responses
+            ):
                 self.assertEqual(expected_response, response)
 
     def testStreamingOutputCallExpired(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             request = _streaming_output_request(self._requests_pb2)
             with methods.pause():
                 responses = stub.StreamingOutputCall(
-                    request, test_constants.SHORT_TIMEOUT)
+                    request, test_constants.SHORT_TIMEOUT
+                )
                 with self.assertRaises(face.ExpirationError):
                     list(responses)
 
     def testStreamingOutputCallCancelled(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             request = _streaming_output_request(self._requests_pb2)
-            responses = stub.StreamingOutputCall(request,
-                                                 test_constants.LONG_TIMEOUT)
+            responses = stub.StreamingOutputCall(
+                request, test_constants.LONG_TIMEOUT
+            )
             next(responses)
             responses.cancel()
             with self.assertRaises(face.CancellationError):
@@ -465,8 +488,9 @@ class PythonPluginTest(unittest.TestCase):
     def testStreamingOutputCallFailed(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             request = _streaming_output_request(self._requests_pb2)
             with methods.fail():
                 responses = stub.StreamingOutputCall(request, 1)
@@ -477,60 +501,77 @@ class PythonPluginTest(unittest.TestCase):
     def testStreamingInputCall(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             response = stub.StreamingInputCall(
-                _streaming_input_request_iterator(self._payload_pb2,
-                                                  self._requests_pb2),
-                test_constants.LONG_TIMEOUT)
+                _streaming_input_request_iterator(
+                    self._payload_pb2, self._requests_pb2
+                ),
+                test_constants.LONG_TIMEOUT,
+            )
         expected_response = methods.StreamingInputCall(
-            _streaming_input_request_iterator(self._payload_pb2,
-                                              self._requests_pb2),
-            'not a real RpcContext!')
+            _streaming_input_request_iterator(
+                self._payload_pb2, self._requests_pb2
+            ),
+            "not a real RpcContext!",
+        )
         self.assertEqual(expected_response, response)
 
     def testStreamingInputCallFuture(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             with methods.pause():
                 response_future = stub.StreamingInputCall.future(
-                    _streaming_input_request_iterator(self._payload_pb2,
-                                                      self._requests_pb2),
-                    test_constants.LONG_TIMEOUT)
+                    _streaming_input_request_iterator(
+                        self._payload_pb2, self._requests_pb2
+                    ),
+                    test_constants.LONG_TIMEOUT,
+                )
             response = response_future.result()
         expected_response = methods.StreamingInputCall(
-            _streaming_input_request_iterator(self._payload_pb2,
-                                              self._requests_pb2),
-            'not a real RpcContext!')
+            _streaming_input_request_iterator(
+                self._payload_pb2, self._requests_pb2
+            ),
+            "not a real RpcContext!",
+        )
         self.assertEqual(expected_response, response)
 
     def testStreamingInputCallFutureExpired(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             with methods.pause():
                 response_future = stub.StreamingInputCall.future(
-                    _streaming_input_request_iterator(self._payload_pb2,
-                                                      self._requests_pb2),
-                    test_constants.SHORT_TIMEOUT)
+                    _streaming_input_request_iterator(
+                        self._payload_pb2, self._requests_pb2
+                    ),
+                    test_constants.SHORT_TIMEOUT,
+                )
                 with self.assertRaises(face.ExpirationError):
                     response_future.result()
-                self.assertIsInstance(response_future.exception(),
-                                      face.ExpirationError)
+                self.assertIsInstance(
+                    response_future.exception(), face.ExpirationError
+                )
 
     def testStreamingInputCallFutureCancelled(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             with methods.pause():
                 response_future = stub.StreamingInputCall.future(
-                    _streaming_input_request_iterator(self._payload_pb2,
-                                                      self._requests_pb2),
-                    test_constants.LONG_TIMEOUT)
+                    _streaming_input_request_iterator(
+                        self._payload_pb2, self._requests_pb2
+                    ),
+                    test_constants.LONG_TIMEOUT,
+                )
                 response_future.cancel()
                 self.assertTrue(response_future.cancelled())
             with self.assertRaises(future.CancelledError):
@@ -539,50 +580,61 @@ class PythonPluginTest(unittest.TestCase):
     def testStreamingInputCallFutureFailed(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             with methods.fail():
                 response_future = stub.StreamingInputCall.future(
-                    _streaming_input_request_iterator(self._payload_pb2,
-                                                      self._requests_pb2),
-                    test_constants.LONG_TIMEOUT)
+                    _streaming_input_request_iterator(
+                        self._payload_pb2, self._requests_pb2
+                    ),
+                    test_constants.LONG_TIMEOUT,
+                )
                 self.assertIsNotNone(response_future.exception())
 
     def testFullDuplexCall(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             responses = stub.FullDuplexCall(
                 _full_duplex_request_iterator(self._requests_pb2),
-                test_constants.LONG_TIMEOUT)
+                test_constants.LONG_TIMEOUT,
+            )
             expected_responses = methods.FullDuplexCall(
                 _full_duplex_request_iterator(self._requests_pb2),
-                'not a real RpcContext!')
-            for expected_response, response in moves.zip_longest(
-                    expected_responses, responses):
+                "not a real RpcContext!",
+            )
+            for expected_response, response in itertools.zip_longest(
+                expected_responses, responses
+            ):
                 self.assertEqual(expected_response, response)
 
     def testFullDuplexCallExpired(self):
         self._protoc()
 
         request_iterator = _full_duplex_request_iterator(self._requests_pb2)
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             with methods.pause():
-                responses = stub.FullDuplexCall(request_iterator,
-                                                test_constants.SHORT_TIMEOUT)
+                responses = stub.FullDuplexCall(
+                    request_iterator, test_constants.SHORT_TIMEOUT
+                )
                 with self.assertRaises(face.ExpirationError):
                     list(responses)
 
     def testFullDuplexCallCancelled(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             request_iterator = _full_duplex_request_iterator(self._requests_pb2)
-            responses = stub.FullDuplexCall(request_iterator,
-                                            test_constants.LONG_TIMEOUT)
+            responses = stub.FullDuplexCall(
+                request_iterator, test_constants.LONG_TIMEOUT
+            )
             next(responses)
             responses.cancel()
             with self.assertRaises(face.CancellationError):
@@ -592,11 +644,13 @@ class PythonPluginTest(unittest.TestCase):
         self._protoc()
 
         request_iterator = _full_duplex_request_iterator(self._requests_pb2)
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             with methods.fail():
-                responses = stub.FullDuplexCall(request_iterator,
-                                                test_constants.LONG_TIMEOUT)
+                responses = stub.FullDuplexCall(
+                    request_iterator, test_constants.LONG_TIMEOUT
+                )
                 self.assertIsNotNone(responses)
                 with self.assertRaises(face.RemoteError):
                     next(responses)
@@ -604,8 +658,9 @@ class PythonPluginTest(unittest.TestCase):
     def testHalfDuplexCall(self):
         self._protoc()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
 
             def half_duplex_request_iterator():
                 request = self._requests_pb2.StreamingOutputCallRequest()
@@ -616,11 +671,13 @@ class PythonPluginTest(unittest.TestCase):
                 request.response_parameters.add(size=3, interval_us=0)
                 yield request
 
-            responses = stub.HalfDuplexCall(half_duplex_request_iterator(),
-                                            test_constants.LONG_TIMEOUT)
+            responses = stub.HalfDuplexCall(
+                half_duplex_request_iterator(), test_constants.LONG_TIMEOUT
+            )
             expected_responses = methods.HalfDuplexCall(
-                half_duplex_request_iterator(), 'not a real RpcContext!')
-            for check in moves.zip_longest(expected_responses, responses):
+                half_duplex_request_iterator(), "not a real RpcContext!"
+            )
+            for check in itertools.zip_longest(expected_responses, responses):
                 expected_response, response = check
                 self.assertEqual(expected_response, response)
 
@@ -648,15 +705,17 @@ class PythonPluginTest(unittest.TestCase):
                 while wait_cell[0]:
                     condition.wait()
 
-        with _CreateService(self._payload_pb2, self._responses_pb2,
-                            self._service_pb2) as (methods, stub):
+        with _CreateService(
+            self._payload_pb2, self._responses_pb2, self._service_pb2
+        ) as (methods, stub):
             with wait():
-                responses = stub.HalfDuplexCall(half_duplex_request_iterator(),
-                                                test_constants.SHORT_TIMEOUT)
+                responses = stub.HalfDuplexCall(
+                    half_duplex_request_iterator(), test_constants.SHORT_TIMEOUT
+                )
                 # half-duplex waits for the client to send all info
                 with self.assertRaises(face.ExpirationError):
                     next(responses)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

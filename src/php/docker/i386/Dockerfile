@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM i386/php:7.2
+FROM i386/php:7.4
 
 RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \
@@ -36,4 +36,6 @@ RUN pear package && \
   find . -name grpc-*.tgz | xargs -I{} pecl install {}
 
 
-CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", "--ignore-valgrind-undef-errors"]
+CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", \
+     "--ignore-valgrind-undef-errors"]
+

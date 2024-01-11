@@ -13,11 +13,10 @@
   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   # See the License for the specific language governing permissions and
   # limitations under the License.
-  
-  FROM golang:1.16
-  
+
+  FROM golang:1.19
+
   <%include file="../../go_path.include"/>
   <%include file="../../run_tests_python_deps.include"/>
   # Define the default command.
   CMD ["bash"]
-  

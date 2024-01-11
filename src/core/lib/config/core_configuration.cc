@@ -16,7 +16,6 @@
 
 #include "src/core/lib/config/core_configuration.h"
 
-#include <algorithm>
 #include <atomic>
 #include <utility>
 #include <vector>
@@ -43,9 +42,14 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       handshaker_registry_(builder->handshaker_registry_.Build()),
       channel_creds_registry_(builder->channel_creds_registry_.Build()),
       service_config_parser_(builder->service_config_parser_.Build()),
-      resolver_registry_(builder->resolver_registry_.Build()) {}
+      resolver_registry_(builder->resolver_registry_.Build()),
+      lb_policy_registry_(builder->lb_policy_registry_.Build()),
+      proxy_mapper_registry_(builder->proxy_mapper_registry_.Build()),
+      certificate_provider_registry_(
+          builder->certificate_provider_registry_.Build()) {}
 
-void CoreConfiguration::RegisterBuilder(std::function<void(Builder*)> builder) {
+void CoreConfiguration::RegisterBuilder(
+    absl::AnyInvocable<void(Builder*)> builder) {
   GPR_ASSERT(config_.load(std::memory_order_relaxed) == nullptr &&
              "CoreConfiguration was already instantiated before builder "
              "registration was completed");

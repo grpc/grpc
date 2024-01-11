@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -27,9 +27,9 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/slice/slice.h"
 
-/* --- Constants. --- */
+// --- Constants. ---
 
 static const int8_t base64_bytes[] = {
     -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
@@ -54,7 +54,7 @@ static const char base64_url_safe_chars[] =
 #define GRPC_BASE64_MULTILINE_LINE_LEN 76
 #define GRPC_BASE64_MULTILINE_NUM_BLOCKS (GRPC_BASE64_MULTILINE_LINE_LEN / 4)
 
-/* --- base64 functions. --- */
+// --- base64 functions. ---
 
 char* grpc_base64_encode(const void* vdata, size_t data_size, int url_safe,
                          int multiline) {
@@ -86,7 +86,7 @@ void grpc_base64_encode_core(char* result, const void* vdata, size_t data_size,
   size_t num_blocks = 0;
   size_t i = 0;
 
-  /* Encode each block. */
+  // Encode each block.
   while (data_size >= 3) {
     *current++ = base64_chars[(data[i] >> 2) & 0x3F];
     *current++ =
@@ -104,7 +104,7 @@ void grpc_base64_encode_core(char* result, const void* vdata, size_t data_size,
     }
   }
 
-  /* Take care of the tail. */
+  // Take care of the tail.
   if (data_size == 2) {
     *current++ = base64_chars[(data[i] >> 2) & 0x3F];
     *current++ =
@@ -147,7 +147,7 @@ static int decode_group(const unsigned char* codes, size_t num_codes,
                         unsigned char* result, size_t* result_offset) {
   GPR_ASSERT(num_codes <= 4);
 
-  /* Short end groups that may not have padding. */
+  // Short end groups that may not have padding.
   if (num_codes == 1) {
     gpr_log(GPR_ERROR, "Invalid group. Must be at least 2 bytes.");
     return 0;
@@ -161,7 +161,7 @@ static int decode_group(const unsigned char* codes, size_t num_codes,
     return 1;
   }
 
-  /* Regular 4 byte groups with padding or not. */
+  // Regular 4 byte groups with padding or not.
   GPR_ASSERT(num_codes == 4);
   if (codes[0] == GRPC_BASE64_PAD_BYTE || codes[1] == GRPC_BASE64_PAD_BYTE) {
     gpr_log(GPR_ERROR, "Invalid padding detected.");
@@ -177,7 +177,7 @@ static int decode_group(const unsigned char* codes, size_t num_codes,
   } else if (codes[3] == GRPC_BASE64_PAD_BYTE) {
     decode_two_chars(codes, result, result_offset);
   } else {
-    /* No padding. */
+    // No padding.
     uint32_t packed = (static_cast<uint32_t>(codes[0]) << 18) |
                       (static_cast<uint32_t>(codes[1]) << 12) |
                       (static_cast<uint32_t>(codes[2]) << 6) | codes[3];
@@ -234,6 +234,6 @@ grpc_slice grpc_base64_decode_with_len(const char* b64, size_t b64_len,
   return result;
 
 fail:
-  grpc_slice_unref_internal(result);
+  grpc_core::CSliceUnref(result);
   return grpc_empty_slice();
 }

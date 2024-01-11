@@ -1,26 +1,27 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include <string.h>
 
 #include <functional>
+#include <memory>
 #include <type_traits>  // IWYU pragma: keep
 #include <utility>
 
@@ -37,19 +38,19 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
-#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -116,7 +117,7 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
   const bool call_creds_has_md = (ctx != nullptr) && (ctx->creds != nullptr);
 
   if (channel_call_creds == nullptr && !call_creds_has_md) {
-    /* Skip sending metadata altogether. */
+    // Skip sending metadata altogether.
     return Immediate(absl::StatusOr<CallArgs>(std::move(call_args)));
   }
 
@@ -135,8 +136,8 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
     creds = channel_call_creds->Ref();
   }
 
-  /* Check security level of call credential and channel, and do not send
-   * metadata if the check fails. */
+  // Check security level of call credential and channel, and do not send
+  // metadata if the check fails.
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       args_.auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
@@ -158,7 +159,15 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
 
   auto client_initial_metadata = std::move(call_args.client_initial_metadata);
   return TrySeq(
-      creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
+      Seq(creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
+          [](absl::StatusOr<ClientMetadataHandle> new_metadata) mutable {
+            if (!new_metadata.ok()) {
+              return absl::StatusOr<ClientMetadataHandle>(
+                  MaybeRewriteIllegalStatusCode(new_metadata.status(),
+                                                "call credentials"));
+            }
+            return new_metadata;
+          }),
       [call_args =
            std::move(call_args)](ClientMetadataHandle new_metadata) mutable {
         call_args.client_initial_metadata = std::move(new_metadata);
@@ -186,10 +195,13 @@ ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
   if (host == nullptr) {
     return next_promise_factory(std::move(call_args));
   }
-  return TrySeq(args_.security_connector->CheckCallHost(
-                    host->as_string_view(), args_.auth_context.get()),
-                GetCallCredsMetadata(std::move(call_args)),
-                next_promise_factory);
+  return TrySeq(
+      args_.security_connector->CheckCallHost(host->as_string_view(),
+                                              args_.auth_context.get()),
+      [this, call_args = std::move(call_args)]() mutable {
+        return GetCallCredsMetadata(std::move(call_args));
+      },
+      next_promise_factory);
 }
 
 absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
@@ -204,10 +216,8 @@ absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
     return absl::InvalidArgumentError(
         "Auth context missing from client auth filter args");
   }
-
-  return ClientAuthFilter(
-      static_cast<grpc_channel_security_connector*>(sc)->Ref(),
-      auth_context->Ref());
+  return ClientAuthFilter(sc->RefAsSubclass<grpc_channel_security_connector>(),
+                          auth_context->Ref());
 }
 
 const grpc_channel_filter ClientAuthFilter::kFilter =

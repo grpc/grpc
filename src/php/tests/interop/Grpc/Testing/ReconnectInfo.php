@@ -33,7 +33,7 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type bool $passed
-     *     @type int[]|\Google\Protobuf\Internal\RepeatedField $backoff_ms
+     *     @type array<int>|\Google\Protobuf\Internal\RepeatedField $backoff_ms
      * }
      */
     public function __construct($data = NULL) {
@@ -74,7 +74,7 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>
-     * @param int[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @param array<int>|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
      */
     public function setBackoffMs($var)

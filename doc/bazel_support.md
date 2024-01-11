@@ -19,7 +19,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "com_github_grpc_grpc",
     strip_prefix = "grpc-1.45.0",
-    sha256 = "ec19657a677d49af59aa806ec299c070c882986c9fcc022b1c22c2a3caf01bcd"k
+    sha256 = "ec19657a677d49af59aa806ec299c070c882986c9fcc022b1c22c2a3caf01bcd",
     urls = ["https://github.com/grpc/grpc/archive/refs/tags/v1.45.0.tar.gz"],
 )
 
@@ -34,11 +34,16 @@ grpc_extra_deps()
 
 ## Supported Versions
 
-In general, gRPC supports building with the latest patch release of the two most
-recent LTS versions of Bazel. However individual releases may have a broader
+gRPC supports building with the latest stable release of Bazel,
+as well as the previous major version release for at least 6 months
+after it transitions into maintenance mode.
+This is consistent with the supported build systems of
+[the Google Foundational C++ Support Policy](https://opensource.google/documentation/policies/cplusplus-support).
+However individual releases may have a broader
 compatibility range. The currently supported versions are captured by the
 following list:
 
-- [`5.0.0`](https://github.com/bazelbuild/bazel/releases/tag/5.0.0)
-- [`4.2.2`](https://github.com/bazelbuild/bazel/releases/tag/4.2.2)
-- [`3.7.2`](https://github.com/bazelbuild/bazel/releases/tag/3.7.2)
+- [`6.4.0`](https://github.com/bazelbuild/bazel/releases/tag/6.4.0)
+- [`7.0.0`](https://github.com/bazelbuild/bazel/releases/tag/7.0.0)
+
+NOTE: gRPC doesn't support bzlmod yet.

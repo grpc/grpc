@@ -5,7 +5,7 @@ Reference package for reflection in GRPC Python.
 
 Supported Python Versions
 -------------------------
-Python >= 3.6
+Python >= 3.7
 
 Dependencies
 ------------

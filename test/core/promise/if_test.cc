@@ -14,8 +14,6 @@
 
 #include "src/core/lib/promise/if.h"
 
-#include <utility>
-
 #include "gtest/gtest.h"
 
 namespace grpc_core {
@@ -50,6 +48,18 @@ TEST(IfTest, ChooseFailure) {
                []() { return absl::StatusOr<int>(1); },
                []() { return absl::StatusOr<int>(2); })(),
             Poll<absl::StatusOr<int>>(absl::StatusOr<int>()));
+}
+
+TEST(IfTest, ImmediateChooseTrue) {
+  EXPECT_EQ(If(
+                true, []() { return 1; }, []() { return 2; })(),
+            Poll<int>(1));
+}
+
+TEST(IfTest, ImmediateChooseFalse) {
+  EXPECT_EQ(If(
+                false, []() { return 1; }, []() { return 2; })(),
+            Poll<int>(2));
 }
 
 }  // namespace grpc_core

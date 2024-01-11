@@ -16,8 +16,12 @@
   
   <%include file="../../oss_fuzz_base.include"/>
   <%include file="../../bazel.include"/>
+  <%include file="../../git_avoid_dubious_ownership_error.include"/>
+  <%include file="../../git_avoid_dubious_ownership_error_allusers.include"/>
+
+  RUN apt-get install -y gdb
   
   RUN mkdir -p /var/local/jenkins
-  
+
   # Define the default command.
   CMD ["bash"]

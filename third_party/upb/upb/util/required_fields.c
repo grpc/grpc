@@ -1,42 +1,31 @@
-/*
- * Copyright (c) 2009-2021, Google LLC
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Google LLC nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Protocol Buffers - Google's data interchange format
+// Copyright 2023 Google LLC.  All rights reserved.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #include "upb/util/required_fields.h"
 
+#include <assert.h>
 #include <inttypes.h>
 #include <setjmp.h>
 #include <stdarg.h>
-#include <stdio.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "upb/internal/vsnprintf_compat.h"
-#include "upb/reflection.h"
+#include "upb/base/descriptor_constants.h"
+#include "upb/message/array.h"
+#include "upb/message/map.h"
+#include "upb/message/types.h"
+#include "upb/port/vsnprintf_compat.h"
+#include "upb/reflection/def.h"
+#include "upb/reflection/message.h"
 
 // Must be last.
-#include "upb/port_def.inc"
+#include "upb/port/def.inc"
 
 ////////////////////////////////////////////////////////////////////////////////
 // upb_FieldPath_ToText()
@@ -209,7 +198,7 @@ static void upb_util_FindUnsetInMessage(upb_FindContext* ctx,
     const upb_FieldDef* f = upb_MessageDef_Field(m, i);
     if (upb_FieldDef_Label(f) != kUpb_Label_Required) continue;
 
-    if (!msg || !upb_Message_Has(msg, f)) {
+    if (!msg || !upb_Message_HasFieldByDef(msg, f)) {
       // A required field is missing.
       ctx->has_unset_required = true;
 
@@ -246,7 +235,7 @@ static void upb_util_FindUnsetRequiredInternal(upb_FindContext* ctx,
   // in the previous loop.  We do this separately because this loop will also
   // find present extensions, which the previous loop will not.
   //
-  // TODO(haberman): consider changing upb_Message_Next() to be capable of
+  // TODO: consider changing upb_Message_Next() to be capable of
   // visiting extensions only, for example with a kUpb_Message_BeginEXT
   // constant.
   size_t iter = kUpb_Message_Begin;
@@ -266,9 +255,8 @@ static void upb_util_FindUnsetRequiredInternal(upb_FindContext* ctx,
       if (!val_m) continue;
       const upb_Map* map = val.map_val;
       size_t iter = kUpb_Map_Begin;
-      while (upb_MapIterator_Next(map, &iter)) {
-        upb_MessageValue key = upb_MapIterator_Key(map, iter);
-        upb_MessageValue map_val = upb_MapIterator_Value(map, iter);
+      upb_MessageValue key, map_val;
+      while (upb_Map_Next(map, &key, &map_val, &iter)) {
         upb_FindContext_Push(ctx, (upb_FieldPathEntry){.map_key = key});
         upb_util_FindUnsetRequiredInternal(ctx, map_val.msg_val, val_m);
         upb_FindContext_Pop(ctx);
@@ -302,11 +290,13 @@ bool upb_util_HasUnsetRequired(const upb_Message* msg, const upb_MessageDef* m,
   upb_FieldPathVector_Init(&ctx.out_fields);
   upb_util_FindUnsetRequiredInternal(&ctx, msg, m);
   free(ctx.stack.path);
-  if (fields) {
+
+  if (ctx.has_unset_required && fields) {
     upb_FieldPathVector_Reserve(&ctx, &ctx.out_fields, 1);
     ctx.out_fields.path[ctx.out_fields.size] =
         (upb_FieldPathEntry){.field = NULL};
     *fields = ctx.out_fields.path;
   }
+
   return ctx.has_unset_required;
 }

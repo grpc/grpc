@@ -26,15 +26,28 @@ package(
 grpc_cc_test(
     name = "backoff_test",
     srcs = ["backoff_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:backoff",
+        "//:exec_ctx",
+        "//:grpc",
+        "//src/core:time",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "random_early_detection_test",
+    srcs = ["random_early_detection_test.cc"],
     external_deps = [
+        "absl/random",
         "gtest",
     ],
     language = "C++",
-    uses_event_engine = True,  # uses EventEngine::Now()
+    uses_event_engine = False,
     uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
+    deps = ["//src/core:random_early_detection"],
 )

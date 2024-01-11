@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H
-#define GRPC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,7 +26,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
@@ -37,16 +37,14 @@
 namespace grpc_core {
 
 // XdsChannelStackModifier allows for inserting xDS HTTP filters into the
-// channel stack. It is registered to mutate the
-// `ChannelStackBuilder` object via
-// ChannelInit::Builder::RegisterStage.
+// channel stack. It is registered to mutate the `ChannelStackBuilder` object
+// via ChannelInit::Builder::RegisterPostProcessor.
 class XdsChannelStackModifier : public RefCounted<XdsChannelStackModifier> {
  public:
   explicit XdsChannelStackModifier(
       std::vector<const grpc_channel_filter*> filters)
       : filters_(std::move(filters)) {}
-  // Returns true on success, false otherwise.
-  bool ModifyChannelStack(ChannelStackBuilder* builder);
+  void ModifyChannelStack(ChannelStackBuilder& builder);
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<XdsChannelStackModifier> GetFromChannelArgs(
       const grpc_channel_args& args);
@@ -62,4 +60,4 @@ class XdsChannelStackModifier : public RefCounted<XdsChannelStackModifier> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H */
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H

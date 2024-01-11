@@ -1,38 +1,62 @@
-# Copy to local-dev.cfg; replace ${UPPERCASED_VARS} with your settings.
-# Usage: python -m tests.baseline_test --flagfile=config/local-dev.cfg
-# Alt usage: ./run.sh tests/baseline_test.py
+# Copy to local-dev.cfg; replace ${UPPERCASED_VARS}. Details in README.md.
 
-# Import common settings
+## Import common settings
 --flagfile=config/common.cfg
 
-# Project settings
+### --------------------------------- Project ----------------------------------
+
+## Project settings
 --project=${PROJECT_ID}
 --gcp_service_account=${WORKLOAD_SA_EMAIL}
 --private_api_key_secret_name=projects/${PROJECT_NUMBER}/secrets/xds-interop-tests-private-api-access-key
-# Uncomment to ensure the allow health check firewall exists before test case runs
-# --ensure_firewall
-# Uncomment if the health check port opened in firewall is different than 8080
-# --server_port=50051
 
-# Use a resource prefix to describe usage and ownership
---resource_prefix=xds-k8s-test
+### --------------------------------- Clusters ---------------------------------
 
-# Use predictable resource suffix to simplify debugging
-# If left blank, the framework will randomly generate one
---resource_suffix=dev
-
-# The name of kube context to use. See `gcloud container clusters get-credentials` and `kubectl config`
+## The name of kube context to use (points to your GKE cluster).
 --kube_context=${KUBE_CONTEXT}
 
-# Test images, f.e. java v1.46.x:
---server_image=gcr.io/grpc-testing/xds-interop/java-server:v1.46.x
---client_image=gcr.io/grpc-testing/xds-interop/java-client:v1.46.x
+### ------------------------------- App images ---------------------------------
 
-# Uncomment for verbose output
-#--logger_levels=__main__:DEBUG,framework:DEBUG
-#--verbosity=1
+## Test images, f.e. java v1.57.x.
+--server_image=gcr.io/grpc-testing/xds-interop/java-server:v1.57.x
+--client_image=gcr.io/grpc-testing/xds-interop/java-client:v1.57.x
 
-# Enable port forwarding in local dev
+### ----------------------------------- App ------------------------------------
+
+## Use a resource prefix to describe usage and ownership.
+--resource_prefix=${USER}-psm
+
+## Use random port in the server xds address, f.e. xds://my-test-server:42
+--server_xds_port=0
+
+## When running ./bin helpers, you might need to set randomly generated fields
+## to a static value.
+# --resource_suffix=dev
+# --server_xds_port=1111
+
+### --------------------------------- Logging ----------------------------------
+
+## Verbosity: -3 (fatal/critical), -2 (error), -1 (warning), 0 (info), 1 (debug)
+# --verbosity=1
+
+## Uncomment and set different log levels per module. Examples:
+# --logger_levels=__main__:DEBUG,framework:INFO
+# --logger_levels=__main__:INFO,framework:DEBUG,urllib3.connectionpool:ERROR
+
+## Uncomment to collect test client, server logs to out/test_app_logs/ folder.
+# --collect_app_logs
+# --log_dir=out
+
+### ------------------------------- Local dev  ---------------------------------
+
+## Enable port forwarding in local dev.
 --debug_use_port_forwarding
-# (convenience) Allow to set always known flags
---undefok=private_api_key_secret_name
+
+## (convenience) Allow to set always known flags.
+--undefok=private_api_key_secret_name,gcp_ui_url
+
+## Uncomment to create the firewall rule before test case runs.
+# --ensure_firewall
+
+## Uncomment if the health check port opened in firewall is different than 8080.
+# --server_port=50051

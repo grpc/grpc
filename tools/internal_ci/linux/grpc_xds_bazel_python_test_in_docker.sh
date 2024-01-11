@@ -16,11 +16,9 @@
 trap 'date' DEBUG
 set -ex -o igncr || set -ex
 
+
 mkdir -p /var/local/git
-git clone /var/local/jenkins/grpc /var/local/git/grpc
-(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
-&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
-${name}')
+git clone -b master --single-branch --depth=1 https://github.com/grpc/grpc.git /var/local/git/grpc
 cd /var/local/git/grpc
 
 python3 -m pip install virtualenv
@@ -28,7 +26,9 @@ VIRTUAL_ENV=$(mktemp -d)
 python3 -m virtualenv "$VIRTUAL_ENV" -p python3
 PYTHON="$VIRTUAL_ENV"/bin/python
 "$PYTHON" -m pip install --upgrade pip==19.3.1
-"$PYTHON" -m pip install --upgrade grpcio-tools google-api-python-client google-auth-httplib2 oauth2client xds-protos
+# TODO(sergiitk): Unpin grpcio-tools when a version of xds-protos
+#   compatible with protobuf 4.X is uploaded to PyPi.
+"$PYTHON" -m pip install --upgrade grpcio-tools==1.48.1 google-api-python-client google-auth-httplib2 oauth2client xds-protos
 
 # Prepare generated Python code.
 TOOLS_DIR=tools/run_tests
@@ -60,15 +60,16 @@ touch "$TOOLS_DIR"/src/proto/grpc/health/v1/__init__.py
     --grpc_python_out=${TOOLS_DIR} \
     ${HEALTH_PROTO_SOURCE_DIR}/health.proto
 
+cd /var/local/jenkins/grpc/
 bazel build //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 
 # Test cases "path_matching" and "header_matching" are not included in "all",
 # because not all interop clients in all languages support these new tests.
 export PYTHONUNBUFFERED=true
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
-  tools/run_tests/run_xds_tests.py \
+  /var/local/git/grpc/tools/run_tests/run_xds_tests.py \
     --halt_after_fail \
-    --test_case="ping_pong" \
+    --test_case="ping_pong,circuit_breaking" \
     --project_id=grpc-testing \
     --project_num=830293263384 \
     --source_image=projects/grpc-testing/global/images/xds-test-server-5 \

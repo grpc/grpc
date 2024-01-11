@@ -13,8 +13,10 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <memory>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -27,13 +29,13 @@ using ::testing::MockFunction;
 
 class EventEngineSmokeTest : public testing::Test {};
 
-TEST_F(EventEngineSmokeTest, SetDefaultEventEngineFactoryLinks) {
+TEST_F(EventEngineSmokeTest, SetEventEngineFactoryLinks) {
   // See https://github.com/grpc/grpc/pull/28707
   testing::MockFunction<
       std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
       factory;
   EXPECT_CALL(factory, Call()).Times(1);
-  grpc_event_engine::experimental::SetDefaultEventEngineFactory(
+  grpc_event_engine::experimental::SetEventEngineFactory(
       factory.AsStdFunction());
   EXPECT_EQ(nullptr, grpc_event_engine::experimental::CreateEventEngine());
 }

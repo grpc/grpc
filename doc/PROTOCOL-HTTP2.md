@@ -4,7 +4,7 @@
 This document serves as a detailed description for an implementation of gRPC carried over <a href="https://tools.ietf.org/html/rfc7540">HTTP2 framing</a>. It assumes familiarity with the HTTP2 specification.
 
 ## Protocol
-Production rules are using <a href="http://tools.ietf.org/html/rfc5234">ABNF syntax</a>.
+Production rules are using <a href="https://tools.ietf.org/html/rfc5234">ABNF syntax</a>.
 
 ### Outline
 
@@ -75,7 +75,7 @@ Base64-encoded values.
 
 **ASCII-Value** should not have leading or trailing whitespace. If it contains
 leading or trailing whitespace, it may be stripped. The **ASCII-Value**
-character range defined is more strict than HTTP. Implementations must not error
+character range defined is stricter than HTTP. Implementations must not error
 due to receiving an invalid **ASCII-Value** that's a valid **field-value** in
 HTTP, but the precise behavior is not strictly defined: they may throw the value
 away or accept the value. If accepted, care must be taken to make sure that the

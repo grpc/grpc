@@ -31,9 +31,6 @@ source tools/internal_ci/helper_scripts/prepare_qemu_rc
 # configure ccache
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
-# Build all C# linux artifacts
-tools/run_tests/task_runner.py -f artifact linux csharp ${TASK_RUNNER_EXTRA_FILTERS} -j 4 --inner_jobs 8 -x build_artifacts_csharp/sponge_log.xml || FAILED="true"
-
 # Build all protoc linux artifacts
 tools/run_tests/task_runner.py -f artifact linux protoc ${TASK_RUNNER_EXTRA_FILTERS} -j 4 --inner_jobs 8 -x build_artifacts_protoc/sponge_log.xml || FAILED="true"
 

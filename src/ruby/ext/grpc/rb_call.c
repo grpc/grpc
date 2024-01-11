@@ -801,6 +801,56 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
   return result;
 }
 
+struct call_run_batch_args {
+  grpc_rb_call* call;
+  unsigned write_flag;
+  VALUE ops_hash;
+  run_batch_stack* st;
+};
+
+static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
+  grpc_rb_fork_unsafe_begin();
+  struct call_run_batch_args* args = (struct call_run_batch_args*)value_args;
+  void* tag = (void*)&args->st;
+
+  grpc_event ev;
+  grpc_call_error err;
+
+  args->st = gpr_malloc(sizeof(run_batch_stack));
+  grpc_run_batch_stack_init(args->st, args->write_flag);
+  grpc_run_batch_stack_fill_ops(args->st, args->ops_hash);
+
+  /* call grpc_call_start_batch, then wait for it to complete using
+   * pluck_event */
+  err = grpc_call_start_batch(args->call->wrapped, args->st->ops,
+                              args->st->op_num, tag, NULL);
+  if (err != GRPC_CALL_OK) {
+    rb_raise(grpc_rb_eCallError,
+             "grpc_call_start_batch failed with %s (code=%d)",
+             grpc_call_error_detail_of(err), err);
+  }
+  ev = rb_completion_queue_pluck(args->call->queue, tag,
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  if (!ev.success) {
+    rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
+  }
+  /* Build and return the BatchResult struct result,
+     if there is an error, it's reflected in the status */
+  return grpc_run_batch_stack_build_result(args->st);
+}
+
+static VALUE grpc_rb_call_run_batch_ensure(VALUE value_args) {
+  grpc_rb_fork_unsafe_end();
+  struct call_run_batch_args* args = (struct call_run_batch_args*)value_args;
+
+  if (args->st) {
+    grpc_run_batch_stack_cleanup(args->st);
+    gpr_free(args->st);
+  }
+
+  return Qnil;
+}
+
 /* call-seq:
    ops = {
      GRPC::Core::CallOps::SEND_INITIAL_METADATA => <op_value>,
@@ -819,56 +869,29 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
    Only one operation of each type can be active at once in any given
    batch */
 static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
-  run_batch_stack* st = NULL;
-  grpc_rb_call* call = NULL;
-  grpc_event ev;
-  grpc_call_error err;
-  VALUE result = Qnil;
-  VALUE rb_write_flag = rb_ivar_get(self, id_write_flag);
-  unsigned write_flag = 0;
-  void* tag = (void*)&st;
-
   grpc_ruby_fork_guard();
   if (RTYPEDDATA_DATA(self) == NULL) {
     rb_raise(grpc_rb_eCallError, "Cannot run batch on closed call");
-    return Qnil;
   }
+
+  grpc_rb_call* call = NULL;
   TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
 
   /* Validate the ops args, adding them to a ruby array */
   if (TYPE(ops_hash) != T_HASH) {
     rb_raise(rb_eTypeError, "call#run_batch: ops hash should be a hash");
-    return Qnil;
   }
-  if (rb_write_flag != Qnil) {
-    write_flag = NUM2UINT(rb_write_flag);
-  }
-  st = gpr_malloc(sizeof(run_batch_stack));
-  grpc_run_batch_stack_init(st, write_flag);
-  grpc_run_batch_stack_fill_ops(st, ops_hash);
 
-  /* call grpc_call_start_batch, then wait for it to complete using
-   * pluck_event */
-  err = grpc_call_start_batch(call->wrapped, st->ops, st->op_num, tag, NULL);
-  if (err != GRPC_CALL_OK) {
-    grpc_run_batch_stack_cleanup(st);
-    gpr_free(st);
-    rb_raise(grpc_rb_eCallError,
-             "grpc_call_start_batch failed with %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
-    return Qnil;
-  }
-  ev = rb_completion_queue_pluck(call->queue, tag,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  if (!ev.success) {
-    rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
-  }
-  /* Build and return the BatchResult struct result,
-     if there is an error, it's reflected in the status */
-  result = grpc_run_batch_stack_build_result(st);
-  grpc_run_batch_stack_cleanup(st);
-  gpr_free(st);
-  return result;
+  VALUE rb_write_flag = rb_ivar_get(self, id_write_flag);
+
+  struct call_run_batch_args args = {
+      .call = call,
+      .write_flag = rb_write_flag == Qnil ? 0 : NUM2UINT(rb_write_flag),
+      .ops_hash = ops_hash,
+      .st = NULL};
+
+  return rb_ensure(grpc_rb_call_run_batch_try, (VALUE)&args,
+                   grpc_rb_call_run_batch_ensure, (VALUE)&args);
 }
 
 static void Init_grpc_write_flags() {
@@ -973,6 +996,7 @@ void Init_grpc_call() {
   grpc_rb_cCall = rb_define_class_under(grpc_rb_mGrpcCore, "Call", rb_cObject);
   grpc_rb_cMdAry =
       rb_define_class_under(grpc_rb_mGrpcCore, "MetadataArray", rb_cObject);
+  rb_undef_alloc_func(grpc_rb_cMdAry);
 
   /* Prevent allocation or inialization of the Call class */
   rb_define_alloc_func(grpc_rb_cCall, grpc_rb_cannot_alloc);

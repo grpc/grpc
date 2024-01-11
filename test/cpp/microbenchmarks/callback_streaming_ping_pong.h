@@ -1,29 +1,28 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef TEST_CPP_MICROBENCHMARKS_CALLBACK_STREAMING_PING_PONG_H
-#define TEST_CPP_MICROBENCHMARKS_CALLBACK_STREAMING_PING_PONG_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_STREAMING_PING_PONG_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_STREAMING_PING_PONG_H
 
 #include <sstream>
 
 #include <benchmark/benchmark.h>
 
-#include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
@@ -32,9 +31,9 @@
 namespace grpc {
 namespace testing {
 
-/*******************************************************************************
- * BENCHMARKING KERNELS
- */
+//******************************************************************************
+// BENCHMARKING KERNELS
+//
 
 class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
@@ -136,11 +135,9 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
     request.set_message("");
   }
   if (state.KeepRunning()) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     BidiClient test{&state, stub_.get(), &cli_ctx, &request, &response};
     test.Await();
   }
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(2 * message_size * max_ping_pongs *
                           state.iterations());
@@ -148,4 +145,4 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
 
 }  // namespace testing
 }  // namespace grpc
-#endif  // TEST_CPP_MICROBENCHMARKS_CALLBACK_STREAMING_PING_PONG_H
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_STREAMING_PING_PONG_H

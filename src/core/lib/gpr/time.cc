@@ -1,22 +1,22 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Generic implementation of time calls. */
+// Generic implementation of time calls.
 
 #include <grpc/support/port_platform.h>
 
@@ -26,6 +26,8 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
+#include "src/core/lib/gprpp/crash.h"
 
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
@@ -77,16 +79,18 @@ static gpr_timespec to_seconds_from_sub_second_time(int64_t time_in_units,
   } else if (time_in_units == INT64_MIN) {
     out = gpr_inf_past(type);
   } else {
-    if (time_in_units >= 0) {
-      out.tv_sec = time_in_units / units_per_sec;
-    } else {
-      out.tv_sec = (-((units_per_sec - 1) - (time_in_units + units_per_sec)) /
-                    units_per_sec) -
-                   1;
-    }
+    GPR_DEBUG_ASSERT(GPR_NS_PER_SEC % units_per_sec == 0);
+
+    out.tv_sec = time_in_units / units_per_sec;
     out.tv_nsec =
-        static_cast<int32_t>((time_in_units - out.tv_sec * units_per_sec) *
-                             GPR_NS_PER_SEC / units_per_sec);
+        static_cast<int32_t>((time_in_units - (out.tv_sec * units_per_sec)) *
+                             (GPR_NS_PER_SEC / units_per_sec));
+    /// `out.tv_nsec` should always be positive.
+    if (out.tv_nsec < 0) {
+      out.tv_nsec += GPR_NS_PER_SEC;
+      out.tv_sec--;
+    }
+
     out.clock_type = type;
   }
   return out;
@@ -225,8 +229,8 @@ int32_t gpr_time_to_millis(gpr_timespec t) {
     }
     return 2147483647;
   } else if (t.tv_sec <= -2147483) {
-    /* TODO(ctiller): correct handling here (it's so far in the past do we
-       care?) */
+    // TODO(ctiller): correct handling here (it's so far in the past do we
+    // care?)
     return -2147483647;
   } else {
     return static_cast<int32_t>(t.tv_sec * GPR_MS_PER_SEC +

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdio.h>
 #include <string.h>
@@ -33,24 +33,32 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/event_engine/ares_resolver.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
+#include "test/core/util/socket_use_after_close_detector.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/test_config.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -62,6 +70,8 @@
 #endif
 
 namespace {
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 void* Tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -97,7 +107,8 @@ void ArgsInit(ArgsStruct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->lock = std::make_shared<grpc_core::WorkSerializer>();
+  args->lock = std::make_shared<grpc_core::WorkSerializer>(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   gpr_atm_rel_store(&args->done_atm, 0);
   args->channel_args = nullptr;
 }
@@ -147,7 +158,7 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
   }
 
   void ReportResult(grpc_core::Resolver::Result /*result*/) override {
-    GPR_ASSERT(false);
+    grpc_core::Crash("unreachable");
   }
 
  private:
@@ -165,8 +176,9 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
-          client_target.c_str(), grpc_core::ChannelArgs(), args->pollset_set,
-          args->lock,
+          client_target.c_str(),
+          grpc_core::ChannelArgs().SetObject(GetDefaultEventEngine()),
+          args->pollset_set, args->lock,
           std::unique_ptr<grpc_core::Resolver::ResultHandler>(
               new AssertFailureResultHandler(args)));
   resolver->StartLocked();
@@ -180,28 +192,15 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
 
 class CancelDuringAresQuery : public ::testing::Test {
  protected:
-  static void SetUpTestCase() {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
-    // Sanity check the time that it takes to run the test
-    // including the teardown time (the teardown
-    // part of the test involves cancelling the DNS query,
-    // which is the main point of interest for this test).
-    overall_deadline = grpc_timeout_seconds_to_deadline(4);
+  static void SetUpTestSuite() {
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.dns_resolver = "ares";
+    grpc_core::ConfigVars::SetOverrides(overrides);
     grpc_init();
   }
 
-  static void TearDownTestCase() {
-    grpc_shutdown();
-    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
-      gpr_log(GPR_ERROR, "Test took too long");
-      abort();
-    }
-  }
-
- private:
-  static gpr_timespec overall_deadline;
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
-gpr_timespec CancelDuringAresQuery::overall_deadline;
 
 TEST_F(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
   grpc_core::ExecCtx exec_ctx;
@@ -221,7 +220,7 @@ void MaybePollArbitraryPollsetTwice() {
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+      grpc_pollset_work(pollset, &worker, grpc_core::Timestamp::Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   // Make a second zero-timeout poll (in case the first one
@@ -229,7 +228,7 @@ void MaybePollArbitraryPollsetTwice() {
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+      grpc_pollset_work(pollset, &worker, grpc_core::Timestamp::Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(pollset);
@@ -268,73 +267,30 @@ TEST_F(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   grpc_pollset_set_destroy(fake_other_pollset_set);
 }
 
-// Settings for TestCancelDuringActiveQuery test
-typedef enum {
-  NONE,
-  SHORT,
-  ZERO,
-} cancellation_test_query_timeout_setting;
+std::string kFakeName = "dont-care-since-wont-be-resolved.test.com:1234";
 
 void TestCancelDuringActiveQuery(
-    cancellation_test_query_timeout_setting query_timeout_setting) {
-  // Start up fake non responsive DNS server
-  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
-      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
-          kWaitForClientToSendFirstBytes,
-      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+    grpc_status_code expected_status_code,
+    absl::string_view expected_error_message_substring,
+    gpr_timespec rpc_deadline, int dns_query_timeout_ms,
+    int fake_dns_server_port) {
   // Create a call that will try to use the fake DNS server
-  std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
   std::string client_target =
-      absl::StrFormat("dns://[::1]:%d/%s", fake_dns_server.port(), name);
-  gpr_log(GPR_DEBUG, "TestCancelActiveDNSQuery. query timeout setting: %d",
-          query_timeout_setting);
+      absl::StrFormat("dns://[::1]:%d/%s", fake_dns_server_port, kFakeName);
   grpc_channel_args* client_args = nullptr;
-  grpc_status_code expected_status_code = GRPC_STATUS_OK;
-  std::string expected_error_message_substring;
-  gpr_timespec rpc_deadline;
-  if (query_timeout_setting == NONE) {
-    // The RPC deadline should go off well before the DNS resolution
-    // timeout fires.
-    expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
-    // use default DNS resolution timeout (which is over one minute).
-    client_args = nullptr;
-    rpc_deadline = grpc_timeout_milliseconds_to_deadline(100);
-  } else if (query_timeout_setting == SHORT) {
-    // The DNS resolution timeout should fire well before the
-    // RPC's deadline expires.
-    expected_status_code = GRPC_STATUS_UNAVAILABLE;
-    expected_error_message_substring =
-        absl::StrCat("DNS resolution failed for ", name);
+  if (dns_query_timeout_ms >= 0) {
     grpc_arg arg;
     arg.type = GRPC_ARG_INTEGER;
     arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
-    arg.value.integer =
-        1;  // Set this shorter than the call deadline so that it goes off.
+    arg.value.integer = dns_query_timeout_ms;
     client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-    // Set the deadline high enough such that if we hit this and get
-    // a deadline exceeded status code, then we are confident that there's
-    // a bug causing cancellation of DNS resolutions to not happen in a timely
-    // manner.
-    rpc_deadline = grpc_timeout_seconds_to_deadline(10);
-  } else if (query_timeout_setting == ZERO) {
-    // The RPC deadline should go off well before the DNS resolution
-    // timeout fires.
-    expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
-    grpc_arg arg;
-    arg.type = GRPC_ARG_INTEGER;
-    arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
-    arg.value.integer = 0;  // Set this to zero to disable query timeouts.
-    client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-    rpc_deadline = grpc_timeout_milliseconds_to_deadline(100);
-  } else {
-    abort();
   }
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* client =
       grpc_channel_create(client_target.c_str(), creds, client_args);
   grpc_channel_credentials_release(creds);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, rpc_deadline, nullptr);
@@ -380,8 +336,8 @@ void TestCancelDuringActiveQuery(
   grpc_call_error error = grpc_call_start_batch(
       call, ops_base, static_cast<size_t>(op - ops_base), Tag(1), nullptr);
   EXPECT_EQ(GRPC_CALL_OK, error);
-  CQ_EXPECT_COMPLETION(cqv, Tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(Tag(1), true);
+  cqv.Verify();
   EXPECT_EQ(status, expected_status_code);
   EXPECT_THAT(std::string(error_string),
               testing::HasSubstr(expected_error_message_substring));
@@ -394,32 +350,181 @@ void TestCancelDuringActiveQuery(
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(call);
-  cq_verifier_destroy(cqv);
   EndTest(client, cq);
 }
 
 TEST_F(CancelDuringAresQuery,
        TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
-  TestCancelDuringActiveQuery(NONE /* don't set query timeouts */);
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  grpc_status_code expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
+  // The RPC deadline should go off well before the DNS resolution
+  // timeout fires.
+  gpr_timespec rpc_deadline = grpc_timeout_milliseconds_to_deadline(100);
+  int dns_query_timeout_ms = -1;  // don't set query timeout
+  TestCancelDuringActiveQuery(
+      expected_status_code, "" /* expected error message substring */,
+      rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithQueryTimeoutIsGraceful) {
-  TestCancelDuringActiveQuery(SHORT /* set short query timeout */);
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
+  std::string expected_error_message_substring;
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    expected_error_message_substring =
+        absl::StrCat("errors resolving ", kFakeName);
+  } else {
+    expected_error_message_substring =
+        absl::StrCat("DNS resolution failed for ", kFakeName);
+  }
+  // The DNS resolution timeout should fire well before the
+  // RPC's deadline expires.
+  gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(10);
+  int dns_query_timeout_ms = 1;
+  TestCancelDuringActiveQuery(expected_status_code,
+                              expected_error_message_substring, rpc_deadline,
+                              dns_query_timeout_ms, fake_dns_server.port());
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithZeroQueryTimeoutIsGraceful) {
-  TestCancelDuringActiveQuery(ZERO /* disable query timeouts */);
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  grpc_status_code expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
+  // The RPC deadline should go off well before the DNS resolution
+  // timeout fires.
+  gpr_timespec rpc_deadline = grpc_timeout_milliseconds_to_deadline(100);
+  int dns_query_timeout_ms = 0;  // disable query timeouts
+  TestCancelDuringActiveQuery(
+      expected_status_code, "" /* expected error message substring */,
+      rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
+}
+
+TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
+  // Use a fake TCP server that immediately closes the socket and causes
+  // c-ares to pick up a socket read error, while the previous socket
+  // connect/writes succeeded. Meanwhile, force c-ares to only use TCP.
+  // The goal is to hit a socket use-after-close bug described in
+  // https://github.com/grpc/grpc/pull/33871.
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::
+          CloseSocketUponReceivingBytesFromPeer);
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    g_event_engine_grpc_ares_test_only_force_tcp = true;
+  } else {
+    g_grpc_ares_test_only_force_tcp = true;
+  }
+  grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
+  std::string expected_error_message_substring;
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    expected_error_message_substring =
+        absl::StrCat("errors resolving ", kFakeName);
+  } else {
+    expected_error_message_substring =
+        absl::StrCat("DNS resolution failed for ", kFakeName);
+  }
+  // Don't really care about the deadline - we should quickly hit a DNS
+  // resolution failure.
+  gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(100);
+  int dns_query_timeout_ms = -1;  // don't set query timeout
+  TestCancelDuringActiveQuery(expected_status_code,
+                              expected_error_message_substring, rpc_deadline,
+                              dns_query_timeout_ms, fake_dns_server.port());
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    g_event_engine_grpc_ares_test_only_force_tcp = false;
+  } else {
+    g_grpc_ares_test_only_force_tcp = false;
+  }
+}
+
+// This test is meant to repro a bug noticed in internal issue b/297538255.
+// The general issue is the loop in
+// https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc#L371.
+// The problem with that loop is that c-ares *can* in certain situations stop
+// caring about the fd being processed without reading all of the data out of
+// the read buffer. In that case, we keep looping because
+// IsFdStillReadableLocked() keeps returning true, but we never make progress.
+// Meanwhile, we are holding a lock which prevents cancellation or timeouts from
+// kicking in, and thus we spin-loop forever.
+//
+// At the time of writing, this test case illustrates one way to hit that bug.
+// It works as follows:
+//   1) We force c-ares to use TCP for its DNS queries
+//   2) We stand up a fake DNS server that, for each incoming connection, sends
+//      three all-zero bytes and then closes the socket.
+//   3) When the c-ares library receives the three-zero-byte response from the
+//      DNS server, it parses the first two-bytes as a length field:
+//      https://github.com/c-ares/c-ares/blob/6360e96b5cf8e5980c887ce58ef727e53d77243a/src/lib/ares_process.c#L410.
+//   4) Because the first two bytes were zero, c-ares attempts to malloc a
+//      zero-length buffer:
+//      https://github.com/c-ares/c-ares/blob/6360e96b5cf8e5980c887ce58ef727e53d77243a/src/lib/ares_process.c#L428.
+//   5) Because c-ares' default_malloc(0) returns NULL
+//      (https://github.com/c-ares/c-ares/blob/7f3262312f246556d8c1bdd8ccc1844847f42787/src/lib/ares_library_init.c#L38),
+//      c-ares invokes handle_error and stops reading on the socket:
+//      https://github.com/c-ares/c-ares/blob/6360e96b5cf8e5980c887ce58ef727e53d77243a/src/lib/ares_process.c#L430.
+//   6) Because we overwrite the socket "close" method, c-ares attempt to close
+//      the socket in handle_error does nothing except for removing the socket
+//      from ARES_GETSOCK_READABLE:
+//      https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc#L156.
+//   7) Because there is still one byte left in the TCP read buffer,
+//      IsFdStillReadableLocked will keep returning true:
+//      https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc#L82.
+//      But c-ares will never try to read from that socket again, so we have an
+//      infinite busy loop.
+TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    g_event_engine_grpc_ares_test_only_force_tcp = true;
+  } else {
+    g_grpc_ares_test_only_force_tcp = true;
+  }
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::SendThreeAllZeroBytes);
+  grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
+  // Don't really care about the deadline - we'll hit a DNS
+  // resolution failure quickly in any case.
+  gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(100);
+  int dns_query_timeout_ms = -1;  // don't set query timeout
+  TestCancelDuringActiveQuery(
+      expected_status_code, "" /* expected error message substring */,
+      rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    g_event_engine_grpc_ares_test_only_force_tcp = false;
+  } else {
+    g_grpc_ares_test_only_force_tcp = false;
+  }
 }
 
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::InitTest(&argc, &argv, true);
+  grpc::testing::TestEnvironment env(&argc, argv);
   auto result = RUN_ALL_TESTS();
   return result;
 }

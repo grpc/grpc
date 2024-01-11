@@ -26,10 +26,15 @@ cdef class _CallState:
 
   cdef grpc_call *c_call
   cdef set due
+  # call_tracer_capsule should have type of grpc._observability.ClientCallTracerCapsule
+  cdef object call_tracer_capsule
+  cdef void maybe_set_client_call_tracer_on_call(self, bytes method_name, bytes target) except *
+  cdef void maybe_delete_call_tracer(self) except *
 
 
 cdef class _ChannelState:
 
+  cdef bytes target
   cdef object condition
   cdef grpc_channel *c_channel
   # A boolean field indicating that the channel is open (if True) or is being
@@ -69,6 +74,13 @@ cdef class SegregatedCall:
 cdef class Channel:
 
   cdef _ChannelState _state
+  cdef dict _registered_call_handles
 
   # TODO(https://github.com/grpc/grpc/issues/15662): Eliminate this.
   cdef tuple _arguments
+
+
+cdef class CallHandle:
+
+  cdef void *c_call_handle
+  cdef object method

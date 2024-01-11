@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_SERVER_AUTHZ_FILTER_H
-#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_SERVER_AUTHZ_FILTER_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_SERVER_AUTHZ_FILTER_H
+#define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_SERVER_AUTHZ_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -34,22 +34,31 @@
 
 namespace grpc_core {
 
-class GrpcServerAuthzFilter final : public ChannelFilter {
+class GrpcServerAuthzFilter final
+    : public ImplementChannelFilter<GrpcServerAuthzFilter> {
  public:
-  static const grpc_channel_filter kFilterVtable;
+  static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<GrpcServerAuthzFilter> Create(const ChannelArgs& args,
                                                       ChannelFilter::Args);
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    absl::Status OnClientInitialMetadata(ClientMetadata& md,
+                                         GrpcServerAuthzFilter* filter);
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
 
  private:
   GrpcServerAuthzFilter(
       RefCountedPtr<grpc_auth_context> auth_context, grpc_endpoint* endpoint,
       RefCountedPtr<grpc_authorization_policy_provider> provider);
 
-  bool IsAuthorized(const ClientMetadataHandle& initial_metadata);
+  bool IsAuthorized(ClientMetadata& initial_metadata);
 
   RefCountedPtr<grpc_auth_context> auth_context_;
   EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;
@@ -58,4 +67,4 @@ class GrpcServerAuthzFilter final : public ChannelFilter {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_SERVER_AUTHZ_FILTER_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_SERVER_AUTHZ_FILTER_H

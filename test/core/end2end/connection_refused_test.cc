@@ -1,44 +1,45 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string.h>
 
+#include <string>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel* chan;
   grpc_call* call;
   grpc_completion_queue* cq;
-  cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array trailing_metadata_recv;
@@ -53,9 +54,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_metadata_array_init(&trailing_metadata_recv);
 
   cq = grpc_completion_queue_create_for_next(nullptr);
-  cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
 
-  /* if using service config, create channel args */
+  // if using service config, create channel args
   grpc_channel_args* args = nullptr;
   if (use_service_config) {
     GPR_ASSERT(wait_for_ready);
@@ -74,7 +75,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
     args = grpc_channel_args_copy_and_add(args, &arg, 1);
   }
 
-  /* create a call, channel to a port which will refuse connection */
+  // create a call, channel to a port which will refuse connection
   int port = grpc_pick_unused_port_or_die();
   std::string addr = grpc_core::JoinHostPort("127.0.0.1", port);
   gpr_log(GPR_INFO, "server: %s", addr.c_str());
@@ -104,12 +105,12 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
-                                                   (size_t)(op - ops), tag(1),
-                                                   nullptr));
-  /* verify that all tags get completed */
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, ops, (size_t)(op - ops),
+                                   grpc_core::CqVerifier::tag(1), nullptr));
+  // verify that all tags get completed
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
+  cqv.Verify();
 
   if (wait_for_ready) {
     GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
@@ -125,7 +126,6 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_completion_queue_destroy(cq);
   grpc_call_unref(call);
   grpc_channel_destroy(chan);
-  cq_verifier_destroy(cqv);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

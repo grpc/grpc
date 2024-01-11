@@ -28,6 +28,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util_base",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -42,6 +43,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util_base",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -56,6 +58,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util_base",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -75,6 +78,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:tls_test_utils",
     ],

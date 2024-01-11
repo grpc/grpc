@@ -23,20 +23,22 @@ def mako_plugin(dictionary):
     """
     errors = []
     target_groups = (
-        ('gpr', 'grpc', 'grpc++'),
-        ('gpr', 'grpc_unsecure', 'grpc++_unsecure'),
+        ("gpr", "grpc", "grpc++"),
+        ("gpr", "grpc_unsecure", "grpc++_unsecure"),
     )
-    lib_map = {lib['name']: lib for lib in dictionary.get('libs')}
+    lib_map = {lib["name"]: lib for lib in dictionary.get("libs")}
     for target_group in target_groups:
         src_map = {}
         for target in target_group:
-            for src in lib_map[target]['src']:
-                if src.endswith('.cc'):
+            for src in lib_map[target]["src"]:
+                if src.endswith(".cc"):
                     if src in src_map:
                         errors.append(
-                            'Source {0} is used in both {1} and {2}'.format(
-                                src, src_map[src], target))
+                            "Source {0} is used in both {1} and {2}".format(
+                                src, src_map[src], target
+                            )
+                        )
                     else:
                         src_map[src] = target
     if errors:
-        raise Exception('\n'.join(errors))
+        raise Exception("\n".join(errors))

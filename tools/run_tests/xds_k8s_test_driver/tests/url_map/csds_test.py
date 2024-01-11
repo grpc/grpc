@@ -38,41 +38,42 @@ _NUM_RPCS = 50
 
 
 class TestBasicCsds(xds_url_map_testcase.XdsUrlMapTestCase):
-
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         if config.client_lang == _Lang.NODE:
-            return config.version_gte('v1.5.x')
+            return config.version_gte("v1.5.x")
         return True
 
     @staticmethod
     def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
         # Validate Endpoint Configs
         self.assertNumEndpoints(xds_config, 1)
         # Validate Node
-        self.assertEqual(self.test_client.ip,
-                         xds_config['node']['metadata']['INSTANCE_IP'])
+        self.assertEqual(
+            self.test_client.ip, xds_config["node"]["metadata"]["INSTANCE_IP"]
+        )
         # Validate Listeners
         self.assertIsNotNone(xds_config.lds)
-        self.assertEqual(self.hostname(), xds_config.lds['name'])
+        self.assertEqual(self.hostname(), xds_config.lds["name"])
         # Validate Route Configs
-        self.assertTrue(xds_config.rds['virtualHosts'])
+        self.assertTrue(xds_config.rds["virtualHosts"])
         # Validate Clusters
         self.assertEqual(1, len(xds_config.cds))
-        self.assertEqual('EDS', xds_config.cds[0]['type'])
+        self.assertEqual("EDS", xds_config.cds[0]["type"])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(
             test_client,
             rpc_types=[RpcTypeUnaryCall, RpcTypeEmptyCall],
-            num_rpcs=_NUM_RPCS)
+            num_rpcs=_NUM_RPCS,
+        )
         self.assertEqual(_NUM_RPCS, rpc_distribution.num_oks)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     absltest.main()

@@ -27,12 +27,14 @@
 #include <grpcpp/security/credentials.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
+#include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -237,10 +239,10 @@ MATCHER_P2(EqNoRdsHCM, route_configuration_name, cluster_name,
 class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
   ClientStatusDiscoveryServiceTest() {
-    admin_server_thread_ = absl::make_unique<AdminServerThread>(this);
+    admin_server_thread_ = std::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
-    std::string admin_server_address = absl::StrCat(
-        ipv6_only_ ? "[::1]:" : "127.0.0.1:", admin_server_thread_->port());
+    std::string admin_server_address =
+        grpc_core::LocalIpAndPort(admin_server_thread_->port());
     admin_channel_ = grpc::CreateChannel(
         admin_server_address,
         std::make_shared<SecureChannelCredentials>(
@@ -467,7 +469,9 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
                   kDefaultRouteConfigurationName, kDefaultClusterName)),
               ClientResourceStatus::NACKED,
               EqUpdateFailureState(
-                  ::testing::HasSubstr("VirtualHost has no domains"), "2"))));
+                  ::testing::HasSubstr(
+                      "field:virtual_hosts[0].domains error:must be non-empty"),
+                  "2"))));
     } else {
       ok = ::testing::Value(
           csds_response.config(0).generic_xds_configs(),
@@ -478,7 +482,12 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
                                           kDefaultClusterName))),
               ClientResourceStatus::NACKED,
               EqUpdateFailureState(
-                  ::testing::HasSubstr("VirtualHost has no domains"), "2"))));
+                  ::testing::HasSubstr(
+                      "field:api_listener.api_listener.value[envoy.extensions"
+                      ".filters.network.http_connection_manager.v3"
+                      ".HttpConnectionManager].route_config.virtual_hosts[0]"
+                      ".domains error:must be non-empty"),
+                  "2"))));
     }
     if (ok) return;  // TEST PASSED!
     gpr_sleep_until(
@@ -510,8 +519,8 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
             kCdsTypeUrl, kDefaultClusterName, "1",
             UnpackCluster(EqCluster(kDefaultClusterName)),
             ClientResourceStatus::NACKED,
-            EqUpdateFailureState(
-                ::testing::HasSubstr("DiscoveryType not found"), "2"))));
+            EqUpdateFailureState(::testing::HasSubstr("unknown discovery type"),
+                                 "2"))));
     if (ok) return;  // TEST PASSED!
     gpr_sleep_until(
         grpc_timeout_milliseconds_to_deadline(kFetchIntervalMilliseconds));
@@ -548,8 +557,11 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
                 kDefaultEdsServiceName, backends_[0]->port(),
                 kDefaultLocalityWeight)),
             ClientResourceStatus::NACKED,
-            EqUpdateFailureState(::testing::HasSubstr("Empty locality"),
-                                 "2"))));
+            EqUpdateFailureState(
+                ::testing::HasSubstr(
+                    "errors parsing EDS resource: ["
+                    "field:endpoints[0].locality error:field not present]"),
+                "2"))));
     if (ok) return;  // TEST PASSED!
     gpr_sleep_until(
         grpc_timeout_milliseconds_to_deadline(kFetchIntervalMilliseconds));
@@ -607,7 +619,7 @@ class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
  protected:
   void SetUp() override {
     // Shorten the ADS subscription timeout to speed up the test run.
-    InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"",
+    InitClient(XdsBootstrapBuilder(), /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/2000);
   }
 };
@@ -668,7 +680,7 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("CDS resource \"", kDefaultClusterName, "\" does not exist"),
+      absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
       RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
@@ -680,11 +692,11 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancer_->ads_service()->UnsetResource(kEdsTypeUrl, kDefaultEdsServiceName);
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      // TODO(roth): Improve this error message as part of
-                      // https://github.com/grpc/grpc/issues/22883.
-                      "no children in weighted_target policy: ",
-                      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "no children in weighted_target policy: EDS resource eds_service_name "
+      "does not exist",
+      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(
       csds_response.config(0).generic_xds_configs(),
@@ -704,10 +716,12 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();

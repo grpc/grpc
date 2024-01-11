@@ -19,7 +19,6 @@ from grpc_testing import _common
 
 
 class State(_common.ChannelRpcHandler):
-
     def __init__(self, invocation_metadata, requests, requests_closed):
         self._condition = threading.Condition()
         self._invocation_metadata = invocation_metadata
@@ -63,23 +62,28 @@ class State(_common.ChannelRpcHandler):
                 if self._code is grpc.StatusCode.OK:
                     if self._responses:
                         response = self._responses.pop(0)
-                        return _common.ChannelRpcRead(response, None, None,
-                                                      None)
+                        return _common.ChannelRpcRead(
+                            response, None, None, None
+                        )
                     else:
-                        return _common.ChannelRpcRead(None,
-                                                      self._trailing_metadata,
-                                                      grpc.StatusCode.OK,
-                                                      self._details)
+                        return _common.ChannelRpcRead(
+                            None,
+                            self._trailing_metadata,
+                            grpc.StatusCode.OK,
+                            self._details,
+                        )
                 elif self._code is None:
                     if self._responses:
                         response = self._responses.pop(0)
-                        return _common.ChannelRpcRead(response, None, None,
-                                                      None)
+                        return _common.ChannelRpcRead(
+                            response, None, None, None
+                        )
                     else:
                         self._condition.wait()
                 else:
-                    return _common.ChannelRpcRead(None, self._trailing_metadata,
-                                                  self._code, self._details)
+                    return _common.ChannelRpcRead(
+                        None, self._trailing_metadata, self._code, self._details
+                    )
 
     def termination(self):
         with self._condition:
@@ -105,7 +109,7 @@ class State(_common.ChannelRpcHandler):
     def take_invocation_metadata(self):
         with self._condition:
             if self._invocation_metadata is None:
-                raise ValueError('Expected invocation metadata!')
+                raise ValueError("Expected invocation metadata!")
             else:
                 invocation_metadata = self._invocation_metadata
                 self._invocation_metadata = None
@@ -114,9 +118,9 @@ class State(_common.ChannelRpcHandler):
     def take_invocation_metadata_and_request(self):
         with self._condition:
             if self._invocation_metadata is None:
-                raise ValueError('Expected invocation metadata!')
+                raise ValueError("Expected invocation metadata!")
             elif not self._requests:
-                raise ValueError('Expected at least one request!')
+                raise ValueError("Expected at least one request!")
             else:
                 invocation_metadata = self._invocation_metadata
                 self._invocation_metadata = None
@@ -125,7 +129,8 @@ class State(_common.ChannelRpcHandler):
     def send_initial_metadata(self, initial_metadata):
         with self._condition:
             self._initial_metadata = _common.fuss_with_metadata(
-                initial_metadata)
+                initial_metadata
+            )
             self._condition.notify_all()
 
     def take_request(self):
@@ -150,14 +155,16 @@ class State(_common.ChannelRpcHandler):
                 self._responses.append(response)
                 self._condition.notify_all()
 
-    def terminate_with_response(self, response, trailing_metadata, code,
-                                details):
+    def terminate_with_response(
+        self, response, trailing_metadata, code, details
+    ):
         with self._condition:
             if self._initial_metadata is None:
                 self._initial_metadata = _common.FUSSED_EMPTY_METADATA
             self._responses.append(response)
             self._trailing_metadata = _common.fuss_with_metadata(
-                trailing_metadata)
+                trailing_metadata
+            )
             self._code = code
             self._details = details
             self._condition.notify_all()
@@ -167,7 +174,8 @@ class State(_common.ChannelRpcHandler):
             if self._initial_metadata is None:
                 self._initial_metadata = _common.FUSSED_EMPTY_METADATA
             self._trailing_metadata = _common.fuss_with_metadata(
-                trailing_metadata)
+                trailing_metadata
+            )
             self._code = code
             self._details = details
             self._condition.notify_all()
@@ -180,8 +188,9 @@ class State(_common.ChannelRpcHandler):
                 elif self._code is None:
                     self._condition.wait()
                 else:
-                    raise ValueError('Status code unexpectedly {}!'.format(
-                        self._code))
+                    raise ValueError(
+                        "Status code unexpectedly {}!".format(self._code)
+                    )
 
     def is_active(self):
         raise NotImplementedError()

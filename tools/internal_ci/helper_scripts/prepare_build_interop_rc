@@ -18,9 +18,6 @@
 
 export LANG=en_US.UTF-8
 
-# Download Docker images from DockerHub
-export DOCKERHUB_ORGANIZATION=grpctesting
-
 git submodule update --init
 
 # Clone repositories for languages tested by the interop test suite

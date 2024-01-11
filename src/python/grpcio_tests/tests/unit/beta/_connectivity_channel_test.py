@@ -19,7 +19,6 @@ from grpc.beta import interfaces
 
 
 class ConnectivityStatesTest(unittest.TestCase):
-
     def testBetaConnectivityStates(self):
         self.assertIsNotNone(interfaces.ChannelConnectivity.IDLE)
         self.assertIsNotNone(interfaces.ChannelConnectivity.CONNECTING)
@@ -28,5 +27,5 @@ class ConnectivityStatesTest(unittest.TestCase):
         self.assertIsNotNone(interfaces.ChannelConnectivity.FATAL_FAILURE)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

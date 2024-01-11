@@ -26,13 +26,9 @@ py_library(
     name = "face_lib",
     srcs = ["face.py"],
     deps = [
-        "//src/python/grpcio/grpc/framework/foundation",
         "//src/python/grpcio/grpc/framework/common",
-        "@six//:six",
-    ] + select({
-        "//conditions:default": ["@enum34//:enum34"],
-        "//:python3": [],
-    }),
+        "//src/python/grpcio/grpc/framework/foundation",
+    ],
 )
 
 py_library(

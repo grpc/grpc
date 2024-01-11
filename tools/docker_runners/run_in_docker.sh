@@ -47,7 +47,5 @@ DOCKER_NONROOT_ARGS=(
 
 # the original DOCKER_EXTRA_ARGS + all the args defined in this script
 export DOCKER_EXTRA_ARGS="${DOCKER_NONROOT_ARGS[@]} ${DOCKER_EXTRA_ARGS}"
-# download the docker images from dockerhub instead of building them locally
-export DOCKERHUB_ORGANIZATION=grpctesting
 
 exec tools/run_tests/dockerize/build_and_run_docker.sh "$@"

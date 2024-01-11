@@ -24,67 +24,65 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
-#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/support/alloc.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_util.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
 
 TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
 
-// TODO(donnadionne): Remove once outlier detection is no longer experimental
-bool XdsOutlierDetectionEnabled() {
-  char* value = gpr_getenv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 namespace {
 
-constexpr char kOutlierDetection[] = "outlier_detection_experimental";
+using ::grpc_event_engine::experimental::EventEngine;
+
+constexpr absl::string_view kOutlierDetection =
+    "outlier_detection_experimental";
 
 // Config for xDS Cluster Impl LB policy.
 class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
@@ -95,13 +93,11 @@ class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
       : outlier_detection_config_(outlier_detection_config),
         child_policy_(std::move(child_policy)) {}
 
-  const char* name() const override { return kOutlierDetection; }
+  absl::string_view name() const override { return kOutlierDetection; }
 
   bool CountingEnabled() const {
-    return (
-        outlier_detection_config_.interval != Duration::Infinity() &&
-        (outlier_detection_config_.success_rate_ejection.has_value() ||
-         outlier_detection_config_.failure_percentage_ejection.has_value()));
+    return outlier_detection_config_.success_rate_ejection.has_value() ||
+           outlier_detection_config_.failure_percentage_ejection.has_value();
   }
 
   const OutlierDetectionConfig& outlier_detection_config() const {
@@ -122,57 +118,70 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
  public:
   explicit OutlierDetectionLb(Args args);
 
-  const char* name() const override { return kOutlierDetection; }
+  absl::string_view name() const override { return kOutlierDetection; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
  private:
   class SubchannelState;
+  class EndpointState;
+
   class SubchannelWrapper : public DelegatingSubchannel {
    public:
-    SubchannelWrapper(RefCountedPtr<SubchannelState> subchannel_state,
+    SubchannelWrapper(std::shared_ptr<WorkSerializer> work_serializer,
+                      RefCountedPtr<SubchannelState> subchannel_state,
                       RefCountedPtr<SubchannelInterface> subchannel)
         : DelegatingSubchannel(std::move(subchannel)),
+          work_serializer_(std::move(work_serializer)),
           subchannel_state_(std::move(subchannel_state)) {
       if (subchannel_state_ != nullptr) {
         subchannel_state_->AddSubchannel(this);
-        if (subchannel_state_->ejection_time().has_value()) {
+        if (subchannel_state_->endpoint_state()->ejection_time().has_value()) {
           ejected_ = true;
         }
       }
     }
 
-    ~SubchannelWrapper() override {
-      if (subchannel_state_ != nullptr) {
-        subchannel_state_->RemoveSubchannel(this);
+    void Orphan() override {
+      if (!IsWorkSerializerDispatchEnabled()) {
+        if (subchannel_state_ != nullptr) {
+          subchannel_state_->RemoveSubchannel(this);
+        }
+        return;
       }
+      work_serializer_->Run(
+          [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
+            if (self->subchannel_state_ != nullptr) {
+              self->subchannel_state_->RemoveSubchannel(self.get());
+            }
+          },
+          DEBUG_LOCATION);
     }
 
     void Eject();
 
     void Uneject();
 
-    void WatchConnectivityState(
-        std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override;
+    void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override;
 
-    void CancelConnectivityStateWatch(
-        ConnectivityStateWatcherInterface* watcher) override;
+    void CancelDataWatcher(DataWatcherInterface* watcher) override;
 
-    RefCountedPtr<SubchannelState> subchannel_state() const {
-      return subchannel_state_;
+    RefCountedPtr<EndpointState> endpoint_state() const {
+      if (subchannel_state_ == nullptr) return nullptr;
+      return subchannel_state_->endpoint_state();
     }
 
    private:
     class WatcherWrapper
         : public SubchannelInterface::ConnectivityStateWatcherInterface {
      public:
-      WatcherWrapper(std::unique_ptr<
+      WatcherWrapper(std::shared_ptr<
                          SubchannelInterface::ConnectivityStateWatcherInterface>
-                         watcher,
+                         health_watcher,
                      bool ejected)
-          : watcher_(std::move(watcher)), ejected_(ejected) {}
+          : watcher_(std::move(health_watcher)), ejected_(ejected) {}
 
       void Eject() {
         ejected_ = true;
@@ -212,26 +221,70 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       }
 
      private:
-      std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
+      std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
       absl::optional<grpc_connectivity_state> last_seen_state_;
       absl::Status last_seen_status_;
       bool ejected_;
     };
 
+    std::shared_ptr<WorkSerializer> work_serializer_;
     RefCountedPtr<SubchannelState> subchannel_state_;
     bool ejected_ = false;
-    std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
-             WatcherWrapper*>
-        watchers_;
+    WatcherWrapper* watcher_wrapper_ = nullptr;
   };
 
   class SubchannelState : public RefCounted<SubchannelState> {
    public:
-    struct Bucket {
-      std::atomic<uint64_t> successes;
-      std::atomic<uint64_t> failures;
-    };
+    void AddSubchannel(SubchannelWrapper* wrapper) {
+      subchannels_.insert(wrapper);
+    }
+
+    void RemoveSubchannel(SubchannelWrapper* wrapper) {
+      subchannels_.erase(wrapper);
+    }
+
+    RefCountedPtr<EndpointState> endpoint_state() {
+      MutexLock lock(&mu_);
+      return endpoint_state_;
+    }
+
+    void set_endpoint_state(RefCountedPtr<EndpointState> endpoint_state) {
+      MutexLock lock(&mu_);
+      endpoint_state_ = std::move(endpoint_state);
+    }
+
+    void Eject() {
+      // Ejecting the subchannel may cause the child policy to unref the
+      // subchannel, so we need to be prepared for the set to be modified
+      // while we are iterating.
+      for (auto it = subchannels_.begin(); it != subchannels_.end();) {
+        SubchannelWrapper* subchannel = *it;
+        ++it;
+        subchannel->Eject();
+      }
+    }
+
+    void Uneject() {
+      for (auto& subchannel : subchannels_) {
+        subchannel->Uneject();
+      }
+    }
+
+   private:
+    std::set<SubchannelWrapper*> subchannels_;
+    Mutex mu_;
+    RefCountedPtr<EndpointState> endpoint_state_ ABSL_GUARDED_BY(mu_);
+  };
+
+  class EndpointState : public RefCounted<EndpointState> {
+   public:
+    explicit EndpointState(std::set<SubchannelState*> subchannels)
+        : subchannels_(std::move(subchannels)) {
+      for (SubchannelState* subchannel : subchannels_) {
+        subchannel->set_endpoint_state(Ref());
+      }
+    }
 
     void RotateBucket() {
       backup_bucket_->successes = 0;
@@ -253,14 +306,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
           {success_rate, backup_bucket_->successes + backup_bucket_->failures}};
     }
 
-    void AddSubchannel(SubchannelWrapper* wrapper) {
-      subchannels_.insert(wrapper);
-    }
-
-    void RemoveSubchannel(SubchannelWrapper* wrapper) {
-      subchannels_.erase(wrapper);
-    }
-
     void AddSuccessCount() { active_bucket_.load()->successes.fetch_add(1); }
 
     void AddFailureCount() { active_bucket_.load()->failures.fetch_add(1); }
@@ -270,15 +315,15 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     void Eject(const Timestamp& time) {
       ejection_time_ = time;
       ++multiplier_;
-      for (auto& subchannel : subchannels_) {
-        subchannel->Eject();
+      for (SubchannelState* subchannel_state : subchannels_) {
+        subchannel_state->Eject();
       }
     }
 
     void Uneject() {
       ejection_time_.reset();
-      for (auto& subchannel : subchannels_) {
-        subchannel->Uneject();
+      for (SubchannelState* subchannel_state : subchannels_) {
+        subchannel_state->Uneject();
       }
     }
 
@@ -295,7 +340,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
                                base_ejection_time_in_millis * multiplier_,
                                std::max(base_ejection_time_in_millis,
                                         max_ejection_time_in_millis)));
-        if (change_time < ExecCtx::Get()->Now()) {
+        if (change_time < Timestamp::Now()) {
           Uneject();
           return true;
         }
@@ -303,62 +348,54 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       return false;
     }
 
+    void DisableEjection() {
+      if (ejection_time_.has_value()) Uneject();
+      multiplier_ = 0;
+    }
+
    private:
-    std::unique_ptr<Bucket> current_bucket_ = absl::make_unique<Bucket>();
-    std::unique_ptr<Bucket> backup_bucket_ = absl::make_unique<Bucket>();
+    struct Bucket {
+      std::atomic<uint64_t> successes;
+      std::atomic<uint64_t> failures;
+    };
+
+    const std::set<SubchannelState*> subchannels_;
+
+    std::unique_ptr<Bucket> current_bucket_ = std::make_unique<Bucket>();
+    std::unique_ptr<Bucket> backup_bucket_ = std::make_unique<Bucket>();
     // The bucket used to update call counts.
     // Points to either current_bucket or active_bucket.
     std::atomic<Bucket*> active_bucket_{current_bucket_.get()};
     uint32_t multiplier_ = 0;
     absl::optional<Timestamp> ejection_time_;
-    std::set<SubchannelWrapper*> subchannels_;
-  };
-
-  // A simple wrapper for ref-counting a picker from the child policy.
-  class RefCountedPicker : public RefCounted<RefCountedPicker> {
-   public:
-    explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
-        : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) { return picker_->Pick(args); }
-
-   private:
-    std::unique_ptr<SubchannelPicker> picker_;
   };
 
   // A picker that wraps the picker from the child to perform outlier detection.
   class Picker : public SubchannelPicker {
    public:
     Picker(OutlierDetectionLb* outlier_detection_lb,
-           RefCountedPtr<RefCountedPicker> picker, bool counting_enabled);
+           RefCountedPtr<SubchannelPicker> picker, bool counting_enabled);
 
     PickResult Pick(PickArgs args) override;
 
    private:
     class SubchannelCallTracker;
-    RefCountedPtr<RefCountedPicker> picker_;
+    RefCountedPtr<SubchannelPicker> picker_;
     bool counting_enabled_;
   };
 
-  class Helper : public ChannelControlHelper {
+  class Helper
+      : public ParentOwningDelegatingChannelControlHelper<OutlierDetectionLb> {
    public:
     explicit Helper(RefCountedPtr<OutlierDetectionLb> outlier_detection_policy)
-        : outlier_detection_policy_(std::move(outlier_detection_policy)) {}
-
-    ~Helper() override {
-      outlier_detection_policy_.reset(DEBUG_LOCATION, "Helper");
-    }
+        : ParentOwningDelegatingChannelControlHelper(
+              std::move(outlier_detection_policy)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override;
+        const grpc_resolved_address& address,
+        const ChannelArgs& per_address_args, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override;
-    void RequestReresolution() override;
-    absl::string_view GetAuthority() override;
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override;
-
-   private:
-    RefCountedPtr<OutlierDetectionLb> outlier_detection_policy_;
+                     RefCountedPtr<SubchannelPicker> picker) override;
   };
 
   class EjectionTimer : public InternallyRefCounted<EjectionTimer> {
@@ -371,20 +408,15 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     Timestamp StartTime() const { return start_time_; }
 
    private:
-    static void OnTimer(void* arg, grpc_error_handle error);
-    void OnTimerLocked(grpc_error_handle);
+    void OnTimerLocked();
 
     RefCountedPtr<OutlierDetectionLb> parent_;
-    grpc_timer timer_;
-    grpc_closure on_timer_;
-    bool timer_pending_ = true;
+    absl::optional<EventEngine::TaskHandle> timer_handle_;
     Timestamp start_time_;
     absl::BitGen bit_gen_;
   };
 
   ~OutlierDetectionLb() override;
-
-  static std::string MakeKeyForAddress(const ServerAddress& address);
 
   void ShutdownLocked() override;
 
@@ -404,8 +436,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   // Latest state and picker reported by the child policy.
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
   absl::Status status_;
-  RefCountedPtr<RefCountedPicker> picker_;
-  std::map<std::string, RefCountedPtr<SubchannelState>> subchannel_state_map_;
+  RefCountedPtr<SubchannelPicker> picker_;
+  std::map<EndpointAddressSet, RefCountedPtr<EndpointState>>
+      endpoint_state_map_;
+  std::map<grpc_resolved_address, RefCountedPtr<SubchannelState>,
+           ResolvedAddressLessThan>
+      subchannel_state_map_;
   OrphanablePtr<EjectionTimer> ejection_timer_;
 };
 
@@ -415,33 +451,32 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
 void OutlierDetectionLb::SubchannelWrapper::Eject() {
   ejected_ = true;
-  for (auto& watcher : watchers_) {
-    watcher.second->Eject();
-  }
+  if (watcher_wrapper_ != nullptr) watcher_wrapper_->Eject();
 }
 
 void OutlierDetectionLb::SubchannelWrapper::Uneject() {
   ejected_ = false;
-  for (auto& watcher : watchers_) {
-    watcher.second->Uneject();
+  if (watcher_wrapper_ != nullptr) watcher_wrapper_->Uneject();
+}
+
+void OutlierDetectionLb::SubchannelWrapper::AddDataWatcher(
+    std::unique_ptr<DataWatcherInterface> watcher) {
+  auto* w = static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get());
+  if (w->type() == HealthProducer::Type()) {
+    auto* health_watcher = static_cast<HealthWatcher*>(watcher.get());
+    auto watcher_wrapper = std::make_shared<WatcherWrapper>(
+        health_watcher->TakeWatcher(), ejected_);
+    watcher_wrapper_ = watcher_wrapper.get();
+    health_watcher->SetWatcher(std::move(watcher_wrapper));
   }
+  DelegatingSubchannel::AddDataWatcher(std::move(watcher));
 }
 
-void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
-    std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
-  ConnectivityStateWatcherInterface* watcher_ptr = watcher.get();
-  auto watcher_wrapper =
-      absl::make_unique<WatcherWrapper>(std::move(watcher), ejected_);
-  watchers_.emplace(watcher_ptr, watcher_wrapper.get());
-  wrapped_subchannel()->WatchConnectivityState(std::move(watcher_wrapper));
-}
-
-void OutlierDetectionLb::SubchannelWrapper::CancelConnectivityStateWatch(
-    ConnectivityStateWatcherInterface* watcher) {
-  auto it = watchers_.find(watcher);
-  if (it == watchers_.end()) return;
-  wrapped_subchannel()->CancelConnectivityStateWatch(it->second);
-  watchers_.erase(it);
+void OutlierDetectionLb::SubchannelWrapper::CancelDataWatcher(
+    DataWatcherInterface* watcher) {
+  auto* w = static_cast<InternalSubchannelDataWatcherInterface*>(watcher);
+  if (w->type() == HealthProducer::Type()) watcher_wrapper_ = nullptr;
+  DelegatingSubchannel::CancelDataWatcher(watcher);
 }
 
 //
@@ -454,13 +489,13 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
   SubchannelCallTracker(
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           original_subchannel_call_tracker,
-      RefCountedPtr<SubchannelState> subchannel_state)
+      RefCountedPtr<EndpointState> endpoint_state)
       : original_subchannel_call_tracker_(
             std::move(original_subchannel_call_tracker)),
-        subchannel_state_(std::move(subchannel_state)) {}
+        endpoint_state_(std::move(endpoint_state)) {}
 
   ~SubchannelCallTracker() override {
-    subchannel_state_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    endpoint_state_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
   }
 
   void Start() override {
@@ -478,19 +513,17 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
     }
     // Record call completion based on status for outlier detection
     // calculations.
-    if (subchannel_state_ != nullptr) {
-      if (args.status.ok()) {
-        subchannel_state_->AddSuccessCount();
-      } else {
-        subchannel_state_->AddFailureCount();
-      }
+    if (args.status.ok()) {
+      endpoint_state_->AddSuccessCount();
+    } else {
+      endpoint_state_->AddFailureCount();
     }
   }
 
  private:
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       original_subchannel_call_tracker_;
-  RefCountedPtr<SubchannelState> subchannel_state_;
+  RefCountedPtr<EndpointState> endpoint_state_;
 };
 
 //
@@ -498,7 +531,7 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
 //
 
 OutlierDetectionLb::Picker::Picker(OutlierDetectionLb* outlier_detection_lb,
-                                   RefCountedPtr<RefCountedPicker> picker,
+                                   RefCountedPtr<SubchannelPicker> picker,
                                    bool counting_enabled)
     : picker_(std::move(picker)), counting_enabled_(counting_enabled) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
@@ -520,17 +553,20 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
   PickResult result = picker_->Pick(args);
   auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
-    // Unwrap subchannel to pass back up the stack.
     auto* subchannel_wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
     // Inject subchannel call tracker to record call completion as long as
-    // not both success_rate_ejection and failure_percentage_ejection are unset.
+    // either success_rate_ejection or failure_percentage_ejection is enabled.
     if (counting_enabled_) {
-      complete_pick->subchannel_call_tracker =
-          absl::make_unique<SubchannelCallTracker>(
-              std::move(complete_pick->subchannel_call_tracker),
-              subchannel_wrapper->subchannel_state());
+      auto endpoint_state = subchannel_wrapper->endpoint_state();
+      if (endpoint_state != nullptr) {
+        complete_pick->subchannel_call_tracker =
+            std::make_unique<SubchannelCallTracker>(
+                std::move(complete_pick->subchannel_call_tracker),
+                std::move(endpoint_state));
+      }
     }
+    // Unwrap subchannel to pass back up the stack.
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
   }
   return result;
@@ -553,13 +589,6 @@ OutlierDetectionLb::~OutlierDetectionLb() {
             "[outlier_detection_lb %p] destroying outlier_detection LB policy",
             this);
   }
-}
-
-std::string OutlierDetectionLb::MakeKeyForAddress(
-    const ServerAddress& address) {
-  // Use only the address, not the attributes.
-  auto addr_str = grpc_sockaddr_to_string(&address.address(), false);
-  return addr_str.ok() ? addr_str.value() : addr_str.status().ToString();
 }
 
 void OutlierDetectionLb::ShutdownLocked() {
@@ -588,13 +617,13 @@ void OutlierDetectionLb::ResetBackoffLocked() {
   if (child_policy_ != nullptr) child_policy_->ResetBackoffLocked();
 }
 
-void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
+absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] Received update", this);
   }
   auto old_config = std::move(config_);
   // Update config.
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<OutlierDetectionLbConfig>();
   // Update outlier detection timer.
   if (!config_->CountingEnabled()) {
     // No need for timer.  Cancel the current timer, if any.
@@ -609,9 +638,9 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO, "[outlier_detection_lb %p] starting timer", this);
     }
-    ejection_timer_ =
-        MakeOrphanable<EjectionTimer>(Ref(), ExecCtx::Get()->Now());
-    for (const auto& p : subchannel_state_map_) {
+    ejection_timer_ = MakeOrphanable<EjectionTimer>(
+        RefAsSubclass<OutlierDetectionLb>(), Timestamp::Now());
+    for (const auto& p : endpoint_state_map_) {
       p.second->RotateBucket();  // Reset call counters.
     }
   } else if (old_config->outlier_detection_config().interval !=
@@ -625,36 +654,91 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
               "[outlier_detection_lb %p] interval changed, replacing timer",
               this);
     }
-    ejection_timer_ =
-        MakeOrphanable<EjectionTimer>(Ref(), ejection_timer_->StartTime());
+    ejection_timer_ = MakeOrphanable<EjectionTimer>(
+        RefAsSubclass<OutlierDetectionLb>(), ejection_timer_->StartTime());
   }
-  // Update subchannel state map.
+  // Update subchannel and endpoint maps.
   if (args.addresses.ok()) {
-    std::set<std::string> current_addresses;
-    for (const ServerAddress& address : *args.addresses) {
-      std::string address_key = MakeKeyForAddress(address);
-      auto& subchannel_state = subchannel_state_map_[address_key];
-      if (subchannel_state == nullptr) {
-        subchannel_state = MakeRefCounted<SubchannelState>();
+    std::set<EndpointAddressSet> current_endpoints;
+    std::set<grpc_resolved_address, ResolvedAddressLessThan> current_addresses;
+    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
+      EndpointAddressSet key(endpoint.addresses());
+      current_endpoints.emplace(key);
+      for (const grpc_resolved_address& address : endpoint.addresses()) {
+        current_addresses.emplace(address);
+      }
+      // Find the entry in the endpoint map.
+      auto it = endpoint_state_map_.find(key);
+      if (it == endpoint_state_map_.end()) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
           gpr_log(GPR_INFO,
-                  "[outlier_detection_lb %p] adding map entry for %s (%p)",
-                  this, address_key.c_str(), subchannel_state.get());
+                  "[outlier_detection_lb %p] adding endpoint entry for %s",
+                  this, key.ToString().c_str());
         }
+        // The endpoint is not present in the map, so we'll need to add it.
+        // Start by getting a pointer to the entry for each address in the
+        // subchannel map, creating the entry if needed.
+        std::set<SubchannelState*> subchannels;
+        for (const grpc_resolved_address& address : endpoint.addresses()) {
+          auto it2 = subchannel_state_map_.find(address);
+          if (it2 == subchannel_state_map_.end()) {
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+              std::string address_str = grpc_sockaddr_to_string(&address, false)
+                                            .value_or("<unknown>");
+              gpr_log(GPR_INFO,
+                      "[outlier_detection_lb %p] adding address entry for %s",
+                      this, address_str.c_str());
+            }
+            it2 = subchannel_state_map_
+                      .emplace(address, MakeRefCounted<SubchannelState>())
+                      .first;
+          }
+          subchannels.insert(it2->second.get());
+        }
+        // Now create the endpoint.
+        endpoint_state_map_.emplace(
+            key, MakeRefCounted<EndpointState>(std::move(subchannels)));
+      } else if (!config_->CountingEnabled()) {
+        // If counting is not enabled, reset state.
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+          gpr_log(GPR_INFO,
+                  "[outlier_detection_lb %p] counting disabled; disabling "
+                  "ejection for %s",
+                  this, key.ToString().c_str());
+        }
+        it->second->DisableEjection();
       }
-      current_addresses.emplace(address_key);
-    }
+    });
+    // Remove any entries we no longer need in the subchannel map.
     for (auto it = subchannel_state_map_.begin();
          it != subchannel_state_map_.end();) {
       if (current_addresses.find(it->first) == current_addresses.end()) {
-        // remove each map entry for a subchannel address not in the updated
-        // address list.
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+          std::string address_str =
+              grpc_sockaddr_to_string(&it->first, false).value_or("<unknown>");
+          gpr_log(GPR_INFO,
+                  "[outlier_detection_lb %p] removing subchannel map entry %s",
+                  this, address_str.c_str());
+        }
+        // Don't hold a ref to the corresponding EndpointState object,
+        // because there could be subchannel wrappers keeping this alive
+        // for a while, and we don't need them to do any call tracking.
+        it->second->set_endpoint_state(nullptr);
+        it = subchannel_state_map_.erase(it);
+      } else {
+        ++it;
+      }
+    }
+    // Remove any entries we no longer need in the endpoint map.
+    for (auto it = endpoint_state_map_.begin();
+         it != endpoint_state_map_.end();) {
+      if (current_endpoints.find(it->first) == current_endpoints.end()) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
           gpr_log(GPR_INFO,
-                  "[outlier_detection_lb %p] removing map entry for %s (%p)",
-                  this, it->first.c_str(), it->second.get());
+                  "[outlier_detection_lb %p] removing endpoint map entry %s",
+                  this, it->first.ToString().c_str());
         }
-        it = subchannel_state_map_.erase(it);
+        it = endpoint_state_map_.erase(it);
       } else {
         ++it;
       }
@@ -667,21 +751,21 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update child policy.
   UpdateArgs update_args;
   update_args.addresses = std::move(args.addresses);
+  update_args.resolution_note = std::move(args.resolution_note);
   update_args.config = config_->child_policy();
-  // Update the policy.
   update_args.args = std::move(args.args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,
             "[outlier_detection_lb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
-  child_policy_->UpdateLocked(std::move(update_args));
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 void OutlierDetectionLb::MaybeUpdatePickerLocked() {
   if (picker_ != nullptr) {
     auto outlier_detection_picker =
-        absl::make_unique<Picker>(this, picker_, config_->CountingEnabled());
+        MakeRefCounted<Picker>(this, picker_, config_->CountingEnabled());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
               "[outlier_detection_lb %p] updating connectivity: state=%s "
@@ -699,8 +783,8 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+  lb_policy_args.channel_control_helper = std::make_unique<Helper>(
+      RefAsSubclass<OutlierDetectionLb>(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_outlier_detection_lb_trace);
@@ -722,18 +806,26 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 //
 
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
-  if (outlier_detection_policy_->shutting_down_) return nullptr;
-  std::string key = MakeKeyForAddress(address);
+    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const ChannelArgs& args) {
+  if (parent()->shutting_down_) return nullptr;
   RefCountedPtr<SubchannelState> subchannel_state;
-  auto it = outlier_detection_policy_->subchannel_state_map_.find(key);
-  if (it != outlier_detection_policy_->subchannel_state_map_.end()) {
+  auto it = parent()->subchannel_state_map_.find(address);
+  if (it != parent()->subchannel_state_map_.end()) {
     subchannel_state = it->second->Ref();
   }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+    std::string address_str =
+        grpc_sockaddr_to_string(&address, false).value_or("<unknown>");
+    gpr_log(GPR_INFO,
+            "[outlier_detection_lb %p] creating subchannel for %s, "
+            "subchannel state %p",
+            parent(), address_str.c_str(), subchannel_state.get());
+  }
   auto subchannel = MakeRefCounted<SubchannelWrapper>(
-      subchannel_state,
-      outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
-          std::move(address), args));
+      parent()->work_serializer(), subchannel_state,
+      parent()->channel_control_helper()->CreateSubchannel(
+          address, per_address_args, args));
   if (subchannel_state != nullptr) {
     subchannel_state->AddSubchannel(subchannel.get());
   }
@@ -742,38 +834,21 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
 
 void OutlierDetectionLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
-  if (outlier_detection_policy_->shutting_down_) return;
+    RefCountedPtr<SubchannelPicker> picker) {
+  if (parent()->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,
             "[outlier_detection_lb %p] child connectivity state update: "
             "state=%s (%s) picker=%p",
-            outlier_detection_policy_.get(), ConnectivityStateName(state),
-            status.ToString().c_str(), picker.get());
+            parent(), ConnectivityStateName(state), status.ToString().c_str(),
+            picker.get());
   }
   // Save the state and picker.
-  outlier_detection_policy_->state_ = state;
-  outlier_detection_policy_->status_ = status;
-  outlier_detection_policy_->picker_ =
-      MakeRefCounted<RefCountedPicker>(std::move(picker));
+  parent()->state_ = state;
+  parent()->status_ = status;
+  parent()->picker_ = std::move(picker);
   // Wrap the picker and return it to the channel.
-  outlier_detection_policy_->MaybeUpdatePickerLocked();
-}
-
-void OutlierDetectionLb::Helper::RequestReresolution() {
-  if (outlier_detection_policy_->shutting_down_) return;
-  outlier_detection_policy_->channel_control_helper()->RequestReresolution();
-}
-
-absl::string_view OutlierDetectionLb::Helper::GetAuthority() {
-  return outlier_detection_policy_->channel_control_helper()->GetAuthority();
-}
-
-void OutlierDetectionLb::Helper::AddTraceEvent(TraceSeverity severity,
-                                               absl::string_view message) {
-  if (outlier_detection_policy_->shutting_down_) return;
-  outlier_detection_policy_->channel_control_helper()->AddTraceEvent(severity,
-                                                                     message);
+  parent()->MaybeUpdatePickerLocked();
 }
 
 //
@@ -788,212 +863,205 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejection timer will run in %s",
             parent_.get(), interval.ToString().c_str());
   }
-  GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
-  Ref().release();
-  grpc_timer_init(&timer_, start_time_ + interval, &on_timer_);
+  timer_handle_ = parent_->channel_control_helper()->GetEventEngine()->RunAfter(
+      interval, [self = Ref(DEBUG_LOCATION, "EjectionTimer")]() mutable {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        auto self_ptr = self.get();
+        self_ptr->parent_->work_serializer()->Run(
+            [self = std::move(self)]() { self->OnTimerLocked(); },
+            DEBUG_LOCATION);
+      });
 }
 
 void OutlierDetectionLb::EjectionTimer::Orphan() {
-  if (timer_pending_) {
-    timer_pending_ = false;
-    grpc_timer_cancel(&timer_);
+  if (timer_handle_.has_value()) {
+    parent_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
+    timer_handle_.reset();
   }
   Unref();
 }
 
-void OutlierDetectionLb::EjectionTimer::OnTimer(void* arg,
-                                                grpc_error_handle error) {
-  auto* self = static_cast<EjectionTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
-  self->parent_->work_serializer()->Run(
-      [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
-}
-
-void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-      gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejection timer running",
-              parent_.get());
+void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
+  if (!timer_handle_.has_value()) return;
+  timer_handle_.reset();
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+    gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejection timer running",
+            parent_.get());
+  }
+  std::map<EndpointState*, double> success_rate_ejection_candidates;
+  std::map<EndpointState*, double> failure_percentage_ejection_candidates;
+  size_t ejected_host_count = 0;
+  double success_rate_sum = 0;
+  auto time_now = Timestamp::Now();
+  auto& config = parent_->config_->outlier_detection_config();
+  for (auto& state : parent_->endpoint_state_map_) {
+    auto* endpoint_state = state.second.get();
+    // For each address, swap the call counter's buckets in that address's
+    // map entry.
+    endpoint_state->RotateBucket();
+    // Gather data to run success rate algorithm or failure percentage
+    // algorithm.
+    if (endpoint_state->ejection_time().has_value()) {
+      ++ejected_host_count;
     }
-    std::map<SubchannelState*, double> success_rate_ejection_candidates;
-    std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
-    size_t ejected_host_count = 0;
-    double success_rate_sum = 0;
-    auto time_now = ExecCtx::Get()->Now();
-    auto& config = parent_->config_->outlier_detection_config();
-    for (auto& state : parent_->subchannel_state_map_) {
-      auto* subchannel_state = state.second.get();
-      // For each address, swap the call counter's buckets in that address's
-      // map entry.
-      subchannel_state->RotateBucket();
-      // Gather data to run success rate algorithm or failure percentage
-      // algorithm.
-      if (subchannel_state->ejection_time().has_value()) {
-        ++ejected_host_count;
-      }
-      absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
-          subchannel_state->GetSuccessRateAndVolume();
-      if (!host_success_rate_and_volume.has_value()) {
-        continue;
-      }
-      double success_rate = host_success_rate_and_volume->first;
-      uint64_t request_volume = host_success_rate_and_volume->second;
-      if (config.success_rate_ejection.has_value()) {
-        if (request_volume >= config.success_rate_ejection->request_volume) {
-          success_rate_ejection_candidates[subchannel_state] = success_rate;
-          success_rate_sum += success_rate;
-        }
-      }
-      if (config.failure_percentage_ejection.has_value()) {
-        if (request_volume >=
-            config.failure_percentage_ejection->request_volume) {
-          failure_percentage_ejection_candidates[subchannel_state] =
-              success_rate;
-        }
+    absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
+        endpoint_state->GetSuccessRateAndVolume();
+    if (!host_success_rate_and_volume.has_value()) {
+      continue;
+    }
+    double success_rate = host_success_rate_and_volume->first;
+    uint64_t request_volume = host_success_rate_and_volume->second;
+    if (config.success_rate_ejection.has_value()) {
+      if (request_volume >= config.success_rate_ejection->request_volume) {
+        success_rate_ejection_candidates[endpoint_state] = success_rate;
+        success_rate_sum += success_rate;
       }
     }
+    if (config.failure_percentage_ejection.has_value()) {
+      if (request_volume >=
+          config.failure_percentage_ejection->request_volume) {
+        failure_percentage_ejection_candidates[endpoint_state] = success_rate;
+      }
+    }
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+    gpr_log(GPR_INFO,
+            "[outlier_detection_lb %p] found %" PRIuPTR
+            " success rate candidates and %" PRIuPTR
+            " failure percentage candidates; ejected_host_count=%" PRIuPTR
+            "; success_rate_sum=%.3f",
+            parent_.get(), success_rate_ejection_candidates.size(),
+            failure_percentage_ejection_candidates.size(), ejected_host_count,
+            success_rate_sum);
+  }
+  // success rate algorithm
+  if (!success_rate_ejection_candidates.empty() &&
+      success_rate_ejection_candidates.size() >=
+          config.success_rate_ejection->minimum_hosts) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
-              "[outlier_detection_lb %p] found %" PRIuPTR
-              " success rate candidates and %" PRIuPTR
-              " failure percentage candidates; ejected_host_count=%" PRIuPTR
-              "; success_rate_sum=%.3f",
-              parent_.get(), success_rate_ejection_candidates.size(),
-              failure_percentage_ejection_candidates.size(), ejected_host_count,
-              success_rate_sum);
+              "[outlier_detection_lb %p] running success rate algorithm: "
+              "stdev_factor=%d, enforcement_percentage=%d",
+              parent_.get(), config.success_rate_ejection->stdev_factor,
+              config.success_rate_ejection->enforcement_percentage);
     }
-    // success rate algorithm
-    if (!success_rate_ejection_candidates.empty() &&
-        success_rate_ejection_candidates.size() >=
-            config.success_rate_ejection->minimum_hosts) {
+    // calculate ejection threshold: (mean - stdev *
+    // (success_rate_ejection.stdev_factor / 1000))
+    double mean = success_rate_sum / success_rate_ejection_candidates.size();
+    double variance = 0;
+    for (const auto& p : success_rate_ejection_candidates) {
+      variance += std::pow(p.second - mean, 2);
+    }
+    variance /= success_rate_ejection_candidates.size();
+    double stdev = std::sqrt(variance);
+    const double success_rate_stdev_factor =
+        static_cast<double>(config.success_rate_ejection->stdev_factor) / 1000;
+    double ejection_threshold = mean - stdev * success_rate_stdev_factor;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+      gpr_log(GPR_INFO,
+              "[outlier_detection_lb %p] stdev=%.3f, ejection_threshold=%.3f",
+              parent_.get(), stdev, ejection_threshold);
+    }
+    for (auto& candidate : success_rate_ejection_candidates) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
         gpr_log(GPR_INFO,
-                "[outlier_detection_lb %p] running success rate algorithm",
-                parent_.get());
+                "[outlier_detection_lb %p] checking candidate %p: "
+                "success_rate=%.3f",
+                parent_.get(), candidate.first, candidate.second);
       }
-      // calculate ejection threshold: (mean - stdev *
-      // (success_rate_ejection.stdev_factor / 1000))
-      double mean = success_rate_sum / success_rate_ejection_candidates.size();
-      double variance = 0;
-      for (const auto& p : success_rate_ejection_candidates) {
-        variance += std::pow(p.second - mean, 2);
-      }
-      variance /= success_rate_ejection_candidates.size();
-      double stdev = std::sqrt(variance);
-      const double success_rate_stdev_factor =
-          static_cast<double>(config.success_rate_ejection->stdev_factor) /
-          1000;
-      double ejection_threshold = mean - stdev * success_rate_stdev_factor;
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-        gpr_log(GPR_INFO,
-                "[outlier_detection_lb %p] stdev=%.3f, ejection_threshold=%.3f",
-                parent_.get(), stdev, ejection_threshold);
-      }
-      for (auto& candidate : success_rate_ejection_candidates) {
+      if (candidate.second < ejection_threshold) {
+        uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
+        double current_percent =
+            100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
         if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
           gpr_log(GPR_INFO,
-                  "[outlier_detection_lb %p] checking candidate %p: "
-                  "success_rate=%.3f",
-                  parent_.get(), candidate.first, candidate.second);
+                  "[outlier_detection_lb %p] random_key=%d "
+                  "ejected_host_count=%" PRIuPTR " current_percent=%.3f",
+                  parent_.get(), random_key, ejected_host_count,
+                  current_percent);
         }
-        if (candidate.second < ejection_threshold) {
-          uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
-          double current_percent = 100.0 * ejected_host_count /
-                                   parent_->subchannel_state_map_.size();
+        if (random_key < config.success_rate_ejection->enforcement_percentage &&
+            (ejected_host_count == 0 ||
+             (current_percent < config.max_ejection_percent))) {
+          // Eject and record the timestamp for use when ejecting addresses in
+          // this iteration.
           if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-            gpr_log(GPR_INFO,
-                    "[outlier_detection_lb %p] random_key=%d "
-                    "ejected_host_count=%" PRIuPTR " current_percent=%.3f",
-                    parent_.get(), random_key, ejected_host_count,
-                    current_percent);
+            gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
+                    parent_.get());
           }
-          if (random_key <
-                  config.success_rate_ejection->enforcement_percentage &&
-              (ejected_host_count == 0 ||
-               (current_percent < config.max_ejection_percent))) {
-            // Eject and record the timestamp for use when ejecting addresses in
-            // this iteration.
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-              gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
-                      parent_.get());
-            }
-            candidate.first->Eject(time_now);
-            ++ejected_host_count;
-          }
+          candidate.first->Eject(time_now);
+          ++ejected_host_count;
         }
       }
     }
-    // failure percentage algorithm
-    if (!failure_percentage_ejection_candidates.empty() &&
-        failure_percentage_ejection_candidates.size() >=
-            config.failure_percentage_ejection->minimum_hosts) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-        gpr_log(
-            GPR_INFO,
-            "[outlier_detection_lb %p] running failure percentage algorithm",
-            parent_.get());
-      }
-      for (auto& candidate : failure_percentage_ejection_candidates) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-          gpr_log(GPR_INFO,
-                  "[outlier_detection_lb %p] checking candidate %p: "
-                  "success_rate=%.3f",
-                  parent_.get(), candidate.first, candidate.second);
-        }
-        // Extra check to make sure success rate algorithm didn't already
-        // eject this backend.
-        if (candidate.first->ejection_time().has_value()) continue;
-        if ((100.0 - candidate.second) >
-            config.failure_percentage_ejection->threshold) {
-          uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
-          double current_percent = 100.0 * ejected_host_count /
-                                   parent_->subchannel_state_map_.size();
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-            gpr_log(GPR_INFO,
-                    "[outlier_detection_lb %p] random_key=%d "
-                    "ejected_host_count=%" PRIuPTR " current_percent=%.3f",
-                    parent_.get(), random_key, ejected_host_count,
-                    current_percent);
-          }
-          if (random_key <
-                  config.failure_percentage_ejection->enforcement_percentage &&
-              (ejected_host_count == 0 ||
-               (current_percent < config.max_ejection_percent))) {
-            // Eject and record the timestamp for use when ejecting addresses in
-            // this iteration.
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-              gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
-                      parent_.get());
-            }
-            candidate.first->Eject(time_now);
-            ++ejected_host_count;
-          }
-        }
-      }
-    }
-    // For each address in the map:
-    //   If the address is not ejected and the multiplier is greater than 0,
-    //   decrease the multiplier by 1. If the address is ejected, and the
-    //   current time is after ejection_timestamp + min(base_ejection_time *
-    //   multiplier, max(base_ejection_time, max_ejection_time)), un-eject the
-    //   address.
-    for (auto& state : parent_->subchannel_state_map_) {
-      auto* subchannel_state = state.second.get();
-      const bool unejected =
-          subchannel_state->MaybeUneject(config.base_ejection_time.millis(),
-                                         config.max_ejection_time.millis());
-      if (unejected &&
-          GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-        gpr_log(GPR_INFO, "[outlier_detection_lb %p] unejected address %s (%p)",
-                parent_.get(), state.first.c_str(), subchannel_state);
-      }
-    }
-    timer_pending_ = false;
-    parent_->ejection_timer_ =
-        MakeOrphanable<EjectionTimer>(parent_, ExecCtx::Get()->Now());
   }
-  Unref(DEBUG_LOCATION, "Timer");
-  GRPC_ERROR_UNREF(error);
+  // failure percentage algorithm
+  if (!failure_percentage_ejection_candidates.empty() &&
+      failure_percentage_ejection_candidates.size() >=
+          config.failure_percentage_ejection->minimum_hosts) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+      gpr_log(GPR_INFO,
+              "[outlier_detection_lb %p] running failure percentage algorithm: "
+              "threshold=%d, enforcement_percentage=%d",
+              parent_.get(), config.failure_percentage_ejection->threshold,
+              config.failure_percentage_ejection->enforcement_percentage);
+    }
+    for (auto& candidate : failure_percentage_ejection_candidates) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+        gpr_log(GPR_INFO,
+                "[outlier_detection_lb %p] checking candidate %p: "
+                "success_rate=%.3f",
+                parent_.get(), candidate.first, candidate.second);
+      }
+      // Extra check to make sure success rate algorithm didn't already
+      // eject this backend.
+      if (candidate.first->ejection_time().has_value()) continue;
+      if ((100.0 - candidate.second) >
+          config.failure_percentage_ejection->threshold) {
+        uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
+        double current_percent =
+            100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+          gpr_log(GPR_INFO,
+                  "[outlier_detection_lb %p] random_key=%d "
+                  "ejected_host_count=%" PRIuPTR " current_percent=%.3f",
+                  parent_.get(), random_key, ejected_host_count,
+                  current_percent);
+        }
+        if (random_key <
+                config.failure_percentage_ejection->enforcement_percentage &&
+            (ejected_host_count == 0 ||
+             (current_percent < config.max_ejection_percent))) {
+          // Eject and record the timestamp for use when ejecting addresses in
+          // this iteration.
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+            gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
+                    parent_.get());
+          }
+          candidate.first->Eject(time_now);
+          ++ejected_host_count;
+        }
+      }
+    }
+  }
+  // For each address in the map:
+  //   If the address is not ejected and the multiplier is greater than 0,
+  //   decrease the multiplier by 1. If the address is ejected, and the
+  //   current time is after ejection_timestamp + min(base_ejection_time *
+  //   multiplier, max(base_ejection_time, max_ejection_time)), un-eject the
+  //   address.
+  for (auto& state : parent_->endpoint_state_map_) {
+    auto* endpoint_state = state.second.get();
+    const bool unejected = endpoint_state->MaybeUneject(
+        config.base_ejection_time.millis(), config.max_ejection_time.millis());
+    if (unejected && GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+      gpr_log(GPR_INFO, "[outlier_detection_lb %p] unejected endpoint %s (%p)",
+              parent_.get(), state.first.ToString().c_str(), endpoint_state);
+    }
+  }
+  parent_->ejection_timer_ =
+      MakeOrphanable<EjectionTimer>(parent_, Timestamp::Now());
 }
 
 //
@@ -1007,105 +1075,38 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<OutlierDetectionLb>(std::move(args));
   }
 
-  const char* name() const override { return kOutlierDetection; }
+  absl::string_view name() const override { return kOutlierDetection; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
-    if (json.type() == Json::Type::JSON_NULL) {
-      // This policy was configured in the deprecated loadBalancingPolicy
-      // field or in the client API.
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:loadBalancingPolicy error:outlier_detection policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-      return nullptr;
-    }
-    std::vector<grpc_error_handle> error_list;
-    // Outlier detection config
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& json) const override {
+    ValidationErrors errors;
     OutlierDetectionConfig outlier_detection_config;
-    auto it = json.object_value().find("successRateEjection");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::OBJECT) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:successRateEjection error:type must be object"));
-      } else {
-        OutlierDetectionConfig::SuccessRateEjection success_config;
-        const Json::Object& object = it->second.object_value();
-        ParseJsonObjectField(object, "stdevFactor",
-                             &success_config.stdev_factor, &error_list,
-                             /*required=*/false);
-        ParseJsonObjectField(object, "enforcementPercentage",
-                             &success_config.enforcement_percentage,
-                             &error_list, /*required=*/false);
-        ParseJsonObjectField(object, "minimumHosts",
-                             &success_config.minimum_hosts, &error_list,
-                             /*required=*/false);
-        ParseJsonObjectField(object, "requestVolume",
-                             &success_config.request_volume, &error_list,
-                             /*required=*/false);
-        outlier_detection_config.success_rate_ejection = success_config;
-      }
-    }
-    it = json.object_value().find("failurePercentageEjection");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::OBJECT) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:successRateEjection error:type must be object"));
-      } else {
-        OutlierDetectionConfig::FailurePercentageEjection failure_config;
-        const Json::Object& object = it->second.object_value();
-        ParseJsonObjectField(object, "threshold", &failure_config.threshold,
-                             &error_list, /*required=*/false);
-        ParseJsonObjectField(object, "enforcementPercentage",
-                             &failure_config.enforcement_percentage,
-                             &error_list, /*required=*/false);
-        ParseJsonObjectField(object, "minimumHosts",
-                             &failure_config.minimum_hosts, &error_list,
-                             /*required=*/false);
-        ParseJsonObjectField(object, "requestVolume",
-                             &failure_config.request_volume, &error_list,
-                             /*required=*/false);
-        outlier_detection_config.failure_percentage_ejection = failure_config;
-      }
-    }
-    ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
-                                   &outlier_detection_config.interval,
-                                   &error_list);
-    ParseJsonObjectFieldAsDuration(json.object_value(), "baseEjectionTime",
-                                   &outlier_detection_config.base_ejection_time,
-                                   &error_list, /*required=*/false);
-    if (!ParseJsonObjectFieldAsDuration(
-            json.object_value(), "maxEjectionTime",
-            &outlier_detection_config.max_ejection_time, &error_list,
-            /*required=*/false)) {
-      outlier_detection_config.max_ejection_time = std::max(
-          outlier_detection_config.base_ejection_time, Duration::Seconds(300));
-    }
-    ParseJsonObjectField(json.object_value(), "maxEjectionPercent",
-                         &outlier_detection_config.max_ejection_percent,
-                         &error_list, /*required=*/false);
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
-    it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:childPolicy error:required field missing"));
-    } else {
-      grpc_error_handle parse_error = GRPC_ERROR_NONE;
-      child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-          it->second, &parse_error);
-      if (child_policy == nullptr) {
-        GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(parse_error));
-        std::vector<grpc_error_handle> child_errors;
-        child_errors.push_back(parse_error);
-        error_list.push_back(
-            GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
+    {
+      outlier_detection_config =
+          LoadFromJson<OutlierDetectionConfig>(json, JsonArgs(), &errors);
+      // Parse childPolicy manually.
+      {
+        ValidationErrors::ScopedField field(&errors, ".childPolicy");
+        auto it = json.object().find("childPolicy");
+        if (it == json.object().end()) {
+          errors.AddError("field not present");
+        } else {
+          auto child_policy_config = CoreConfiguration::Get()
+                                         .lb_policy_registry()
+                                         .ParseLoadBalancingConfig(it->second);
+          if (!child_policy_config.ok()) {
+            errors.AddError(child_policy_config.status().message());
+          } else {
+            child_policy = std::move(*child_policy_config);
+          }
+        }
       }
     }
-    if (!error_list.empty()) {
-      *error = GRPC_ERROR_CREATE_FROM_VECTOR(
-          "outlier_detection_experimental LB policy config", &error_list);
-      return nullptr;
+    if (!errors.ok()) {
+      return errors.status(
+          absl::StatusCode::kInvalidArgument,
+          "errors validating outlier_detection LB policy config");
     }
     return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,
                                                     std::move(child_policy));
@@ -1114,18 +1115,94 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
+//
+// OutlierDetectionConfig
+//
+
+const JsonLoaderInterface*
+OutlierDetectionConfig::SuccessRateEjection::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<SuccessRateEjection>()
+          .OptionalField("stdevFactor", &SuccessRateEjection::stdev_factor)
+          .OptionalField("enforcementPercentage",
+                         &SuccessRateEjection::enforcement_percentage)
+          .OptionalField("minimumHosts", &SuccessRateEjection::minimum_hosts)
+          .OptionalField("requestVolume", &SuccessRateEjection::request_volume)
+          .Finish();
+  return loader;
+}
+
+void OutlierDetectionConfig::SuccessRateEjection::JsonPostLoad(
+    const Json&, const JsonArgs&, ValidationErrors* errors) {
+  if (enforcement_percentage > 100) {
+    ValidationErrors::ScopedField field(errors, ".enforcement_percentage");
+    errors->AddError("value must be <= 100");
+  }
+}
+
+const JsonLoaderInterface*
+OutlierDetectionConfig::FailurePercentageEjection::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<FailurePercentageEjection>()
+          .OptionalField("threshold", &FailurePercentageEjection::threshold)
+          .OptionalField("enforcementPercentage",
+                         &FailurePercentageEjection::enforcement_percentage)
+          .OptionalField("minimumHosts",
+                         &FailurePercentageEjection::minimum_hosts)
+          .OptionalField("requestVolume",
+                         &FailurePercentageEjection::request_volume)
+          .Finish();
+  return loader;
+}
+
+void OutlierDetectionConfig::FailurePercentageEjection::JsonPostLoad(
+    const Json&, const JsonArgs&, ValidationErrors* errors) {
+  if (enforcement_percentage > 100) {
+    ValidationErrors::ScopedField field(errors, ".enforcement_percentage");
+    errors->AddError("value must be <= 100");
+  }
+  if (threshold > 100) {
+    ValidationErrors::ScopedField field(errors, ".threshold");
+    errors->AddError("value must be <= 100");
+  }
+}
+
+const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<OutlierDetectionConfig>()
+          .OptionalField("interval", &OutlierDetectionConfig::interval)
+          .OptionalField("baseEjectionTime",
+                         &OutlierDetectionConfig::base_ejection_time)
+          .OptionalField("maxEjectionTime",
+                         &OutlierDetectionConfig::max_ejection_time)
+          .OptionalField("maxEjectionPercent",
+                         &OutlierDetectionConfig::max_ejection_percent)
+          .OptionalField("successRateEjection",
+                         &OutlierDetectionConfig::success_rate_ejection)
+          .OptionalField("failurePercentageEjection",
+                         &OutlierDetectionConfig::failure_percentage_ejection)
+          .Finish();
+  return loader;
+}
+
+void OutlierDetectionConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+                                          ValidationErrors* errors) {
+  if (json.object().find("maxEjectionTime") == json.object().end()) {
+    max_ejection_time = std::max(base_ejection_time, Duration::Seconds(300));
+  }
+  if (max_ejection_percent > 100) {
+    ValidationErrors::ScopedField field(errors, ".max_ejection_percent");
+    errors->AddError("value must be <= 100");
+  }
+}
 
 //
 // Plugin registration
 //
 
-void grpc_lb_policy_outlier_detection_init() {
-  if (grpc_core::XdsOutlierDetectionEnabled()) {
-    grpc_core::LoadBalancingPolicyRegistry::Builder::
-        RegisterLoadBalancingPolicyFactory(
-            absl::make_unique<grpc_core::OutlierDetectionLbFactory>());
-  }
+void RegisterOutlierDetectionLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      std::make_unique<OutlierDetectionLbFactory>());
 }
 
-void grpc_lb_policy_outlier_detection_shutdown() {}
+}  // namespace grpc_core

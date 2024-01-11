@@ -16,13 +16,15 @@
 
 #include "src/core/lib/gprpp/status_helper.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <stddef.h>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/civil_time.h"
 #include "absl/time/clock.h"
+#include "gmock/gmock.h"
 #include "google/rpc/status.upb.h"
+#include "gtest/gtest.h"
 #include "upb/upb.hpp"
 
 namespace grpc_core {
@@ -119,7 +121,7 @@ TEST(StatusUtilTest, ToAndFromProtoWithNonUTF8Characters) {
 }
 
 TEST(StatusUtilTest, OkToString) {
-  absl::Status s = absl::OkStatus();
+  absl::Status s;
   std::string t = StatusToString(s);
   EXPECT_EQ("OK", t);
 }

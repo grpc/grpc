@@ -22,147 +22,224 @@ from grpc.framework.foundation import stream  # pylint: disable=unused-import
 from grpc.framework.interfaces.face import face
 
 
-class _MethodImplementation(face.MethodImplementation,
-                            collections.namedtuple('_MethodImplementation', [
-                                'cardinality',
-                                'style',
-                                'unary_unary_inline',
-                                'unary_stream_inline',
-                                'stream_unary_inline',
-                                'stream_stream_inline',
-                                'unary_unary_event',
-                                'unary_stream_event',
-                                'stream_unary_event',
-                                'stream_stream_event',
-                            ])):
+class _MethodImplementation(
+    face.MethodImplementation,
+    collections.namedtuple(
+        "_MethodImplementation",
+        [
+            "cardinality",
+            "style",
+            "unary_unary_inline",
+            "unary_stream_inline",
+            "stream_unary_inline",
+            "stream_stream_inline",
+            "unary_unary_event",
+            "unary_stream_event",
+            "stream_unary_event",
+            "stream_stream_event",
+        ],
+    ),
+):
     pass
 
 
 def unary_unary_inline(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-  Args:
-    behavior: The implementation of a unary-unary RPC method as a callable value
-      that takes a request value and an face.ServicerContext object and
-      returns a response value.
+    Args:
+      behavior: The implementation of a unary-unary RPC method as a callable value
+        that takes a request value and an face.ServicerContext object and
+        returns a response value.
 
-  Returns:
-    An face.MethodImplementation derived from the given behavior.
-  """
-    return _MethodImplementation(cardinality.Cardinality.UNARY_UNARY,
-                                 style.Service.INLINE, behavior, None, None,
-                                 None, None, None, None, None)
+    Returns:
+      An face.MethodImplementation derived from the given behavior.
+    """
+    return _MethodImplementation(
+        cardinality.Cardinality.UNARY_UNARY,
+        style.Service.INLINE,
+        behavior,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
 
 
 def unary_stream_inline(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-  Args:
-    behavior: The implementation of a unary-stream RPC method as a callable
-      value that takes a request value and an face.ServicerContext object and
-      returns an iterator of response values.
+    Args:
+      behavior: The implementation of a unary-stream RPC method as a callable
+        value that takes a request value and an face.ServicerContext object and
+        returns an iterator of response values.
 
-  Returns:
-    An face.MethodImplementation derived from the given behavior.
-  """
-    return _MethodImplementation(cardinality.Cardinality.UNARY_STREAM,
-                                 style.Service.INLINE, None, behavior, None,
-                                 None, None, None, None, None)
+    Returns:
+      An face.MethodImplementation derived from the given behavior.
+    """
+    return _MethodImplementation(
+        cardinality.Cardinality.UNARY_STREAM,
+        style.Service.INLINE,
+        None,
+        behavior,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
 
 
 def stream_unary_inline(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-  Args:
-    behavior: The implementation of a stream-unary RPC method as a callable
-      value that takes an iterator of request values and an
-      face.ServicerContext object and returns a response value.
+    Args:
+      behavior: The implementation of a stream-unary RPC method as a callable
+        value that takes an iterator of request values and an
+        face.ServicerContext object and returns a response value.
 
-  Returns:
-    An face.MethodImplementation derived from the given behavior.
-  """
-    return _MethodImplementation(cardinality.Cardinality.STREAM_UNARY,
-                                 style.Service.INLINE, None, None, behavior,
-                                 None, None, None, None, None)
+    Returns:
+      An face.MethodImplementation derived from the given behavior.
+    """
+    return _MethodImplementation(
+        cardinality.Cardinality.STREAM_UNARY,
+        style.Service.INLINE,
+        None,
+        None,
+        behavior,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
 
 
 def stream_stream_inline(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-  Args:
-    behavior: The implementation of a stream-stream RPC method as a callable
-      value that takes an iterator of request values and an
-      face.ServicerContext object and returns an iterator of response values.
+    Args:
+      behavior: The implementation of a stream-stream RPC method as a callable
+        value that takes an iterator of request values and an
+        face.ServicerContext object and returns an iterator of response values.
 
-  Returns:
-    An face.MethodImplementation derived from the given behavior.
-  """
-    return _MethodImplementation(cardinality.Cardinality.STREAM_STREAM,
-                                 style.Service.INLINE, None, None, None,
-                                 behavior, None, None, None, None)
+    Returns:
+      An face.MethodImplementation derived from the given behavior.
+    """
+    return _MethodImplementation(
+        cardinality.Cardinality.STREAM_STREAM,
+        style.Service.INLINE,
+        None,
+        None,
+        None,
+        behavior,
+        None,
+        None,
+        None,
+        None,
+    )
 
 
 def unary_unary_event(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-  Args:
-    behavior: The implementation of a unary-unary RPC method as a callable
-      value that takes a request value, a response callback to which to pass
-      the response value of the RPC, and an face.ServicerContext.
+    Args:
+      behavior: The implementation of a unary-unary RPC method as a callable
+        value that takes a request value, a response callback to which to pass
+        the response value of the RPC, and an face.ServicerContext.
 
-  Returns:
-    An face.MethodImplementation derived from the given behavior.
-  """
-    return _MethodImplementation(cardinality.Cardinality.UNARY_UNARY,
-                                 style.Service.EVENT, None, None, None, None,
-                                 behavior, None, None, None)
+    Returns:
+      An face.MethodImplementation derived from the given behavior.
+    """
+    return _MethodImplementation(
+        cardinality.Cardinality.UNARY_UNARY,
+        style.Service.EVENT,
+        None,
+        None,
+        None,
+        None,
+        behavior,
+        None,
+        None,
+        None,
+    )
 
 
 def unary_stream_event(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-  Args:
-    behavior: The implementation of a unary-stream RPC method as a callable
-      value that takes a request value, a stream.Consumer to which to pass the
-      the response values of the RPC, and an face.ServicerContext.
+    Args:
+      behavior: The implementation of a unary-stream RPC method as a callable
+        value that takes a request value, a stream.Consumer to which to pass the
+        the response values of the RPC, and an face.ServicerContext.
 
-  Returns:
-    An face.MethodImplementation derived from the given behavior.
-  """
-    return _MethodImplementation(cardinality.Cardinality.UNARY_STREAM,
-                                 style.Service.EVENT, None, None, None, None,
-                                 None, behavior, None, None)
+    Returns:
+      An face.MethodImplementation derived from the given behavior.
+    """
+    return _MethodImplementation(
+        cardinality.Cardinality.UNARY_STREAM,
+        style.Service.EVENT,
+        None,
+        None,
+        None,
+        None,
+        None,
+        behavior,
+        None,
+        None,
+    )
 
 
 def stream_unary_event(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-  Args:
-    behavior: The implementation of a stream-unary RPC method as a callable
-      value that takes a response callback to which to pass the response value
-      of the RPC and an face.ServicerContext and returns a stream.Consumer to
-      which the request values of the RPC should be passed.
+    Args:
+      behavior: The implementation of a stream-unary RPC method as a callable
+        value that takes a response callback to which to pass the response value
+        of the RPC and an face.ServicerContext and returns a stream.Consumer to
+        which the request values of the RPC should be passed.
 
-  Returns:
-    An face.MethodImplementation derived from the given behavior.
-  """
-    return _MethodImplementation(cardinality.Cardinality.STREAM_UNARY,
-                                 style.Service.EVENT, None, None, None, None,
-                                 None, None, behavior, None)
+    Returns:
+      An face.MethodImplementation derived from the given behavior.
+    """
+    return _MethodImplementation(
+        cardinality.Cardinality.STREAM_UNARY,
+        style.Service.EVENT,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        behavior,
+        None,
+    )
 
 
 def stream_stream_event(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-  Args:
-    behavior: The implementation of a stream-stream RPC method as a callable
-      value that takes a stream.Consumer to which to pass the response values
-      of the RPC and an face.ServicerContext and returns a stream.Consumer to
-      which the request values of the RPC should be passed.
+    Args:
+      behavior: The implementation of a stream-stream RPC method as a callable
+        value that takes a stream.Consumer to which to pass the response values
+        of the RPC and an face.ServicerContext and returns a stream.Consumer to
+        which the request values of the RPC should be passed.
 
-  Returns:
-    An face.MethodImplementation derived from the given behavior.
-  """
-    return _MethodImplementation(cardinality.Cardinality.STREAM_STREAM,
-                                 style.Service.EVENT, None, None, None, None,
-                                 None, None, None, behavior)
+    Returns:
+      An face.MethodImplementation derived from the given behavior.
+    """
+    return _MethodImplementation(
+        cardinality.Cardinality.STREAM_STREAM,
+        style.Service.EVENT,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        behavior,
+    )

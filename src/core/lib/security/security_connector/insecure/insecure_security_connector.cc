@@ -29,7 +29,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
@@ -77,12 +76,12 @@ void InsecureChannelSecurityConnector::add_handshakers(
 }
 
 void InsecureChannelSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
+    tsi_peer peer, grpc_endpoint* /*ep*/, const ChannelArgs& /*args*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   *auth_context = MakeAuthContext();
   tsi_peer_destruct(&peer);
-  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, absl::OkStatus());
 }
 
 int InsecureChannelSecurityConnector::cmp(
@@ -104,12 +103,12 @@ void InsecureServerSecurityConnector::add_handshakers(
 }
 
 void InsecureServerSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
+    tsi_peer peer, grpc_endpoint* /*ep*/, const ChannelArgs& /*args*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   *auth_context = MakeAuthContext();
   tsi_peer_destruct(&peer);
-  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, absl::OkStatus());
 }
 
 int InsecureServerSecurityConnector::cmp(

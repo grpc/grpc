@@ -65,7 +65,7 @@ def main
   STDERR.puts 'sent shutdown'
 
   begin
-    Timeout.timeout(10) do
+    Timeout.timeout(120) do
       Process.wait(client_controller.client_pid)
     end
   rescue Timeout::Error
