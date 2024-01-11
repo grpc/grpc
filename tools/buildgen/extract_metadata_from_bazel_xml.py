@@ -99,10 +99,10 @@ EXTERNAL_PROTO_LIBRARIES = {
 # For that we need mapping from external repo name to a corresponding
 # path to a git submodule.
 EXTERNAL_SOURCE_PREFIXES = {
-    "@utf8_range": "third_party/protobuf/third_party/utf8_range",
+    "@utf8_range": "third_party/utf8_range",
     "@com_googlesource_code_re2": "third_party/re2",
     "@com_google_googletest": "third_party/googletest",
-    "@com_google_protobuf": "third_party/protobuf",
+    "@com_google_protobuf": "third_party/upb",
     "@zlib": "third_party/zlib",
 }
 
@@ -349,10 +349,6 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         return "protobuf"
     elif bazel_dep == "@com_google_protobuf//:protoc_lib":
         return "protoc"
-    elif bazel_dep == "@utf8_range//:utf8_range":
-        return "utf8_range_lib"
-    elif bazel_dep == "@com_google_protobuf//third_party/utf8_range:utf8_range":
-        return "utf8_range_lib"
     else:
         # Two options here:
         # * either this is not external dependency at all (which is fine, we will treat it as internal library)
@@ -437,7 +433,7 @@ def _compute_transitive_metadata(
             # Add all the transitive deps of our every public dep to exclude
             # list since we want to avoid building sources that are already
             # built by our dependencies
-            exclude_deps.update(bazel_rules[dep].get("_TRANSITIVE_DEPS", []))
+            exclude_deps.update(bazel_rules[dep]["_TRANSITIVE_DEPS"])
             continue
 
         # This dep is an external target, add it as a dependency
@@ -731,17 +727,6 @@ def _generate_build_metadata(
                         for dep in lib_dict_to_update["deps"]
                     ]
                 )
-
-        merge_name = build_extra_metadata.get(lib_name, {}).get("_MERGE", None)
-        if merge_name:
-            for lib_dict_to_update in list(result.values()):
-                lib_dict_to_update["deps"] = list(
-                    [
-                        merge_name if dep == lib_name else dep
-                        for dep in lib_dict_to_update["deps"]
-                    ]
-                )
-            result.pop(lib_name)
 
     return result
 
@@ -1109,16 +1094,11 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_textformat_lib",
     },
-    "@com_google_protobuf//third_party/utf8_range:utf8_range": {
+    "@utf8_range//:utf8_range": {
         "language": "c",
         "build": "all",
         # rename to utf8_range_lib is necessary for now to avoid clash with utf8_range target in protobuf's cmake
         "_RENAME": "utf8_range_lib",
-    },
-    "@utf8_range//:utf8_range": {
-        "language": "c",
-        "build": "all",
-        "_MERGE": "utf8_range_lib",
     },
     "@com_googlesource_code_re2//:re2": {
         "language": "c",
@@ -1333,7 +1313,6 @@ _BAZEL_DEPS_QUERIES = [
     # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds
     # as upb_c_proto_library dependencies.
     'deps("//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
-    "deps(@com_google_protobuf//third_party/utf8_range:utf8_range)",
 ]
 
 # Step 1: run a bunch of "bazel query --output xml" queries to collect

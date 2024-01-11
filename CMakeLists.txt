@@ -3213,17 +3213,17 @@ add_library(grpc_unsecure
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-  third_party/protobuf/upb/message/accessors.c
-  third_party/protobuf/upb/mini_descriptor/build_enum.c
-  third_party/protobuf/upb/mini_descriptor/decode.c
-  third_party/protobuf/upb/mini_descriptor/internal/base92.c
-  third_party/protobuf/upb/mini_descriptor/internal/encode.c
-  third_party/protobuf/upb/mini_descriptor/link.c
-  third_party/protobuf/upb/wire/decode.c
-  third_party/protobuf/upb/wire/decode_fast.c
-  third_party/protobuf/upb/wire/encode.c
-  third_party/protobuf/upb/wire/eps_copy_input_stream.c
-  third_party/protobuf/upb/wire/reader.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
@@ -3458,9 +3458,9 @@ endif()
 
 
 add_library(upb ${_gRPC_STATIC_WIN32}
-  third_party/protobuf/upb/base/status.c
-  third_party/protobuf/upb/mem/alloc.c
-  third_party/protobuf/upb/mem/arena.c
+  third_party/upb/upb/base/status.c
+  third_party/upb/upb/mem/alloc.c
+  third_party/upb/upb/mem/arena.c
 )
 
 target_compile_features(upb PUBLIC cxx_std_14)
@@ -3512,17 +3512,17 @@ endif()
 
 
 add_library(upb_collections_lib ${_gRPC_STATIC_WIN32}
-  third_party/protobuf/upb/base/status.c
-  third_party/protobuf/upb/hash/common.c
-  third_party/protobuf/upb/mem/alloc.c
-  third_party/protobuf/upb/mem/arena.c
-  third_party/protobuf/upb/message/array.c
-  third_party/protobuf/upb/message/map.c
-  third_party/protobuf/upb/message/map_sorter.c
-  third_party/protobuf/upb/message/message.c
-  third_party/protobuf/upb/mini_table/extension_registry.c
-  third_party/protobuf/upb/mini_table/internal/message.c
-  third_party/protobuf/upb/mini_table/message.c
+  third_party/upb/upb/base/status.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/mem/alloc.c
+  third_party/upb/upb/mem/arena.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
 )
 
 target_compile_features(upb_collections_lib PUBLIC cxx_std_14)
@@ -3575,51 +3575,51 @@ endif()
 
 add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
-  third_party/protobuf/upb/base/status.c
-  third_party/protobuf/upb/hash/common.c
-  third_party/protobuf/upb/json/decode.c
-  third_party/protobuf/upb/json/encode.c
-  third_party/protobuf/upb/lex/atoi.c
-  third_party/protobuf/upb/lex/round_trip.c
-  third_party/protobuf/upb/lex/strtod.c
-  third_party/protobuf/upb/lex/unicode.c
-  third_party/protobuf/upb/mem/alloc.c
-  third_party/protobuf/upb/mem/arena.c
-  third_party/protobuf/upb/message/accessors.c
-  third_party/protobuf/upb/message/array.c
-  third_party/protobuf/upb/message/map.c
-  third_party/protobuf/upb/message/map_sorter.c
-  third_party/protobuf/upb/message/message.c
-  third_party/protobuf/upb/mini_descriptor/build_enum.c
-  third_party/protobuf/upb/mini_descriptor/decode.c
-  third_party/protobuf/upb/mini_descriptor/internal/base92.c
-  third_party/protobuf/upb/mini_descriptor/internal/encode.c
-  third_party/protobuf/upb/mini_descriptor/link.c
-  third_party/protobuf/upb/mini_table/extension_registry.c
-  third_party/protobuf/upb/mini_table/internal/message.c
-  third_party/protobuf/upb/mini_table/message.c
-  third_party/protobuf/upb/reflection/def_pool.c
-  third_party/protobuf/upb/reflection/def_type.c
-  third_party/protobuf/upb/reflection/desc_state.c
-  third_party/protobuf/upb/reflection/enum_def.c
-  third_party/protobuf/upb/reflection/enum_reserved_range.c
-  third_party/protobuf/upb/reflection/enum_value_def.c
-  third_party/protobuf/upb/reflection/extension_range.c
-  third_party/protobuf/upb/reflection/field_def.c
-  third_party/protobuf/upb/reflection/file_def.c
-  third_party/protobuf/upb/reflection/internal/def_builder.c
-  third_party/protobuf/upb/reflection/internal/strdup2.c
-  third_party/protobuf/upb/reflection/message.c
-  third_party/protobuf/upb/reflection/message_def.c
-  third_party/protobuf/upb/reflection/message_reserved_range.c
-  third_party/protobuf/upb/reflection/method_def.c
-  third_party/protobuf/upb/reflection/oneof_def.c
-  third_party/protobuf/upb/reflection/service_def.c
-  third_party/protobuf/upb/wire/decode.c
-  third_party/protobuf/upb/wire/decode_fast.c
-  third_party/protobuf/upb/wire/encode.c
-  third_party/protobuf/upb/wire/eps_copy_input_stream.c
-  third_party/protobuf/upb/wire/reader.c
+  third_party/upb/upb/base/status.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/json/decode.c
+  third_party/upb/upb/json/encode.c
+  third_party/upb/upb/lex/atoi.c
+  third_party/upb/upb/lex/round_trip.c
+  third_party/upb/upb/lex/strtod.c
+  third_party/upb/upb/lex/unicode.c
+  third_party/upb/upb/mem/alloc.c
+  third_party/upb/upb/mem/arena.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/reflection/def_pool.c
+  third_party/upb/upb/reflection/def_type.c
+  third_party/upb/upb/reflection/desc_state.c
+  third_party/upb/upb/reflection/enum_def.c
+  third_party/upb/upb/reflection/enum_reserved_range.c
+  third_party/upb/upb/reflection/enum_value_def.c
+  third_party/upb/upb/reflection/extension_range.c
+  third_party/upb/upb/reflection/field_def.c
+  third_party/upb/upb/reflection/file_def.c
+  third_party/upb/upb/reflection/internal/def_builder.c
+  third_party/upb/upb/reflection/internal/strdup2.c
+  third_party/upb/upb/reflection/message.c
+  third_party/upb/upb/reflection/message_def.c
+  third_party/upb/upb/reflection/message_reserved_range.c
+  third_party/upb/upb/reflection/method_def.c
+  third_party/upb/upb/reflection/oneof_def.c
+  third_party/upb/upb/reflection/service_def.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_json_lib PUBLIC cxx_std_14)
@@ -3673,50 +3673,50 @@ endif()
 
 add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
-  third_party/protobuf/upb/base/status.c
-  third_party/protobuf/upb/hash/common.c
-  third_party/protobuf/upb/lex/atoi.c
-  third_party/protobuf/upb/lex/round_trip.c
-  third_party/protobuf/upb/lex/strtod.c
-  third_party/protobuf/upb/lex/unicode.c
-  third_party/protobuf/upb/mem/alloc.c
-  third_party/protobuf/upb/mem/arena.c
-  third_party/protobuf/upb/message/accessors.c
-  third_party/protobuf/upb/message/array.c
-  third_party/protobuf/upb/message/map.c
-  third_party/protobuf/upb/message/map_sorter.c
-  third_party/protobuf/upb/message/message.c
-  third_party/protobuf/upb/mini_descriptor/build_enum.c
-  third_party/protobuf/upb/mini_descriptor/decode.c
-  third_party/protobuf/upb/mini_descriptor/internal/base92.c
-  third_party/protobuf/upb/mini_descriptor/internal/encode.c
-  third_party/protobuf/upb/mini_descriptor/link.c
-  third_party/protobuf/upb/mini_table/extension_registry.c
-  third_party/protobuf/upb/mini_table/internal/message.c
-  third_party/protobuf/upb/mini_table/message.c
-  third_party/protobuf/upb/reflection/def_pool.c
-  third_party/protobuf/upb/reflection/def_type.c
-  third_party/protobuf/upb/reflection/desc_state.c
-  third_party/protobuf/upb/reflection/enum_def.c
-  third_party/protobuf/upb/reflection/enum_reserved_range.c
-  third_party/protobuf/upb/reflection/enum_value_def.c
-  third_party/protobuf/upb/reflection/extension_range.c
-  third_party/protobuf/upb/reflection/field_def.c
-  third_party/protobuf/upb/reflection/file_def.c
-  third_party/protobuf/upb/reflection/internal/def_builder.c
-  third_party/protobuf/upb/reflection/internal/strdup2.c
-  third_party/protobuf/upb/reflection/message.c
-  third_party/protobuf/upb/reflection/message_def.c
-  third_party/protobuf/upb/reflection/message_reserved_range.c
-  third_party/protobuf/upb/reflection/method_def.c
-  third_party/protobuf/upb/reflection/oneof_def.c
-  third_party/protobuf/upb/reflection/service_def.c
-  third_party/protobuf/upb/text/encode.c
-  third_party/protobuf/upb/wire/decode.c
-  third_party/protobuf/upb/wire/decode_fast.c
-  third_party/protobuf/upb/wire/encode.c
-  third_party/protobuf/upb/wire/eps_copy_input_stream.c
-  third_party/protobuf/upb/wire/reader.c
+  third_party/upb/upb/base/status.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/lex/atoi.c
+  third_party/upb/upb/lex/round_trip.c
+  third_party/upb/upb/lex/strtod.c
+  third_party/upb/upb/lex/unicode.c
+  third_party/upb/upb/mem/alloc.c
+  third_party/upb/upb/mem/arena.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/reflection/def_pool.c
+  third_party/upb/upb/reflection/def_type.c
+  third_party/upb/upb/reflection/desc_state.c
+  third_party/upb/upb/reflection/enum_def.c
+  third_party/upb/upb/reflection/enum_reserved_range.c
+  third_party/upb/upb/reflection/enum_value_def.c
+  third_party/upb/upb/reflection/extension_range.c
+  third_party/upb/upb/reflection/field_def.c
+  third_party/upb/upb/reflection/file_def.c
+  third_party/upb/upb/reflection/internal/def_builder.c
+  third_party/upb/upb/reflection/internal/strdup2.c
+  third_party/upb/upb/reflection/message.c
+  third_party/upb/upb/reflection/message_def.c
+  third_party/upb/upb/reflection/message_reserved_range.c
+  third_party/upb/upb/reflection/method_def.c
+  third_party/upb/upb/reflection/oneof_def.c
+  third_party/upb/upb/reflection/service_def.c
+  third_party/upb/upb/text/encode.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_textformat_lib PUBLIC cxx_std_14)
@@ -3769,9 +3769,9 @@ endif()
 
 
 add_library(utf8_range_lib
-  third_party/protobuf/third_party/utf8_range/naive.c
-  third_party/protobuf/third_party/utf8_range/range2-neon.c
-  third_party/protobuf/third_party/utf8_range/range2-sse.c
+  third_party/utf8_range/naive.c
+  third_party/utf8_range/range2-neon.c
+  third_party/utf8_range/range2-sse.c
 )
 
 target_compile_features(utf8_range_lib PUBLIC cxx_std_14)
@@ -5193,25 +5193,25 @@ add_library(grpc_authorization_provider
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-  third_party/protobuf/upb/hash/common.c
-  third_party/protobuf/upb/message/accessors.c
-  third_party/protobuf/upb/message/array.c
-  third_party/protobuf/upb/message/map.c
-  third_party/protobuf/upb/message/map_sorter.c
-  third_party/protobuf/upb/message/message.c
-  third_party/protobuf/upb/mini_descriptor/build_enum.c
-  third_party/protobuf/upb/mini_descriptor/decode.c
-  third_party/protobuf/upb/mini_descriptor/internal/base92.c
-  third_party/protobuf/upb/mini_descriptor/internal/encode.c
-  third_party/protobuf/upb/mini_descriptor/link.c
-  third_party/protobuf/upb/mini_table/extension_registry.c
-  third_party/protobuf/upb/mini_table/internal/message.c
-  third_party/protobuf/upb/mini_table/message.c
-  third_party/protobuf/upb/wire/decode.c
-  third_party/protobuf/upb/wire/decode_fast.c
-  third_party/protobuf/upb/wire/encode.c
-  third_party/protobuf/upb/wire/eps_copy_input_stream.c
-  third_party/protobuf/upb/wire/reader.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(grpc_authorization_provider PUBLIC cxx_std_14)
@@ -8986,25 +8986,25 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
-  third_party/protobuf/upb/hash/common.c
-  third_party/protobuf/upb/message/accessors.c
-  third_party/protobuf/upb/message/array.c
-  third_party/protobuf/upb/message/map.c
-  third_party/protobuf/upb/message/map_sorter.c
-  third_party/protobuf/upb/message/message.c
-  third_party/protobuf/upb/mini_descriptor/build_enum.c
-  third_party/protobuf/upb/mini_descriptor/decode.c
-  third_party/protobuf/upb/mini_descriptor/internal/base92.c
-  third_party/protobuf/upb/mini_descriptor/internal/encode.c
-  third_party/protobuf/upb/mini_descriptor/link.c
-  third_party/protobuf/upb/mini_table/extension_registry.c
-  third_party/protobuf/upb/mini_table/internal/message.c
-  third_party/protobuf/upb/mini_table/message.c
-  third_party/protobuf/upb/wire/decode.c
-  third_party/protobuf/upb/wire/decode_fast.c
-  third_party/protobuf/upb/wire/encode.c
-  third_party/protobuf/upb/wire/eps_copy_input_stream.c
-  third_party/protobuf/upb/wire/reader.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(chunked_vector_test PUBLIC cxx_std_14)
 target_include_directories(chunked_vector_test
@@ -11496,25 +11496,25 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
-  third_party/protobuf/upb/hash/common.c
-  third_party/protobuf/upb/message/accessors.c
-  third_party/protobuf/upb/message/array.c
-  third_party/protobuf/upb/message/map.c
-  third_party/protobuf/upb/message/map_sorter.c
-  third_party/protobuf/upb/message/message.c
-  third_party/protobuf/upb/mini_descriptor/build_enum.c
-  third_party/protobuf/upb/mini_descriptor/decode.c
-  third_party/protobuf/upb/mini_descriptor/internal/base92.c
-  third_party/protobuf/upb/mini_descriptor/internal/encode.c
-  third_party/protobuf/upb/mini_descriptor/link.c
-  third_party/protobuf/upb/mini_table/extension_registry.c
-  third_party/protobuf/upb/mini_table/internal/message.c
-  third_party/protobuf/upb/mini_table/message.c
-  third_party/protobuf/upb/wire/decode.c
-  third_party/protobuf/upb/wire/decode_fast.c
-  third_party/protobuf/upb/wire/encode.c
-  third_party/protobuf/upb/wire/eps_copy_input_stream.c
-  third_party/protobuf/upb/wire/reader.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(exec_ctx_wakeup_scheduler_test PUBLIC cxx_std_14)
 target_include_directories(exec_ctx_wakeup_scheduler_test
@@ -12196,25 +12196,25 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   test/core/transport/chttp2/flow_control_test.cc
-  third_party/protobuf/upb/hash/common.c
-  third_party/protobuf/upb/message/accessors.c
-  third_party/protobuf/upb/message/array.c
-  third_party/protobuf/upb/message/map.c
-  third_party/protobuf/upb/message/map_sorter.c
-  third_party/protobuf/upb/message/message.c
-  third_party/protobuf/upb/mini_descriptor/build_enum.c
-  third_party/protobuf/upb/mini_descriptor/decode.c
-  third_party/protobuf/upb/mini_descriptor/internal/base92.c
-  third_party/protobuf/upb/mini_descriptor/internal/encode.c
-  third_party/protobuf/upb/mini_descriptor/link.c
-  third_party/protobuf/upb/mini_table/extension_registry.c
-  third_party/protobuf/upb/mini_table/internal/message.c
-  third_party/protobuf/upb/mini_table/message.c
-  third_party/protobuf/upb/wire/decode.c
-  third_party/protobuf/upb/wire/decode_fast.c
-  third_party/protobuf/upb/wire/encode.c
-  third_party/protobuf/upb/wire/eps_copy_input_stream.c
-  third_party/protobuf/upb/wire/reader.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(flow_control_test PUBLIC cxx_std_14)
 target_include_directories(flow_control_test
@@ -12280,25 +12280,25 @@ add_executable(for_each_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
-  third_party/protobuf/upb/hash/common.c
-  third_party/protobuf/upb/message/accessors.c
-  third_party/protobuf/upb/message/array.c
-  third_party/protobuf/upb/message/map.c
-  third_party/protobuf/upb/message/map_sorter.c
-  third_party/protobuf/upb/message/message.c
-  third_party/protobuf/upb/mini_descriptor/build_enum.c
-  third_party/protobuf/upb/mini_descriptor/decode.c
-  third_party/protobuf/upb/mini_descriptor/internal/base92.c
-  third_party/protobuf/upb/mini_descriptor/internal/encode.c
-  third_party/protobuf/upb/mini_descriptor/link.c
-  third_party/protobuf/upb/mini_table/extension_registry.c
-  third_party/protobuf/upb/mini_table/internal/message.c
-  third_party/protobuf/upb/mini_table/message.c
-  third_party/protobuf/upb/wire/decode.c
-  third_party/protobuf/upb/wire/decode_fast.c
-  third_party/protobuf/upb/wire/encode.c
-  third_party/protobuf/upb/wire/eps_copy_input_stream.c
-  third_party/protobuf/upb/wire/reader.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(for_each_test PUBLIC cxx_std_14)
 target_include_directories(for_each_test
@@ -15064,25 +15064,25 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/interceptor_list_test.cc
-  third_party/protobuf/upb/hash/common.c
-  third_party/protobuf/upb/message/accessors.c
-  third_party/protobuf/upb/message/array.c
-  third_party/protobuf/upb/message/map.c
-  third_party/protobuf/upb/message/map_sorter.c
-  third_party/protobuf/upb/message/message.c
-  third_party/protobuf/upb/mini_descriptor/build_enum.c
-  third_party/protobuf/upb/mini_descriptor/decode.c
-  third_party/protobuf/upb/mini_descriptor/internal/base92.c
-  third_party/protobuf/upb/mini_descriptor/internal/encode.c
-  third_party/protobuf/upb/mini_descriptor/link.c
-  third_party/protobuf/upb/mini_table/extension_registry.c
-  third_party/protobuf/upb/mini_table/internal/message.c
-  third_party/protobuf/upb/mini_table/message.c
-  third_party/protobuf/upb/wire/decode.c
-  third_party/protobuf/upb/wire/decode_fast.c
-  third_party/protobuf/upb/wire/encode.c
-  third_party/protobuf/upb/wire/eps_copy_input_stream.c
-  third_party/protobuf/upb/wire/reader.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(interceptor_list_test PUBLIC cxx_std_14)
 target_include_directories(interceptor_list_test
@@ -15987,25 +15987,25 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/map_pipe_test.cc
-  third_party/protobuf/upb/hash/common.c
-  third_party/protobuf/upb/message/accessors.c
-  third_party/protobuf/upb/message/array.c
-  third_party/protobuf/upb/message/map.c
-  third_party/protobuf/upb/message/map_sorter.c
-  third_party/protobuf/upb/message/message.c
-  third_party/protobuf/upb/mini_descriptor/build_enum.c
-  third_party/protobuf/upb/mini_descriptor/decode.c
-  third_party/protobuf/upb/mini_descriptor/internal/base92.c
-  third_party/protobuf/upb/mini_descriptor/internal/encode.c
-  third_party/protobuf/upb/mini_descriptor/link.c
-  third_party/protobuf/upb/mini_table/extension_registry.c
-  third_party/protobuf/upb/mini_table/internal/message.c
-  third_party/protobuf/upb/mini_table/message.c
-  third_party/protobuf/upb/wire/decode.c
-  third_party/protobuf/upb/wire/decode_fast.c
-  third_party/protobuf/upb/wire/encode.c
-  third_party/protobuf/upb/wire/eps_copy_input_stream.c
-  third_party/protobuf/upb/wire/reader.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(map_pipe_test PUBLIC cxx_std_14)
 target_include_directories(map_pipe_test
@@ -17684,25 +17684,25 @@ add_executable(periodic_update_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
-  third_party/protobuf/upb/hash/common.c
-  third_party/protobuf/upb/message/accessors.c
-  third_party/protobuf/upb/message/array.c
-  third_party/protobuf/upb/message/map.c
-  third_party/protobuf/upb/message/map_sorter.c
-  third_party/protobuf/upb/message/message.c
-  third_party/protobuf/upb/mini_descriptor/build_enum.c
-  third_party/protobuf/upb/mini_descriptor/decode.c
-  third_party/protobuf/upb/mini_descriptor/internal/base92.c
-  third_party/protobuf/upb/mini_descriptor/internal/encode.c
-  third_party/protobuf/upb/mini_descriptor/link.c
-  third_party/protobuf/upb/mini_table/extension_registry.c
-  third_party/protobuf/upb/mini_table/internal/message.c
-  third_party/protobuf/upb/mini_table/message.c
-  third_party/protobuf/upb/wire/decode.c
-  third_party/protobuf/upb/wire/decode_fast.c
-  third_party/protobuf/upb/wire/encode.c
-  third_party/protobuf/upb/wire/eps_copy_input_stream.c
-  third_party/protobuf/upb/wire/reader.c
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/message/array.c
+  third_party/upb/upb/message/map.c
+  third_party/upb/upb/message/map_sorter.c
+  third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 target_compile_features(periodic_update_test PUBLIC cxx_std_14)
 target_include_directories(periodic_update_test

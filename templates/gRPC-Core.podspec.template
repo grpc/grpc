@@ -153,8 +153,8 @@
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-gen"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-gen"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'${"\\"}
-          ' "$(PODS_TARGET_SRCROOT)/third_party/protobuf"'${"\\"}
-          ' "$(PODS_TARGET_SRCROOT)/third_party/protobuf/third_party/utf8_range"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/utf8_range"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
       # If we don't set these two settings, `include/grpc/support/time.h` and
       # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
