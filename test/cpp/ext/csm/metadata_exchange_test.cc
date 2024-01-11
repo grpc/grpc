@@ -339,7 +339,7 @@ TEST_P(MetadataExchangeTest, ClientDoesNotSendMetadata) {
 }
 
 TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
-  Init(/*metric_names=*/{grpc::experimental::OpenTelemetryPluginBuilder::
+  Init(/*metric_names=*/{grpc::OpenTelemetryPluginBuilder::
                              kClientAttemptDurationInstrumentName},
        /*enable_client_side_injector=*/true,
        // Injects CSM service labels to be recorded in the call.
