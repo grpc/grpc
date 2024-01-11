@@ -179,23 +179,23 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
-  class ChannelState : public DualRefCounted<ChannelState> {
+  class XdsChannel : public DualRefCounted<XdsChannel> {
    public:
     template <typename T>
     class RetryableCall;
 
-    class AdsCallState;
-    class LrsCallState;
+    class AdsCall;
+    class LrsCall;
 
-    ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
-                 const XdsBootstrap::XdsServer& server);
-    ~ChannelState() override;
+    XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
+               const XdsBootstrap::XdsServer& server);
+    ~XdsChannel() override;
 
     void Orphan() override;
 
     XdsClient* xds_client() const { return xds_client_.get(); }
-    AdsCallState* ads_calld() const;
-    LrsCallState* lrs_calld() const;
+    AdsCall* ads_call() const;
+    LrsCall* lrs_call() const;
 
     void ResetBackoff();
 
@@ -232,8 +232,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     bool shutting_down_ = false;
 
     // The retryable XDS calls.
-    OrphanablePtr<RetryableCall<AdsCallState>> ads_calld_;
-    OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
+    OrphanablePtr<RetryableCall<AdsCall>> ads_call_;
+    OrphanablePtr<RetryableCall<LrsCall>> lrs_call_;
 
     // Stores the most recent accepted resource version for each resource type.
     std::map<const XdsResourceType*, std::string /*version*/>
@@ -252,7 +252,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   struct AuthorityState {
-    RefCountedPtr<ChannelState> channel_state;
+    RefCountedPtr<XdsChannel> xds_channel;
     std::map<const XdsResourceType*, std::map<XdsResourceKey, ResourceState>>
         resource_map;
   };
@@ -277,7 +277,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       LoadReportState>;
 
   struct LoadReportServer {
-    RefCountedPtr<ChannelState> channel_state;
+    RefCountedPtr<XdsChannel> xds_channel;
     LoadReportMap load_report_map;
   };
 
@@ -309,7 +309,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       const XdsBootstrap::XdsServer& xds_server, bool send_all_clusters,
       const std::set<std::string>& clusters) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  RefCountedPtr<ChannelState> GetOrCreateChannelStateLocked(
+  RefCountedPtr<XdsChannel> GetOrCreateXdsChannelLocked(
       const XdsBootstrap::XdsServer& server, const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
@@ -330,8 +330,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // Map of existing xDS server channels.
   // Key is owned by the bootstrap config.
-  std::map<const XdsBootstrap::XdsServer*, ChannelState*>
-      xds_server_channel_map_ ABSL_GUARDED_BY(mu_);
+  std::map<const XdsBootstrap::XdsServer*, XdsChannel*> xds_server_channel_map_
+      ABSL_GUARDED_BY(mu_);
 
   std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
