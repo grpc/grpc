@@ -231,7 +231,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
     bool shutting_down_ = false;
 
-    // The retryable XDS calls.
+    // The retryable ADS and LRS calls.
     OrphanablePtr<RetryableCall<AdsCall>> ads_call_;
     OrphanablePtr<RetryableCall<LrsCall>> lrs_call_;
 
