@@ -110,10 +110,7 @@ def create_phony_channel():
 
 
 def perform_unary_unary_call(channel, wait_for_ready=None):
-    channel.unary_unary(
-        _UNARY_UNARY,
-        _registered_method=True,
-    ).__call__(
+    channel.unary_unary(_UNARY_UNARY).__call__(
         _REQUEST,
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
@@ -121,10 +118,7 @@ def perform_unary_unary_call(channel, wait_for_ready=None):
 
 
 def perform_unary_unary_with_call(channel, wait_for_ready=None):
-    channel.unary_unary(
-        _UNARY_UNARY,
-        _registered_method=True,
-    ).with_call(
+    channel.unary_unary(_UNARY_UNARY).with_call(
         _REQUEST,
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
@@ -132,10 +126,7 @@ def perform_unary_unary_with_call(channel, wait_for_ready=None):
 
 
 def perform_unary_unary_future(channel, wait_for_ready=None):
-    channel.unary_unary(
-        _UNARY_UNARY,
-        _registered_method=True,
-    ).future(
+    channel.unary_unary(_UNARY_UNARY).future(
         _REQUEST,
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
@@ -143,10 +134,7 @@ def perform_unary_unary_future(channel, wait_for_ready=None):
 
 
 def perform_unary_stream_call(channel, wait_for_ready=None):
-    response_iterator = channel.unary_stream(
-        _UNARY_STREAM,
-        _registered_method=True,
-    ).__call__(
+    response_iterator = channel.unary_stream(_UNARY_STREAM).__call__(
         _REQUEST,
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
@@ -156,10 +144,7 @@ def perform_unary_stream_call(channel, wait_for_ready=None):
 
 
 def perform_stream_unary_call(channel, wait_for_ready=None):
-    channel.stream_unary(
-        _STREAM_UNARY,
-        _registered_method=True,
-    ).__call__(
+    channel.stream_unary(_STREAM_UNARY).__call__(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
@@ -167,10 +152,7 @@ def perform_stream_unary_call(channel, wait_for_ready=None):
 
 
 def perform_stream_unary_with_call(channel, wait_for_ready=None):
-    channel.stream_unary(
-        _STREAM_UNARY,
-        _registered_method=True,
-    ).with_call(
+    channel.stream_unary(_STREAM_UNARY).with_call(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
@@ -178,10 +160,7 @@ def perform_stream_unary_with_call(channel, wait_for_ready=None):
 
 
 def perform_stream_unary_future(channel, wait_for_ready=None):
-    channel.stream_unary(
-        _STREAM_UNARY,
-        _registered_method=True,
-    ).future(
+    channel.stream_unary(_STREAM_UNARY).future(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
@@ -189,9 +168,7 @@ def perform_stream_unary_future(channel, wait_for_ready=None):
 
 
 def perform_stream_stream_call(channel, wait_for_ready=None):
-    response_iterator = channel.stream_stream(
-        _STREAM_STREAM, _registered_method=True
-    ).__call__(
+    response_iterator = channel.stream_stream(_STREAM_STREAM).__call__(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
