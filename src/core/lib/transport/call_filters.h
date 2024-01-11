@@ -59,44 +59,6 @@ class CallWrapper<Derived, absl::void_t<decltype(typename Derived::Call())>>
   explicit CallWrapper(Derived*) : Derived::Call() {}
 };
 
-template <typename FilterType>
-std::enable_if<!std::is_empty<FilterType>::value, Filter> MakeFilter(
-    void* channel_data, size_t call_offset) {
-  static_assert(
-      sizeof(typename FilterType::Call) == sizeof(CallWrapper<FilterType>),
-      "CallWrapper must be the same size as Call");
-  return Filter{
-      channel_data,
-      call_offset,
-      [](void* call_data, void* channel_data) {
-        new (call_data) CallWrapper<FilterType>(
-            static_cast<FilterType*>(static_cast<FilterType*>(channel_data)));
-      },
-      [](void* call_data) {
-        static_cast<CallWrapper<FilterType>*>(call_data)->~CallWrapper();
-      },
-  };
-}
-
-template <typename FilterType>
-std::enable_if<std::is_empty<FilterType>::value, Filter> MakeFilter(
-    void* channel_data, size_t call_offset) {
-  static_assert(
-      sizeof(typename FilterType::Call) == sizeof(CallWrapper<FilterType>),
-      "CallWrapper must be the same size as Call");
-  return Filter{
-      channel_data,
-      call_offset,
-      [](void* call_data, void* channel_data) {
-        new (call_data) CallWrapper<FilterType>(
-            static_cast<FilterType*>(static_cast<FilterType*>(channel_data)));
-      },
-      [](void* call_data) {
-        static_cast<CallWrapper<FilterType>*>(call_data)->~CallWrapper();
-      },
-  };
-}
-
 template <typename T>
 struct ResultOr {
   T ok;
@@ -153,6 +115,54 @@ struct StackData {
   Layout<FallibleOperator<MessageHandle>> server_to_client_messages;
   Layout<InfallibleOperator<ServerMetadataHandle>> server_trailing_metadata;
   std::vector<Finalizer> finalizers;
+
+  template <typename FilterType>
+  std::enable_if<!std::is_empty<FilterType>::value, size_t> AddFilter(
+      void* channel_data) {
+    static_assert(
+        sizeof(typename FilterType::Call) == sizeof(CallWrapper<FilterType>),
+        "CallWrapper must be the same size as Call");
+    call_data_alignment =
+        std::max(call_data_alignment, alignof(CallWrapper<FilterType>));
+    if (call_data_size % alignof(CallWrapper<FilterType>) != 0) {
+      call_data_size += alignof(CallWrapper<FilterType>) -
+                        call_data_size % alignof(CallWrapper<FilterType>);
+    }
+    const size_t call_offset = call_data_size;
+    call_data_size += sizeof(CallWrapper<FilterType>);
+    filters.push_back(Filter{
+        channel_data,
+        call_offset,
+        [](void* call_data, void* channel_data) {
+          new (call_data) CallWrapper<FilterType>(
+              static_cast<FilterType*>(static_cast<FilterType*>(channel_data)));
+        },
+        [](void* call_data) {
+          static_cast<CallWrapper<FilterType>*>(call_data)->~CallWrapper();
+        },
+    });
+    return call_offset;
+  }
+
+  template <typename FilterType>
+  std::enable_if<std::is_empty<FilterType>::value, size_t> AddFilter(
+      void* channel_data) {
+    static_assert(
+        sizeof(typename FilterType::Call) == sizeof(CallWrapper<FilterType>),
+        "CallWrapper must be the same size as Call");
+    filters.push_back(Filter{
+        channel_data,
+        0,
+        [](void* call_data, void* channel_data) {
+          new (call_data) CallWrapper<FilterType>(
+              static_cast<FilterType*>(static_cast<FilterType*>(channel_data)));
+        },
+        [](void* call_data) {
+          static_cast<CallWrapper<FilterType>*>(call_data)->~CallWrapper();
+        },
+    });
+    return 0;
+  }
 };
 
 template <typename T>
@@ -536,11 +546,7 @@ class CallFilters {
    public:
     template <typename FilterType>
     void Add(FilterType* filter) {
-      const size_t call_offset =
-          OffsetForNextFilter(alignof(typename FilterType::Call),
-                              sizeof(typename FilterType::Call));
-      data_.filters.push_back(
-          filters_detail::MakeFilter<FilterType>(filter, call_offset));
+      const size_t call_offset = data_.AddFilter<FilterType>(filter);
       filters_detail::AddClientInitialMetadataOp(
           filter, call_offset, &FilterType::OnClientInitialMetadata, data_);
       filters_detail::AddServerInitialMetadataOp(
@@ -558,8 +564,6 @@ class CallFilters {
     RefCountedPtr<Stack> Build();
 
    private:
-    size_t OffsetForNextFilter(size_t alignment, size_t size);
-
     filters_detail::StackData data_;
   };
 

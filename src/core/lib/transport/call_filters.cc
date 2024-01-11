@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "src/core/lib/transport/call_filters.h"
+
 #include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
@@ -198,17 +199,6 @@ void CallFilters::CancelDueToFailedPipeOperation() {
 
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters::StackBuilder
-
-size_t CallFilters::StackBuilder::OffsetForNextFilter(size_t alignment,
-                                                      size_t size) {
-  data_.call_data_alignment = std::max(data_.call_data_alignment, alignment);
-  if (data_.call_data_size % alignment != 0) {
-    data_.call_data_size += alignment - data_.call_data_size % alignment;
-  }
-  const size_t offset = data_.call_data_size;
-  data_.call_data_size += size;
-  return offset;
-}
 
 RefCountedPtr<CallFilters::Stack> CallFilters::StackBuilder::Build() {
   if (data_.call_data_size % data_.call_data_alignment != 0) {
