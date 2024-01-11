@@ -82,7 +82,7 @@ class LabelsInjector {
 };
 
 class InternalOpenTelemetryPluginOption
-    : public grpc::experimental::OpenTelemetryPluginOption {
+    : public grpc::OpenTelemetryPluginOption {
  public:
   ~InternalOpenTelemetryPluginOption() override = default;
   // Determines whether a plugin option is active on a given channel target

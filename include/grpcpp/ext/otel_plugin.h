@@ -36,8 +36,6 @@ namespace internal {
 class OpenTelemetryPluginBuilderImpl;
 }  // namespace internal
 
-namespace experimental {
-
 class OpenTelemetryPluginOption {
  public:
   virtual ~OpenTelemetryPluginOption() = default;
@@ -114,7 +112,15 @@ class OpenTelemetryPluginBuilder {
  private:
   std::unique_ptr<internal::OpenTelemetryPluginBuilderImpl> impl_;
 };
+
+namespace experimental {
+// TODO(yashykt): Delete this after the 1.62 release.
+GRPC_DEPRECATED(
+    "Use grpc::OpenTelemetryPluginBuilder instead. The experimental version "
+    "will be deleted after the 1.62 release.")
+typedef grpc::OpenTelemetryPluginBuilder OpenTelemetryPluginBuilder;
 }  // namespace experimental
+
 }  // namespace grpc
 
 #endif  // GRPCPP_EXT_OTEL_PLUGIN_H
