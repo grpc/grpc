@@ -15,12 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -33,6 +29,13 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/if.h"
