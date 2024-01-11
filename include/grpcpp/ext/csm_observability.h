@@ -100,8 +100,7 @@ class CsmObservabilityBuilder {
 ///     .SetMeterProvider(provider)
 ///     .AddPluginOption(MakeCsmOpenTelemetryPluginOption())
 ///     .BuildAndRegisterGlobal();
-std::unique_ptr<grpc::OpenTelemetryPluginOption>
-MakeCsmOpenTelemetryPluginOption();
+std::unique_ptr<OpenTelemetryPluginOption> MakeCsmOpenTelemetryPluginOption();
 
 }  // namespace grpc
 
