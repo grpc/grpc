@@ -310,6 +310,8 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
 }
 
 TEST_P(CdsTest, VerifyCsmServiceLabelsParsing) {
+  // Injects a fake client call tracer factory. Try keep this at top.
+  grpc_core::FakeClientCallTracerFactory fake_client_call_tracer_factory;
   CreateAndStartBackends(1);
   // Populates EDS resources.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -322,8 +324,6 @@ TEST_P(CdsTest, VerifyCsmServiceLabelsParsing) {
   *label_map["service_name"].mutable_string_value() = "myservice";
   *label_map["service_namespace"].mutable_string_value() = "mynamespace";
   balancer_->ads_service()->SetCdsResource(cluster);
-  // Injects a fake client call tracer factory.
-  grpc_core::FakeClientCallTracerFactory fake_client_call_tracer_factory;
   ChannelArguments channel_args;
   channel_args.SetPointer(GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY,
                           &fake_client_call_tracer_factory);
@@ -339,6 +339,7 @@ TEST_P(CdsTest, VerifyCsmServiceLabelsParsing) {
                   ::testing::Pointee(::testing::ElementsAre(
                       ::testing::Pair("service_name", "myservice"),
                       ::testing::Pair("service_namespace", "mynamespace"))))));
+  balancer_->Shutdown();
 }
 
 //
