@@ -95,12 +95,13 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(const char* addr) {
       [self = shared_from_this()](std::unique_ptr<EventEngine::Endpoint> ep,
                                   MemoryAllocator) {
         MutexLock lock(&self->mu_);
-        self->connection_ = std::make_shared<ActiveConnection>(self);
-        self->connection_->Start(std::move(ep));
+        self->connection_list_.insert(self->connection_list_.end(),
+                                      std::make_shared<ActiveConnection>(self));
+        self->connection_list_.back()->Start(std::move(ep));
       };
   auto shutdown_cb = [](absl::Status status) {
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "Error server accept connection failed: %s",
+      gpr_log(GPR_ERROR, "Server accept connection failed: %s",
               StatusToString(status).c_str());
     }
   };
@@ -148,7 +149,8 @@ void ChaoticGoodServerListener::ActiveConnection::Start(
   handshaking_state_->Start(std::move(endpoint));
 }
 
-void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
+std::string
+ChaoticGoodServerListener::ActiveConnection::GenerateConnectionIDLocked() {
   std::string random_string;
   int random_length = 8;
   std::string charset =
@@ -158,8 +160,25 @@ void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
   for (size_t i = 0; i < random_length; ++i) {
     random_string += charset[distribution(bitgen_)];
   }
-  // TODO(ladynana): check collision.
-  connection_id_ = Slice::FromCopiedString(random_string);
+  return random_string;
+}
+
+void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
+  bool has_new_id = false;
+  std::string id;
+  MutexLock lock(&listener_->mu_);
+  while (!has_new_id) {
+    id = GenerateConnectionIDLocked();
+    if (!listener_->connectivity_map_.contains(id)) {
+      has_new_id = true;
+    }
+  }
+  connection_id_ = Slice::FromCopiedString(id);
+  listener_->connectivity_map_.insert(
+      std::pair<std::string,
+                std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>>>(
+          connection_id_.as_string_view(),
+          std::make_shared<Latch<std::shared_ptr<PromiseEndpoint>>>()));
 }
 
 ChaoticGoodServerListener::ActiveConnection::HandshakingState::HandshakingState(
@@ -264,15 +283,6 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   return TrySeq(
       [self = self]() {
         self->connection_->NewConnectionID();
-        {
-          MutexLock lock(&self->connection_->listener_->mu_);
-          self->connection_->listener_->connectivity_map_.insert(
-              std::pair<
-                  std::string,
-                  std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>>>(
-                  self->connection_->connection_id_.as_string_view(),
-                  std::make_shared<Latch<std::shared_ptr<PromiseEndpoint>>>()));
-        }
         SettingsFrame frame;
         ClientMetadataHandle metadata =
             GetContext<Arena>()->MakePooled<ClientMetadata>(
@@ -290,27 +300,30 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     DataEndpointWriteSettingsFrame(std::shared_ptr<HandshakingState> self) {
-  return TrySeq([self = self]() mutable {
-    // Send data endpoint setting frame
-    SettingsFrame frame;
-    ClientMetadataHandle metadata =
-        GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
-    metadata->Set(ChaoticGoodConnectionIdMetadata(),
-                  self->connection_->connection_id_.Ref());
-    frame.headers = std::move(metadata);
-    auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
-    return TrySeq(
-        self->connection_->endpoint_->Write(std::move(write_buffer.control)),
-        [self = self]() mutable {
-          MutexLock lock(&self->connection_->listener_->mu_);
-          // Set endpoint to latch
-          self->connection_->listener_->connectivity_map_
-              .find(std::string(
-                  self->connection_->connection_id_.as_string_view()))
-              ->second->Set(std::move(self->connection_->endpoint_));
-          return absl::OkStatus();
-        });
-  });
+  return TrySeq(
+      [self = self]() mutable {
+        // Send data endpoint setting frame
+        SettingsFrame frame;
+        ClientMetadataHandle metadata =
+            GetContext<Arena>()->MakePooled<ClientMetadata>(
+                GetContext<Arena>());
+        metadata->Set(ChaoticGoodConnectionIdMetadata(),
+                      self->connection_->connection_id_.Ref());
+        frame.headers = std::move(metadata);
+        auto write_buffer =
+            frame.Serialize(&self->connection_->hpack_compressor_);
+        return self->connection_->endpoint_->Write(
+            std::move(write_buffer.control));
+      },
+      [self = self]() mutable {
+        MutexLock lock(&self->connection_->listener_->mu_);
+        // Set endpoint to latch
+        self->connection_->listener_->connectivity_map_
+            .find(
+                std::string(self->connection_->connection_id_.as_string_view()))
+            ->second->Set(std::move(self->connection_->endpoint_));
+        return absl::OkStatus();
+      });
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
@@ -319,17 +332,18 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   return If(is_control_endpoint, ControlEndpointWriteSettingsFrame(self),
             DataEndpointWriteSettingsFrame(self));
 }
+
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(void* arg, grpc_error_handle error) {
   if (!error.ok()) {
-    gpr_log(GPR_ERROR, "Error server handshake failed: %s",
+    gpr_log(GPR_ERROR, "Server handshake failed: %s",
             StatusToString(error).c_str());
     return;
   }
   auto* args = static_cast<HandshakerArgs*>(arg);
   GPR_ASSERT(args != nullptr);
   if (args->endpoint == nullptr) {
-    gpr_log(GPR_ERROR, "Error server handshake done with null endpoint.");
+    gpr_log(GPR_ERROR, "Server handshake done but has empty endpoint.");
     return;
   }
   GPR_ASSERT(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
@@ -352,7 +366,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           grpc_event_engine::experimental::GetDefaultEventEngine()),
       [](absl::Status status) {
         if (!status.ok()) {
-          gpr_log(GPR_ERROR, "Error server receive setting frame failed: %s",
+          gpr_log(GPR_ERROR, "Server receive setting frame failed: %s",
                   StatusToString(status).c_str());
         }
       },

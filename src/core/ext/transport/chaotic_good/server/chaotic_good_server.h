@@ -113,6 +113,7 @@ class ChaoticGoodServerListener
     };
 
    private:
+    std::string GenerateConnectionIDLocked();
     void NewConnectionID();
     std::shared_ptr<ChaoticGoodServerListener> listener_;
     size_t initial_arena_size_ = 1024;
@@ -146,7 +147,8 @@ class ChaoticGoodServerListener
   absl::flat_hash_map<std::string,
                       std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>>>
       connectivity_map_ ABSL_GUARDED_BY(mu_);
-  std::shared_ptr<ActiveConnection> connection_ ABSL_GUARDED_BY(mu_);
+  std::vector<std::shared_ptr<ActiveConnection>> connection_list_
+      ABSL_GUARDED_BY(mu_);
 };
 }  // namespace chaotic_good
 }  // namespace grpc_core
