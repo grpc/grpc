@@ -65,6 +65,14 @@ MATCHER(IsPending, "") {
   return true;
 }
 
+MATCHER(IsReady, "") {
+  if (arg.pending()) {
+    *result_listener << "is pending";
+    return false;
+  }
+  return true;
+}
+
 MATCHER_P(IsReady, value, "") {
   if (arg.pending()) {
     *result_listener << "is pending";
@@ -1327,6 +1335,128 @@ TEST(PipeStateTest, DropProcessing) {
 }
 
 }  // namespace filters_detail
+
+///////////////////////////////////////////////////////////////////////////////
+// CallFilters
+
+TEST(CallFiltersTest, CanBuildStack) {
+  struct Filter {
+    struct Call {
+      void OnClientInitialMetadata(ClientMetadata& md) {}
+      void OnServerInitialMetadata(ServerMetadata& md) {}
+      void OnClientToServerMessage(Message& message) {}
+      void OnServerToClientMessage(Message& message) {}
+      void OnServerTrailingMetadata(ServerMetadata& md) {}
+      void OnFinalize(const grpc_call_final_info*) {}
+    };
+  };
+  CallFilters::StackBuilder builder;
+  Filter f;
+  builder.Add(&f);
+  auto stack = builder.Build();
+  EXPECT_NE(stack, nullptr);
+}
+
+TEST(CallFiltersTest, UnaryCall) {
+  struct Filter {
+    struct Call {
+      void OnClientInitialMetadata(ClientMetadata& md, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnClientInitialMetadata"));
+      }
+      void OnServerInitialMetadata(ServerMetadata& md, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnServerInitialMetadata"));
+      }
+      void OnClientToServerMessage(Message& message, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnClientToServerMessage"));
+      }
+      void OnServerToClientMessage(Message& message, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnServerToClientMessage"));
+      }
+      void OnServerTrailingMetadata(ServerMetadata& md, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnServerTrailingMetadata"));
+      }
+      void OnFinalize(const grpc_call_final_info*, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnFinalize"));
+      }
+    };
+
+    const std::string label;
+    std::vector<std::string>& steps;
+  };
+  std::vector<std::string> steps;
+  Filter f1{"f1", steps};
+  Filter f2{"f2", steps};
+  CallFilters::StackBuilder builder;
+  builder.Add(&f1);
+  builder.Add(&f2);
+  CallFilters filters(builder.Build());
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
+  promise_detail::Context<Arena> ctx(arena.get());
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  // Push client initial metadata
+  auto push_client_initial_metadata = filters.PushClientInitialMetadata(
+      Arena::MakePooled<ClientMetadata>(arena.get()));
+  EXPECT_THAT(push_client_initial_metadata(), IsPending());
+  auto pull_client_initial_metadata = filters.PullClientInitialMetadata();
+  // Pull client initial metadata, expect a wakeup
+  EXPECT_CALL(activity, WakeupRequested());
+  EXPECT_THAT(pull_client_initial_metadata(), IsReady());
+  Mock::VerifyAndClearExpectations(&activity);
+  // Push should be done
+  EXPECT_THAT(push_client_initial_metadata(), IsReady(Success{}));
+  // Push client to server message
+  auto push_client_to_server_message = filters.PushClientToServerMessage(
+      Arena::MakePooled<Message>(SliceBuffer(), 0));
+  EXPECT_THAT(push_client_to_server_message(), IsPending());
+  auto pull_client_to_server_message = filters.PullClientToServerMessage();
+  // Pull client to server message, expect a wakeup
+  EXPECT_CALL(activity, WakeupRequested());
+  EXPECT_THAT(pull_client_to_server_message(), IsReady());
+  Mock::VerifyAndClearExpectations(&activity);
+  // Push should be done
+  EXPECT_THAT(push_client_to_server_message(), IsReady(Success{}));
+  // Push server initial metadata
+  auto push_server_initial_metadata = filters.PushServerInitialMetadata(
+      Arena::MakePooled<ServerMetadata>(arena.get()));
+  EXPECT_THAT(push_server_initial_metadata(), IsPending());
+  auto pull_server_initial_metadata = filters.PullServerInitialMetadata();
+  // Pull server initial metadata, expect a wakeup
+  EXPECT_CALL(activity, WakeupRequested());
+  EXPECT_THAT(pull_server_initial_metadata(), IsReady());
+  Mock::VerifyAndClearExpectations(&activity);
+  // Push should be done
+  EXPECT_THAT(push_server_initial_metadata(), IsReady(Success{}));
+  // Push server to client message
+  auto push_server_to_client_message = filters.PushServerToClientMessage(
+      Arena::MakePooled<Message>(SliceBuffer(), 0));
+  EXPECT_THAT(push_server_to_client_message(), IsPending());
+  auto pull_server_to_client_message = filters.PullServerToClientMessage();
+  // Pull server to client message, expect a wakeup
+  EXPECT_CALL(activity, WakeupRequested());
+  EXPECT_THAT(pull_server_to_client_message(), IsReady());
+  Mock::VerifyAndClearExpectations(&activity);
+  // Push should be done
+  EXPECT_THAT(push_server_to_client_message(), IsReady(Success{}));
+  // Push server trailing metadata
+  filters.PushServerTrailingMetadata(
+      Arena::MakePooled<ServerMetadata>(arena.get()));
+  // Pull server trailing metadata
+  auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
+  // Should be done
+  EXPECT_THAT(pull_server_trailing_metadata(), IsReady());
+  filters.Finalize(nullptr);
+  EXPECT_THAT(steps,
+              ::testing::ElementsAre(
+                  "f1:OnClientInitialMetadata", "f2:OnClientInitialMetadata",
+                  "f1:OnClientToServerMessage", "f2:OnClientToServerMessage",
+                  "f2:OnServerInitialMetadata", "f1:OnServerInitialMetadata",
+                  "f2:OnServerToClientMessage", "f1:OnServerToClientMessage",
+                  "f2:OnServerTrailingMetadata", "f1:OnServerTrailingMetadata",
+                  "f1:OnFinalize", "f2:OnFinalize"));
+}
 
 }  // namespace grpc_core
 

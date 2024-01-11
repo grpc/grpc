@@ -696,7 +696,7 @@ struct StackData {
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
                     void (FilterType::Call::*p)(const grpc_call_final_info*)) {
-    GPR_DEBUG_ASSERT(p == &FilterType::OnFinalize);
+    GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
@@ -711,7 +711,7 @@ struct StackData {
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
                     void (FilterType::Call::*p)(const grpc_call_final_info*,
                                                 FilterType*)) {
-    GPR_DEBUG_ASSERT(p == &FilterType::OnFinalize);
+    GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
@@ -921,17 +921,12 @@ class CallFilters {
     template <typename FilterType>
     void Add(FilterType* filter) {
       const size_t call_offset = data_.AddFilter<FilterType>(filter);
-      data_.AddClientInitialMetadataOp(filter, call_offset,
-                                       &FilterType::OnClientInitialMetadata);
-      data_.AddServerInitialMetadataOp(filter, call_offset,
-                                       &FilterType::OnServerInitialMetadata);
-      data_.AddClientToServerMessageOp(filter, call_offset,
-                                       &FilterType::OnClientToServerMessage);
-      data_.AddServerToClientMessageOp(filter, call_offset,
-                                       &FilterType::OnServerToClientMessage);
-      data_.AddServerTrailingMetadataOp(filter, call_offset,
-                                        &FilterType::OnServerTrailingMetadata);
-      data_.AddFinalizer(filter, call_offset, &FilterType::OnFinalize);
+      data_.AddClientInitialMetadataOp(filter, call_offset);
+      data_.AddServerInitialMetadataOp(filter, call_offset);
+      data_.AddClientToServerMessageOp(filter, call_offset);
+      data_.AddServerToClientMessageOp(filter, call_offset);
+      data_.AddServerTrailingMetadataOp(filter, call_offset);
+      data_.AddFinalizer(filter, call_offset, &FilterType::Call::OnFinalize);
     }
 
     RefCountedPtr<Stack> Build();
@@ -1034,27 +1029,31 @@ class CallFilters {
         if (transformer_.IsRunning()) {
           return FinishPipeTransformer(transformer_.Step(filters_->call_data_));
         }
-        auto p = state().PollPullValue();
+        auto p = state().PollPull();
         auto* r = p.value_if_ready();
         if (r == nullptr) return Pending{};
         if (!r->ok()) {
           filters_->CancelDueToFailedPipeOperation();
           return Failure{};
         }
-        return FinishPipeTransformer(
-            transformer_.Start(push()->TakeValue(), filters_->call_data_));
+        return FinishPipeTransformer(transformer_.Start(
+            layout(), push()->TakeValue(), filters_->call_data_));
       }
 
      private:
       filters_detail::PipeState& state() { return filters_->*state_ptr; }
       Push* push() { return static_cast<Push*>(filters_->*push_ptr); }
+      const filters_detail::Layout<filters_detail::FallibleOperator<T>>*
+      layout() {
+        return &(filters_->stack_->data_.*layout_ptr);
+      }
 
       Poll<ValueOrFailure<T>> FinishPipeTransformer(
           Poll<filters_detail::ResultOr<T>> p) {
         auto* r = p.value_if_ready();
         if (r == nullptr) return Pending{};
         GPR_DEBUG_ASSERT(!transformer_.IsRunning());
-        state().AckPullValue();
+        state().AckPull();
         if (r->ok != nullptr) return std::move(r->ok);
         filters_->PushServerTrailingMetadata(std::move(r->error));
         return Failure{};
