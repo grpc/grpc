@@ -363,9 +363,6 @@ class XdsClient::ChannelState::LrsCallState
 
   void Orphan() override;
 
-  void MaybeStartReportingLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-
   RetryableCall<LrsCallState>* parent() { return parent_.get(); }
   ChannelState* chand() const { return parent_->chand(); }
   XdsClient* xds_client() const { return chand()->xds_client(); }
@@ -393,10 +390,8 @@ class XdsClient::ChannelState::LrsCallState
   // A repeating timer for a particular duration.
   class Timer : public InternallyRefCounted<Timer> {
    public:
-    Timer(RefCountedPtr<LrsCallState> parent, Duration report_interval)
-        : parent_(std::move(parent)), report_interval_(report_interval) {
-      ScheduleNextReportLocked();
-    }
+    explicit Timer(RefCountedPtr<LrsCallState> parent)
+        : parent_(std::move(parent)) {}
     ~Timer() override { parent_.reset(DEBUG_LOCATION, "LRS timer"); }
 
     // Disable thread-safety analysis because this method is called via
@@ -416,8 +411,6 @@ class XdsClient::ChannelState::LrsCallState
     // The owning LRS call.
     RefCountedPtr<LrsCallState> parent_;
 
-    // The load reporting state.
-    const Duration report_interval_;
     absl::optional<EventEngine::TaskHandle> timer_handle_
         ABSL_GUARDED_BY(&XdsClient::mu_);
   };
@@ -1161,12 +1154,6 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
       if (result.have_valid_resources || result.errors.empty()) {
         chand()->resource_type_version_map_[result.type] =
             std::move(result.version);
-        // Start load reporting if needed.
-        auto& lrs_call = chand()->lrs_calld_;
-        if (lrs_call != nullptr) {
-          LrsCallState* lrs_calld = lrs_call->calld();
-          if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
-        }
       }
       // Send ACK or NACK.
       SendMessageLocked(result.type);
@@ -1255,10 +1242,11 @@ void XdsClient::ChannelState::LrsCallState::Timer::ScheduleNextReportLocked() {
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: scheduling next load report in %s",
             xds_client(), parent_->chand()->server_.server_uri().c_str(),
-            report_interval_.ToString().c_str());
+            parent_->load_reporting_interval_.ToString().c_str());
   }
   timer_handle_ = parent_->xds_client()->engine()->RunAfter(
-      report_interval_, [self = Ref(DEBUG_LOCATION, "timer")]() {
+      parent_->load_reporting_interval_,
+      [self = Ref(DEBUG_LOCATION, "timer")]() {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnNextReportTimer();
@@ -1317,42 +1305,18 @@ void XdsClient::ChannelState::LrsCallState::Orphan() {
   call_.reset();
 }
 
-void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
-  // Don't start again if already started.
-  if (timer_ != nullptr) return;
-  // Don't start if the previous send_message op (of the initial request or
-  // the last report of the previous timer) hasn't completed.
+void XdsClient::ChannelState::LrsCallState::MaybeScheduleNextReportLocked() {
+  // Don't start if the previous send_message op hasn't completed yet.
+  // If this happens, we'll be called again from OnRequestSent().
   if (send_message_pending_) return;
   // Don't start if no LRS response has arrived.
   if (!seen_response()) return;
-  // Don't start if the ADS call hasn't received any valid response. Note that
-  // this must be the first channel because it is the current channel but its
-  // ADS call hasn't seen any response.
-  if (chand()->ads_calld_ == nullptr ||
-      chand()->ads_calld_->calld() == nullptr ||
-      !chand()->ads_calld_->calld()->seen_response()) {
-    return;
-  }
-  // Start timer.
-  timer_ = MakeOrphanable<Timer>(Ref(DEBUG_LOCATION, "LRS timer"),
-                                 load_reporting_interval_);
-}
-
-void XdsClient::ChannelState::LrsCallState::MaybeScheduleNextReportLocked() {
-  // If there are no more registered stats to report, cancel the call.
-  auto it = xds_client()->xds_load_report_server_map_.find(&chand()->server_);
-  if (it == xds_client()->xds_load_report_server_map_.end() ||
-      it->second.load_report_map.empty()) {
-    it->second.channel_state->StopLrsCallLocked();
-    return;
-  }
-  // If there is no timer (i.e., the load report interval was updated while
-  // a load report was in flight), start a new one.
+  // If there is no timer, create one.
+  // This happens on the initial response and whenever the interval changes.
   if (timer_ == nullptr) {
-    MaybeStartReportingLocked();
-    return;
+    timer_ = MakeOrphanable<Timer>(Ref(DEBUG_LOCATION, "LRS timer"));
   }
-  // Otherwise, schedule the next load report.
+  // Schedule the next load report.
   timer_->ScheduleNextReportLocked();
 }
 
@@ -1400,7 +1364,16 @@ void XdsClient::ChannelState::LrsCallState::SendMessageLocked(
 void XdsClient::ChannelState::LrsCallState::OnRequestSent() {
   MutexLock lock(&xds_client()->mu_);
   send_message_pending_ = false;
-  if (IsCurrentCallOnChannel()) MaybeScheduleNextReportLocked();
+  if (!IsCurrentCallOnChannel()) return;
+  // If there are no more registered stats to report, cancel the call.
+  auto it = xds_client()->xds_load_report_server_map_.find(&chand()->server_);
+  if (it == xds_client()->xds_load_report_server_map_.end() ||
+      it->second.load_report_map.empty()) {
+    it->second.channel_state->StopLrsCallLocked();
+    return;
+  }
+  // Otherwise, schedule the next load report.
+  MaybeScheduleNextReportLocked();
 }
 
 void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
@@ -1465,14 +1438,17 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
     }
     return;
   }
-  // Stop current timer (if any) to adopt the new config.
-  timer_.reset();
+  // If the interval has changed, stop the current timer.
+  // We'll start a new one in MaybeScheduleNextReportLocked().
+  if (load_reporting_interval_ != new_load_reporting_interval) {
+    timer_.reset();
+  }
   // Record the new config.
   send_all_clusters_ = send_all_clusters;
   cluster_names_ = std::move(new_cluster_names);
   load_reporting_interval_ = new_load_reporting_interval;
-  // Try starting sending load report.
-  MaybeStartReportingLocked();
+  // Schedule next load report if needed.
+  MaybeScheduleNextReportLocked();
 }
 
 void XdsClient::ChannelState::LrsCallState::OnStatusReceived(
