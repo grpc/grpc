@@ -114,7 +114,7 @@ class OpenTelemetryPluginBuilder {
 };
 
 namespace experimental {
-// TODO(yashykt): Delete this after the 1.42 release.
+// TODO(yashykt): Delete this after the 1.62 release.
 GRPC_DEPRECATED(
     "Use grpc::OpenTelemetryPluginBuilder instead. The experimental version "
     "will be deleted after the 1.62 release.")
