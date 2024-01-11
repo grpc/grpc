@@ -24,6 +24,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -107,14 +110,16 @@ class ChaoticGoodServerListener
    private:
     std::shared_ptr<ChaoticGoodServerListener> listener_;
     MemoryAllocator memory_allocator_;
+    size_t initial_arena_size_ = 1024;
+    Duration connection_deadline_ = Duration::Seconds(5);
     std::shared_ptr<HandshakingState> handshaking_state_;
     ActivityPtr receive_settings_activity_;
     std::shared_ptr<PromiseEndpoint> endpoint_;
-    std::unique_ptr<HPackCompressor> hpack_compressor_;
-    std::unique_ptr<HPackParser> hpack_parser_;
+    HPackCompressor hpack_compressor_;
+    HPackParser hpack_parser_;
+    absl::BitGen bitgen_;
     Slice connection_type_;
     Slice connection_id_;
-    Duration connection_deadline_;
   };
 
   // Overridden to initialize listener but not actually used.

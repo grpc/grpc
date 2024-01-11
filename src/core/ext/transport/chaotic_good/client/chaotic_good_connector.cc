@@ -174,11 +174,11 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
               // Initialized to get this_cpu() info in
               // global_stat().
               ExecCtx exec_ctx;
-              absl::BitGen bitgen;
               BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
               auto status = frame.Deserialize(
-                  &self->hpack_parser_, *frame_header, absl::BitGenRef(bitgen),
-                  GetContext<Arena>(), std::move(buffer_pair));
+                  &self->hpack_parser_, *frame_header,
+                  absl::BitGenRef(self->bitgen_), GetContext<Arena>(),
+                  std::move(buffer_pair));
               GPR_ASSERT(status.ok());
               self->connection_id_ =
                   frame.headers->get_pointer(ChaoticGoodConnectionIdMetadata())

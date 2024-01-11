@@ -22,6 +22,8 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -98,6 +100,7 @@ class ChaoticGoodConnector
   std::shared_ptr<HandshakeManager> handshake_mgr_;
   HPackCompressor hpack_compressor_;
   HPackParser hpack_parser_;
+  absl::BitGen bitgen_;
   std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>> data_endpoint_latch_;
   std::shared_ptr<WaitForCallback> wait_for_data_endpoint_callback_;
   Slice connection_id_;

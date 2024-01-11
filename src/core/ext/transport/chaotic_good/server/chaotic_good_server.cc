@@ -137,10 +137,7 @@ ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     : listener_(listener),
       memory_allocator_(
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-              "connection")),
-      hpack_compressor_(std::make_unique<HPackCompressor>()),
-      hpack_parser_(std::make_unique<HPackParser>()),
-      connection_deadline_(Duration::Seconds(5)) {}
+              "connection")) {}
 
 ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
   listener_.reset();
@@ -209,12 +206,11 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
               // Initialized to get this_cpu() info in global_stat().
               ExecCtx exec_ctx;
               // Deserialize frame from read buffer.
-              absl::BitGen bitgen;
               BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
               auto status = frame.Deserialize(
-                  self->connection_->hpack_parser_.get(), frame_header,
-                  absl::BitGenRef(bitgen), GetContext<Arena>(),
-                  std::move(buffer_pair));
+                  &self->connection_->hpack_parser_, frame_header,
+                  absl::BitGenRef(self->connection_->bitgen_),
+                  GetContext<Arena>(), std::move(buffer_pair));
               GPR_ASSERT(status.ok());
               self->connection_->connection_type_ =
                   frame.headers
@@ -265,8 +261,8 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                   metadata->Set(ChaoticGoodConnectionIdMetadata(),
                                 self->connection_->connection_id_.Ref());
                   frame.headers = std::move(metadata);
-                  auto write_buffer = frame.Serialize(
-                      self->connection_->hpack_compressor_.get());
+                  auto write_buffer =
+                      frame.Serialize(&self->connection_->hpack_compressor_);
                   return self->connection_->endpoint_->Write(
                       std::move(write_buffer.control));
                 },
@@ -281,6 +277,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                 },
                 [](std::shared_ptr<PromiseEndpoint> ret) -> absl::Status {
                   GPR_ASSERT(ret != nullptr);
+                  // TODO(ladynana): initialize server transport.
                   return absl::OkStatus();
                 }),
             // Set timeout for waiting data endpoint connect.
@@ -309,7 +306,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                       self->connection_->connection_id_.Ref());
         frame.headers = std::move(metadata);
         auto write_buffer =
-            frame.Serialize(self->connection_->hpack_compressor_.get());
+            frame.Serialize(&self->connection_->hpack_compressor_);
         return TrySeq(
             self->connection_->endpoint_->Write(
                 std::move(write_buffer.control)),
@@ -358,7 +355,8 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                   StatusToString(status).c_str());
         }
       },
-      MakeScopedArena(1024, &self->connection_->memory_allocator_),
+      MakeScopedArena(self->connection_->initial_arena_size_,
+                      &self->connection_->memory_allocator_),
       grpc_event_engine::experimental::GetDefaultEventEngine().get());
 }
 
