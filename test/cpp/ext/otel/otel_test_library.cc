@@ -90,6 +90,9 @@ void OpenTelemetryPluginEnd2EndTest::Init(
     const std::map<std::string, std::string>& labels_to_inject,
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_selector,
+    absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*channel_args*/)
+                           const>
+        server_selector,
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_attribute_filter,
     absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
@@ -121,6 +124,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(
   }
   ot_builder.SetLabelsInjector(std::move(labels_injector));
   ot_builder.SetTargetSelector(std::move(target_selector));
+  ot_builder.SetServerSelector(std::move(server_selector));
   ot_builder.SetTargetAttributeFilter(std::move(target_attribute_filter));
   ot_builder.SetGenericMethodAttributeFilter(
       std::move(generic_method_attribute_filter));
