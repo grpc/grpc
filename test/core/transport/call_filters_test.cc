@@ -951,12 +951,15 @@ TEST(PipeTransformerTest, InstantTwo) {
     class Call {
      public:
       absl::Status OnClientInitialMetadata(ClientMetadata& md) {
+        bool first = std::exchange(first_, false);
+        if (!first) {
+          EXPECT_EQ(md.get_pointer(HttpPathMetadata()), nullptr);
+        }
         if (md.get_pointer(HttpPathMetadata()) != nullptr) {
           md.Set(HttpPathMetadata(), Slice::FromStaticString("world"));
         } else {
           md.Set(HttpPathMetadata(), Slice::FromStaticString("hello"));
         }
-        bool first = std::exchange(first_, false);
         return first ? absl::OkStatus() : absl::CancelledError();
       }
 
@@ -982,6 +985,8 @@ TEST(PipeTransformerTest, InstantTwo) {
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
+  promise_detail::Context<Arena> ctx(arena.get());
+  // First call succeeds
   auto md = Arena::MakePooled<ServerMetadata>(arena.get());
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   auto r =
@@ -989,6 +994,91 @@ TEST(PipeTransformerTest, InstantTwo) {
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "world");
+  // Second fails
+  md = Arena::MakePooled<ServerMetadata>(arena.get());
+  EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
+  r = transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
+  EXPECT_TRUE(r.ready());
+  EXPECT_EQ(r.value().ok, nullptr);
+  EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
+  d.filters[1].call_destroy(call_data2);
+  d.filters[0].call_destroy(call_data1);
+  gpr_free_aligned(call_data1);
+}
+
+TEST(PipeTransformerTest, PromiseTwo) {
+  class Filter1 {
+   public:
+    class Call {
+     public:
+      auto OnClientInitialMetadata(ClientMetadata& md) {
+        return [md = &md, this,
+                i = std::make_unique<int>(3)]() mutable -> Poll<absl::Status> {
+          --*i;
+          if (*i > 0) return Pending{};
+          bool first = std::exchange(first_, false);
+          if (!first) {
+            EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
+          }
+          if (md->get_pointer(HttpPathMetadata()) != nullptr) {
+            md->Set(HttpPathMetadata(), Slice::FromStaticString("world"));
+          } else {
+            md->Set(HttpPathMetadata(), Slice::FromStaticString("hello"));
+          }
+          return first ? absl::OkStatus() : absl::CancelledError();
+        };
+      }
+
+     private:
+      bool first_ = true;
+    };
+  };
+  StackData d;
+  Filter1 f1;
+  Filter1 f2;
+  const size_t call_offset1 = d.AddFilter(&f1);
+  const size_t call_offset2 = d.AddFilter(&f2);
+  d.AddClientInitialMetadataOp(&f1, call_offset1);
+  d.AddClientInitialMetadataOp(&f2, call_offset2);
+  EXPECT_EQ(d.filters.size(), 2u);
+  EXPECT_EQ(d.client_initial_metadata.ops.size(), 2u);
+  void* call_data1 =
+      gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
+  void* call_data2 = Offset(call_data1, d.filters[1].call_offset);
+  d.filters[0].call_init(call_data1, &f1);
+  d.filters[1].call_init(call_data2, &f2);
+  PipeTransformer<ClientMetadataHandle> transformer;
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
+  promise_detail::Context<Arena> ctx(arena.get());
+  // First call succeeds after two sets of two step delays.
+  auto md = Arena::MakePooled<ServerMetadata>(arena.get());
+  EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
+  auto r =
+      transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
+  EXPECT_FALSE(r.ready());
+  r = transformer.Step(call_data1);
+  EXPECT_FALSE(r.ready());
+  r = transformer.Step(call_data1);
+  EXPECT_FALSE(r.ready());
+  r = transformer.Step(call_data1);
+  EXPECT_FALSE(r.ready());
+  r = transformer.Step(call_data1);
+  EXPECT_TRUE(r.ready());
+  EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
+            "world");
+  // Second fails after one set of two step delays.
+  md = Arena::MakePooled<ServerMetadata>(arena.get());
+  EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
+  r = transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
+  EXPECT_FALSE(r.ready());
+  r = transformer.Step(call_data1);
+  EXPECT_FALSE(r.ready());
+  r = transformer.Step(call_data1);
+  EXPECT_TRUE(r.ready());
+  EXPECT_EQ(r.value().ok, nullptr);
+  EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
   d.filters[1].call_destroy(call_data2);
   d.filters[0].call_destroy(call_data1);
   gpr_free_aligned(call_data1);
@@ -1004,6 +1094,51 @@ namespace filters_detail {
 TEST(InfalliblePipeTransformer, NoOp) {
   PipeTransformer<ServerMetadataHandle> pipe;
   EXPECT_FALSE(pipe.IsRunning());
+}
+
+TEST(InfalliblePipeTransformer, InstantTwo) {
+  class Filter1 {
+   public:
+    class Call {
+     public:
+      void OnServerTrailingMetadata(ClientMetadata& md) {
+        if (md.get_pointer(HttpPathMetadata()) != nullptr) {
+          md.Set(HttpPathMetadata(), Slice::FromStaticString("world"));
+        } else {
+          md.Set(HttpPathMetadata(), Slice::FromStaticString("hello"));
+        }
+      }
+    };
+  };
+  StackData d;
+  Filter1 f1;
+  Filter1 f2;
+  const size_t call_offset1 = d.AddFilter(&f1);
+  const size_t call_offset2 = d.AddFilter(&f2);
+  d.AddServerTrailingMetadataOp(&f1, call_offset1);
+  d.AddServerTrailingMetadataOp(&f2, call_offset2);
+  EXPECT_EQ(d.filters.size(), 2u);
+  EXPECT_EQ(d.server_trailing_metadata.ops.size(), 2u);
+  void* call_data1 =
+      gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
+  void* call_data2 = Offset(call_data1, d.filters[1].call_offset);
+  d.filters[0].call_init(call_data1, &f1);
+  d.filters[1].call_init(call_data2, &f2);
+  InfalliblePipeTransformer<ServerMetadataHandle> transformer;
+  auto memory_allocator =
+      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
+  promise_detail::Context<Arena> ctx(arena.get());
+  auto md = Arena::MakePooled<ServerMetadata>(arena.get());
+  EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
+  auto r =
+      transformer.Start(&d.server_trailing_metadata, std::move(md), call_data1);
+  EXPECT_TRUE(r.ready());
+  EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
+            "world");
+  d.filters[1].call_destroy(call_data2);
+  d.filters[0].call_destroy(call_data1);
+  gpr_free_aligned(call_data1);
 }
 
 }  // namespace filters_detail

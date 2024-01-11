@@ -83,6 +83,7 @@ Poll<ResultOr<T>> PipeTransformer<T>::ContinueStep(void* call_data) {
   auto p = ops_->poll(promise_data_);
   if (auto* r = p.value_if_ready()) {
     if (r->ok == nullptr) return std::move(*r);
+    ++ops_;
     return InitStep(std::move(r->ok), call_data);
   }
   return Pending{};

@@ -26,13 +26,90 @@
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
 
+// CallFilters tracks a list of filters that are attached to a call.
+// At a high level, a filter (for the purposes of this module) is a class
+// that has a Call member class, and a set of methods that are called
+// for each major event in the lifetime of a call.
+//
+// The Call member class must have the following members:
+// - OnClientInitialMetadata  - $VALUE_TYPE = ClientMetadata
+// - OnServerInitialMetadata  - $VALUE_TYPE = ServerMetadata
+// - OnServerToClientMessage  - $VALUE_TYPE = Message
+// - OnClientToServerMessage  - $VALUE_TYPE = Message
+// - OnServerTrailingMetadata - $VALUE_TYPE = ServerMetadata
+// - OnFinalize               - special, see below
+// These members define an interception point for a particular event in
+// the call lifecycle.
+//
+// The type of these members matters, and is selectable by the class
+// author. For $INTERCEPTOR_NAME in the above list:
+// - static const NoInterceptor $INTERCEPTOR_NAME:
+//   defines that this filter does not intercept this event.
+//   there is zero runtime cost added to handling that event by this filter.
+// - void $INTERCEPTOR_NAME($VALUE_TYPE&):
+//   the filter intercepts this event, and can modify the value.
+//   it never fails.
+// - absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&):
+//   the filter intercepts this event, and can modify the value.
+//   it can fail, in which case the call will be aborted.
+// - ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
+//   the filter intercepts this event, and can modify the value.
+//   the filter can return nullptr for success, or a metadata handle for
+//   failure (in which case the call will be aborted).
+//   useful for cases where the exact metadata returned needs to be customized.
+// - void $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*):
+//   the filter intercepts this event, and can modify the value.
+//   it can access the channel via the second argument.
+//   it never fails.
+// - absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*):
+//   the filter intercepts this event, and can modify the value.
+//   it can access the channel via the second argument.
+//   it can fail, in which case the call will be aborted.
+// - ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
+//   the filter intercepts this event, and can modify the value.
+//   it can access the channel via the second argument.
+//   the filter can return nullptr for success, or a metadata handle for
+//   failure (in which case the call will be aborted).
+//   useful for cases where the exact metadata returned needs to be customized.
+// It's also acceptable to return a promise that resolves to the
+// relevant return type listed above.
+//
+// Finally, OnFinalize is added to intecept call finalization.
+// It must have one of the signatures:
+// - static const NoInterceptor OnFinalize:
+//   the filter does not intercept call finalization.
+// - void OnFinalize(const grpc_call_final_info*):
+//   the filter intercepts call finalization.
+// - void OnFinalize(const grpc_call_final_info*, FilterType*):
+//   the filter intercepts call finalization.
+//
+// The constructor of the Call object can either take a pointer to the channel
+// object, or not take any arguments.
+//
+// *THIS MODULE* holds no opinion on what members the channel part of the
+// filter should or should not have, but does require that it have a stable
+// pointer for the lifetime of a call (ownership is expected to happen
+// elsewhere).
+
 namespace grpc_core {
 
+// Tag type to indicate no interception.
+// This is used to indicate that a filter does not intercept a particular
+// event.
+// In C++14 we declare these as (for example):
+//   static const NoInterceptor OnClientInitialMetadata;
+// and out-of-line provide the definition:
+//   const MyFilter::Call::NoInterceptor
+//   MyFilter::Call::OnClientInitialMetadata;
+// In C++17 and later we can use inline variables instead:
+//   inline static const NoInterceptor OnClientInitialMetadata;
 struct NoInterceptor {};
 
 namespace filters_detail {
 
 // One call filter metadata
+// Contains enough information to allocate and initialize/destruct the
+// call data for one filter.
 struct Filter {
   // Pointer to corresponding channel data for this filter
   void* channel_data;
@@ -91,16 +168,30 @@ struct Operator {
                           void* channel_data, V value);
   // Poll the promise data for this filter.
   // If the promise finishes, also destroy the promise data!
+  // Note that if the promise always finishes on the first poll, then supplying
+  // this method is unnecessary (as it will never be called).
   Poll<R> (*poll)(void* promise_data);
   // Destroy the promise data for this filter for an in-progress operation
   // before the promise finishes.
+  // Note that if the promise always finishes on the first poll, then supplying
+  // this method is unnecessary (as it will never be called).
   void (*early_destroy)(void* promise_data);
 };
 
-// An operation that could fail
+// We divide operations into fallible and infallible.
+// Fallible operations can fail, and that failure terminates the call.
+// Infallible operations cannot fail.
+// Fallible operations are used for client initial, and server initial metadata,
+// and messages.
+// Infallible operations are used for server trailing metadata.
+// (This is because server trailing metadata occurs when the call is finished -
+// and so we couldn't possibly become more finished - and also because it's the
+// preferred representation of failure anyway!)
+
+// An operation that could fail: takes a T argument, produces a ResultOr<T>
 template <typename T>
 using FallibleOperator = Operator<ResultOr<T>, T>;
-// And one that cannot
+// And one that cannot: takes a T argument, produces a T
 template <typename T>
 using InfallibleOperator = Operator<T, T>;
 
@@ -129,6 +220,17 @@ struct Layout {
   void Reverse() { std::reverse(ops.begin(), ops.end()); }
 };
 
+// AddOp and friends
+// These are helpers to wrap a member function on a class into an operation
+// and attach it to a layout.
+// There's a generic wrapper function `AddOp` for each of fallible and
+// infallible operations.
+// There are then specializations of AddOpImpl for each kind of member function
+// an operation could have.
+// Each specialization has an `Add` member function for the kinds of operations
+// it supports: some only support fallible, some only support infallible, some
+// support both.
+
 template <typename FilterType, typename T, typename FunctionImpl,
           FunctionImpl impl, typename SfinaeVoid = void>
 struct AddOpImpl;
@@ -149,12 +251,16 @@ void AddOp(FilterType* channel_data, size_t call_offset,
                                                     to);
 }
 
+// const NoInterceptor $EVENT
+// These do nothing, and specifically DO NOT add an operation to the layout.
+// Supported for fallible & infallible operations.
 template <typename FilterType, typename T, const NoInterceptor* which>
 struct AddOpImpl<FilterType, T, const NoInterceptor*, which> {
   static void Add(FilterType*, size_t, Layout<FallibleOperator<T>>&) {}
   static void Add(FilterType*, size_t, Layout<InfallibleOperator<T>>&) {}
 };
 
+// void $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
           void (FilterType::Call::*impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
@@ -191,6 +297,7 @@ struct AddOpImpl<FilterType, T,
   }
 };
 
+// void $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
           void (FilterType::Call::*impl)(typename T::element_type&,
                                          FilterType*)>
@@ -231,6 +338,7 @@ struct AddOpImpl<
   }
 };
 
+// absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
           absl::Status (FilterType::Call::*impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
@@ -257,6 +365,7 @@ struct AddOpImpl<FilterType, T,
   }
 };
 
+// absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
           absl::Status (FilterType::Call::*impl)(typename T::element_type&,
                                                  FilterType*)>
@@ -286,6 +395,7 @@ struct AddOpImpl<FilterType, T,
   }
 };
 
+// ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
           ServerMetadataHandle (FilterType::Call::*impl)(
               typename T::element_type&)>
@@ -314,6 +424,7 @@ struct AddOpImpl<FilterType, T,
   }
 };
 
+// ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
           ServerMetadataHandle (FilterType::Call::*impl)(
               typename T::element_type&, FilterType*)>
@@ -343,6 +454,7 @@ struct AddOpImpl<FilterType, T,
   }
 };
 
+// PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T, typename R,
           R (FilterType::Call::*impl)(typename T::element_type&)>
 struct AddOpImpl<
@@ -394,6 +506,7 @@ struct AddOpImpl<
   }
 };
 
+// PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T, typename R,
           R (FilterType::Call::*impl)(typename T::element_type&, FilterType*)>
 struct AddOpImpl<
@@ -447,17 +560,39 @@ struct AddOpImpl<
   }
 };
 
+// StackData contains the main datastructures built up by this module.
+// It's a complete representation of all the code that needs to be invoked
+// to execute a call for a given set of filters.
+// This structure is held at the channel layer and is shared between many
+// in-flight calls.
 struct StackData {
+  // Overall size and alignment of the call data for this stack.
   size_t call_data_alignment = 0;
   size_t call_data_size = 0;
+  // A complete list of filters for this call, so that we can construct the
+  // call data for each filter.
   std::vector<Filter> filters;
+  // For each kind of operation, a layout of the operations for this call.
+  // (there's some duplicate data here, and that's ok: we want to avoid
+  // pointer chasing as much as possible when executing a call)
   Layout<FallibleOperator<ClientMetadataHandle>> client_initial_metadata;
   Layout<FallibleOperator<ServerMetadataHandle>> server_initial_metadata;
   Layout<FallibleOperator<MessageHandle>> client_to_server_messages;
   Layout<FallibleOperator<MessageHandle>> server_to_client_messages;
   Layout<InfallibleOperator<ServerMetadataHandle>> server_trailing_metadata;
+  // A list of finalizers for this call.
+  // We use a bespoke data structure here because finalizers can never be
+  // asynchronous.
   std::vector<Finalizer> finalizers;
 
+  // Add one filter to the list of filters, and update alignment.
+  // Returns the offset of the call data for this filter.
+  // Specifically does not update any of the layouts or finalizers.
+  // Callers are expected to do that themselves.
+  // This separation enables separation of *testing* of filters, and since
+  // this is a detail type it's felt that a slightly harder to hold API that
+  // we have exactly one caller for is warranted for a more thorough testing
+  // story.
   template <typename FilterType>
   absl::enable_if_t<!std::is_empty<typename FilterType::Call>::value, size_t>
   AddFilter(FilterType* channel_data) {
@@ -508,6 +643,9 @@ struct StackData {
     return 0;
   }
 
+  // Per operation adders - one for each interception point.
+  // Delegate to AddOp() above.
+
   template <typename FilterType>
   void AddClientInitialMetadataOp(FilterType* channel_data,
                                   size_t call_offset) {
@@ -548,6 +686,8 @@ struct StackData {
         channel_data, call_offset, server_trailing_metadata);
   }
 
+  // Finalizer interception adders
+
   template <typename FilterType>
   void AddFinalizer(FilterType*, size_t, const NoInterceptor* p) {
     GPR_DEBUG_ASSERT(p == &FilterType::OnFinalize);
@@ -584,6 +724,13 @@ struct StackData {
   }
 };
 
+// PipeTransformer is a helper class to execute a sequence of operations
+// from a layout on one value.
+// We instantiate one of these during the *Pull* promise for each operation
+// and wait for it to resolve.
+// At this layer the filters look like a list of transformations on the
+// value pushed.
+// An early-failing filter will cause subsequent filters to not execute.
 template <typename T>
 class PipeTransformer {
  public:
@@ -591,21 +738,43 @@ class PipeTransformer {
   ~PipeTransformer();
   PipeTransformer(const PipeTransformer&) = delete;
   PipeTransformer& operator=(const PipeTransformer&) = delete;
-  PipeTransformer(PipeTransformer&& other) {
+  PipeTransformer(PipeTransformer&& other) noexcept
+      : ops_(other.ops_), end_ops_(other.end_ops_) {
+    // Movable iff we're not running.
     GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
   }
-  PipeTransformer& operator=(PipeTransformer&& other) {
+  PipeTransformer& operator=(PipeTransformer&& other) noexcept {
     GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
     GPR_DEBUG_ASSERT(promise_data_ == nullptr);
+    ops_ = other.ops_;
+    end_ops_ = other.end_ops_;
     return *this;
   }
+  // IsRunning() is true if we're currently executing a sequence of operations.
   bool IsRunning() const { return promise_data_ != nullptr; }
+  // Start executing a layout. May allocate space to store the relevant promise.
+  // Returns the result of the first poll.
+  // If the promise finishes, also destroy the promise data.
   Poll<ResultOr<T>> Start(const Layout<FallibleOperator<T>>* layout, T input,
                           void* call_data);
+  // Continue executing a layout. Returns the result of the next poll.
+  // If the promise finishes, also destroy the promise data.
   Poll<ResultOr<T>> Step(void* call_data);
 
  private:
+  // Start polling on the current step of the layout.
+  // `input` is the current value (either the input to the first step, or the
+  // so far transformed value)
+  // `call_data` is the call data for the filter stack.
+  // If this op finishes immediately then we iterative move to the next step.
+  // If we reach the end up the ops, we return the overall poll result,
+  // otherwise we return Pending.
   Poll<ResultOr<T>> InitStep(T input, void* call_data);
+  // Continue polling on the current step of the layout.
+  // Called on the next poll after InitStep returns pending.
+  // If the promise is still pending, returns this.
+  // If the promise completes we call into InitStep to continue execution
+  // through the filters.
   Poll<ResultOr<T>> ContinueStep(void* call_data);
 
   void* promise_data_ = nullptr;
@@ -621,21 +790,45 @@ class InfalliblePipeTransformer {
   InfalliblePipeTransformer(const InfalliblePipeTransformer&) = delete;
   InfalliblePipeTransformer& operator=(const InfalliblePipeTransformer&) =
       delete;
-  InfalliblePipeTransformer(InfalliblePipeTransformer&& other) {
+  InfalliblePipeTransformer(InfalliblePipeTransformer&& other) noexcept
+      : ops_(other.ops_), end_ops_(other.end_ops_) {
+    // Movable iff we're not running.
     GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
   }
-  InfalliblePipeTransformer& operator=(InfalliblePipeTransformer&& other) {
+  InfalliblePipeTransformer& operator=(
+      InfalliblePipeTransformer&& other) noexcept {
     GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
     GPR_DEBUG_ASSERT(promise_data_ == nullptr);
+    ops_ = other.ops_;
+    end_ops_ = other.end_ops_;
     return *this;
   }
+
+  // IsRunning() is true if we're currently executing a sequence of operations.
   bool IsRunning() const { return promise_data_ != nullptr; }
+  // Start executing a layout. May allocate space to store the relevant promise.
+  // Returns the result of the first poll.
+  // If the promise finishes, also destroy the promise data.
   Poll<T> Start(const Layout<InfallibleOperator<T>>* layout, T input,
                 void* call_data);
+  // Continue executing a layout. Returns the result of the next poll.
+  // If the promise finishes, also destroy the promise data.
   Poll<T> Step(void* call_data);
 
  private:
+  // Start polling on the current step of the layout.
+  // `input` is the current value (either the input to the first step, or the
+  // so far transformed value)
+  // `call_data` is the call data for the filter stack.
+  // If this op finishes immediately then we iterative move to the next step.
+  // If we reach the end up the ops, we return the overall poll result,
+  // otherwise we return Pending.
   Poll<T> InitStep(T input, void* call_data);
+  // Continue polling on the current step of the layout.
+  // Called on the next poll after InitStep returns pending.
+  // If the promise is still pending, returns this.
+  // If the promise completes we call into InitStep to continue execution
+  // through the filters.
   Poll<T> ContinueStep(void* call_data);
 
   void* promise_data_ = nullptr;
@@ -645,7 +838,8 @@ class InfalliblePipeTransformer {
 
 }  // namespace filters_detail
 
-// Execution environment for a stack of filters
+// Execution environment for a stack of filters.
+// This is a per-call object.
 class CallFilters {
  public:
   class StackBuilder;
