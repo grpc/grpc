@@ -79,6 +79,23 @@ class LabelsInjector {
   virtual void AddLabels(
       grpc_metadata_batch* outgoing_initial_metadata,
       LabelsIterable* labels_from_incoming_metadata) const = 0;
+
+  // Adds optional labels to the traced calls. Each entry in the span
+  // corresponds to the CallAttemptTracer::OptionalLabelComponent enum. Returns
+  // false when callback returns false.
+  virtual bool AddOptionalLabels(
+      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+          optional_labels_span,
+      opentelemetry::nostd::function_ref<
+          bool(opentelemetry::nostd::string_view,
+               opentelemetry::common::AttributeValue)>
+          callback) const = 0;
+
+  // Gets the actual size of the optional labels that the Plugin is going to
+  // produce through the AddOptionalLabels method.
+  virtual size_t GetOptionalLabelsSize(
+      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+          optional_labels_span) const = 0;
 };
 
 class InternalOpenTelemetryPluginOption
@@ -223,14 +240,17 @@ class ActivePluginOptionsView {
         });
   }
 
-  void ForEach(
-      absl::FunctionRef<void(const InternalOpenTelemetryPluginOption&, size_t)>
+  bool ForEach(
+      absl::FunctionRef<bool(const InternalOpenTelemetryPluginOption&, size_t)>
           func) const {
     for (size_t i = 0; i < OpenTelemetryPluginState().plugin_options.size();
          ++i) {
       const auto& plugin_option = OpenTelemetryPluginState().plugin_options[i];
-      if (active_mask_[i]) func(*plugin_option, i);
+      if (active_mask_[i] && !func(*plugin_option, i)) {
+        return false;
+      }
     }
+    return true;
   }
 
  private:
