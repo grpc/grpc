@@ -84,7 +84,6 @@ class ChaoticGoodServerListener
         std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
             endpoint);
     const ChannelArgs& args() const { return listener_->args(); }
-    void GenerateConnectionID();
 
     class HandshakingState
         : public std::enable_shared_from_this<HandshakingState> {
@@ -108,13 +107,13 @@ class ChaoticGoodServerListener
           std::shared_ptr<HandshakingState> self);
 
       static void OnHandshakeDone(void* arg, grpc_error_handle error);
-
       Timestamp GetConnectionDeadline();
       std::shared_ptr<ActiveConnection> connection_;
       std::shared_ptr<HandshakeManager> handshake_mgr_;
     };
 
    private:
+    void NewConnectionID();
     std::shared_ptr<ChaoticGoodServerListener> listener_;
     size_t initial_arena_size_ = 1024;
     Duration connection_deadline_ = Duration::Seconds(5);
@@ -124,7 +123,6 @@ class ChaoticGoodServerListener
     HPackCompressor hpack_compressor_;
     HPackParser hpack_parser_;
     absl::BitGen bitgen_;
-    Slice connection_type_;
     Slice connection_id_;
   };
 

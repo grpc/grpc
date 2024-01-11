@@ -148,18 +148,17 @@ void ChaoticGoodServerListener::ActiveConnection::Start(
   handshaking_state_->Start(std::move(endpoint));
 }
 
-void ChaoticGoodServerListener::ActiveConnection::GenerateConnectionID() {
+void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
   std::string random_string;
   int random_length = 8;
-  std::random_device rd;
-  std::mt19937 generator(rd());
   std::string charset =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   std::uniform_int_distribution<> distribution(0, charset.size() - 1);
-  random_string.reserve(8);
+  random_string.reserve(random_length);
   for (size_t i = 0; i < random_length; ++i) {
-    random_string += charset[distribution(generator)];
+    random_string += charset[distribution(bitgen_)];
   }
+  // TODO(ladynana): check collision.
   connection_id_ = Slice::FromCopiedString(random_string);
 }
 
@@ -207,14 +206,12 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                   absl::BitGenRef(self->connection_->bitgen_),
                   GetContext<Arena>(), std::move(buffer_pair));
               GPR_ASSERT(status.ok());
-              self->connection_->connection_type_ =
-                  frame.headers
-                      ->get_pointer(ChaoticGoodConnectionTypeMetadata())
-                      ->Ref();
               bool is_control_endpoint =
                   std::string(
-                      self->connection_->connection_type_.as_string_view()) ==
-                  "control";
+                      frame.headers
+                          ->get_pointer(ChaoticGoodConnectionTypeMetadata())
+                          ->Ref()
+                          .as_string_view()) == "control";
               if (!is_control_endpoint) {
                 // Get connection id for data endpoint.
                 self->connection_->connection_id_ =
@@ -266,7 +263,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     ControlEndpointWriteSettingsFrame(std::shared_ptr<HandshakingState> self) {
   return TrySeq(
       [self = self]() {
-        self->connection_->GenerateConnectionID();
+        self->connection_->NewConnectionID();
         {
           MutexLock lock(&self->connection_->listener_->mu_);
           self->connection_->listener_->connectivity_map_.insert(
