@@ -168,7 +168,12 @@ CallFilters::CallFilters() : stack_(nullptr), call_data_(nullptr) {}
 CallFilters::CallFilters(RefCountedPtr<Stack> stack)
     : stack_(std::move(stack)),
       call_data_(gpr_malloc_aligned(stack->data_.call_data_size,
-                                    stack->data_.call_data_alignment)) {}
+                                    stack->data_.call_data_alignment)) {
+  client_initial_metadata_state_.Start();
+  client_to_server_message_state_.Start();
+  server_initial_metadata_state_.Start();
+  server_to_client_message_state_.Start();
+}
 
 CallFilters::~CallFilters() {
   if (call_data_ != nullptr) gpr_free_aligned(call_data_);
@@ -179,7 +184,10 @@ void CallFilters::SetStack(RefCountedPtr<Stack> stack) {
   stack_ = std::move(stack);
   call_data_ = gpr_malloc_aligned(stack->data_.call_data_size,
                                   stack->data_.call_data_alignment);
-  stack_waiter_.Wake();
+  client_initial_metadata_state_.Start();
+  client_to_server_message_state_.Start();
+  server_initial_metadata_state_.Start();
+  server_to_client_message_state_.Start();
 }
 
 void CallFilters::Finalize(const grpc_call_final_info* final_info) {
@@ -217,7 +225,13 @@ RefCountedPtr<CallFilters::Stack> CallFilters::StackBuilder::Build() {
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters::PipeState
 
-void CallFilters::PipeState::BeginPush() {
+void filters_detail::PipeState::Start() {
+  GPR_DEBUG_ASSERT(!started_);
+  started_ = true;
+  wait_recv_.Wake();
+}
+
+void filters_detail::PipeState::BeginPush() {
   switch (state_) {
     case ValueState::kIdle:
       state_ = ValueState::kQueued;
@@ -237,7 +251,7 @@ void CallFilters::PipeState::BeginPush() {
   }
 }
 
-void CallFilters::PipeState::AbandonPush() {
+void filters_detail::PipeState::DropPush() {
   switch (state_) {
     case ValueState::kQueued:
     case ValueState::kReady:
@@ -253,7 +267,23 @@ void CallFilters::PipeState::AbandonPush() {
   }
 }
 
-Poll<StatusFlag> CallFilters::PipeState::PollPush() {
+void filters_detail::PipeState::DropPull() {
+  switch (state_) {
+    case ValueState::kQueued:
+    case ValueState::kReady:
+    case ValueState::kProcessing:
+    case ValueState::kWaiting:
+      state_ = ValueState::kError;
+      wait_send_.Wake();
+      break;
+    case ValueState::kIdle:
+    case ValueState::kClosed:
+    case ValueState::kError:
+      break;
+  }
+}
+
+Poll<StatusFlag> filters_detail::PipeState::PollPush() {
   switch (state_) {
     case ValueState::kIdle:
     // Read completed and new read started => we see waiting here
@@ -269,17 +299,19 @@ Poll<StatusFlag> CallFilters::PipeState::PollPush() {
   }
 }
 
-Poll<StatusFlag> CallFilters::PipeState::PollPullValue() {
+Poll<StatusFlag> filters_detail::PipeState::PollPull() {
   switch (state_) {
+    case ValueState::kWaiting:
+      return wait_recv_.pending();
     case ValueState::kIdle:
       state_ = ValueState::kWaiting;
       return wait_recv_.pending();
     case ValueState::kReady:
     case ValueState::kQueued:
+      if (!started_) return wait_recv_.pending();
       state_ = ValueState::kProcessing;
       return Success{};
     case ValueState::kProcessing:
-    case ValueState::kWaiting:
       Crash("Only one pull allowed to be outstanding");
     case ValueState::kClosed:
     case ValueState::kError:
@@ -287,7 +319,7 @@ Poll<StatusFlag> CallFilters::PipeState::PollPullValue() {
   }
 }
 
-void CallFilters::PipeState::AckPullValue() {
+void filters_detail::PipeState::AckPull() {
   switch (state_) {
     case ValueState::kProcessing:
       state_ = ValueState::kIdle;

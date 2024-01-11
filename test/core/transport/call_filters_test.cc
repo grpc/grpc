@@ -19,10 +19,64 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+using testing::Mock;
+using testing::StrictMock;
+
 namespace grpc_core {
 
 namespace {
+// Offset a void pointer by a given amount
 void* Offset(void* base, size_t amt) { return static_cast<char*>(base) + amt; }
+
+// A mock activity that can be activated and deactivated.
+class MockActivity : public Activity, public Wakeable {
+ public:
+  MOCK_METHOD(void, WakeupRequested, ());
+
+  void ForceImmediateRepoll(WakeupMask /*mask*/) override { WakeupRequested(); }
+  void Orphan() override {}
+  Waker MakeOwningWaker() override { return Waker(this, 0); }
+  Waker MakeNonOwningWaker() override { return Waker(this, 0); }
+  void Wakeup(WakeupMask /*mask*/) override { WakeupRequested(); }
+  void WakeupAsync(WakeupMask /*mask*/) override { WakeupRequested(); }
+  void Drop(WakeupMask /*mask*/) override {}
+  std::string DebugTag() const override { return "MockActivity"; }
+  std::string ActivityDebugTag(WakeupMask /*mask*/) const override {
+    return DebugTag();
+  }
+
+  void Activate() {
+    if (scoped_activity_ == nullptr) {
+      scoped_activity_ = std::make_unique<ScopedActivity>(this);
+    }
+  }
+
+  void Deactivate() { scoped_activity_.reset(); }
+
+ private:
+  std::unique_ptr<ScopedActivity> scoped_activity_;
+};
+
+MATCHER(IsPending, "") {
+  if (arg.ready()) {
+    *result_listener << "is ready";
+    return false;
+  }
+  return true;
+}
+
+MATCHER_P(IsReady, value, "") {
+  if (arg.pending()) {
+    *result_listener << "is pending";
+    return false;
+  }
+  if (arg.value() != value) {
+    *result_listener << "is " << ::testing::PrintToString(arg.value());
+    return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1139,6 +1193,137 @@ TEST(InfalliblePipeTransformer, InstantTwo) {
   d.filters[1].call_destroy(call_data2);
   d.filters[0].call_destroy(call_data1);
   gpr_free_aligned(call_data1);
+}
+
+}  // namespace filters_detail
+
+///////////////////////////////////////////////////////////////////////////////
+// PipeState
+
+namespace filters_detail {
+
+TEST(PipeStateTest, NoOp) { PipeState(); }
+
+TEST(PipeStateTest, OnePull) {
+  PipeState ps;
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  // initially: not started, should only see pending from pulls
+  EXPECT_THAT(ps.PollPull(), IsPending());
+  EXPECT_THAT(ps.PollPull(), IsPending());
+  // start it, should see a wakeup
+  EXPECT_CALL(activity, WakeupRequested());
+  ps.Start();
+  Mock::VerifyAndClearExpectations(&activity);
+  // should still see pending! nothing's been pushed
+  EXPECT_THAT(ps.PollPull(), IsPending());
+  EXPECT_THAT(ps.PollPull(), IsPending());
+  // begin a push, should see a wakeup
+  EXPECT_CALL(activity, WakeupRequested());
+  ps.BeginPush();
+  Mock::VerifyAndClearExpectations(&activity);
+  // now we should see a value on the pull poll
+  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  // push should be pending though!
+  EXPECT_THAT(ps.PollPush(), IsPending());
+  // ack the pull, should see a wakeup
+  EXPECT_CALL(activity, WakeupRequested());
+  ps.AckPull();
+  Mock::VerifyAndClearExpectations(&activity);
+  // now the push is complete
+  EXPECT_THAT(ps.PollPush(), IsReady(Success{}));
+  ps.DropPush();
+  ps.DropPull();
+  EXPECT_FALSE(ps.holds_error());
+}
+
+TEST(PipeStateTest, StartThenPull) {
+  PipeState ps;
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  ps.Start();
+  // pull is pending! nothing's been pushed
+  EXPECT_THAT(ps.PollPull(), IsPending());
+  EXPECT_THAT(ps.PollPull(), IsPending());
+  // begin a push, should see a wakeup
+  EXPECT_CALL(activity, WakeupRequested());
+  ps.BeginPush();
+  Mock::VerifyAndClearExpectations(&activity);
+  // now we should see a value on the pull poll
+  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  // push should be pending though!
+  EXPECT_THAT(ps.PollPush(), IsPending());
+  // ack the pull, should see a wakeup
+  EXPECT_CALL(activity, WakeupRequested());
+  ps.AckPull();
+  Mock::VerifyAndClearExpectations(&activity);
+  // now the push is complete
+  EXPECT_THAT(ps.PollPush(), IsReady(Success{}));
+  ps.DropPush();
+  ps.DropPull();
+  EXPECT_FALSE(ps.holds_error());
+}
+
+TEST(PipeStateTest, PushFirst) {
+  PipeState ps;
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  // start immediately, and push immediately
+  ps.Start();
+  ps.BeginPush();
+  // push should be pending
+  EXPECT_THAT(ps.PollPush(), IsPending());
+  // pull should immediately see a value
+  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  // push should still be pending though!
+  EXPECT_THAT(ps.PollPush(), IsPending());
+  // ack the pull, should see a wakeup
+  EXPECT_CALL(activity, WakeupRequested());
+  ps.AckPull();
+  Mock::VerifyAndClearExpectations(&activity);
+  // now the push is complete
+  EXPECT_THAT(ps.PollPush(), IsReady(Success{}));
+  ps.DropPush();
+  ps.DropPull();
+  EXPECT_FALSE(ps.holds_error());
+}
+
+TEST(PipeStateTest, DropPushing) {
+  PipeState ps;
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  ps.BeginPush();
+  ps.DropPush();
+  EXPECT_TRUE(ps.holds_error());
+  EXPECT_THAT(ps.PollPull(), IsReady(Failure()));
+  ps.BeginPush();
+  EXPECT_THAT(ps.PollPush(), IsReady(Failure()));
+  ps.DropPush();
+}
+
+TEST(PipeStateTest, DropPulling) {
+  PipeState ps;
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  EXPECT_THAT(ps.PollPull(), IsPending());
+  ps.DropPull();
+  EXPECT_TRUE(ps.holds_error());
+  EXPECT_THAT(ps.PollPull(), IsReady(Failure()));
+  ps.DropPull();
+  EXPECT_THAT(ps.PollPush(), IsReady(Failure()));
+}
+
+TEST(PipeStateTest, DropProcessing) {
+  PipeState ps;
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  ps.Start();
+  ps.BeginPush();
+  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  ps.DropPull();
+  EXPECT_TRUE(ps.holds_error());
+  EXPECT_THAT(ps.PollPull(), IsReady(Failure()));
+  EXPECT_THAT(ps.PollPush(), IsReady(Failure()));
 }
 
 }  // namespace filters_detail
