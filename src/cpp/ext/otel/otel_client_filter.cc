@@ -152,6 +152,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
           injected_labels_from_plugin_options_.push_back(
               labels_injector->GetLabels(recv_initial_metadata));
         }
+        return true;
       });
 }
 
@@ -168,6 +169,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         if (labels_injector != nullptr) {
           labels_injector->AddLabels(send_initial_metadata, nullptr);
         }
+        return true;
       });
 }
 

@@ -95,6 +95,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
                 send_initial_metadata,
                 injected_labels_from_plugin_options_[index].get());
           }
+          return true;
         });
   }
 
@@ -186,6 +187,7 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
           injected_labels_from_plugin_options_[index] =
               labels_injector->GetLabels(recv_initial_metadata);
         }
+        return true;
       });
   registered_method_ =
       recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod())

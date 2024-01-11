@@ -240,14 +240,17 @@ class ActivePluginOptionsView {
         });
   }
 
-  void ForEach(
-      absl::FunctionRef<void(const InternalOpenTelemetryPluginOption&, size_t)>
+  bool ForEach(
+      absl::FunctionRef<bool(const InternalOpenTelemetryPluginOption&, size_t)>
           func) const {
     for (size_t i = 0; i < OpenTelemetryPluginState().plugin_options.size();
          ++i) {
       const auto& plugin_option = OpenTelemetryPluginState().plugin_options[i];
-      if (active_mask_[i]) func(*plugin_option, i);
+      if (active_mask_[i] && !func(*plugin_option, i)) {
+        return false;
+      }
     }
+    return true;
   }
 
  private:
