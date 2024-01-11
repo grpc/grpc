@@ -1306,6 +1306,13 @@ void XdsClient::ChannelState::LrsCallState::Orphan() {
 }
 
 void XdsClient::ChannelState::LrsCallState::MaybeScheduleNextReportLocked() {
+  // If there are no more registered stats to report, cancel the call.
+  auto it = xds_client()->xds_load_report_server_map_.find(&chand()->server_);
+  if (it == xds_client()->xds_load_report_server_map_.end() ||
+      it->second.load_report_map.empty()) {
+    it->second.channel_state->StopLrsCallLocked();
+    return;
+  }
   // Don't start if the previous send_message op hasn't completed yet.
   // If this happens, we'll be called again from OnRequestSent().
   if (send_message_pending_) return;
@@ -1364,16 +1371,7 @@ void XdsClient::ChannelState::LrsCallState::SendMessageLocked(
 void XdsClient::ChannelState::LrsCallState::OnRequestSent() {
   MutexLock lock(&xds_client()->mu_);
   send_message_pending_ = false;
-  if (!IsCurrentCallOnChannel()) return;
-  // If there are no more registered stats to report, cancel the call.
-  auto it = xds_client()->xds_load_report_server_map_.find(&chand()->server_);
-  if (it == xds_client()->xds_load_report_server_map_.end() ||
-      it->second.load_report_map.empty()) {
-    it->second.channel_state->StopLrsCallLocked();
-    return;
-  }
-  // Otherwise, schedule the next load report.
-  MaybeScheduleNextReportLocked();
+  if (IsCurrentCallOnChannel()) MaybeScheduleNextReportLocked();
 }
 
 void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
