@@ -206,8 +206,8 @@ class MetadataExchangeTest
 
 // Verify that grpc.client.attempt.started does not get service mesh attributes
 TEST_P(MetadataExchangeTest, ClientAttemptStarted) {
-  Init(/*metric_names=*/{grpc::experimental::OpenTelemetryPluginBuilder::
-                             kClientAttemptStartedInstrumentName});
+  Init(/*metric_names=*/{
+      grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName});
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -230,8 +230,8 @@ TEST_P(MetadataExchangeTest, ClientAttemptStarted) {
 }
 
 TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
-  Init(/*metric_names=*/{grpc::experimental::OpenTelemetryPluginBuilder::
-                             kClientAttemptDurationInstrumentName});
+  Init(/*metric_names=*/{
+      grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName});
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto data = ReadCurrentMetricsData(
@@ -256,8 +256,8 @@ TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
 // Verify that grpc.server.call.started does not get service mesh attributes
 TEST_P(MetadataExchangeTest, ServerCallStarted) {
   Init(
-      /*metric_names=*/{grpc::experimental::OpenTelemetryPluginBuilder::
-                            kServerCallStartedInstrumentName});
+      /*metric_names=*/{
+          grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName});
   SendRPC();
   const char* kMetricName = "grpc.server.call.started";
   auto data = ReadCurrentMetricsData(
@@ -277,8 +277,8 @@ TEST_P(MetadataExchangeTest, ServerCallStarted) {
 
 TEST_P(MetadataExchangeTest, ServerCallDuration) {
   Init(
-      /*metric_names=*/{grpc::experimental::OpenTelemetryPluginBuilder::
-                            kServerCallDurationInstrumentName});
+      /*metric_names=*/{
+          grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName});
   SendRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -301,7 +301,7 @@ TEST_P(MetadataExchangeTest, ServerCallDuration) {
 // Test that the server records unknown when the client does not send metadata
 TEST_P(MetadataExchangeTest, ClientDoesNotSendMetadata) {
   Init(
-      /*metric_names=*/{grpc::experimental::OpenTelemetryPluginBuilder::
+      /*metric_names=*/{grpc::OpenTelemetryPluginBuilder::
                             kServerCallDurationInstrumentName},
       /*enable_client_side_injector=*/false);
   SendRPC();
