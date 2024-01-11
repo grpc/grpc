@@ -427,6 +427,9 @@ class XdsClient::ChannelState::LrsCallState
 
   void SendReportLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
+  void SendMessageLocked(std::string payload)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+
   void OnRequestSent();
   void OnRecvMessage(absl::string_view payload);
   void OnStatusReceived(absl::Status status);
@@ -1241,14 +1244,20 @@ XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
 
 void XdsClient::ChannelState::LrsCallState::Timer::Orphan() {
   if (timer_handle_.has_value()) {
-    GetDefaultEventEngine()->Cancel(*timer_handle_);
+    parent_->xds_client()->engine()->Cancel(*timer_handle_);
     timer_handle_.reset();
   }
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
 void XdsClient::ChannelState::LrsCallState::Timer::ScheduleNextReportLocked() {
-  timer_handle_ = GetDefaultEventEngine()->RunAfter(
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] xds server %s: scheduling next load report in %s",
+            xds_client(), parent_->chand()->server_.server_uri().c_str(),
+            report_interval_.ToString().c_str());
+  }
+  timer_handle_ = parent_->xds_client()->engine()->RunAfter(
       report_interval_, [self = Ref(DEBUG_LOCATION, "timer")]() {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
@@ -1295,8 +1304,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   }
   // Send the initial request.
   std::string serialized_payload = xds_client()->api_.CreateLrsInitialRequest();
-  send_message_pending_ = true;
-  call_->SendMessage(std::move(serialized_payload));
+  SendMessageLocked(std::move(serialized_payload));
   // Read initial response.
   call_->StartRecvMessage();
 }
@@ -1332,7 +1340,7 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
 
 void XdsClient::ChannelState::LrsCallState::MaybeScheduleNextReportLocked() {
   // If there are no more registered stats to report, cancel the call.
-  auto it = xds_client()->xds_load_report_server_map_.find(chand()->server_);
+  auto it = xds_client()->xds_load_report_server_map_.find(&chand()->server_);
   if (it == xds_client()->xds_load_report_server_map_.end() ||
       it->second.load_report_map.empty()) {
     it->second.channel_state->StopLrsCallLocked();
@@ -1380,8 +1388,13 @@ void XdsClient::ChannelState::LrsCallState::SendReportLocked() {
   // Send a request that contains the snapshot.
   std::string serialized_payload =
       xds_client()->api_.CreateLrsRequest(std::move(snapshot));
+  SendMessageLocked(std::move(serialized_payload));
+}
+
+void XdsClient::ChannelState::LrsCallState::SendMessageLocked(
+    std::string payload) {
   send_message_pending_ = true;
-  call_->SendMessage(std::move(serialized_payload));
+  call_->SendMessage(std::move(payload));
 }
 
 void XdsClient::ChannelState::LrsCallState::OnRequestSent() {
