@@ -5,7 +5,7 @@ Testing utilities for gRPC Python
 
 Supported Python Versions
 -------------------------
-Python >= 3.7
+Python >= 3.8
 
 Dependencies
 ------------
