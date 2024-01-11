@@ -1011,11 +1011,6 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
-<<<<<<< HEAD
-          _registered_method: Implementation Private. A bool representing whether the method
-            is registered.
-=======
->>>>>>> parent of d8ae1d28c5 ([Python O11Y] Add _registered_method to __init__.py (#35482))
 
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
@@ -1035,11 +1030,6 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
-<<<<<<< HEAD
-          _registered_method: Implementation Private. A bool representing whether the method
-            is registered.
-=======
->>>>>>> parent of d8ae1d28c5 ([Python O11Y] Add _registered_method to __init__.py (#35482))
 
         Returns:
           A UnaryStreamMultiCallable value for the name unary-stream method.
@@ -1059,11 +1049,6 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
-<<<<<<< HEAD
-          _registered_method: Implementation Private. A bool representing whether the method
-            is registered.
-=======
->>>>>>> parent of d8ae1d28c5 ([Python O11Y] Add _registered_method to __init__.py (#35482))
 
         Returns:
           A StreamUnaryMultiCallable value for the named stream-unary method.
@@ -1083,11 +1068,6 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
-<<<<<<< HEAD
-          _registered_method: Implementation Private. A bool representing whether the method
-            is registered.
-=======
->>>>>>> parent of d8ae1d28c5 ([Python O11Y] Add _registered_method to __init__.py (#35482))
 
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.
