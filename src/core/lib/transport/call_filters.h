@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_FILTER_RUNNER_H
-#define GRPC_FILTER_RUNNER_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
+
+#include <grpc/support/port_platform.h>
 
 #include <cstdint>
 #include <memory>
@@ -986,7 +988,7 @@ class CallFilters {
 
       Push(const Push&) = delete;
       Push& operator=(const Push&) = delete;
-      Push(Push&& other)
+      Push(Push&& other) noexcept
           : filters_(std::exchange(other.filters_, nullptr)),
             value_(std::move(other.value_)) {
         if (filters_ != nullptr) {
@@ -1020,7 +1022,7 @@ class CallFilters {
 
       Pull(const Pull&) = delete;
       Pull& operator=(const Pull&) = delete;
-      Pull(Pull&& other)
+      Pull(Pull&& other) noexcept
           : filters_(std::exchange(other.filters_, nullptr)),
             transformer_(std::move(other.transformer_)) {}
       Pull& operator=(Pull&&) = delete;
@@ -1156,4 +1158,4 @@ inline auto CallFilters::PullServerTrailingMetadata() {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_FILTER_RUNNER_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
