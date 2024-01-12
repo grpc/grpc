@@ -503,7 +503,7 @@ bool FuzzingEventEngine::IsWorkerThread() { abort(); }
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
 #if defined(GRPC_POSIX_SOCKET_TCP)
-  return std::make_unique<NativeDNSResolver>(shared_from_this());
+  return std::make_unique<NativePosixDNSResolver>(shared_from_this());
 #else
   grpc_core::Crash("FuzzingEventEngine::GetDNSResolver Not implemented");
 #endif
