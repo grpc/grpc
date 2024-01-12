@@ -7799,20 +7799,12 @@ add_executable(call_filters_test
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   test/core/transport/call_filters_test.cc
-  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
-  third_party/upb/upb/message/array.c
-  third_party/upb/upb/message/map.c
-  third_party/upb/upb/message/map_sorter.c
-  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/decode_fast.c
   third_party/upb/upb/wire/encode.c
@@ -7842,7 +7834,7 @@ target_include_directories(call_filters_test
 target_link_libraries(call_filters_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb
+  upb_message_lib
   utf8_range_lib
   absl::inlined_vector
   absl::function_ref
