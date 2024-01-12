@@ -16,11 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/lib/iomgr/pollset_set.h"

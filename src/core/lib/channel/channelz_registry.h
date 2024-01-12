@@ -19,13 +19,13 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 #include <map>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

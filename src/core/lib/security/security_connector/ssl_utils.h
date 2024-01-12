@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <memory>
@@ -35,6 +33,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"

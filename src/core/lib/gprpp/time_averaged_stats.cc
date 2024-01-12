@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/time_averaged_stats.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

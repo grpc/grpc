@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_RBAC_RBAC_SERVICE_CONFIG_PARSER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_RBAC_RBAC_SERVICE_CONFIG_PARSER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <algorithm>
@@ -27,6 +25,8 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"

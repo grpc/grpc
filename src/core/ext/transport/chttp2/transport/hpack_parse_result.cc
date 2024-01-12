@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 
 #include <stddef.h>
 
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/gprpp/status_helper.h"

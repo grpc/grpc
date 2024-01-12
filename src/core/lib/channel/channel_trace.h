@@ -19,12 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 

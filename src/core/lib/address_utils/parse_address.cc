@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 

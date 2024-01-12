@@ -14,11 +14,11 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.h"
 
 #include "absl/strings/str_join.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"

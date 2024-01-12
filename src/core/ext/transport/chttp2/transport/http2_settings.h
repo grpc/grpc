@@ -21,9 +21,9 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
+
+#include <grpc/support/port_platform.h>
 
 typedef enum {
   GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE = 0,                // wire id 1

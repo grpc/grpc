@@ -21,7 +21,6 @@
 
 /* Platform-specific type declarations of gpr_mu and gpr_cv.   */
 #include <grpc/support/port_platform.h>
-
 #include <grpc/support/time.h> /* for gpr_timespec */
 
 #ifdef __cplusplus

@@ -19,10 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
 #define GRPC_SRC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/impl/compression_types.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 
 // compress 'input' to 'output' using 'algorithm'.
 // On success, appends compressed slices to output and returns 1.

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "server_call_tracer.h"
 
 #include <stdint.h>
@@ -34,6 +32,8 @@
 #include "constants.h"
 #include "observability_util.h"
 #include "python_census_context.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"

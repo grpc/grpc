@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <string.h>
 
 #include <cmath>
@@ -25,6 +23,7 @@
 
 #include <grpc/load_reporting.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/ext/server_load_reporting.h>
 #include <grpcpp/server_context.h>
 

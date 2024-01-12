@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 
 #include <algorithm>
@@ -29,6 +27,7 @@
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/config/core_configuration.h"

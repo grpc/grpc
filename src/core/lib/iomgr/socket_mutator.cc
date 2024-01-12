@@ -16,12 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"

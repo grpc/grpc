@@ -16,14 +16,14 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/bdp_estimator.h"
 
 #include <inttypes.h>
 #include <stdlib.h>
 
 #include <algorithm>
+
+#include <grpc/support/port_platform.h>
 
 grpc_core::TraceFlag grpc_bdp_estimator_trace(false, "bdp_estimator");
 

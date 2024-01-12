@@ -16,14 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/support/config.h>
 

@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_common_types.h"
 
 #include <stddef.h>
@@ -44,6 +42,7 @@
 #include "xds/type/v3/typed_struct.upb.h"
 
 #include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"

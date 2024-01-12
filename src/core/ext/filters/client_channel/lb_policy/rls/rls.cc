@@ -20,8 +20,6 @@
 // to use. A child policy that recognizes the name as a field of its
 // configuration will take further load balancing action on the request.
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,6 +60,7 @@
 #include <grpc/status.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"

@@ -17,12 +17,12 @@
 #ifndef GRPC_SRC_CORE_EXT_GCP_METADATA_QUERY_H
 #define GRPC_SRC_CORE_EXT_GCP_METADATA_QUERY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/time.h"

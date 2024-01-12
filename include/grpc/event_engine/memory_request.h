@@ -14,11 +14,11 @@
 #ifndef GRPC_EVENT_ENGINE_MEMORY_REQUEST_H
 #define GRPC_EVENT_ENGINE_MEMORY_REQUEST_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_event_engine {
 namespace experimental {

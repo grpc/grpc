@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"

@@ -16,11 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
 #include "upb/mem/arena.hpp"
+
+#include <grpc/support/port_platform.h>
 
 bool grpc_gcp_rpc_protocol_versions_set_max(
     grpc_gcp_rpc_protocol_versions* versions, uint32_t max_major,

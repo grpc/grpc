@@ -19,10 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_TCP_CLIENT_H
 #define GRPC_SRC_CORE_LIB_IOMGR_TCP_CLIENT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/impl/grpc_types.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/endpoint.h"

@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
 #define GRPC_SRC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <cstring>
@@ -29,6 +27,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/error.h"
 

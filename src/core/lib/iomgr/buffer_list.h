@@ -19,10 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_BUFFER_LIST_H
 #define GRPC_SRC_CORE_LIB_IOMGR_BUFFER_LIST_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/types/optional.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/sync.h"

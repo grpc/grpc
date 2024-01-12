@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_CONSTRUCT_DESTRUCT_H
 #define GRPC_SRC_CORE_LIB_GPRPP_CONSTRUCT_DESTRUCT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <new>
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

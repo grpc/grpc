@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <set>
@@ -35,6 +33,7 @@
 #include "upb/reflection/def.h"
 
 #include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"

@@ -17,8 +17,6 @@
 #ifndef GRPC_TEST_CORE_UTIL_AUDIT_LOGGING_UTILS_H
 #define GRPC_TEST_CORE_UTIL_AUDIT_LOGGING_UTILS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <string>
 #include <vector>
@@ -28,6 +26,7 @@
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 namespace testing {

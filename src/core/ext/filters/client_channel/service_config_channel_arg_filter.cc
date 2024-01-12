@@ -17,8 +17,6 @@
 // This filter reads GRPC_ARG_SERVICE_CONFIG and populates ServiceConfigCallData
 // in the call context per call for direct channels.
 
-#include <grpc/support/port_platform.h>
-
 #include <functional>
 #include <memory>
 #include <string>
@@ -30,6 +28,7 @@
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"

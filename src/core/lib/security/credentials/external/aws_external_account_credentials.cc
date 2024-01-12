@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 
 #include <string.h>
@@ -35,6 +33,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/env.h"

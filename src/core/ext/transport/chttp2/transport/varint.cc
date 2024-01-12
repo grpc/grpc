@@ -16,11 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 
 #include "absl/base/attributes.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

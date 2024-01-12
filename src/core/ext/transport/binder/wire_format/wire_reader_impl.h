@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <queue>
 #include <utility>
@@ -24,6 +22,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"

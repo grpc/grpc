@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <functional>
@@ -30,6 +28,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"

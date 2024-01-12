@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/mpscq.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

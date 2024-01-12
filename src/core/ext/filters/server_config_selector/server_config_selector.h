@@ -17,12 +17,12 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_SERVER_CONFIG_SELECTOR_SERVER_CONFIG_SELECTOR_H
 #define GRPC_SRC_CORE_EXT_FILTERS_SERVER_CONFIG_SELECTOR_SERVER_CONFIG_SELECTOR_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"

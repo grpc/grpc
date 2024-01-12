@@ -19,13 +19,12 @@
 #ifndef GRPC_GRPC_SECURITY_H
 #define GRPC_GRPC_SECURITY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdbool.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {

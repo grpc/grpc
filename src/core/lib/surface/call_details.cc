@@ -16,10 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

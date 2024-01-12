@@ -21,9 +21,8 @@
 
 /* Generic type definitions for gpr_sync. */
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 
 /* gpr_event */
 typedef struct {

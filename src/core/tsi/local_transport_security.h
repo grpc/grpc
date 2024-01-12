@@ -19,9 +19,8 @@
 #ifndef GRPC_SRC_CORE_TSI_LOCAL_TRANSPORT_SECURITY_H
 #define GRPC_SRC_CORE_TSI_LOCAL_TRANSPORT_SECURITY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"

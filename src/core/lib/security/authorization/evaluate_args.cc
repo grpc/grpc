@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
 #include <string.h>
@@ -25,6 +23,7 @@
 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/host_port.h"

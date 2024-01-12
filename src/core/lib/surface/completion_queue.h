@@ -21,11 +21,10 @@
 
 // Internal API for completion queues
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/manual_constructor.h"

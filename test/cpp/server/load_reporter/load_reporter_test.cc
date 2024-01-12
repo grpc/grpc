@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
 #include <set>
@@ -30,6 +28,7 @@
 #include "opencensus/stats/testing/test_utils.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <limits.h>
 #include <stddef.h>
 
@@ -30,6 +28,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"

@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/api_trace.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 

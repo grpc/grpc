@@ -19,13 +19,13 @@
 #ifndef GRPC_SRC_CORE_LIB_ADDRESS_UTILS_SOCKADDR_UTILS_H
 #define GRPC_SRC_CORE_LIB_ADDRESS_UTILS_SOCKADDR_UTILS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <string>
 
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/resolved_address.h"
 

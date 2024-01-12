@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/pollset_set.h"
+
+#include <grpc/support/port_platform.h>
 
 grpc_pollset_set_vtable* grpc_pollset_set_impl;
 

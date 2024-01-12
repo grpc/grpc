@@ -16,11 +16,10 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 
 static void maybe_copy_error_msg(const char* src, char** dst) {
   if (dst != nullptr && src != nullptr) {

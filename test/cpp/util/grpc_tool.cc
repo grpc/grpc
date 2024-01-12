@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/cpp/util/grpc_tool.h"
 
 #include <cstdio>
@@ -32,6 +30,7 @@
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/grpcpp.h>

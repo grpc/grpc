@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/detail/promise_like.h"
 

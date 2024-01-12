@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -34,6 +32,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"

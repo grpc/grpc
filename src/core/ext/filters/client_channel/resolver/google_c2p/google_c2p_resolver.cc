@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 #include <memory>
 #include <random>
@@ -31,6 +29,7 @@
 
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/gcp/metadata_query.h"
 #include "src/core/ext/xds/xds_bootstrap.h"

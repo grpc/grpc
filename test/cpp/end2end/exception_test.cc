@@ -16,13 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <exception>
 #include <memory>
 
 #include <gtest/gtest.h>
 
+#include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/server.h>

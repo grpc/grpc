@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <set>
@@ -33,6 +31,7 @@
 #include "upb/reflection/def.hpp"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"

@@ -19,8 +19,6 @@
 #ifndef GRPC_GRPC_H
 #define GRPC_GRPC_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <grpc/byte_buffer.h>
@@ -29,6 +27,7 @@
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #ifdef __cplusplus

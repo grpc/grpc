@@ -19,12 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_UNIX_SOCKETS_POSIX_H
 #define GRPC_SRC_CORE_LIB_IOMGR_UNIX_SOCKETS_POSIX_H
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/port.h"

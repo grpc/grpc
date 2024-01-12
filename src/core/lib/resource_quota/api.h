@@ -15,12 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_API_H
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_API_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/resource_quota/resource_quota.h"

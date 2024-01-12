@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <string.h>
+
+#include <grpc/support/port_platform.h>
 
 // Provide a wrapped memcpy for targets that need to be backwards
 // compatible with older libc's.

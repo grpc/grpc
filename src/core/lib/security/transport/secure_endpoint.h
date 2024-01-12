@@ -19,12 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
 #define GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"

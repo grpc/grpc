@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include <signal.h>
 #include <string.h>
+
+#include <grpc/support/port_platform.h>
 
 #ifndef GPR_WINDOWS
 #include <unistd.h>

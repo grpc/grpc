@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -29,6 +27,7 @@
 #include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

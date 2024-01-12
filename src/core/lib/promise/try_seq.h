@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_TRY_SEQ_H
 #define GRPC_SRC_CORE_LIB_PROMISE_TRY_SEQ_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdlib.h>
 
 #include <type_traits>
@@ -25,6 +23,8 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/detail/promise_like.h"

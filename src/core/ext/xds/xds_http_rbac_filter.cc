@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_http_rbac_filter.h"
 
 #include <stddef.h>
@@ -43,6 +41,7 @@
 #include "upb/message/map.h"
 
 #include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"

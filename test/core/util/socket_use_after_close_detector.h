@@ -19,11 +19,10 @@
 #ifndef GRPC_TEST_CORE_UTIL_SOCKET_USE_AFTER_CLOSE_DETECTOR_H
 #define GRPC_TEST_CORE_UTIL_SOCKET_USE_AFTER_CLOSE_DETECTOR_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <thread>
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync_generic.h>
 
 namespace grpc_core {

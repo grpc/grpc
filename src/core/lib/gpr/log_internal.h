@@ -14,12 +14,12 @@
 #ifndef GRPC_SRC_CORE_LIB_GPR_LOG_INTERNAL_H
 #define GRPC_SRC_CORE_LIB_GPR_LOG_INTERNAL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <cstring>
+
+#include <grpc/support/port_platform.h>
 
 /// abort() the process if x is zero, with rudimentary logging to prevent
 /// circular dependencies with gpr_log.

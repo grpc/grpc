@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <memory>
 #include <string>
@@ -26,6 +24,7 @@
 #include "absl/container/flat_hash_map.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"

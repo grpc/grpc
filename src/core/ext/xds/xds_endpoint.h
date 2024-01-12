@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ENDPOINT_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_ENDPOINT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -32,6 +30,8 @@
 #include "absl/strings/string_view.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 #include "upb/reflection/def.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"

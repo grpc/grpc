@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 
 #include <algorithm>
@@ -26,6 +24,8 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

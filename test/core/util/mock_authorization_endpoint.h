@@ -15,11 +15,11 @@
 #ifndef GRPC_TEST_CORE_UTIL_MOCK_AUTHORIZATION_ENDPOINT_H
 #define GRPC_TEST_CORE_UTIL_MOCK_AUTHORIZATION_ENDPOINT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/endpoint.h"
 

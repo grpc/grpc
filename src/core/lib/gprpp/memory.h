@@ -19,12 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_MEMORY_H
 #define GRPC_SRC_CORE_LIB_GPRPP_MEMORY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <type_traits>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

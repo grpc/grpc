@@ -14,9 +14,9 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

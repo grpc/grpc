@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 
 #include <stdint.h>
@@ -42,6 +40,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"

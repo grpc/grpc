@@ -17,7 +17,6 @@
 //
 
 #include <grpc/support/port_platform.h>
-
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/server_builder.h>
 

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channelz_registry.h"
 
 #include <algorithm>
@@ -29,6 +27,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channelz.h"

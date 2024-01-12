@@ -19,14 +19,13 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 #include <type_traits>
@@ -29,6 +27,7 @@
 #include "opentelemetry/nostd/unique_ptr.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/version_info.h>
 

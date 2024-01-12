@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice.h"
 
 #include <inttypes.h>
@@ -35,6 +33,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/no_destruct.h"
