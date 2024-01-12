@@ -82,8 +82,7 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
         .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
   }
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL,
-                       &GrpcServerAuthzFilter::kFilterVtable)
+      ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER)
       .After<ServerAuthFilter>()
       .After<LegacyServerAuthFilter>();

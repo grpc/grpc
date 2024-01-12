@@ -40,9 +40,9 @@
 #include "google/protobuf/timestamp.upb.h"
 #include "google/rpc/status.upb.h"
 #include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.h"
 #include "upb/text/encode.h"
-#include "upb/upb.hpp"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>

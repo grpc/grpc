@@ -128,6 +128,11 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
   // as transparent retry attempts.)
   class CallAttemptTracer : public CallTracerInterface {
    public:
+    enum class OptionalLabelComponent : std::uint8_t {
+      kXdsServiceLabels = 0,
+      kSize = 1,  // keep last
+    };
+
     ~CallAttemptTracer() override {}
     // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
     // and `RecordEnd` should be moved into CallTracerInterface.
@@ -140,6 +145,11 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
     // Should be the last API call to the object. Once invoked, the tracer
     // library is free to destroy the object.
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
+
+    // Adds optional labels to be reported by the underlying tracer in a call.
+    virtual void AddOptionalLabels(
+        OptionalLabelComponent component,
+        std::shared_ptr<std::map<std::string, std::string>> labels) = 0;
   };
 
   ~ClientCallTracer() override {}
@@ -190,6 +200,9 @@ class ServerCallTracerFactory {
   // before grpc_init(). It is the responsibility of the caller to maintain
   // this for the lifetime of the process.
   static void RegisterGlobal(ServerCallTracerFactory* factory);
+
+  // Deletes any previous registered ServerCallTracerFactory.
+  static void TestOnlyReset();
 
   static absl::string_view ChannelArgName();
 };

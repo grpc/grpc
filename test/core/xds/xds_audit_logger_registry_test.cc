@@ -30,8 +30,8 @@
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "google/protobuf/struct.pb.h"
 #include "gtest/gtest.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_audit_logging.h>

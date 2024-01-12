@@ -37,11 +37,11 @@
 #include "google/protobuf/struct.upb.h"
 #include "opentelemetry/sdk/resource/semantic_conventions.h"
 #include "upb/base/string_view.h"
-#include "upb/mem/arena.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/slice.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -49,9 +49,13 @@
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/cpp/ext/otel/key_value_iterable.h"
 
 namespace grpc {
 namespace internal {
+
+using OptionalLabelComponent =
+    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
 
 namespace {
 
@@ -425,6 +429,43 @@ void ServiceMeshLabelsInjector::AddLabels(
   }
   outgoing_initial_metadata->Set(grpc_core::XEnvoyPeerMetadata(),
                                  serialized_labels_to_send_.Ref());
+}
+
+bool ServiceMeshLabelsInjector::AddOptionalLabels(
+    absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+        optional_labels_span,
+    opentelemetry::nostd::function_ref<
+        bool(opentelemetry::nostd::string_view,
+             opentelemetry::common::AttributeValue)>
+        callback) const {
+  // According to the CSM Observability Metric spec, if the control plane fails
+  // to provide these labels, the client will set their values to "unknown".
+  // These default values are set below.
+  absl::string_view service_name = "unknown";
+  absl::string_view service_namespace = "unknown";
+  // Performs JSON label name format to CSM Observability Metric spec format
+  // conversion.
+  if (optional_labels_span.size() >
+      static_cast<size_t>(OptionalLabelComponent::kXdsServiceLabels)) {
+    const auto& optional_labels = optional_labels_span[static_cast<size_t>(
+        OptionalLabelComponent::kXdsServiceLabels)];
+    if (optional_labels != nullptr) {
+      auto it = optional_labels->find("service_name");
+      if (it != optional_labels->end()) service_name = it->second;
+      it = optional_labels->find("service_namespace");
+      if (it != optional_labels->end()) service_namespace = it->second;
+    }
+  }
+  return callback("csm.service_name",
+                  AbslStrViewToOpenTelemetryStrView(service_name)) &&
+         callback("csm.service_namespace_name",
+                  AbslStrViewToOpenTelemetryStrView(service_namespace));
+}
+
+size_t ServiceMeshLabelsInjector::GetOptionalLabelsSize(
+    absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>)
+    const {
+  return 2;
 }
 
 }  // namespace internal
