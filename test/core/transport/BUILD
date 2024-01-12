@@ -45,8 +45,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:call_filters"
-    ]
+        "//src/core:call_filters",
+    ],
 )
 
 grpc_cc_test(
