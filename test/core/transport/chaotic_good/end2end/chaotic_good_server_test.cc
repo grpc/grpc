@@ -121,7 +121,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
   }
 
  protected:
-  static void OnConnectingFinished(void* arg, grpc_error_handle error) {
+  static void OnConnectingFinished(void* arg, grpc_error_handle) {
     ChaoticGoodServerTest* self = static_cast<ChaoticGoodServerTest*>(arg);
     self->connect_finished_.Notify();
   }

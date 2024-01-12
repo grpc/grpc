@@ -33,6 +33,9 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = [
+        "no_windows",
+    ],
     uses_event_engine = True,
     uses_polling = False,
     deps = [
