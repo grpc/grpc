@@ -131,6 +131,9 @@ class TestClient {
              StatsWatchers* stats_watchers)
       : stub_(TestService::NewStub(channel)), stats_watchers_(stats_watchers) {}
 
+  const int kLargeRequestSize = 271828;
+  const int kLargeResponseSize = 314159;
+
   void AsyncUnaryCall(const RpcConfig& config) {
     SimpleResponse response;
     int saved_request_id;
@@ -154,11 +157,15 @@ class TestClient {
             std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
       }
     }
+    SimpleRequest request;
+    request.set_response_size(kLargeResponseSize);
+    std::string payload(kLargeRequestSize, '\0');
+    request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
     call->context.set_deadline(deadline);
     call->result.saved_request_id = saved_request_id;
     call->result.rpc_type = ClientConfigureRequest::UNARY_CALL;
     call->simple_response_reader = stub_->PrepareAsyncUnaryCall(
-        &call->context, SimpleRequest::default_instance(), &cq_);
+        &call->context, request, &cq_);
     call->simple_response_reader->StartCall();
     call->simple_response_reader->Finish(&call->result.simple_response,
                                          &call->result.status, call);
