@@ -41,7 +41,7 @@
 #include "test/core/util/port.h"
 
 #if defined(GRPC_POSIX_SOCKET_TCP)
-#include "src/core/lib/event_engine/posix_engine/native_dns_resolver.h"
+#include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
 #endif
 // IWYU pragma: no_include <sys/socket.h>
 
