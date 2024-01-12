@@ -29,6 +29,8 @@ X will be v1.17.2. In both cases Y will be origin/v1.17.x.
 from collections import defaultdict
 import json
 import logging
+import re
+import subprocess
 
 import urllib3
 
@@ -86,6 +88,35 @@ HTML_URL = "https://github.com/grpc/grpc/pull/"
 API_URL = "https://api.github.com/repos/grpc/grpc/pulls/"
 
 
+def print_commits_wo_pr(commits_wo_pr):
+    """Print commit and CL info for the commits that are submitted with CL-first workflow and warn the release manager to check manually."""
+    print("***WARNING***")
+    print(
+        "The following commits are submitted with the CL-first workflow and does not have a PR number available in its commit info!"
+    )
+    print(
+        "Release manager needs to use the following info to go to the CL and gets the PR info from the Copybara:copybara_presubmit info on the CL and manually verify if the PR has the `release notes: yes` label!"
+    )
+    print("\n")
+
+    for commit in commits_wo_pr:
+        glg_command = [
+            "git",
+            "log",
+            "-n 1",
+            "%s" % commit,
+        ]
+        output = subprocess.check_output(glg_command).decode("utf-8", "ignore")
+        matches = re.search("PiperOrigin-RevId: ([0-9]+)$", output)
+        print("Commit: https://github.com/grpc/grpc/commit/%s" % commit)
+        print(
+            "CL:     https://critique.corp.google.com/cl/%s" % matches.group(1)
+        )
+        print("\n")
+
+    print("***WARNING***")
+
+
 def get_commit_log(prevRelLabel, relBranch):
     """Return the output of 'git log prevRelLabel..relBranch'"""
 
@@ -120,20 +151,33 @@ def get_pr_data(pr_num):
 def get_pr_titles(gitLogs):
     import re
 
+    # All commits
+    match_commit = "^([a-fA-F0-9]+) "
+    all_commits_set = set(re.findall(match_commit, gitLogs, re.MULTILINE))
+
     error_count = 0
     # PRs with merge commits
-    match_merge_pr = "Merge pull request #(\d+)"
-    prlist_merge_pr = re.findall(match_merge_pr, gitLogs, re.MULTILINE)
+    match_merge_pr = "^([a-fA-F0-9]+) .*Merge pull request #(\d+)"
+    matches = re.findall(match_merge_pr, gitLogs, re.MULTILINE)
+    merge_commits = []
+    prlist_merge_pr = []
+    if matches:
+        merge_commits, prlist_merge_pr = zip(*matches)
+    merge_commits_set = set(merge_commits)
     print("\nPRs matching 'Merge pull request #<num>':")
     print(prlist_merge_pr)
     print("\n")
+
     # PRs using Github's squash & merge feature
-    match_sq = "\(#(\d+)\)$"
-    prlist_sq = re.findall(match_sq, gitLogs, re.MULTILINE)
+    match_sq = "^([a-fA-F0-9]+) .*\(#(\d+)\)$"
+    matches = re.findall(match_sq, gitLogs, re.MULTILINE)
+    if matches:
+        sq_commits, prlist_sq = zip(*matches)
+    sq_commits_set = set(sq_commits)
     print("\nPRs matching '[PR Description](#<num>)$'")
     print(prlist_sq)
     print("\n")
-    prlist = prlist_merge_pr + prlist_sq
+    prlist = list(prlist_merge_pr) + list(prlist_sq)
     langs_pr = defaultdict(list)
     for pr_num in prlist:
         pr_num = str(pr_num)
@@ -187,7 +231,12 @@ def get_pr_titles(gitLogs):
             )
             langs_pr["inrel"].append(detail)
             langs_pr[lang].append(prline)
-        print(("State: " + pr["state"]))
+
+    # Warn the release manager to manually check the commits that do not have PR
+    # info in its commit message.
+    commits_wo_pr = all_commits_set - merge_commits_set - sq_commits_set
+    if commits_wo_pr:
+        print_commits_wo_pr(commits_wo_pr)
 
     return langs_pr, error_count
 
