@@ -237,6 +237,10 @@ class TransportTest : public ::testing::Test {
   CallHandler TickUntilServerCall();
   void WaitForAllPendingWork();
 
+  // Alternative for Seq for test driver code.
+  // Registers each step so that WaitForAllPendingWork() can report progress,
+  // and wait for completion... AND generate good failure messages when a
+  // sequence doesn't complete in a timely manner.
   template <typename Context, typename... Actions>
   void SpawnTestSeq(Context context,
                     transport_test_detail::NameAndLocation name_and_location,

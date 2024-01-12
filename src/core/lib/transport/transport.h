@@ -452,7 +452,7 @@ class CallInitiator {
                    if (md.cancelled()) return Failure{};
                    return absl::optional<ServerMetadataHandle>();
                  }
-                 return absl::optional<ClientMetadataHandle>(std::move(*md));
+                 return absl::optional<ServerMetadataHandle>(std::move(*md));
                });
   }
 
@@ -463,8 +463,6 @@ class CallInitiator {
             [spine = spine_](
                 NextResult<ServerMetadataHandle> md) -> ServerMetadataHandle {
               GPR_ASSERT(md.has_value());
-              gpr_log(GPR_ERROR, "[%p] PullServerTrailingMetadata: %s",
-                      spine.get(), md.value()->DebugString().c_str());
               return std::move(*md);
             }),
         spine_->WaitForCancel());

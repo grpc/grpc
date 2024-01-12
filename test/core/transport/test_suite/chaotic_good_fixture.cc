@@ -56,7 +56,7 @@ EndpointPair CreateEndpointPair(
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
 
   const auto resolved_address =
-      URIToResolvedAddress("ipv4:127.0.0.1:1234").value();
+      URIToResolvedAddress(absl::StrCat("ipv4:127.0.0.1:", port)).value();
 
   ::testing::StrictMock<MockEndpointConfig> endpoint_config;
   auto listener = *event_engine->CreateListener(

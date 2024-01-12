@@ -212,12 +212,14 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
   if (status.ok()) {
     auto create_call_result =
         acceptor_->CreateCall(*fragment_frame.headers, arena.release());
-    gpr_log(GPR_INFO,
-            "CHAOTIC_GOOD: DeserializeAndPushFragmentToNewCall: "
-            "create_call_result=%s",
-            create_call_result.ok()
-                ? "ok"
-                : create_call_result.status().ToString().c_str());
+    if (grpc_chaotic_good_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "CHAOTIC_GOOD: DeserializeAndPushFragmentToNewCall: "
+              "create_call_result=%s",
+              create_call_result.ok()
+                  ? "ok"
+                  : create_call_result.status().ToString().c_str());
+    }
     if (create_call_result.ok()) {
       call_initiator.emplace(std::move(*create_call_result));
       auto add_result = NewStream(frame_header.stream_id, *call_initiator);
