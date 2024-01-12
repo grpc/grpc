@@ -18,7 +18,7 @@
 				<string>C617.1</string>
 			</array>
 		</dict>
-    <dict>
+		<dict>
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>
