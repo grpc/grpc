@@ -23,7 +23,7 @@
 
 #include <gtest/gtest.h>
 
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>

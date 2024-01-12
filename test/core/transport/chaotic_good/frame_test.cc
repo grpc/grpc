@@ -28,6 +28,8 @@ namespace grpc_core {
 namespace chaotic_good {
 namespace {
 
+FrameLimits TestFrameLimits() { return FrameLimits{1024 * 1024 * 1024, 63}; }
+
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
@@ -50,7 +52,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   ScopedArenaPtr arena = MakeScopedArena(1024, &allocator);
   auto deser =
       output.Deserialize(&hpack_parser, header.value(), absl::BitGenRef(bitgen),
-                         arena.get(), std::move(serialized));
+                         arena.get(), std::move(serialized), TestFrameLimits());
   GPR_ASSERT(deser.ok());
   GPR_ASSERT(output == input);
 }

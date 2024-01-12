@@ -135,7 +135,8 @@ auto ChaoticGoodClientTransport::TransportReadLoop() {
           absl::Status deserialize_status;
           if (call_handler.has_value()) {
             deserialize_status = transport_.DeserializeFrame(
-                frame_header, std::move(buffers), call_handler->arena(), frame);
+                frame_header, std::move(buffers), call_handler->arena(), frame,
+                FrameLimits{1024 * 1024 * 1024, aligned_bytes_ - 1});
           } else {
             // Stream not found, skip the frame.
             transport_.SkipFrame(frame_header, std::move(buffers));

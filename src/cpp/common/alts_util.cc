@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/log.h>

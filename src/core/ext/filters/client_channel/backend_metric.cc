@@ -24,8 +24,8 @@
 
 #include "absl/strings/string_view.h"
 #include "upb/base/string_view.h"
-#include "upb/collections/map.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
+#include "upb/message/map.h"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
 namespace grpc_core {

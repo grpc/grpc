@@ -49,6 +49,8 @@ struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
   uint64_t operator()() { return 42; }
 };
 
+FrameLimits FuzzerFrameLimits() { return FrameLimits{1024 * 1024 * 1024, 63}; }
+
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
@@ -69,9 +71,9 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   T output;
   HPackParser hpack_parser;
   DeterministicBitGen bitgen;
-  auto deser =
-      output.Deserialize(&hpack_parser, header.value(), absl::BitGenRef(bitgen),
-                         GetContext<Arena>(), std::move(serialized));
+  auto deser = output.Deserialize(&hpack_parser, header.value(),
+                                  absl::BitGenRef(bitgen), GetContext<Arena>(),
+                                  std::move(serialized), FuzzerFrameLimits());
   GPR_ASSERT(deser.ok());
   GPR_ASSERT(output == input);
 }
@@ -82,9 +84,9 @@ void FinishParseAndChecks(const FrameHeader& header, BufferPair buffers) {
   ExecCtx exec_ctx;  // Initialized to get this_cpu() info in global_stat().
   HPackParser hpack_parser;
   DeterministicBitGen bitgen;
-  auto deser =
-      parsed.Deserialize(&hpack_parser, header, absl::BitGenRef(bitgen),
-                         GetContext<Arena>(), std::move(buffers));
+  auto deser = parsed.Deserialize(&hpack_parser, header,
+                                  absl::BitGenRef(bitgen), GetContext<Arena>(),
+                                  std::move(buffers), FuzzerFrameLimits());
   if (!deser.ok()) return;
   gpr_log(GPR_INFO, "Read frame: %s", parsed.ToString().c_str());
   AssertRoundTrips(parsed, header.type);

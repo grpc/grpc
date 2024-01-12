@@ -246,6 +246,7 @@ void OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
   g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
   g_otel_plugin_state_->target_attribute_filter =
       std::move(target_attribute_filter_);
+  g_otel_plugin_state_->server_selector = std::move(server_selector_);
   g_otel_plugin_state_->generic_method_attribute_filter =
       std::move(generic_method_attribute_filter_);
   g_otel_plugin_state_->meter_provider = std::move(meter_provider);
