@@ -97,7 +97,7 @@ build_docker_images_if_needed() {
 #######################################
 run_test() {
   # Test driver usage:
-  # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
+  # https://github.com/grpc/psm-interop#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
   local out_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
   mkdir -pv "${out_dir}"
