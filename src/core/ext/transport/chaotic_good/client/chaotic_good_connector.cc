@@ -100,7 +100,7 @@ auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
     std::shared_ptr<ChaoticGoodConnector> self) {
   GPR_ASSERT(self->data_endpoint_ != nullptr);
   return TrySeq(
-      self->data_endpoint_->ReadSlice(FrameHeader::frame_header_size_),
+      self->data_endpoint_->ReadSlice(FrameHeader::kFrameHeaderSize),
       [self = self](Slice slice) mutable {
         // Read setting frame;
         // Parse frame header
@@ -187,7 +187,7 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
       },
       [self = self]() {
         return self->control_endpoint_->ReadSlice(
-            FrameHeader::frame_header_size_);
+            FrameHeader::kFrameHeaderSize);
       },
       [self = self](Slice slice) mutable {
         // Parse frame header
@@ -205,7 +205,7 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
                   auto status = frame.Deserialize(
                       &self->hpack_parser_, frame_header,
                       absl::BitGenRef(self->bitgen_), GetContext<Arena>(),
-                      std::move(buffer_pair));
+                      std::move(buffer_pair), FrameLimits{});
                   GPR_ASSERT(status.ok());
                   self->connection_id_ =
                       frame.headers

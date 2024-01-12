@@ -203,7 +203,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       },
       [self = self]() {
         return self->connection_->endpoint_->ReadSlice(
-            FrameHeader::frame_header_size_);
+            FrameHeader::kFrameHeaderSize);
       },
       [self = self](Slice slice) mutable {
         // Parse frame header
@@ -221,7 +221,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
               auto status = frame.Deserialize(
                   &self->connection_->hpack_parser_, frame_header,
                   absl::BitGenRef(self->connection_->bitgen_),
-                  GetContext<Arena>(), std::move(buffer_pair));
+                  GetContext<Arena>(), std::move(buffer_pair), FrameLimits{});
               GPR_ASSERT(status.ok());
               bool is_control_endpoint =
                   std::string(
