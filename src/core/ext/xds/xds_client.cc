@@ -1436,17 +1436,18 @@ void XdsClient::XdsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
     }
     return;
   }
-  // If the interval has changed, stop the current timer.
-  // We'll start a new one in MaybeScheduleNextReportLocked().
-  if (load_reporting_interval_ != new_load_reporting_interval) {
-    timer_.reset();
-  }
+  // If the interval has changed, we'll need to restart the timer below.
+  const bool restart_timer =
+      load_reporting_interval_ != new_load_reporting_interval;
   // Record the new config.
   send_all_clusters_ = send_all_clusters;
   cluster_names_ = std::move(new_cluster_names);
   load_reporting_interval_ = new_load_reporting_interval;
-  // Schedule next load report if needed.
-  MaybeScheduleNextReportLocked();
+  // Restart timer if needed.
+  if (restart_timer) {
+    timer_.reset();
+    MaybeScheduleNextReportLocked();
+  }
 }
 
 void XdsClient::XdsChannel::LrsCall::OnStatusReceived(absl::Status status) {
