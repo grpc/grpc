@@ -231,7 +231,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 
 def _unary_unary_multi_callable(channel):
-    return channel.unary_unary(_UNARY_UNARY, _registered_method=True)
+    return channel.unary_unary(_UNARY_UNARY)
 
 
 def _unary_stream_multi_callable(channel):
@@ -239,7 +239,6 @@ def _unary_stream_multi_callable(channel):
         _UNARY_STREAM,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
-        _registered_method=True,
     )
 
 
@@ -248,12 +247,11 @@ def _stream_unary_multi_callable(channel):
         _STREAM_UNARY,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
-        _registered_method=True,
     )
 
 
 def _stream_stream_multi_callable(channel):
-    return channel.stream_stream(_STREAM_STREAM, _registered_method=True)
+    return channel.stream_stream(_STREAM_STREAM)
 
 
 class _ClientCallDetails(
@@ -564,7 +562,7 @@ class InterceptorTest(unittest.TestCase):
         self._record[:] = []
 
         multi_callable = _unary_unary_multi_callable(channel)
-        response, call = multi_callable.with_call(
+        multi_callable.with_call(
             request,
             metadata=(
                 (

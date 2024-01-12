@@ -1889,6 +1889,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/batch_builder.h )
   s.files += %w( src/core/lib/transport/bdp_estimator.cc )
   s.files += %w( src/core/lib/transport/bdp_estimator.h )
+  s.files += %w( src/core/lib/transport/call_final_info.cc )
+  s.files += %w( src/core/lib/transport/call_final_info.h )
   s.files += %w( src/core/lib/transport/connectivity_state.cc )
   s.files += %w( src/core/lib/transport/connectivity_state.h )
   s.files += %w( src/core/lib/transport/custom_metadata.h )

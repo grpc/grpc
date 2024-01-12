@@ -4740,6 +4740,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "delegating_helper",
+        "env",
         "grpc_lb_address_filtering",
         "grpc_lb_xds_channel_args",
         "grpc_outlier_detection_header",
@@ -6622,6 +6623,20 @@ grpc_cc_library(
         "//:hpack_encoder",
         "//:hpack_parser",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "call_final_info",
+    srcs = [
+        "lib/transport/call_final_info.cc",
+    ],
+    hdrs = [
+        "lib/transport/call_final_info.h",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 

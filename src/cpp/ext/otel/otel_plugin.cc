@@ -61,23 +61,23 @@ absl::string_view OpenTelemetryTargetKey() { return "grpc.target"; }
 namespace {
 absl::flat_hash_set<std::string> BaseMetrics() {
   return absl::flat_hash_set<std::string>{
-      std::string(grpc::experimental::OpenTelemetryPluginBuilder::
+      std::string(grpc::OpenTelemetryPluginBuilder::
                       kClientAttemptStartedInstrumentName),
-      std::string(grpc::experimental::OpenTelemetryPluginBuilder::
+      std::string(grpc::OpenTelemetryPluginBuilder::
                       kClientAttemptDurationInstrumentName),
       std::string(
-          grpc::experimental::OpenTelemetryPluginBuilder::
+          grpc::OpenTelemetryPluginBuilder::
               kClientAttemptSentTotalCompressedMessageSizeInstrumentName),
       std::string(
-          grpc::experimental::OpenTelemetryPluginBuilder::
+          grpc::OpenTelemetryPluginBuilder::
               kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName),
-      std::string(grpc::experimental::OpenTelemetryPluginBuilder::
-                      kServerCallStartedInstrumentName),
-      std::string(grpc::experimental::OpenTelemetryPluginBuilder::
-                      kServerCallDurationInstrumentName),
-      std::string(grpc::experimental::OpenTelemetryPluginBuilder::
+      std::string(
+          grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName),
+      std::string(
+          grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName),
+      std::string(grpc::OpenTelemetryPluginBuilder::
                       kServerCallSentTotalCompressedMessageSizeInstrumentName),
-      std::string(grpc::experimental::OpenTelemetryPluginBuilder::
+      std::string(grpc::OpenTelemetryPluginBuilder::
                       kServerCallRcvdTotalCompressedMessageSizeInstrumentName)};
 }
 }  // namespace
@@ -172,74 +172,74 @@ void OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
     return;
   }
   auto meter = meter_provider->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
-  if (metrics_.contains(grpc::experimental::OpenTelemetryPluginBuilder::
+  if (metrics_.contains(grpc::OpenTelemetryPluginBuilder::
                             kClientAttemptStartedInstrumentName)) {
     g_otel_plugin_state_->client.attempt.started = meter->CreateUInt64Counter(
-        std::string(grpc::experimental::OpenTelemetryPluginBuilder::
+        std::string(grpc::OpenTelemetryPluginBuilder::
                         kClientAttemptStartedInstrumentName),
         "Number of client call attempts started", "{attempt}");
   }
-  if (metrics_.contains(grpc::experimental::OpenTelemetryPluginBuilder::
+  if (metrics_.contains(grpc::OpenTelemetryPluginBuilder::
                             kClientAttemptDurationInstrumentName)) {
     g_otel_plugin_state_->client.attempt.duration =
         meter->CreateDoubleHistogram(
-            std::string(grpc::experimental::OpenTelemetryPluginBuilder::
+            std::string(grpc::OpenTelemetryPluginBuilder::
                             kClientAttemptDurationInstrumentName),
             "End-to-end time taken to complete a client call attempt", "s");
   }
   if (metrics_.contains(
-          grpc::experimental::OpenTelemetryPluginBuilder::
+          grpc::OpenTelemetryPluginBuilder::
               kClientAttemptSentTotalCompressedMessageSizeInstrumentName)) {
     g_otel_plugin_state_->client.attempt.sent_total_compressed_message_size =
         meter->CreateUInt64Histogram(
             std::string(
-                grpc::experimental::OpenTelemetryPluginBuilder::
+                grpc::OpenTelemetryPluginBuilder::
                     kClientAttemptSentTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes sent per client call attempt", "By");
   }
   if (metrics_.contains(
-          grpc::experimental::OpenTelemetryPluginBuilder::
+          grpc::OpenTelemetryPluginBuilder::
               kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName)) {
     g_otel_plugin_state_->client.attempt.rcvd_total_compressed_message_size =
         meter->CreateUInt64Histogram(
             std::string(
-                grpc::experimental::OpenTelemetryPluginBuilder::
+                grpc::OpenTelemetryPluginBuilder::
                     kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes received per call attempt", "By");
   }
-  if (metrics_.contains(grpc::experimental::OpenTelemetryPluginBuilder::
-                            kServerCallStartedInstrumentName)) {
+  if (metrics_.contains(
+          grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName)) {
     g_otel_plugin_state_->server.call.started = meter->CreateUInt64Counter(
-        std::string(grpc::experimental::OpenTelemetryPluginBuilder::
-                        kServerCallStartedInstrumentName),
+        std::string(
+            grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName),
         "Number of server calls started", "{call}");
   }
-  if (metrics_.contains(grpc::experimental::OpenTelemetryPluginBuilder::
+  if (metrics_.contains(grpc::OpenTelemetryPluginBuilder::
                             kServerCallDurationInstrumentName)) {
     g_otel_plugin_state_->server.call.duration = meter->CreateDoubleHistogram(
-        std::string(grpc::experimental::OpenTelemetryPluginBuilder::
+        std::string(grpc::OpenTelemetryPluginBuilder::
                         kServerCallDurationInstrumentName),
         "End-to-end time taken to complete a call from server transport's "
         "perspective",
         "s");
   }
   if (metrics_.contains(
-          grpc::experimental::OpenTelemetryPluginBuilder::
+          grpc::OpenTelemetryPluginBuilder::
               kServerCallSentTotalCompressedMessageSizeInstrumentName)) {
     g_otel_plugin_state_->server.call.sent_total_compressed_message_size =
         meter->CreateUInt64Histogram(
             std::string(
-                grpc::experimental::OpenTelemetryPluginBuilder::
+                grpc::OpenTelemetryPluginBuilder::
                     kServerCallSentTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes sent per server call", "By");
   }
   if (metrics_.contains(
-          grpc::experimental::OpenTelemetryPluginBuilder::
+          grpc::OpenTelemetryPluginBuilder::
               kServerCallRcvdTotalCompressedMessageSizeInstrumentName)) {
     g_otel_plugin_state_->server.call.rcvd_total_compressed_message_size =
         meter->CreateUInt64Histogram(
             std::string(
-                grpc::experimental::OpenTelemetryPluginBuilder::
+                grpc::OpenTelemetryPluginBuilder::
                     kServerCallRcvdTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes received per server call", "By");
   }
@@ -271,8 +271,6 @@ void OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
 }
 
 }  // namespace internal
-
-namespace experimental {
 
 constexpr absl::string_view
     OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName;
@@ -336,5 +334,4 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   impl_->BuildAndRegisterGlobal();
 }
 
-}  // namespace experimental
 }  // namespace grpc

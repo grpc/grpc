@@ -1530,6 +1530,7 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
         "//src/core:bitset",
+        "//src/core:call_final_info",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
@@ -2384,6 +2385,7 @@ grpc_cc_library(
     language = "c++",
     tags = ["nofixdeps"],
     deps = [
+        ":grpcpp_otel_plugin",
         "//src/cpp/ext/csm:csm_observability",
     ],
 )

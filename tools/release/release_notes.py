@@ -95,7 +95,6 @@ def get_commit_log(prevRelLabel, relBranch):
         "git",
         "log",
         "--pretty=oneline",
-        "--committer=GitHub",
         "%s..%s" % (prevRelLabel, relBranch),
     ]
     print(("Running ", " ".join(glg_command)))
@@ -161,15 +160,11 @@ def get_pr_titles(gitLogs):
         body = pr["title"]
         if not body.endswith("."):
             body = body + "."
-        if not pr["merged_by"]:
-            print(("\n***ERROR***: No merge_by found for PR " + pr_num + "\n"))
-            error_count += 1
-            continue
 
         prline = (
             "-  " + body + " ([#" + pr_num + "](" + HTML_URL + pr_num + "))"
         )
-        detail = "- " + pr["merged_by"]["login"] + "@ " + prline
+        detail = "- " + pr["user"]["login"] + "@ " + prline
         print(detail)
         # if no RL label
         if not rl_no_found and not rl_yes_found:
@@ -192,6 +187,7 @@ def get_pr_titles(gitLogs):
             )
             langs_pr["inrel"].append(detail)
             langs_pr[lang].append(prline)
+        print(("State: " + pr["state"]))
 
     return langs_pr, error_count
 

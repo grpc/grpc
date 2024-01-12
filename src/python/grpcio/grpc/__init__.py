@@ -1004,7 +1004,6 @@ class Channel(abc.ABC):
         method,
         request_serializer=None,
         response_deserializer=None,
-        _registered_method=False,
     ):
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
@@ -1015,8 +1014,6 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
-          _registered_method: Implementation Private. A bool representing whether the method
-            is registered.
 
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
@@ -1029,7 +1026,6 @@ class Channel(abc.ABC):
         method,
         request_serializer=None,
         response_deserializer=None,
-        _registered_method=False,
     ):
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
@@ -1040,8 +1036,6 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
-          _registered_method: Implementation Private. A bool representing whether the method
-            is registered.
 
         Returns:
           A UnaryStreamMultiCallable value for the name unary-stream method.
@@ -1054,7 +1048,6 @@ class Channel(abc.ABC):
         method,
         request_serializer=None,
         response_deserializer=None,
-        _registered_method=False,
     ):
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
@@ -1065,8 +1058,6 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
-          _registered_method: Implementation Private. A bool representing whether the method
-            is registered.
 
         Returns:
           A StreamUnaryMultiCallable value for the named stream-unary method.
@@ -1079,7 +1070,6 @@ class Channel(abc.ABC):
         method,
         request_serializer=None,
         response_deserializer=None,
-        _registered_method=False,
     ):
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
@@ -1090,8 +1080,6 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
-          _registered_method: Implementation Private. A bool representing whether the method
-            is registered.
 
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.
