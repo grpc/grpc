@@ -6703,6 +6703,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "slice_buffer",
+        "//:gpr_platform",
         "//:grpc_public_hdrs",
     ],
 )
