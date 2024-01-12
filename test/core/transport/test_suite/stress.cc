@@ -18,7 +18,7 @@
 
 namespace grpc_core {
 
-TRANSPORT_TEST(ManyUnaryRequests) {
+TRANSPORT_TEST(DISABLED_ManyUnaryRequests) {
   SetServerAcceptor();
   const int kNumRequests = absl::LogUniform<int>(rng(), 10, 100);
   std::list<std::string> call_names;

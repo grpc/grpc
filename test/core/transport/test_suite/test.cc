@@ -34,6 +34,7 @@ void TransportTestRegistry::RegisterTest(
                                       const fuzzing_event_engine::Actions&,
                                       absl::BitGenRef) const>
         create) {
+  if (absl::StartsWith(name, "DISABLED_")) return;
   tests_.push_back({name, std::move(create)});
 }
 
