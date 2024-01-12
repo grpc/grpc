@@ -39,7 +39,7 @@ namespace grpc_core {
 namespace transport_test_detail {
 
 struct NameAndLocation {
-  // NOLINTNEXTLINE(runtime/explicit)
+  // NOLINTNEXTLINE
   NameAndLocation(const char* name, SourceLocation location = {})
       : location_(location), name_(name) {}
   NameAndLocation Next() const {
