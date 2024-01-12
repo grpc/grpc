@@ -6687,6 +6687,7 @@ grpc_cc_library(
     deps = [
         "error_utils",
         "metadata_batch",
+        "//:gpr_platform",
     ],
 )
 

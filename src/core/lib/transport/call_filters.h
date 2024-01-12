@@ -613,8 +613,8 @@ struct StackData {
         channel_data,
         call_offset,
         [](void* call_data, void* channel_data) {
-          new (call_data) CallWrapper<FilterType>(
-              static_cast<FilterType*>(static_cast<FilterType*>(channel_data)));
+          new (call_data)
+              CallWrapper<FilterType>(static_cast<FilterType*>(channel_data));
         },
         [](void* call_data) {
           static_cast<CallWrapper<FilterType>*>(call_data)->~CallWrapper();
@@ -635,8 +635,8 @@ struct StackData {
         channel_data,
         0,
         [](void* call_data, void* channel_data) {
-          new (call_data) CallWrapper<FilterType>(
-              static_cast<FilterType*>(static_cast<FilterType*>(channel_data)));
+          new (call_data)
+              CallWrapper<FilterType>(static_cast<FilterType*>(channel_data));
         },
         [](void* call_data) {
           static_cast<CallWrapper<FilterType>*>(call_data)->~CallWrapper();
@@ -726,7 +726,7 @@ struct StackData {
   }
 };
 
-// PipeTransformer is a helper class to execute a sequence of operations
+// OperationExecutor is a helper class to execute a sequence of operations
 // from a layout on one value.
 // We instantiate one of these during the *Pull* promise for each operation
 // and wait for it to resolve.
@@ -734,18 +734,18 @@ struct StackData {
 // value pushed.
 // An early-failing filter will cause subsequent filters to not execute.
 template <typename T>
-class PipeTransformer {
+class OperationExecutor {
  public:
-  PipeTransformer() = default;
-  ~PipeTransformer();
-  PipeTransformer(const PipeTransformer&) = delete;
-  PipeTransformer& operator=(const PipeTransformer&) = delete;
-  PipeTransformer(PipeTransformer&& other) noexcept
+  OperationExecutor() = default;
+  ~OperationExecutor();
+  OperationExecutor(const OperationExecutor&) = delete;
+  OperationExecutor& operator=(const OperationExecutor&) = delete;
+  OperationExecutor(OperationExecutor&& other) noexcept
       : ops_(other.ops_), end_ops_(other.end_ops_) {
     // Movable iff we're not running.
     GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
   }
-  PipeTransformer& operator=(PipeTransformer&& other) noexcept {
+  OperationExecutor& operator=(OperationExecutor&& other) noexcept {
     GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
     GPR_DEBUG_ASSERT(promise_data_ == nullptr);
     ops_ = other.ops_;
@@ -784,22 +784,22 @@ class PipeTransformer {
   const FallibleOperator<T>* end_ops_;
 };
 
-// Per PipeTransformer, but for infallible operation sequences.
+// Per OperationExecutor, but for infallible operation sequences.
 template <typename T>
-class InfalliblePipeTransformer {
+class InfallibleOperationExecutor {
  public:
-  InfalliblePipeTransformer() = default;
-  ~InfalliblePipeTransformer();
-  InfalliblePipeTransformer(const InfalliblePipeTransformer&) = delete;
-  InfalliblePipeTransformer& operator=(const InfalliblePipeTransformer&) =
+  InfallibleOperationExecutor() = default;
+  ~InfallibleOperationExecutor();
+  InfallibleOperationExecutor(const InfallibleOperationExecutor&) = delete;
+  InfallibleOperationExecutor& operator=(const InfallibleOperationExecutor&) =
       delete;
-  InfalliblePipeTransformer(InfalliblePipeTransformer&& other) noexcept
+  InfallibleOperationExecutor(InfallibleOperationExecutor&& other) noexcept
       : ops_(other.ops_), end_ops_(other.end_ops_) {
     // Movable iff we're not running.
     GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
   }
-  InfalliblePipeTransformer& operator=(
-      InfalliblePipeTransformer&& other) noexcept {
+  InfallibleOperationExecutor& operator=(
+      InfallibleOperationExecutor&& other) noexcept {
     GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
     GPR_DEBUG_ASSERT(promise_data_ == nullptr);
     ops_ = other.ops_;
@@ -1029,7 +1029,8 @@ class CallFilters {
 
       Poll<ValueOrFailure<T>> operator()() {
         if (transformer_.IsRunning()) {
-          return FinishPipeTransformer(transformer_.Step(filters_->call_data_));
+          return FinishOperationExecutor(
+              transformer_.Step(filters_->call_data_));
         }
         auto p = state().PollPull();
         auto* r = p.value_if_ready();
@@ -1038,7 +1039,7 @@ class CallFilters {
           filters_->CancelDueToFailedPipeOperation();
           return Failure{};
         }
-        return FinishPipeTransformer(transformer_.Start(
+        return FinishOperationExecutor(transformer_.Start(
             layout(), push()->TakeValue(), filters_->call_data_));
       }
 
@@ -1050,7 +1051,7 @@ class CallFilters {
         return &(filters_->stack_->data_.*layout_ptr);
       }
 
-      Poll<ValueOrFailure<T>> FinishPipeTransformer(
+      Poll<ValueOrFailure<T>> FinishOperationExecutor(
           Poll<filters_detail::ResultOr<T>> p) {
         auto* r = p.value_if_ready();
         if (r == nullptr) return Pending{};
@@ -1062,11 +1063,9 @@ class CallFilters {
       }
 
       CallFilters* filters_;
-      filters_detail::PipeTransformer<T> transformer_;
+      filters_detail::OperationExecutor<T> transformer_;
     };
   };
-
-  class PullServerTrailingMetadata {};
 
   void CancelDueToFailedPipeOperation();
 
@@ -1079,27 +1078,36 @@ class CallFilters {
   IntraActivityWaiter server_trailing_metadata_waiter_;
 
   void* call_data_;
-  void* client_initial_metadata_ = nullptr;
-  void* server_initial_metadata_ = nullptr;
-  void* client_to_server_message_ = nullptr;
-  void* server_to_client_message_ = nullptr;
+
+  // The following void*'s are pointers to a `Push` object (from above).
+  // They are used to track the current push operation for each pipe.
+  // It would be lovely for them to be typed pointers, but that would require
+  // a recursive type definition since the location of this field needs to be
+  // a template argument to the `Push` object itself.
+  void* client_initial_metadata_push_ = nullptr;
+  void* server_initial_metadata_push_ = nullptr;
+  void* client_to_server_message_push_ = nullptr;
+  void* server_to_client_message_push_ = nullptr;
+
   ServerMetadataHandle server_trailing_metadata_;
 
   using ClientInitialMetadataPromises =
       PipePromise<&CallFilters::client_initial_metadata_state_,
-                  &CallFilters::client_initial_metadata_, ClientMetadataHandle,
+                  &CallFilters::client_initial_metadata_push_,
+                  ClientMetadataHandle,
                   &filters_detail::StackData::client_initial_metadata>;
   using ServerInitialMetadataPromises =
       PipePromise<&CallFilters::server_initial_metadata_state_,
-                  &CallFilters::server_initial_metadata_, ServerMetadataHandle,
+                  &CallFilters::server_initial_metadata_push_,
+                  ServerMetadataHandle,
                   &filters_detail::StackData::server_initial_metadata>;
   using ClientToServerMessagePromises =
       PipePromise<&CallFilters::client_to_server_message_state_,
-                  &CallFilters::client_to_server_message_, MessageHandle,
+                  &CallFilters::client_to_server_message_push_, MessageHandle,
                   &filters_detail::StackData::client_to_server_messages>;
   using ServerToClientMessagePromises =
       PipePromise<&CallFilters::server_to_client_message_state_,
-                  &CallFilters::server_to_client_message_, MessageHandle,
+                  &CallFilters::server_to_client_message_push_, MessageHandle,
                   &filters_detail::StackData::server_to_client_messages>;
 };
 
@@ -1145,7 +1153,7 @@ inline auto CallFilters::PullServerToClientMessage() {
 
 inline auto CallFilters::PullServerTrailingMetadata() {
   return [this,
-          pipe = filters_detail::InfalliblePipeTransformer<
+          pipe = filters_detail::InfallibleOperationExecutor<
               ServerMetadataHandle>()]() mutable -> Poll<ServerMetadataHandle> {
     if (pipe.IsRunning()) {
       return pipe.Step(call_data_);

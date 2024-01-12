@@ -27,7 +27,7 @@ void* Offset(void* base, size_t amt) { return static_cast<char*>(base) + amt; }
 namespace filters_detail {
 
 template <typename T>
-PipeTransformer<T>::~PipeTransformer() {
+OperationExecutor<T>::~OperationExecutor() {
   if (promise_data_ != nullptr) {
     ops_->early_destroy(promise_data_);
     gpr_free_aligned(promise_data_);
@@ -35,7 +35,7 @@ PipeTransformer<T>::~PipeTransformer() {
 }
 
 template <typename T>
-Poll<ResultOr<T>> PipeTransformer<T>::Start(
+Poll<ResultOr<T>> OperationExecutor<T>::Start(
     const Layout<FallibleOperator<T>>* layout, T input, void* call_data) {
   ops_ = layout->ops.data();
   end_ops_ = ops_ + layout->ops.size();
@@ -51,7 +51,7 @@ Poll<ResultOr<T>> PipeTransformer<T>::Start(
 }
 
 template <typename T>
-Poll<ResultOr<T>> PipeTransformer<T>::InitStep(T input, void* call_data) {
+Poll<ResultOr<T>> OperationExecutor<T>::InitStep(T input, void* call_data) {
   while (true) {
     if (ops_ == end_ops_) {
       return ResultOr<T>{std::move(input), nullptr};
@@ -70,7 +70,7 @@ Poll<ResultOr<T>> PipeTransformer<T>::InitStep(T input, void* call_data) {
 }
 
 template <typename T>
-Poll<ResultOr<T>> PipeTransformer<T>::Step(void* call_data) {
+Poll<ResultOr<T>> OperationExecutor<T>::Step(void* call_data) {
   GPR_DEBUG_ASSERT(promise_data_ != nullptr);
   auto p = ContinueStep(call_data);
   if (p.ready()) {
@@ -81,7 +81,7 @@ Poll<ResultOr<T>> PipeTransformer<T>::Step(void* call_data) {
 }
 
 template <typename T>
-Poll<ResultOr<T>> PipeTransformer<T>::ContinueStep(void* call_data) {
+Poll<ResultOr<T>> OperationExecutor<T>::ContinueStep(void* call_data) {
   auto p = ops_->poll(promise_data_);
   if (auto* r = p.value_if_ready()) {
     if (r->ok == nullptr) return std::move(*r);
@@ -92,7 +92,7 @@ Poll<ResultOr<T>> PipeTransformer<T>::ContinueStep(void* call_data) {
 }
 
 template <typename T>
-InfalliblePipeTransformer<T>::~InfalliblePipeTransformer() {
+InfallibleOperationExecutor<T>::~InfallibleOperationExecutor() {
   if (promise_data_ != nullptr) {
     ops_->early_destroy(promise_data_);
     gpr_free_aligned(promise_data_);
@@ -100,7 +100,7 @@ InfalliblePipeTransformer<T>::~InfalliblePipeTransformer() {
 }
 
 template <typename T>
-Poll<T> InfalliblePipeTransformer<T>::Start(
+Poll<T> InfallibleOperationExecutor<T>::Start(
     const Layout<InfallibleOperator<T>>* layout, T input, void* call_data) {
   ops_ = layout->ops.data();
   end_ops_ = ops_ + layout->ops.size();
@@ -116,7 +116,7 @@ Poll<T> InfalliblePipeTransformer<T>::Start(
 }
 
 template <typename T>
-Poll<T> InfalliblePipeTransformer<T>::InitStep(T input, void* call_data) {
+Poll<T> InfallibleOperationExecutor<T>::InitStep(T input, void* call_data) {
   while (true) {
     if (ops_ == end_ops_) {
       return input;
@@ -134,7 +134,7 @@ Poll<T> InfalliblePipeTransformer<T>::InitStep(T input, void* call_data) {
 }
 
 template <typename T>
-Poll<T> InfalliblePipeTransformer<T>::Step(void* call_data) {
+Poll<T> InfallibleOperationExecutor<T>::Step(void* call_data) {
   GPR_DEBUG_ASSERT(promise_data_ != nullptr);
   auto p = ContinueStep(call_data);
   if (p.ready()) {
@@ -145,7 +145,7 @@ Poll<T> InfalliblePipeTransformer<T>::Step(void* call_data) {
 }
 
 template <typename T>
-Poll<T> InfalliblePipeTransformer<T>::ContinueStep(void* call_data) {
+Poll<T> InfallibleOperationExecutor<T>::ContinueStep(void* call_data) {
   auto p = ops_->poll(promise_data_);
   if (auto* r = p.value_if_ready()) {
     ++ops_;
@@ -157,9 +157,9 @@ Poll<T> InfalliblePipeTransformer<T>::ContinueStep(void* call_data) {
 // Explicit instantiations of some types used in filters.h
 // We'll need to add ServerMetadataHandle to this when it becomes different
 // to ClientMetadataHandle
-template class PipeTransformer<ClientMetadataHandle>;
-template class PipeTransformer<MessageHandle>;
-template class InfalliblePipeTransformer<ServerMetadataHandle>;
+template class OperationExecutor<ClientMetadataHandle>;
+template class OperationExecutor<MessageHandle>;
+template class InfallibleOperationExecutor<ServerMetadataHandle>;
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
