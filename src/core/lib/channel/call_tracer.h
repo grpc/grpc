@@ -201,6 +201,9 @@ class ServerCallTracerFactory {
   // this for the lifetime of the process.
   static void RegisterGlobal(ServerCallTracerFactory* factory);
 
+  // Deletes any previous registered ServerCallTracerFactory.
+  static void TestOnlyReset();
+
   static absl::string_view ChannelArgName();
 };
 

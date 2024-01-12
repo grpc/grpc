@@ -60,6 +60,11 @@ void ServerCallTracerFactory::RegisterGlobal(ServerCallTracerFactory* factory) {
   g_server_call_tracer_factory_ = factory;
 }
 
+void ServerCallTracerFactory::TestOnlyReset() {
+  delete g_server_call_tracer_factory_;
+  g_server_call_tracer_factory_ = nullptr;
+}
+
 absl::string_view ServerCallTracerFactory::ChannelArgName() {
   return kServerCallTracerFactoryChannelArgName;
 }
