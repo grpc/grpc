@@ -223,56 +223,19 @@ class MeshLabelsIterable : public LabelsIterable {
     if (pos_ < local_labels_size) {
       return local_labels_[pos_++];
     }
-    if (++pos_ == local_labels_size + 1) {
-      return std::make_pair(kPeerTypeAttribute,
-                            GetStringValueFromUpbStruct(
-                                struct_pb.struct_pb, kMetadataExchangeTypeKey,
-                                struct_pb.arena.ptr()));
+    const size_t fixed_attribute_end =
+        local_labels_size + kFixedAttributes.size();
+    if (pos_ < fixed_attribute_end) {
+      return NextFromAttributeList(struct_pb, kFixedAttributes,
+                                   local_labels_size);
     }
-    if (pos_ == local_labels_size + 2) {
-      return std::make_pair(
-          kPeerCanonicalServiceAttribute,
-          GetStringValueFromUpbStruct(struct_pb.struct_pb,
-                                      kMetadataExchangeCanonicalServiceKey,
-                                      struct_pb.arena.ptr()));
-    }
-    switch (remote_type_) {
-      case GcpResourceType::kGke:
-        if ((pos_ - 3 - local_labels_size) >= kGkeAttributeList.size()) {
-          return absl::nullopt;
-        }
-        return std::make_pair(
-            kGkeAttributeList[pos_ - 3 - local_labels_size].otel_attribute,
-            GetStringValueFromUpbStruct(
-                struct_pb.struct_pb,
-                kGkeAttributeList[pos_ - 3 - local_labels_size]
-                    .metadata_attribute,
-                struct_pb.arena.ptr()));
-      case GcpResourceType::kGce:
-        if ((pos_ - 3 - local_labels_size) >= kGceAttributeList.size()) {
-          return absl::nullopt;
-        }
-        return std::make_pair(
-            kGceAttributeList[pos_ - 3 - local_labels_size].otel_attribute,
-            GetStringValueFromUpbStruct(
-                struct_pb.struct_pb,
-                kGceAttributeList[pos_ - 3 - local_labels_size]
-                    .metadata_attribute,
-                struct_pb.arena.ptr()));
-      case GcpResourceType::kUnknown:
-        return absl::nullopt;
-    }
+    return NextFromAttributeList(struct_pb, GetAttributesForType(remote_type_),
+                                 fixed_attribute_end);
   }
 
   size_t Size() const override {
-    auto& struct_pb = GetDecodedMetadata();
-    if (struct_pb.struct_pb == nullptr) {
-      return local_labels_.size();
-    }
-    if (remote_type_ != GcpResourceType::kGke) {
-      return local_labels_.size() + 1;
-    }
-    return local_labels_.size() + kGkeAttributeList.size() + 1;
+    return local_labels_.size() + kFixedAttributes.size() +
+           GetAttributesForType(remote_type_).size();
   }
 
   void ResetIteratorPosition() override { pos_ = 0; }
@@ -294,6 +257,12 @@ class MeshLabelsIterable : public LabelsIterable {
     google_protobuf_Struct* struct_pb = nullptr;
   };
 
+  static constexpr std::array<RemoteAttribute, 2> kFixedAttributes = {
+      RemoteAttribute{kPeerTypeAttribute, kMetadataExchangeTypeKey},
+      RemoteAttribute{kPeerCanonicalServiceAttribute,
+                      kMetadataExchangeCanonicalServiceKey},
+  };
+
   static constexpr std::array<RemoteAttribute, 5> kGkeAttributeList = {
       RemoteAttribute{kPeerWorkloadNameAttribute,
                       kMetadataExchangeWorkloadNameKey},
@@ -310,6 +279,33 @@ class MeshLabelsIterable : public LabelsIterable {
       RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
       RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
   };
+
+  static absl::Span<const RemoteAttribute> GetAttributesForType(
+      GcpResourceType remote_type) {
+    switch (remote_type) {
+      case GcpResourceType::kGke:
+        return kGkeAttributeList;
+      case GcpResourceType::kGce:
+        return kGceAttributeList;
+      default:
+        return {};
+    }
+  }
+
+  absl::optional<std::pair<absl::string_view, absl::string_view>>
+  NextFromAttributeList(const StructPb& struct_pb,
+                        absl::Span<const RemoteAttribute> attributes,
+                        size_t start_index) {
+    GPR_DEBUG_ASSERT(pos_ >= start_index);
+    const size_t index = pos_ - start_index;
+    if (index >= attributes.size()) return absl::nullopt;
+    ++pos_;
+    const auto& attribute = attributes[index];
+    return std::make_pair(attribute.otel_attribute,
+                          GetStringValueFromUpbStruct(
+                              struct_pb.struct_pb, attribute.metadata_attribute,
+                              struct_pb.arena.ptr()));
+  }
 
   StructPb& GetDecodedMetadata() const {
     auto* slice = absl::get_if<grpc_core::Slice>(&metadata_);
@@ -345,6 +341,8 @@ class MeshLabelsIterable : public LabelsIterable {
   uint32_t pos_ = 0;
 };
 
+constexpr std::array<MeshLabelsIterable::RemoteAttribute, 2>
+    MeshLabelsIterable::kFixedAttributes;
 constexpr std::array<MeshLabelsIterable::RemoteAttribute, 5>
     MeshLabelsIterable::kGkeAttributeList;
 constexpr std::array<MeshLabelsIterable::RemoteAttribute, 3>
