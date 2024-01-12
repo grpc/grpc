@@ -998,16 +998,16 @@ TEST(StackDataTest,
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
-// PipeTransformer
+// OperationExecutor
 
 namespace filters_detail {
 
-TEST(PipeTransformerTest, NoOp) {
-  PipeTransformer<ClientMetadataHandle> pipe;
+TEST(OperationExecutorTest, NoOp) {
+  OperationExecutor<ClientMetadataHandle> pipe;
   EXPECT_FALSE(pipe.IsRunning());
 }
 
-TEST(PipeTransformerTest, InstantTwo) {
+TEST(OperationExecutorTest, InstantTwo) {
   class Filter1 {
    public:
     class Call {
@@ -1043,7 +1043,7 @@ TEST(PipeTransformerTest, InstantTwo) {
   void* call_data2 = Offset(call_data1, d.filters[1].call_offset);
   d.filters[0].call_init(call_data1, &f1);
   d.filters[1].call_init(call_data2, &f2);
-  PipeTransformer<ClientMetadataHandle> transformer;
+  OperationExecutor<ClientMetadataHandle> transformer;
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
@@ -1068,7 +1068,7 @@ TEST(PipeTransformerTest, InstantTwo) {
   gpr_free_aligned(call_data1);
 }
 
-TEST(PipeTransformerTest, PromiseTwo) {
+TEST(OperationExecutorTest, PromiseTwo) {
   class Filter1 {
    public:
     class Call {
@@ -1109,7 +1109,7 @@ TEST(PipeTransformerTest, PromiseTwo) {
   void* call_data2 = Offset(call_data1, d.filters[1].call_offset);
   d.filters[0].call_init(call_data1, &f1);
   d.filters[1].call_init(call_data2, &f2);
-  PipeTransformer<ClientMetadataHandle> transformer;
+  OperationExecutor<ClientMetadataHandle> transformer;
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
@@ -1149,16 +1149,16 @@ TEST(PipeTransformerTest, PromiseTwo) {
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
-// InfalliblePipeTransformer
+// InfallibleOperationExecutor
 
 namespace filters_detail {
 
-TEST(InfalliblePipeTransformer, NoOp) {
-  PipeTransformer<ServerMetadataHandle> pipe;
+TEST(InfallibleOperationExecutor, NoOp) {
+  OperationExecutor<ServerMetadataHandle> pipe;
   EXPECT_FALSE(pipe.IsRunning());
 }
 
-TEST(InfalliblePipeTransformer, InstantTwo) {
+TEST(InfallibleOperationExecutor, InstantTwo) {
   class Filter1 {
    public:
     class Call {
@@ -1186,7 +1186,7 @@ TEST(InfalliblePipeTransformer, InstantTwo) {
   void* call_data2 = Offset(call_data1, d.filters[1].call_offset);
   d.filters[0].call_init(call_data1, &f1);
   d.filters[1].call_init(call_data2, &f2);
-  InfalliblePipeTransformer<ServerMetadataHandle> transformer;
+  InfallibleOperationExecutor<ServerMetadataHandle> transformer;
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
