@@ -359,8 +359,9 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoid) {
   auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ClientMetadata>(arena.get());
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
+  char call_data;
   auto r = d.client_initial_metadata.ops[0].promise_init(
-      nullptr, nullptr, d.client_initial_metadata.ops[0].channel_data,
+      nullptr, &call_data, d.client_initial_metadata.ops[0].channel_data,
       std::move(md));
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
@@ -398,8 +399,9 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoidTakingChannelPtr) {
   auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ClientMetadata>(arena.get());
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
+  char call_data;
   auto r = d.client_initial_metadata.ops[0].promise_init(
-      nullptr, nullptr, d.client_initial_metadata.ops[0].channel_data,
+      nullptr, &call_data, d.client_initial_metadata.ops[0].channel_data,
       std::move(md));
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
@@ -839,8 +841,9 @@ TEST(StackDataTest, InstantServerInitialMetadataReturningVoid) {
   auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ServerMetadata>(arena.get());
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
+  char call_data;
   auto r = d.server_initial_metadata.ops[0].promise_init(
-      nullptr, nullptr, d.server_initial_metadata.ops[0].channel_data,
+      nullptr, &call_data, d.server_initial_metadata.ops[0].channel_data,
       std::move(md));
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
@@ -875,8 +878,9 @@ TEST(StackDataTest, InstantClientToServerMessagesReturningVoid) {
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
   auto message = Arena::MakePooled<Message>(SliceBuffer(), 0);
+  char call_data;
   auto r = d.client_to_server_messages.ops[0].promise_init(
-      nullptr, nullptr, d.client_to_server_messages.ops[0].channel_data,
+      nullptr, &call_data, d.client_to_server_messages.ops[0].channel_data,
       std::move(message));
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok->flags(), 1u);
@@ -910,8 +914,9 @@ TEST(StackDataTest, InstantServerToClientMessagesReturningVoid) {
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
   auto message = Arena::MakePooled<Message>(SliceBuffer(), 0);
+  char call_data;
   auto r = d.server_to_client_messages.ops[0].promise_init(
-      nullptr, nullptr, d.server_to_client_messages.ops[0].channel_data,
+      nullptr, &call_data, d.server_to_client_messages.ops[0].channel_data,
       std::move(message));
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok->flags(), 1u);
@@ -946,8 +951,9 @@ TEST(StackDataTest, InstantServerTrailingMetadataReturningVoid) {
   auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ServerMetadata>(arena.get());
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
+  char call_data;
   auto r = d.server_trailing_metadata.ops[0].promise_init(
-      nullptr, nullptr, d.server_trailing_metadata.ops[0].channel_data,
+      nullptr, &call_data, d.server_trailing_metadata.ops[0].channel_data,
       std::move(md));
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
@@ -986,8 +992,9 @@ TEST(StackDataTest,
   auto arena = MakeScopedArena(1024, &memory_allocator);
   auto md = Arena::MakePooled<ServerMetadata>(arena.get());
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
+  char call_data;
   auto r = d.server_trailing_metadata.ops[0].promise_init(
-      nullptr, nullptr, d.server_trailing_metadata.ops[0].channel_data,
+      nullptr, &call_data, d.server_trailing_metadata.ops[0].channel_data,
       std::move(md));
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
