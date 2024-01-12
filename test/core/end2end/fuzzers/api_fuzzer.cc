@@ -434,6 +434,7 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
   ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
       create_channel.channel_args(), fuzzing_env);
   if (create_channel.inproc()) {
+    if (server_ == nullptr) return Result::kFailed;
     channel_ = grpc_inproc_channel_create(server_, args.ToC().get(), nullptr);
   } else {
     grpc_channel_credentials* creds =

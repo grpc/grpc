@@ -32,7 +32,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "upb/base/string_view.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
