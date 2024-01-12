@@ -49,7 +49,7 @@ class ChaoticGoodTransport {
   // Resolves to StatusOr<tuple<FrameHeader, BufferPair>>.
   auto ReadFrameBytes() {
     return TrySeq(
-        control_endpoint_->ReadSlice(FrameHeader::frame_header_size_),
+        control_endpoint_->ReadSlice(FrameHeader::kFrameHeaderSize),
         [this](Slice read_buffer) {
           auto frame_header =
               FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
@@ -88,9 +88,10 @@ class ChaoticGoodTransport {
   }
 
   absl::Status DeserializeFrame(FrameHeader header, BufferPair buffers,
-                                Arena* arena, FrameInterface& frame) {
+                                Arena* arena, FrameInterface& frame,
+                                FrameLimits limits) {
     return frame.Deserialize(&parser_, header, bitgen_, arena,
-                             std::move(buffers));
+                             std::move(buffers), limits);
   }
 
   // Skip a frame, but correctly handle any hpack state updates.
