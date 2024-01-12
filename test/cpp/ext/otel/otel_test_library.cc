@@ -164,8 +164,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(
 void OpenTelemetryPluginEnd2EndTest::TearDown() {
   server_->Shutdown();
   grpc_shutdown_blocking();
-  delete grpc_core::ServerCallTracerFactory::Get(grpc_core::ChannelArgs());
-  grpc_core::ServerCallTracerFactory::RegisterGlobal(nullptr);
+  grpc_core::ServerCallTracerFactory::TestOnlyReset();
 }
 
 void OpenTelemetryPluginEnd2EndTest::ResetStub(

@@ -57,7 +57,13 @@ ServerCallTracerFactory* ServerCallTracerFactory::Get(
 }
 
 void ServerCallTracerFactory::RegisterGlobal(ServerCallTracerFactory* factory) {
+  GPR_DEBUG_ASSERT(g_server_call_tracer_factory_ == nullptr);
   g_server_call_tracer_factory_ = factory;
+}
+
+void ServerCallTracerFactory::TestOnlyReset() {
+  delete g_server_call_tracer_factory_;
+  g_server_call_tracer_factory_ = nullptr;
 }
 
 absl::string_view ServerCallTracerFactory::ChannelArgName() {
