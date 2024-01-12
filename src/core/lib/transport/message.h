@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef T_MESSAGE_H
-#define T_MESSAGE_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_MESSAGE_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_MESSAGE_H
 
-#include "src/core/lib/slice/slice_buffer.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_buffer.h"
 
 /// Internal bit flag for grpc_begin_message's \a flags signaling the use of
 /// compression for the message. (Does not apply for stream compression.)
@@ -54,6 +56,6 @@ class Message {
 
 using MessageHandle = Arena::PoolPtr<Message>;
 
-}
+}  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_MESSAGE_H

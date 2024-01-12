@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef T_META_H
-#define T_META_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_H
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -73,4 +75,4 @@ struct StatusCastImpl<
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_H
