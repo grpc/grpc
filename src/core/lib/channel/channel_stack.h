@@ -72,6 +72,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/transport.h"
 
 struct grpc_channel_element_args {
@@ -89,16 +90,6 @@ struct grpc_call_element_args {
   grpc_core::Timestamp deadline;
   grpc_core::Arena* arena;
   grpc_core::CallCombiner* call_combiner;
-};
-struct grpc_call_stats {
-  grpc_transport_stream_stats transport_stream_stats;
-  gpr_timespec latency;  // From call creating to enqueing of received status
-};
-/// Information about the call upon completion.
-struct grpc_call_final_info {
-  grpc_call_stats stats;
-  grpc_status_code final_status = GRPC_STATUS_OK;
-  const char* error_string = nullptr;
 };
 
 // Channel filters specify:

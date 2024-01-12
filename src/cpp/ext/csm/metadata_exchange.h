@@ -50,6 +50,20 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
   void AddLabels(grpc_metadata_batch* outgoing_initial_metadata,
                  LabelsIterable* labels_from_incoming_metadata) const override;
 
+  // Add optional labels to the traced calls.
+  bool AddOptionalLabels(
+      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+          optional_labels_span,
+      opentelemetry::nostd::function_ref<
+          bool(opentelemetry::nostd::string_view,
+               opentelemetry::common::AttributeValue)>
+          callback) const override;
+
+  // Gets the size of the actual optional labels.
+  size_t GetOptionalLabelsSize(
+      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+          optional_labels_span) const override;
+
  private:
   std::vector<std::pair<absl::string_view, std::string>> local_labels_;
   grpc_core::Slice serialized_labels_to_send_;

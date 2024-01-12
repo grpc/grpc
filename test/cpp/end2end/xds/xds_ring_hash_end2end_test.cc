@@ -117,15 +117,16 @@ TEST_P(RingHashTest, AggregateClusterFallBackFromRingHashAtStartup) {
   new_cluster1.set_name(kNewCluster1Name);
   new_cluster1.mutable_eds_cluster_config()->set_service_name(
       kNewEdsService1Name);
+  new_cluster1.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(new_cluster1);
   Cluster new_cluster2 = default_cluster_;
   new_cluster2.set_name(kNewCluster2Name);
   new_cluster2.mutable_eds_cluster_config()->set_service_name(
       kNewEdsService2Name);
+  new_cluster2.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  cluster.set_lb_policy(Cluster::RING_HASH);
   CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
@@ -175,6 +176,7 @@ TEST_P(RingHashTest,
   // Populate new CDS resources.
   Cluster eds_cluster = default_cluster_;
   eds_cluster.set_name(kEdsClusterName);
+  eds_cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(eds_cluster);
   // Populate LOGICAL_DNS cluster.
   auto logical_dns_cluster = default_cluster_;
@@ -191,7 +193,6 @@ TEST_P(RingHashTest,
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  cluster.set_lb_policy(Cluster::RING_HASH);
   CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
@@ -243,6 +244,7 @@ TEST_P(RingHashTest,
   // Populate new CDS resources.
   Cluster eds_cluster = default_cluster_;
   eds_cluster.set_name(kEdsClusterName);
+  eds_cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(eds_cluster);
   // Populate LOGICAL_DNS cluster.
   auto logical_dns_cluster = default_cluster_;
@@ -259,7 +261,6 @@ TEST_P(RingHashTest,
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  cluster.set_lb_policy(Cluster::RING_HASH);
   CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;

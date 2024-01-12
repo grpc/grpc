@@ -385,7 +385,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
     }
 
-    std::shared_ptr<WorkSerializer> work_serializer() {
+    size_t NumWatchers() const {
+      size_t num_watchers;
+      absl::Notification notification;
+      work_serializer()->Run(
+          [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*test_->work_serializer_) {
+            num_watchers = state_tracker_.NumWatchers();
+            notification.Notify();
+          },
+          DEBUG_LOCATION);
+      notification.WaitForNotification();
+      return num_watchers;
+    }
+
+    std::shared_ptr<WorkSerializer> work_serializer() const {
       return test_->work_serializer_;
     }
 
@@ -457,7 +470,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           << location.file() << ":" << location.line();
       if (update == nullptr) return absl::nullopt;
       StateUpdate result = std::move(*update);
-      gpr_log(GPR_INFO, "got next state update: %s", result.ToString().c_str());
+      gpr_log(GPR_INFO, "dequeued next state update: %s",
+              result.ToString().c_str());
       queue_.pop_front();
       return std::move(result);
     }
@@ -563,7 +577,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       StateUpdate update{
           state, status,
           MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
-      gpr_log(GPR_INFO, "state update from LB policy: %s",
+      gpr_log(GPR_INFO, "enqueuing state update from LB policy: %s",
               update.ToString().c_str());
       queue_.push_back(std::move(update));
     }
@@ -654,6 +668,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       if (it != attributes_.end()) {
         return it->second;
       }
+      return nullptr;
+    }
+
+    ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
       return nullptr;
     }
 
@@ -1414,14 +1432,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   void SetExpectedTimerDuration(
       absl::optional<grpc_event_engine::experimental::EventEngine::Duration>
-          duration) {
+          duration,
+      SourceLocation location = SourceLocation()) {
     if (duration.has_value()) {
       fuzzing_ee_->SetRunAfterDurationCallback(
-          [expected = *duration](
+          [expected = *duration, location = location](
               grpc_event_engine::experimental::EventEngine::Duration duration) {
             EXPECT_EQ(duration, expected)
                 << "Expected: " << expected.count()
-                << "ns\nActual: " << duration.count() << "ns";
+                << "ns\n  Actual: " << duration.count() << "ns\n"
+                << location.file() << ":" << location.line();
           });
     } else {
       fuzzing_ee_->SetRunAfterDurationCallback(nullptr);

@@ -739,6 +739,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/http_filter_rbac.proto src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  src/proto/grpc/testing/xds/v3/http_protocol_options.proto src/proto/grpc/testing/xds/v3/http_protocol_options.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/listener.proto src/proto/grpc/testing/xds/v3/listener.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -1951,6 +1954,7 @@ add_library(grpc
   src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c
   src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c
   src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c
   src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c
@@ -2109,6 +2113,7 @@ add_library(grpc
   src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.c
@@ -2249,7 +2254,7 @@ add_library(grpc
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
   src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -2495,6 +2500,7 @@ add_library(grpc
   src/core/lib/surface/version.cc
   src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
@@ -2981,7 +2987,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
   src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -3188,6 +3194,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/version.cc
   src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
@@ -4971,7 +4978,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   src/core/lib/event_engine/posix_engine/posix_engine.cc
   src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -5174,6 +5181,7 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/transport/batch_builder.cc
+  src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
@@ -7801,6 +7809,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(call_tracer_test
   test/core/channel/call_tracer_test.cc
+  test/core/util/fake_stats_plugin.cc
 )
 target_compile_features(call_tracer_test PUBLIC cxx_std_14)
 target_include_directories(call_tracer_test
@@ -27035,6 +27044,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+    test/core/util/fake_stats_plugin.cc
     test/cpp/end2end/connection_attempt_injector.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_cluster_end2end_test.cc
@@ -27107,6 +27117,10 @@ add_executable(xds_cluster_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/health_check.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_protocol_options.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_protocol_options.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_protocol_options.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_protocol_options.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/outlier_detection.pb.h
@@ -27115,6 +27129,10 @@ add_executable(xds_cluster_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h

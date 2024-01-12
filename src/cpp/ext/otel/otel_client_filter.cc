@@ -132,7 +132,9 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     // avoid recording a subset of injected labels here.
     OpenTelemetryPluginState().client.attempt.started->Add(
         1, KeyValueIterable(/*injected_labels_iterable=*/nullptr, {},
-                            additional_labels));
+                            additional_labels,
+                            /*active_plugin_options_view=*/nullptr,
+                            /*optional_labels_span=*/{}));
   }
 }
 
@@ -150,6 +152,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
           injected_labels_from_plugin_options_.push_back(
               labels_injector->GetLabels(recv_initial_metadata));
         }
+        return true;
       });
 }
 
@@ -166,6 +169,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         if (labels_injector != nullptr) {
           labels_injector->AddLabels(send_initial_metadata, nullptr);
         }
+        return true;
       });
 }
 
@@ -206,9 +210,10 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
            {OpenTelemetryStatusKey(),
             grpc_status_code_to_string(
                 static_cast<grpc_status_code>(status.code()))}}};
-  KeyValueIterable labels(injected_labels_.get(),
-                          injected_labels_from_plugin_options_,
-                          additional_labels);
+  KeyValueIterable labels(
+      injected_labels_.get(), injected_labels_from_plugin_options_,
+      additional_labels, &parent_->parent_->active_plugin_options_view(),
+      optional_labels_array_);
   if (OpenTelemetryPluginState().client.attempt.duration != nullptr) {
     OpenTelemetryPluginState().client.attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,
@@ -260,6 +265,13 @@ std::shared_ptr<grpc_core::TcpTracerInterface>
 OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::StartNewTcpTrace() {
   // No TCP trace.
   return nullptr;
+}
+
+void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::AddOptionalLabels(
+    OptionalLabelComponent component,
+    std::shared_ptr<std::map<std::string, std::string>> optional_labels) {
+  optional_labels_array_[static_cast<std::size_t>(component)] =
+      std::move(optional_labels);
 }
 
 //

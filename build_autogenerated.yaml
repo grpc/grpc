@@ -488,6 +488,8 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb.h
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.h
   - src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb.h
   - src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.h
   - src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb.h
@@ -727,6 +729,7 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.h
@@ -883,7 +886,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.h
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
@@ -1165,6 +1168,7 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -1415,6 +1419,7 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c
   - src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c
   - src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c
   - src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c
@@ -1573,6 +1578,7 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.c
@@ -1713,7 +1719,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -1959,6 +1965,7 @@ libs:
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
@@ -2350,7 +2357,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.h
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
@@ -2596,6 +2603,7 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -2803,7 +2811,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -3010,6 +3018,7 @@ libs:
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
@@ -4494,7 +4503,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.h
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h
   - src/core/lib/event_engine/posix_engine/posix_endpoint.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
@@ -4733,6 +4742,7 @@ libs:
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
+  - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
@@ -4853,7 +4863,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  - src/core/lib/event_engine/posix_engine/native_dns_resolver.cc
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
   - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
@@ -5056,6 +5066,7 @@ libs:
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/batch_builder.cc
+  - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
@@ -6407,9 +6418,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/fake_stats_plugin.h
   src:
   - test/core/channel/call_tracer_test.cc
+  - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
   - grpc_test_util
@@ -18005,6 +18018,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/scoped_env_var.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
@@ -18045,6 +18059,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - test/core/util/fake_stats_plugin.cc
   - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_end2end_test.cc
@@ -18073,8 +18088,10 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/health_check.proto
+  - src/proto/grpc/testing/xds/v3/http_protocol_options.proto
   - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
   - src/proto/grpc/testing/xds/v3/regex.proto
   - src/proto/grpc/testing/xds/v3/round_robin.proto
   - src/proto/grpc/testing/xds/v3/string.proto
@@ -18094,6 +18111,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
