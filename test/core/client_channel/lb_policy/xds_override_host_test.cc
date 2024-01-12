@@ -72,8 +72,8 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       cluster_resource->connection_idle_timeout = *connection_idle_timeout;
     }
     auto xds_config = MakeRefCounted<XdsDependencyManager::XdsConfig>();
-    xds_config->clusters[cluster_name].emplace(
-        cluster_name, std::move(cluster_resource), nullptr, "");
+    xds_config->clusters[std::move(cluster_name)].emplace(
+        std::move(cluster_resource), nullptr, "");
     return xds_config;
   }
 

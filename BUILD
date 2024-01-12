@@ -2387,6 +2387,7 @@ grpc_cc_library(
     language = "c++",
     tags = ["nofixdeps"],
     deps = [
+        ":grpcpp_otel_plugin",
         "//src/cpp/ext/csm:csm_observability",
     ],
 )

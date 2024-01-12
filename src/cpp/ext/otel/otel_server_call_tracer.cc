@@ -95,6 +95,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
                 send_initial_metadata,
                 injected_labels_from_plugin_options_[index].get());
           }
+          return true;
         });
   }
 
@@ -186,6 +187,7 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
           injected_labels_from_plugin_options_[index] =
               labels_injector->GetLabels(recv_initial_metadata);
         }
+        return true;
       });
   registered_method_ =
       recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
@@ -197,7 +199,8 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     // avoid recording a subset of injected labels here.
     OpenTelemetryPluginState().server.call.started->Add(
         1, KeyValueIterable(/*injected_labels_iterable=*/nullptr, {},
-                            additional_labels));
+                            additional_labels,
+                            /*active_plugin_options_view=*/nullptr, {}));
   }
 }
 
@@ -215,9 +218,11 @@ void OpenTelemetryServerCallTracer::RecordEnd(
           {{OpenTelemetryMethodKey(), MethodForStats()},
            {OpenTelemetryStatusKey(),
             grpc_status_code_to_string(final_info->final_status)}}};
-  KeyValueIterable labels(injected_labels_.get(),
-                          injected_labels_from_plugin_options_,
-                          additional_labels);
+  // Currently we do not have any optional labels on the server side.
+  KeyValueIterable labels(
+      injected_labels_.get(), injected_labels_from_plugin_options_,
+      additional_labels,
+      /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{});
   if (OpenTelemetryPluginState().server.call.duration != nullptr) {
     OpenTelemetryPluginState().server.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,
