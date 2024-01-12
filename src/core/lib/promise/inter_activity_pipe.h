@@ -35,7 +35,7 @@ namespace grpc_core {
 
 template <typename T, uint8_t kQueueSize>
 class InterActivityPipe {
- private:
+ public:
   class NextResult {
    public:
     template <typename... Args>
@@ -53,6 +53,7 @@ class InterActivityPipe {
     absl::optional<T> value_;
   };
 
+ private:
   class Center : public RefCounted<Center, NonPolymorphicRefCount> {
    public:
     Poll<bool> Push(T& value) {
