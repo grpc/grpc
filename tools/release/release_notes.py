@@ -92,10 +92,14 @@ def print_commits_wo_pr(commits_wo_pr):
     import subprocess
 
     if commits_wo_pr:
-      print("***WARNING***")
-      print("The following commits are submitted with the CL-first workflow and does not have a PR number available in its commit info!")
-      print("Release manager needs to use the following info to go to the CL and gets the PR info from the Copybara:copybara_presubmit info on the CL and manually verify if the PR has the `release notes: yes` label!")
-      print("\n")
+        print("***WARNING***")
+        print(
+            "The following commits are submitted with the CL-first workflow and does not have a PR number available in its commit info!"
+        )
+        print(
+            "Release manager needs to use the following info to go to the CL and gets the PR info from the Copybara:copybara_presubmit info on the CL and manually verify if the PR has the `release notes: yes` label!"
+        )
+        print("\n")
 
     for commit in commits_wo_pr:
         glg_command = [
@@ -107,9 +111,10 @@ def print_commits_wo_pr(commits_wo_pr):
         output = subprocess.check_output(glg_command).decode("utf-8", "ignore")
         matches = re.search("PiperOrigin-RevId: ([0-9]+)$", output)
         print("Commit: https://github.com/grpc/grpc/commit/%s" % commit)
-        print("CL:     https://critique.corp.google.com/cl/%s" % matches.group(1))
+        print(
+            "CL:     https://critique.corp.google.com/cl/%s" % matches.group(1)
+        )
         print("\n")
-
 
     if commits_wo_pr:
         print("***WARNING***")
