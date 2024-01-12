@@ -29,6 +29,8 @@ X will be v1.17.2. In both cases Y will be origin/v1.17.x.
 from collections import defaultdict
 import json
 import logging
+import re
+import subprocess
 
 import urllib3
 
@@ -88,18 +90,14 @@ API_URL = "https://api.github.com/repos/grpc/grpc/pulls/"
 
 def print_commits_wo_pr(commits_wo_pr):
     """Print commit and CL info for the commits that are submitted with CL-first workflow and warn the release manager to check manually."""
-    import re
-    import subprocess
-
-    if commits_wo_pr:
-        print("***WARNING***")
-        print(
-            "The following commits are submitted with the CL-first workflow and does not have a PR number available in its commit info!"
-        )
-        print(
-            "Release manager needs to use the following info to go to the CL and gets the PR info from the Copybara:copybara_presubmit info on the CL and manually verify if the PR has the `release notes: yes` label!"
-        )
-        print("\n")
+    print("***WARNING***")
+    print(
+        "The following commits are submitted with the CL-first workflow and does not have a PR number available in its commit info!"
+    )
+    print(
+        "Release manager needs to use the following info to go to the CL and gets the PR info from the Copybara:copybara_presubmit info on the CL and manually verify if the PR has the `release notes: yes` label!"
+    )
+    print("\n")
 
     for commit in commits_wo_pr:
         glg_command = [
@@ -116,8 +114,7 @@ def print_commits_wo_pr(commits_wo_pr):
         )
         print("\n")
 
-    if commits_wo_pr:
-        print("***WARNING***")
+    print("***WARNING***")
 
 
 def get_commit_log(prevRelLabel, relBranch):
@@ -238,7 +235,8 @@ def get_pr_titles(gitLogs):
     # Warn the release manager to manually check the commits that do not have PR
     # info in its commit message.
     commits_wo_pr = all_commits_set - merge_commits_set - sq_commits_set
-    print_commits_wo_pr(commits_wo_pr)
+    if commits_wo_pr:
+        print_commits_wo_pr(commits_wo_pr)
 
     return langs_pr, error_count
 
