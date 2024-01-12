@@ -164,8 +164,8 @@ class TestClient {
     call->context.set_deadline(deadline);
     call->result.saved_request_id = saved_request_id;
     call->result.rpc_type = ClientConfigureRequest::UNARY_CALL;
-    call->simple_response_reader = stub_->PrepareAsyncUnaryCall(
-        &call->context, request, &cq_);
+    call->simple_response_reader =
+        stub_->PrepareAsyncUnaryCall(&call->context, request, &cq_);
     call->simple_response_reader->StartCall();
     call->simple_response_reader->Finish(&call->result.simple_response,
                                          &call->result.status, call);
