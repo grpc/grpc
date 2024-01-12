@@ -269,13 +269,14 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
   X509_NAME* subject_name = X509_get_subject_name(cert);
   int utf8_returned_size = 0;
   if (subject_name == nullptr) {
-    gpr_log(GPR_INFO, "Could not get subject name from certificate.");
+    gpr_log(GPR_DEBUG, "Could not get subject name from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_index =
       X509_NAME_get_index_by_NID(subject_name, NID_commonName, -1);
   if (common_name_index == -1) {
-    gpr_log(GPR_INFO, "Could not get common name of subject from certificate.");
+    gpr_log(GPR_DEBUG,
+            "Could not get common name of subject from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_entry = X509_NAME_get_entry(subject_name, common_name_index);
@@ -2074,6 +2075,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
+#if OPENSSL_VERSION_NUMBER >= 0x10101000
+  SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
+#endif
   if (ssl_context == nullptr) {
     grpc_core::LogSslErrorStack();
     gpr_log(GPR_ERROR, "Could not create ssl context.");
@@ -2288,6 +2292,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
 #else
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
+#endif
+#if OPENSSL_VERSION_NUMBER >= 0x10101000
+      SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_RENEGOTIATION);
 #endif
       if (impl->ssl_contexts[i] == nullptr) {
         grpc_core::LogSslErrorStack();

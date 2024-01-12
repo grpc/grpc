@@ -39,6 +39,12 @@ namespace grpc_core {
 
 TraceFlag grpc_authz_trace(false, "grpc_authz_api");
 
+const NoInterceptor GrpcServerAuthzFilter::Call::OnServerInitialMetadata;
+const NoInterceptor GrpcServerAuthzFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor GrpcServerAuthzFilter::Call::OnClientToServerMessage;
+const NoInterceptor GrpcServerAuthzFilter::Call::OnServerToClientMessage;
+const NoInterceptor GrpcServerAuthzFilter::Call::OnFinalize;
+
 GrpcServerAuthzFilter::GrpcServerAuthzFilter(
     RefCountedPtr<grpc_auth_context> auth_context, grpc_endpoint* endpoint,
     RefCountedPtr<grpc_authorization_policy_provider> provider)
@@ -61,9 +67,8 @@ absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
       /*endpoint=*/nullptr, provider->Ref());
 }
 
-bool GrpcServerAuthzFilter::IsAuthorized(
-    const ClientMetadataHandle& initial_metadata) {
-  EvaluateArgs args(initial_metadata.get(), &per_channel_evaluate_args_);
+bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
+  EvaluateArgs args(&initial_metadata, &per_channel_evaluate_args_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
     gpr_log(GPR_DEBUG,
             "checking request: url_path=%s, transport_security_type=%s, "
@@ -105,17 +110,15 @@ bool GrpcServerAuthzFilter::IsAuthorized(
   return false;
 }
 
-ArenaPromise<ServerMetadataHandle> GrpcServerAuthzFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  if (!IsAuthorized(call_args.client_initial_metadata)) {
-    return ArenaPromise<ServerMetadataHandle>(
-        Immediate(ServerMetadataFromStatus(absl::PermissionDeniedError(
-            "Unauthorized RPC request rejected."))));
+absl::Status GrpcServerAuthzFilter::Call::OnClientInitialMetadata(
+    ClientMetadata& md, GrpcServerAuthzFilter* filter) {
+  if (!filter->IsAuthorized(md)) {
+    return absl::PermissionDeniedError("Unauthorized RPC request rejected.");
   }
-  return next_promise_factory(std::move(call_args));
+  return absl::OkStatus();
 }
 
-const grpc_channel_filter GrpcServerAuthzFilter::kFilterVtable =
+const grpc_channel_filter GrpcServerAuthzFilter::kFilter =
     MakePromiseBasedFilter<GrpcServerAuthzFilter, FilterEndpoint::kServer>(
         "grpc-server-authz");
 

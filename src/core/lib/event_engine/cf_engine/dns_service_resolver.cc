@@ -50,7 +50,14 @@ void DNSServiceResolverImpl::LookupHostname(
     });
     return;
   }
-  GPR_ASSERT(!host.empty());
+  if (host.empty()) {
+    engine_->Run([on_resolve = std::move(on_resolve),
+                  status = absl::InvalidArgumentError(absl::StrCat(
+                      "host must not be empty in name: ", name))]() mutable {
+      on_resolve(status);
+    });
+    return;
+  }
   if (port_string.empty()) {
     if (default_port.empty()) {
       engine_->Run([on_resolve = std::move(on_resolve),

@@ -99,7 +99,10 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
             {"routeLookupConfig", std::move(*json)},
             {"childPolicy",
              Json::FromArray({
-                 Json::FromObject({{"cds_experimental", Json::FromObject({})}}),
+                 Json::FromObject({{"cds_experimental",
+                                    Json::FromObject({
+                                        {"isDynamic", Json::FromBool(true)},
+                                    })}}),
              })},
             {"childPolicyConfigTargetFieldName", Json::FromString("cluster")},
         })}})});

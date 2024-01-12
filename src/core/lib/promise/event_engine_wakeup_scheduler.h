@@ -33,7 +33,9 @@ class EventEngineWakeupScheduler {
   explicit EventEngineWakeupScheduler(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine)
-      : event_engine_(std::move(event_engine)) {}
+      : event_engine_(std::move(event_engine)) {
+    GPR_ASSERT(event_engine_ != nullptr);
+  }
 
   template <typename ActivityType>
   class BoundScheduler

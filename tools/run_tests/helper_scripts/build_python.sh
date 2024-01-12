@@ -123,23 +123,20 @@ if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
   # Instantiate the virtualenv from the Python version passed in.
-  $PYTHON -m pip install --user virtualenv==20.0.23
-  $PYTHON -m virtualenv "$VENV"
+  $PYTHON -m pip install --user virtualenv==20.25.0
+  # Skip wheel and setuptools and manually install later. Otherwise we might
+  # not find cython module while building grpcio.
+  $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
   VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
-
-# On library/version/platforms combo that do not have a binary
-# published, we may end up building a dependency from source. In that
-# case, several of our build environment variables may disrupt the
-# third-party build process. This function pipes through only the
-# minimal environment necessary.
 pip_install() {
-  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
+  $VENV_PYTHON -m pip install "$@"
 }
 
-pip_install --upgrade setuptools==61.0.0
 pip_install --upgrade pip
+pip_install --upgrade wheel
+pip_install --upgrade setuptools==66.1.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.

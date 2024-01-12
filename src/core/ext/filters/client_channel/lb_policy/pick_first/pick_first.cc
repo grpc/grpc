@@ -224,7 +224,9 @@ class PickFirst : public LoadBalancingPolicy {
    private:
     // Returns true if all subchannels have seen their initial
     // connectivity state notifications.
-    bool AllSubchannelsSeenInitialState();
+    bool AllSubchannelsSeenInitialState() const {
+      return num_subchannels_seen_initial_notification_ == size();
+    }
 
     // Looks through subchannels_ starting from attempting_index_ to
     // find the first one not currently in TRANSIENT_FAILURE, then
@@ -254,6 +256,8 @@ class PickFirst : public LoadBalancingPolicy {
 
     // TODO(roth): Remove this when we remove the Happy Eyeballs experiment.
     bool in_transient_failure_ = false;
+
+    size_t num_subchannels_seen_initial_notification_ = 0;
 
     // The index into subchannels_ to which we are currently attempting
     // to connect during the initial Happy Eyeballs pass.  Once the
@@ -418,7 +422,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
             latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<SubchannelList>(
-      Ref(), addresses, latest_update_args_.args);
+      RefAsSubclass<PickFirst>(), addresses, latest_update_args_.args);
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE and request re-resolution.
   if (latest_pending_subchannel_list_->size() == 0) {
@@ -754,6 +758,11 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     seen_transient_failure_ = true;
     subchannel_list_->last_failure_ = connectivity_status_;
   }
+  // If this is the initial connectivity state update for this subchannel,
+  // increment the counter in the subchannel list.
+  if (!old_state.has_value()) {
+    ++subchannel_list_->num_subchannels_seen_initial_notification_;
+  }
   // If we haven't yet seen the initial connectivity state notification
   // for all subchannels, do nothing.
   if (!subchannel_list_->AllSubchannelsSeenInitialState()) return;
@@ -1030,7 +1039,7 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
       gpr_log(GPR_INFO, "[PF %p] starting health watch", p);
     }
     auto watcher = std::make_unique<HealthWatcher>(
-        p->Ref(DEBUG_LOCATION, "HealthWatcher"));
+        p->RefAsSubclass<PickFirst>(DEBUG_LOCATION, "HealthWatcher"));
     p->health_watcher_ = watcher.get();
     auto health_data_watcher = MakeHealthCheckWatcher(
         p->work_serializer(), subchannel_list_->args_, std::move(watcher));
@@ -1120,13 +1129,6 @@ void PickFirst::SubchannelList::ResetBackoffLocked() {
   for (auto& sd : subchannels_) {
     sd.ResetBackoffLocked();
   }
-}
-
-bool PickFirst::SubchannelList::AllSubchannelsSeenInitialState() {
-  for (auto& sd : subchannels_) {
-    if (!sd.connectivity_state().has_value()) return false;
-  }
-  return true;
 }
 
 void PickFirst::SubchannelList::StartConnectingNextSubchannel() {

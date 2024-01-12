@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from concurrent import futures
-import json
 import logging
 import os
-import random
 import sys
-from typing import Any, Dict, List
+from typing import List
 import unittest
 
 import grpc
@@ -26,41 +23,11 @@ import grpc_observability
 from grpc_observability import _cyobservability
 from grpc_observability import _observability
 
+from tests.observability import _test_server
+
 logger = logging.getLogger(__name__)
 
-_REQUEST = b"\x00\x00\x00"
-_RESPONSE = b"\x00\x00\x00"
-
-_UNARY_UNARY = "/test/UnaryUnary"
-_UNARY_STREAM = "/test/UnaryStream"
-_STREAM_UNARY = "/test/StreamUnary"
-_STREAM_STREAM = "/test/StreamStream"
 STREAM_LENGTH = 5
-TRIGGER_RPC_METADATA = ("control", "trigger_rpc")
-TRIGGER_RPC_TO_NEW_SERVER_METADATA = ("to_new_server", "")
-
-CONFIG_ENV_VAR_NAME = "GRPC_GCP_OBSERVABILITY_CONFIG"
-CONFIG_FILE_ENV_VAR_NAME = "GRPC_GCP_OBSERVABILITY_CONFIG_FILE"
-
-_VALID_CONFIG_TRACING_STATS = {
-    "project_id": "test-project",
-    "cloud_trace": {"sampling_rate": 1.00},
-    "cloud_monitoring": {},
-}
-_VALID_CONFIG_TRACING_ONLY = {
-    "project_id": "test-project",
-    "cloud_trace": {"sampling_rate": 1.00},
-}
-_VALID_CONFIG_STATS_ONLY = {
-    "project_id": "test-project",
-    "cloud_monitoring": {},
-}
-_VALID_CONFIG_STATS_ONLY_STR = """
-{
-    'project_id': 'test-project',
-    'cloud_monitoring': {}
-}
-"""
 
 
 class TestExporter(_observability.Exporter):
@@ -84,69 +51,17 @@ class TestExporter(_observability.Exporter):
         self.span_collecter.extend(tracing_data)
 
 
-def handle_unary_unary(request, servicer_context):
-    if TRIGGER_RPC_METADATA in servicer_context.invocation_metadata():
-        for k, v in servicer_context.invocation_metadata():
-            if "port" in k:
-                unary_unary_call(port=int(v))
-            if "to_new_server" in k:
-                second_server = grpc.server(
-                    futures.ThreadPoolExecutor(max_workers=10)
-                )
-                second_server.add_generic_rpc_handlers((_GenericHandler(),))
-                second_server_port = second_server.add_insecure_port("[::]:0")
-                second_server.start()
-                unary_unary_call(port=second_server_port)
-                second_server.stop(0)
-    return _RESPONSE
+class _ClientUnaryUnaryInterceptor(grpc.UnaryUnaryClientInterceptor):
+    def intercept_unary_unary(
+        self, continuation, client_call_details, request_or_iterator
+    ):
+        response = continuation(client_call_details, request_or_iterator)
+        return response
 
 
-def handle_unary_stream(request, servicer_context):
-    for _ in range(STREAM_LENGTH):
-        yield _RESPONSE
-
-
-def handle_stream_unary(request_iterator, servicer_context):
-    return _RESPONSE
-
-
-def handle_stream_stream(request_iterator, servicer_context):
-    for request in request_iterator:
-        yield _RESPONSE
-
-
-class _MethodHandler(grpc.RpcMethodHandler):
-    def __init__(self, request_streaming, response_streaming):
-        self.request_streaming = request_streaming
-        self.response_streaming = response_streaming
-        self.request_deserializer = None
-        self.response_serializer = None
-        self.unary_unary = None
-        self.unary_stream = None
-        self.stream_unary = None
-        self.stream_stream = None
-        if self.request_streaming and self.response_streaming:
-            self.stream_stream = handle_stream_stream
-        elif self.request_streaming:
-            self.stream_unary = handle_stream_unary
-        elif self.response_streaming:
-            self.unary_stream = handle_unary_stream
-        else:
-            self.unary_unary = handle_unary_unary
-
-
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return _MethodHandler(False, False)
-        elif handler_call_details.method == _UNARY_STREAM:
-            return _MethodHandler(False, True)
-        elif handler_call_details.method == _STREAM_UNARY:
-            return _MethodHandler(True, False)
-        elif handler_call_details.method == _STREAM_STREAM:
-            return _MethodHandler(True, True)
-        else:
-            return None
+class _ServerInterceptor(grpc.ServerInterceptor):
+    def intercept_service(self, continuation, handler_call_details):
+        return continuation(handler_call_details)
 
 
 @unittest.skipIf(
@@ -162,172 +77,117 @@ class ObservabilityTest(unittest.TestCase):
         self._port = None
 
     def tearDown(self):
-        os.environ[CONFIG_ENV_VAR_NAME] = ""
-        os.environ[CONFIG_FILE_ENV_VAR_NAME] = ""
         if self._server:
             self._server.stop(0)
 
     def testRecordUnaryUnary(self):
-        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
-        with grpc_observability.GCPOpenCensusObservability(
+        with grpc_observability.OpenTelemetryObservability(
             exporter=self.test_exporter
         ):
-            self._start_server()
-            unary_unary_call(port=self._port)
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
 
         self.assertGreater(len(self.all_metric), 0)
         self._validate_metrics(self.all_metric)
 
-    def testThrowErrorWithoutConfig(self):
-        with self.assertRaises(ValueError):
-            with grpc_observability.GCPOpenCensusObservability(
-                exporter=self.test_exporter
-            ):
-                pass
-
-    def testThrowErrorWithInvalidConfig(self):
-        _INVALID_CONFIG = "INVALID"
-        self._set_config_file(_INVALID_CONFIG)
-        with self.assertRaises(ValueError):
-            with grpc_observability.GCPOpenCensusObservability(
-                exporter=self.test_exporter
-            ):
-                pass
-
-    def testNoErrorAndDataWithEmptyConfig(self):
-        _EMPTY_CONFIG = {}
-        self._set_config_file(_EMPTY_CONFIG)
-        # Empty config still require project_id
-        os.environ["GCP_PROJECT"] = "test-project"
-        with grpc_observability.GCPOpenCensusObservability(
+    def testRecordUnaryUnaryWithClientInterceptor(self):
+        interceptor = _ClientUnaryUnaryInterceptor()
+        with grpc_observability.OpenTelemetryObservability(
             exporter=self.test_exporter
         ):
-            self._start_server()
-            unary_unary_call(port=self._port)
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.intercepted_unary_unary_call(
+                port=port, interceptors=interceptor
+            )
 
-        self.assertEqual(len(self.all_metric), 0)
+        self.assertGreater(len(self.all_metric), 0)
+        self._validate_metrics(self.all_metric)
+
+    def testRecordUnaryUnaryWithServerInterceptor(self):
+        interceptor = _ServerInterceptor()
+        with grpc_observability.OpenTelemetryObservability(
+            exporter=self.test_exporter
+        ):
+            server, port = _test_server.start_server(interceptors=[interceptor])
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+
+        self.assertGreater(len(self.all_metric), 0)
+        self._validate_metrics(self.all_metric)
 
     def testThrowErrorWhenCallingMultipleInit(self):
-        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
         with self.assertRaises(ValueError):
-            with grpc_observability.GCPOpenCensusObservability(
+            with grpc_observability.OpenTelemetryObservability(
                 exporter=self.test_exporter
             ) as o11y:
                 grpc._observability.observability_init(o11y)
 
-    def testRecordUnaryUnaryStatsOnly(self):
-        self._set_config_file(_VALID_CONFIG_STATS_ONLY)
-        with grpc_observability.GCPOpenCensusObservability(
-            exporter=self.test_exporter
-        ):
-            self._start_server()
-            unary_unary_call(port=self._port)
-
-        self.assertGreater(len(self.all_metric), 0)
-        self._validate_metrics(self.all_metric)
-
-    def testRecordUnaryUnaryTracingOnly(self):
-        self._set_config_file(_VALID_CONFIG_TRACING_ONLY)
-        with grpc_observability.GCPOpenCensusObservability(
-            exporter=self.test_exporter
-        ):
-            self._start_server()
-            unary_unary_call(port=self._port)
-
-        self.assertEqual(len(self.all_metric), 0)
-
     def testRecordUnaryStream(self):
-        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
-        with grpc_observability.GCPOpenCensusObservability(
+        with grpc_observability.OpenTelemetryObservability(
             exporter=self.test_exporter
         ):
-            self._start_server()
-            unary_stream_call(port=self._port)
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_stream_call(port=port)
 
         self.assertGreater(len(self.all_metric), 0)
         self._validate_metrics(self.all_metric)
 
     def testRecordStreamUnary(self):
-        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
-        with grpc_observability.GCPOpenCensusObservability(
+        with grpc_observability.OpenTelemetryObservability(
             exporter=self.test_exporter
         ):
-            self._start_server()
-            stream_unary_call(port=self._port)
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.stream_unary_call(port=port)
 
         self.assertTrue(len(self.all_metric) > 0)
-        self.assertTrue(len(self.all_span) > 0)
         self._validate_metrics(self.all_metric)
 
     def testRecordStreamStream(self):
-        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
-        with grpc_observability.GCPOpenCensusObservability(
+        with grpc_observability.OpenTelemetryObservability(
             exporter=self.test_exporter
         ):
-            self._start_server()
-            stream_stream_call(port=self._port)
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.stream_stream_call(port=port)
 
         self.assertGreater(len(self.all_metric), 0)
         self._validate_metrics(self.all_metric)
 
     def testNoRecordBeforeInit(self):
-        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
-        self._start_server()
-        unary_unary_call(port=self._port)
+        server, port = _test_server.start_server()
+        _test_server.unary_unary_call(port=port)
         self.assertEqual(len(self.all_metric), 0)
-        self._server.stop(0)
+        server.stop(0)
 
-        with grpc_observability.GCPOpenCensusObservability(
+        with grpc_observability.OpenTelemetryObservability(
             exporter=self.test_exporter
         ):
-            self._start_server()
-            unary_unary_call(port=self._port)
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
 
         self.assertGreater(len(self.all_metric), 0)
         self._validate_metrics(self.all_metric)
 
     def testNoRecordAfterExit(self):
-        self._set_config_file(_VALID_CONFIG_TRACING_STATS)
-        with grpc_observability.GCPOpenCensusObservability(
+        with grpc_observability.OpenTelemetryObservability(
             exporter=self.test_exporter
         ):
-            self._start_server()
-            unary_unary_call(port=self._port)
+            server, port = _test_server.start_server()
+            self._server = server
+            self._port = port
+            _test_server.unary_unary_call(port=port)
 
         self.assertGreater(len(self.all_metric), 0)
         current_metric_len = len(self.all_metric)
         self._validate_metrics(self.all_metric)
 
-        unary_unary_call(port=self._port)
+        _test_server.unary_unary_call(port=self._port)
         self.assertEqual(len(self.all_metric), current_metric_len)
-
-    def testConfigFileOverEnvVar(self):
-        # env var have only stats enabled
-        os.environ[CONFIG_ENV_VAR_NAME] = _VALID_CONFIG_STATS_ONLY_STR
-        # config_file have only tracing enabled
-        self._set_config_file(_VALID_CONFIG_TRACING_ONLY)
-
-        with grpc_observability.GCPOpenCensusObservability(
-            exporter=self.test_exporter
-        ):
-            self._start_server()
-            unary_unary_call(port=self._port)
-
-        self.assertEqual(len(self.all_metric), 0)
-
-    def _set_config_file(self, config: Dict[str, Any]) -> None:
-        # Using random name here so multiple tests can run with different config files.
-        config_file_path = "/tmp/" + str(random.randint(0, 100000))
-        with open(config_file_path, "w", encoding="utf-8") as f:
-            f.write(json.dumps(config))
-        os.environ[CONFIG_FILE_ENV_VAR_NAME] = config_file_path
-
-    def _start_server(self) -> None:
-        self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        self._server.add_generic_rpc_handlers((_GenericHandler(),))
-        self._port = self._server.add_insecure_port("[::]:0")
-        self._server.start()
-        return self._port
 
     def _validate_metrics(
         self, metrics: List[_observability.StatsData]
@@ -341,41 +201,6 @@ class ObservabilityTest(unittest.TestCase):
                     metric_names,
                 )
             self.assertTrue(name in metric_names)
-
-
-def unary_unary_call(port, metadata=None):
-    with grpc.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.unary_unary(_UNARY_UNARY)
-        if metadata:
-            unused_response, call = multi_callable.with_call(
-                _REQUEST, metadata=metadata
-            )
-        else:
-            unused_response, call = multi_callable.with_call(_REQUEST)
-
-
-def unary_stream_call(port):
-    with grpc.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.unary_stream(_UNARY_STREAM)
-        call = multi_callable(_REQUEST)
-        for _ in call:
-            pass
-
-
-def stream_unary_call(port):
-    with grpc.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.stream_unary(_STREAM_UNARY)
-        unused_response, call = multi_callable.with_call(
-            iter([_REQUEST] * STREAM_LENGTH)
-        )
-
-
-def stream_stream_call(port):
-    with grpc.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.stream_stream(_STREAM_STREAM)
-        call = multi_callable(iter([_REQUEST] * STREAM_LENGTH))
-        for _ in call:
-            pass
 
 
 if __name__ == "__main__":
