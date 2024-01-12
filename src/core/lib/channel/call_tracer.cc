@@ -57,7 +57,6 @@ ServerCallTracerFactory* ServerCallTracerFactory::Get(
 }
 
 void ServerCallTracerFactory::RegisterGlobal(ServerCallTracerFactory* factory) {
-  GPR_DEBUG_ASSERT(g_server_call_tracer_factory_ == nullptr);
   g_server_call_tracer_factory_ = factory;
 }
 
