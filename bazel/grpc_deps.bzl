@@ -21,11 +21,6 @@ def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
 
     native.bind(
-        name = "upb_lib",
-        actual = "@com_google_protobuf//upb",
-    )
-
-    native.bind(
         name = "upb_amalgamation_lib",
         actual = "@com_google_protobuf//upb:amalgamation",
     )
@@ -36,8 +31,8 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "upb_collections_lib",
-        actual = "@com_google_protobuf//upb/collections",
+        name = "upb_message_lib",
+        actual = "@com_google_protobuf//upb:message",
     )
 
     native.bind(
