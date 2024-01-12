@@ -19,10 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_VERIFIER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_VERIFIER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/time.h"

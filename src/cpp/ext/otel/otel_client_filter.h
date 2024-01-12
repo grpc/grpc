@@ -19,13 +19,13 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_FILTER_H
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_FILTER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
 #include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"

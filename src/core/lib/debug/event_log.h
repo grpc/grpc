@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_DEBUG_EVENT_LOG_H
 #define GRPC_SRC_CORE_LIB_DEBUG_EVENT_LOG_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <atomic>
@@ -26,6 +24,8 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/per_cpu.h"

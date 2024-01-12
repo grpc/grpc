@@ -16,13 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 
 #include <stdint.h>
 
 #include <algorithm>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 

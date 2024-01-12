@@ -16,12 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 
 #include <errno.h>
 #include <inttypes.h>
+
+#include <grpc/support/port_platform.h>
 #ifdef GRPC_HAVE_VSOCK
 #include <linux/vm_sockets.h>
 #endif

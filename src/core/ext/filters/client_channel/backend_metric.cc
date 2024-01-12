@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 
 #include <string.h>
@@ -27,6 +25,8 @@
 #include "upb/collections/map.h"
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

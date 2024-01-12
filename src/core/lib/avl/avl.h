@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_AVL_AVL_H
 #define GRPC_SRC_CORE_LIB_AVL_AVL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdlib.h>
 
 #include <algorithm>  // IWYU pragma: keep
 #include <iterator>
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"

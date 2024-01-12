@@ -15,11 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_CONTEXT_H
 #define GRPC_SRC_CORE_LIB_PROMISE_CONTEXT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

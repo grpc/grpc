@@ -14,14 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/time_util.h"
 
 #include <stdint.h>
 #include <time.h>
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 namespace grpc_core {

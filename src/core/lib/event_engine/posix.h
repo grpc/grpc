@@ -14,8 +14,6 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
@@ -26,6 +24,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_event_engine {
 namespace experimental {

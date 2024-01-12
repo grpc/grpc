@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CRL_PROVIDER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CRL_PROVIDER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -39,6 +37,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc_crl_provider.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/directory_reader.h"
 #include "src/core/lib/gprpp/sync.h"

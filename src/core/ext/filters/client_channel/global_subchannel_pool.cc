@@ -16,11 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
 

@@ -19,12 +19,12 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_PROXY_MAPPER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_PROXY_MAPPER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"

@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OOB_BACKEND_METRIC_INTERNAL_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OOB_BACKEND_METRIC_INTERNAL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <set>
 #include <utility>
@@ -27,6 +25,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"

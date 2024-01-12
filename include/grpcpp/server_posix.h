@@ -19,10 +19,9 @@
 #ifndef GRPCPP_SERVER_POSIX_H
 #define GRPCPP_SERVER_POSIX_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
+#include <grpc/support/port_platform.h>
 #include <grpcpp/server.h>
 
 namespace grpc {

@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_BATCH_BUILDER_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_BATCH_BUILDER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <memory>
@@ -31,6 +29,7 @@
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"

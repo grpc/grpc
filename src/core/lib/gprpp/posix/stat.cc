@@ -14,9 +14,9 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 // IWYU pragma: no_include <bits/struct_stat.h>
 

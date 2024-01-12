@@ -16,13 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/timer_heap.h"
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/port.h"

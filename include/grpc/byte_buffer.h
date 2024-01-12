@@ -19,10 +19,9 @@
 #ifndef GRPC_BYTE_BUFFER_H
 #define GRPC_BYTE_BUFFER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {

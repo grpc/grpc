@@ -18,8 +18,6 @@
 
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <vector>
@@ -28,6 +26,7 @@
 #include "upb/mem/arena.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/lib/gprpp/time.h"

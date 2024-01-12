@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <string>
 
@@ -31,6 +29,7 @@
 #include "absl/time/time.h"
 
 #include <grpc/grpc_audit_logging.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"

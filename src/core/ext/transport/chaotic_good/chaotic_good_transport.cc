@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {}  // namespace grpc_core

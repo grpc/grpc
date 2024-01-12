@@ -19,13 +19,12 @@
 #ifndef GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
 #define GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <openssl/x509.h>
 
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security_constants.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/transport_security_interface.h"

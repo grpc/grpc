@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_IF_H
 #define GRPC_SRC_CORE_LIB_PROMISE_IF_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"

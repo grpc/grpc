@@ -19,14 +19,13 @@
 #ifndef GRPC_SRC_CORE_TSI_SSL_SESSION_CACHE_SSL_SESSION_CACHE_H
 #define GRPC_SRC_CORE_TSI_SSL_SESSION_CACHE_SSL_SESSION_CACHE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 
 #include <openssl/ssl.h>
 
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/cpp_impl_of.h"

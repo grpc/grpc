@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_LEGACY_CALL_DATA_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_FILTER_LEGACY_CALL_DATA_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -29,6 +27,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/retry_filter.h"

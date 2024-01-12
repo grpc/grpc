@@ -19,9 +19,8 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 
 enum cronet_net_error_code {
   //

@@ -19,12 +19,12 @@
 #ifndef GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
 #define GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 

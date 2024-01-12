@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
 #include <cstdint>
@@ -29,6 +27,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_audit_logging.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json_args.h"

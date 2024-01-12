@@ -16,14 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/certificate_provider_store.h"
 
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"

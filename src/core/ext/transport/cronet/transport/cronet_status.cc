@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
+
+#include <grpc/support/port_platform.h>
 
 const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
   switch (net_error) {

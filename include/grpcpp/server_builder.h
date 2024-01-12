@@ -19,8 +19,6 @@
 #ifndef GRPCPP_SERVER_BUILDER_H
 #define GRPCPP_SERVER_BUILDER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <climits>
 #include <map>
 #include <memory>
@@ -28,6 +26,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/support/cpu.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/workaround_list.h>
 #include <grpcpp/impl/channel_argument_option.h>
 #include <grpcpp/impl/server_builder_option.h>

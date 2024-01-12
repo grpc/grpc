@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/json/json_object_loader.h"
 
 #include <utility>
@@ -23,6 +21,7 @@
 #include "absl/strings/strip.h"
 
 #include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 namespace json_detail {

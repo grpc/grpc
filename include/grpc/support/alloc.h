@@ -19,9 +19,9 @@
 #ifndef GRPC_SUPPORT_ALLOC_H
 #define GRPC_SUPPORT_ALLOC_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
+
+#include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {

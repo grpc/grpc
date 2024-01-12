@@ -19,13 +19,13 @@
 #ifndef GRPC_SRC_CORE_LIB_DEBUG_TRACE_H
 #define GRPC_SRC_CORE_LIB_DEBUG_TRACE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <map>
 #include <string>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 void grpc_tracer_init();
 void grpc_tracer_shutdown(void);

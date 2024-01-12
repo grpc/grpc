@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 
 #include <inttypes.h>
@@ -31,6 +29,7 @@
 #include "absl/time/time.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/debug/trace.h"

@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_PIPE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_PIPE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <array>
@@ -24,6 +22,8 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

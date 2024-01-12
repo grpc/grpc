@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_THROTTLE_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_THROTTLE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <map>
@@ -29,6 +27,7 @@
 #include "absl/base/thread_annotations.h"
 
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_DEBUG_STATS_H
 #define GRPC_SRC_CORE_LIB_DEBUG_STATS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <string>
@@ -28,6 +26,8 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/histogram_view.h"
 #include "src/core/lib/debug/stats_data.h"

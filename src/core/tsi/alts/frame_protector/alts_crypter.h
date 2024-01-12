@@ -19,12 +19,11 @@
 #ifndef GRPC_SRC_CORE_TSI_ALTS_FRAME_PROTECTOR_ALTS_CRYPTER_H
 #define GRPC_SRC_CORE_TSI_ALTS_FRAME_PROTECTOR_ALTS_CRYPTER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdbool.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/alts/crypt/gsec.h"
 

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <string.h>
 
@@ -26,6 +24,7 @@
 #include <grpc/compression.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/trace.h"

@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_TSI_SSL_KEY_LOGGING_SSL_KEY_LOGGING_H
 #define GRPC_SRC_CORE_TSI_SSL_KEY_LOGGING_SSL_KEY_LOGGING_H
 
-#include <grpc/support/port_platform.h>
-
 #include <iostream>
 #include <map>
 
@@ -26,6 +24,7 @@
 
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/memory.h"

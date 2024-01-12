@@ -15,11 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FINAL_INFO_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FINAL_INFO_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 struct grpc_transport_one_way_stats {

@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/transport_security_grpc.h"
+
+#include <grpc/support/port_platform.h>
 
 // This method creates a tsi_zero_copy_grpc_protector object.
 tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(

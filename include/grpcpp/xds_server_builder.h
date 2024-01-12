@@ -20,7 +20,6 @@
 #define GRPCPP_XDS_SERVER_BUILDER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpcpp/server_builder.h>
 
 namespace grpc {

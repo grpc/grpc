@@ -16,14 +16,14 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/handshaker_registry.h"
 
 #include <stddef.h>
 
 #include <algorithm>
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

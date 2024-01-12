@@ -15,11 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/status/status.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/for_each.h"

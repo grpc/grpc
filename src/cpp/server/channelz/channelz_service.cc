@@ -16,13 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/server/channelz/channelz_service.h"
 
 #include <memory>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 // IWYU pragma: no_include "google/protobuf/json/json.h"

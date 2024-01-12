@@ -17,11 +17,11 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKEND_METRIC_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKEND_METRIC_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 

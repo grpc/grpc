@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <utility>
@@ -26,6 +24,8 @@
 #include "absl/strings/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/gprpp/validation_errors.h"

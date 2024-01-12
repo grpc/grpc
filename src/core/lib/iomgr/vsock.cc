@@ -15,9 +15,9 @@
 // limitations under the License.
 //
 //
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/vsock.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifdef GRPC_HAVE_VSOCK
 

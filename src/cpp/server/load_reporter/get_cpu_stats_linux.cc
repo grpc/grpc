@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 #ifdef GPR_LINUX
 
