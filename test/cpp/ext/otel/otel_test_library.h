@@ -63,14 +63,22 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
           opentelemetry::sdk::resource::Resource::Create({}),
       std::unique_ptr<grpc::internal::LabelsInjector> labels_injector = nullptr,
       bool test_no_meter_provider = false,
+      const std::map<std::string, std::string>& labels_to_inject = {},
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_selector = absl::AnyInvocable<bool(absl::string_view) const>(),
+      absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*channel_args*/)
+                             const>
+          server_selector = absl::AnyInvocable<
+              bool(const grpc_core::ChannelArgs& /*channel_args*/) const>(),
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attribute_filter =
               absl::AnyInvocable<bool(absl::string_view) const>(),
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter = absl::AnyInvocable<
-              bool(absl::string_view /*generic_method*/) const>());
+              bool(absl::string_view /*generic_method*/) const>(),
+      std::vector<
+          std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
+          plugin_options = {});
 
   void TearDown() override;
 
@@ -91,6 +99,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
 
   const absl::string_view kMethodName = "grpc.testing.EchoTestService/Echo";
   const absl::string_view kGenericMethodName = "foo/bar";
+  std::map<std::string, std::string> labels_to_inject_;
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader_;
   std::string server_address_;
   std::string canonical_server_address_;

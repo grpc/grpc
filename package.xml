@@ -576,6 +576,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.h" role="src" />
@@ -973,6 +976,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c" role="src" />
@@ -1274,8 +1279,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/internal_errqueue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/lockfree_event.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/lockfree_event.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/native_dns_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/native_dns_resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine.cc" role="src" />
@@ -1331,6 +1336,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/grpc_polled_fd_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/iocp.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/iocp.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/native_windows_dns_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/native_windows_dns_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/win_socket.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/win_socket.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_endpoint.cc" role="src" />
@@ -1866,6 +1873,8 @@
     <file baseinstalldir="/" name="src/core/lib/transport/batch_builder.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/custom_metadata.h" role="src" />
@@ -2915,8 +2924,6 @@
     <file baseinstalldir="/" name="third_party/upb/upb/base/status.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/status.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/string_view.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/collections/array.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/collections/map.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/generated_code_support.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/common.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/common.h" role="src" />
@@ -3047,7 +3054,6 @@
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/service_def.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text/encode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/upb.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode_fast.c" role="src" />

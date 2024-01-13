@@ -56,7 +56,12 @@ namespace {
 
 class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
  public:
-  OpenTelemetryServerCallTracer() : start_time_(absl::Now()) {}
+  explicit OpenTelemetryServerCallTracer(const grpc_core::ChannelArgs& args)
+      : start_time_(absl::Now()),
+        active_plugin_options_view_(
+            ActivePluginOptionsView::MakeForServer(args)),
+        injected_labels_from_plugin_options_(
+            OpenTelemetryPluginState().plugin_options.size()) {}
 
   std::string TraceId() override {
     // Not implemented
@@ -81,6 +86,17 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
       OpenTelemetryPluginState().labels_injector->AddLabels(
           send_initial_metadata, injected_labels_.get());
     }
+    active_plugin_options_view_.ForEach(
+        [&](const InternalOpenTelemetryPluginOption& plugin_option,
+            size_t index) {
+          auto* labels_injector = plugin_option.labels_injector();
+          if (labels_injector != nullptr) {
+            labels_injector->AddLabels(
+                send_initial_metadata,
+                injected_labels_from_plugin_options_[index].get());
+          }
+          return true;
+        });
   }
 
   void RecordSendTrailingMetadata(
@@ -148,6 +164,11 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   grpc_core::Slice path_;
   std::unique_ptr<LabelsIterable> injected_labels_;
   bool registered_method_;
+  ActivePluginOptionsView active_plugin_options_view_;
+  // TODO(yashykt): It's wasteful to do this per call. When we re-haul the stats
+  // infrastructure, this should move to be done per server.
+  std::vector<std::unique_ptr<LabelsIterable>>
+      injected_labels_from_plugin_options_;
 };
 
 void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
@@ -158,6 +179,16 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     injected_labels_ = OpenTelemetryPluginState().labels_injector->GetLabels(
         recv_initial_metadata);
   }
+  active_plugin_options_view_.ForEach(
+      [&](const InternalOpenTelemetryPluginOption& plugin_option,
+          size_t index) {
+        auto* labels_injector = plugin_option.labels_injector();
+        if (labels_injector != nullptr) {
+          injected_labels_from_plugin_options_[index] =
+              labels_injector->GetLabels(recv_initial_metadata);
+        }
+        return true;
+      });
   registered_method_ =
       recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
           .value_or(nullptr) != nullptr;
@@ -167,8 +198,9 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
     OpenTelemetryPluginState().server.call.started->Add(
-        1, KeyValueIterable(/*injected_labels_iterable=*/nullptr,
-                            additional_labels));
+        1, KeyValueIterable(/*injected_labels_iterable=*/nullptr, {},
+                            additional_labels,
+                            /*active_plugin_options_view=*/nullptr, {}));
   }
 }
 
@@ -186,7 +218,11 @@ void OpenTelemetryServerCallTracer::RecordEnd(
           {{OpenTelemetryMethodKey(), MethodForStats()},
            {OpenTelemetryStatusKey(),
             grpc_status_code_to_string(final_info->final_status)}}};
-  KeyValueIterable labels(injected_labels_.get(), additional_labels);
+  // Currently we do not have any optional labels on the server side.
+  KeyValueIterable labels(
+      injected_labels_.get(), injected_labels_from_plugin_options_,
+      additional_labels,
+      /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{});
   if (OpenTelemetryPluginState().server.call.duration != nullptr) {
     OpenTelemetryPluginState().server.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,
@@ -216,8 +252,8 @@ void OpenTelemetryServerCallTracer::RecordEnd(
 
 grpc_core::ServerCallTracer*
 OpenTelemetryServerCallTracerFactory::CreateNewServerCallTracer(
-    grpc_core::Arena* arena) {
-  return arena->ManagedNew<OpenTelemetryServerCallTracer>();
+    grpc_core::Arena* arena, const grpc_core::ChannelArgs& args) {
+  return arena->ManagedNew<OpenTelemetryServerCallTracer>(args);
 }
 
 bool OpenTelemetryServerCallTracerFactory::IsServerTraced(

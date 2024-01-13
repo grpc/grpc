@@ -97,6 +97,11 @@ class FakeCallTracer : public ClientCallTracer {
     void RecordAnnotation(absl::string_view /*annotation*/) override {}
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
 
+    void AddOptionalLabels(
+        OptionalLabelComponent /*component*/,
+        std::shared_ptr<std::map<std::string, std::string>> /*labels*/)
+        override {}
+
     static grpc_transport_stream_stats transport_stream_stats() {
       MutexLock lock(g_mu);
       return transport_stream_stats_;
@@ -200,7 +205,8 @@ grpc_transport_stream_stats FakeServerCallTracer::transport_stream_stats_;
 
 class FakeServerCallTracerFactory : public ServerCallTracerFactory {
  public:
-  ServerCallTracer* CreateNewServerCallTracer(Arena* arena) override {
+  ServerCallTracer* CreateNewServerCallTracer(
+      Arena* arena, const ChannelArgs& /*args*/) override {
     return arena->ManagedNew<FakeServerCallTracer>();
   }
 };
@@ -214,8 +220,8 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   g_client_call_ended_notify = new Notification();
   g_server_call_ended_notify = new Notification();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterFilter(GRPC_CLIENT_CHANNEL,
-                                            &FakeClientFilter::kFilter);
+    builder->channel_init()->RegisterFilter<FakeClientFilter>(
+        GRPC_CLIENT_CHANNEL);
   });
   ServerCallTracerFactory::RegisterGlobal(new FakeServerCallTracerFactory);
 

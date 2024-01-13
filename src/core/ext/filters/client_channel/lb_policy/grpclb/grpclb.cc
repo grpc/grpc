@@ -81,7 +81,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
@@ -1928,8 +1928,7 @@ void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<GrpcLbFactory>());
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                       &ClientLoadReportingFilter::kFilter)
+      ->RegisterFilter<ClientLoadReportingFilter>(GRPC_CLIENT_SUBCHANNEL)
       .IfChannelArg(GRPC_ARG_GRPCLB_ENABLE_LOAD_REPORTING_FILTER, false);
 }
 

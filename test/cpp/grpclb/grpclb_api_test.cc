@@ -19,7 +19,7 @@
 #include <gtest/gtest.h>
 
 #include "google/protobuf/duration.upb.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/grpc.h>
 #include <grpcpp/support/config.h>

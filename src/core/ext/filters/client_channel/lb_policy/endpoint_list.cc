@@ -69,6 +69,9 @@ class EndpointList::Endpoint::Helper
       grpc_connectivity_state state, const absl::Status& status,
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
     auto old_state = std::exchange(endpoint_->connectivity_state_, state);
+    if (!old_state.has_value()) {
+      ++endpoint_->endpoint_list_->num_endpoints_seen_initial_state_;
+    }
     endpoint_->picker_ = std::move(picker);
     endpoint_->OnStateUpdate(old_state, state, status);
   }
@@ -179,13 +182,6 @@ void EndpointList::ResetBackoffLocked() {
   for (const auto& endpoint : endpoints_) {
     endpoint->ResetBackoffLocked();
   }
-}
-
-bool EndpointList::AllEndpointsSeenInitialState() const {
-  for (const auto& endpoint : endpoints_) {
-    if (!endpoint->connectivity_state().has_value()) return false;
-  }
-  return true;
 }
 
 }  // namespace grpc_core

@@ -226,7 +226,7 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
   if (PythonCensusStatsEnabled()) {
     const uint64_t request_size = GetOutgoingDataSize(final_info);
     const uint64_t response_size = GetIncomingDataSize(final_info);
-    double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);
+    double elapsed_time_s = absl::ToDoubleSeconds(elapsed_time_);
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
     context_.Labels().emplace_back(
         kServerStatus,
@@ -235,7 +235,7 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
                        static_cast<double>(response_size), context_.Labels());
     RecordDoubleMetric(kRpcServerReceivedBytesPerRpcMeasureName,
                        static_cast<double>(request_size), context_.Labels());
-    RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_ms,
+    RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_s,
                        context_.Labels());
     RecordIntMetric(kRpcServerCompletedRpcMeasureName, 1, context_.Labels());
     RecordIntMetric(kRpcServerSentMessagesPerRpcMeasureName,
@@ -261,10 +261,11 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
 
 grpc_core::ServerCallTracer*
 PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
-    grpc_core::Arena* arena) {
+    grpc_core::Arena* arena, const grpc_core::ChannelArgs& channel_args) {
   // We don't use arena here to to ensure that memory is allocated and freed in
   // the same DLL in Windows.
   (void)arena;
+  (void)channel_args;
   return new PythonOpenCensusServerCallTracer();
 }
 

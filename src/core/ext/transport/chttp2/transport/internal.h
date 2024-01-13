@@ -204,18 +204,6 @@ struct grpc_chttp2_stream_link {
   grpc_chttp2_stream* next;
   grpc_chttp2_stream* prev;
 };
-// We keep several sets of connection wide parameters
-typedef enum {
-  // The settings our peer has asked for (and we have acked)
-  GRPC_PEER_SETTINGS = 0,
-  // The settings we'd like to have
-  GRPC_LOCAL_SETTINGS,
-  // The settings we've published to our peer
-  GRPC_SENT_SETTINGS,
-  // The settings the peer has acked
-  GRPC_ACKED_SETTINGS,
-  GRPC_NUM_SETTING_SETS
-} grpc_chttp2_setting_set;
 
 typedef enum {
   GRPC_CHTTP2_NO_GOAWAY_SEND,
@@ -361,10 +349,8 @@ struct grpc_chttp2_transport final
 
   grpc_chttp2_sent_goaway_state sent_goaway_state = GRPC_CHTTP2_NO_GOAWAY_SEND;
 
-  /// bitmask of setting indexes to send out
-  grpc_core::BitSet<GRPC_CHTTP2_NUM_SETTINGS> force_send_settings;
   /// settings values
-  uint32_t settings[GRPC_NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
+  grpc_core::Http2SettingsManager settings;
 
   grpc_event_engine::experimental::EventEngine::TaskHandle
       settings_ack_watchdog =
@@ -537,11 +523,6 @@ struct grpc_chttp2_transport final
 
   /// is this a client?
   bool is_client;
-
-  /// are the local settings dirty and need to be sent?
-  bool dirtied_local_settings = true;
-  /// have local settings been sent?
-  bool sent_local_settings = false;
 
   /// If start_bdp_ping_locked has been called
   bool bdp_ping_started = false;

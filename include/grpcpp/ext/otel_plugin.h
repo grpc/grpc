@@ -36,7 +36,10 @@ namespace internal {
 class OpenTelemetryPluginBuilderImpl;
 }  // namespace internal
 
-namespace experimental {
+class OpenTelemetryPluginOption {
+ public:
+  virtual ~OpenTelemetryPluginOption() = default;
+};
 
 /// The most common way to use this API is -
 ///
@@ -76,6 +79,7 @@ class OpenTelemetryPluginBuilder {
           "grpc.server.call.rcvd_total_compressed_message_size";
 
   OpenTelemetryPluginBuilder();
+  ~OpenTelemetryPluginBuilder();
   /// If `SetMeterProvider()` is not called, no metrics are collected.
   OpenTelemetryPluginBuilder& SetMeterProvider(
       std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider);
@@ -95,6 +99,12 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetGenericMethodAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter);
+  /// Add a plugin option to add to the opentelemetry plugin being built. At
+  /// present, this type is an opaque type. Ownership of \a option is
+  /// transferred when `AddPluginOption` is invoked. A maximum of 64 plugin
+  /// options can be added.
+  OpenTelemetryPluginBuilder& AddPluginOption(
+      std::unique_ptr<OpenTelemetryPluginOption> option);
   /// Registers a global plugin that acts on all channels and servers running on
   /// the process.
   void BuildAndRegisterGlobal();
@@ -102,7 +112,15 @@ class OpenTelemetryPluginBuilder {
  private:
   std::unique_ptr<internal::OpenTelemetryPluginBuilderImpl> impl_;
 };
+
+namespace experimental {
+// TODO(yashykt): Delete this after the 1.62 release.
+GRPC_DEPRECATED(
+    "Use grpc::OpenTelemetryPluginBuilder instead. The experimental version "
+    "will be deleted after the 1.62 release.")
+typedef grpc::OpenTelemetryPluginBuilder OpenTelemetryPluginBuilder;
 }  // namespace experimental
+
 }  // namespace grpc
 
 #endif  // GRPCPP_EXT_OTEL_PLUGIN_H

@@ -1000,7 +1000,10 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def unary_unary(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
     ):
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
@@ -1019,7 +1022,10 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def unary_stream(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
     ):
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
@@ -1038,7 +1044,10 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def stream_unary(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
     ):
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
@@ -1057,7 +1066,10 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def stream_stream(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
     ):
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 

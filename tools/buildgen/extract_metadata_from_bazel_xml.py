@@ -895,6 +895,13 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         if not test.startswith("test/cpp/util:channelz_sampler_test")
     ]
 
+    # chaotic good not supported outside bazel
+    tests = [
+        test
+        for test in tests
+        if not test.startswith("test/core/transport/chaotic_good")
+    ]
+
     # we don't need to generate fuzzers outside of bazel
     tests = [test for test in tests if not test.endswith("_fuzzer")]
 
@@ -1067,15 +1074,20 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "address_sorting",
     },
-    "@com_google_protobuf//upb:upb": {
+    "@com_google_protobuf//upb:base": {
         "language": "c",
         "build": "all",
-        "_RENAME": "upb",
+        "_RENAME": "upb_base_lib",
     },
-    "@com_google_protobuf//upb/collections:collections": {
+    "@com_google_protobuf//upb:mem": {
         "language": "c",
         "build": "all",
-        "_RENAME": "upb_collections_lib",
+        "_RENAME": "upb_mem_lib",
+    },
+    "@com_google_protobuf//upb:message": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_message_lib",
     },
     "@com_google_protobuf//upb/json:json": {
         "language": "c",
