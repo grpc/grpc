@@ -289,6 +289,8 @@ let package = Package(
         "src/core/ext/transport/chttp2/transport/decode_huff.h",
         "src/core/ext/transport/chttp2/transport/flow_control.cc",
         "src/core/ext/transport/chttp2/transport/flow_control.h",
+        "src/core/ext/transport/chttp2/transport/frame.cc",
+        "src/core/ext/transport/chttp2/transport/frame.h",
         "src/core/ext/transport/chttp2/transport/frame_data.cc",
         "src/core/ext/transport/chttp2/transport/frame_data.h",
         "src/core/ext/transport/chttp2/transport/frame_goaway.cc",
