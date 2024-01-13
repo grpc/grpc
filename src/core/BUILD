@@ -5086,6 +5086,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "down_cast",
+    hdrs = ["lib/gprpp/down_cast.h"],
+    external_deps = ["absl/base:config"],
+    deps = ["//:gpr"],
+)
+
+grpc_cc_library(
     name = "status_conversion",
     srcs = ["lib/transport/status_conversion.cc"],
     hdrs = ["lib/transport/status_conversion.h"],
