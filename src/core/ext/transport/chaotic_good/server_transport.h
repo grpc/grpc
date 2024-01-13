@@ -115,7 +115,7 @@ class ChaoticGoodServerTransport final : public Transport,
   static auto SendFragment(ServerFragmentFrame frame,
                            MpscSender<ServerFrame> outgoing_frames);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
-  auto OnTransportActivityDone();
+  auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop();
   auto TransportWriteLoop();
   // Read different parts of the server frame from control/data endpoints

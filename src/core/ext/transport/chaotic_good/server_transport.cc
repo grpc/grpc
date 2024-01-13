@@ -308,8 +308,16 @@ auto ChaoticGoodServerTransport::TransportReadLoop() {
   });
 }
 
-auto ChaoticGoodServerTransport::OnTransportActivityDone() {
-  return [this](absl::Status status) { AbortWithError(); };
+auto ChaoticGoodServerTransport::OnTransportActivityDone(
+    absl::string_view activity) {
+  return [this, activity](absl::Status status) {
+    if (grpc_chaotic_good_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "CHAOTIC_GOOD: OnTransportActivityDone: activity=%s status=%s",
+              std::string(activity).c_str(), status.ToString().c_str());
+    }
+    AbortWithError();
+  };
 }
 
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
@@ -324,7 +332,7 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
       event_engine_(event_engine),
       writer_{MakeActivity(TransportWriteLoop(),
                            EventEngineWakeupScheduler(event_engine),
-                           OnTransportActivityDone())},
+                           OnTransportActivityDone("writer"))},
       reader_{nullptr} {}
 
 void ChaoticGoodServerTransport::SetAcceptor(Acceptor* acceptor) {
@@ -333,7 +341,7 @@ void ChaoticGoodServerTransport::SetAcceptor(Acceptor* acceptor) {
   acceptor_ = acceptor;
   reader_ = MakeActivity(TransportReadLoop(),
                          EventEngineWakeupScheduler(event_engine_),
-                         OnTransportActivityDone());
+                         OnTransportActivityDone("reader"));
 }
 
 ChaoticGoodServerTransport::~ChaoticGoodServerTransport() {
