@@ -1349,11 +1349,11 @@ TEST(PipeStateTest, DropProcessing) {
 TEST(CallFiltersTest, CanBuildStack) {
   struct Filter {
     struct Call {
-      void OnClientInitialMetadata(ClientMetadata& md) {}
-      void OnServerInitialMetadata(ServerMetadata& md) {}
-      void OnClientToServerMessage(Message& message) {}
-      void OnServerToClientMessage(Message& message) {}
-      void OnServerTrailingMetadata(ServerMetadata& md) {}
+      void OnClientInitialMetadata(ClientMetadata&) {}
+      void OnServerInitialMetadata(ServerMetadata&) {}
+      void OnClientToServerMessage(Message&) {}
+      void OnServerToClientMessage(Message&) {}
+      void OnServerTrailingMetadata(ServerMetadata&) {}
       void OnFinalize(const grpc_call_final_info*) {}
     };
   };
@@ -1367,19 +1367,19 @@ TEST(CallFiltersTest, CanBuildStack) {
 TEST(CallFiltersTest, UnaryCall) {
   struct Filter {
     struct Call {
-      void OnClientInitialMetadata(ClientMetadata& md, Filter* f) {
+      void OnClientInitialMetadata(ClientMetadata&, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnClientInitialMetadata"));
       }
-      void OnServerInitialMetadata(ServerMetadata& md, Filter* f) {
+      void OnServerInitialMetadata(ServerMetadata&, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnServerInitialMetadata"));
       }
-      void OnClientToServerMessage(Message& message, Filter* f) {
+      void OnClientToServerMessage(Message&, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnClientToServerMessage"));
       }
-      void OnServerToClientMessage(Message& message, Filter* f) {
+      void OnServerToClientMessage(Message&, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnServerToClientMessage"));
       }
-      void OnServerTrailingMetadata(ServerMetadata& md, Filter* f) {
+      void OnServerTrailingMetadata(ServerMetadata&, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnServerTrailingMetadata"));
       }
       void OnFinalize(const grpc_call_final_info*, Filter* f) {

@@ -466,8 +466,7 @@ struct AddOpImpl<
                   Layout<FallibleOperator<T>>& to) {
     class Promise {
      public:
-      Promise(T value, typename FilterType::Call* call_data,
-              FilterType* channel_data)
+      Promise(T value, typename FilterType::Call* call_data, FilterType*)
           : value_(std::move(value)), impl_((call_data->*impl)(*value_)) {}
 
       Poll<ResultOr<T>> PollOnce() {
