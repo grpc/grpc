@@ -26,7 +26,6 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
-
 #include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
 
 namespace grpc_core {
