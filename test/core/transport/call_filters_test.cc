@@ -94,7 +94,7 @@ namespace filters_detail {
 
 TEST(LayoutTest, Empty) {
   Layout<FallibleOperator<ClientMetadataHandle>> l;
-  EXPECT_EQ(l.ops.size(), 0u);
+  ASSERT_EQ(l.ops.size(), 0u);
   EXPECT_EQ(l.promise_size, 0u);
   EXPECT_EQ(l.promise_alignment, 0u);
 }
@@ -104,7 +104,7 @@ TEST(LayoutTest, Add) {
   l.Add(1, 4,
         FallibleOperator<ClientMetadataHandle>{&l, 120, nullptr, nullptr,
                                                nullptr});
-  EXPECT_EQ(l.ops.size(), 1u);
+  ASSERT_EQ(l.ops.size(), 1u);
   EXPECT_EQ(l.promise_size, 1u);
   EXPECT_EQ(l.promise_alignment, 4u);
   EXPECT_EQ(l.ops[0].call_offset, 120);
@@ -137,7 +137,7 @@ TEST(StackDataTest, OneByteAlignmentAndSize) {
   d.AddFilter(&f1);
   EXPECT_EQ(d.call_data_alignment, 1);
   EXPECT_EQ(d.call_data_size, 1);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   // Check channel data
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   // Check call offsets
@@ -159,7 +159,7 @@ TEST(StackDataTest, PointerAlignmentAndSize) {
   d.AddFilter(&f1);
   EXPECT_EQ(d.call_data_alignment, alignof(void*));
   EXPECT_EQ(d.call_data_size, sizeof(void*));
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   // Check channel data
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   // Check call offsets
@@ -192,7 +192,7 @@ TEST(StackDataTest, PointerAndOneByteAlignmentAndSize) {
   EXPECT_EQ(d.call_data_alignment, alignof(void*));
   // Padding added after 1-byte element to align pointer.
   EXPECT_EQ(d.call_data_size, 2 * sizeof(void*));
-  EXPECT_EQ(d.filters.size(), 2u);
+  ASSERT_EQ(d.filters.size(), 2u);
   // Check channel data
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[1].channel_data, &f2);
@@ -227,7 +227,7 @@ TEST(StackDataTest, PointerAndOneByteAlignmentAndSizeBackwards) {
   EXPECT_EQ(d.call_data_alignment, alignof(void*));
   // No padding needed, so just the sum of sizes.
   EXPECT_EQ(d.call_data_size, sizeof(void*) + 1);
-  EXPECT_EQ(d.filters.size(), 2u);
+  ASSERT_EQ(d.filters.size(), 2u);
   // Check channel data
   EXPECT_EQ(d.filters[0].channel_data, &f2);
   EXPECT_EQ(d.filters[1].channel_data, &f1);
@@ -274,7 +274,7 @@ TEST(StackDataTest, OneFilterThenManyEmptyThenOneNonEmpty) {
   d.AddFilter(&f1b);
   // Check overall size
   EXPECT_EQ(d.call_data_size, 2);
-  EXPECT_EQ(d.filters.size(), 6u);
+  ASSERT_EQ(d.filters.size(), 6u);
   // Check channel data
   EXPECT_EQ(d.filters[0].channel_data, &f1a);
   EXPECT_EQ(d.filters[1].channel_data, &f2a);
@@ -300,7 +300,7 @@ TEST(StackDataTest, FilterInit) {
   StackData d;
   Filter1 f1;
   d.AddFilter(&f1);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, 0);
   void* p = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
@@ -320,7 +320,7 @@ TEST(StackDataTest, FilterInitWithArg) {
   StackData d;
   Filter1 f1;
   d.AddFilter(&f1);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, 0);
   void* p = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
@@ -344,10 +344,10 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoid) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.client_initial_metadata.ops.size(), 1u);
+  ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
   // Instant => no poll/early destroy
@@ -384,10 +384,10 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoidTakingChannelPtr) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.client_initial_metadata.ops.size(), 1u);
+  ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
   // Instant => no poll/early destroy
@@ -428,10 +428,10 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningAbslStatus) {
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.client_initial_metadata.ops.size(), 1u);
+  ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
   // Instant => no poll/early destroy
@@ -488,10 +488,10 @@ TEST(StackDataTest,
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.client_initial_metadata.ops.size(), 1u);
+  ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
   // Instant => no poll/early destroy
@@ -547,10 +547,10 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.client_initial_metadata.ops.size(), 1u);
+  ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
   // Instant => no poll/early destroy
@@ -609,10 +609,10 @@ TEST(StackDataTest,
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.client_initial_metadata.ops.size(), 1u);
+  ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
   // Instant => no poll/early destroy
@@ -672,10 +672,10 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.client_initial_metadata.ops.size(), 1u);
+  ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
   // Check promise init
@@ -755,10 +755,10 @@ TEST(StackDataTest,
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.client_initial_metadata.ops.size(), 1u);
+  ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
   // Check promise init
@@ -826,10 +826,10 @@ TEST(StackDataTest, InstantServerInitialMetadataReturningVoid) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddServerInitialMetadataOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.server_initial_metadata.ops.size(), 1u);
+  ASSERT_EQ(d.server_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.server_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.server_initial_metadata.ops[0].channel_data, &f1);
   // Instant => no poll/early destroy
@@ -864,10 +864,10 @@ TEST(StackDataTest, InstantClientToServerMessagesReturningVoid) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddClientToServerMessageOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.client_to_server_messages.ops.size(), 1u);
+  ASSERT_EQ(d.client_to_server_messages.ops.size(), 1u);
   EXPECT_EQ(d.client_to_server_messages.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_to_server_messages.ops[0].channel_data, &f1);
   // Instant => no poll/early destroy
@@ -900,10 +900,10 @@ TEST(StackDataTest, InstantServerToClientMessagesReturningVoid) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddServerToClientMessageOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.server_to_client_messages.ops.size(), 1u);
+  ASSERT_EQ(d.server_to_client_messages.ops.size(), 1u);
   EXPECT_EQ(d.server_to_client_messages.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.server_to_client_messages.ops[0].channel_data, &f1);
   // Instant => no poll/early destroy
@@ -936,10 +936,10 @@ TEST(StackDataTest, InstantServerTrailingMetadataReturningVoid) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddServerTrailingMetadataOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.server_trailing_metadata.ops.size(), 1u);
+  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 1u);
   EXPECT_EQ(d.server_trailing_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.server_trailing_metadata.ops[0].channel_data, &f1);
   // Instant => no poll/early destroy
@@ -977,10 +977,10 @@ TEST(StackDataTest,
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddServerTrailingMetadataOp(&f1, call_offset);
-  EXPECT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filters.size(), 1u);
   EXPECT_EQ(d.filters[0].channel_data, &f1);
   EXPECT_EQ(d.filters[0].call_offset, call_offset);
-  EXPECT_EQ(d.server_trailing_metadata.ops.size(), 1u);
+  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 1u);
   EXPECT_EQ(d.server_trailing_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.server_trailing_metadata.ops[0].channel_data, &f1);
   // Instant => no poll/early destroy
@@ -1043,8 +1043,8 @@ TEST(OperationExecutorTest, InstantTwo) {
   const size_t call_offset2 = d.AddFilter(&f2);
   d.AddClientInitialMetadataOp(&f1, call_offset1);
   d.AddClientInitialMetadataOp(&f2, call_offset2);
-  EXPECT_EQ(d.filters.size(), 2u);
-  EXPECT_EQ(d.client_initial_metadata.ops.size(), 2u);
+  ASSERT_EQ(d.filters.size(), 2u);
+  ASSERT_EQ(d.client_initial_metadata.ops.size(), 2u);
   void* call_data1 =
       gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   void* call_data2 = Offset(call_data1, d.filters[1].call_offset);
@@ -1109,8 +1109,8 @@ TEST(OperationExecutorTest, PromiseTwo) {
   const size_t call_offset2 = d.AddFilter(&f2);
   d.AddClientInitialMetadataOp(&f1, call_offset1);
   d.AddClientInitialMetadataOp(&f2, call_offset2);
-  EXPECT_EQ(d.filters.size(), 2u);
-  EXPECT_EQ(d.client_initial_metadata.ops.size(), 2u);
+  ASSERT_EQ(d.filters.size(), 2u);
+  ASSERT_EQ(d.client_initial_metadata.ops.size(), 2u);
   void* call_data1 =
       gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   void* call_data2 = Offset(call_data1, d.filters[1].call_offset);
@@ -1186,8 +1186,8 @@ TEST(InfallibleOperationExecutor, InstantTwo) {
   const size_t call_offset2 = d.AddFilter(&f2);
   d.AddServerTrailingMetadataOp(&f1, call_offset1);
   d.AddServerTrailingMetadataOp(&f2, call_offset2);
-  EXPECT_EQ(d.filters.size(), 2u);
-  EXPECT_EQ(d.server_trailing_metadata.ops.size(), 2u);
+  ASSERT_EQ(d.filters.size(), 2u);
+  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 2u);
   void* call_data1 =
       gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   void* call_data2 = Offset(call_data1, d.filters[1].call_offset);

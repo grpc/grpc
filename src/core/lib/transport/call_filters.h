@@ -1024,13 +1024,12 @@ class CallFilters {
       Pull& operator=(const Pull&) = delete;
       Pull(Pull&& other) noexcept
           : filters_(std::exchange(other.filters_, nullptr)),
-            transformer_(std::move(other.transformer_)) {}
+            executor_(std::move(other.executor_)) {}
       Pull& operator=(Pull&&) = delete;
 
       Poll<ValueOrFailure<T>> operator()() {
-        if (transformer_.IsRunning()) {
-          return FinishOperationExecutor(
-              transformer_.Step(filters_->call_data_));
+        if (executor_.IsRunning()) {
+          return FinishOperationExecutor(executor_.Step(filters_->call_data_));
         }
         auto p = state().PollPull();
         auto* r = p.value_if_ready();
@@ -1039,7 +1038,7 @@ class CallFilters {
           filters_->CancelDueToFailedPipeOperation();
           return Failure{};
         }
-        return FinishOperationExecutor(transformer_.Start(
+        return FinishOperationExecutor(executor_.Start(
             layout(), push()->TakeValue(), filters_->call_data_));
       }
 
@@ -1055,7 +1054,7 @@ class CallFilters {
           Poll<filters_detail::ResultOr<T>> p) {
         auto* r = p.value_if_ready();
         if (r == nullptr) return Pending{};
-        GPR_DEBUG_ASSERT(!transformer_.IsRunning());
+        GPR_DEBUG_ASSERT(!executor_.IsRunning());
         state().AckPull();
         if (r->ok != nullptr) return std::move(r->ok);
         filters_->PushServerTrailingMetadata(std::move(r->error));
@@ -1063,8 +1062,41 @@ class CallFilters {
       }
 
       CallFilters* filters_;
-      filters_detail::OperationExecutor<T> transformer_;
+      filters_detail::OperationExecutor<T> executor_;
     };
+  };
+
+  class PullServerTrailingMetadataPromise {
+   public:
+    explicit PullServerTrailingMetadataPromise(CallFilters* filters)
+        : filters_(filters) {}
+
+    PullServerTrailingMetadataPromise(
+        const PullServerTrailingMetadataPromise&) = delete;
+    PullServerTrailingMetadataPromise& operator=(
+        const PullServerTrailingMetadataPromise&) = delete;
+    PullServerTrailingMetadataPromise(
+        PullServerTrailingMetadataPromise&& other) noexcept
+        : filters_(std::exchange(other.filters_, nullptr)),
+          executor_(std::move(other.executor_)) {}
+    PullServerTrailingMetadataPromise& operator=(
+        PullServerTrailingMetadataPromise&&) = delete;
+
+    Poll<ServerMetadataHandle> operator()() {
+      if (executor_.IsRunning()) {
+        return executor_.Step(filters_->call_data_);
+      }
+      if (filters_->server_trailing_metadata_ == nullptr) {
+        return filters_->server_trailing_metadata_waiter_.pending();
+      }
+      return executor_.Start(&filters_->stack_->data_.server_trailing_metadata,
+                             std::move(filters_->server_trailing_metadata_),
+                             filters_->call_data_);
+    }
+
+   private:
+    CallFilters* filters_;
+    filters_detail::InfallibleOperationExecutor<ServerMetadataHandle> executor_;
   };
 
   void CancelDueToFailedPipeOperation();
@@ -1152,16 +1184,7 @@ inline auto CallFilters::PullServerToClientMessage() {
 }
 
 inline auto CallFilters::PullServerTrailingMetadata() {
-  return [this,
-          pipe = filters_detail::InfallibleOperationExecutor<
-              ServerMetadataHandle>()]() mutable -> Poll<ServerMetadataHandle> {
-    if (pipe.IsRunning()) {
-      return pipe.Step(call_data_);
-    }
-    if (server_trailing_metadata_ == nullptr) return Pending{};
-    return pipe.Start(&stack_->data_.server_trailing_metadata,
-                      std::move(server_trailing_metadata_), call_data_);
-  };
+  return PullServerTrailingMetadataPromise(this);
 }
 
 }  // namespace grpc_core
