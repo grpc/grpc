@@ -194,10 +194,10 @@ class WriteContext {
       if (IsChttp2NewWritesEnabled()) {
         AddFrame(std::move(*update));
       } else {
-        grpc_core::Http2Frame frame(std::move(*update));
-        Serialize(absl::Span<grpc_core::Http2Frame>(&frame, 1), t_->outbuf);
+        Http2Frame frame(std::move(*update));
+        Serialize(absl::Span<Http2Frame>(&frame, 1), t_->outbuf);
       }
-      if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
+      if (t_->keepalive_timeout != Duration::Infinity()) {
         GPR_ASSERT(
             t_->settings_ack_watchdog ==
             grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);

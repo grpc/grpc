@@ -1910,7 +1910,6 @@ let package = Package(
         "src/core/lib/transport/parsed_metadata.cc",
         "src/core/lib/transport/parsed_metadata.h",
         "src/core/lib/transport/simple_slice_based_metadata.h",
-        "src/core/lib/transport/stats.h",
         "src/core/lib/transport/status_conversion.cc",
         "src/core/lib/transport/status_conversion.h",
         "src/core/lib/transport/tcp_connect_handshaker.cc",
