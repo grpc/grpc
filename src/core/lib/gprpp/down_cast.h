@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_DOWNCAST_H
-#define GRPC_DOWNCAST_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_DOWN_CAST_H
+#define GRPC_SRC_CORE_LIB_GPRPP_DOWN_CAST_H
 
 #include <grpc/support/port_platform.h>
 
@@ -46,4 +46,4 @@ inline To down_cast(From& f) {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_DOWN_CAST_H
