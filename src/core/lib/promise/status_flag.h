@@ -29,13 +29,13 @@ namespace grpc_core {
 
 struct Failure {
   template <typename Sink>
-  friend void AbslStringify(Sink& sink, Failure flag) {
+  friend void AbslStringify(Sink& sink, Failure) {
     sink.Append("failed");
   }
 };
 struct Success {
   template <typename Sink>
-  friend void AbslStringify(Sink& sink, Success flag) {
+  friend void AbslStringify(Sink& sink, Success) {
     sink.Append("ok");
   }
 };
