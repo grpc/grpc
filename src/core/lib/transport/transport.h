@@ -543,7 +543,7 @@ class CallHandler {
         },
         [this]() {
           spine_->server_initial_metadata().sender.Close();
-          return [] { return Success{}; };
+          return []() -> StatusFlag { return Success{}; };
         });
   }
 
