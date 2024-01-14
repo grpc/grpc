@@ -14,8 +14,18 @@
 
 #include "src/core/lib/promise/observable.h"
 
+#include <cstdint>
+#include <limits>
+#include <thread>
+#include <vector>
+
+#include "absl/strings/str_join.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+#include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/map.h"
 
 using testing::Mock;
 using testing::StrictMock;
@@ -140,6 +150,71 @@ TEST(ObservableTest, MultipleActivitiesWakeUp) {
   Mock::VerifyAndClearExpectations(&activity2);
   EXPECT_THAT(next1(), IsReady(2));
   EXPECT_THAT(next2(), IsReady(2));
+}
+
+class ThreadWakeupScheduler {
+ public:
+  template <typename ActivityType>
+  class BoundScheduler {
+   public:
+    explicit BoundScheduler(ThreadWakeupScheduler) {}
+    void ScheduleWakeup() {
+      std::thread t(
+          [this] { static_cast<ActivityType*>(this)->RunScheduledWakeup(); });
+      t.detach();
+    }
+  };
+};
+
+TEST(ObservableTest, Stress) {
+  static constexpr uint64_t kEnd = std::numeric_limits<uint64_t>::max();
+  std::vector<uint64_t> values1;
+  std::vector<uint64_t> values2;
+  uint64_t current1 = 0;
+  uint64_t current2 = 0;
+  Notification done1;
+  Notification done2;
+  Observable<uint64_t> observable(0);
+  auto activity1 = MakeActivity(
+      Loop([&observable, &current1, &values1] {
+        return Map(
+            observable.Next(current1),
+            [&values1, &current1](uint64_t value) -> LoopCtl<absl::Status> {
+              values1.push_back(value);
+              current1 = value;
+              if (value == kEnd) return absl::OkStatus();
+              return Continue{};
+            });
+      }),
+      ThreadWakeupScheduler(), [&done1](absl::Status status) {
+        EXPECT_TRUE(status.ok()) << status.ToString();
+        done1.Notify();
+      });
+  auto activity2 = MakeActivity(
+      Loop([&observable, &current2, &values2] {
+        return Map(
+            observable.Next(current2),
+            [&values2, &current2](uint64_t value) -> LoopCtl<absl::Status> {
+              values2.push_back(value);
+              current2 = value;
+              if (value == kEnd) return absl::OkStatus();
+              return Continue{};
+            });
+      }),
+      ThreadWakeupScheduler(), [&done2](absl::Status status) {
+        EXPECT_TRUE(status.ok()) << status.ToString();
+        done2.Notify();
+      });
+  for (uint64_t i = 0; i < 1000000; i++) {
+    observable.Set(i);
+  }
+  observable.Set(kEnd);
+  done1.WaitForNotification();
+  done2.WaitForNotification();
+  ASSERT_GE(values1.size(), 1);
+  ASSERT_GE(values2.size(), 1);
+  EXPECT_EQ(values1.back(), kEnd);
+  EXPECT_EQ(values2.back(), kEnd);
 }
 
 }  // namespace

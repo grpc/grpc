@@ -488,7 +488,7 @@ grpc_cc_test(
     name = "observable_test",
     srcs = ["observable_test.cc"],
     external_deps = [
-        "absl/types:optional",
+        "absl/strings",
         "gtest",
     ],
     language = "c++",
@@ -496,9 +496,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
-        "//:promise",
-        "//src/core:activity",
+        "//src/core:loop",
+        "//src/core:map",
+        "//src/core:notification",
         "//src/core:observable",
     ],
 )

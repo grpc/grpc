@@ -23,38 +23,52 @@
 
 namespace grpc_core {
 
+// Observable allows broadcasting a value to multiple interested observers.
 template <typename T>
 class Observable {
  public:
+  // We need to assign a value initially.
   explicit Observable(T initial)
       : state_(MakeRefCounted<State>(std::move(initial))) {}
 
+  // Update the value to something new. Awakes any waiters.
   void Set(T value) { state_->Set(std::move(value)); }
 
+  // Returns a promise that resolves to a T when the value becomes != current.
   auto Next(T current) { return Observer(state_, std::move(current)); }
 
  private:
+  // Forward declaration so we can form pointers to Observer in State.
   class Observer;
+
+  // State keeps track of all observable state.
+  // It's a refcounted object so that promises reading the state are not tied
+  // to the lifetime of the Observable.
   class State : public RefCounted<State> {
    public:
     explicit State(T value) : value_(std::move(value)) {}
 
+    // Update the value and wake all observers.
     void Set(T value) {
       MutexLock lock(&mu_);
       std::swap(value_, value);
       WakeAll();
     }
 
+    // Export our mutex so that Observer can use it.
     Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
 
+    // Fetch a ref to the current value.
     const T& current() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       return value_;
     }
 
+    // Remove an observer from the set (it no longer needs updates).
     void Remove(Observer* observer) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       observers_.erase(observer);
     }
 
+    // Add an observer to the set (it needs updates).
     GRPC_MUST_USE_RESULT Waker Add(Observer* observer)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       observers_.insert(observer);
@@ -62,6 +76,7 @@ class Observable {
     }
 
    private:
+    // Wake all observers.
     void WakeAll() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       for (auto* observer : observers_) {
         observer->Wakeup();
@@ -69,17 +84,24 @@ class Observable {
     }
 
     Mutex mu_;
+    // All observers that may need an update.
     absl::flat_hash_set<Observer*> observers_ ABSL_GUARDED_BY(mu_);
+    // The current value.
     T value_ ABSL_GUARDED_BY(mu_);
   };
 
+  // Observer is a promise that resolves to a T when the value becomes !=
+  // current.
   class Observer {
    public:
     Observer(RefCountedPtr<State> state, T current)
         : state_(std::move(state)), current_(std::move(current)) {}
     ~Observer() {
+      // If we saw a pending at all then we *may* be in the set of observers.
+      if (!saw_pending_) return;
       MutexLock lock(state_->mu());
-      if (!waker_.is_unwakeable()) state_->Remove(this);
+      auto w = std::move(waker_);
+      state_->Remove(this);
     }
 
     Observer(const Observer&) = delete;
@@ -87,17 +109,21 @@ class Observable {
     Observer(Observer&& other) noexcept
         : state_(std::move(other.state_)), current_(std::move(other.current_)) {
       GPR_ASSERT(other.waker_.is_unwakeable());
+      GPR_ASSERT(!other.saw_pending_);
     }
     Observer& operator=(Observer&& other) noexcept = delete;
 
-    void Wakeup() { waker_.Wakeup(); }
+    void Wakeup() { waker_.WakeupAsync(); }
 
     Poll<T> operator()() {
       MutexLock lock(state_->mu());
+      // Check if the value has changed yet.
       if (current_ != state_->current()) {
-        if (!waker_.is_unwakeable()) state_->Remove(this);
+        if (saw_pending_ && !waker_.is_unwakeable()) state_->Remove(this);
         return state_->current();
       }
+      // Record that we saw at least one pending and then register for wakeup.
+      saw_pending_ = true;
       if (waker_.is_unwakeable()) waker_ = state_->Add(this);
       return Pending{};
     }
@@ -106,6 +132,7 @@ class Observable {
     RefCountedPtr<State> state_;
     T current_;
     Waker waker_;
+    bool saw_pending_ = false;
   };
 
   RefCountedPtr<State> state_;
