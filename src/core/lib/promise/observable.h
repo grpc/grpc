@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_OBSERVABLE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_OBSERVABLE_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/container/flat_hash_set.h"
 
 #include "src/core/lib/gprpp/sync.h"
@@ -141,4 +143,4 @@ class Observable {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_OBSERVABLE_H
