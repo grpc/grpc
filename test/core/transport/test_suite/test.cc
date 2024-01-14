@@ -152,6 +152,9 @@ std::string TransportTest::RandomMetadataValue(absl::string_view key) {
   if (key == ":scheme") {
     return RandomStringFrom({"http", "https"});
   }
+  if (key == "te") {
+    return "trailers";
+  }
   static const NoDestruct<std::string> kChars{[]() {
     std::string out;
     for (char c = 32; c < 127; c++) out.push_back(c);

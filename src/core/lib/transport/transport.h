@@ -541,9 +541,9 @@ class CallHandler {
               spine_->server_initial_metadata().sender.Push(std::move(*md)),
               [](bool ok) { return StatusFlag(ok); });
         },
-        [this]() -> StatusFlag {
+        [this]() {
           spine_->server_initial_metadata().sender.Close();
-          return Success{};
+          return [] { return Success{}; };
         });
   }
 
