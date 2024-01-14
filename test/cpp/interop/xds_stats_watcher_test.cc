@@ -16,15 +16,15 @@
 
 #include "test/cpp/interop/xds_stats_watcher.h"
 
+#include <gmock/gmock.h>
+#include <grpc/grpc.h>
+#include <gtest/gtest.h>
+
 #include <map>
 #include <memory>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <grpc/grpc.h>
-
 #include "test/core/util/test_config.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 namespace testing {
@@ -89,8 +89,8 @@ TEST(XdsStatsWatcherTest, WaitForRpcStatsResponse) {
   (*expected.mutable_rpcs_by_method())["UnaryCall"]
       .mutable_rpcs_by_peer()
       ->insert({{"peer1", 3}, {"peer2", 1}});
-  EXPECT_EQ(expected.DebugString(),
-            watcher.WaitForRpcStatsResponse(0).DebugString());
+  EXPECT_EQ(absl::StrCat(expected),
+            absl::StrCat(watcher.WaitForRpcStatsResponse(0)));
 }
 
 TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseIgnoresCase) {
@@ -117,8 +117,8 @@ TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseIgnoresCase) {
   (*expected.mutable_rpcs_by_method())["UnaryCall"]
       .mutable_rpcs_by_peer()
       ->insert({{"peer1", 2}, {"peer2", 1}});
-  EXPECT_EQ(expected.DebugString(),
-            watcher.WaitForRpcStatsResponse(0).DebugString());
+  EXPECT_EQ(absl::StrCat(expected),
+            absl::StrCat(watcher.WaitForRpcStatsResponse(0)));
 }
 
 TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseReturnsAll) {
@@ -148,8 +148,8 @@ TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseReturnsAll) {
   (*expected.mutable_rpcs_by_method())["UnaryCall"]
       .mutable_rpcs_by_peer()
       ->insert({{"peer1", 2}, {"peer2", 1}});
-  EXPECT_EQ(expected.DebugString(),
-            watcher.WaitForRpcStatsResponse(0).DebugString());
+  EXPECT_EQ(absl::StrCat(expected),
+            absl::StrCat(watcher.WaitForRpcStatsResponse(0)));
 }
 
 TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseExcludesMetadata) {
@@ -166,8 +166,8 @@ TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseExcludesMetadata) {
   (*expected.mutable_rpcs_by_method())["UnaryCall"]
       .mutable_rpcs_by_peer()
       ->insert({{"peer1", 2}, {"peer2", 1}});
-  EXPECT_EQ(watcher.WaitForRpcStatsResponse(0).DebugString(),
-            expected.DebugString());
+  EXPECT_EQ(absl::StrCat(watcher.WaitForRpcStatsResponse(0)),
+            absl::StrCat(expected));
 }
 
 }  // namespace
