@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#if GRPC_TIMER_USE_GENERIC
+
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -36,5 +38,7 @@ struct grpc_timer {
   struct grpc_timer* hash_table_next;
 #endif
 };
+
+#endif  // GRPC_TIMER_USE_GENERIC
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_TIMER_GENERIC_H

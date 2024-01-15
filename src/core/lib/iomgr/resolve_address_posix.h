@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 #include <functional>
 
 #include "src/core/lib/iomgr/port.h"
@@ -59,5 +60,7 @@ class NativeDNSResolver : public DNSResolver {
 };
 
 }  // namespace grpc_core
+
+#endif  // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_POSIX_H

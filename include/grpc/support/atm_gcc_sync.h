@@ -23,6 +23,8 @@
    interface */
 #include <grpc/support/port_platform.h>
 
+#if defined(GPR_GCC_SYNC)
+
 typedef intptr_t gpr_atm;
 #define GPR_ATM_MAX INTPTR_MAX
 #define GPR_ATM_MIN INTPTR_MIN
@@ -79,5 +81,7 @@ static __inline gpr_atm gpr_atm_full_xchg(gpr_atm* p, gpr_atm n) {
   } while (!gpr_atm_rel_cas(p, cur, n));
   return cur;
 }
+
+#endif  // defined(GPR_GCC_SYNC)
 
 #endif /* GRPC_SUPPORT_ATM_GCC_SYNC_H */
