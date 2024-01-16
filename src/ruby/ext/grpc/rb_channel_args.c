@@ -45,16 +45,16 @@ static rb_data_type_t grpc_rb_channel_args_data_type = {
 static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
                                                               VALUE val,
                                                               VALUE args_obj) {
-  const char* the_key;
+  const char* key_cstr;
   grpc_channel_args* args;
 
   switch (TYPE(key)) {
     case T_STRING:
-      the_key = StringValuePtr(key);
+      key_cstr = StringValuePtr(key);
       break;
 
     case T_SYMBOL:
-      the_key = rb_id2name(SYM2ID(key));
+      key_cstr = rb_id2name(SYM2ID(key));
       break;
 
     default:
@@ -71,7 +71,7 @@ static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
     return ST_STOP;
   }
 
-  args->args[args->num_args - 1].key = (char*)the_key;
+  args->args[args->num_args - 1].key = gpr_strdup(key_cstr);
   switch (TYPE(val)) {
     case T_SYMBOL:
       args->args[args->num_args - 1].type = GRPC_ARG_STRING;
@@ -163,8 +163,8 @@ void grpc_rb_channel_args_destroy(grpc_channel_args* args) {
   GPR_ASSERT(args != NULL);
   if (args->args == NULL) return;
   for (int i = 0; i < args->num_args; i++) {
+    gpr_free(args->args[i].key);
     if (args->args[i].type == GRPC_ARG_STRING) {
-      // we own string pointers, which were created with gpr_strdup
       gpr_free(args->args[i].value.string);
     }
   }
