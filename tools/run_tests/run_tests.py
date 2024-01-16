@@ -1026,6 +1026,7 @@ class RubyLanguage(object):
                 "src/ruby/end2end/bad_usage_fork_test.rb",
                 "src/ruby/end2end/prefork_without_using_grpc_test.rb",
                 "src/ruby/end2end/prefork_postfork_loop_test.rb",
+                "src/ruby/end2end/fork_test_repro_35489.rb",
             ]:
                 # Skip fork tests in general until https://github.com/grpc/grpc/issues/34442
                 # is fixed. Otherwise we see too many flakes.
