@@ -2451,6 +2451,7 @@
     <file baseinstalldir="/" name="third_party/address_sorting/address_sorting_posix.c" role="src" />
     <file baseinstalldir="/" name="third_party/address_sorting/address_sorting_windows.c" role="src" />
     <file baseinstalldir="/" name="third_party/address_sorting/include/address_sorting/address_sorting.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/err_data.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.c" role="src" />
@@ -2556,8 +2557,6 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/evp/evp_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/evp/evp_ctx.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/evp/internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/evp/p_dh.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/evp/p_dh_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/evp/p_dsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/evp/p_ec.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/evp/p_ec_asn1.c" role="src" />
@@ -2728,6 +2727,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/address.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/fors.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/fors.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/merkle.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/merkle.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/spx/params.h" role="src" />
@@ -2819,7 +2819,6 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x_val.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x_x509.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/gen/crypto/err_data.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/aead.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/aes.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/arm_arch.h" role="src" />
@@ -2860,14 +2859,13 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/evp.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/evp_errors.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/ex_data.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/experimental/kyber.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/experimental/spx.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/hkdf.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/hmac.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/hpke.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/hrss.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/is_boringssl.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/kdf.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/kyber.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/lhash.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/md4.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/md5.h" role="src" />
@@ -2931,7 +2929,6 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/ssl_buffer.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/ssl_cert.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/ssl_cipher.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/ssl_credential.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/ssl_file.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/ssl_key_share.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/ssl_lib.cc" role="src" />
@@ -2955,6 +2952,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_32.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64_msvc.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/bitmap256.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/bitmap256.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/bitstate.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/compile.cc" role="src" />
@@ -2982,7 +2980,6 @@
     <file baseinstalldir="/" name="third_party/re2/re2/simplify.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/sparse_array.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/sparse_set.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/re2/stringpiece.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/stringpiece.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/tostring.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_casefold.cc" role="src" />
@@ -2991,13 +2988,10 @@
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/walker-inl.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/logging.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/mix.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/mutex.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/rune.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/descriptor_constants.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/internal/endian.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/internal/log2.h" role="src" />

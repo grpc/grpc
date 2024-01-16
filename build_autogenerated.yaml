@@ -2050,9 +2050,6 @@ libs:
   - absl/base:config
   - absl/base:no_destructor
   - absl/cleanup:cleanup
-  - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -2060,7 +2057,6 @@ libs:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -3186,7 +3182,6 @@ libs:
   - third_party/googletest/googletest/src/gtest.cc
   deps:
   - re2
-  - absl/container:flat_hash_set
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
@@ -3194,9 +3189,7 @@ libs:
   - absl/flags:parse
   - absl/flags:reflection
   - absl/flags:usage
-  - absl/strings:strings
   - absl/types:any
-  - absl/types:optional
   - absl/types:variant
 - name: re2
   build: all
@@ -3219,12 +3212,10 @@ libs:
   - third_party/re2/re2/unicode_groups.h
   - third_party/re2/re2/walker-inl.h
   - third_party/re2/util/logging.h
-  - third_party/re2/util/mix.h
-  - third_party/re2/util/mutex.h
   - third_party/re2/util/strutil.h
   - third_party/re2/util/utf.h
-  - third_party/re2/util/util.h
   src:
+  - third_party/re2/re2/bitmap256.cc
   - third_party/re2/re2/bitstate.cc
   - third_party/re2/re2/compile.cc
   - third_party/re2/re2/dfa.cc
@@ -3241,13 +3232,23 @@ libs:
   - third_party/re2/re2/regexp.cc
   - third_party/re2/re2/set.cc
   - third_party/re2/re2/simplify.cc
-  - third_party/re2/re2/stringpiece.cc
   - third_party/re2/re2/tostring.cc
   - third_party/re2/re2/unicode_casefold.cc
   - third_party/re2/re2/unicode_groups.cc
   - third_party/re2/util/rune.cc
   - third_party/re2/util/strutil.cc
-  deps: []
+  deps:
+  - absl/base:base
+  - absl/base:core_headers
+  - absl/container:fixed_array
+  - absl/container:flat_hash_map
+  - absl/container:flat_hash_set
+  - absl/container:inlined_vector
+  - absl/strings:str_format
+  - absl/strings:strings
+  - absl/synchronization:synchronization
+  - absl/types:optional
+  - absl/types:span
 - name: upb_base_lib
   build: all
   language: c
@@ -5020,14 +5021,10 @@ libs:
   - absl/base:config
   - absl/base:no_destructor
   - absl/cleanup:cleanup
-  - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -6501,7 +6498,6 @@ targets:
   - upb_message_lib
   - absl/base:config
   - absl/base:no_destructor
-  - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9871,7 +9867,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: for_each_test
@@ -10109,7 +10104,6 @@ targets:
   - gtest
   - absl/hash:hash
   - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: fuzzing_event_engine_test
@@ -12107,13 +12101,10 @@ targets:
   - absl/base:config
   - absl/base:no_destructor
   - absl/cleanup:cleanup
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -18735,7 +18726,6 @@ targets:
   - test/core/load_balancing/static_stride_scheduler_test.cc
   deps:
   - gtest
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: stats_test
@@ -20201,7 +20191,6 @@ targets:
   - test/core/gprpp/unique_type_name_test.cc
   deps:
   - gtest
-  - absl/strings:str_format
   uses_polling: false
 - name: unknown_frame_bad_client_test
   gtest: true
