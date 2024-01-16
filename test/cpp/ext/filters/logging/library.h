@@ -30,6 +30,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
 #include <grpcpp/support/status.h>
 
 #include "src/core/ext/filters/logging/logging_filter.h"
@@ -103,6 +104,7 @@ class LoggingTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
     g_test_logging_sink = new TestLoggingSink;
+    grpc::RegisterOpenCensusPlugin();
     grpc_core::RegisterLoggingFilter(g_test_logging_sink);
   }
 

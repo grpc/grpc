@@ -20,7 +20,6 @@
 #include <stdlib.h>
 
 #include <tuple>
-#include <utility>
 
 #include "absl/meta/type_traits.h"
 
@@ -44,6 +43,10 @@ struct JoinTraits {
   template <typename R, typename T>
   static R EarlyReturn(T) {
     abort();
+  }
+  template <typename... A>
+  static std::tuple<A...> FinalReturn(A... a) {
+    return std::make_tuple(std::move(a)...);
   }
 };
 

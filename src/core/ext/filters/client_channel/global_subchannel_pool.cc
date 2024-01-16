@@ -28,7 +28,7 @@ namespace grpc_core {
 
 RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
   static GlobalSubchannelPool* p = new GlobalSubchannelPool();
-  return p->Ref();
+  return p->RefAsSubclass<GlobalSubchannelPool>();
 }
 
 RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(

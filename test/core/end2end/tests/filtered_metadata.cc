@@ -16,6 +16,8 @@
 //
 //
 
+#include <memory>
+
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
@@ -72,8 +74,6 @@ void TestRequestResponseWithMetadataToBeFiltered(
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, ContentLengthIsFiltered) {
-  // TODO(vigneshbabu): re-enable these before release
-  SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   TestRequestResponseWithMetadataToBeFiltered(*this, "content-length", "45");
 }
 

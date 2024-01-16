@@ -17,16 +17,15 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
 #include <errno.h>
-#include <inttypes.h>
 #include <limits.h>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/gpr/useful.h"
@@ -77,6 +76,7 @@ int AdjustValue(int default_value, int min_value, int max_value,
   return *actual_value;
 }
 
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 // The default values for TCP_USER_TIMEOUT are currently configured to be in
 // line with the default values of KEEPALIVE_TIMEOUT as proposed in
 // https://github.com/grpc/proposal/blob/master/A18-tcp-user-timeout.md */
@@ -84,8 +84,6 @@ int kDefaultClientUserTimeoutMs = 20000;
 int kDefaultServerUserTimeoutMs = 20000;
 bool kDefaultClientUserTimeoutEnabled = false;
 bool kDefaultServerUserTimeoutEnabled = true;
-
-#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
 absl::Status ErrorForFd(
     int fd, const experimental::EventEngine::ResolvedAddress& addr) {
@@ -211,6 +209,13 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   if (value != nullptr) {
     options.socket_mutator =
         grpc_socket_mutator_ref(static_cast<grpc_socket_mutator*>(value));
+  }
+  value =
+      config.GetVoidPointer(GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY);
+  if (value != nullptr) {
+    options.memory_allocator_factory =
+        static_cast<grpc_event_engine::experimental::MemoryAllocatorFactory*>(
+            value);
   }
   return options;
 }
@@ -749,7 +754,7 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
     }
     // If this isn't an IPv4 address, then return whatever we've got.
     if (!ResolvedAddressIsV4Mapped(addr, nullptr)) {
-      if (newfd <= 0) {
+      if (newfd < 0) {
         return ErrorForFd(newfd, addr);
       }
       dsmode = PosixSocketWrapper::DSMode::DSMODE_IPV6;

@@ -27,6 +27,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//test/core/util:fake_stats_plugin",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -123,6 +124,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//src/core:channel_args",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",
     ],

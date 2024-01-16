@@ -29,7 +29,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 
 namespace grpc_core {
 
@@ -51,7 +50,7 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
 
   struct Result {
     // The connected transport.
-    grpc_transport* transport = nullptr;
+    Transport* transport = nullptr;
     // Channel args to be passed to filters.
     ChannelArgs channel_args;
     // Channelz socket node of the connected transport, if any.
@@ -59,7 +58,7 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
 
     void Reset() {
       if (transport != nullptr) {
-        grpc_transport_destroy(transport);
+        transport->Orphan();
         transport = nullptr;
       }
       channel_args = ChannelArgs();

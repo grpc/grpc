@@ -44,11 +44,12 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
-    grpc_transport* server_transport = grpc_create_binder_transport_server(
-        std::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
-            input.incoming_parcels()),
-        std::make_shared<
-            grpc::experimental::binder::UntrustedSecurityPolicy>());
+    grpc_core::Transport* server_transport =
+        grpc_create_binder_transport_server(
+            std::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
+                input.incoming_parcels()),
+            std::make_shared<
+                grpc::experimental::binder::UntrustedSecurityPolicy>());
     grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
                                               .channel_args_preconditioning()
                                               .PreconditionChannelArgs(nullptr);

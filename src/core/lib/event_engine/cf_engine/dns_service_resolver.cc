@@ -15,7 +15,10 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_APPLE
+#include <AvailabilityMacros.h>
+#ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -47,7 +50,14 @@ void DNSServiceResolverImpl::LookupHostname(
     });
     return;
   }
-  GPR_ASSERT(!host.empty());
+  if (host.empty()) {
+    engine_->Run([on_resolve = std::move(on_resolve),
+                  status = absl::InvalidArgumentError(absl::StrCat(
+                      "host must not be empty in name: ", name))]() mutable {
+      on_resolve(status);
+    });
+    return;
+  }
   if (port_string.empty()) {
     if (default_port.empty()) {
       engine_->Run([on_resolve = std::move(on_resolve),
@@ -144,16 +154,21 @@ void DNSServiceResolverImpl::ResolveCallback(
   grpc_core::ReleasableMutexLock lock(&that->request_mu_);
   auto request_it = that->requests_.find(sdRef);
   GPR_ASSERT(request_it != that->requests_.end());
-  auto& request = request_it->second;
 
   if (errorCode != kDNSServiceErr_NoError &&
       errorCode != kDNSServiceErr_NoSuchRecord) {
+    // extrace request and release lock before calling on_resolve
+    auto request_node = that->requests_.extract(request_it);
+    lock.Release();
+
+    auto& request = request_node.mapped();
     request.on_resolve(absl::UnknownError(absl::StrFormat(
         "address lookup failed for %s: errorCode: %d", hostname, errorCode)));
-    that->requests_.erase(request_it);
     DNSServiceRefDeallocate(sdRef);
     return;
   }
+
+  auto& request = request_it->second;
 
   // set received ipv4 or ipv6 response, even for kDNSServiceErr_NoSuchRecord to
   // mark that the response for the stack is received, it is possible that the
@@ -192,13 +207,17 @@ void DNSServiceResolverImpl::ResolveCallback(
   // with the collected results.
   if (!(flags & kDNSServiceFlagsMoreComing) && request.has_ipv4_response &&
       request.has_ipv6_response) {
+    // extrace request and release lock before calling on_resolve
+    auto request_node = that->requests_.extract(request_it);
+    lock.Release();
+
+    auto& request = request_node.mapped();
     if (request.result.empty()) {
       request.on_resolve(absl::NotFoundError(absl::StrFormat(
           "address lookup failed for %s: Domain name not found", hostname)));
     } else {
       request.on_resolve(std::move(request.result));
     }
-    that->requests_.erase(request_it);
     DNSServiceRefDeallocate(sdRef);
   }
 }
@@ -226,4 +245,5 @@ void DNSServiceResolverImpl::Shutdown() {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
+#endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

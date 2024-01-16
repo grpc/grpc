@@ -21,7 +21,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -51,7 +50,7 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -166,14 +165,14 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_wrr_locality_lb_trace)) {
     gpr_log(GPR_INFO, "[xds_wrr_locality_lb %p] Received update", this);
   }
-  RefCountedPtr<XdsWrrLocalityLbConfig> config = std::move(args.config);
+  auto config = args.config.TakeAsSubclass<XdsWrrLocalityLbConfig>();
   // Scan the addresses to find the weight for each locality.
   std::map<std::string, uint32_t> locality_weights;
   if (args.addresses.ok()) {
-    for (const auto& address : *args.addresses) {
-      auto* locality_name = address.args().GetObject<XdsLocalityName>();
+    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
+      auto* locality_name = endpoint.args().GetObject<XdsLocalityName>();
       uint32_t weight =
-          address.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT).value_or(0);
+          endpoint.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT).value_or(0);
       if (locality_name != nullptr && weight > 0) {
         auto p = locality_weights.emplace(
             locality_name->AsHumanReadableString(), weight);
@@ -184,7 +183,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
                   p.first->first.c_str(), p.first->second, weight);
         }
       }
-    }
+    });
   }
   // Construct the config for the weighted_target policy.
   Json::Object weighted_targets;
@@ -253,8 +252,8 @@ OrphanablePtr<LoadBalancingPolicy> XdsWrrLocalityLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper =
-      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+  lb_policy_args.channel_control_helper = std::make_unique<Helper>(
+      RefAsSubclass<XdsWrrLocalityLb>(DEBUG_LOCATION, "Helper"));
   auto lb_policy =
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "weighted_target_experimental", std::move(lb_policy_args));

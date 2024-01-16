@@ -18,6 +18,10 @@
 
 #include "src/core/ext/xds/xds_health_status.h"
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "envoy/config/core/v3/health_check.upb.h"
 
 namespace grpc_core {
@@ -56,8 +60,16 @@ const char* XdsHealthStatus::ToString() const {
   }
 }
 
-bool operator<(const XdsHealthStatus& hs1, const XdsHealthStatus& hs2) {
-  return hs1.status() < hs2.status();
+std::string XdsHealthStatusSet::ToString() const {
+  std::vector<const char*> set;
+  set.reserve(3);
+  for (const auto& status :
+       {XdsHealthStatus::kUnknown, XdsHealthStatus::kHealthy,
+        XdsHealthStatus::kDraining}) {
+    const XdsHealthStatus health_status(status);
+    if (Contains(health_status)) set.push_back(health_status.ToString());
+  }
+  return absl::StrCat("{", absl::StrJoin(set, ", "), "}");
 }
 
 }  // namespace grpc_core

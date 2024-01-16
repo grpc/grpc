@@ -47,6 +47,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -59,7 +60,7 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -334,7 +335,7 @@ absl::Status PriorityLb::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[priority_lb %p] received update", this);
   }
   // Update config.
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<PriorityLbConfig>();
   // Update args.
   args_ = std::move(args.args);
   // Update addresses.
@@ -410,7 +411,8 @@ void PriorityLb::ChoosePriorityLocked() {
     // Create child if needed.
     if (child == nullptr) {
       child = MakeOrphanable<ChildPriority>(
-          Ref(DEBUG_LOCATION, "ChildPriority"), child_name);
+          RefAsSubclass<PriorityLb>(DEBUG_LOCATION, "ChildPriority"),
+          child_name);
       auto child_config = config_->children().find(child_name);
       GPR_DEBUG_ASSERT(child_config != config_->children().end());
       // TODO(roth): If the child reports a non-OK status with the
@@ -683,7 +685,8 @@ absl::Status PriorityLb::ChildPriority::UpdateLocked(
   if (priority_policy_->addresses_.ok()) {
     auto it = priority_policy_->addresses_->find(name_);
     if (it == priority_policy_->addresses_->end()) {
-      update_args.addresses.emplace();
+      update_args.addresses = std::make_shared<EndpointAddressesListIterator>(
+          EndpointAddressesList());
     } else {
       update_args.addresses = it->second;
     }

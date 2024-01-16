@@ -33,4 +33,5 @@ message Frame {
 message Msg {
   repeated Frame frames = 2;
   grpc.testing.FuzzConfigVars config_vars = 3;
+  repeated uint64 random_numbers = 4;
 }

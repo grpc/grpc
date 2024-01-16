@@ -18,7 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
 #include <string.h>
 
 #include <functional>
@@ -217,10 +216,8 @@ absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
     return absl::InvalidArgumentError(
         "Auth context missing from client auth filter args");
   }
-
-  return ClientAuthFilter(
-      static_cast<grpc_channel_security_connector*>(sc)->Ref(),
-      auth_context->Ref());
+  return ClientAuthFilter(sc->RefAsSubclass<grpc_channel_security_connector>(),
+                          auth_context->Ref());
 }
 
 const grpc_channel_filter ClientAuthFilter::kFilter =

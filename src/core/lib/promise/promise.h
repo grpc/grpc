@@ -18,7 +18,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <type_traits>
-#include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
@@ -89,6 +88,10 @@ auto WithResult(F f) ->
                             F>::type {
   return f;
 }
+
+template <typename Promise>
+using PromiseResult = typename PollTraits<
+    typename promise_detail::PromiseLike<Promise>::Result>::Type;
 
 }  // namespace grpc_core
 

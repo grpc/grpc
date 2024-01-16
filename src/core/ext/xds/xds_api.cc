@@ -21,7 +21,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>
@@ -41,9 +40,9 @@
 #include "google/protobuf/timestamp.upb.h"
 #include "google/rpc/status.upb.h"
 #include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.h"
 #include "upb/text/encode.h"
-#include "upb/upb.hpp"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -58,12 +57,12 @@
 namespace grpc_core {
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
-               const XdsBootstrap::Node* node, upb::SymbolTable* symtab,
+               const XdsBootstrap::Node* node, upb::DefPool* def_pool,
                std::string user_agent_name, std::string user_agent_version)
     : client_(client),
       tracer_(tracer),
       node_(node),
-      symtab_(symtab),
+      def_pool_(def_pool),
       user_agent_name_(std::move(user_agent_name)),
       user_agent_version_(std::move(user_agent_version)) {}
 
@@ -72,7 +71,7 @@ namespace {
 struct XdsApiContext {
   XdsClient* client;
   TraceFlag* tracer;
-  upb_DefPool* symtab;
+  upb_DefPool* def_pool;
   upb_Arena* arena;
 };
 
@@ -184,9 +183,10 @@ void MaybeLogDiscoveryRequest(
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
-        envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(context.symtab);
+        envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(context.def_pool);
     char buf[10240];
-    upb_TextEncode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(request), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed ADS request: %s",
             context.client, buf);
   }
@@ -208,7 +208,8 @@ std::string XdsApi::CreateAdsRequest(
     absl::string_view nonce, const std::vector<std::string>& resource_names,
     absl::Status status, bool populate_node) {
   upb::Arena arena;
-  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
+  const XdsApiContext context = {client_, tracer_, def_pool_->ptr(),
+                                 arena.ptr()};
   // Create a request.
   envoy_service_discovery_v3_DiscoveryRequest* request =
       envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
@@ -271,9 +272,11 @@ void MaybeLogDiscoveryResponse(
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
-        envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(context.symtab);
+        envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(
+            context.def_pool);
     char buf[10240];
-    upb_TextEncode(response, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(response), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", context.client,
             buf);
   }
@@ -284,7 +287,8 @@ void MaybeLogDiscoveryResponse(
 absl::Status XdsApi::ParseAdsResponse(absl::string_view encoded_response,
                                       AdsResponseParserInterface* parser) {
   upb::Arena arena;
-  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
+  const XdsApiContext context = {client_, tracer_, def_pool_->ptr(),
+                                 arena.ptr()};
   // Decode the response.
   const envoy_service_discovery_v3_DiscoveryResponse* response =
       envoy_service_discovery_v3_DiscoveryResponse_parse(
@@ -357,9 +361,11 @@ void MaybeLogLrsRequest(
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
-        envoy_service_load_stats_v3_LoadStatsRequest_getmsgdef(context.symtab);
+        envoy_service_load_stats_v3_LoadStatsRequest_getmsgdef(
+            context.def_pool);
     char buf[10240];
-    upb_TextEncode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(request), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed LRS request: %s",
             context.client, buf);
   }
@@ -378,7 +384,8 @@ std::string SerializeLrsRequest(
 
 std::string XdsApi::CreateLrsInitialRequest() {
   upb::Arena arena;
-  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
+  const XdsApiContext context = {client_, tracer_, def_pool_->ptr(),
+                                 arena.ptr()};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -448,7 +455,8 @@ void LocalityStatsPopulate(
 std::string XdsApi::CreateLrsRequest(
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
-  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
+  const XdsApiContext context = {client_, tracer_, def_pool_->ptr(),
+                                 arena.ptr()};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -515,9 +523,11 @@ void MaybeLogLrsResponse(
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
-        envoy_service_load_stats_v3_LoadStatsResponse_getmsgdef(context.symtab);
+        envoy_service_load_stats_v3_LoadStatsResponse_getmsgdef(
+            context.def_pool);
     char buf[10240];
-    upb_TextEncode(response, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(response), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] received LRS response: %s",
             context.client, buf);
   }
@@ -538,7 +548,8 @@ absl::Status XdsApi::ParseLrsResponse(absl::string_view encoded_response,
   if (decoded_response == nullptr) {
     return absl::UnavailableError("Can't decode response.");
   }
-  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
+  const XdsApiContext context = {client_, tracer_, def_pool_->ptr(),
+                                 arena.ptr()};
   MaybeLogLrsResponse(context, decoded_response);
   // Check send_all_clusters.
   if (envoy_service_load_stats_v3_LoadStatsResponse_send_all_clusters(
@@ -586,7 +597,8 @@ std::string XdsApi::AssembleClientConfig(
   // Fill-in the node information
   auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
                                                                  arena.ptr());
-  const XdsApiContext context = {client_, tracer_, symtab_->ptr(), arena.ptr()};
+  const XdsApiContext context = {client_, tracer_, def_pool_->ptr(),
+                                 arena.ptr()};
   PopulateNode(context, node_, user_agent_name_, user_agent_version_, node);
   // Dump each resource.
   std::vector<std::string> type_url_storage;

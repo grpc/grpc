@@ -407,7 +407,7 @@ class ClientChannel::LoadBalancedCall
   ClientChannel* chand() const { return chand_; }
   ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
     return static_cast<ClientCallTracer::CallAttemptTracer*>(
-        call_context()[GRPC_CONTEXT_CALL_TRACER].value);
+        call_context_[GRPC_CONTEXT_CALL_TRACER].value);
   }
   ConnectedSubchannel* connected_subchannel() const {
     return connected_subchannel_.get();
@@ -441,13 +441,14 @@ class ClientChannel::LoadBalancedCall
 
   void RecordLatency();
 
+  grpc_call_context_element* call_context() const { return call_context_; }
+
  private:
   class LbCallState;
   class Metadata;
   class BackendMetricAccessor;
 
   virtual Arena* arena() const = 0;
-  virtual grpc_call_context_element* call_context() const = 0;
   virtual grpc_polling_entity* pollent() = 0;
   virtual grpc_metadata_batch* send_initial_metadata() const = 0;
 
@@ -473,6 +474,7 @@ class ClientChannel::LoadBalancedCall
   const BackendMetricData* backend_metric_data_ = nullptr;
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       lb_subchannel_call_tracker_;
+  grpc_call_context_element* const call_context_;
 };
 
 class ClientChannel::FilterBasedLoadBalancedCall
@@ -509,9 +511,6 @@ class ClientChannel::FilterBasedLoadBalancedCall
   using LoadBalancedCall::Commit;
 
   Arena* arena() const override { return arena_; }
-  grpc_call_context_element* call_context() const override {
-    return call_context_;
-  }
   grpc_polling_entity* pollent() override { return pollent_; }
   grpc_metadata_batch* send_initial_metadata() const override {
     return pending_batches_[0]
@@ -568,7 +567,6 @@ class ClientChannel::FilterBasedLoadBalancedCall
   // context.  This will save per-call memory overhead.
   Timestamp deadline_;
   Arena* arena_;
-  grpc_call_context_element* call_context_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
   grpc_polling_entity* pollent_;
@@ -618,7 +616,6 @@ class ClientChannel::PromiseBasedLoadBalancedCall
 
  private:
   Arena* arena() const override;
-  grpc_call_context_element* call_context() const override;
   grpc_polling_entity* pollent() override { return &pollent_; }
   grpc_metadata_batch* send_initial_metadata() const override;
 

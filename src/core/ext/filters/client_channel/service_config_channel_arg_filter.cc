@@ -31,10 +31,10 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -46,7 +46,6 @@
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/service_config/service_config_parser.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -55,8 +54,11 @@ namespace grpc_core {
 
 namespace {
 
-class ServiceConfigChannelArgFilter : public ChannelFilter {
+class ServiceConfigChannelArgFilter
+    : public ImplementChannelFilter<ServiceConfigChannelArgFilter> {
  public:
+  static const grpc_channel_filter kFilter;
+
   static absl::StatusOr<ServiceConfigChannelArgFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args) {
     return ServiceConfigChannelArgFilter(args);
@@ -75,31 +77,46 @@ class ServiceConfigChannelArgFilter : public ChannelFilter {
     }
   }
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& md,
+                                 ServiceConfigChannelArgFilter* filter);
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
 
  private:
   RefCountedPtr<ServiceConfig> service_config_;
 };
 
-ArenaPromise<ServerMetadataHandle>
-ServiceConfigChannelArgFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+const NoInterceptor
+    ServiceConfigChannelArgFilter::Call::OnServerInitialMetadata;
+const NoInterceptor
+    ServiceConfigChannelArgFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor
+    ServiceConfigChannelArgFilter::Call::OnClientToServerMessage;
+const NoInterceptor
+    ServiceConfigChannelArgFilter::Call::OnServerToClientMessage;
+const NoInterceptor ServiceConfigChannelArgFilter::Call::OnFinalize;
+
+void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
+    ClientMetadata& md, ServiceConfigChannelArgFilter* filter) {
   const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
-  if (service_config_ != nullptr) {
-    method_configs = service_config_->GetMethodParsedConfigVector(
-        call_args.client_initial_metadata->get_pointer(HttpPathMetadata())
-            ->c_slice());
+  if (filter->service_config_ != nullptr) {
+    method_configs = filter->service_config_->GetMethodParsedConfigVector(
+        md.get_pointer(HttpPathMetadata())->c_slice());
   }
   auto* arena = GetContext<Arena>();
   auto* service_config_call_data = arena->New<ServiceConfigCallData>(
       arena, GetContext<grpc_call_context_element>());
-  service_config_call_data->SetServiceConfig(service_config_, method_configs);
-  return next_promise_factory(std::move(call_args));
+  service_config_call_data->SetServiceConfig(filter->service_config_,
+                                             method_configs);
 }
 
-const grpc_channel_filter kServiceConfigChannelArgFilter =
+const grpc_channel_filter ServiceConfigChannelArgFilter::kFilter =
     MakePromiseBasedFilter<ServiceConfigChannelArgFilter,
                            FilterEndpoint::kClient>(
         "service_config_channel_arg");
@@ -108,17 +125,12 @@ const grpc_channel_filter kServiceConfigChannelArgFilter =
 
 void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto channel_args = builder->channel_args();
-        if (channel_args.WantMinimalStack() ||
-            !channel_args.GetString(GRPC_ARG_SERVICE_CONFIG).has_value()) {
-          return true;
-        }
-        builder->PrependFilter(&kServiceConfigChannelArgFilter);
-        return true;
-      });
+  builder->channel_init()
+      ->RegisterFilter<ServiceConfigChannelArgFilter>(
+          GRPC_CLIENT_DIRECT_CHANNEL)
+      .ExcludeFromMinimalStack()
+      .IfHasChannelArg(GRPC_ARG_SERVICE_CONFIG)
+      .Before<ClientMessageSizeFilter>();
 }
 
 }  // namespace grpc_core

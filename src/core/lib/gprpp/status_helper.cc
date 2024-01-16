@@ -22,7 +22,6 @@
 
 #include <string.h>
 
-#include <algorithm>
 #include <utility>
 
 #include "absl/strings/cord.h"
@@ -35,8 +34,7 @@
 #include "google/protobuf/any.upb.h"
 #include "google/rpc/status.upb.h"
 #include "upb/base/string_view.h"
-#include "upb/mem/arena.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/support/log.h>
 

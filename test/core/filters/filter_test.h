@@ -206,13 +206,14 @@ class FilterTestBase : public ::testing::Test {
   ~FilterTestBase() override;
 
   grpc_event_engine::experimental::EventEngine* event_engine() {
-    return &event_engine_;
+    return event_engine_.get();
   }
 
   void Step();
 
  private:
-  grpc_event_engine::experimental::FuzzingEventEngine event_engine_;
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+      event_engine_;
 };
 
 template <typename Filter>

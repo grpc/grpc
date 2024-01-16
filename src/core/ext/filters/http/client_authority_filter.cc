@@ -20,8 +20,6 @@
 
 #include "src/core/ext/filters/http/client_authority_filter.h"
 
-#include <limits.h>
-
 #include <functional>
 #include <memory>
 
@@ -32,12 +30,18 @@
 #include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
+
+const NoInterceptor ClientAuthorityFilter::Call::OnServerInitialMetadata;
+const NoInterceptor ClientAuthorityFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ClientAuthorityFilter::Call::OnClientToServerMessage;
+const NoInterceptor ClientAuthorityFilter::Call::OnServerToClientMessage;
+const NoInterceptor ClientAuthorityFilter::Call::OnFinalize;
 
 absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
@@ -51,17 +55,12 @@ absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
   return ClientAuthorityFilter(Slice::FromCopiedString(*default_authority));
 }
 
-ArenaPromise<ServerMetadataHandle> ClientAuthorityFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void ClientAuthorityFilter::Call::OnClientInitialMetadata(
+    ClientMetadata& md, ClientAuthorityFilter* filter) {
   // If no authority is set, set the default authority.
-  if (call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata()) ==
-      nullptr) {
-    call_args.client_initial_metadata->Set(HttpAuthorityMetadata(),
-                                           default_authority_.Ref());
+  if (md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
+    md.Set(HttpAuthorityMetadata(), filter->default_authority_.Ref());
   }
-  // We have no asynchronous work, so we can just ask the next promise to run,
-  // passing down initial_metadata.
-  return next_promise_factory(std::move(call_args));
 }
 
 const grpc_channel_filter ClientAuthorityFilter::kFilter =
@@ -69,22 +68,21 @@ const grpc_channel_filter ClientAuthorityFilter::kFilter =
         "authority");
 
 namespace {
-bool add_client_authority_filter(ChannelStackBuilder* builder) {
-  if (builder->channel_args()
-          .GetBool(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER)
-          .value_or(false)) {
-    return true;
-  }
-  builder->PrependFilter(&ClientAuthorityFilter::kFilter);
-  return true;
+bool NeedsClientAuthorityFilter(const ChannelArgs& args) {
+  return !args.GetBool(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER)
+              .value_or(false);
 }
 }  // namespace
 
 void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
-                                         add_client_authority_filter);
-  builder->channel_init()->RegisterStage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                         add_client_authority_filter);
+  builder->channel_init()
+      ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_SUBCHANNEL)
+      .If(NeedsClientAuthorityFilter)
+      .Before<ClientAuthFilter>();
+  builder->channel_init()
+      ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+      .If(NeedsClientAuthorityFilter)
+      .Before<ClientAuthFilter>();
 }
 
 }  // namespace grpc_core

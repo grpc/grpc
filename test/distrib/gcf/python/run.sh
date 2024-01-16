@@ -25,10 +25,7 @@ RUN_ID=$(uuidgen)
 
 FAILED_RUNTIMES=""
 
-# This is the only programmatic way to get access to the list of runtimes.
-# While hacky, it's better than the alternative -- manually upgrading a
-# hand-curated list every few months.
-RUNTIMES=$(gcloud functions deploy --help | grep -Eo "python[0-9]+" | sort | uniq)
+RUNTIMES=$(gcloud functions runtimes list --filter name:python* --region us-west1 | grep python | awk '{print $1}')
 
 while read -r RUNTIME; do
   BARE_VERSION=${RUNTIME//python/}

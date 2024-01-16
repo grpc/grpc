@@ -18,7 +18,6 @@
 
 #include <stddef.h>
 
-#include <initializer_list>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
@@ -26,7 +25,6 @@
 #include "absl/strings/str_join.h"
 
 #include "src/core/lib/gprpp/atomic_utils.h"
-#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
 
@@ -85,7 +83,23 @@ class FreestandingActivity::Handle final : public Wakeable {
   }
 
   void WakeupAsync(WakeupMask) override ABSL_LOCKS_EXCLUDED(mu_) {
-    Crash("not implemented");
+    mu_.Lock();
+    // Note that activity refcount can drop to zero, but we could win the lock
+    // against DropActivity, so we need to only increase activities refcount if
+    // it is non-zero.
+    if (activity_ && activity_->RefIfNonzero()) {
+      FreestandingActivity* activity = activity_;
+      mu_.Unlock();
+      // Activity still exists and we have a reference: wake it up, which will
+      // drop the ref.
+      activity->WakeupAsync(0);
+    } else {
+      // Could not get the activity - it's either gone or going. No need to wake
+      // it up!
+      mu_.Unlock();
+    }
+    // Drop the ref to the handle (we have one ref = one wakeup semantics).
+    Unref();
   }
 
   void Drop(WakeupMask) override { Unref(); }

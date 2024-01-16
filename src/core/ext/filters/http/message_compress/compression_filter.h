@@ -61,14 +61,14 @@ namespace grpc_core {
 /// the aforementioned 'grpc-encoding' metadata value, data will pass through
 /// uncompressed.
 
-class CompressionFilter : public ChannelFilter {
- protected:
+class ChannelCompression {
+ public:
+  explicit ChannelCompression(const ChannelArgs& args);
+
   struct DecompressArgs {
     grpc_compression_algorithm algorithm;
     absl::optional<uint32_t> max_recv_message_length;
   };
-
-  explicit CompressionFilter(const ChannelArgs& args);
 
   grpc_compression_algorithm default_compression_algorithm() const {
     return default_compression_algorithm_;
@@ -104,7 +104,8 @@ class CompressionFilter : public ChannelFilter {
   bool enable_decompression_;
 };
 
-class ClientCompressionFilter final : public CompressionFilter {
+class ClientCompressionFilter final
+    : public ImplementChannelFilter<ClientCompressionFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -112,14 +113,35 @@ class ClientCompressionFilter final : public CompressionFilter {
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& md,
+                                 ClientCompressionFilter* filter);
+    MessageHandle OnClientToServerMessage(MessageHandle message,
+                                          ClientCompressionFilter* filter);
+
+    void OnServerInitialMetadata(ServerMetadata& md,
+                                 ClientCompressionFilter* filter);
+    absl::StatusOr<MessageHandle> OnServerToClientMessage(
+        MessageHandle message, ClientCompressionFilter* filter);
+
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnFinalize;
+
+   private:
+    grpc_compression_algorithm compression_algorithm_;
+    ChannelCompression::DecompressArgs decompress_args_;
+  };
 
  private:
-  using CompressionFilter::CompressionFilter;
+  explicit ClientCompressionFilter(const ChannelArgs& args)
+      : compression_engine_(args) {}
+
+  ChannelCompression compression_engine_;
 };
 
-class ServerCompressionFilter final : public CompressionFilter {
+class ServerCompressionFilter final
+    : public ImplementChannelFilter<ServerCompressionFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -127,11 +149,31 @@ class ServerCompressionFilter final : public CompressionFilter {
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& md,
+                                 ServerCompressionFilter* filter);
+    absl::StatusOr<MessageHandle> OnClientToServerMessage(
+        MessageHandle message, ServerCompressionFilter* filter);
+
+    void OnServerInitialMetadata(ServerMetadata& md,
+                                 ServerCompressionFilter* filter);
+    MessageHandle OnServerToClientMessage(MessageHandle message,
+                                          ServerCompressionFilter* filter);
+
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnFinalize;
+
+   private:
+    ChannelCompression::DecompressArgs decompress_args_;
+    grpc_compression_algorithm compression_algorithm_;
+  };
 
  private:
-  using CompressionFilter::CompressionFilter;
+  explicit ServerCompressionFilter(const ChannelArgs& args)
+      : compression_engine_(args) {}
+
+  ChannelCompression compression_engine_;
 };
 
 }  // namespace grpc_core

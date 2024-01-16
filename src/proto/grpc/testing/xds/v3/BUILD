@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 
 licenses(["notice"])
 
@@ -209,6 +209,16 @@ grpc_proto_library(
         "protocol.proto",
     ],
     well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "http_protocol_options_proto",
+    srcs = [
+        "http_protocol_options.proto",
+    ],
+    deps = [
+        "protocol_proto",
+    ],
 )
 
 grpc_proto_library(

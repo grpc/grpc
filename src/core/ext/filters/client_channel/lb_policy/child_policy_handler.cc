@@ -32,10 +32,10 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -52,11 +52,12 @@ class ChildPolicyHandler::Helper
       : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const ChannelArgs& args) override {
+      const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+      const ChannelArgs& args) override {
     if (parent()->shutting_down_) return nullptr;
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
     return parent()->channel_control_helper()->CreateSubchannel(
-        std::move(address), args);
+        address, per_address_args, args);
   }
 
   void UpdateState(grpc_connectivity_state state, const absl::Status& status,
@@ -97,7 +98,7 @@ class ChildPolicyHandler::Helper
             : parent()->child_policy_.get();
     if (child_ != latest_child_policy) return;
     if (GRPC_TRACE_FLAG_ENABLED(*(parent()->tracer_))) {
-      gpr_log(GPR_INFO, "[child_policy_handler %p] started name re-resolving",
+      gpr_log(GPR_INFO, "[child_policy_handler %p] requesting re-resolution",
               parent());
     }
     parent()->channel_control_helper()->RequestReresolution();
@@ -271,7 +272,8 @@ void ChildPolicyHandler::ResetBackoffLocked() {
 
 OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
     absl::string_view child_policy_name, const ChannelArgs& args) {
-  Helper* helper = new Helper(Ref(DEBUG_LOCATION, "Helper"));
+  Helper* helper =
+      new Helper(RefAsSubclass<ChildPolicyHandler>(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.channel_control_helper =

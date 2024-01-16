@@ -16,7 +16,6 @@
 
 #include "src/core/ext/xds/xds_common_types.h"
 
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -34,8 +33,8 @@
 #include "google/protobuf/duration.upb.h"
 #include "gtest/gtest.h"
 #include "re2/re2.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 

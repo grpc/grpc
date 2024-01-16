@@ -18,8 +18,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include <string>
-
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
@@ -84,6 +82,7 @@ static void free_call(void* arg, grpc_error_handle /*error*/) {
 TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_channel_filter filter = {
       call_func,
+      nullptr,
       nullptr,
       channel_func,
       sizeof(int),

@@ -30,7 +30,6 @@ line_length = 80
 src_paths = [
     "examples/python/data_transmission",
     "examples/python/async_streaming",
-    "tools/run_tests/xds_k8s_test_driver",
     "src/python/grpcio_tests",
     "tools/run_tests",
 ]

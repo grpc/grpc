@@ -25,6 +25,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
@@ -49,6 +50,7 @@ class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
  public:
   virtual ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
       UniqueTypeName type) const = 0;
+  virtual ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const = 0;
 };
 
 // Internal type for ServiceConfigCallData.  Handles call commits.

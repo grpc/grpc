@@ -43,6 +43,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "bm_rng",
+    srcs = ["bm_rng.cc"],
+    external_deps = [
+        "benchmark",
+        "absl/container:btree",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/core:channel_args",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "bm_exec_ctx",
     srcs = ["bm_exec_ctx.cc"],
     args = grpc_benchmark_args(),
@@ -210,22 +224,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
-)
-
-grpc_cc_test(
-    name = "bm_call_create",
-    srcs = ["bm_call_create.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        ":helpers",
-        "//src/core:channel_args",
-    ],
 )
 
 grpc_cc_test(

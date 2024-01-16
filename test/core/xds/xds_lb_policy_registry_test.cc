@@ -29,8 +29,8 @@
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 
@@ -74,10 +74,10 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
     const LoadBalancingPolicyProto& policy) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
-  upb::SymbolTable symtab;
-  XdsResourceType::DecodeContext context = {nullptr,
-                                            GrpcXdsBootstrap::GrpcXdsServer(),
-                                            nullptr, symtab.ptr(), arena.ptr()};
+  upb::DefPool def_pool;
+  XdsResourceType::DecodeContext context = {
+      nullptr, GrpcXdsBootstrap::GrpcXdsServer(), nullptr, def_pool.ptr(),
+      arena.ptr()};
   auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());
   ValidationErrors errors;

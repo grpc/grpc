@@ -221,6 +221,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   channelz::SubchannelNode* channelz_node();
 
+  const grpc_resolved_address& address() const { return key_.address(); }
+
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.
   // Subsequent callbacks will be delivered as the subchannel's state
@@ -269,6 +271,10 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // this type is the specified producer.
   void RemoveDataProducer(DataProducerInterface* data_producer)
       ABSL_LOCKS_EXCLUDED(mu_);
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine() {
+    return event_engine_;
+  }
 
  private:
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring

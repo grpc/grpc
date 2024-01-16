@@ -27,7 +27,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -36,8 +35,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -45,18 +42,54 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(yashykt): This filter is not really needed. We should be able to move
-// this to the connected filter.
-class ServerCallTracerFilter : public ChannelFilter {
+class ServerCallTracerFilter
+    : public ImplementChannelFilter<ServerCallTracerFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ServerCallTracerFilter> Create(
       const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/);
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& client_initial_metadata) {
+      auto* call_tracer = CallTracer();
+      if (call_tracer == nullptr) return;
+      call_tracer->RecordReceivedInitialMetadata(&client_initial_metadata);
+    }
+
+    void OnServerInitialMetadata(ServerMetadata& server_initial_metadata) {
+      auto* call_tracer = CallTracer();
+      if (call_tracer == nullptr) return;
+      call_tracer->RecordSendInitialMetadata(&server_initial_metadata);
+    }
+
+    void OnFinalize(const grpc_call_final_info* final_info) {
+      auto* call_tracer = CallTracer();
+      if (call_tracer == nullptr) return;
+      call_tracer->RecordEnd(final_info);
+    }
+
+    void OnServerTrailingMetadata(ServerMetadata& server_trailing_metadata) {
+      auto* call_tracer = CallTracer();
+      if (call_tracer == nullptr) return;
+      call_tracer->RecordSendTrailingMetadata(&server_trailing_metadata);
+    }
+
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+
+   private:
+    static ServerCallTracer* CallTracer() {
+      auto* call_context = GetContext<grpc_call_context_element>();
+      return static_cast<ServerCallTracer*>(
+          call_context[GRPC_CONTEXT_CALL_TRACER].value);
+    }
+  };
 };
+
+const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerMessage;
+const NoInterceptor ServerCallTracerFilter::Call::OnServerToClientMessage;
 
 const grpc_channel_filter ServerCallTracerFilter::kFilter =
     MakePromiseBasedFilter<ServerCallTracerFilter, FilterEndpoint::kServer,
@@ -68,43 +101,11 @@ absl::StatusOr<ServerCallTracerFilter> ServerCallTracerFilter::Create(
   return ServerCallTracerFilter();
 }
 
-ArenaPromise<ServerMetadataHandle> ServerCallTracerFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  auto* call_context = GetContext<grpc_call_context_element>();
-  auto* call_tracer = static_cast<ServerCallTracer*>(
-      call_context[GRPC_CONTEXT_CALL_TRACER].value);
-  if (call_tracer == nullptr) {
-    return next_promise_factory(std::move(call_args));
-  }
-  call_tracer->RecordReceivedInitialMetadata(
-      call_args.client_initial_metadata.get());
-  call_args.server_initial_metadata->InterceptAndMap(
-      [call_tracer](ServerMetadataHandle metadata) {
-        call_tracer->RecordSendInitialMetadata(metadata.get());
-        return metadata;
-      });
-  GetContext<CallFinalization>()->Add(
-      [call_tracer](const grpc_call_final_info* final_info) {
-        call_tracer->RecordEnd(final_info);
-      });
-  return OnCancel(
-      Map(next_promise_factory(std::move(call_args)),
-          [call_tracer](ServerMetadataHandle md) {
-            call_tracer->RecordSendTrailingMetadata(md.get());
-            return md;
-          }),
-      [call_tracer]() { call_tracer->RecordCancel(absl::CancelledError()); });
-}
-
 }  // namespace
 
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        builder->AppendFilter(&ServerCallTracerFilter::kFilter);
-        return true;
-      });
+  builder->channel_init()->RegisterFilter<ServerCallTracerFilter>(
+      GRPC_SERVER_CHANNEL);
 }
 
 }  // namespace grpc_core

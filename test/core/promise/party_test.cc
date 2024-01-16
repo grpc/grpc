@@ -36,6 +36,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/sleep.h"
@@ -298,6 +299,31 @@ TEST_F(PartyTest, CanSpawnAndRun) {
   n.WaitForNotification();
 }
 
+TEST_F(PartyTest, CanSpawnWaitableAndRun) {
+  auto party1 = MakeRefCounted<TestParty>();
+  auto party2 = MakeRefCounted<TestParty>();
+  Notification n;
+  InterActivityLatch<void> done;
+  // Spawn a task on party1 that will wait for a task on party2.
+  // The party2 task will wait on the latch `done`.
+  party1->Spawn(
+      "party1_main",
+      [&party2, &done]() {
+        return party2->SpawnWaitable("party2_main",
+                                     [&done]() { return done.Wait(); });
+      },
+      [&n](Empty) { n.Notify(); });
+  ASSERT_FALSE(n.HasBeenNotified());
+  party1->Spawn(
+      "party1_notify_latch",
+      [&done]() {
+        done.Set();
+        return Empty{};
+      },
+      [](Empty) {});
+  n.WaitForNotification();
+}
+
 TEST_F(PartyTest, CanSpawnFromSpawn) {
   auto party = MakeRefCounted<TestParty>();
   Notification n1;
@@ -462,6 +488,54 @@ TEST_F(PartyTest, CanBulkSpawn) {
   }
   n1.WaitForNotification();
   n2.WaitForNotification();
+}
+
+TEST_F(PartyTest, AfterCurrentPollWorks) {
+  auto party = MakeRefCounted<TestParty>();
+  Notification n;
+  int state = 0;
+  {
+    Party::BulkSpawner spawner(party.get());
+    // BulkSpawner will schedule and poll this promise first, but the
+    // `AfterCurrentPoll` will pause it.
+    // Then spawn1, spawn2, and spawn3 will run in order (with EXPECT_EQ checks
+    // demonstrating this), at which point the poll will complete, causing
+    // spawn_final to be awoken and scheduled and see the final state.
+    spawner.Spawn(
+        "spawn_final",
+        [&state, &party]() {
+          return Seq(party->AfterCurrentPoll(), [&state]() {
+            EXPECT_EQ(state, 3);
+            return Empty{};
+          });
+        },
+        [&n](Empty) { n.Notify(); });
+    spawner.Spawn(
+        "spawn1",
+        [&state]() {
+          EXPECT_EQ(state, 0);
+          state = 1;
+          return Empty{};
+        },
+        [](Empty) {});
+    spawner.Spawn(
+        "spawn2",
+        [&state]() {
+          EXPECT_EQ(state, 1);
+          state = 2;
+          return Empty{};
+        },
+        [](Empty) {});
+    spawner.Spawn(
+        "spawn3",
+        [&state]() {
+          EXPECT_EQ(state, 2);
+          state = 3;
+          return Empty{};
+        },
+        [](Empty) {});
+  }
+  n.WaitForNotification();
 }
 
 TEST_F(PartyTest, ThreadStressTest) {
