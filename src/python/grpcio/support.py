@@ -18,7 +18,13 @@ import shutil
 import sys
 import tempfile
 
-from setuptools import errors
+if sys.version_info >= (3, 11):
+    from setuptools import errors
+else:
+    # CompileError only exist for setuptools>=59.0.1, which becomes standard library
+    # after Python 3.10.6.
+    # TODO(xuanwn): Remove this once Python version floor is higher than 3.10.
+    from distutils import errors
 
 import commands
 
