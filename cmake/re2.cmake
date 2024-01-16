@@ -12,18 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The CMakeLists.txt for re2 doesn't propagate include directories
-# transitively so `_gRPC_RE2_INCLUDE_DIR` should be set for gRPC
-# to find header files.
-
-if(gRPC_RE2_PROVIDER STREQUAL "module")
+if(TARGET re2::re2)
+  # If absl is included already, skip including it.
+elseif(gRPC_RE2_PROVIDER STREQUAL "module")
   if(NOT RE2_ROOT_DIR)
     set(RE2_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/re2)
   endif()
   if(EXISTS "${RE2_ROOT_DIR}/CMakeLists.txt")
     # Explicitly disable BUILD_TESTING to avoid re2's CMakeLists.txt triggering https://github.com/grpc/grpc/issues/23586
     option(BUILD_TESTING "re2.cmake explicitly disabled CTest's BUILD_TESTING option." OFF)
-    set(_gRPC_RE2_INCLUDE_DIR "${RE2_ROOT_DIR}")
     add_subdirectory(${RE2_ROOT_DIR} third_party/re2)
   else()
     message(WARNING "gRPC_RE2_PROVIDER is \"module\" but RE2_ROOT_DIR(${RE2_ROOT_DIR}) is wrong")
@@ -33,9 +30,6 @@ if(gRPC_RE2_PROVIDER STREQUAL "module")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif(gRPC_RE2_PROVIDER STREQUAL "package")
-  find_package(re2 REQUIRED)
-  if(TARGET re2::re2)
-    set(_gRPC_RE2_LIBRARIES re2::re2)
-  endif()
-  set(_gRPC_FIND_RE2 "if(NOT re2_FOUND)\n  find_package(re2)\nendif()")
+  find_package(re2 REQUIRED CONFIG)
 endif()
+set(_gRPC_FIND_RE2 "if(NOT TARGET re2_FOUND)\n  find_package(re2 CONFIG)\nendif()")
