@@ -247,10 +247,11 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
       return;
     }
   }
-  args_ = std::move(args);
+  args_ = args;
   notify_ = notify;
   resolved_addr_ = EventEngine::ResolvedAddress(
-      reinterpret_cast<const sockaddr*>(args.address->addr), args.address->len);
+      reinterpret_cast<const sockaddr*>(args_.address->addr),
+      args_.address->len);
   GPR_ASSERT(resolved_addr_.value().address() != nullptr);
   Ref().release();  // Ref held by OnHandshakeDone().
   grpc_event_engine::experimental::EventEngine::OnConnectCallback on_connect =
