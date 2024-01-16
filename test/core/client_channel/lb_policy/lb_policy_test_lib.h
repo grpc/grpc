@@ -385,7 +385,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
     }
 
-    std::shared_ptr<WorkSerializer> work_serializer() {
+    size_t NumWatchers() const {
+      size_t num_watchers;
+      absl::Notification notification;
+      work_serializer()->Run(
+          [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*test_->work_serializer_) {
+            num_watchers = state_tracker_.NumWatchers();
+            notification.Notify();
+          },
+          DEBUG_LOCATION);
+      notification.WaitForNotification();
+      return num_watchers;
+    }
+
+    std::shared_ptr<WorkSerializer> work_serializer() const {
       return test_->work_serializer_;
     }
 
@@ -457,7 +470,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           << location.file() << ":" << location.line();
       if (update == nullptr) return absl::nullopt;
       StateUpdate result = std::move(*update);
-      gpr_log(GPR_INFO, "got next state update: %s", result.ToString().c_str());
+      gpr_log(GPR_INFO, "dequeued next state update: %s",
+              result.ToString().c_str());
       queue_.pop_front();
       return std::move(result);
     }
@@ -542,7 +556,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         const ChannelArgs& /*per_address_args*/,
         const ChannelArgs& args) override {
       // TODO(roth): Need to use per_address_args here.
-      SubchannelKey key(address, args);
+      SubchannelKey key(
+          address, args.RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX));
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
         auto address_uri = grpc_sockaddr_to_uri(&address);
@@ -562,7 +577,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       StateUpdate update{
           state, status,
           MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
-      gpr_log(GPR_INFO, "state update from LB policy: %s",
+      gpr_log(GPR_INFO, "enqueuing state update from LB policy: %s",
               update.ToString().c_str());
       queue_.push_back(std::move(update));
     }
@@ -653,6 +668,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       if (it != attributes_.end()) {
         return it->second;
       }
+      return nullptr;
+    }
+
+    ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
       return nullptr;
     }
 
@@ -771,11 +790,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Constructs an update containing a list of endpoints.
   LoadBalancingPolicy::UpdateArgs BuildUpdate(
       absl::Span<const EndpointAddresses> endpoints,
-      RefCountedPtr<LoadBalancingPolicy::Config> config) {
+      RefCountedPtr<LoadBalancingPolicy::Config> config,
+      ChannelArgs args = ChannelArgs()) {
     LoadBalancingPolicy::UpdateArgs update;
     update.addresses = std::make_shared<EndpointAddressesListIterator>(
         EndpointAddressesList(endpoints.begin(), endpoints.end()));
     update.config = std::move(config);
+    update.args = std::move(args);
     return update;
   }
 
@@ -791,9 +812,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Convenient overload that takes a flat address list.
   LoadBalancingPolicy::UpdateArgs BuildUpdate(
       absl::Span<const absl::string_view> addresses,
-      RefCountedPtr<LoadBalancingPolicy::Config> config) {
+      RefCountedPtr<LoadBalancingPolicy::Config> config,
+      ChannelArgs args = ChannelArgs()) {
     return BuildUpdate(MakeEndpointAddressesListFromAddressList(addresses),
-                       std::move(config));
+                       std::move(config), std::move(args));
   }
 
   // Applies the update on the LB policy.
@@ -1161,7 +1183,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Expect startup with RR with a set of addresses.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
-      absl::Span<const EndpointAddresses> endpoints) {
+      absl::Span<const EndpointAddresses> endpoints,
+      SourceLocation location = SourceLocation()) {
     GPR_ASSERT(!endpoints.empty());
     // There should be a subchannel for every address.
     // We will wind up connecting to the first address for every endpoint.
@@ -1178,7 +1201,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         const grpc_resolved_address& address = endpoint.addresses()[i];
         std::string address_str = grpc_sockaddr_to_uri(&address).value();
         auto* subchannel = FindSubchannel(address_str);
-        EXPECT_NE(subchannel, nullptr);
+        EXPECT_NE(subchannel, nullptr)
+            << address_str << "\n"
+            << location.file() << ":" << location.line();
         if (subchannel == nullptr) return nullptr;
         endpoint_subchannels.back().push_back(subchannel);
         if (i == 0) {
@@ -1190,16 +1215,19 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // We should request a connection to the first address of each endpoint,
     // and not to any of the subsequent addresses.
     for (const auto& subchannels : endpoint_subchannels) {
-      EXPECT_TRUE(subchannels[0]->ConnectionRequested());
+      EXPECT_TRUE(subchannels[0]->ConnectionRequested())
+          << location.file() << ":" << location.line();
       for (size_t i = 1; i < subchannels.size(); ++i) {
-        EXPECT_FALSE(subchannels[i]->ConnectionRequested());
+        EXPECT_FALSE(subchannels[i]->ConnectionRequested())
+            << "i=" << i << "\n"
+            << location.file() << ":" << location.line();
       }
     }
     // The subchannels that we've asked to connect should report
     // CONNECTING state.
     for (size_t i = 0; i < endpoint_subchannels.size(); ++i) {
       endpoint_subchannels[i][0]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-      if (i == 0) ExpectConnectingUpdate();
+      if (i == 0) ExpectConnectingUpdate(location);
     }
     // The connection attempts should succeed.
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
@@ -1209,8 +1237,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         // When the first subchannel becomes READY, accept any number of
         // CONNECTING updates with a picker that queues followed by a READY
         // update with a picker that repeatedly returns only the first address.
-        picker = WaitForConnected();
-        ExpectRoundRobinPicks(picker.get(), {chosen_addresses[0]});
+        picker = WaitForConnected(location);
+        ExpectRoundRobinPicks(picker.get(), {chosen_addresses[0]}, {}, 3,
+                              location);
       } else {
         // When each subsequent subchannel becomes READY, we accept any number
         // of READY updates where the picker returns only the previously
@@ -1219,7 +1248,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         // connected subchannel.
         picker = WaitForRoundRobinListChange(
             absl::MakeSpan(chosen_addresses).subspan(0, i),
-            absl::MakeSpan(chosen_addresses).subspan(0, i + 1));
+            absl::MakeSpan(chosen_addresses).subspan(0, i + 1), {}, 3,
+            location);
       }
     }
     return picker;
@@ -1228,9 +1258,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // A convenient override that takes a flat list of addresses, one per
   // endpoint.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
-      absl::Span<const absl::string_view> addresses) {
+      absl::Span<const absl::string_view> addresses,
+      SourceLocation location = SourceLocation()) {
     return ExpectRoundRobinStartup(
-        MakeEndpointAddressesListFromAddressList(addresses));
+        MakeEndpointAddressesListFromAddressList(addresses), location);
   }
 
   // Expects zero or more picker updates, each of which returns
@@ -1401,14 +1432,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   void SetExpectedTimerDuration(
       absl::optional<grpc_event_engine::experimental::EventEngine::Duration>
-          duration) {
+          duration,
+      SourceLocation location = SourceLocation()) {
     if (duration.has_value()) {
       fuzzing_ee_->SetRunAfterDurationCallback(
-          [expected = *duration](
+          [expected = *duration, location = location](
               grpc_event_engine::experimental::EventEngine::Duration duration) {
             EXPECT_EQ(duration, expected)
                 << "Expected: " << expected.count()
-                << "ns\nActual: " << duration.count() << "ns";
+                << "ns\n  Actual: " << duration.count() << "ns\n"
+                << location.file() << ":" << location.line();
           });
     } else {
       fuzzing_ee_->SetRunAfterDurationCallback(nullptr);

@@ -22,6 +22,9 @@ import "google/protobuf/duration.proto";
 
 // [#next-free-field: 5]
 message HttpProtocolOptions {
-  // The maximum duration of a connection.
+  // The connection idle timeout.  Defaults to 1h.
+  google.protobuf.Duration idle_timeout = 1;
+
+  // The maximum duration of a stream.
   google.protobuf.Duration max_stream_duration = 4;
 }

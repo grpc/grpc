@@ -35,7 +35,9 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/promise/test_context.h"
+#include "test/core/transport/chaotic_good/frame_fuzzer.pb.h"
 
 bool squelch = false;
 
@@ -47,14 +49,16 @@ struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
   uint64_t operator()() { return 42; }
 };
 
+FrameLimits FuzzerFrameLimits() { return FrameLimits{1024 * 1024 * 1024, 63}; }
+
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
   auto serialized = input.Serialize(&hpack_compressor);
-  GPR_ASSERT(serialized.Length() >=
+  GPR_ASSERT(serialized.control.Length() >=
              24);  // Initial output buffer size is 64 byte.
   uint8_t header_bytes[24];
-  serialized.MoveFirstNBytesIntoBuffer(24, header_bytes);
+  serialized.control.MoveFirstNBytesIntoBuffer(24, header_bytes);
   auto header = FrameHeader::Parse(header_bytes);
   if (!header.ok()) {
     if (!squelch) {
@@ -68,65 +72,68 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackParser hpack_parser;
   DeterministicBitGen bitgen;
   auto deser = output.Deserialize(&hpack_parser, header.value(),
-                                  absl::BitGenRef(bitgen), serialized);
+                                  absl::BitGenRef(bitgen), GetContext<Arena>(),
+                                  std::move(serialized), FuzzerFrameLimits());
   GPR_ASSERT(deser.ok());
   GPR_ASSERT(output == input);
 }
 
 template <typename T>
-void FinishParseAndChecks(const FrameHeader& header, const uint8_t* data,
-                          size_t size) {
+void FinishParseAndChecks(const FrameHeader& header, BufferPair buffers) {
   T parsed;
   ExecCtx exec_ctx;  // Initialized to get this_cpu() info in global_stat().
   HPackParser hpack_parser;
-  SliceBuffer serialized;
-  serialized.Append(Slice::FromCopiedBuffer(data, size));
   DeterministicBitGen bitgen;
   auto deser = parsed.Deserialize(&hpack_parser, header,
-                                  absl::BitGenRef(bitgen), serialized);
+                                  absl::BitGenRef(bitgen), GetContext<Arena>(),
+                                  std::move(buffers), FuzzerFrameLimits());
   if (!deser.ok()) return;
   gpr_log(GPR_INFO, "Read frame: %s", parsed.ToString().c_str());
   AssertRoundTrips(parsed, header.type);
 }
 
-int Run(const uint8_t* data, size_t size) {
-  if (size < 1) return 0;
-  const bool is_server = (data[0] & 1) != 0;
-  size--;
-  data++;
-  if (size < 24) return 0;
-  auto r = FrameHeader::Parse(data);
-  if (!r.ok()) return 0;
+void Run(const frame_fuzzer::Test& test) {
+  const uint8_t* control_data =
+      reinterpret_cast<const uint8_t*>(test.control().data());
+  size_t control_size = test.control().size();
+  if (test.control().size() < 24) return;
+  auto r = FrameHeader::Parse(control_data);
+  if (!r.ok()) return;
+  if (test.data().size() != r->message_length) return;
   gpr_log(GPR_INFO, "Read frame header: %s", r->ToString().c_str());
-  size -= 24;
-  data += 24;
+  control_data += 24;
+  control_size -= 24;
   MemoryAllocator memory_allocator = MemoryAllocator(
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
   auto arena = MakeScopedArena(1024, &memory_allocator);
   TestContext<Arena> ctx(arena.get());
+  BufferPair buffers{
+      SliceBuffer(Slice::FromCopiedBuffer(control_data, control_size)),
+      SliceBuffer(
+          Slice::FromCopiedBuffer(test.data().data(), test.data().size())),
+  };
   switch (r->type) {
     default:
-      return 0;  // We don't know how to parse this frame type.
+      return;  // We don't know how to parse this frame type.
     case FrameType::kSettings:
-      FinishParseAndChecks<SettingsFrame>(*r, data, size);
+      FinishParseAndChecks<SettingsFrame>(*r, std::move(buffers));
       break;
     case FrameType::kFragment:
-      if (is_server) {
-        FinishParseAndChecks<ServerFragmentFrame>(*r, data, size);
+      if (test.is_server()) {
+        FinishParseAndChecks<ServerFragmentFrame>(*r, std::move(buffers));
       } else {
-        FinishParseAndChecks<ClientFragmentFrame>(*r, data, size);
+        FinishParseAndChecks<ClientFragmentFrame>(*r, std::move(buffers));
       }
       break;
     case FrameType::kCancel:
-      FinishParseAndChecks<CancelFrame>(*r, data, size);
+      FinishParseAndChecks<CancelFrame>(*r, std::move(buffers));
       break;
   }
-  return 0;
 }
 
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  return grpc_core::chaotic_good::Run(data, size);
+DEFINE_PROTO_FUZZER(const frame_fuzzer::Test& test) {
+  grpc_core::chaotic_good::Run(test);
 }

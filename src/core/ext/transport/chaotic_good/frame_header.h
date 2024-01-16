@@ -36,7 +36,7 @@ enum class FrameType : uint8_t {
 
 struct FrameHeader {
   FrameType type = FrameType::kCancel;
-  BitSet<2> flags;
+  BitSet<3> flags;
   uint32_t stream_id = 0;
   uint32_t header_length = 0;
   uint32_t message_length = 0;
@@ -60,7 +60,7 @@ struct FrameHeader {
            trailer_length == h.trailer_length;
   }
   // Frame header size is fixed to 24 bytes.
-  static constexpr size_t frame_header_size_ = 24;
+  static constexpr size_t kFrameHeaderSize = 24;
 };
 
 }  // namespace chaotic_good

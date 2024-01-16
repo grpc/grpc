@@ -24,7 +24,7 @@
 
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"  // IWYU pragma: keep
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>

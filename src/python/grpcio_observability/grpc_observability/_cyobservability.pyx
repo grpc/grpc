@@ -111,18 +111,22 @@ def activate_config(object py_config) -> None:
   if (py_config.stats_enabled):
     EnablePythonCensusStats(True);
 
+def activate_stats() -> None:
+  EnablePythonCensusStats(True);
 
-def create_client_call_tracer(bytes method_name, bytes trace_id,
+
+def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id,
                               bytes parent_span_id=b'') -> cpython.PyObject:
   """Create a ClientCallTracer and save to PyCapsule.
 
   Returns: A grpc_observability._observability.ClientCallTracerCapsule object.
   """
   cdef char* c_method = cpython.PyBytes_AsString(method_name)
+  cdef char* c_target = cpython.PyBytes_AsString(target)
   cdef char* c_trace_id = cpython.PyBytes_AsString(trace_id)
   cdef char* c_parent_span_id = cpython.PyBytes_AsString(parent_span_id)
 
-  cdef void* call_tracer = CreateClientCallTracer(c_method, c_trace_id, c_parent_span_id)
+  cdef void* call_tracer = CreateClientCallTracer(c_method, c_target, c_trace_id, c_parent_span_id)
   capsule = cpython.PyCapsule_New(call_tracer, CLIENT_CALL_TRACER, NULL)
   return capsule
 
@@ -244,7 +248,7 @@ def _get_tracing_data(SpanCensusData span_data, vector[Label] span_labels,
                                     span_annotations = py_span_annotations)
 
 
-def _record_rpc_latency(object exporter, str method, float rpc_latency, str status_code) -> None:
+def _record_rpc_latency(object exporter, str method, str target, float rpc_latency, str status_code) -> None:
   exporter: _observability.Exporter
 
   measurement = {}
@@ -254,6 +258,7 @@ def _record_rpc_latency(object exporter, str method, float rpc_latency, str stat
 
   labels = {}
   labels[_decode(kClientMethod)] = method.strip("/")
+  labels[_decode(kClientTarget)] = target
   labels[_decode(kClientStatus)] = status_code
   metric = _get_stats_data(measurement, labels)
   exporter.export_stats_data([metric])

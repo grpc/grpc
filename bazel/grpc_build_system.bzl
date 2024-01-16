@@ -108,7 +108,6 @@ def _update_visibility(visibility):
         "grpc++_test": PRIVATE,
         "http": PRIVATE,
         "httpcli": PRIVATE,
-        "iomgr_timer": PRIVATE,
         "iomgr_internal_errqueue": PRIVATE,
         "iomgr_buffer_list": PRIVATE,
         "json_reader_legacy": PRIVATE,
@@ -121,6 +120,8 @@ def _update_visibility(visibility):
         "xds": PRIVATE,
         "xds_client_core": PRIVATE,
         "grpc_python_observability": PRIVATE,
+        "event_engine_base_hdrs": PRIVATE,
+        "useful": PRIVATE,
     }
     final_visibility = []
     for rule in visibility:

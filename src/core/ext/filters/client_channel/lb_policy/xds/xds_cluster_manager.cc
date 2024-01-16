@@ -40,7 +40,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
+#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -283,7 +283,7 @@ absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   }
   update_in_progress_ = true;
   // Update config.
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<XdsClusterManagerLbConfig>();
   // Deactivate the children not in the new config.
   for (const auto& p : children_) {
     const std::string& name = p.first;
@@ -299,8 +299,9 @@ absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
     const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second.config;
     auto& child = children_[name];
     if (child == nullptr) {
-      child = MakeOrphanable<ClusterChild>(Ref(DEBUG_LOCATION, "ClusterChild"),
-                                           name);
+      child = MakeOrphanable<ClusterChild>(
+          RefAsSubclass<XdsClusterManagerLb>(DEBUG_LOCATION, "ClusterChild"),
+          name);
     }
     absl::Status status =
         child->UpdateLocked(config, args.addresses, args.args);

@@ -104,16 +104,7 @@ TransportFlowControl::TransportFlowControl(absl::string_view name,
                                            MemoryOwner* memory_owner)
     : memory_owner_(memory_owner),
       enable_bdp_probe_(enable_bdp_probe),
-      bdp_estimator_(name),
-      pid_controller_(PidController::Args()
-                          .set_gain_p(4)
-                          .set_gain_i(8)
-                          .set_gain_d(0)
-                          .set_initial_control_value(TargetLogBdp())
-                          .set_min_control_value(-1)
-                          .set_max_control_value(25)
-                          .set_integral_range(10)),
-      last_pid_update_(Timestamp::Now()) {}
+      bdp_estimator_(name) {}
 
 uint32_t TransportFlowControl::DesiredAnnounceSize(bool writing_anyway) const {
   const uint32_t target_announced_window =
@@ -184,41 +175,6 @@ FlowControlAction TransportFlowControl::UpdateAction(FlowControlAction action) {
   return action;
 }
 
-// Take in a target and modifies it based on the memory pressure of the system
-static double AdjustForMemoryPressure(double memory_pressure, double target) {
-  // do not increase window under heavy memory pressure.
-  static const double kLowMemPressure = 0.1;
-  static const double kZeroTarget = 22;
-  static const double kHighMemPressure = 0.8;
-  static const double kMaxMemPressure = 0.9;
-  if (memory_pressure < kLowMemPressure && target < kZeroTarget) {
-    target = (target - kZeroTarget) * memory_pressure / kLowMemPressure +
-             kZeroTarget;
-  } else if (memory_pressure > kHighMemPressure) {
-    target *= 1 - std::min(1.0, (memory_pressure - kHighMemPressure) /
-                                    (kMaxMemPressure - kHighMemPressure));
-  }
-  return target;
-}
-
-double TransportFlowControl::TargetLogBdp() {
-  return AdjustForMemoryPressure(
-      memory_owner_->is_valid()
-          ? memory_owner_->GetPressureInfo().pressure_control_value
-          : 0.0,
-      1 + log2(bdp_estimator_.EstimateBdp()));
-}
-
-double TransportFlowControl::SmoothLogBdp(double value) {
-  Timestamp now = Timestamp::Now();
-  double bdp_error = value - pid_controller_.last_control_value();
-  const double dt = (now - last_pid_update_).seconds();
-  last_pid_update_ = now;
-  // Limit dt to 100ms
-  const double kMaxDt = 0.1;
-  return pid_controller_.Update(bdp_error, dt > kMaxDt ? kMaxDt : dt);
-}
-
 double
 TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
     const {
@@ -274,18 +230,14 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
 }
 
 void TransportFlowControl::UpdateSetting(
-    grpc_chttp2_setting_id id, int64_t* desired_value,
-    uint32_t new_desired_value, FlowControlAction* action,
+    absl::string_view name, int64_t* desired_value, uint32_t new_desired_value,
+    FlowControlAction* action,
     FlowControlAction& (FlowControlAction::*set)(FlowControlAction::Urgency,
                                                  uint32_t)) {
-  new_desired_value =
-      Clamp(new_desired_value, grpc_chttp2_settings_parameters[id].min_value,
-            grpc_chttp2_settings_parameters[id].max_value);
   if (new_desired_value != *desired_value) {
     if (grpc_flowctl_trace.enabled()) {
       gpr_log(GPR_INFO, "[flowctl] UPDATE SETTING %s from %" PRId64 " to %d",
-              grpc_chttp2_settings_parameters[id].name, *desired_value,
-              new_desired_value);
+              std::string(name).c_str(), *desired_value, new_desired_value);
     }
     // Reaching zero can only happen for initial window size, and if it occurs
     // we really want to wake up writes and ensure all the queued stream
@@ -323,10 +275,8 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     // TODO(ncteisen): experiment with setting target to be huge under low
     // memory pressure.
     uint32_t target = static_cast<uint32_t>(RoundUpToPowerOf2(
-        Clamp(IsMemoryPressureControllerEnabled()
-                  ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
-                  : pow(2, SmoothLogBdp(TargetLogBdp())),
-              0.0, static_cast<double>(kMaxInitialWindowSize))));
+        Clamp(TargetInitialWindowSizeBasedOnMemoryPressureAndBdp(), 0.0,
+              static_cast<double>(kMaxInitialWindowSize))));
     if (target < kMinPositiveInitialWindowSize) target = 0;
     if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
       // Hook for simulating unusual flow control situations in tests.
@@ -336,13 +286,15 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     }
     // Though initial window 'could' drop to 0, we keep the floor at
     // kMinInitialWindowSize
-    UpdateSetting(GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
-                  &target_initial_window_size_, target, &action,
-                  &FlowControlAction::set_send_initial_window_update);
+    UpdateSetting(Http2Settings::initial_window_size_name(),
+                  &target_initial_window_size_,
+                  std::min(target, Http2Settings::max_initial_window_size()),
+                  &action, &FlowControlAction::set_send_initial_window_update);
     // we target the max of BDP or bandwidth in microseconds.
-    UpdateSetting(GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, &target_frame_size_,
-                  target, &action,
-                  &FlowControlAction::set_send_max_frame_size_update);
+    UpdateSetting(Http2Settings::max_frame_size_name(), &target_frame_size_,
+                  Clamp(target, Http2Settings::min_max_frame_size(),
+                        Http2Settings::max_max_frame_size()),
+                  &action, &FlowControlAction::set_send_max_frame_size_update);
 
     if (IsTcpFrameSizeTuningEnabled()) {
       // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
@@ -352,10 +304,11 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
       // Clamp(target_frame_size_ * 2, 16384, 0x7fffffff). In the future, this
       // maybe updated to a different function of the memory pressure.
       UpdateSetting(
-          GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
+          Http2Settings::preferred_receive_crypto_message_size_name(),
           &target_preferred_rx_crypto_frame_size_,
-          Clamp(static_cast<unsigned int>(target_frame_size_ * 2), 16384u,
-                0x7ffffffu),
+          Clamp(static_cast<unsigned int>(target_frame_size_ * 2),
+                Http2Settings::min_preferred_receive_crypto_message_size(),
+                Http2Settings::max_preferred_receive_crypto_message_size()),
           &action,
           &FlowControlAction::set_preferred_rx_crypto_frame_size_update);
     }

@@ -28,9 +28,14 @@
 #include "absl/strings/string_view.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
-#include "src/cpp/ext/otel/otel_plugin.h"
+#include <grpcpp/ext/otel_plugin.h>
 
 namespace grpc {
+
+namespace internal {
+class OpenTelemetryPluginBuilderImpl;
+}  // namespace internal
+
 namespace experimental {
 
 // This is a no-op at present, but in the future, this object would be useful
@@ -41,6 +46,8 @@ class CsmObservability {};
 // for a binary running on CSM.
 class CsmObservabilityBuilder {
  public:
+  CsmObservabilityBuilder();
+  ~CsmObservabilityBuilder();
   CsmObservabilityBuilder& SetMeterProvider(
       std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
           meter_provider);
@@ -80,10 +87,21 @@ class CsmObservabilityBuilder {
   absl::StatusOr<CsmObservability> BuildAndRegister();
 
  private:
-  internal::OpenTelemetryPluginBuilder builder_;
+  std::unique_ptr<grpc::internal::OpenTelemetryPluginBuilderImpl> builder_;
 };
 
 }  // namespace experimental
+
+/// Creates an OpenTelemetryPluginOption that would add additional labels on
+/// gRPC metrics to enhance observability for CSM users.
+///
+/// Sample Usage -
+/// OpenTelemetryPluginBuilder()
+///     .SetMeterProvider(provider)
+///     .AddPluginOption(MakeCsmOpenTelemetryPluginOption())
+///     .BuildAndRegisterGlobal();
+std::unique_ptr<OpenTelemetryPluginOption> MakeCsmOpenTelemetryPluginOption();
+
 }  // namespace grpc
 
 #endif  // GRPCPP_EXT_CSM_OBSERVABILITY_H
