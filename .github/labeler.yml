@@ -48,6 +48,7 @@ lang/python:
           - examples/python/**
           - requirements.bazel.txt
           - src/compiler/python*
+      - all-globs-to-any-file:
           - src/python/**
           - '!src/python/grpcio/grpc_core_dependencies.py'
 lang/ruby:
