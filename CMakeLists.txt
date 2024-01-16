@@ -16562,6 +16562,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(http2_settings_test
   test/core/transport/chttp2/http2_settings_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(http2_settings_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(http2_settings_test PUBLIC cxx_std_14)
 target_include_directories(http2_settings_test
   PRIVATE
