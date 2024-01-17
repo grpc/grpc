@@ -9795,6 +9795,15 @@ add_executable(chaotic_good_test
   test/core/transport/test_suite/test.cc
   test/core/transport/test_suite/test_main.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(chaotic_good_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(chaotic_good_test PUBLIC cxx_std_14)
 target_include_directories(chaotic_good_test
   PRIVATE
@@ -17117,6 +17126,15 @@ add_executable(inproc_test
   test/core/transport/test_suite/test.cc
   test/core/transport/test_suite/test_main.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(inproc_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(inproc_test PUBLIC cxx_std_14)
 target_include_directories(inproc_test
   PRIVATE
