@@ -136,6 +136,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "down_cast_test",
+    srcs = ["down_cast_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:down_cast",
+    ],
+)
+
+grpc_cc_test(
     name = "table_test",
     srcs = ["table_test.cc"],
     external_deps = [
