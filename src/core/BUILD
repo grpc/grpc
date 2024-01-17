@@ -2580,6 +2580,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/types:optional",
         "absl/types:variant",
+        "address_sorting",
         "cares",
     ],
     deps = [
