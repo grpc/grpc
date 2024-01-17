@@ -1408,6 +1408,7 @@ let package = Package(
         "src/core/lib/gprpp/crash.h",
         "src/core/lib/gprpp/debug_location.h",
         "src/core/lib/gprpp/directory_reader.h",
+        "src/core/lib/gprpp/down_cast.h",
         "src/core/lib/gprpp/dual_ref_counted.h",
         "src/core/lib/gprpp/env.h",
         "src/core/lib/gprpp/examine_stack.cc",
