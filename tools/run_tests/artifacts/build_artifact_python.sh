@@ -140,9 +140,6 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 # Build gRPC tools package distribution
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
-# Generate dependency files for observability package
-"${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
-
 # Build gRPC tools package source distribution
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
 
@@ -286,7 +283,12 @@ then
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_observability source distribution
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py \
-      sdist bdist_wheel
-  cp -r src/python/grpcio_observability/dist/* "$ARTIFACT_DIR"
+  # Skips MacOS since grpcio_observability does not support MacOS.
+  if [ "$GRPC_UNIVERSAL2_REPAIR" == "" ]; then
+    "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
+    ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py \
+        sdist bdist_wheel
+    cp -r src/python/grpcio_observability/dist/* "$ARTIFACT_DIR"
+  fi
+
 fi
