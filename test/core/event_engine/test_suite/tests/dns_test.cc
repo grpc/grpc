@@ -436,6 +436,7 @@ TEST_F(EventEngineDNSTest, LocalHost) {
   dns_resolver->LookupHostname(
       [this](auto result) {
 #ifdef GRPC_IOS_EVENT_ENGINE_CLIENT
+        EXPECT_SUCCESS();
 #else
         EXPECT_TRUE(result.ok());
         EXPECT_THAT(*result,
