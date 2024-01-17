@@ -31,9 +31,6 @@
 #include "test/core/util/fuzz_config_vars.h"
 #include "test/core/util/proto_bit_gen.h"
 
-using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-
 namespace grpc_event_engine {
 namespace experimental {
 extern bool g_event_engine_supports_fd;

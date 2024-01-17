@@ -262,6 +262,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
             call_initiator.PullServerInitialMetadata(),
             [call_handler,
              call_initiator](absl::optional<ServerMetadataHandle> md) mutable {
+              const bool has_md = md.has_value();
               call_handler.SpawnGuarded(
                   "recv_initial_metadata",
                   [md = std::move(md), call_handler]() mutable {
@@ -269,7 +270,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                         std::move(md));
                   });
               return If(
-                  md.has_value(),
+                  has_md,
                   ForEach(OutgoingMessages(call_initiator),
                           [call_handler](MessageHandle msg) mutable {
                             return call_handler.SpawnWaitable(
