@@ -89,6 +89,7 @@ ancillary_package_dir=(
   "src/python/grpcio_reflection/"
   "src/python/grpcio_status/"
   "src/python/grpcio_testing/"
+  "src/python/grpcio_observability/"
 )
 
 # Copy license to ancillary package directories so it will be distributed.
@@ -138,6 +139,9 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 
 # Build gRPC tools package distribution
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
+
+# Generate dependency files for observability package
+"${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
 
 # Build gRPC tools package source distribution
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
@@ -280,4 +284,9 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_admin/setup.py \
       sdist bdist_wheel
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_observability source distribution
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py \
+      sdist bdist_wheel
+  cp -r src/python/grpcio_observability/dist/* "$ARTIFACT_DIR"
 fi
