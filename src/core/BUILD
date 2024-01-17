@@ -6712,6 +6712,10 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/message.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
+
     deps = [
         "arena",
         "slice_buffer",
