@@ -8441,6 +8441,14 @@ add_executable(call_filters_test
   third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/reader.c
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(call_filters_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(call_filters_test PUBLIC cxx_std_14)
 target_include_directories(call_filters_test
   PRIVATE
