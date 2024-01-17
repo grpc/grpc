@@ -443,8 +443,8 @@ TEST_F(EventEngineDNSTest, LocalHost) {
                     Pointwise(ResolvedAddressEq(),
                               {*URIToResolvedAddress("ipv6:[::1]:1"),
                                *URIToResolvedAddress("ipv4:127.0.0.1:1")}));
-        dns_resolver_signal_.Notify();
 #endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
+        dns_resolver_signal_.Notify();
       },
       "localhost:1", "");
   dns_resolver_signal_.WaitForNotification();
