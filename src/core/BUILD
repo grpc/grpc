@@ -5086,6 +5086,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "down_cast",
+    hdrs = ["lib/gprpp/down_cast.h"],
+    external_deps = ["absl/base:config"],
+    deps = ["//:gpr"],
+)
+
+grpc_cc_library(
     name = "status_conversion",
     srcs = ["lib/transport/status_conversion.cc"],
     hdrs = ["lib/transport/status_conversion.h"],
@@ -6645,6 +6652,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_filters",
+    srcs = [
+        "lib/transport/call_filters.cc",
+    ],
+    hdrs = [
+        "lib/transport/call_filters.h",
+    ],
+    deps = [
+        "call_final_info",
+        "message",
+        "metadata",
+        "ref_counted",
+        "status_flag",
+        "//:gpr",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "parsed_metadata",
     srcs = [
         "lib/transport/parsed_metadata.cc",
@@ -6661,6 +6688,37 @@ grpc_cc_library(
         "slice",
         "time",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "metadata",
+    srcs = [
+        "lib/transport/metadata.cc",
+    ],
+    hdrs = [
+        "lib/transport/metadata.h",
+    ],
+    deps = [
+        "error_utils",
+        "metadata_batch",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "message",
+    srcs = [
+        "lib/transport/message.cc",
+    ],
+    hdrs = [
+        "lib/transport/message.h",
+    ],
+    deps = [
+        "arena",
+        "slice_buffer",
+        "//:gpr_platform",
+        "//:grpc_public_hdrs",
     ],
 )
 
