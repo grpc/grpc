@@ -311,7 +311,8 @@ class RefCounted : public Impl {
       std::enable_if_t<std::is_base_of<Child, Subclass>::value, bool> = true>
   RefCountedPtr<Subclass> RefAsSubclass() {
     IncrementRefCount();
-    return RefCountedPtr<Subclass>(down_cast<Subclass*>(this));
+    return RefCountedPtr<Subclass>(
+        down_cast<Subclass*>(static_cast<Child*>(this)));
   }
   template <
       typename Subclass,
@@ -319,7 +320,8 @@ class RefCounted : public Impl {
   RefCountedPtr<Subclass> RefAsSubclass(const DebugLocation& location,
                                         const char* reason) {
     IncrementRefCount(location, reason);
-    return RefCountedPtr<Subclass>(down_cast<Subclass*>(this));
+    return RefCountedPtr<Subclass>(
+        down_cast<Subclass*>(static_cast<Child*>(this)));
   }
 
   // RefIfNonZero() for mutable types.
