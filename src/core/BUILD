@@ -1068,6 +1068,7 @@ grpc_cc_library(
     public_hdrs = ["lib/gprpp/ref_counted.h"],
     deps = [
         "atomic_utils",
+        "down_cast",
         "//:debug_location",
         "//:gpr",
         "//:ref_counted_ptr",
