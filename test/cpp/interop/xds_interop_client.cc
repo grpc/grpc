@@ -67,8 +67,10 @@ ABSL_FLAG(int32_t, stats_port, 50052,
           "Port to expose peer distribution stats service.");
 ABSL_FLAG(std::string, rpc, "UnaryCall",
           "a comma separated list of rpc methods.");
-ABSL_FLAG(int32_t, request_payload_size, 0, "request payload size in bytes.");
-ABSL_FLAG(int32_t, response_payload_size, 0, "response payload size in bytes.");
+ABSL_FLAG(int32_t, request_payload_size, 0,
+          "request payload size in bytes of zeros.");
+ABSL_FLAG(int32_t, response_payload_size, 0,
+          "response payload size in bytes of zeros.");
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
 ABSL_FLAG(std::string, expect_status, "OK",
           "RPC status for the test RPC to be considered successful");
@@ -157,10 +159,14 @@ class TestClient {
       }
     }
     SimpleRequest request;
-    request.set_response_size(absl::GetFlag(FLAGS_response_payload_size));
-    std::string payload(absl::GetFlag(FLAGS_request_payload_size), '\0');
-    request.mutable_payload()->set_body(
-        payload.c_str(), absl::GetFlag(FLAGS_request_payload_size));
+    if (absl::GetFlag(FLAGS_response_payload_size) > 0) {
+      request.set_response_size(absl::GetFlag(FLAGS_response_payload_size));
+    }
+    if (absl::GetFlag(FLAGS_request_payload_size) > 0) {
+      std::string payload(absl::GetFlag(FLAGS_request_payload_size), '\0');
+      request.mutable_payload()->set_body(
+          payload.c_str(), absl::GetFlag(FLAGS_request_payload_size));
+    }
     call->context.set_deadline(deadline);
     call->result.saved_request_id = saved_request_id;
     call->result.rpc_type = ClientConfigureRequest::UNARY_CALL;
