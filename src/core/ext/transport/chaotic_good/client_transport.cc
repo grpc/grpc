@@ -165,7 +165,7 @@ auto ChaoticGoodClientTransport::TransportReadLoop() {
 }
 
 auto ChaoticGoodClientTransport::OnTransportActivityDone() {
-  return [this](absl::Status status) { AbortWithError(); };
+  return [this](absl::Status) { AbortWithError(); };
 }
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(

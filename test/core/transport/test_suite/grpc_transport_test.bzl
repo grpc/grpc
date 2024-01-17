@@ -27,6 +27,7 @@ def grpc_transport_test(name, deps):
     grpc_proto_fuzzer(
         name = name + "_fuzzer",
         srcs = ["fuzzer_main.cc"],
+        tags = ["no_windows"],
         deps = [
             ":test",
             ":fuzzer",
