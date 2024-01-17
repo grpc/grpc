@@ -44,8 +44,8 @@ def main
   to_parent_w.close
   child_port = to_parent_r.gets.strip
   STDERR.puts "server running on port: #{child_port}"
-  key = "grpc." * 100000 # large enough to malloc backing storage
-  value = "testvalue" * 100000
+  key = "grpc." * 100_000 # large enough to malloc backing storage
+  value = "testvalue" * 100_000
   stub = Echo::EchoServer::Stub.new("localhost:#{child_port}", :this_channel_is_insecure, channel_args: { key => value })
   with_logging("parent: GRPC.prefork") { GRPC.prefork }
   pid = fork do
