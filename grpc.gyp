@@ -2016,6 +2016,7 @@
         'absl/utility:utility',
         'cares',
         'gpr',
+        'address_sorting',
       ],
       'sources': [
         'src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c',

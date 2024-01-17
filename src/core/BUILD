@@ -2550,7 +2550,6 @@ grpc_cc_library(
     ],
     deps = [
         "iomgr_port",
-        "ref_counted_dns_resolver_interface",
         "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -2581,6 +2580,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/types:optional",
         "absl/types:variant",
+        "address_sorting",
         "cares",
     ],
     deps = [

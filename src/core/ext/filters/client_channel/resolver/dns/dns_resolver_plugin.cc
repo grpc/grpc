@@ -38,12 +38,14 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
       std::make_unique<EventEngineClientChannelDNSResolverFactory>());
   return;
 #endif
+#ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
   if (IsEventEngineDnsEnabled()) {
     gpr_log(GPR_DEBUG, "Using EventEngine dns resolver");
     builder->resolver_registry()->RegisterResolverFactory(
         std::make_unique<EventEngineClientChannelDNSResolverFactory>());
     return;
   }
+#endif
   auto resolver = ConfigVars::Get().DnsResolver();
   // ---- Ares resolver ----
   if (ShouldUseAresDnsResolver(resolver)) {
