@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.8)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.61.0-dev")
+set(PACKAGE_VERSION       "1.62.0-dev")
 set(gRPC_CORE_VERSION     "38.0.0")
 set(gRPC_CORE_SOVERSION   "38")
-set(gRPC_CPP_VERSION      "1.61.0-dev")
-set(gRPC_CPP_SOVERSION    "1.61")
+set(gRPC_CPP_VERSION      "1.62.0-dev")
+set(gRPC_CPP_SOVERSION    "1.62")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -12024,6 +12024,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(down_cast_test
   test/core/gprpp/down_cast_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(down_cast_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(down_cast_test PUBLIC cxx_std_14)
 target_include_directories(down_cast_test
   PRIVATE
