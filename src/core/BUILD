@@ -298,7 +298,6 @@ grpc_cc_library(
         "absl/time",
         "absl/types:optional",
         "upb_base_lib",
-        "upb_lib",
         "upb_mem_lib",
     ],
     language = "c++",
@@ -4252,7 +4251,6 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/types:variant",
         "upb_base_lib",
-        "upb_lib",
         "upb_mem_lib",
     ],
     language = "c++",
@@ -4361,7 +4359,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/types:optional",
         "upb_base_lib",
-        "upb_lib",
+        "upb_mem_lib",
     ],
     language = "c++",
     deps = [
@@ -4491,13 +4489,12 @@ grpc_cc_library(
         "absl/types:span",
         "absl/types:variant",
         "upb_base_lib",
-        "upb_lib",
         "upb_mem_lib",
         "upb_textformat_lib",
         "upb_json_lib",
         "re2",
         "upb_reflection",
-        "upb_collections_lib",
+        "upb_message_lib",
     ],
     language = "c++",
     tags = ["nofixdeps"],
@@ -4947,7 +4944,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "upb_base_lib",
-        "upb_lib",
+        "upb_mem_lib",
     ],
     language = "c++",
     deps = [
@@ -5575,7 +5572,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "upb_base_lib",
-        "upb_lib",
+        "upb_mem_lib",
     ],
     language = "c++",
     deps = [
@@ -6140,9 +6137,15 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chttp2/transport/http2_settings.h",
     ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/strings",
+        "absl/types:optional",
+    ],
     deps = [
         "http2_errors",
         "useful",
+        "//:chttp2_frame",
         "//:gpr_platform",
     ],
 )
@@ -6484,6 +6487,7 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
     ],
 )

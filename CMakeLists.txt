@@ -26,14 +26,18 @@ cmake_minimum_required(VERSION 3.8)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.61.0-dev")
-set(gRPC_CORE_VERSION     "37.0.0")
-set(gRPC_CORE_SOVERSION   "37")
+set(gRPC_CORE_VERSION     "38.0.0")
+set(gRPC_CORE_SOVERSION   "38")
 set(gRPC_CPP_VERSION      "1.61.0-dev")
 set(gRPC_CPP_SOVERSION    "1.61")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
 project(${PACKAGE_NAME} LANGUAGES C CXX)
+
+if(BUILD_SHARED_LIBS AND MSVC)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
 
 set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
 set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
@@ -267,6 +271,8 @@ if(MSVC)
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4503")
   # Tell MSVC to build grpc using utf-8
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /utf-8")
+  # Inconsistent object sizes can cause stack corruption and should be treated as an error
+  set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /we4789")
 endif()
 if (MINGW)
   add_definitions(-D_WIN32_WINNT=0x600)
@@ -427,12 +433,12 @@ if(WIN32)
   set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} ws2_32 crypt32)
   set(_gRPC_STATIC_WIN32 STATIC)
 endif()
-
+  
 if(BUILD_SHARED_LIBS AND WIN32)
 
 # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
 # are generated from protobuf definitions by upbc. This source code does not include
-# annotations needed to export these functions from gprc.lib so we have to
+# annotations needed to export these functions from grpc.lib so we have to
 # re-include a small subset of these.
 #
 # This is not an ideal situation because these functions will be unavailable
@@ -445,9 +451,18 @@ set(gRPC_UPB_GEN_DUPL_SRC
   src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
 )
+
 set(gRPC_ADDITIONAL_DLL_SRC
   src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
   src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
+  src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
+  src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+)
+
+set(gRPC_ADDITIONAL_DLL_CXX_SRC
+  src/cpp/common/tls_certificate_provider.cc
+  src/cpp/common/tls_certificate_verifier.cc
+  src/cpp/common/tls_credentials_options.cc
 )
 
 endif() # BUILD_SHARED_LIBS AND WIN32
@@ -1098,6 +1113,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx hpack_parser_test)
   add_dependencies(buildtests_cxx hpack_size_test)
   add_dependencies(buildtests_cxx http2_client)
+  add_dependencies(buildtests_cxx http2_settings_test)
   add_dependencies(buildtests_cxx http2_stats_test)
   add_dependencies(buildtests_cxx http_proxy_mapper_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1651,9 +1667,11 @@ if(WIN32 AND MSVC)
   set_target_properties(gpr PROPERTIES COMPILE_PDB_NAME "gpr"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
-  set_target_properties(gpr PROPERTIES DEFINE_SYMBOL "GPR_DLL_EXPORTS")
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(gpr INTERFACE GPR_DLL_IMPORTS)
+    target_compile_definitions(gpr
+    PRIVATE
+      "GPR_DLL_EXPORTS"
+    )
   endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gpr.pdb
@@ -1848,6 +1866,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   src/core/ext/transport/chttp2/transport/decode_huff.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
+  src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
   src/core/ext/transport/chttp2/transport/frame_goaway.cc
   src/core/ext/transport/chttp2/transport/frame_ping.cc
@@ -2560,9 +2579,12 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc PROPERTIES COMPILE_PDB_NAME "grpc"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
-  set_target_properties(grpc PROPERTIES DEFINE_SYMBOL "GRPC_DLL_EXPORTS")
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(grpc INTERFACE GRPC_DLL_IMPORTS)
+    target_compile_definitions(grpc
+    PRIVATE
+      "GRPC_DLL_EXPORTS"
+      "GPR_DLL_IMPORTS"
+    )
   endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc.pdb
@@ -2586,10 +2608,8 @@ target_include_directories(grpc
 )
 target_link_libraries(grpc
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  upb_collections_lib
   upb_json_lib
   upb_textformat_lib
-  upb
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   absl::algorithm_container
@@ -2733,6 +2753,13 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc_test_util PROPERTIES COMPILE_PDB_NAME "grpc_test_util"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_test_util
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_test_util.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -2792,6 +2819,13 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc_test_util_unsecure PROPERTIES COMPILE_PDB_NAME "grpc_test_util_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_test_util_unsecure
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_test_util_unsecure.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -2903,6 +2937,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   src/core/ext/transport/chttp2/transport/decode_huff.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
+  src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
   src/core/ext/transport/chttp2/transport/frame_goaway.cc
   src/core/ext/transport/chttp2/transport/frame_ping.cc
@@ -3242,9 +3277,12 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc_unsecure PROPERTIES COMPILE_PDB_NAME "grpc_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
-  set_target_properties(grpc_unsecure PROPERTIES DEFINE_SYMBOL "GRPC_DLL_EXPORTS")
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(grpc_unsecure INTERFACE GRPC_DLL_IMPORTS)
+    target_compile_definitions(grpc_unsecure
+    PRIVATE
+      "GRPC_DLL_EXPORTS"
+      "GPR_DLL_IMPORTS"
+    )
   endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_unsecure.pdb
@@ -3268,8 +3306,7 @@ target_include_directories(grpc_unsecure
 )
 target_link_libraries(grpc_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  upb_collections_lib
-  upb
+  upb_message_lib
   utf8_range_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::algorithm_container
@@ -3461,31 +3498,29 @@ target_link_libraries(gtest
 endif()
 
 
-add_library(upb ${_gRPC_STATIC_WIN32}
+add_library(upb_base_lib
   third_party/upb/upb/base/status.c
-  third_party/upb/upb/mem/alloc.c
-  third_party/upb/upb/mem/arena.c
 )
 
-target_compile_features(upb PUBLIC cxx_std_14)
+target_compile_features(upb_base_lib PUBLIC cxx_std_14)
 
-set_target_properties(upb PROPERTIES
+set_target_properties(upb_base_lib PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
   SOVERSION ${gRPC_CORE_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
-  set_target_properties(upb PROPERTIES COMPILE_PDB_NAME "upb"
+  set_target_properties(upb_base_lib PROPERTIES COMPILE_PDB_NAME "upb_base_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
   if(gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb.pdb
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_base_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
     )
   endif()
 endif()
 
-target_include_directories(upb
+target_include_directories(upb_base_lib
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -3498,76 +3533,14 @@ target_include_directories(upb
     ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-target_link_libraries(upb
+target_link_libraries(upb_base_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
 
 
 if(gRPC_INSTALL)
-  install(TARGETS upb EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
-
-
-add_library(upb_collections_lib ${_gRPC_STATIC_WIN32}
-  third_party/upb/upb/base/status.c
-  third_party/upb/upb/hash/common.c
-  third_party/upb/upb/mem/alloc.c
-  third_party/upb/upb/mem/arena.c
-  third_party/upb/upb/message/array.c
-  third_party/upb/upb/message/map.c
-  third_party/upb/upb/message/map_sorter.c
-  third_party/upb/upb/message/message.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
-)
-
-target_compile_features(upb_collections_lib PUBLIC cxx_std_14)
-
-set_target_properties(upb_collections_lib PROPERTIES
-  VERSION ${gRPC_CORE_VERSION}
-  SOVERSION ${gRPC_CORE_SOVERSION}
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(upb_collections_lib PROPERTIES COMPILE_PDB_NAME "upb_collections_lib"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if(gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_collections_lib.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-target_include_directories(upb_collections_lib
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-target_link_libraries(upb_collections_lib
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-)
-
-
-
-if(gRPC_INSTALL)
-  install(TARGETS upb_collections_lib EXPORT gRPCTargets
+  install(TARGETS upb_base_lib EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -3579,29 +3552,18 @@ endif()
 
 add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
-  third_party/upb/upb/base/status.c
-  third_party/upb/upb/hash/common.c
   third_party/upb/upb/json/decode.c
   third_party/upb/upb/json/encode.c
   third_party/upb/upb/lex/atoi.c
   third_party/upb/upb/lex/round_trip.c
   third_party/upb/upb/lex/strtod.c
   third_party/upb/upb/lex/unicode.c
-  third_party/upb/upb/mem/alloc.c
-  third_party/upb/upb/mem/arena.c
   third_party/upb/upb/message/accessors.c
-  third_party/upb/upb/message/array.c
-  third_party/upb/upb/message/map.c
-  third_party/upb/upb/message/map_sorter.c
-  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
   third_party/upb/upb/reflection/desc_state.c
@@ -3659,6 +3621,7 @@ target_include_directories(upb_json_lib
 )
 target_link_libraries(upb_json_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  upb_message_lib
   utf8_range_lib
 )
 
@@ -3675,29 +3638,132 @@ endif()
 
 
 
-add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
-  third_party/upb/upb/base/status.c
-  third_party/upb/upb/hash/common.c
-  third_party/upb/upb/lex/atoi.c
-  third_party/upb/upb/lex/round_trip.c
-  third_party/upb/upb/lex/strtod.c
-  third_party/upb/upb/lex/unicode.c
+add_library(upb_mem_lib
   third_party/upb/upb/mem/alloc.c
   third_party/upb/upb/mem/arena.c
-  third_party/upb/upb/message/accessors.c
+)
+
+target_compile_features(upb_mem_lib PUBLIC cxx_std_14)
+
+set_target_properties(upb_mem_lib PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(upb_mem_lib PROPERTIES COMPILE_PDB_NAME "upb_mem_lib"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_mem_lib.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(upb_mem_lib
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(upb_mem_lib
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS upb_mem_lib EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+
+add_library(upb_message_lib
+  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/array.c
   third_party/upb/upb/message/map.c
   third_party/upb/upb/message/map_sorter.c
   third_party/upb/upb/message/message.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+)
+
+target_compile_features(upb_message_lib PUBLIC cxx_std_14)
+
+set_target_properties(upb_message_lib PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(upb_message_lib PROPERTIES COMPILE_PDB_NAME "upb_message_lib"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_message_lib.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(upb_message_lib
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(upb_message_lib
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  upb_base_lib
+  upb_mem_lib
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS upb_message_lib EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+
+add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  third_party/upb/upb/lex/atoi.c
+  third_party/upb/upb/lex/round_trip.c
+  third_party/upb/upb/lex/strtod.c
+  third_party/upb/upb/lex/unicode.c
+  third_party/upb/upb/message/accessors.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
   third_party/upb/upb/reflection/desc_state.c
@@ -3756,6 +3822,7 @@ target_include_directories(upb_textformat_lib
 )
 target_link_libraries(upb_textformat_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  upb_message_lib
   utf8_range_lib
 )
 
@@ -3828,7 +3895,7 @@ if(gRPC_BUILD_TESTS)
 
 if(gRPC_BUILD_CODEGEN)
 
-add_library(benchmark_helpers
+add_library(benchmark_helpers ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -3870,6 +3937,14 @@ if(WIN32 AND MSVC)
   set_target_properties(benchmark_helpers PROPERTIES COMPILE_PDB_NAME "benchmark_helpers"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(benchmark_helpers
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/benchmark_helpers.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -3984,9 +4059,13 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++ PROPERTIES COMPILE_PDB_NAME "grpc++"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
-  set_target_properties(grpc++ PROPERTIES DEFINE_SYMBOL "GRPCXX_DLL_EXPORTS")
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(grpc++ INTERFACE GRPCXX_DLL_IMPORTS)
+    target_compile_definitions(grpc++
+    PRIVATE
+      "GRPCXX_DLL_EXPORTS"
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
   endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++.pdb
@@ -4258,6 +4337,14 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++_alts PROPERTIES COMPILE_PDB_NAME "grpc++_alts"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc++_alts
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_alts.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4322,6 +4409,14 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++_error_details PROPERTIES COMPILE_PDB_NAME "grpc++_error_details"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc++_error_details
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_error_details.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4372,7 +4467,7 @@ endif()
 
 if(gRPC_BUILD_CODEGEN)
 
-add_library(grpc++_reflection
+add_library(grpc++_reflection ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.pb.h
@@ -4396,6 +4491,14 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++_reflection PROPERTIES COMPILE_PDB_NAME "grpc++_reflection"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc++_reflection
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_reflection.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4464,6 +4567,14 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++_test PROPERTIES COMPILE_PDB_NAME "grpc++_test"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc++_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_test.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4530,6 +4641,12 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++_test_config PROPERTIES COMPILE_PDB_NAME "grpc++_test_config"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc++_test_config
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_test_config.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4597,6 +4714,14 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++_test_util PROPERTIES COMPILE_PDB_NAME "grpc++_test_util"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc++_test_util
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_test_util.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4666,6 +4791,7 @@ add_library(grpc++_unsecure
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
   ${gRPC_UPB_GEN_DUPL_SRC}
+  ${gRPC_ADDITIONAL_DLL_CXX_SRC}
 )
 
 target_compile_features(grpc++_unsecure PUBLIC cxx_std_14)
@@ -4679,9 +4805,13 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++_unsecure PROPERTIES COMPILE_PDB_NAME "grpc++_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
-  set_target_properties(grpc++_unsecure PROPERTIES DEFINE_SYMBOL "GRPCXX_DLL_EXPORTS")
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(grpc++_unsecure INTERFACE GRPCXX_DLL_IMPORTS)
+    target_compile_definitions(grpc++_unsecure
+    PRIVATE
+      "GRPCXX_DLL_EXPORTS"
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
   endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_unsecure.pdb
@@ -5198,20 +5328,12 @@ add_library(grpc_authorization_provider
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
-  third_party/upb/upb/message/array.c
-  third_party/upb/upb/message/map.c
-  third_party/upb/upb/message/map_sorter.c
-  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/decode_fast.c
   third_party/upb/upb/wire/encode.c
@@ -5230,6 +5352,12 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc_authorization_provider PROPERTIES COMPILE_PDB_NAME "grpc_authorization_provider"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_authorization_provider
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_authorization_provider.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -5253,7 +5381,7 @@ target_include_directories(grpc_authorization_provider
 )
 target_link_libraries(grpc_authorization_provider
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  upb
+  upb_message_lib
   ${_gRPC_RE2_LIBRARIES}
   utf8_range_lib
   ${_gRPC_ZLIB_LIBRARIES}
@@ -5440,7 +5568,7 @@ endif()
 # See https://github.com/grpc/grpc/issues/19473
 if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
 
-add_library(grpcpp_channelz
+add_library(grpcpp_channelz ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
@@ -5460,6 +5588,14 @@ if(WIN32 AND MSVC)
   set_target_properties(grpcpp_channelz PROPERTIES COMPILE_PDB_NAME "grpcpp_channelz"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpcpp_channelz
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpcpp_channelz.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -5528,6 +5664,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(fd_conservation_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(fd_conservation_posix_test PUBLIC cxx_std_14)
   target_include_directories(fd_conservation_posix_test
     PRIVATE
@@ -5556,6 +5701,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(multiple_server_queues_test
   test/core/end2end/multiple_server_queues_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(multiple_server_queues_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(multiple_server_queues_test PUBLIC cxx_std_14)
 target_include_directories(multiple_server_queues_test
   PRIVATE
@@ -5584,6 +5738,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   add_executable(pollset_windows_starvation_test
     test/core/iomgr/pollset_windows_starvation_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(pollset_windows_starvation_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(pollset_windows_starvation_test PUBLIC cxx_std_14)
   target_include_directories(pollset_windows_starvation_test
     PRIVATE
@@ -5614,6 +5777,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
     test/core/client_channel/lb_policy/static_stride_scheduler_benchmark.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(static_stride_scheduler_benchmark
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(static_stride_scheduler_benchmark PUBLIC cxx_std_14)
   target_include_directories(static_stride_scheduler_benchmark
     PRIVATE
@@ -5655,6 +5826,15 @@ add_executable(test_core_iomgr_timer_list_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_iomgr_timer_list_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_iomgr_timer_list_test PUBLIC cxx_std_14)
 target_include_directories(test_core_iomgr_timer_list_test
   PRIVATE
@@ -5685,6 +5865,14 @@ add_executable(activity_test
   src/core/lib/promise/trace.cc
   test/core/promise/activity_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(activity_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(activity_test PUBLIC cxx_std_14)
 target_include_directories(activity_test
   PRIVATE
@@ -5722,6 +5910,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(address_sorting_test
     test/cpp/naming/address_sorting_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(address_sorting_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(address_sorting_test PUBLIC cxx_std_14)
   target_include_directories(address_sorting_test
     PRIVATE
@@ -5773,6 +5971,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/util/string_ref_helper.cc
     test/cpp/util/subprocess.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(address_sorting_test_unsecure
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(address_sorting_test_unsecure PUBLIC cxx_std_14)
   target_include_directories(address_sorting_test_unsecure
     PRIVATE
@@ -5827,6 +6035,16 @@ add_executable(admin_services_end2end_test
   src/cpp/server/csds/csds.cc
   test/cpp/end2end/admin_services_end2end_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(admin_services_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(admin_services_end2end_test PUBLIC cxx_std_14)
 target_include_directories(admin_services_end2end_test
   PRIVATE
@@ -5873,6 +6091,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/tracer_util.cc
     test/cpp/common/alarm_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(alarm_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(alarm_test PUBLIC cxx_std_14)
   target_include_directories(alarm_test
     PRIVATE
@@ -5910,6 +6138,14 @@ add_executable(all_ok_test
   src/core/lib/promise/trace.cc
   test/core/promise/all_ok_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(all_ok_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(all_ok_test PUBLIC cxx_std_14)
 target_include_directories(all_ok_test
   PRIVATE
@@ -5946,6 +6182,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(alloc_test
   test/core/gpr/alloc_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alloc_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alloc_test PUBLIC cxx_std_14)
 target_include_directories(alloc_test
   PRIVATE
@@ -5979,6 +6224,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(alpn_test
   test/core/transport/chttp2/alpn_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alpn_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alpn_test PUBLIC cxx_std_14)
 target_include_directories(alpn_test
   PRIVATE
@@ -6024,6 +6278,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
     test/core/util/fake_udp_and_tcp_server.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(alts_concurrent_connectivity_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(alts_concurrent_connectivity_test PUBLIC cxx_std_14)
   target_include_directories(alts_concurrent_connectivity_test
     PRIVATE
@@ -6060,6 +6324,15 @@ add_executable(alts_counter_test
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/frame_protector/alts_counter_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_counter_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_counter_test PUBLIC cxx_std_14)
 target_include_directories(alts_counter_test
   PRIVATE
@@ -6094,6 +6367,15 @@ add_executable(alts_crypt_test
   test/core/tsi/alts/crypt/aes_gcm_test.cc
   test/core/tsi/alts/crypt/gsec_test_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_crypt_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_crypt_test PUBLIC cxx_std_14)
 target_include_directories(alts_crypt_test
   PRIVATE
@@ -6128,6 +6410,15 @@ add_executable(alts_crypter_test
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/frame_protector/alts_crypter_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_crypter_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_crypter_test PUBLIC cxx_std_14)
 target_include_directories(alts_crypter_test
   PRIVATE
@@ -6163,6 +6454,15 @@ add_executable(alts_frame_protector_test
   test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
   test/core/tsi/transport_security_test_lib.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_frame_protector_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_frame_protector_test PUBLIC cxx_std_14)
 target_include_directories(alts_frame_protector_test
   PRIVATE
@@ -6197,6 +6497,15 @@ add_executable(alts_grpc_record_protocol_test
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_grpc_record_protocol_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_grpc_record_protocol_test PUBLIC cxx_std_14)
 target_include_directories(alts_grpc_record_protocol_test
   PRIVATE
@@ -6231,6 +6540,15 @@ add_executable(alts_handshaker_client_test
   test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_handshaker_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_handshaker_client_test PUBLIC cxx_std_14)
 target_include_directories(alts_handshaker_client_test
   PRIVATE
@@ -6265,6 +6583,15 @@ add_executable(alts_iovec_record_protocol_test
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_iovec_record_protocol_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_iovec_record_protocol_test PUBLIC cxx_std_14)
 target_include_directories(alts_iovec_record_protocol_test
   PRIVATE
@@ -6308,6 +6635,15 @@ add_executable(alts_security_connector_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_security_connector_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_security_connector_test PUBLIC cxx_std_14)
 target_include_directories(alts_security_connector_test
   PRIVATE
@@ -6342,6 +6678,15 @@ add_executable(alts_tsi_handshaker_test
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_tsi_handshaker_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_tsi_handshaker_test PUBLIC cxx_std_14)
 target_include_directories(alts_tsi_handshaker_test
   PRIVATE
@@ -6376,6 +6721,15 @@ add_executable(alts_tsi_utils_test
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_tsi_utils_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_tsi_utils_test PUBLIC cxx_std_14)
 target_include_directories(alts_tsi_utils_test
   PRIVATE
@@ -6409,6 +6763,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(alts_util_test
   test/cpp/common/alts_util_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_util_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_util_test PUBLIC cxx_std_14)
 target_include_directories(alts_util_test
   PRIVATE
@@ -6444,6 +6808,15 @@ add_executable(alts_zero_copy_grpc_protector_test
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(alts_zero_copy_grpc_protector_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(alts_zero_copy_grpc_protector_test PUBLIC cxx_std_14)
 target_include_directories(alts_zero_copy_grpc_protector_test
   PRIVATE
@@ -6477,6 +6850,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(arena_promise_test
   test/core/promise/arena_promise_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(arena_promise_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(arena_promise_test PUBLIC cxx_std_14)
 target_include_directories(arena_promise_test
   PRIVATE
@@ -6510,6 +6892,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(arena_test
   test/core/resource_quota/arena_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(arena_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(arena_test PUBLIC cxx_std_14)
 target_include_directories(arena_test
   PRIVATE
@@ -6567,6 +6958,16 @@ add_executable(async_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/async_end2end_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(async_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(async_end2end_test PUBLIC cxx_std_14)
 target_include_directories(async_end2end_test
   PRIVATE
@@ -6610,6 +7011,15 @@ add_executable(auth_context_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(auth_context_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(auth_context_test PUBLIC cxx_std_14)
 target_include_directories(auth_context_test
   PRIVATE
@@ -6643,6 +7053,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(auth_property_iterator_test
   test/cpp/common/auth_property_iterator_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(auth_property_iterator_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(auth_property_iterator_test PUBLIC cxx_std_14)
 target_include_directories(auth_property_iterator_test
   PRIVATE
@@ -6686,6 +7106,15 @@ add_executable(authorization_matchers_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(authorization_matchers_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(authorization_matchers_test PUBLIC cxx_std_14)
 target_include_directories(authorization_matchers_test
   PRIVATE
@@ -6720,6 +7149,16 @@ add_executable(authorization_policy_provider_test
   src/cpp/server/authorization_policy_provider.cc
   test/cpp/server/authorization_policy_provider_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(authorization_policy_provider_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(authorization_policy_provider_test PUBLIC cxx_std_14)
 target_include_directories(authorization_policy_provider_test
   PRIVATE
@@ -6755,6 +7194,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(avl_test
   test/core/avl/avl_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(avl_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(avl_test PUBLIC cxx_std_14)
 target_include_directories(avl_test
   PRIVATE
@@ -6799,6 +7246,15 @@ add_executable(aws_request_signer_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(aws_request_signer_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(aws_request_signer_test PUBLIC cxx_std_14)
 target_include_directories(aws_request_signer_test
   PRIVATE
@@ -6832,6 +7288,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(b64_test
   test/core/slice/b64_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(b64_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(b64_test PUBLIC cxx_std_14)
 target_include_directories(b64_test
   PRIVATE
@@ -6879,6 +7344,16 @@ add_executable(backend_metrics_lb_policy_test
   test/cpp/interop/backend_metrics_lb_policy.cc
   test/cpp/interop/backend_metrics_lb_policy_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(backend_metrics_lb_policy_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(backend_metrics_lb_policy_test PUBLIC cxx_std_14)
 target_include_directories(backend_metrics_lb_policy_test
   PRIVATE
@@ -6914,6 +7389,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(backoff_test
   test/core/backoff/backoff_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(backoff_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(backoff_test PUBLIC cxx_std_14)
 target_include_directories(backoff_test
   PRIVATE
@@ -6956,6 +7440,15 @@ add_executable(bad_ping_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(bad_ping_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(bad_ping_test PUBLIC cxx_std_14)
 target_include_directories(bad_ping_test
   PRIVATE
@@ -6992,6 +7485,15 @@ add_executable(bad_server_response_test
   test/core/end2end/bad_server_response_test.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(bad_server_response_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(bad_server_response_test PUBLIC cxx_std_14)
 target_include_directories(bad_server_response_test
   PRIVATE
@@ -7039,6 +7541,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(bad_ssl_alpn_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(bad_ssl_alpn_test PUBLIC cxx_std_14)
   target_include_directories(bad_ssl_alpn_test
     PRIVATE
@@ -7087,6 +7598,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(bad_ssl_cert_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(bad_ssl_cert_test PUBLIC cxx_std_14)
   target_include_directories(bad_ssl_cert_test
     PRIVATE
@@ -7123,6 +7643,15 @@ add_executable(bad_streaming_id_bad_client_test
   test/core/bad_client/tests/bad_streaming_id.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(bad_streaming_id_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(bad_streaming_id_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(bad_streaming_id_bad_client_test
   PRIVATE
@@ -7158,6 +7687,15 @@ add_executable(badreq_bad_client_test
   test/core/bad_client/tests/badreq.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(badreq_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(badreq_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(badreq_bad_client_test
   PRIVATE
@@ -7191,6 +7729,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(basic_work_queue_test
   test/core/event_engine/work_queue/basic_work_queue_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(basic_work_queue_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(basic_work_queue_test PUBLIC cxx_std_14)
 target_include_directories(basic_work_queue_test
   PRIVATE
@@ -7225,6 +7772,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(bdp_estimator_test
     test/core/transport/bdp_estimator_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(bdp_estimator_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(bdp_estimator_test PUBLIC cxx_std_14)
   target_include_directories(bdp_estimator_test
     PRIVATE
@@ -7259,6 +7815,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(bin_decoder_test
   test/core/transport/chttp2/bin_decoder_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(bin_decoder_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(bin_decoder_test PUBLIC cxx_std_14)
 target_include_directories(bin_decoder_test
   PRIVATE
@@ -7292,6 +7857,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(bin_encoder_test
   test/core/transport/chttp2/bin_encoder_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(bin_encoder_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(bin_encoder_test PUBLIC cxx_std_14)
 target_include_directories(bin_encoder_test
   PRIVATE
@@ -7334,6 +7908,15 @@ add_executable(binary_metadata_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(binary_metadata_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(binary_metadata_test PUBLIC cxx_std_14)
 target_include_directories(binary_metadata_test
   PRIVATE
@@ -7369,6 +7952,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(binder_resolver_test
   test/core/client_channel/resolvers/binder_resolver_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(binder_resolver_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(binder_resolver_test PUBLIC cxx_std_14)
 target_include_directories(binder_resolver_test
   PRIVATE
@@ -7420,6 +8012,16 @@ add_executable(binder_server_test
   test/core/transport/binder/end2end/fake_binder.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(binder_server_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(binder_server_test PUBLIC cxx_std_14)
 target_include_directories(binder_server_test
   PRIVATE
@@ -7516,6 +8118,15 @@ add_executable(binder_transport_test
   test/core/transport/binder/binder_transport_test.cc
   test/core/transport/binder/mock_objects.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(binder_transport_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(binder_transport_test PUBLIC cxx_std_14)
 target_include_directories(binder_transport_test
   PRIVATE
@@ -7592,6 +8203,15 @@ add_executable(buffer_list_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(buffer_list_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(buffer_list_test PUBLIC cxx_std_14)
 target_include_directories(buffer_list_test
   PRIVATE
@@ -7625,6 +8245,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(byte_buffer_test
   test/cpp/util/byte_buffer_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(byte_buffer_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(byte_buffer_test PUBLIC cxx_std_14)
 target_include_directories(byte_buffer_test
   PRIVATE
@@ -7658,6 +8288,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(c_slice_buffer_test
   test/core/slice/c_slice_buffer_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(c_slice_buffer_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(c_slice_buffer_test PUBLIC cxx_std_14)
 target_include_directories(c_slice_buffer_test
   PRIVATE
@@ -7700,6 +8339,15 @@ add_executable(call_creds_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(call_creds_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(call_creds_test PUBLIC cxx_std_14)
 target_include_directories(call_creds_test
   PRIVATE
@@ -7735,6 +8383,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(call_finalization_test
   test/core/channel/call_finalization_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(call_finalization_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(call_finalization_test PUBLIC cxx_std_14)
 target_include_directories(call_finalization_test
   PRIVATE
@@ -7777,6 +8434,15 @@ add_executable(call_host_override_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(call_host_override_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(call_host_override_test PUBLIC cxx_std_14)
 target_include_directories(call_host_override_test
   PRIVATE
@@ -7813,6 +8479,15 @@ add_executable(call_tracer_test
   test/core/channel/call_tracer_test.cc
   test/core/util/fake_stats_plugin.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(call_tracer_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(call_tracer_test PUBLIC cxx_std_14)
 target_include_directories(call_tracer_test
   PRIVATE
@@ -7855,6 +8530,15 @@ add_executable(cancel_after_accept_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cancel_after_accept_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cancel_after_accept_test PUBLIC cxx_std_14)
 target_include_directories(cancel_after_accept_test
   PRIVATE
@@ -7899,6 +8583,15 @@ add_executable(cancel_after_client_done_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cancel_after_client_done_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cancel_after_client_done_test PUBLIC cxx_std_14)
 target_include_directories(cancel_after_client_done_test
   PRIVATE
@@ -7943,6 +8636,15 @@ add_executable(cancel_after_invoke_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cancel_after_invoke_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cancel_after_invoke_test PUBLIC cxx_std_14)
 target_include_directories(cancel_after_invoke_test
   PRIVATE
@@ -7987,6 +8689,15 @@ add_executable(cancel_after_round_trip_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cancel_after_round_trip_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cancel_after_round_trip_test PUBLIC cxx_std_14)
 target_include_directories(cancel_after_round_trip_test
   PRIVATE
@@ -8025,6 +8736,16 @@ add_executable(cancel_ares_query_test
   test/core/util/socket_use_after_close_detector.cc
   test/cpp/naming/cancel_ares_query_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cancel_ares_query_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cancel_ares_query_test PUBLIC cxx_std_14)
 target_include_directories(cancel_ares_query_test
   PRIVATE
@@ -8068,6 +8789,15 @@ add_executable(cancel_before_invoke_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cancel_before_invoke_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cancel_before_invoke_test PUBLIC cxx_std_14)
 target_include_directories(cancel_before_invoke_test
   PRIVATE
@@ -8103,6 +8833,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(cancel_callback_test
   test/core/promise/cancel_callback_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cancel_callback_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cancel_callback_test PUBLIC cxx_std_14)
 target_include_directories(cancel_callback_test
   PRIVATE
@@ -8146,6 +8884,15 @@ add_executable(cancel_in_a_vacuum_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cancel_in_a_vacuum_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cancel_in_a_vacuum_test PUBLIC cxx_std_14)
 target_include_directories(cancel_in_a_vacuum_test
   PRIVATE
@@ -8190,6 +8937,15 @@ add_executable(cancel_with_status_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cancel_with_status_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cancel_with_status_test PUBLIC cxx_std_14)
 target_include_directories(cancel_with_status_test
   PRIVATE
@@ -8323,6 +9079,15 @@ add_executable(cel_authorization_engine_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cel_authorization_engine_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cel_authorization_engine_test PUBLIC cxx_std_14)
 target_include_directories(cel_authorization_engine_test
   PRIVATE
@@ -8356,6 +9121,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(certificate_provider_registry_test
   test/core/security/certificate_provider_registry_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(certificate_provider_registry_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(certificate_provider_registry_test PUBLIC cxx_std_14)
 target_include_directories(certificate_provider_registry_test
   PRIVATE
@@ -8389,6 +9163,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(certificate_provider_store_test
   test/core/xds/certificate_provider_store_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(certificate_provider_store_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(certificate_provider_store_test PUBLIC cxx_std_14)
 target_include_directories(certificate_provider_store_test
   PRIVATE
@@ -8423,6 +9206,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(cf_engine_test
     test/core/event_engine/cf/cf_engine_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(cf_engine_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(cf_engine_test PUBLIC cxx_std_14)
   target_include_directories(cf_engine_test
     PRIVATE
@@ -8463,6 +9255,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/tests/client_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(cf_event_engine_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(cf_event_engine_test PUBLIC cxx_std_14)
   target_include_directories(cf_event_engine_test
     PRIVATE
@@ -8514,6 +9315,16 @@ add_executable(cfstream_test
   test/cpp/end2end/cfstream_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cfstream_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cfstream_test PUBLIC cxx_std_14)
 target_include_directories(cfstream_test
   PRIVATE
@@ -8547,6 +9358,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(channel_args_test
   test/core/channel/channel_args_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(channel_args_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(channel_args_test PUBLIC cxx_std_14)
 target_include_directories(channel_args_test
   PRIVATE
@@ -8580,6 +9400,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(channel_arguments_test
   test/cpp/common/channel_arguments_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(channel_arguments_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(channel_arguments_test PUBLIC cxx_std_14)
 target_include_directories(channel_arguments_test
   PRIVATE
@@ -8624,6 +9454,15 @@ add_executable(channel_creds_registry_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(channel_creds_registry_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(channel_creds_registry_test PUBLIC cxx_std_14)
 target_include_directories(channel_creds_registry_test
   PRIVATE
@@ -8657,6 +9496,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(channel_init_test
   test/core/surface/channel_init_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(channel_init_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(channel_init_test PUBLIC cxx_std_14)
 target_include_directories(channel_init_test
   PRIVATE
@@ -8690,6 +9538,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(channel_stack_builder_test
   test/core/channel/channel_stack_builder_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(channel_stack_builder_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(channel_stack_builder_test PUBLIC cxx_std_14)
 target_include_directories(channel_stack_builder_test
   PRIVATE
@@ -8723,6 +9580,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(channel_stack_test
   test/core/channel/channel_stack_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(channel_stack_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(channel_stack_test PUBLIC cxx_std_14)
 target_include_directories(channel_stack_test
   PRIVATE
@@ -8761,6 +9627,16 @@ add_executable(channel_trace_test
   test/core/channel/channel_trace_test.cc
   test/cpp/util/channel_trace_proto_helper.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(channel_trace_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(channel_trace_test PUBLIC cxx_std_14)
 target_include_directories(channel_trace_test
   PRIVATE
@@ -8795,6 +9671,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(channelz_registry_test
   test/core/channel/channelz_registry_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(channelz_registry_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(channelz_registry_test PUBLIC cxx_std_14)
 target_include_directories(channelz_registry_test
   PRIVATE
@@ -8847,6 +9733,16 @@ add_executable(channelz_service_test
   test/cpp/end2end/channelz_service_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(channelz_service_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(channelz_service_test PUBLIC cxx_std_14)
 target_include_directories(channelz_service_test
   PRIVATE
@@ -8943,6 +9839,15 @@ add_executable(check_gcp_environment_linux_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(check_gcp_environment_linux_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(check_gcp_environment_linux_test PUBLIC cxx_std_14)
 target_include_directories(check_gcp_environment_linux_test
   PRIVATE
@@ -8986,6 +9891,15 @@ add_executable(check_gcp_environment_windows_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(check_gcp_environment_windows_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(check_gcp_environment_windows_test PUBLIC cxx_std_14)
 target_include_directories(check_gcp_environment_windows_test
   PRIVATE
@@ -9044,26 +9958,26 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
-  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
-  third_party/upb/upb/message/array.c
-  third_party/upb/upb/message/map.c
-  third_party/upb/upb/message/map_sorter.c
-  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/decode_fast.c
   third_party/upb/upb/wire/encode.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/reader.c
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(chunked_vector_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(chunked_vector_test PUBLIC cxx_std_14)
 target_include_directories(chunked_vector_test
   PRIVATE
@@ -9087,7 +10001,7 @@ target_include_directories(chunked_vector_test
 target_link_libraries(chunked_vector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb
+  upb_message_lib
   utf8_range_lib
   absl::function_ref
   absl::hash
@@ -9129,6 +10043,16 @@ add_executable(cli_call_test
   test/cpp/util/proto_reflection_descriptor_database.cc
   test/cpp/util/service_describer.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cli_call_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cli_call_test PUBLIC cxx_std_14)
 target_include_directories(cli_call_test
   PRIVATE
@@ -9169,6 +10093,15 @@ add_executable(client_auth_filter_test
   test/core/filters/client_auth_filter_test.cc
   test/core/filters/filter_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(client_auth_filter_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(client_auth_filter_test PUBLIC cxx_std_14)
 target_include_directories(client_auth_filter_test
   PRIVATE
@@ -9209,6 +10142,15 @@ add_executable(client_authority_filter_test
   test/core/filters/client_authority_filter_test.cc
   test/core/filters/filter_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(client_authority_filter_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(client_authority_filter_test PUBLIC cxx_std_14)
 target_include_directories(client_authority_filter_test
   PRIVATE
@@ -9261,6 +10203,16 @@ add_executable(client_callback_end2end_test
   test/cpp/end2end/interceptors_util.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(client_callback_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(client_callback_end2end_test PUBLIC cxx_std_14)
 target_include_directories(client_callback_end2end_test
   PRIVATE
@@ -9294,6 +10246,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(client_channel_service_config_test
   test/core/client_channel/client_channel_service_config_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(client_channel_service_config_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(client_channel_service_config_test PUBLIC cxx_std_14)
 target_include_directories(client_channel_service_config_test
   PRIVATE
@@ -9327,6 +10288,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(client_channel_test
   test/core/client_channel/client_channel_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(client_channel_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(client_channel_test PUBLIC cxx_std_14)
 target_include_directories(client_channel_test
   PRIVATE
@@ -9360,6 +10330,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(client_context_test_peer_test
   test/cpp/test/client_context_test_peer_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(client_context_test_peer_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(client_context_test_peer_test PUBLIC cxx_std_14)
 target_include_directories(client_context_test_peer_test
   PRIVATE
@@ -9414,6 +10394,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
     test/cpp/end2end/client_fork_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(client_fork_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(client_fork_test PUBLIC cxx_std_14)
   target_include_directories(client_fork_test
     PRIVATE
@@ -9468,6 +10458,16 @@ add_executable(client_interceptors_end2end_test
   test/cpp/end2end/interceptors_util.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(client_interceptors_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(client_interceptors_end2end_test PUBLIC cxx_std_14)
 target_include_directories(client_interceptors_end2end_test
   PRIVATE
@@ -9530,6 +10530,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/connection_attempt_injector.cc
     test/cpp/end2end/test_service_impl.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(client_lb_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(client_lb_end2end_test PUBLIC cxx_std_14)
   target_include_directories(client_lb_end2end_test
     PRIVATE
@@ -9565,6 +10575,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(client_ssl_test
     test/core/handshake/client_ssl.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(client_ssl_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(client_ssl_test PUBLIC cxx_std_14)
   target_include_directories(client_ssl_test
     PRIVATE
@@ -9608,6 +10627,15 @@ add_executable(client_streaming_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(client_streaming_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(client_streaming_test PUBLIC cxx_std_14)
 target_include_directories(client_streaming_test
   PRIVATE
@@ -9653,6 +10681,15 @@ add_executable(cmdline_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cmdline_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cmdline_test PUBLIC cxx_std_14)
 target_include_directories(cmdline_test
   PRIVATE
@@ -9686,6 +10723,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(codegen_test_full
   test/cpp/codegen/codegen_test_full.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(codegen_test_full
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(codegen_test_full PUBLIC cxx_std_14)
 target_include_directories(codegen_test_full
   PRIVATE
@@ -9720,6 +10767,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(codegen_test_minimal
   test/cpp/codegen/codegen_test_minimal.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(codegen_test_minimal
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(codegen_test_minimal PUBLIC cxx_std_14)
 target_include_directories(codegen_test_minimal
   PRIVATE
@@ -9765,6 +10822,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(combiner_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(combiner_test PUBLIC cxx_std_14)
   target_include_directories(combiner_test
     PRIVATE
@@ -9799,6 +10865,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(common_closures_test
   test/core/event_engine/common_closures_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(common_closures_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(common_closures_test PUBLIC cxx_std_14)
 target_include_directories(common_closures_test
   PRIVATE
@@ -9833,6 +10907,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(completion_queue_threading_test
   test/core/surface/completion_queue_threading_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(completion_queue_threading_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(completion_queue_threading_test PUBLIC cxx_std_14)
 target_include_directories(completion_queue_threading_test
   PRIVATE
@@ -9875,6 +10958,15 @@ add_executable(compressed_payload_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(compressed_payload_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(compressed_payload_test PUBLIC cxx_std_14)
 target_include_directories(compressed_payload_test
   PRIVATE
@@ -9910,6 +11002,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(compression_test
   test/core/compression/compression_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(compression_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(compression_test PUBLIC cxx_std_14)
 target_include_directories(compression_test
   PRIVATE
@@ -9943,6 +11044,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(concurrent_connectivity_test
   test/core/surface/concurrent_connectivity_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(concurrent_connectivity_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(concurrent_connectivity_test PUBLIC cxx_std_14)
 target_include_directories(concurrent_connectivity_test
   PRIVATE
@@ -9978,6 +11088,15 @@ add_executable(connection_prefix_bad_client_test
   test/core/bad_client/tests/connection_prefix.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(connection_prefix_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(connection_prefix_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(connection_prefix_bad_client_test
   PRIVATE
@@ -10012,6 +11131,15 @@ add_executable(connection_refused_test
   test/core/end2end/connection_refused_test.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(connection_refused_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(connection_refused_test PUBLIC cxx_std_14)
 target_include_directories(connection_refused_test
   PRIVATE
@@ -10055,6 +11183,15 @@ add_executable(connectivity_state_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(connectivity_state_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(connectivity_state_test PUBLIC cxx_std_14)
 target_include_directories(connectivity_state_test
   PRIVATE
@@ -10097,6 +11234,15 @@ add_executable(connectivity_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(connectivity_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(connectivity_test PUBLIC cxx_std_14)
 target_include_directories(connectivity_test
   PRIVATE
@@ -10149,6 +11295,16 @@ add_executable(context_allocator_end2end_test
   test/cpp/end2end/context_allocator_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(context_allocator_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(context_allocator_end2end_test PUBLIC cxx_std_14)
 target_include_directories(context_allocator_end2end_test
   PRIVATE
@@ -10182,6 +11338,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(context_test
   test/core/promise/context_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(context_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(context_test PUBLIC cxx_std_14)
 target_include_directories(context_test
   PRIVATE
@@ -10215,6 +11379,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(core_configuration_test
   test/core/config/core_configuration_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(core_configuration_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(core_configuration_test PUBLIC cxx_std_14)
 target_include_directories(core_configuration_test
   PRIVATE
@@ -10280,6 +11453,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(cpu_test
   test/core/gpr/cpu_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cpu_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(cpu_test PUBLIC cxx_std_14)
 target_include_directories(cpu_test
   PRIVATE
@@ -10330,6 +11512,16 @@ add_executable(crl_provider_test
   test/cpp/end2end/crl_provider_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(crl_provider_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(crl_provider_test PUBLIC cxx_std_14)
 target_include_directories(crl_provider_test
   PRIVATE
@@ -10365,6 +11557,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/tsi/crl_ssl_transport_security_test.cc
     test/core/tsi/transport_security_test_lib.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(crl_ssl_transport_security_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(crl_ssl_transport_security_test PUBLIC cxx_std_14)
   target_include_directories(crl_ssl_transport_security_test
     PRIVATE
@@ -10399,6 +11600,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(default_engine_methods_test
   test/core/event_engine/default_engine_methods_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(default_engine_methods_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(default_engine_methods_test PUBLIC cxx_std_14)
 target_include_directories(default_engine_methods_test
   PRIVATE
@@ -10441,6 +11651,15 @@ add_executable(default_host_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(default_host_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(default_host_test PUBLIC cxx_std_14)
 target_include_directories(default_host_test
   PRIVATE
@@ -10493,6 +11712,16 @@ add_executable(delegating_channel_test
   test/cpp/end2end/delegating_channel_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(delegating_channel_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(delegating_channel_test PUBLIC cxx_std_14)
 target_include_directories(delegating_channel_test
   PRIVATE
@@ -10526,6 +11755,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(destroy_grpclb_channel_with_active_connect_stress_test
   test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(destroy_grpclb_channel_with_active_connect_stress_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(destroy_grpclb_channel_with_active_connect_stress_test PUBLIC cxx_std_14)
 target_include_directories(destroy_grpclb_channel_with_active_connect_stress_test
   PRIVATE
@@ -10559,6 +11798,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(directory_reader_test
   test/core/gprpp/directory_reader_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(directory_reader_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(directory_reader_test PUBLIC cxx_std_14)
 target_include_directories(directory_reader_test
   PRIVATE
@@ -10601,6 +11849,15 @@ add_executable(disappearing_server_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(disappearing_server_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(disappearing_server_test PUBLIC cxx_std_14)
 target_include_directories(disappearing_server_test
   PRIVATE
@@ -10636,6 +11893,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(dns_resolver_cooldown_test
   test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(dns_resolver_cooldown_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(dns_resolver_cooldown_test PUBLIC cxx_std_14)
 target_include_directories(dns_resolver_cooldown_test
   PRIVATE
@@ -10669,6 +11935,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(dns_resolver_test
   test/core/client_channel/resolvers/dns_resolver_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(dns_resolver_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(dns_resolver_test PUBLIC cxx_std_14)
 target_include_directories(dns_resolver_test
   PRIVATE
@@ -10702,6 +11977,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(dual_ref_counted_test
   test/core/gprpp/dual_ref_counted_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(dual_ref_counted_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(dual_ref_counted_test PUBLIC cxx_std_14)
 target_include_directories(dual_ref_counted_test
   PRIVATE
@@ -10737,6 +12021,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/end2end/cq_verifier.cc
     test/core/end2end/dualstack_socket_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(dualstack_socket_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(dualstack_socket_test PUBLIC cxx_std_14)
   target_include_directories(dualstack_socket_test
     PRIVATE
@@ -10773,6 +12066,15 @@ add_executable(duplicate_header_bad_client_test
   test/core/bad_client/tests/duplicate_header.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(duplicate_header_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(duplicate_header_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(duplicate_header_bad_client_test
   PRIVATE
@@ -10815,6 +12117,15 @@ add_executable(empty_batch_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(empty_batch_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(empty_batch_test PUBLIC cxx_std_14)
 target_include_directories(empty_batch_test
   PRIVATE
@@ -10870,6 +12181,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/transport/binder/end2end/testing_channel_create.cc
     test/cpp/end2end/test_service_impl.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(end2end_binder_transport_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(end2end_binder_transport_test PUBLIC cxx_std_14)
   target_include_directories(end2end_binder_transport_test
     PRIVATE
@@ -10926,6 +12247,16 @@ add_executable(end2end_test
   test/cpp/end2end/interceptors_util.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(end2end_test PUBLIC cxx_std_14)
 target_include_directories(end2end_test
   PRIVATE
@@ -10959,6 +12290,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(endpoint_addresses_test
   test/core/resolver/endpoint_addresses_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(endpoint_addresses_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(endpoint_addresses_test PUBLIC cxx_std_14)
 target_include_directories(endpoint_addresses_test
   PRIVATE
@@ -11055,6 +12395,15 @@ add_executable(endpoint_binder_pool_test
   test/core/transport/binder/endpoint_binder_pool_test.cc
   test/core/transport/binder/mock_objects.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(endpoint_binder_pool_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(endpoint_binder_pool_test PUBLIC cxx_std_14)
 target_include_directories(endpoint_binder_pool_test
   PRIVATE
@@ -11094,6 +12443,14 @@ add_executable(endpoint_config_test
   src/core/lib/surface/channel_stack_type.cc
   test/core/event_engine/endpoint_config_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(endpoint_config_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(endpoint_config_test PUBLIC cxx_std_14)
 target_include_directories(endpoint_config_test
   PRIVATE
@@ -11141,6 +12498,15 @@ add_executable(endpoint_pair_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(endpoint_pair_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(endpoint_pair_test PUBLIC cxx_std_14)
 target_include_directories(endpoint_pair_test
   PRIVATE
@@ -11174,6 +12540,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(env_test
   test/core/gpr/env_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(env_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(env_test PUBLIC cxx_std_14)
 target_include_directories(env_test
   PRIVATE
@@ -11219,6 +12594,16 @@ add_executable(error_details_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   test/cpp/util/error_details_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(error_details_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(error_details_test PUBLIC cxx_std_14)
 target_include_directories(error_details_test
   PRIVATE
@@ -11264,6 +12649,15 @@ add_executable(error_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(error_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(error_test PUBLIC cxx_std_14)
 target_include_directories(error_test
   PRIVATE
@@ -11307,6 +12701,15 @@ add_executable(error_utils_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(error_utils_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(error_utils_test PUBLIC cxx_std_14)
 target_include_directories(error_utils_test
   PRIVATE
@@ -11350,6 +12753,15 @@ add_executable(evaluate_args_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(evaluate_args_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(evaluate_args_test PUBLIC cxx_std_14)
 target_include_directories(evaluate_args_test
   PRIVATE
@@ -11383,6 +12795,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(event_engine_wakeup_scheduler_test
   test/core/promise/event_engine_wakeup_scheduler_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(event_engine_wakeup_scheduler_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(event_engine_wakeup_scheduler_test PUBLIC cxx_std_14)
 target_include_directories(event_engine_wakeup_scheduler_test
   PRIVATE
@@ -11418,6 +12839,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/posix/event_poller_posix_test.cc
     test/core/event_engine/posix/posix_engine_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(event_poller_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(event_poller_posix_test PUBLIC cxx_std_14)
   target_include_directories(event_poller_posix_test
     PRIVATE
@@ -11453,6 +12883,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(examine_stack_test
     test/core/gprpp/examine_stack_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(examine_stack_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(examine_stack_test PUBLIC cxx_std_14)
   target_include_directories(examine_stack_test
     PRIVATE
@@ -11503,6 +12942,16 @@ add_executable(exception_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/exception_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(exception_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(exception_test PUBLIC cxx_std_14)
 target_include_directories(exception_test
   PRIVATE
@@ -11554,26 +13003,26 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
-  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
-  third_party/upb/upb/message/array.c
-  third_party/upb/upb/message/map.c
-  third_party/upb/upb/message/map_sorter.c
-  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/decode_fast.c
   third_party/upb/upb/wire/encode.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/reader.c
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(exec_ctx_wakeup_scheduler_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(exec_ctx_wakeup_scheduler_test PUBLIC cxx_std_14)
 target_include_directories(exec_ctx_wakeup_scheduler_test
   PRIVATE
@@ -11597,7 +13046,7 @@ target_include_directories(exec_ctx_wakeup_scheduler_test
 target_link_libraries(exec_ctx_wakeup_scheduler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb
+  upb_message_lib
   utf8_range_lib
   absl::hash
   absl::type_traits
@@ -11615,6 +13064,14 @@ add_executable(experiments_tag_test
   test/core/experiments/experiments_tag_test.cc
   test/core/experiments/fixtures/experiments.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(experiments_tag_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(experiments_tag_test PUBLIC cxx_std_14)
 target_include_directories(experiments_tag_test
   PRIVATE
@@ -11652,6 +13109,14 @@ add_executable(experiments_test
   test/core/experiments/experiments_test.cc
   test/core/experiments/fixtures/experiments.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(experiments_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(experiments_test PUBLIC cxx_std_14)
 target_include_directories(experiments_test
   PRIVATE
@@ -11685,6 +13150,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(factory_test
   test/core/event_engine/factory_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(factory_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(factory_test PUBLIC cxx_std_14)
 target_include_directories(factory_test
   PRIVATE
@@ -11781,6 +13255,15 @@ add_executable(fake_binder_test
   test/core/transport/binder/end2end/fake_binder.cc
   test/core/transport/binder/end2end/fake_binder_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(fake_binder_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(fake_binder_test PUBLIC cxx_std_14)
 target_include_directories(fake_binder_test
   PRIVATE
@@ -11815,6 +13298,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(fake_resolver_test
   test/core/client_channel/resolvers/fake_resolver_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(fake_resolver_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(fake_resolver_test PUBLIC cxx_std_14)
 target_include_directories(fake_resolver_test
   PRIVATE
@@ -11849,6 +13341,15 @@ add_executable(fake_transport_security_test
   test/core/tsi/fake_transport_security_test.cc
   test/core/tsi/transport_security_test_lib.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(fake_transport_security_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(fake_transport_security_test PUBLIC cxx_std_14)
 target_include_directories(fake_transport_security_test
   PRIVATE
@@ -11893,6 +13394,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(fd_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(fd_posix_test PUBLIC cxx_std_14)
   target_include_directories(fd_posix_test
     PRIVATE
@@ -11927,6 +13437,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(file_watcher_certificate_provider_factory_test
   test/core/xds/file_watcher_certificate_provider_factory_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(file_watcher_certificate_provider_factory_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(file_watcher_certificate_provider_factory_test PUBLIC cxx_std_14)
 target_include_directories(file_watcher_certificate_provider_factory_test
   PRIVATE
@@ -11969,6 +13488,15 @@ add_executable(filter_causes_close_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(filter_causes_close_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(filter_causes_close_test PUBLIC cxx_std_14)
 target_include_directories(filter_causes_close_test
   PRIVATE
@@ -12013,6 +13541,15 @@ add_executable(filter_context_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(filter_context_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(filter_context_test PUBLIC cxx_std_14)
 target_include_directories(filter_context_test
   PRIVATE
@@ -12057,6 +13594,15 @@ add_executable(filter_init_fails_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(filter_init_fails_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(filter_init_fails_test PUBLIC cxx_std_14)
 target_include_directories(filter_init_fails_test
   PRIVATE
@@ -12098,6 +13644,15 @@ add_executable(filter_test_test
   test/core/filters/filter_test.cc
   test/core/filters/filter_test_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(filter_test_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(filter_test_test PUBLIC cxx_std_14)
 target_include_directories(filter_test_test
   PRIVATE
@@ -12142,6 +13697,15 @@ add_executable(filtered_metadata_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(filtered_metadata_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(filtered_metadata_test PUBLIC cxx_std_14)
 target_include_directories(filtered_metadata_test
   PRIVATE
@@ -12194,6 +13758,16 @@ add_executable(flaky_network_test
   test/cpp/end2end/flaky_network_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(flaky_network_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(flaky_network_test PUBLIC cxx_std_14)
 target_include_directories(flaky_network_test
   PRIVATE
@@ -12226,6 +13800,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(flow_control_test
   src/core/ext/transport/chttp2/transport/flow_control.cc
+  src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
@@ -12250,30 +13825,31 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   test/core/transport/chttp2/flow_control_test.cc
-  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
-  third_party/upb/upb/message/array.c
-  third_party/upb/upb/message/map.c
-  third_party/upb/upb/message/map_sorter.c
-  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/decode_fast.c
   third_party/upb/upb/wire/encode.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/reader.c
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(flow_control_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(flow_control_test PUBLIC cxx_std_14)
 target_include_directories(flow_control_test
   PRIVATE
@@ -12297,12 +13873,13 @@ target_include_directories(flow_control_test
 target_link_libraries(flow_control_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb
+  upb_message_lib
   utf8_range_lib
   absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -12338,26 +13915,26 @@ add_executable(for_each_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
-  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
-  third_party/upb/upb/message/array.c
-  third_party/upb/upb/message/map.c
-  third_party/upb/upb/message/map_sorter.c
-  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/decode_fast.c
   third_party/upb/upb/wire/encode.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/reader.c
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(for_each_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(for_each_test PUBLIC cxx_std_14)
 target_include_directories(for_each_test
   PRIVATE
@@ -12381,7 +13958,7 @@ target_include_directories(for_each_test
 target_link_libraries(for_each_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb
+  upb_message_lib
   utf8_range_lib
   absl::function_ref
   absl::hash
@@ -12398,6 +13975,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(fork_test
     test/core/gprpp/fork_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(fork_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(fork_test PUBLIC cxx_std_14)
   target_include_directories(fork_test
     PRIVATE
@@ -12434,6 +14020,14 @@ add_executable(forkable_test
   src/core/lib/event_engine/forkable.cc
   test/core/event_engine/forkable_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(forkable_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(forkable_test PUBLIC cxx_std_14)
 target_include_directories(forkable_test
   PRIVATE
@@ -12482,6 +14076,15 @@ add_executable(format_request_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(format_request_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(format_request_test PUBLIC cxx_std_14)
 target_include_directories(format_request_test
   PRIVATE
@@ -12516,6 +14119,15 @@ add_executable(frame_handler_test
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/frame_protector/frame_handler_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(frame_handler_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(frame_handler_test PUBLIC cxx_std_14)
 target_include_directories(frame_handler_test
   PRIVATE
@@ -12555,6 +14167,14 @@ add_executable(frame_test
   src/core/lib/slice/slice_string_helpers.cc
   test/core/transport/chttp2/frame_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(frame_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(frame_test PUBLIC cxx_std_14)
 target_include_directories(frame_test
   PRIVATE
@@ -12602,6 +14222,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/tests/server_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(fuzzing_event_engine_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(fuzzing_event_engine_test PUBLIC cxx_std_14)
   target_include_directories(fuzzing_event_engine_test
     PRIVATE
@@ -12642,6 +14271,15 @@ add_executable(fuzzing_event_engine_unittest
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine_unittest.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(fuzzing_event_engine_unittest
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(fuzzing_event_engine_unittest PUBLIC cxx_std_14)
 target_include_directories(fuzzing_event_engine_unittest
   PRIVATE
@@ -12696,6 +14334,16 @@ add_executable(generic_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/generic_end2end_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(generic_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(generic_end2end_test PUBLIC cxx_std_14)
 target_include_directories(generic_end2end_test
   PRIVATE
@@ -12730,6 +14378,15 @@ add_executable(goaway_server_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/goaway_server_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(goaway_server_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(goaway_server_test PUBLIC cxx_std_14)
 target_include_directories(goaway_server_test
   PRIVATE
@@ -12764,6 +14421,16 @@ add_executable(google_c2p_resolver_test
   test/core/client_channel/resolvers/google_c2p_resolver_test.cc
   test/core/util/fake_udp_and_tcp_server.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(google_c2p_resolver_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(google_c2p_resolver_test PUBLIC cxx_std_14)
 target_include_directories(google_c2p_resolver_test
   PRIVATE
@@ -12806,6 +14473,15 @@ add_executable(graceful_server_shutdown_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(graceful_server_shutdown_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(graceful_server_shutdown_test PUBLIC cxx_std_14)
 target_include_directories(graceful_server_shutdown_test
   PRIVATE
@@ -12842,6 +14518,15 @@ add_executable(graceful_shutdown_test
   test/core/end2end/cq_verifier.cc
   test/core/transport/chttp2/graceful_shutdown_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(graceful_shutdown_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(graceful_shutdown_test PUBLIC cxx_std_14)
 target_include_directories(graceful_shutdown_test
   PRIVATE
@@ -12885,6 +14570,15 @@ add_executable(grpc_alts_credentials_options_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_alts_credentials_options_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_alts_credentials_options_test PUBLIC cxx_std_14)
 target_include_directories(grpc_alts_credentials_options_test
   PRIVATE
@@ -12918,6 +14612,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_audit_logging_test
   test/core/security/grpc_audit_logging_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_audit_logging_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_audit_logging_test PUBLIC cxx_std_14)
 target_include_directories(grpc_audit_logging_test
   PRIVATE
@@ -12962,6 +14665,15 @@ add_executable(grpc_authorization_engine_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_authorization_engine_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_authorization_engine_test PUBLIC cxx_std_14)
 target_include_directories(grpc_authorization_engine_test
   PRIVATE
@@ -13005,6 +14717,15 @@ add_executable(grpc_authorization_policy_provider_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_authorization_policy_provider_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_authorization_policy_provider_test PUBLIC cxx_std_14)
 target_include_directories(grpc_authorization_policy_provider_test
   PRIVATE
@@ -13058,6 +14779,16 @@ add_executable(grpc_authz_end2end_test
   test/cpp/end2end/grpc_authz_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_authz_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_authz_end2end_test PUBLIC cxx_std_14)
 target_include_directories(grpc_authz_end2end_test
   PRIVATE
@@ -13101,6 +14832,15 @@ add_executable(grpc_authz_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_authz_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_authz_test PUBLIC cxx_std_14)
 target_include_directories(grpc_authz_test
   PRIVATE
@@ -13136,6 +14876,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_byte_buffer_reader_test
   test/core/surface/byte_buffer_reader_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_byte_buffer_reader_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_byte_buffer_reader_test PUBLIC cxx_std_14)
 target_include_directories(grpc_byte_buffer_reader_test
   PRIVATE
@@ -13179,6 +14928,16 @@ add_executable(grpc_cli
   test/cpp/util/proto_reflection_descriptor_database.cc
   test/cpp/util/service_describer.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_cli
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_cli PUBLIC cxx_std_14)
 target_include_directories(grpc_cli
   PRIVATE
@@ -13209,6 +14968,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(grpc_completion_queue_test
   test/core/surface/completion_queue_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_completion_queue_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_completion_queue_test PUBLIC cxx_std_14)
 target_include_directories(grpc_completion_queue_test
   PRIVATE
@@ -13328,6 +15096,15 @@ add_executable(grpc_ipv6_loopback_available_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_ipv6_loopback_available_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_ipv6_loopback_available_test PUBLIC cxx_std_14)
 target_include_directories(grpc_ipv6_loopback_available_test
   PRIVATE
@@ -13561,6 +15338,15 @@ add_executable(grpc_tls_certificate_distributor_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_tls_certificate_distributor_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_tls_certificate_distributor_test PUBLIC cxx_std_14)
 target_include_directories(grpc_tls_certificate_distributor_test
   PRIVATE
@@ -13604,6 +15390,15 @@ add_executable(grpc_tls_certificate_provider_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_tls_certificate_provider_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_tls_certificate_provider_test PUBLIC cxx_std_14)
 target_include_directories(grpc_tls_certificate_provider_test
   PRIVATE
@@ -13647,6 +15442,15 @@ add_executable(grpc_tls_certificate_verifier_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_tls_certificate_verifier_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_tls_certificate_verifier_test PUBLIC cxx_std_14)
 target_include_directories(grpc_tls_certificate_verifier_test
   PRIVATE
@@ -13690,6 +15494,15 @@ add_executable(grpc_tls_credentials_options_comparator_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_tls_credentials_options_comparator_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_tls_credentials_options_comparator_test PUBLIC cxx_std_14)
 target_include_directories(grpc_tls_credentials_options_comparator_test
   PRIVATE
@@ -13733,6 +15546,15 @@ add_executable(grpc_tls_credentials_options_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_tls_credentials_options_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_tls_credentials_options_test PUBLIC cxx_std_14)
 target_include_directories(grpc_tls_credentials_options_test
   PRIVATE
@@ -13776,6 +15598,15 @@ add_executable(grpc_tls_crl_provider_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/security/grpc_tls_crl_provider_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_tls_crl_provider_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpc_tls_crl_provider_test PUBLIC cxx_std_14)
 target_include_directories(grpc_tls_crl_provider_test
   PRIVATE
@@ -13833,6 +15664,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/cpp/util/proto_reflection_descriptor_database.cc
     test/cpp/util/service_describer.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(grpc_tool_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(grpc_tool_test PUBLIC cxx_std_14)
   target_include_directories(grpc_tool_test
     PRIVATE
@@ -13874,6 +15715,16 @@ add_executable(grpclb_api_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
   test/cpp/grpclb/grpclb_api_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpclb_api_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(grpclb_api_test PUBLIC cxx_std_14)
 target_include_directories(grpclb_api_test
   PRIVATE
@@ -13933,6 +15784,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/grpclb_end2end_test.cc
     test/cpp/end2end/test_service_impl.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(grpclb_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(grpclb_end2end_test PUBLIC cxx_std_14)
   target_include_directories(grpclb_end2end_test
     PRIVATE
@@ -13976,6 +15837,15 @@ add_executable(h2_ssl_cert_test
   test/core/end2end/h2_ssl_cert_test.cc
   test/core/event_engine/event_engine_test_utils.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(h2_ssl_cert_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(h2_ssl_cert_test PUBLIC cxx_std_14)
 target_include_directories(h2_ssl_cert_test
   PRIVATE
@@ -14010,6 +15880,15 @@ add_executable(h2_ssl_session_reuse_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/h2_ssl_session_reuse_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(h2_ssl_session_reuse_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(h2_ssl_session_reuse_test PUBLIC cxx_std_14)
 target_include_directories(h2_ssl_session_reuse_test
   PRIVATE
@@ -14044,6 +15923,15 @@ add_executable(h2_tls_peer_property_external_verifier_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(h2_tls_peer_property_external_verifier_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(h2_tls_peer_property_external_verifier_test PUBLIC cxx_std_14)
 target_include_directories(h2_tls_peer_property_external_verifier_test
   PRIVATE
@@ -14077,6 +15965,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(handle_tests
   test/core/event_engine/handle_tests.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(handle_tests
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(handle_tests PUBLIC cxx_std_14)
 target_include_directories(handle_tests
   PRIVATE
@@ -14112,6 +16009,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/handshake/readahead_handshaker_server_ssl.cc
     test/core/handshake/server_ssl_common.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(handshake_server_with_readahead_handshaker_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(handshake_server_with_readahead_handshaker_test PUBLIC cxx_std_14)
   target_include_directories(handshake_server_with_readahead_handshaker_test
     PRIVATE
@@ -14148,6 +16054,15 @@ add_executable(head_of_line_blocking_bad_client_test
   test/core/bad_client/tests/head_of_line_blocking.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(head_of_line_blocking_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(head_of_line_blocking_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE
@@ -14183,6 +16098,15 @@ add_executable(headers_bad_client_test
   test/core/bad_client/tests/headers.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(headers_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(headers_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(headers_bad_client_test
   PRIVATE
@@ -14242,6 +16166,16 @@ add_executable(health_service_end2end_test
   test/cpp/end2end/test_health_check_service_impl.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(health_service_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(health_service_end2end_test PUBLIC cxx_std_14)
 target_include_directories(health_service_end2end_test
   PRIVATE
@@ -14284,6 +16218,15 @@ add_executable(high_initial_seqno_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(high_initial_seqno_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(high_initial_seqno_test PUBLIC cxx_std_14)
 target_include_directories(high_initial_seqno_test
   PRIVATE
@@ -14329,6 +16272,15 @@ add_executable(histogram_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(histogram_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(histogram_test PUBLIC cxx_std_14)
 target_include_directories(histogram_test
   PRIVATE
@@ -14362,6 +16314,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(host_port_test
   test/core/gprpp/host_port_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(host_port_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(host_port_test PUBLIC cxx_std_14)
 target_include_directories(host_port_test
   PRIVATE
@@ -14405,6 +16366,15 @@ add_executable(hpack_encoder_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(hpack_encoder_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(hpack_encoder_test PUBLIC cxx_std_14)
 target_include_directories(hpack_encoder_test
   PRIVATE
@@ -14448,6 +16418,15 @@ add_executable(hpack_parser_table_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(hpack_parser_table_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(hpack_parser_table_test PUBLIC cxx_std_14)
 target_include_directories(hpack_parser_table_test
   PRIVATE
@@ -14491,6 +16470,15 @@ add_executable(hpack_parser_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(hpack_parser_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(hpack_parser_test PUBLIC cxx_std_14)
 target_include_directories(hpack_parser_test
   PRIVATE
@@ -14533,6 +16521,15 @@ add_executable(hpack_size_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(hpack_size_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(hpack_size_test PUBLIC cxx_std_14)
 target_include_directories(hpack_size_test
   PRIVATE
@@ -14580,6 +16577,16 @@ add_executable(http2_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
   test/cpp/interop/http2_client.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(http2_client
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(http2_client PUBLIC cxx_std_14)
 target_include_directories(http2_client
   PRIVATE
@@ -14606,6 +16613,48 @@ target_link_libraries(http2_client
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(http2_settings_test
+  test/core/transport/chttp2/http2_settings_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(http2_settings_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(http2_settings_test PUBLIC cxx_std_14)
+target_include_directories(http2_settings_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(http2_settings_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(http2_stats_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
@@ -14618,6 +16667,15 @@ add_executable(http2_stats_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(http2_stats_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(http2_stats_test PUBLIC cxx_std_14)
 target_include_directories(http2_stats_test
   PRIVATE
@@ -14653,6 +16711,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(http_proxy_mapper_test
   test/core/client_channel/http_proxy_mapper_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(http_proxy_mapper_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(http_proxy_mapper_test PUBLIC cxx_std_14)
 target_include_directories(http_proxy_mapper_test
   PRIVATE
@@ -14689,6 +16756,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/http/httpcli_test_util.cc
     test/core/util/fake_udp_and_tcp_server.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(httpcli_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(httpcli_test PUBLIC cxx_std_14)
   target_include_directories(httpcli_test
     PRIVATE
@@ -14726,6 +16803,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/http/httpscli_test.cc
     test/core/util/fake_udp_and_tcp_server.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(httpscli_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(httpscli_test PUBLIC cxx_std_14)
   target_include_directories(httpscli_test
     PRIVATE
@@ -14781,6 +16868,16 @@ add_executable(hybrid_end2end_test
   test/cpp/end2end/hybrid_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(hybrid_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(hybrid_end2end_test PUBLIC cxx_std_14)
 target_include_directories(hybrid_end2end_test
   PRIVATE
@@ -14879,6 +16976,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(if_test
   test/core/promise/if_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(if_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(if_test PUBLIC cxx_std_14)
 target_include_directories(if_test
   PRIVATE
@@ -14914,6 +17019,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(init_test
   test/core/surface/init_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(init_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(init_test PUBLIC cxx_std_14)
 target_include_directories(init_test
   PRIVATE
@@ -14949,6 +17063,15 @@ add_executable(initial_settings_frame_bad_client_test
   test/core/bad_client/tests/initial_settings_frame.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(initial_settings_frame_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(initial_settings_frame_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE
@@ -15038,6 +17161,15 @@ add_executable(insecure_security_connector_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(insecure_security_connector_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(insecure_security_connector_test PUBLIC cxx_std_14)
 target_include_directories(insecure_security_connector_test
   PRIVATE
@@ -15071,6 +17203,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(inter_activity_latch_test
   test/core/promise/inter_activity_latch_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(inter_activity_latch_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(inter_activity_latch_test PUBLIC cxx_std_14)
 target_include_directories(inter_activity_latch_test
   PRIVATE
@@ -15107,6 +17248,14 @@ add_executable(inter_activity_pipe_test
   src/core/lib/promise/trace.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(inter_activity_pipe_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(inter_activity_pipe_test PUBLIC cxx_std_14)
 target_include_directories(inter_activity_pipe_test
   PRIVATE
@@ -15168,26 +17317,26 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/interceptor_list_test.cc
-  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
-  third_party/upb/upb/message/array.c
-  third_party/upb/upb/message/map.c
-  third_party/upb/upb/message/map_sorter.c
-  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/decode_fast.c
   third_party/upb/upb/wire/encode.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/reader.c
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(interceptor_list_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(interceptor_list_test PUBLIC cxx_std_14)
 target_include_directories(interceptor_list_test
   PRIVATE
@@ -15211,7 +17360,7 @@ target_include_directories(interceptor_list_test
 target_link_libraries(interceptor_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb
+  upb_message_lib
   utf8_range_lib
   absl::function_ref
   absl::hash
@@ -15243,6 +17392,16 @@ add_executable(interop_client
   test/cpp/interop/client_helper.cc
   test/cpp/interop/interop_client.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(interop_client
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(interop_client PUBLIC cxx_std_14)
 target_include_directories(interop_client
   PRIVATE
@@ -15287,6 +17446,16 @@ add_executable(interop_server
   test/cpp/interop/interop_server_bootstrap.cc
   test/cpp/interop/server_helper.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(interop_server
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(interop_server PUBLIC cxx_std_14)
 target_include_directories(interop_server
   PRIVATE
@@ -15317,6 +17486,15 @@ add_executable(invalid_call_argument_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/invalid_call_argument_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(invalid_call_argument_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(invalid_call_argument_test PUBLIC cxx_std_14)
 target_include_directories(invalid_call_argument_test
   PRIVATE
@@ -15359,6 +17537,15 @@ add_executable(invoke_large_request_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(invoke_large_request_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(invoke_large_request_test PUBLIC cxx_std_14)
 target_include_directories(invoke_large_request_test
   PRIVATE
@@ -15396,6 +17583,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     test/core/event_engine/windows/create_sockpair.cc
     test/core/event_engine/windows/iocp_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(iocp_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(iocp_test PUBLIC cxx_std_14)
   target_include_directories(iocp_test
     PRIVATE
@@ -15435,6 +17631,16 @@ add_executable(istio_echo_server_test
   test/cpp/interop/istio_echo_server_lib.cc
   test/cpp/interop/istio_echo_server_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(istio_echo_server_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(istio_echo_server_test PUBLIC cxx_std_14)
 target_include_directories(istio_echo_server_test
   PRIVATE
@@ -15472,6 +17678,14 @@ add_executable(join_test
   src/core/lib/promise/trace.cc
   test/core/promise/join_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(join_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(join_test PUBLIC cxx_std_14)
 target_include_directories(join_test
   PRIVATE
@@ -15507,6 +17721,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(json_object_loader_test
   test/core/json/json_object_loader_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(json_object_loader_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(json_object_loader_test PUBLIC cxx_std_14)
 target_include_directories(json_object_loader_test
   PRIVATE
@@ -15540,6 +17763,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(json_test
   test/core/json/json_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(json_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(json_test PUBLIC cxx_std_14)
 target_include_directories(json_test
   PRIVATE
@@ -15583,6 +17815,15 @@ add_executable(json_token_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(json_token_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(json_token_test PUBLIC cxx_std_14)
 target_include_directories(json_token_test
   PRIVATE
@@ -15626,6 +17867,15 @@ add_executable(jwt_verifier_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(jwt_verifier_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(jwt_verifier_test PUBLIC cxx_std_14)
 target_include_directories(jwt_verifier_test
   PRIVATE
@@ -15668,6 +17918,15 @@ add_executable(keepalive_timeout_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(keepalive_timeout_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(keepalive_timeout_test PUBLIC cxx_std_14)
 target_include_directories(keepalive_timeout_test
   PRIVATE
@@ -15704,6 +17963,15 @@ add_executable(lame_client_test
   test/core/end2end/cq_verifier.cc
   test/core/surface/lame_client_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(lame_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(lame_client_test PUBLIC cxx_std_14)
 target_include_directories(lame_client_test
   PRIVATE
@@ -15746,6 +18014,15 @@ add_executable(large_metadata_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(large_metadata_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(large_metadata_test PUBLIC cxx_std_14)
 target_include_directories(large_metadata_test
   PRIVATE
@@ -15784,6 +18061,14 @@ add_executable(latch_test
   src/core/lib/promise/trace.cc
   test/core/promise/latch_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(latch_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(latch_test PUBLIC cxx_std_14)
 target_include_directories(latch_test
   PRIVATE
@@ -15824,6 +18109,15 @@ add_executable(lb_get_cpu_stats_test
   src/cpp/server/load_reporter/get_cpu_stats_windows.cc
   test/cpp/server/load_reporter/get_cpu_stats_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(lb_get_cpu_stats_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(lb_get_cpu_stats_test PUBLIC cxx_std_14)
 target_include_directories(lb_get_cpu_stats_test
   PRIVATE
@@ -15858,6 +18152,16 @@ add_executable(lb_load_data_store_test
   src/cpp/server/load_reporter/load_data_store.cc
   test/cpp/server/load_reporter/load_data_store_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(lb_load_data_store_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(lb_load_data_store_test PUBLIC cxx_std_14)
 target_include_directories(lb_load_data_store_test
   PRIVATE
@@ -15892,6 +18196,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(load_config_test
   test/core/config/load_config_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(load_config_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(load_config_test PUBLIC cxx_std_14)
 target_include_directories(load_config_test
   PRIVATE
@@ -15926,6 +18239,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   add_executable(lock_free_event_test
     test/core/event_engine/posix/lock_free_event_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(lock_free_event_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(lock_free_event_test PUBLIC cxx_std_14)
   target_include_directories(lock_free_event_test
     PRIVATE
@@ -15961,6 +18283,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(log_test
   test/core/gpr/log_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(log_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(log_test PUBLIC cxx_std_14)
 target_include_directories(log_test
   PRIVATE
@@ -15995,6 +18326,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(log_too_many_open_files_test
     test/core/event_engine/posix/log_too_many_open_files_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(log_too_many_open_files_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(log_too_many_open_files_test PUBLIC cxx_std_14)
   target_include_directories(log_too_many_open_files_test
     PRIVATE
@@ -16031,6 +18371,14 @@ add_executable(loop_test
   src/core/lib/promise/trace.cc
   test/core/promise/loop_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(loop_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(loop_test PUBLIC cxx_std_14)
 target_include_directories(loop_test
   PRIVATE
@@ -16091,26 +18439,26 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/map_pipe_test.cc
-  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
-  third_party/upb/upb/message/array.c
-  third_party/upb/upb/message/map.c
-  third_party/upb/upb/message/map_sorter.c
-  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/decode_fast.c
   third_party/upb/upb/wire/encode.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/reader.c
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(map_pipe_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(map_pipe_test PUBLIC cxx_std_14)
 target_include_directories(map_pipe_test
   PRIVATE
@@ -16134,7 +18482,7 @@ target_include_directories(map_pipe_test
 target_link_libraries(map_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb
+  upb_message_lib
   utf8_range_lib
   absl::function_ref
   absl::hash
@@ -16192,6 +18540,15 @@ add_executable(matchers_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(matchers_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(matchers_test PUBLIC cxx_std_14)
 target_include_directories(matchers_test
   PRIVATE
@@ -16226,6 +18583,14 @@ add_executable(max_concurrent_streams_policy_test
   src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   test/core/transport/chttp2/max_concurrent_streams_policy_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(max_concurrent_streams_policy_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(max_concurrent_streams_policy_test PUBLIC cxx_std_14)
 target_include_directories(max_concurrent_streams_policy_test
   PRIVATE
@@ -16268,6 +18633,15 @@ add_executable(max_concurrent_streams_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(max_concurrent_streams_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(max_concurrent_streams_test PUBLIC cxx_std_14)
 target_include_directories(max_concurrent_streams_test
   PRIVATE
@@ -16312,6 +18686,15 @@ add_executable(max_connection_age_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(max_connection_age_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(max_connection_age_test PUBLIC cxx_std_14)
 target_include_directories(max_connection_age_test
   PRIVATE
@@ -16356,6 +18739,15 @@ add_executable(max_connection_idle_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(max_connection_idle_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(max_connection_idle_test PUBLIC cxx_std_14)
 target_include_directories(max_connection_idle_test
   PRIVATE
@@ -16400,6 +18792,15 @@ add_executable(max_message_length_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(max_message_length_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(max_message_length_test PUBLIC cxx_std_14)
 target_include_directories(max_message_length_test
   PRIVATE
@@ -16436,6 +18837,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   add_executable(memory_quota_stress_test
     test/core/resource_quota/memory_quota_stress_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(memory_quota_stress_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(memory_quota_stress_test PUBLIC cxx_std_14)
   target_include_directories(memory_quota_stress_test
     PRIVATE
@@ -16470,6 +18880,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(memory_quota_test
   test/core/resource_quota/memory_quota_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(memory_quota_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(memory_quota_test PUBLIC cxx_std_14)
 target_include_directories(memory_quota_test
   PRIVATE
@@ -16520,6 +18939,16 @@ add_executable(message_allocator_end2end_test
   test/cpp/end2end/message_allocator_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(message_allocator_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(message_allocator_end2end_test PUBLIC cxx_std_14)
 target_include_directories(message_allocator_end2end_test
   PRIVATE
@@ -16563,6 +18992,15 @@ add_executable(message_compress_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(message_compress_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(message_compress_test PUBLIC cxx_std_14)
 target_include_directories(message_compress_test
   PRIVATE
@@ -16596,6 +19034,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(message_size_service_config_test
   test/core/message_size/message_size_service_config_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(message_size_service_config_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(message_size_service_config_test PUBLIC cxx_std_14)
 target_include_directories(message_size_service_config_test
   PRIVATE
@@ -16639,6 +19086,15 @@ add_executable(metadata_map_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(metadata_map_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(metadata_map_test PUBLIC cxx_std_14)
 target_include_directories(metadata_map_test
   PRIVATE
@@ -16672,6 +19128,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(minimal_stack_is_minimal_test
   test/core/channel/minimal_stack_is_minimal_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(minimal_stack_is_minimal_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(minimal_stack_is_minimal_test PUBLIC cxx_std_14)
 target_include_directories(minimal_stack_is_minimal_test
   PRIVATE
@@ -16753,6 +19218,16 @@ add_executable(mock_stream_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   test/cpp/test/mock_stream_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(mock_stream_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(mock_stream_test PUBLIC cxx_std_14)
 target_include_directories(mock_stream_test
   PRIVATE
@@ -16806,6 +19281,16 @@ add_executable(mock_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/mock_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(mock_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(mock_test PUBLIC cxx_std_14)
 target_include_directories(mock_test
   PRIVATE
@@ -16840,6 +19325,14 @@ add_executable(mpsc_test
   src/core/lib/promise/activity.cc
   test/core/promise/mpsc_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(mpsc_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(mpsc_test PUBLIC cxx_std_14)
 target_include_directories(mpsc_test
   PRIVATE
@@ -16877,6 +19370,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(mpscq_test
     test/core/gprpp/mpscq_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(mpscq_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(mpscq_test PUBLIC cxx_std_14)
   target_include_directories(mpscq_test
     PRIVATE
@@ -16920,6 +19422,15 @@ add_executable(negative_deadline_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(negative_deadline_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(negative_deadline_test PUBLIC cxx_std_14)
 target_include_directories(negative_deadline_test
   PRIVATE
@@ -16996,6 +19507,15 @@ add_executable(no_logging_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(no_logging_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(no_logging_test PUBLIC cxx_std_14)
 target_include_directories(no_logging_test
   PRIVATE
@@ -17040,6 +19560,15 @@ add_executable(no_op_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(no_op_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(no_op_test PUBLIC cxx_std_14)
 target_include_directories(no_op_test
   PRIVATE
@@ -17076,6 +19605,15 @@ add_executable(no_server_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/no_server_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(no_server_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(no_server_test PUBLIC cxx_std_14)
 target_include_directories(no_server_test
   PRIVATE
@@ -17125,6 +19663,16 @@ add_executable(nonblocking_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/nonblocking_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(nonblocking_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(nonblocking_test PUBLIC cxx_std_14)
 target_include_directories(nonblocking_test
   PRIVATE
@@ -17158,6 +19706,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(notification_test
   test/core/gprpp/notification_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(notification_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(notification_test PUBLIC cxx_std_14)
 target_include_directories(notification_test
   PRIVATE
@@ -17191,6 +19747,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(num_external_connectivity_watchers_test
   test/core/surface/num_external_connectivity_watchers_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(num_external_connectivity_watchers_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(num_external_connectivity_watchers_test PUBLIC cxx_std_14)
 target_include_directories(num_external_connectivity_watchers_test
   PRIVATE
@@ -17230,6 +19795,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/tests/client_test.cc
     test/core/event_engine/test_suite/tests/server_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(oracle_event_engine_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(oracle_event_engine_posix_test PUBLIC cxx_std_14)
   target_include_directories(oracle_event_engine_posix_test
     PRIVATE
@@ -17273,6 +19847,16 @@ add_executable(orca_service_end2end_test
   src/cpp/server/orca/orca_service.cc
   test/cpp/end2end/orca_service_end2end_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(orca_service_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(orca_service_end2end_test PUBLIC cxx_std_14)
 target_include_directories(orca_service_end2end_test
   PRIVATE
@@ -17306,6 +19890,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(orphanable_test
   test/core/gprpp/orphanable_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(orphanable_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(orphanable_test PUBLIC cxx_std_14)
 target_include_directories(orphanable_test
   PRIVATE
@@ -17374,6 +19967,15 @@ add_executable(out_of_bounds_bad_client_test
   test/core/bad_client/tests/out_of_bounds.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(out_of_bounds_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(out_of_bounds_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(out_of_bounds_bad_client_test
   PRIVATE
@@ -17407,6 +20009,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(outlier_detection_lb_config_parser_test
   test/core/client_channel/lb_policy/outlier_detection_lb_config_parser_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(outlier_detection_lb_config_parser_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(outlier_detection_lb_config_parser_test PUBLIC cxx_std_14)
 target_include_directories(outlier_detection_lb_config_parser_test
   PRIVATE
@@ -17446,6 +20057,15 @@ add_executable(outlier_detection_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(outlier_detection_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(outlier_detection_test PUBLIC cxx_std_14)
 target_include_directories(outlier_detection_test
   PRIVATE
@@ -17512,6 +20132,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(parse_address_test
   test/core/address_utils/parse_address_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(parse_address_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(parse_address_test PUBLIC cxx_std_14)
 target_include_directories(parse_address_test
   PRIVATE
@@ -17546,6 +20175,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(parse_address_with_named_scope_id_test
     test/core/address_utils/parse_address_with_named_scope_id_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(parse_address_with_named_scope_id_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(parse_address_with_named_scope_id_test PUBLIC cxx_std_14)
   target_include_directories(parse_address_with_named_scope_id_test
     PRIVATE
@@ -17580,6 +20218,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(parsed_metadata_test
   test/core/transport/parsed_metadata_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(parsed_metadata_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(parsed_metadata_test PUBLIC cxx_std_14)
 target_include_directories(parsed_metadata_test
   PRIVATE
@@ -17627,6 +20274,15 @@ add_executable(parser_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(parser_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(parser_test PUBLIC cxx_std_14)
 target_include_directories(parser_test
   PRIVATE
@@ -17660,6 +20316,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(party_test
   test/core/promise/party_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(party_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(party_test PUBLIC cxx_std_14)
 target_include_directories(party_test
   PRIVATE
@@ -17702,6 +20367,15 @@ add_executable(payload_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(payload_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(payload_test PUBLIC cxx_std_14)
 target_include_directories(payload_test
   PRIVATE
@@ -17737,6 +20411,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(percent_encoding_test
   test/core/slice/percent_encoding_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(percent_encoding_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(percent_encoding_test PUBLIC cxx_std_14)
 target_include_directories(percent_encoding_test
   PRIVATE
@@ -17788,26 +20471,26 @@ add_executable(periodic_update_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
-  third_party/upb/upb/hash/common.c
   third_party/upb/upb/message/accessors.c
-  third_party/upb/upb/message/array.c
-  third_party/upb/upb/message/map.c
-  third_party/upb/upb/message/map_sorter.c
-  third_party/upb/upb/message/message.c
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/mini_table/extension_registry.c
-  third_party/upb/upb/mini_table/internal/message.c
-  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/decode_fast.c
   third_party/upb/upb/wire/encode.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/reader.c
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(periodic_update_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(periodic_update_test PUBLIC cxx_std_14)
 target_include_directories(periodic_update_test
   PRIVATE
@@ -17831,7 +20514,7 @@ target_include_directories(periodic_update_test
 target_link_libraries(periodic_update_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb
+  upb_message_lib
   utf8_range_lib
   absl::function_ref
   absl::hash
@@ -17852,6 +20535,15 @@ add_executable(pick_first_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(pick_first_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(pick_first_test PUBLIC cxx_std_14)
 target_include_directories(pick_first_test
   PRIVATE
@@ -17896,6 +20588,15 @@ add_executable(ping_abuse_policy_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(ping_abuse_policy_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(ping_abuse_policy_test PUBLIC cxx_std_14)
 target_include_directories(ping_abuse_policy_test
   PRIVATE
@@ -17929,6 +20630,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(ping_callbacks_test
   test/core/transport/chttp2/ping_callbacks_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(ping_callbacks_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(ping_callbacks_test PUBLIC cxx_std_14)
 target_include_directories(ping_callbacks_test
   PRIVATE
@@ -17972,6 +20682,15 @@ add_executable(ping_configuration_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(ping_configuration_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(ping_configuration_test PUBLIC cxx_std_14)
 target_include_directories(ping_configuration_test
   PRIVATE
@@ -18014,6 +20733,15 @@ add_executable(ping_pong_streaming_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(ping_pong_streaming_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(ping_pong_streaming_test PUBLIC cxx_std_14)
 target_include_directories(ping_pong_streaming_test
   PRIVATE
@@ -18059,6 +20787,15 @@ add_executable(ping_rate_policy_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(ping_rate_policy_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(ping_rate_policy_test PUBLIC cxx_std_14)
 target_include_directories(ping_rate_policy_test
   PRIVATE
@@ -18101,6 +20838,15 @@ add_executable(ping_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(ping_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(ping_test PUBLIC cxx_std_14)
 target_include_directories(ping_test
   PRIVATE
@@ -18136,6 +20882,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(pipe_test
   test/core/promise/pipe_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(pipe_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(pipe_test PUBLIC cxx_std_14)
 target_include_directories(pipe_test
   PRIVATE
@@ -18169,6 +20924,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(poll_test
   test/core/promise/poll_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(poll_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(poll_test PUBLIC cxx_std_14)
 target_include_directories(poll_test
   PRIVATE
@@ -18219,6 +20982,16 @@ add_executable(port_sharing_end2end_test
   test/cpp/end2end/port_sharing_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(port_sharing_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(port_sharing_end2end_test PUBLIC cxx_std_14)
 target_include_directories(port_sharing_end2end_test
   PRIVATE
@@ -18257,6 +21030,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test_framework.cc
     test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(posix_endpoint_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(posix_endpoint_test PUBLIC cxx_std_14)
   target_include_directories(posix_endpoint_test
     PRIVATE
@@ -18292,6 +21074,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(posix_engine_listener_utils_test
     test/core/event_engine/posix/posix_engine_listener_utils_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(posix_engine_listener_utils_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(posix_engine_listener_utils_test PUBLIC cxx_std_14)
   target_include_directories(posix_engine_listener_utils_test
     PRIVATE
@@ -18330,6 +21121,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test_framework.cc
     test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(posix_event_engine_connect_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(posix_event_engine_connect_test PUBLIC cxx_std_14)
   target_include_directories(posix_event_engine_connect_test
     PRIVATE
@@ -18372,6 +21172,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/cpp/util/get_grpc_test_runfile_dir.cc
     test/cpp/util/windows/manifest_file.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(posix_event_engine_native_dns_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(posix_event_engine_native_dns_test PUBLIC cxx_std_14)
   target_include_directories(posix_event_engine_native_dns_test
     PRIVATE
@@ -18417,6 +21227,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/cpp/util/get_grpc_test_runfile_dir.cc
     test/cpp/util/windows/manifest_file.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(posix_event_engine_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(posix_event_engine_test PUBLIC cxx_std_14)
   target_include_directories(posix_event_engine_test
     PRIVATE
@@ -18492,6 +21312,16 @@ add_executable(pre_stop_hook_server_test
   test/cpp/interop/pre_stop_hook_server_test.cc
   test/cpp/interop/xds_interop_server_lib.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(pre_stop_hook_server_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(pre_stop_hook_server_test PUBLIC cxx_std_14)
 target_include_directories(pre_stop_hook_server_test
   PRIVATE
@@ -18528,6 +21358,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(prioritized_race_test
   test/core/promise/prioritized_race_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(prioritized_race_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(prioritized_race_test PUBLIC cxx_std_14)
 target_include_directories(prioritized_race_test
   PRIVATE
@@ -18562,6 +21400,15 @@ add_executable(promise_endpoint_test
   src/core/lib/transport/promise_endpoint.cc
   test/core/transport/promise_endpoint_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(promise_endpoint_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(promise_endpoint_test PUBLIC cxx_std_14)
 target_include_directories(promise_endpoint_test
   PRIVATE
@@ -18595,6 +21442,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_factory_test
   test/core/promise/promise_factory_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(promise_factory_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(promise_factory_test PUBLIC cxx_std_14)
 target_include_directories(promise_factory_test
   PRIVATE
@@ -18630,6 +21485,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_map_test
   test/core/promise/map_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(promise_map_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(promise_map_test PUBLIC cxx_std_14)
 target_include_directories(promise_map_test
   PRIVATE
@@ -18667,6 +21530,14 @@ add_executable(promise_mutex_test
   src/core/lib/promise/trace.cc
   test/core/promise/promise_mutex_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(promise_mutex_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(promise_mutex_test PUBLIC cxx_std_14)
 target_include_directories(promise_mutex_test
   PRIVATE
@@ -18703,6 +21574,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_test
   test/core/promise/promise_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(promise_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(promise_test PUBLIC cxx_std_14)
 target_include_directories(promise_test
   PRIVATE
@@ -18737,6 +21616,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(proto_buffer_reader_test
   test/cpp/util/proto_buffer_reader_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(proto_buffer_reader_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(proto_buffer_reader_test PUBLIC cxx_std_14)
 target_include_directories(proto_buffer_reader_test
   PRIVATE
@@ -18770,6 +21659,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(proto_buffer_writer_test
   test/cpp/util/proto_buffer_writer_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(proto_buffer_writer_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(proto_buffer_writer_test PUBLIC cxx_std_14)
 target_include_directories(proto_buffer_writer_test
   PRIVATE
@@ -18825,6 +21724,16 @@ add_executable(proto_server_reflection_test
   test/cpp/end2end/test_service_impl.cc
   test/cpp/util/proto_reflection_descriptor_database.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(proto_server_reflection_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(proto_server_reflection_test PUBLIC cxx_std_14)
 target_include_directories(proto_server_reflection_test
   PRIVATE
@@ -18859,6 +21768,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(proto_utils_test
   test/cpp/codegen/proto_utils_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(proto_utils_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(proto_utils_test PUBLIC cxx_std_14)
 target_include_directories(proto_utils_test
   PRIVATE
@@ -18902,6 +21821,15 @@ add_executable(proxy_auth_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(proxy_auth_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(proxy_auth_test PUBLIC cxx_std_14)
 target_include_directories(proxy_auth_test
   PRIVATE
@@ -18978,6 +21906,16 @@ add_executable(qps_json_driver
   test/cpp/qps/server_sync.cc
   test/cpp/qps/usage_timer.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(qps_json_driver
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(qps_json_driver PUBLIC cxx_std_14)
 target_include_directories(qps_json_driver
   PRIVATE
@@ -19040,6 +21978,16 @@ add_executable(qps_worker
   test/cpp/qps/usage_timer.cc
   test/cpp/qps/worker.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(qps_worker
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(qps_worker PUBLIC cxx_std_14)
 target_include_directories(qps_worker
   PRIVATE
@@ -19069,6 +22017,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(query_extensions_test
   test/core/event_engine/query_extensions_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(query_extensions_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(query_extensions_test PUBLIC cxx_std_14)
 target_include_directories(query_extensions_test
   PRIVATE
@@ -19103,6 +22059,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(race_test
   test/core/promise/race_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(race_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(race_test PUBLIC cxx_std_14)
 target_include_directories(race_test
   PRIVATE
@@ -19193,6 +22157,16 @@ add_executable(raw_end2end_test
   test/cpp/end2end/raw_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(raw_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(raw_end2end_test PUBLIC cxx_std_14)
 target_include_directories(raw_end2end_test
   PRIVATE
@@ -19226,6 +22200,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(rbac_service_config_parser_test
   test/core/ext/filters/rbac/rbac_service_config_parser_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(rbac_service_config_parser_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(rbac_service_config_parser_test PUBLIC cxx_std_14)
 target_include_directories(rbac_service_config_parser_test
   PRIVATE
@@ -19269,6 +22252,15 @@ add_executable(rbac_translator_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(rbac_translator_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(rbac_translator_test PUBLIC cxx_std_14)
 target_include_directories(rbac_translator_test
   PRIVATE
@@ -19303,6 +22295,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(ref_counted_ptr_test
   test/core/gprpp/ref_counted_ptr_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(ref_counted_ptr_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(ref_counted_ptr_test PUBLIC cxx_std_14)
 target_include_directories(ref_counted_ptr_test
   PRIVATE
@@ -19336,6 +22337,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(ref_counted_test
   test/core/gprpp/ref_counted_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(ref_counted_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(ref_counted_test PUBLIC cxx_std_14)
 target_include_directories(ref_counted_test
   PRIVATE
@@ -19378,6 +22388,15 @@ add_executable(registered_call_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(registered_call_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(registered_call_test PUBLIC cxx_std_14)
 target_include_directories(registered_call_test
   PRIVATE
@@ -19414,6 +22433,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(remove_stream_from_stalled_lists_test
     test/core/transport/chttp2/remove_stream_from_stalled_lists_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(remove_stream_from_stalled_lists_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(remove_stream_from_stalled_lists_test PUBLIC cxx_std_14)
   target_include_directories(remove_stream_from_stalled_lists_test
     PRIVATE
@@ -19457,6 +22485,15 @@ add_executable(request_with_flags_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(request_with_flags_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(request_with_flags_test PUBLIC cxx_std_14)
 target_include_directories(request_with_flags_test
   PRIVATE
@@ -19501,6 +22538,15 @@ add_executable(request_with_payload_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(request_with_payload_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(request_with_payload_test PUBLIC cxx_std_14)
 target_include_directories(request_with_payload_test
   PRIVATE
@@ -19547,6 +22593,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(resolve_address_using_ares_resolver_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(resolve_address_using_ares_resolver_posix_test PUBLIC cxx_std_14)
   target_include_directories(resolve_address_using_ares_resolver_posix_test
     PRIVATE
@@ -19592,6 +22647,15 @@ add_executable(resolve_address_using_ares_resolver_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(resolve_address_using_ares_resolver_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(resolve_address_using_ares_resolver_test PUBLIC cxx_std_14)
 target_include_directories(resolve_address_using_ares_resolver_test
   PRIVATE
@@ -19637,6 +22701,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(resolve_address_using_native_resolver_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(resolve_address_using_native_resolver_posix_test PUBLIC cxx_std_14)
   target_include_directories(resolve_address_using_native_resolver_posix_test
     PRIVATE
@@ -19682,6 +22755,15 @@ add_executable(resolve_address_using_native_resolver_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(resolve_address_using_native_resolver_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(resolve_address_using_native_resolver_test PUBLIC cxx_std_14)
 target_include_directories(resolve_address_using_native_resolver_test
   PRIVATE
@@ -19732,6 +22814,16 @@ add_executable(resource_quota_end2end_stress_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/resource_quota_end2end_stress_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(resource_quota_end2end_stress_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(resource_quota_end2end_stress_test PUBLIC cxx_std_14)
 target_include_directories(resource_quota_end2end_stress_test
   PRIVATE
@@ -19774,6 +22866,15 @@ add_executable(resource_quota_server_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(resource_quota_server_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(resource_quota_server_test PUBLIC cxx_std_14)
 target_include_directories(resource_quota_server_test
   PRIVATE
@@ -19809,6 +22910,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(resource_quota_test
   test/core/resource_quota/resource_quota_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(resource_quota_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(resource_quota_test PUBLIC cxx_std_14)
 target_include_directories(resource_quota_test
   PRIVATE
@@ -19851,6 +22961,15 @@ add_executable(retry_cancel_after_first_attempt_starts_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_cancel_after_first_attempt_starts_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_cancel_after_first_attempt_starts_test PUBLIC cxx_std_14)
 target_include_directories(retry_cancel_after_first_attempt_starts_test
   PRIVATE
@@ -19895,6 +23014,15 @@ add_executable(retry_cancel_during_delay_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_cancel_during_delay_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_cancel_during_delay_test PUBLIC cxx_std_14)
 target_include_directories(retry_cancel_during_delay_test
   PRIVATE
@@ -19939,6 +23067,15 @@ add_executable(retry_cancel_with_multiple_send_batches_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_cancel_with_multiple_send_batches_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_cancel_with_multiple_send_batches_test PUBLIC cxx_std_14)
 target_include_directories(retry_cancel_with_multiple_send_batches_test
   PRIVATE
@@ -19983,6 +23120,15 @@ add_executable(retry_cancellation_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_cancellation_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_cancellation_test PUBLIC cxx_std_14)
 target_include_directories(retry_cancellation_test
   PRIVATE
@@ -20027,6 +23173,15 @@ add_executable(retry_disabled_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_disabled_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_disabled_test PUBLIC cxx_std_14)
 target_include_directories(retry_disabled_test
   PRIVATE
@@ -20071,6 +23226,15 @@ add_executable(retry_exceeds_buffer_size_in_delay_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_exceeds_buffer_size_in_delay_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_exceeds_buffer_size_in_delay_test PUBLIC cxx_std_14)
 target_include_directories(retry_exceeds_buffer_size_in_delay_test
   PRIVATE
@@ -20115,6 +23279,15 @@ add_executable(retry_exceeds_buffer_size_in_initial_batch_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_exceeds_buffer_size_in_initial_batch_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_exceeds_buffer_size_in_initial_batch_test PUBLIC cxx_std_14)
 target_include_directories(retry_exceeds_buffer_size_in_initial_batch_test
   PRIVATE
@@ -20159,6 +23332,15 @@ add_executable(retry_exceeds_buffer_size_in_subsequent_batch_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_exceeds_buffer_size_in_subsequent_batch_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_exceeds_buffer_size_in_subsequent_batch_test PUBLIC cxx_std_14)
 target_include_directories(retry_exceeds_buffer_size_in_subsequent_batch_test
   PRIVATE
@@ -20203,6 +23385,15 @@ add_executable(retry_lb_drop_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_lb_drop_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_lb_drop_test PUBLIC cxx_std_14)
 target_include_directories(retry_lb_drop_test
   PRIVATE
@@ -20247,6 +23438,15 @@ add_executable(retry_lb_fail_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_lb_fail_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_lb_fail_test PUBLIC cxx_std_14)
 target_include_directories(retry_lb_fail_test
   PRIVATE
@@ -20291,6 +23491,15 @@ add_executable(retry_non_retriable_status_before_trailers_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_non_retriable_status_before_trailers_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_non_retriable_status_before_trailers_test PUBLIC cxx_std_14)
 target_include_directories(retry_non_retriable_status_before_trailers_test
   PRIVATE
@@ -20335,6 +23544,15 @@ add_executable(retry_non_retriable_status_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_non_retriable_status_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_non_retriable_status_test PUBLIC cxx_std_14)
 target_include_directories(retry_non_retriable_status_test
   PRIVATE
@@ -20379,6 +23597,15 @@ add_executable(retry_per_attempt_recv_timeout_on_last_attempt_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_per_attempt_recv_timeout_on_last_attempt_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_per_attempt_recv_timeout_on_last_attempt_test PUBLIC cxx_std_14)
 target_include_directories(retry_per_attempt_recv_timeout_on_last_attempt_test
   PRIVATE
@@ -20423,6 +23650,15 @@ add_executable(retry_per_attempt_recv_timeout_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_per_attempt_recv_timeout_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_per_attempt_recv_timeout_test PUBLIC cxx_std_14)
 target_include_directories(retry_per_attempt_recv_timeout_test
   PRIVATE
@@ -20467,6 +23703,15 @@ add_executable(retry_recv_initial_metadata_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_recv_initial_metadata_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_recv_initial_metadata_test PUBLIC cxx_std_14)
 target_include_directories(retry_recv_initial_metadata_test
   PRIVATE
@@ -20511,6 +23756,15 @@ add_executable(retry_recv_message_replay_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_recv_message_replay_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_recv_message_replay_test PUBLIC cxx_std_14)
 target_include_directories(retry_recv_message_replay_test
   PRIVATE
@@ -20555,6 +23809,15 @@ add_executable(retry_recv_message_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_recv_message_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_recv_message_test PUBLIC cxx_std_14)
 target_include_directories(retry_recv_message_test
   PRIVATE
@@ -20599,6 +23862,15 @@ add_executable(retry_recv_trailing_metadata_error_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_recv_trailing_metadata_error_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_recv_trailing_metadata_error_test PUBLIC cxx_std_14)
 target_include_directories(retry_recv_trailing_metadata_error_test
   PRIVATE
@@ -20643,6 +23915,15 @@ add_executable(retry_send_initial_metadata_refs_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_send_initial_metadata_refs_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_send_initial_metadata_refs_test PUBLIC cxx_std_14)
 target_include_directories(retry_send_initial_metadata_refs_test
   PRIVATE
@@ -20687,6 +23968,15 @@ add_executable(retry_send_op_fails_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_send_op_fails_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_send_op_fails_test PUBLIC cxx_std_14)
 target_include_directories(retry_send_op_fails_test
   PRIVATE
@@ -20731,6 +24021,15 @@ add_executable(retry_send_recv_batch_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_send_recv_batch_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_send_recv_batch_test PUBLIC cxx_std_14)
 target_include_directories(retry_send_recv_batch_test
   PRIVATE
@@ -20775,6 +24074,15 @@ add_executable(retry_server_pushback_delay_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_server_pushback_delay_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_server_pushback_delay_test PUBLIC cxx_std_14)
 target_include_directories(retry_server_pushback_delay_test
   PRIVATE
@@ -20819,6 +24127,15 @@ add_executable(retry_server_pushback_disabled_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_server_pushback_disabled_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_server_pushback_disabled_test PUBLIC cxx_std_14)
 target_include_directories(retry_server_pushback_disabled_test
   PRIVATE
@@ -20854,6 +24171,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(retry_service_config_test
   test/core/client_channel/retry_service_config_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_service_config_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_service_config_test PUBLIC cxx_std_14)
 target_include_directories(retry_service_config_test
   PRIVATE
@@ -20896,6 +24222,15 @@ add_executable(retry_streaming_after_commit_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_streaming_after_commit_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_streaming_after_commit_test PUBLIC cxx_std_14)
 target_include_directories(retry_streaming_after_commit_test
   PRIVATE
@@ -20940,6 +24275,15 @@ add_executable(retry_streaming_succeeds_before_replay_finished_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_streaming_succeeds_before_replay_finished_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_streaming_succeeds_before_replay_finished_test PUBLIC cxx_std_14)
 target_include_directories(retry_streaming_succeeds_before_replay_finished_test
   PRIVATE
@@ -20984,6 +24328,15 @@ add_executable(retry_streaming_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_streaming_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_streaming_test PUBLIC cxx_std_14)
 target_include_directories(retry_streaming_test
   PRIVATE
@@ -21028,6 +24381,15 @@ add_executable(retry_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_test PUBLIC cxx_std_14)
 target_include_directories(retry_test
   PRIVATE
@@ -21063,6 +24425,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(retry_throttle_test
   test/core/client_channel/retry_throttle_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_throttle_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_throttle_test PUBLIC cxx_std_14)
 target_include_directories(retry_throttle_test
   PRIVATE
@@ -21105,6 +24476,15 @@ add_executable(retry_throttled_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_throttled_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_throttled_test PUBLIC cxx_std_14)
 target_include_directories(retry_throttled_test
   PRIVATE
@@ -21149,6 +24529,15 @@ add_executable(retry_too_many_attempts_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_too_many_attempts_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_too_many_attempts_test PUBLIC cxx_std_14)
 target_include_directories(retry_too_many_attempts_test
   PRIVATE
@@ -21193,6 +24582,15 @@ add_executable(retry_transparent_goaway_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_transparent_goaway_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_transparent_goaway_test PUBLIC cxx_std_14)
 target_include_directories(retry_transparent_goaway_test
   PRIVATE
@@ -21237,6 +24635,15 @@ add_executable(retry_transparent_max_concurrent_streams_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_transparent_max_concurrent_streams_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_transparent_max_concurrent_streams_test PUBLIC cxx_std_14)
 target_include_directories(retry_transparent_max_concurrent_streams_test
   PRIVATE
@@ -21281,6 +24688,15 @@ add_executable(retry_transparent_not_sent_on_wire_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_transparent_not_sent_on_wire_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_transparent_not_sent_on_wire_test PUBLIC cxx_std_14)
 target_include_directories(retry_transparent_not_sent_on_wire_test
   PRIVATE
@@ -21325,6 +24741,15 @@ add_executable(retry_unref_before_finish_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_unref_before_finish_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_unref_before_finish_test PUBLIC cxx_std_14)
 target_include_directories(retry_unref_before_finish_test
   PRIVATE
@@ -21369,6 +24794,15 @@ add_executable(retry_unref_before_recv_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(retry_unref_before_recv_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(retry_unref_before_recv_test PUBLIC cxx_std_14)
 target_include_directories(retry_unref_before_recv_test
   PRIVATE
@@ -21410,6 +24844,15 @@ add_executable(ring_hash_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(ring_hash_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(ring_hash_test PUBLIC cxx_std_14)
 target_include_directories(ring_hash_test
   PRIVATE
@@ -21471,6 +24914,16 @@ add_executable(rls_end2end_test
   test/cpp/end2end/rls_server.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(rls_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(rls_end2end_test PUBLIC cxx_std_14)
 target_include_directories(rls_end2end_test
   PRIVATE
@@ -21505,6 +24958,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(rls_lb_config_parser_test
   test/core/client_channel/lb_policy/rls_lb_config_parser_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(rls_lb_config_parser_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(rls_lb_config_parser_test PUBLIC cxx_std_14)
 target_include_directories(rls_lb_config_parser_test
   PRIVATE
@@ -21544,6 +25006,15 @@ add_executable(round_robin_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(round_robin_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(round_robin_test PUBLIC cxx_std_14)
 target_include_directories(round_robin_test
   PRIVATE
@@ -21578,6 +25049,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(secure_auth_context_test
   test/cpp/common/secure_auth_context_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(secure_auth_context_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(secure_auth_context_test PUBLIC cxx_std_14)
 target_include_directories(secure_auth_context_test
   PRIVATE
@@ -21611,6 +25092,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(secure_channel_create_test
   test/core/surface/secure_channel_create_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(secure_channel_create_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(secure_channel_create_test PUBLIC cxx_std_14)
 target_include_directories(secure_channel_create_test
   PRIVATE
@@ -21655,6 +25145,15 @@ add_executable(secure_endpoint_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(secure_endpoint_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(secure_endpoint_test PUBLIC cxx_std_14)
 target_include_directories(secure_endpoint_test
   PRIVATE
@@ -21698,6 +25197,15 @@ add_executable(security_connector_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(security_connector_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(security_connector_test PUBLIC cxx_std_14)
 target_include_directories(security_connector_test
   PRIVATE
@@ -21733,6 +25241,14 @@ add_executable(seq_test
   src/core/lib/promise/trace.cc
   test/core/promise/seq_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(seq_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(seq_test PUBLIC cxx_std_14)
 target_include_directories(seq_test
   PRIVATE
@@ -21768,6 +25284,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(sequential_connectivity_test
   test/core/surface/sequential_connectivity_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(sequential_connectivity_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(sequential_connectivity_test PUBLIC cxx_std_14)
 target_include_directories(sequential_connectivity_test
   PRIVATE
@@ -21822,6 +25347,16 @@ add_executable(server_builder_plugin_test
   test/cpp/end2end/server_builder_plugin_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(server_builder_plugin_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(server_builder_plugin_test PUBLIC cxx_std_14)
 target_include_directories(server_builder_plugin_test
   PRIVATE
@@ -21882,6 +25417,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/tracer_util.cc
     test/cpp/server/server_builder_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(server_builder_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(server_builder_test PUBLIC cxx_std_14)
   target_include_directories(server_builder_test
     PRIVATE
@@ -21944,6 +25489,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/tracer_util.cc
     test/cpp/server/server_builder_with_socket_mutator_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(server_builder_with_socket_mutator_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(server_builder_with_socket_mutator_test PUBLIC cxx_std_14)
   target_include_directories(server_builder_with_socket_mutator_test
     PRIVATE
@@ -21979,6 +25534,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(server_call_tracer_factory_test
   test/core/channel/server_call_tracer_factory_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(server_call_tracer_factory_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(server_call_tracer_factory_test PUBLIC cxx_std_14)
 target_include_directories(server_call_tracer_factory_test
   PRIVATE
@@ -22012,6 +25576,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(server_chttp2_test
   test/core/surface/server_chttp2_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(server_chttp2_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(server_chttp2_test PUBLIC cxx_std_14)
 target_include_directories(server_chttp2_test
   PRIVATE
@@ -22045,6 +25618,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(server_config_selector_test
   test/core/server_config_selector/server_config_selector_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(server_config_selector_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(server_config_selector_test PUBLIC cxx_std_14)
 target_include_directories(server_config_selector_test
   PRIVATE
@@ -22078,6 +25660,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(server_context_test_spouse_test
   test/cpp/test/server_context_test_spouse_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(server_context_test_spouse_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(server_context_test_spouse_test PUBLIC cxx_std_14)
 target_include_directories(server_context_test_spouse_test
   PRIVATE
@@ -22127,6 +25719,16 @@ add_executable(server_early_return_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/server_early_return_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(server_early_return_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(server_early_return_test PUBLIC cxx_std_14)
 target_include_directories(server_early_return_test
   PRIVATE
@@ -22169,6 +25771,15 @@ add_executable(server_finishes_request_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(server_finishes_request_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(server_finishes_request_test PUBLIC cxx_std_14)
 target_include_directories(server_finishes_request_test
   PRIVATE
@@ -22222,6 +25833,16 @@ add_executable(server_interceptors_end2end_test
   test/cpp/end2end/server_interceptors_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(server_interceptors_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(server_interceptors_end2end_test PUBLIC cxx_std_14)
 target_include_directories(server_interceptors_end2end_test
   PRIVATE
@@ -22257,6 +25878,15 @@ add_executable(server_registered_method_bad_client_test
   test/core/bad_client/tests/server_registered_method.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(server_registered_method_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(server_registered_method_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(server_registered_method_bad_client_test
   PRIVATE
@@ -22317,6 +25947,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/tracer_util.cc
     test/cpp/server/server_request_call_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(server_request_call_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(server_request_call_test PUBLIC cxx_std_14)
   target_include_directories(server_request_call_test
     PRIVATE
@@ -22354,6 +25994,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/handshake/server_ssl.cc
     test/core/handshake/server_ssl_common.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(server_ssl_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(server_ssl_test PUBLIC cxx_std_14)
   target_include_directories(server_ssl_test
     PRIVATE
@@ -22397,6 +26046,15 @@ add_executable(server_streaming_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(server_streaming_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(server_streaming_test PUBLIC cxx_std_14)
 target_include_directories(server_streaming_test
   PRIVATE
@@ -22432,6 +26090,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(server_test
   test/core/surface/server_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(server_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(server_test PUBLIC cxx_std_14)
 target_include_directories(server_test
   PRIVATE
@@ -22486,6 +26153,16 @@ add_executable(service_config_end2end_test
   test/cpp/end2end/service_config_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(service_config_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(service_config_end2end_test PUBLIC cxx_std_14)
 target_include_directories(service_config_end2end_test
   PRIVATE
@@ -22519,6 +26196,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(service_config_test
   test/core/service_config/service_config_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(service_config_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(service_config_test PUBLIC cxx_std_14)
 target_include_directories(service_config_test
   PRIVATE
@@ -22562,6 +26248,15 @@ add_executable(settings_timeout_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(settings_timeout_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(settings_timeout_test PUBLIC cxx_std_14)
 target_include_directories(settings_timeout_test
   PRIVATE
@@ -22604,6 +26299,15 @@ add_executable(shutdown_finishes_calls_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(shutdown_finishes_calls_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(shutdown_finishes_calls_test PUBLIC cxx_std_14)
 target_include_directories(shutdown_finishes_calls_test
   PRIVATE
@@ -22648,6 +26352,15 @@ add_executable(shutdown_finishes_tags_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(shutdown_finishes_tags_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(shutdown_finishes_tags_test PUBLIC cxx_std_14)
 target_include_directories(shutdown_finishes_tags_test
   PRIVATE
@@ -22703,6 +26416,16 @@ add_executable(shutdown_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/shutdown_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(shutdown_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(shutdown_test PUBLIC cxx_std_14)
 target_include_directories(shutdown_test
   PRIVATE
@@ -22745,6 +26468,15 @@ add_executable(simple_delayed_request_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(simple_delayed_request_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(simple_delayed_request_test PUBLIC cxx_std_14)
 target_include_directories(simple_delayed_request_test
   PRIVATE
@@ -22789,6 +26521,15 @@ add_executable(simple_metadata_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(simple_metadata_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(simple_metadata_test PUBLIC cxx_std_14)
 target_include_directories(simple_metadata_test
   PRIVATE
@@ -22826,6 +26567,15 @@ add_executable(simple_request_bad_client_test
   test/core/bad_client/tests/simple_request.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(simple_request_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(simple_request_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(simple_request_bad_client_test
   PRIVATE
@@ -22868,6 +26618,15 @@ add_executable(simple_request_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(simple_request_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(simple_request_test PUBLIC cxx_std_14)
 target_include_directories(simple_request_test
   PRIVATE
@@ -22903,6 +26662,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(single_set_ptr_test
   test/core/gprpp/single_set_ptr_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(single_set_ptr_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(single_set_ptr_test PUBLIC cxx_std_14)
 target_include_directories(single_set_ptr_test
   PRIVATE
@@ -22936,6 +26703,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(sleep_test
   test/core/promise/sleep_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(sleep_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(sleep_test PUBLIC cxx_std_14)
 target_include_directories(sleep_test
   PRIVATE
@@ -22973,6 +26749,14 @@ add_executable(slice_string_helpers_test
   src/core/lib/slice/slice_string_helpers.cc
   test/core/slice/slice_string_helpers_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(slice_string_helpers_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(slice_string_helpers_test PUBLIC cxx_std_14)
 target_include_directories(slice_string_helpers_test
   PRIVATE
@@ -23008,6 +26792,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(smoke_test
   test/core/event_engine/smoke_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(smoke_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(smoke_test PUBLIC cxx_std_14)
 target_include_directories(smoke_test
   PRIVATE
@@ -23041,6 +26834,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(sockaddr_resolver_test
   test/core/client_channel/resolvers/sockaddr_resolver_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(sockaddr_resolver_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(sockaddr_resolver_test PUBLIC cxx_std_14)
 target_include_directories(sockaddr_resolver_test
   PRIVATE
@@ -23074,6 +26876,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(sockaddr_utils_test
   test/core/address_utils/sockaddr_utils_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(sockaddr_utils_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(sockaddr_utils_test PUBLIC cxx_std_14)
 target_include_directories(sockaddr_utils_test
   PRIVATE
@@ -23118,6 +26929,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(socket_utils_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(socket_utils_test PUBLIC cxx_std_14)
   target_include_directories(socket_utils_test
     PRIVATE
@@ -23184,6 +27004,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(spinlock_test
   test/core/gpr/spinlock_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(spinlock_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(spinlock_test PUBLIC cxx_std_14)
 target_include_directories(spinlock_test
   PRIVATE
@@ -23219,6 +27048,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/tsi/ssl_transport_security_test.cc
     test/core/tsi/transport_security_test_lib.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(ssl_transport_security_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(ssl_transport_security_test PUBLIC cxx_std_14)
   target_include_directories(ssl_transport_security_test
     PRIVATE
@@ -23254,6 +27092,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(ssl_transport_security_utils_test
     test/core/tsi/ssl_transport_security_utils_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(ssl_transport_security_utils_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(ssl_transport_security_utils_test PUBLIC cxx_std_14)
   target_include_directories(ssl_transport_security_utils_test
     PRIVATE
@@ -23289,6 +27136,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(stack_tracer_test
     test/core/util/stack_tracer_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(stack_tracer_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(stack_tracer_test PUBLIC cxx_std_14)
   target_include_directories(stack_tracer_test
     PRIVATE
@@ -23323,6 +27179,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(stat_test
   test/core/gprpp/stat_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(stat_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(stat_test PUBLIC cxx_std_14)
 target_include_directories(stat_test
   PRIVATE
@@ -23357,6 +27222,14 @@ add_executable(static_stride_scheduler_test
   src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
   test/core/client_channel/lb_policy/static_stride_scheduler_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(static_stride_scheduler_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(static_stride_scheduler_test PUBLIC cxx_std_14)
 target_include_directories(static_stride_scheduler_test
   PRIVATE
@@ -23391,6 +27264,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(stats_test
   test/core/debug/stats_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(stats_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(stats_test PUBLIC cxx_std_14)
 target_include_directories(stats_test
   PRIVATE
@@ -23434,6 +27316,15 @@ add_executable(status_conversion_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(status_conversion_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(status_conversion_test PUBLIC cxx_std_14)
 target_include_directories(status_conversion_test
   PRIVATE
@@ -23467,6 +27358,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(status_flag_test
   test/core/promise/status_flag_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(status_flag_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(status_flag_test PUBLIC cxx_std_14)
 target_include_directories(status_flag_test
   PRIVATE
@@ -23501,6 +27400,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(status_helper_test
   test/core/gprpp/status_helper_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(status_helper_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(status_helper_test PUBLIC cxx_std_14)
 target_include_directories(status_helper_test
   PRIVATE
@@ -23534,6 +27442,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(status_util_test
   test/core/channel/status_util_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(status_util_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(status_util_test PUBLIC cxx_std_14)
 target_include_directories(status_util_test
   PRIVATE
@@ -23567,6 +27484,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(stream_leak_with_queued_flow_control_update_test
   test/core/transport/chttp2/stream_leak_with_queued_flow_control_update_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(stream_leak_with_queued_flow_control_update_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(stream_leak_with_queued_flow_control_update_test PUBLIC cxx_std_14)
 target_include_directories(stream_leak_with_queued_flow_control_update_test
   PRIVATE
@@ -23609,6 +27535,15 @@ add_executable(streaming_error_response_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(streaming_error_response_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(streaming_error_response_test PUBLIC cxx_std_14)
 target_include_directories(streaming_error_response_test
   PRIVATE
@@ -23665,6 +27600,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
     test/cpp/end2end/streaming_throughput_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(streaming_throughput_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(streaming_throughput_test PUBLIC cxx_std_14)
   target_include_directories(streaming_throughput_test
     PRIVATE
@@ -23710,6 +27655,15 @@ add_executable(streams_not_seen_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(streams_not_seen_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(streams_not_seen_test PUBLIC cxx_std_14)
 target_include_directories(streams_not_seen_test
   PRIVATE
@@ -23743,6 +27697,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(string_ref_test
   test/cpp/util/string_ref_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(string_ref_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(string_ref_test PUBLIC cxx_std_14)
 target_include_directories(string_ref_test
   PRIVATE
@@ -23777,6 +27741,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(string_test
   test/core/gpr/string_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(string_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(string_test PUBLIC cxx_std_14)
 target_include_directories(string_test
   PRIVATE
@@ -23810,6 +27783,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(switch_test
   test/core/promise/switch_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(switch_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(switch_test PUBLIC cxx_std_14)
 target_include_directories(switch_test
   PRIVATE
@@ -23845,6 +27826,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(sync_test
   test/core/gpr/sync_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(sync_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(sync_test PUBLIC cxx_std_14)
 target_include_directories(sync_test
   PRIVATE
@@ -23888,6 +27878,15 @@ add_executable(system_roots_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(system_roots_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(system_roots_test PUBLIC cxx_std_14)
 target_include_directories(system_roots_test
   PRIVATE
@@ -23966,6 +27965,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(tcp_client_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(tcp_client_posix_test PUBLIC cxx_std_14)
   target_include_directories(tcp_client_posix_test
     PRIVATE
@@ -24001,6 +28009,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(tcp_posix_socket_utils_test
     test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(tcp_posix_socket_utils_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(tcp_posix_socket_utils_test PUBLIC cxx_std_14)
   target_include_directories(tcp_posix_socket_utils_test
     PRIVATE
@@ -24047,6 +28064,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(tcp_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(tcp_posix_test PUBLIC cxx_std_14)
   target_include_directories(tcp_posix_test
     PRIVATE
@@ -24092,6 +28118,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(tcp_server_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(tcp_server_posix_test PUBLIC cxx_std_14)
   target_include_directories(tcp_server_posix_test
     PRIVATE
@@ -24126,6 +28161,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(tcp_socket_utils_test
   test/core/event_engine/tcp_socket_utils_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(tcp_socket_utils_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(tcp_socket_utils_test PUBLIC cxx_std_14)
 target_include_directories(tcp_socket_utils_test
   PRIVATE
@@ -24165,6 +28209,16 @@ add_executable(test_core_channel_channelz_test
   test/core/event_engine/event_engine_test_utils.cc
   test/cpp/util/channel_trace_proto_helper.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_channel_channelz_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_channel_channelz_test PUBLIC cxx_std_14)
 target_include_directories(test_core_channel_channelz_test
   PRIVATE
@@ -24208,6 +28262,15 @@ add_executable(test_core_end2end_channelz_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_end2end_channelz_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_end2end_channelz_test PUBLIC cxx_std_14)
 target_include_directories(test_core_end2end_channelz_test
   PRIVATE
@@ -24247,6 +28310,14 @@ add_executable(test_core_event_engine_posix_timer_heap_test
   src/core/lib/gprpp/time_averaged_stats.cc
   test/core/event_engine/posix/timer_heap_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_event_engine_posix_timer_heap_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_event_engine_posix_timer_heap_test PUBLIC cxx_std_14)
 target_include_directories(test_core_event_engine_posix_timer_heap_test
   PRIVATE
@@ -24285,6 +28356,14 @@ add_executable(test_core_event_engine_posix_timer_list_test
   src/core/lib/gprpp/time_averaged_stats.cc
   test/core/event_engine/posix/timer_list_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_event_engine_posix_timer_list_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_event_engine_posix_timer_list_test PUBLIC cxx_std_14)
 target_include_directories(test_core_event_engine_posix_timer_list_test
   PRIVATE
@@ -24328,6 +28407,14 @@ add_executable(test_core_event_engine_slice_buffer_test
   src/core/lib/slice/slice_string_helpers.cc
   test/core/event_engine/slice_buffer_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_event_engine_slice_buffer_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_event_engine_slice_buffer_test PUBLIC cxx_std_14)
 target_include_directories(test_core_event_engine_slice_buffer_test
   PRIVATE
@@ -24364,6 +28451,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_core_gpr_time_test
   test/core/gpr/time_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_gpr_time_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_gpr_time_test PUBLIC cxx_std_14)
 target_include_directories(test_core_gpr_time_test
   PRIVATE
@@ -24397,6 +28493,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_core_gprpp_load_file_test
   test/core/gprpp/load_file_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_gprpp_load_file_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_gprpp_load_file_test PUBLIC cxx_std_14)
 target_include_directories(test_core_gprpp_load_file_test
   PRIVATE
@@ -24431,6 +28536,14 @@ add_executable(test_core_gprpp_time_test
   src/core/lib/gprpp/time.cc
   test/core/gprpp/time_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_gprpp_time_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_gprpp_time_test PUBLIC cxx_std_14)
 target_include_directories(test_core_gprpp_time_test
   PRIVATE
@@ -24475,6 +28588,15 @@ add_executable(test_core_iomgr_load_file_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_iomgr_load_file_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_iomgr_load_file_test PUBLIC cxx_std_14)
 target_include_directories(test_core_iomgr_load_file_test
   PRIVATE
@@ -24518,6 +28640,15 @@ add_executable(test_core_iomgr_timer_heap_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_iomgr_timer_heap_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_iomgr_timer_heap_test PUBLIC cxx_std_14)
 target_include_directories(test_core_iomgr_timer_heap_test
   PRIVATE
@@ -24561,6 +28692,15 @@ add_executable(test_core_security_credentials_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_security_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_security_credentials_test PUBLIC cxx_std_14)
 target_include_directories(test_core_security_credentials_test
   PRIVATE
@@ -24604,6 +28744,15 @@ add_executable(test_core_security_ssl_credentials_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_security_ssl_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_security_ssl_credentials_test PUBLIC cxx_std_14)
 target_include_directories(test_core_security_ssl_credentials_test
   PRIVATE
@@ -24637,6 +28786,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_core_slice_slice_buffer_test
   test/core/slice/slice_buffer_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_slice_slice_buffer_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_slice_slice_buffer_test PUBLIC cxx_std_14)
 target_include_directories(test_core_slice_slice_buffer_test
   PRIVATE
@@ -24671,6 +28829,15 @@ add_executable(test_core_slice_slice_test
   test/core/slice/slice_test.cc
   test/core/util/build.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_slice_slice_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_core_slice_slice_test PUBLIC cxx_std_14)
 target_include_directories(test_core_slice_slice_test
   PRIVATE
@@ -24705,6 +28872,16 @@ add_executable(test_cpp_client_credentials_test
   test/cpp/client/credentials_test.cc
   test/cpp/util/tls_test_utils.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_cpp_client_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_cpp_client_credentials_test PUBLIC cxx_std_14)
 target_include_directories(test_cpp_client_credentials_test
   PRIVATE
@@ -24756,6 +28933,16 @@ add_executable(test_cpp_end2end_ssl_credentials_test
   test/cpp/end2end/ssl_credentials_test.cc
   test/cpp/end2end/test_service_impl.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_cpp_end2end_ssl_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_cpp_end2end_ssl_credentials_test PUBLIC cxx_std_14)
 target_include_directories(test_cpp_end2end_ssl_credentials_test
   PRIVATE
@@ -24790,6 +28977,16 @@ add_executable(test_cpp_server_credentials_test
   test/cpp/server/credentials_test.cc
   test/cpp/util/tls_test_utils.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_cpp_server_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_cpp_server_credentials_test PUBLIC cxx_std_14)
 target_include_directories(test_cpp_server_credentials_test
   PRIVATE
@@ -24824,6 +29021,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_cpp_util_slice_test
   test/cpp/util/slice_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_cpp_util_slice_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_cpp_util_slice_test PUBLIC cxx_std_14)
 target_include_directories(test_cpp_util_slice_test
   PRIVATE
@@ -24857,6 +29064,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_cpp_util_time_test
   test/cpp/util/time_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_cpp_util_time_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(test_cpp_util_time_test PUBLIC cxx_std_14)
 target_include_directories(test_cpp_util_time_test
   PRIVATE
@@ -24890,6 +29107,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(thd_test
   test/core/gprpp/thd_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(thd_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(thd_test PUBLIC cxx_std_14)
 target_include_directories(thd_test
   PRIVATE
@@ -24923,6 +29149,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(thread_manager_test
   test/cpp/thread_manager/thread_manager_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(thread_manager_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(thread_manager_test PUBLIC cxx_std_14)
 target_include_directories(thread_manager_test
   PRIVATE
@@ -24957,6 +29193,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(thread_pool_test
   test/core/event_engine/thread_pool_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(thread_pool_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(thread_pool_test PUBLIC cxx_std_14)
 target_include_directories(thread_pool_test
   PRIVATE
@@ -24992,6 +29237,14 @@ add_executable(thread_quota_test
   src/core/lib/resource_quota/thread_quota.cc
   test/core/resource_quota/thread_quota_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(thread_quota_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(thread_quota_test PUBLIC cxx_std_14)
 target_include_directories(thread_quota_test
   PRIVATE
@@ -25047,6 +29300,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
     test/cpp/end2end/thread_stress_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(thread_stress_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(thread_stress_test PUBLIC cxx_std_14)
   target_include_directories(thread_stress_test
     PRIVATE
@@ -25088,6 +29351,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/tests/timer_test.cc
     test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(thready_posix_event_engine_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(thready_posix_event_engine_test PUBLIC cxx_std_14)
   target_include_directories(thready_posix_event_engine_test
     PRIVATE
@@ -25123,6 +29395,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(time_jump_test
     test/cpp/common/time_jump_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(time_jump_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(time_jump_test PUBLIC cxx_std_14)
   target_include_directories(time_jump_test
     PRIVATE
@@ -25158,6 +29440,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(time_util_test
   test/core/gprpp/time_util_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(time_util_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(time_util_test PUBLIC cxx_std_14)
 target_include_directories(time_util_test
   PRIVATE
@@ -25200,6 +29491,15 @@ add_executable(timeout_before_request_call_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(timeout_before_request_call_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(timeout_before_request_call_test PUBLIC cxx_std_14)
 target_include_directories(timeout_before_request_call_test
   PRIVATE
@@ -25245,6 +29545,15 @@ add_executable(timeout_encoding_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(timeout_encoding_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(timeout_encoding_test PUBLIC cxx_std_14)
 target_include_directories(timeout_encoding_test
   PRIVATE
@@ -25278,6 +29587,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(timer_manager_test
   test/core/event_engine/posix/timer_manager_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(timer_manager_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(timer_manager_test PUBLIC cxx_std_14)
 target_include_directories(timer_manager_test
   PRIVATE
@@ -25311,6 +29629,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(timer_test
   test/cpp/common/timer_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(timer_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(timer_test PUBLIC cxx_std_14)
 target_include_directories(timer_test
   PRIVATE
@@ -25346,6 +29674,16 @@ add_executable(tls_certificate_verifier_test
   test/cpp/security/tls_certificate_verifier_test.cc
   test/cpp/util/tls_test_utils.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(tls_certificate_verifier_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(tls_certificate_verifier_test PUBLIC cxx_std_14)
 target_include_directories(tls_certificate_verifier_test
   PRIVATE
@@ -25397,6 +29735,16 @@ add_executable(tls_credentials_test
   test/cpp/end2end/test_service_impl.cc
   test/cpp/end2end/tls_credentials_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(tls_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(tls_credentials_test PUBLIC cxx_std_14)
 target_include_directories(tls_credentials_test
   PRIVATE
@@ -25446,6 +29794,16 @@ add_executable(tls_key_export_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/tls_key_export_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(tls_key_export_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(tls_key_export_test PUBLIC cxx_std_14)
 target_include_directories(tls_key_export_test
   PRIVATE
@@ -25489,6 +29847,15 @@ add_executable(tls_security_connector_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(tls_security_connector_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(tls_security_connector_test PUBLIC cxx_std_14)
 target_include_directories(tls_security_connector_test
   PRIVATE
@@ -25523,6 +29890,16 @@ add_executable(too_many_pings_test
   test/core/end2end/cq_verifier.cc
   test/core/transport/chttp2/too_many_pings_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(too_many_pings_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(too_many_pings_test PUBLIC cxx_std_14)
 target_include_directories(too_many_pings_test
   PRIVATE
@@ -25558,6 +29935,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(traced_buffer_list_test
     test/core/event_engine/posix/traced_buffer_list_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(traced_buffer_list_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(traced_buffer_list_test PUBLIC cxx_std_14)
   target_include_directories(traced_buffer_list_test
     PRIVATE
@@ -25601,6 +29987,15 @@ add_executable(trailing_metadata_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(trailing_metadata_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(trailing_metadata_test PUBLIC cxx_std_14)
 target_include_directories(trailing_metadata_test
   PRIVATE
@@ -25636,6 +30031,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(transport_security_common_api_test
   test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(transport_security_common_api_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(transport_security_common_api_test PUBLIC cxx_std_14)
 target_include_directories(transport_security_common_api_test
   PRIVATE
@@ -25669,6 +30073,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(transport_security_test
   test/core/tsi/transport_security_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(transport_security_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(transport_security_test PUBLIC cxx_std_14)
 target_include_directories(transport_security_test
   PRIVATE
@@ -25764,6 +30177,15 @@ add_executable(transport_stream_receiver_test
   src/cpp/util/time_cc.cc
   test/core/transport/binder/transport_stream_receiver_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(transport_stream_receiver_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(transport_stream_receiver_test PUBLIC cxx_std_14)
 target_include_directories(transport_stream_receiver_test
   PRIVATE
@@ -25800,6 +30222,14 @@ add_executable(try_join_test
   src/core/lib/promise/trace.cc
   test/core/promise/try_join_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(try_join_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(try_join_test PUBLIC cxx_std_14)
 target_include_directories(try_join_test
   PRIVATE
@@ -25836,6 +30266,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(try_seq_metadata_test
   test/core/promise/try_seq_metadata_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(try_seq_metadata_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(try_seq_metadata_test PUBLIC cxx_std_14)
 target_include_directories(try_seq_metadata_test
   PRIVATE
@@ -25871,6 +30310,14 @@ add_executable(try_seq_test
   src/core/lib/promise/trace.cc
   test/core/promise/try_seq_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(try_seq_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(try_seq_test PUBLIC cxx_std_14)
 target_include_directories(try_seq_test
   PRIVATE
@@ -25941,6 +30388,15 @@ add_executable(unknown_frame_bad_client_test
   test/core/bad_client/tests/unknown_frame.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(unknown_frame_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(unknown_frame_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(unknown_frame_bad_client_test
   PRIVATE
@@ -25974,6 +30430,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(uri_parser_test
   test/core/uri/uri_parser_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(uri_parser_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(uri_parser_test PUBLIC cxx_std_14)
 target_include_directories(uri_parser_test
   PRIVATE
@@ -26040,6 +30505,15 @@ add_executable(uuid_v4_test
   src/core/lib/gprpp/uuid_v4.cc
   test/core/gprpp/uuid_v4_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(uuid_v4_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(uuid_v4_test PUBLIC cxx_std_14)
 target_include_directories(uuid_v4_test
   PRIVATE
@@ -26073,6 +30547,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(validation_errors_test
   test/core/gprpp/validation_errors_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(validation_errors_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(validation_errors_test PUBLIC cxx_std_14)
 target_include_directories(validation_errors_test
   PRIVATE
@@ -26106,6 +30589,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(varint_test
   test/core/transport/chttp2/varint_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(varint_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(varint_test PUBLIC cxx_std_14)
 target_include_directories(varint_test
   PRIVATE
@@ -26140,6 +30632,14 @@ add_executable(wait_for_callback_test
   src/core/lib/promise/activity.cc
   test/core/promise/wait_for_callback_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(wait_for_callback_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(wait_for_callback_test PUBLIC cxx_std_14)
 target_include_directories(wait_for_callback_test
   PRIVATE
@@ -26177,6 +30677,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(wakeup_fd_posix_test
     test/core/event_engine/posix/wakeup_fd_posix_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(wakeup_fd_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(wakeup_fd_posix_test PUBLIC cxx_std_14)
   target_include_directories(wakeup_fd_posix_test
     PRIVATE
@@ -26211,6 +30720,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(weighted_round_robin_config_test
   test/core/client_channel/lb_policy/weighted_round_robin_config_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(weighted_round_robin_config_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(weighted_round_robin_config_test PUBLIC cxx_std_14)
 target_include_directories(weighted_round_robin_config_test
   PRIVATE
@@ -26250,6 +30768,15 @@ add_executable(weighted_round_robin_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(weighted_round_robin_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(weighted_round_robin_test PUBLIC cxx_std_14)
 target_include_directories(weighted_round_robin_test
   PRIVATE
@@ -26286,6 +30813,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     test/core/event_engine/windows/create_sockpair.cc
     test/core/event_engine/windows/win_socket_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(win_socket_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(win_socket_test PUBLIC cxx_std_14)
   target_include_directories(win_socket_test
     PRIVATE
@@ -26322,6 +30858,15 @@ add_executable(window_overflow_bad_client_test
   test/core/bad_client/tests/window_overflow.cc
   test/core/end2end/cq_verifier.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(window_overflow_bad_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(window_overflow_bad_client_test PUBLIC cxx_std_14)
 target_include_directories(window_overflow_bad_client_test
   PRIVATE
@@ -26357,6 +30902,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     test/core/event_engine/windows/create_sockpair.cc
     test/core/event_engine/windows/windows_endpoint_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(windows_endpoint_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(windows_endpoint_test PUBLIC cxx_std_14)
   target_include_directories(windows_endpoint_test
     PRIVATE
@@ -26454,6 +31008,15 @@ add_executable(wire_reader_test
   test/core/transport/binder/mock_objects.cc
   test/core/transport/binder/wire_reader_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(wire_reader_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(wire_reader_test PUBLIC cxx_std_14)
 target_include_directories(wire_reader_test
   PRIVATE
@@ -26551,6 +31114,15 @@ add_executable(wire_writer_test
   test/core/transport/binder/mock_objects.cc
   test/core/transport/binder/wire_writer_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(wire_writer_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(wire_writer_test PUBLIC cxx_std_14)
 target_include_directories(wire_writer_test
   PRIVATE
@@ -26587,6 +31159,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/event_engine_test_utils.cc
     test/core/gprpp/work_serializer_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(work_serializer_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(work_serializer_test PUBLIC cxx_std_14)
   target_include_directories(work_serializer_test
     PRIVATE
@@ -26630,6 +31211,15 @@ add_executable(write_buffering_at_end_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(write_buffering_at_end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(write_buffering_at_end_test PUBLIC cxx_std_14)
 target_include_directories(write_buffering_at_end_test
   PRIVATE
@@ -26674,6 +31264,15 @@ add_executable(write_buffering_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/util/test_lb_policies.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(write_buffering_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(write_buffering_test PUBLIC cxx_std_14)
 target_include_directories(write_buffering_test
   PRIVATE
@@ -26711,6 +31310,14 @@ add_executable(write_size_policy_test
   src/core/lib/gprpp/time.cc
   test/core/transport/chttp2/write_size_policy_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(write_size_policy_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(write_size_policy_test PUBLIC cxx_std_14)
 target_include_directories(write_size_policy_test
   PRIVATE
@@ -26772,6 +31379,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/tracer_util.cc
     test/cpp/performance/writes_per_rpc_test.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(writes_per_rpc_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(writes_per_rpc_test PUBLIC cxx_std_14)
   target_include_directories(writes_per_rpc_test
     PRIVATE
@@ -26872,6 +31489,16 @@ add_executable(xds_audit_logger_registry_test
   test/cpp/util/proto_reflection_descriptor_database.cc
   test/cpp/util/service_describer.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_audit_logger_registry_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_audit_logger_registry_test PUBLIC cxx_std_14)
 target_include_directories(xds_audit_logger_registry_test
   PRIVATE
@@ -26907,6 +31534,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(xds_bootstrap_test
   test/core/xds/xds_bootstrap_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_bootstrap_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_bootstrap_test PUBLIC cxx_std_14)
 target_include_directories(xds_bootstrap_test
   PRIVATE
@@ -26940,6 +31576,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(xds_certificate_provider_test
   test/core/xds/xds_certificate_provider_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_certificate_provider_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_certificate_provider_test PUBLIC cxx_std_14)
 target_include_directories(xds_certificate_provider_test
   PRIVATE
@@ -26987,6 +31632,15 @@ add_executable(xds_client_test
   test/core/xds/xds_client_test.cc
   test/core/xds/xds_transport_fake.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_client_test PUBLIC cxx_std_14)
 target_include_directories(xds_client_test
   PRIVATE
@@ -27153,6 +31807,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_cluster_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_cluster_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_cluster_end2end_test
     PRIVATE
@@ -27260,6 +31924,15 @@ add_executable(xds_cluster_resource_type_test
   src/cpp/util/status.cc
   test/core/xds/xds_cluster_resource_type_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_cluster_resource_type_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_cluster_resource_type_test PUBLIC cxx_std_14)
 target_include_directories(xds_cluster_resource_type_test
   PRIVATE
@@ -27429,6 +32102,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_cluster_type_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_cluster_type_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_cluster_type_end2end_test
     PRIVATE
@@ -27504,6 +32187,16 @@ add_executable(xds_common_types_test
   test/cpp/util/proto_reflection_descriptor_database.cc
   test/cpp/util/service_describer.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_common_types_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_common_types_test PUBLIC cxx_std_14)
 target_include_directories(xds_common_types_test
   PRIVATE
@@ -27669,6 +32362,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_core_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_core_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_core_end2end_test
     PRIVATE
@@ -27720,6 +32423,16 @@ add_executable(xds_credentials_end2end_test
   test/cpp/end2end/test_service_impl.cc
   test/cpp/end2end/xds/xds_credentials_end2end_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_credentials_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_credentials_end2end_test PUBLIC cxx_std_14)
 target_include_directories(xds_credentials_end2end_test
   PRIVATE
@@ -27763,6 +32476,15 @@ add_executable(xds_credentials_test
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_credentials_test PUBLIC cxx_std_14)
 target_include_directories(xds_credentials_test
   PRIVATE
@@ -27935,6 +32657,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_csds_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_csds_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_csds_end2end_test
     PRIVATE
@@ -28120,6 +32852,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_end2end_test
     PRIVATE
@@ -28176,6 +32918,15 @@ add_executable(xds_endpoint_resource_type_test
   src/cpp/util/status.cc
   test/core/xds/xds_endpoint_resource_type_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_endpoint_resource_type_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_endpoint_resource_type_test PUBLIC cxx_std_14)
 target_include_directories(xds_endpoint_resource_type_test
   PRIVATE
@@ -28348,6 +33099,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_fault_injection_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_fault_injection_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_fault_injection_end2end_test
     PRIVATE
@@ -28471,6 +33232,16 @@ add_executable(xds_http_filters_test
   test/cpp/util/proto_reflection_descriptor_database.cc
   test/cpp/util/service_describer.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_http_filters_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_http_filters_test PUBLIC cxx_std_14)
 target_include_directories(xds_http_filters_test
   PRIVATE
@@ -28579,6 +33350,16 @@ add_executable(xds_lb_policy_registry_test
   test/cpp/util/proto_reflection_descriptor_database.cc
   test/cpp/util/service_describer.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_lb_policy_registry_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_lb_policy_registry_test PUBLIC cxx_std_14)
 target_include_directories(xds_lb_policy_registry_test
   PRIVATE
@@ -28711,6 +33492,16 @@ add_executable(xds_listener_resource_type_test
   test/cpp/util/proto_reflection_descriptor_database.cc
   test/cpp/util/service_describer.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_listener_resource_type_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_listener_resource_type_test PUBLIC cxx_std_14)
 target_include_directories(xds_listener_resource_type_test
   PRIVATE
@@ -28884,6 +33675,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_outlier_detection_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_outlier_detection_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_outlier_detection_end2end_test
     PRIVATE
@@ -29060,6 +33861,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_override_host_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_override_host_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_override_host_end2end_test
     PRIVATE
@@ -29094,6 +33905,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(xds_override_host_lb_config_parser_test
   test/core/client_channel/lb_policy/xds_override_host_lb_config_parser_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_override_host_lb_config_parser_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_override_host_lb_config_parser_test PUBLIC cxx_std_14)
 target_include_directories(xds_override_host_lb_config_parser_test
   PRIVATE
@@ -29133,6 +33953,15 @@ add_executable(xds_override_host_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_override_host_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_override_host_test PUBLIC cxx_std_14)
 target_include_directories(xds_override_host_test
   PRIVATE
@@ -29306,6 +34135,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_pick_first_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_pick_first_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_pick_first_end2end_test
     PRIVATE
@@ -29475,6 +34314,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_ring_hash_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_ring_hash_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_ring_hash_end2end_test
     PRIVATE
@@ -29648,6 +34497,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_rls_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_rls_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_rls_end2end_test
     PRIVATE
@@ -29759,6 +34618,16 @@ add_executable(xds_route_config_resource_type_test
   test/cpp/util/proto_reflection_descriptor_database.cc
   test/cpp/util/service_describer.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_route_config_resource_type_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_route_config_resource_type_test PUBLIC cxx_std_14)
 target_include_directories(xds_route_config_resource_type_test
   PRIVATE
@@ -29932,6 +34801,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_utils.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_routing_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_routing_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_routing_end2end_test
     PRIVATE
@@ -29998,6 +34877,16 @@ add_executable(xds_stats_watcher_test
   test/cpp/interop/xds_stats_watcher.cc
   test/cpp/interop/xds_stats_watcher_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_stats_watcher_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_stats_watcher_test PUBLIC cxx_std_14)
 target_include_directories(xds_stats_watcher_test
   PRIVATE
@@ -30172,6 +35061,16 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/xds/xds_wrr_end2end_test.cc
     test/cpp/util/tls_test_utils.cc
   )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(xds_wrr_end2end_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
+      )
+    endif()
+  endif()
   target_compile_features(xds_wrr_end2end_test PUBLIC cxx_std_14)
   target_include_directories(xds_wrr_end2end_test
     PRIVATE
@@ -30281,7 +35180,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
-  "-laddress_sorting -lupb -lupb_textformat_lib -lupb_json_lib -lutf8_range_lib -lupb_collections_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lutf8_range_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib"
   "grpc.pc")
 
 # grpc_unsecure .pc file
@@ -30292,7 +35191,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
   "libcares zlib"
   "-lgrpc_unsecure"
-  "-laddress_sorting -lutf8_range_lib -lupb -lupb_collections_lib"
+  "-laddress_sorting -lutf8_range_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib"
   "grpc_unsecure.pc")
 
 # grpc++ .pc file
@@ -30303,7 +35202,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
-  "-laddress_sorting -lupb -lupb_textformat_lib -lupb_json_lib -lutf8_range_lib -lupb_collections_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lutf8_range_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib"
   "grpc++.pc")
 
 # grpc++_unsecure .pc file
@@ -30314,5 +35213,5 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
-  "-laddress_sorting -lutf8_range_lib -lupb -lupb_collections_lib"
+  "-laddress_sorting -lutf8_range_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib"
   "grpc++_unsecure.pc")

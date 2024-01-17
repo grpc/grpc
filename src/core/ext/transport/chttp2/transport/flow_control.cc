@@ -230,18 +230,14 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
 }
 
 void TransportFlowControl::UpdateSetting(
-    grpc_chttp2_setting_id id, int64_t* desired_value,
-    uint32_t new_desired_value, FlowControlAction* action,
+    absl::string_view name, int64_t* desired_value, uint32_t new_desired_value,
+    FlowControlAction* action,
     FlowControlAction& (FlowControlAction::*set)(FlowControlAction::Urgency,
                                                  uint32_t)) {
-  new_desired_value =
-      Clamp(new_desired_value, grpc_chttp2_settings_parameters[id].min_value,
-            grpc_chttp2_settings_parameters[id].max_value);
   if (new_desired_value != *desired_value) {
     if (grpc_flowctl_trace.enabled()) {
       gpr_log(GPR_INFO, "[flowctl] UPDATE SETTING %s from %" PRId64 " to %d",
-              grpc_chttp2_settings_parameters[id].name, *desired_value,
-              new_desired_value);
+              std::string(name).c_str(), *desired_value, new_desired_value);
     }
     // Reaching zero can only happen for initial window size, and if it occurs
     // we really want to wake up writes and ensure all the queued stream
@@ -290,13 +286,15 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     }
     // Though initial window 'could' drop to 0, we keep the floor at
     // kMinInitialWindowSize
-    UpdateSetting(GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
-                  &target_initial_window_size_, target, &action,
-                  &FlowControlAction::set_send_initial_window_update);
+    UpdateSetting(Http2Settings::initial_window_size_name(),
+                  &target_initial_window_size_,
+                  std::min(target, Http2Settings::max_initial_window_size()),
+                  &action, &FlowControlAction::set_send_initial_window_update);
     // we target the max of BDP or bandwidth in microseconds.
-    UpdateSetting(GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, &target_frame_size_,
-                  target, &action,
-                  &FlowControlAction::set_send_max_frame_size_update);
+    UpdateSetting(Http2Settings::max_frame_size_name(), &target_frame_size_,
+                  Clamp(target, Http2Settings::min_max_frame_size(),
+                        Http2Settings::max_max_frame_size()),
+                  &action, &FlowControlAction::set_send_max_frame_size_update);
 
     if (IsTcpFrameSizeTuningEnabled()) {
       // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
@@ -306,10 +304,11 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
       // Clamp(target_frame_size_ * 2, 16384, 0x7fffffff). In the future, this
       // maybe updated to a different function of the memory pressure.
       UpdateSetting(
-          GRPC_CHTTP2_SETTINGS_GRPC_PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE,
+          Http2Settings::preferred_receive_crypto_message_size_name(),
           &target_preferred_rx_crypto_frame_size_,
-          Clamp(static_cast<unsigned int>(target_frame_size_ * 2), 16384u,
-                0x7ffffffu),
+          Clamp(static_cast<unsigned int>(target_frame_size_ * 2),
+                Http2Settings::min_preferred_receive_crypto_message_size(),
+                Http2Settings::max_preferred_receive_crypto_message_size()),
           &action,
           &FlowControlAction::set_preferred_rx_crypto_frame_size_update);
     }

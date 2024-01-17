@@ -277,6 +277,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/decode_huff.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_data.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_goaway.cc" role="src" />
@@ -2921,8 +2923,6 @@
     <file baseinstalldir="/" name="third_party/upb/upb/base/status.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/status.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/string_view.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/collections/array.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/collections/map.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/generated_code_support.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/common.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/common.h" role="src" />
@@ -3053,7 +3053,6 @@
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/service_def.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text/encode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/upb.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode_fast.c" role="src" />

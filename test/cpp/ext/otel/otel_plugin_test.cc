@@ -358,6 +358,54 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsFalse) {
   ASSERT_TRUE(data.empty());
 }
 
+// Test that a server selector returning true records metrics on the server.
+TEST_F(OpenTelemetryPluginEnd2EndTest, ServerSelectorReturnsTrue) {
+  Init({grpc::OpenTelemetryPluginBuilder::
+            kServerCallDurationInstrumentName}, /*resource=*/
+       opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*labels_to_inject=*/{},
+       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       [](const grpc_core::ChannelArgs& /*channel_args*/) { return true; });
+  SendRPC();
+  const char* kMetricName = "grpc.server.call.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  const auto& server_attributes =
+      data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(server_attributes.size(), 2);
+  EXPECT_EQ(absl::get<std::string>(server_attributes.at("grpc.method")),
+            kMethodName);
+  EXPECT_EQ(absl::get<std::string>(server_attributes.at("grpc.status")), "OK");
+}
+
+// Test that a server selector returning false does not record metrics on the
+// server.
+TEST_F(OpenTelemetryPluginEnd2EndTest, ServerSelectorReturnsFalse) {
+  Init({grpc::OpenTelemetryPluginBuilder::
+            kServerCallDurationInstrumentName}, /*resource=*/
+       opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*labels_to_inject=*/{},
+       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       [](const grpc_core::ChannelArgs& /*channel_args*/) { return false; });
+  SendRPC();
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+          /*data*/) { return false; });
+  ASSERT_TRUE(data.empty());
+}
+
 // Test that a target attribute filter returning true records metrics with the
 // target as is on the channel.
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsTrue) {
@@ -368,6 +416,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsTrue) {
        /*test_no_meter_provider=*/false,
        /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
        /*target_attribute_filter=*/[](absl::string_view /*target*/) {
          return true;
        });
@@ -407,6 +457,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsFalse) {
        /*test_no_meter_provider=*/false,
        /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
        /*target_attribute_filter=*/
        [server_address = canonical_server_address_](
            absl::string_view /*target*/) { return false; });
@@ -475,6 +527,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
        /*test_no_meter_provider=*/false,
        /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
        /*generic_method_attribute_filter=*/
@@ -515,6 +569,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
        /*test_no_meter_provider=*/false,
        /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
        /*generic_method_attribute_filter=*/
@@ -583,6 +639,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
        /*test_no_meter_provider=*/false,
        /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
        /*generic_method_attribute_filter=*/
@@ -622,6 +680,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
        /*test_no_meter_provider=*/false,
        /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
        /*generic_method_attribute_filter=*/
@@ -757,6 +817,8 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
        /*test_no_meter_provider=*/false,
        /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
        /*generic_method_attribute_filter=*/
@@ -799,6 +861,8 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
        /*test_no_meter_provider=*/false,
        /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
        /*generic_method_attribute_filter=*/
@@ -842,6 +906,8 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
        /*test_no_meter_provider=*/false,
        /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
        /*generic_method_attribute_filter=*/
@@ -899,6 +965,8 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
        /*test_no_meter_provider=*/false,
        /*labels_to_inject=*/{},
        /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*server_selector=*/
+       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
        /*target_attribute_filter=*/
        absl::AnyInvocable<bool(absl::string_view) const>(),
        /*generic_method_attribute_filter=*/

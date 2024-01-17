@@ -89,6 +89,8 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
     }
     if (ep->Read(
             [self = Ref(), num_bytes_requested](absl::Status status) {
+              ApplicationCallbackExecCtx callback_exec_ctx;
+              ExecCtx exec_ctx;
               self->Complete(std::move(status), num_bytes_requested);
             },
             &pending_buffer, &read_args)) {

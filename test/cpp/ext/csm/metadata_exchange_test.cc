@@ -45,7 +45,7 @@ namespace {
 
 class TestScenario {
  public:
-  enum class ResourceType : std::uint8_t { kGke, kUnknown };
+  enum class ResourceType : std::uint8_t { kGke, kGce, kUnknown };
   enum class XdsBootstrapSource : std::uint8_t { kFromFile, kFromConfig };
 
   explicit TestScenario(ResourceType type, XdsBootstrapSource bootstrap_source)
@@ -55,6 +55,8 @@ class TestScenario {
     switch (type_) {
       case ResourceType::kGke:
         return TestGkeResource();
+      case ResourceType::kGce:
+        return TestGceResource();
       case ResourceType::kUnknown:
         return TestUnknownResource();
     }
@@ -65,6 +67,9 @@ class TestScenario {
     switch (info.param.type_) {
       case ResourceType::kGke:
         ret_val += "Gke";
+        break;
+      case ResourceType::kGce:
+        ret_val += "Gce";
         break;
       case ResourceType::kUnknown:
         ret_val += "Unknown";
@@ -94,6 +99,14 @@ class TestScenario {
     attributes.SetAttribute("k8s.namespace.name", "namespace");
     attributes.SetAttribute("k8s.cluster.name", "cluster");
     attributes.SetAttribute("cloud.region", "region");
+    attributes.SetAttribute("cloud.account.id", "id");
+    return opentelemetry::sdk::resource::Resource::Create(attributes);
+  }
+
+  static opentelemetry::sdk::resource::Resource TestGceResource() {
+    opentelemetry::sdk::common::AttributeMap attributes;
+    attributes.SetAttribute("cloud.platform", "gcp_compute_engine");
+    attributes.SetAttribute("cloud.availability_zone", "zone");
     attributes.SetAttribute("cloud.account.id", "id");
     return opentelemetry::sdk::resource::Resource::Create(attributes);
   }
@@ -163,6 +176,9 @@ class MetadataExchangeTest
         absl::get<std::string>(attributes.at("csm.workload_canonical_service")),
         "canonical_service");
     EXPECT_EQ(absl::get<std::string>(attributes.at("csm.mesh_id")), "mesh-id");
+    EXPECT_EQ(absl::get<std::string>(
+                  attributes.at("csm.remote_workload_canonical_service")),
+              "canonical_service");
     if (verify_client_only_attributes) {
       EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_name")),
                 "unknown");
@@ -190,9 +206,20 @@ class MetadataExchangeTest
         EXPECT_EQ(absl::get<std::string>(
                       attributes.at("csm.remote_workload_project_id")),
                   "id");
+        break;
+      case TestScenario::ResourceType::kGce:
+        EXPECT_EQ(
+            absl::get<std::string>(attributes.at("csm.remote_workload_type")),
+            "gcp_compute_engine");
+        EXPECT_EQ(
+            absl::get<std::string>(attributes.at("csm.remote_workload_name")),
+            "workload");
         EXPECT_EQ(absl::get<std::string>(
-                      attributes.at("csm.remote_workload_canonical_service")),
-                  "canonical_service");
+                      attributes.at("csm.remote_workload_location")),
+                  "zone");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("csm.remote_workload_project_id")),
+                  "id");
         break;
       case TestScenario::ResourceType::kUnknown:
         EXPECT_EQ(
@@ -365,6 +392,10 @@ INSTANTIATE_TEST_SUITE_P(
         TestScenario(TestScenario::ResourceType::kGke,
                      TestScenario::XdsBootstrapSource::kFromConfig),
         TestScenario(TestScenario::ResourceType::kGke,
+                     TestScenario::XdsBootstrapSource::kFromFile),
+        TestScenario(TestScenario::ResourceType::kGce,
+                     TestScenario::XdsBootstrapSource::kFromConfig),
+        TestScenario(TestScenario::ResourceType::kGce,
                      TestScenario::XdsBootstrapSource::kFromFile),
         TestScenario(TestScenario::ResourceType::kUnknown,
                      TestScenario::XdsBootstrapSource::kFromConfig),
