@@ -219,6 +219,7 @@ Pod::Spec.new do |s|
     abseil_version = '1.20230802.0'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
+    ss.dependency 'abseil/base/config', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
@@ -1012,6 +1013,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/crash.h',
                       'src/core/lib/gprpp/debug_location.h',
                       'src/core/lib/gprpp/directory_reader.h',
+                      'src/core/lib/gprpp/down_cast.h',
                       'src/core/lib/gprpp/dual_ref_counted.h',
                       'src/core/lib/gprpp/env.h',
                       'src/core/lib/gprpp/examine_stack.h',
@@ -2256,6 +2258,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/crash.h',
                               'src/core/lib/gprpp/debug_location.h',
                               'src/core/lib/gprpp/directory_reader.h',
+                              'src/core/lib/gprpp/down_cast.h',
                               'src/core/lib/gprpp/dual_ref_counted.h',
                               'src/core/lib/gprpp/env.h',
                               'src/core/lib/gprpp/examine_stack.h',
