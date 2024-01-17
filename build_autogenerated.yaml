@@ -7990,6 +7990,19 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: down_cast_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/down_cast.h
+  src:
+  - test/core/gprpp/down_cast_test.cc
+  deps:
+  - gtest
+  - absl/base:config
+  - gpr
+  uses_polling: false
 - name: dual_ref_counted_test
   gtest: true
   build: test
