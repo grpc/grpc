@@ -2532,6 +2532,7 @@ grpc_cc_library(
         "debug_location",
         "gpr_platform",
         "ref_counted_ptr",
+        "//src/core:down_cast",
         "//src/core:ref_counted",
     ],
 )
@@ -2564,6 +2565,7 @@ grpc_cc_library(
     deps = [
         "debug_location",
         "gpr_platform",
+        "//src/core:down_cast",
     ],
 )
 

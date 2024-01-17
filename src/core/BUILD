@@ -1080,6 +1080,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["lib/gprpp/dual_ref_counted.h"],
     deps = [
+        "down_cast",
         "//:debug_location",
         "//:gpr",
         "//:orphanable",
