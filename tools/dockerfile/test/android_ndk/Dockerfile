@@ -121,7 +121,7 @@ RUN yes | $ANDROID_SDK_PATH/tools/bin/sdkmanager --licenses  # accept all licens
 # Install Android NDK & CMake
 # This is not required but desirable to reduce the time to download and the chance of download failure.
 RUN mkdir -p ~/.android && touch ~/.android/repositories.cfg
-RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager 'ndk;25.1.8937393' 'cmake;3.18.1'
+RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager 'ndk;25.1.8937393' 'cmake;3.22.1'
 
 # Install gcloud
 RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-407.0.0-linux-x86_64.tar.gz && \

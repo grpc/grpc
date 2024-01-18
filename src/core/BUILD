@@ -5086,6 +5086,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "down_cast",
+    hdrs = ["lib/gprpp/down_cast.h"],
+    external_deps = ["absl/base:config"],
+    deps = ["//:gpr"],
+)
+
+grpc_cc_library(
     name = "status_conversion",
     srcs = ["lib/transport/status_conversion.cc"],
     hdrs = ["lib/transport/status_conversion.h"],
@@ -6629,6 +6636,177 @@ grpc_cc_library(
     ],
 )
 
+
+grpc_cc_library(
+    name = "call_final_info",
+    srcs = [
+        "lib/transport/call_final_info.cc",
+    ],
+    hdrs = [
+        "lib/transport/call_final_info.h",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "call_filters",
+    srcs = [
+        "lib/transport/call_filters.cc",
+    ],
+    hdrs = [
+        "lib/transport/call_filters.h",
+    ],
+    deps = [
+        "call_final_info",
+        "message",
+        "metadata",
+        "ref_counted",
+        "status_flag",
+        "//:gpr",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "parsed_metadata",
+    srcs = [
+        "lib/transport/parsed_metadata.cc",
+    ],
+    hdrs = [
+        "lib/transport/parsed_metadata.h",
+    ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/meta:type_traits",
+        "absl/strings",
+    ],
+    deps = [
+        "slice",
+        "time",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "metadata",
+    srcs = [
+        "lib/transport/metadata.cc",
+    ],
+    hdrs = [
+        "lib/transport/metadata.h",
+    ],
+    deps = [
+        "error_utils",
+        "metadata_batch",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "message",
+    srcs = [
+        "lib/transport/message.cc",
+    ],
+    hdrs = [
+        "lib/transport/message.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "arena",
+        "slice_buffer",
+        "//:gpr_platform",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "metadata_batch",
+    srcs = [
+        "lib/transport/metadata_batch.cc",
+    ],
+    hdrs = [
+        "lib/transport/custom_metadata.h",
+        "lib/transport/metadata_batch.h",
+        "lib/transport/simple_slice_based_metadata.h",
+    ],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/functional:function_ref",
+        "absl/meta:type_traits",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
+    deps = [
+        "arena",
+        "chunked_vector",
+        "compression_internal",
+        "experiments",
+        "if_list",
+        "metadata_compression_traits",
+        "packed_table",
+        "parsed_metadata",
+        "poll",
+        "slice",
+        "time",
+        "timeout_encoding",
+        "type_list",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "timeout_encoding",
+    srcs = [
+        "lib/transport/timeout_encoding.cc",
+    ],
+    hdrs = [
+        "lib/transport/timeout_encoding.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/types:optional",
+    ],
+    deps = [
+        "slice",
+        "time",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "compression_internal",
+    srcs = [
+        "lib/compression/compression_internal.cc",
+    ],
+    hdrs = [
+        "lib/compression/compression_internal.h",
+    ],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
+    deps = [
+        "bitset",
+        "channel_args",
+        "ref_counted_string",
+        "slice",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
+        "//:ref_counted_ptr",
+    ],
+)
+
 grpc_cc_library(
     name = "chaotic_good_server",
     srcs = [
@@ -6781,122 +6959,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:uri_parser",
-    ],
-)
-
-grpc_cc_library(
-    name = "metadata_batch",
-    srcs = [
-        "lib/transport/metadata_batch.cc",
-    ],
-    hdrs = [
-        "lib/transport/custom_metadata.h",
-        "lib/transport/metadata_batch.h",
-        "lib/transport/simple_slice_based_metadata.h",
-    ],
-    external_deps = [
-        "absl/container:inlined_vector",
-        "absl/functional:function_ref",
-        "absl/meta:type_traits",
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/types:optional",
-    ],
-    deps = [
-        "arena",
-        "chunked_vector",
-        "compression_internal",
-        "experiments",
-        "if_list",
-        "metadata_compression_traits",
-        "packed_table",
-        "parsed_metadata",
-        "poll",
-        "slice",
-        "time",
-        "timeout_encoding",
-        "type_list",
-        "//:gpr",
-        "//:grpc_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
-    name = "call_final_info",
-    srcs = [
-        "lib/transport/call_final_info.cc",
-    ],
-    hdrs = [
-        "lib/transport/call_final_info.h",
-    ],
-    deps = [
-        "//:gpr",
-        "//:grpc_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
-    name = "parsed_metadata",
-    srcs = [
-        "lib/transport/parsed_metadata.cc",
-    ],
-    hdrs = [
-        "lib/transport/parsed_metadata.h",
-    ],
-    external_deps = [
-        "absl/functional:function_ref",
-        "absl/meta:type_traits",
-        "absl/strings",
-    ],
-    deps = [
-        "slice",
-        "time",
-        "//:gpr_platform",
-    ],
-)
-
-grpc_cc_library(
-    name = "timeout_encoding",
-    srcs = [
-        "lib/transport/timeout_encoding.cc",
-    ],
-    hdrs = [
-        "lib/transport/timeout_encoding.h",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/types:optional",
-    ],
-    deps = [
-        "slice",
-        "time",
-        "//:gpr",
-    ],
-)
-
-grpc_cc_library(
-    name = "compression_internal",
-    srcs = [
-        "lib/compression/compression_internal.cc",
-    ],
-    hdrs = [
-        "lib/compression/compression_internal.h",
-    ],
-    external_deps = [
-        "absl/container:inlined_vector",
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/types:optional",
-    ],
-    deps = [
-        "bitset",
-        "channel_args",
-        "ref_counted_string",
-        "slice",
-        "//:gpr",
-        "//:grpc_public_hdrs",
-        "//:grpc_trace",
-        "//:ref_counted_ptr",
     ],
 )
 
