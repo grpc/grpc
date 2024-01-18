@@ -232,10 +232,10 @@ Poll<RefCountedPtr<ReclaimerQueue::Handle>> ReclaimerQueue::PollNext() {
   if (!empty) {
     // If we don't, but the queue is probably not empty, schedule an immediate
     // repoll.
-    Activity::current()->ForceImmediateRepoll();
+    GetContext<Activity>()->ForceImmediateRepoll();
   } else {
     // Otherwise, schedule a wakeup for whenever something is pushed.
-    state_->waker = Activity::current()->MakeNonOwningWaker();
+    state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
   }
   return Pending{};
 }
@@ -465,7 +465,7 @@ void BasicMemoryQuota::Start() {
             self->reclamation_counter_.fetch_add(1, std::memory_order_relaxed) +
             1;
         reclaimer->Run(ReclamationSweep(
-            self, token, Activity::current()->MakeNonOwningWaker()));
+            self, token, GetContext<Activity>()->MakeNonOwningWaker()));
         // Return a promise that will wait for our barrier. This will be
         // awoken by the token above being destroyed. So, once that token is
         // destroyed, we'll be able to proceed.

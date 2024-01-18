@@ -118,7 +118,7 @@ class ForEach {
   };
 
   std::string DebugTag() {
-    return absl::StrCat(Activity::current()->DebugTag(), " FOR_EACH[0x",
+    return absl::StrCat(GetContext<Activity>()->DebugTag(), " FOR_EACH[0x",
                         reinterpret_cast<uintptr_t>(this), "]: ");
   }
 

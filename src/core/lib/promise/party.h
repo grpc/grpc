@@ -385,10 +385,10 @@ class Party : public Activity, private Wakeable {
   // This is useful for implementing batching and the like: we can hold some
   // action until the rest of the party resolves itself.
   auto AfterCurrentPoll() {
-    GPR_DEBUG_ASSERT(Activity::current() == this);
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == this);
     sync_.WakeAfterPoll(CurrentParticipant());
     return [this, iteration = sync_.iteration()]() -> Poll<Empty> {
-      GPR_DEBUG_ASSERT(Activity::current() == this);
+      GPR_DEBUG_ASSERT(GetContext<Activity>() == this);
       if (iteration == sync_.iteration()) return Pending{};
       return Empty{};
     };
@@ -561,7 +561,7 @@ class Party : public Activity, private Wakeable {
       GPR_NO_UNIQUE_ADDRESS Promise promise_;
       GPR_NO_UNIQUE_ADDRESS Result result_;
     };
-    Waker waiter_{Activity::current()->MakeOwningWaker()};
+    Waker waiter_{GetContext<Activity>()->MakeOwningWaker()};
     std::atomic<State> state_{State::kFactory};
   };
 
@@ -606,6 +606,11 @@ class Party : public Activity, private Wakeable {
   // If the lower bit is unset, then this is a Participant*.
   // If the lower bit is set, then this is a ParticipantFactory*.
   std::atomic<Participant*> participants_[party_detail::kMaxParticipants] = {};
+};
+
+template <>
+struct ContextSubclass<Party> {
+  using Base = Activity;
 };
 
 template <typename Factory, typename OnComplete>

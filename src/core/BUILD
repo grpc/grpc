@@ -499,7 +499,10 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/context.h",
     ],
-    deps = ["//:gpr"],
+    deps = [
+        "down_cast",
+        "//:gpr",
+    ],
 )
 
 grpc_cc_library(

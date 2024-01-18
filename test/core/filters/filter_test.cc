@@ -219,7 +219,7 @@ bool FilterTestBase::Call::Impl::StepOnce() {
           events().ForwardedMessageServerToClient(call_, *p->value());
         }
         next_server_to_client_messages_.reset();
-        Activity::current()->ForceImmediateRepoll();
+        GetContext<Activity>()->ForceImmediateRepoll();
       }
     }
 
@@ -229,7 +229,7 @@ bool FilterTestBase::Call::Impl::StepOnce() {
           server_to_client_messages_sender_->Push(
               std::move(forward_server_to_client_messages_.front())));
       forward_server_to_client_messages_.pop();
-      Activity::current()->ForceImmediateRepoll();
+      GetContext<Activity>()->ForceImmediateRepoll();
     }
   }
 
@@ -251,7 +251,7 @@ bool FilterTestBase::Call::Impl::StepOnce() {
           events().ForwardedMessageClientToServer(call_, *p->value());
         }
         next_client_to_server_messages_.reset();
-        Activity::current()->ForceImmediateRepoll();
+        GetContext<Activity>()->ForceImmediateRepoll();
       }
     }
 
@@ -261,7 +261,7 @@ bool FilterTestBase::Call::Impl::StepOnce() {
           pipe_client_to_server_messages_.sender.Push(
               std::move(forward_client_to_server_messages_.front())));
       forward_client_to_server_messages_.pop();
-      Activity::current()->ForceImmediateRepoll();
+      GetContext<Activity>()->ForceImmediateRepoll();
     }
   }
 
