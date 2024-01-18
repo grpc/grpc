@@ -30,6 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "envoy/admin/v3/config_dump_shared.upb.h"
+#include "envoy/service/status/v3/csds.upb.h"
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.hpp"
 
@@ -176,9 +177,11 @@ class XdsApi {
                                 std::set<std::string>* cluster_names,
                                 Duration* load_reporting_interval);
 
-  // Assemble the client config proto message and return the serialized result.
-  std::string AssembleClientConfig(
-      const ResourceTypeMetadataMap& resource_type_metadata_map);
+  // Assemble and return the client config proto message.
+  envoy_service_status_v3_ClientConfig* AssembleClientConfig(
+      envoy_service_status_v3_ClientConfig* client_config,
+      const ResourceTypeMetadataMap& resource_type_metadata_map,
+      std::vector<std::string>* type_url_storage, upb_Arena* arena);
 
  private:
   XdsClient* client_;

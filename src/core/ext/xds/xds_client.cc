@@ -2047,7 +2047,7 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
   return snapshot_map;
 }
 
-std::string XdsClient::DumpClientConfigBinary() {
+XdsApi::ResourceTypeMetadataMap XdsClient::BuildResourceTypeMetadataMap() {
   MutexLock lock(&mu_);
   XdsApi::ResourceTypeMetadataMap resource_type_metadata_map;
   for (const auto& a : authority_state_map_) {  // authority
@@ -2064,8 +2064,16 @@ std::string XdsClient::DumpClientConfigBinary() {
       }
     }
   }
+  return resource_type_metadata_map;
+}
+
+void XdsClient::DumpClientConfig(
+    envoy_service_status_v3_ClientConfig* client_config,
+    const XdsApi::ResourceTypeMetadataMap& resource_type_metadata_map,
+    std::vector<std::string>* strings_holder, upb_Arena* arena) {
   // Assemble config dump messages
-  return api_.AssembleClientConfig(resource_type_metadata_map);
+  api_.AssembleClientConfig(client_config, resource_type_metadata_map,
+                            strings_holder, arena);
 }
 
 }  // namespace grpc_core
