@@ -116,11 +116,12 @@ template <typename Context>
 PromiseSpawner SpawnerForContext(
     Context context,
     grpc_event_engine::experimental::EventEngine* event_engine) {
-  return [context = std::move(context), event_engine](absl::string_view name,
-                                                      Promise<Empty> promise) {
+  return [context = std::move(context), event_engine](
+             absl::string_view name, Promise<Empty> promise) mutable {
     // Pass new promises via event engine to allow fuzzers to explore
     // reorderings of possibly interleaved spawns.
-    event_engine->Run([name, context, promise = std::move(promise)]() mutable {
+    event_engine->Run([name, context = std::move(context),
+                       promise = std::move(promise)]() mutable {
       context.SpawnInfallible(name, std::move(promise));
     });
   };
