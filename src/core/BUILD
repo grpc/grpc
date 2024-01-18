@@ -6715,7 +6715,6 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
     ],
-
     deps = [
         "arena",
         "slice_buffer",
