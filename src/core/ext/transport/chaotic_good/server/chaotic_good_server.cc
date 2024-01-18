@@ -269,7 +269,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       // Set timeout for waiting data endpoint connect.
       TrySeq(
           // []() {
-          Sleep(Timestamp::Now() + self->connection_->connection_deadline_),
+          Sleep(Timestamp::Now() + self->connection_->kConnectionDeadline),
           [self = self]() mutable -> absl::Status {
             MutexLock lock(&self->connection_->listener_->mu_);
             // Delete connection id from map when timeout;
@@ -373,8 +373,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                   StatusToString(status).c_str());
         }
       },
-      MakeScopedArena(self->connection_->initial_arena_size_,
-                      &memory_allocator),
+      MakeScopedArena(self->connection_->kInitialArenaSize, &memory_allocator),
       grpc_event_engine::experimental::GetDefaultEventEngine().get());
 }
 
@@ -386,7 +385,7 @@ Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                .GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
                .value();
   }
-  return Timestamp::Now() + connection_->connection_deadline_;
+  return Timestamp::Now() + connection_->kConnectionDeadline;
 }
 }  // namespace chaotic_good
 }  // namespace grpc_core

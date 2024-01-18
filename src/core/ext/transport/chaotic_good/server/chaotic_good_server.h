@@ -117,8 +117,8 @@ class ChaoticGoodServerListener
     std::string GenerateConnectionIDLocked();
     void NewConnectionID();
     std::shared_ptr<ChaoticGoodServerListener> listener_;
-    size_t initial_arena_size_ = 1024;
-    Duration connection_deadline_ = Duration::Seconds(5);
+    const size_t kInitialArenaSize = 1024;
+    const Duration kConnectionDeadline = Duration::Seconds(5);
     std::shared_ptr<HandshakingState> handshaking_state_;
     ActivityPtr receive_settings_activity_;
     std::shared_ptr<PromiseEndpoint> endpoint_;
