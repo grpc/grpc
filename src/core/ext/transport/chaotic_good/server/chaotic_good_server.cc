@@ -138,7 +138,6 @@ ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     : listener_(listener) {}
 
 ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
-  listener_.reset();
   if (receive_settings_activity_ != nullptr) receive_settings_activity_.reset();
 }
 
@@ -201,19 +200,18 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         // TODO(ladynana): find a way to resolve SeqState to actual value.
         return absl::OkStatus();
       },
-      [self = self]() {
+      [self]() {
         return self->connection_->endpoint_->ReadSlice(
             FrameHeader::kFrameHeaderSize);
       },
-      [self = self](Slice slice) mutable {
+      [self](Slice slice) {
         // Parse frame header
         auto frame_header = FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
             GRPC_SLICE_START_PTR(slice.c_slice())));
         GPR_ASSERT(frame_header.ok());
         return TrySeq(
             self->connection_->endpoint_->Read(frame_header->GetFrameLength()),
-            [frame_header = *frame_header,
-             self = self](SliceBuffer buffer) mutable {
+            [frame_header = *frame_header, self](SliceBuffer buffer) {
               // Read Setting frame.
               SettingsFrame frame;
               // Deserialize frame from read buffer.
@@ -252,7 +250,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             // TODO(ladynana): find a way to resolve SeqState to actual value.
             return absl::OkStatus();
           },
-          [self = self]() mutable {
+          [self]() {
             MutexLock lock(&self->connection_->listener_->mu_);
             auto latch =
                 self->connection_->listener_->connectivity_map_
@@ -270,7 +268,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       TrySeq(
           // []() {
           Sleep(Timestamp::Now() + self->connection_->kConnectionDeadline),
-          [self = self]() mutable -> absl::Status {
+          [self]() mutable -> absl::Status {
             MutexLock lock(&self->connection_->listener_->mu_);
             // Delete connection id from map when timeout;
             self->connection_->listener_->connectivity_map_.erase(std::string(
@@ -282,7 +280,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     ControlEndpointWriteSettingsFrame(std::shared_ptr<HandshakingState> self) {
   return TrySeq(
-      [self = self]() {
+      [self]() {
         self->connection_->NewConnectionID();
         SettingsFrame frame;
         ClientMetadataHandle metadata =
@@ -302,7 +300,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     DataEndpointWriteSettingsFrame(std::shared_ptr<HandshakingState> self) {
   return TrySeq(
-      [self = self]() mutable {
+      [self]() {
         // Send data endpoint setting frame
         SettingsFrame frame;
         ClientMetadataHandle metadata =
@@ -318,7 +316,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         return self->connection_->endpoint_->Write(
             std::move(write_buffer.control));
       },
-      [self = self]() mutable {
+      [self]() mutable {
         MutexLock lock(&self->connection_->listener_->mu_);
         // Set endpoint to latch
         self->connection_->listener_->connectivity_map_

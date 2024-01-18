@@ -78,6 +78,7 @@ void MaybeNotify(const DebugLocation& location, grpc_closure* notify,
   }
 }
 }  // namespace
+
 ChaoticGoodConnector::ChaoticGoodConnector()
     : event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
       handshake_mgr_(std::make_shared<HandshakeManager>()),
@@ -99,7 +100,7 @@ auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
   GPR_ASSERT(self->data_endpoint_ != nullptr);
   return TrySeq(
       self->data_endpoint_->ReadSlice(FrameHeader::kFrameHeaderSize),
-      [self = self](Slice slice) mutable {
+      [self](Slice slice) mutable {
         // Read setting frame;
         // Parse frame header
         GPR_ASSERT(self->data_endpoint_ != nullptr);
@@ -108,7 +109,7 @@ auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
                 GRPC_SLICE_START_PTR(slice.c_slice())));
         return If(
             frame_header_.ok(),
-            [frame_header_ = *frame_header_, self = self]() {
+            [frame_header_ = *frame_header_, self]() {
               auto frame_header_length = frame_header_.GetFrameLength();
               return TrySeq(self->data_endpoint_->Read(frame_header_length),
                             []() { return absl::OkStatus(); });
@@ -120,7 +121,7 @@ auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
 auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
     std::shared_ptr<ChaoticGoodConnector> self) {
   GPR_ASSERT(self->data_endpoint_ != nullptr);
-  return TrySeq([self = self]() mutable {
+  return [self]() {
     // Serialize setting frame.
     SettingsFrame frame;
     // frame.header set connectiion_type: control
@@ -135,7 +136,7 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
     frame.headers = std::move(metadata);
     auto write_buffer = frame.Serialize(&self->hpack_compressor_);
     return self->data_endpoint_->Write(std::move(write_buffer.control));
-  });
+  };
 }
 
 auto ChaoticGoodConnector::WaitForDataEndpointSetup(
@@ -143,8 +144,8 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
   // Data endpoint on_connect callback.
   grpc_event_engine::experimental::EventEngine::OnConnectCallback
       on_data_endpoint_connect =
-          [self = self](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
-                            endpoint) mutable {
+          [self](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
+                     endpoint) mutable {
             self->data_endpoint_latch_->Set(std::make_shared<PromiseEndpoint>(
                 std::move(endpoint.value()), SliceBuffer()));
             auto cb = self->wait_for_data_endpoint_callback_->MakeCallback();
@@ -161,15 +162,15 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
 
   return TrySeq(
       self->wait_for_data_endpoint_callback_->MakeWaitPromise(),
-      Race(TrySeq(self->data_endpoint_latch_->Wait(),
-                  [self = self](
-                      std::shared_ptr<PromiseEndpoint> data_endpoint) mutable {
-                    self->data_endpoint_.swap(data_endpoint);
-                    return TrySeq(
-                        DataEndpointWriteSettingsFrame(self),
-                        DataEndpointReadSettingsFrame(self),
-                        []() -> absl::Status { return absl::OkStatus(); });
-                  }),
+      Race(TrySeq(
+               self->data_endpoint_latch_->Wait(),
+               [self](std::shared_ptr<PromiseEndpoint> data_endpoint) mutable {
+                 self->data_endpoint_.swap(data_endpoint);
+                 return TrySeq(
+                     DataEndpointWriteSettingsFrame(self),
+                     DataEndpointReadSettingsFrame(self),
+                     []() -> absl::Status { return absl::OkStatus(); });
+               }),
            TrySeq(
                Sleep(Timestamp::Now() + Duration::Seconds(self->kTimeoutSecs)),
                []() -> absl::Status {
@@ -186,11 +187,11 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
         // TODO(ladynana): find a way to resolve SeqState to actual value.
         return absl::OkStatus();
       },
-      [self = self]() {
+      [self]() {
         return self->control_endpoint_->ReadSlice(
             FrameHeader::kFrameHeaderSize);
       },
-      [self = self](Slice slice) mutable {
+      [self](Slice slice) {
         // Parse frame header
         auto frame_header = FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
             GRPC_SLICE_START_PTR(slice.c_slice())));
@@ -198,8 +199,7 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
             frame_header.ok(),
             TrySeq(
                 self->control_endpoint_->Read(frame_header->GetFrameLength()),
-                [frame_header = *frame_header,
-                 self = self](SliceBuffer buffer) {
+                [frame_header = *frame_header, self](SliceBuffer buffer) {
                   // Deserialize setting frame.
                   SettingsFrame frame;
                   BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
@@ -221,7 +221,7 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
 
 auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
     std::shared_ptr<ChaoticGoodConnector> self) {
-  return TrySeq([self = self]() mutable {
+  return [self]() {
     GPR_ASSERT(self->control_endpoint_ != nullptr);
     // Serialize setting frame.
     SettingsFrame frame;
@@ -235,8 +235,9 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
     frame.headers = std::move(metadata);
     auto write_buffer = frame.Serialize(&self->hpack_compressor_);
     return self->control_endpoint_->Write(std::move(write_buffer.control));
-  });
+  };
 }
+
 void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                                    grpc_closure* notify) {
   {
@@ -337,6 +338,5 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
     self->handshake_mgr_.reset();
   }
 }
-
 }  // namespace chaotic_good
 }  // namespace grpc_core
