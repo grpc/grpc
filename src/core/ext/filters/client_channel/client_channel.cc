@@ -893,9 +893,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
       ABSL_GUARDED_BY(*chand_->work_serializer_);
-  std::set<std::unique_ptr<DataWatcherInterface>,
-           DataWatcherLessThan> data_watchers_
-      ABSL_GUARDED_BY(*chand_->work_serializer_);
+  std::set<std::unique_ptr<DataWatcherInterface>, DataWatcherLessThan>
+      data_watchers_ ABSL_GUARDED_BY(*chand_->work_serializer_);
 };
 
 //
