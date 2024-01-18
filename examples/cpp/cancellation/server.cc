@@ -19,6 +19,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
 #include "absl/strings/str_format.h"
 
 #include <grpcpp/grpcpp.h>

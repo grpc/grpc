@@ -411,6 +411,7 @@ with open("src/core/lib/config/config_vars.cc", "w") as C:
     print('#include "src/core/lib/config/config_vars.h"', file=C)
     print('#include "src/core/lib/config/load_config.h"', file=C)
     print('#include "absl/strings/escaping.h"', file=C)
+    print('#include "absl/strings/str_cat.h"', file=C)
     print('#include "absl/flags/flag.h"', file=C)
     print(file=C)
 

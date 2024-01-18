@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

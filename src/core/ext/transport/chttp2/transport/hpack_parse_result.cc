@@ -18,6 +18,7 @@
 
 #include <stddef.h>
 
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
 #include "absl/strings/str_format.h"
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"

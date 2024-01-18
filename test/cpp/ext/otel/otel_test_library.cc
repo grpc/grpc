@@ -19,6 +19,7 @@
 #include "test/cpp/ext/otel/otel_test_library.h"
 
 #include "absl/functional/any_invocable.h"
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
 #include "api/include/opentelemetry/metrics/provider.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

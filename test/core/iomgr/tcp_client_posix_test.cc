@@ -36,6 +36,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

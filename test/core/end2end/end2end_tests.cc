@@ -24,6 +24,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/compression.h>

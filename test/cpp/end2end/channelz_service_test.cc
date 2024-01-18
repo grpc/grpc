@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
