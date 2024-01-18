@@ -171,6 +171,10 @@ CallFilters::CallFilters(RefCountedPtr<Stack> stack)
     : stack_(std::move(stack)),
       call_data_(gpr_malloc_aligned(stack_->data_.call_data_size,
                                     stack_->data_.call_data_alignment)) {
+  for (const auto& constructor : stack_->data_.filter_constructor) {
+    constructor.call_init(Offset(call_data_, constructor.call_offset),
+                          constructor.channel_data);
+  }
   client_initial_metadata_state_.Start();
   client_to_server_message_state_.Start();
   server_initial_metadata_state_.Start();
@@ -178,14 +182,23 @@ CallFilters::CallFilters(RefCountedPtr<Stack> stack)
 }
 
 CallFilters::~CallFilters() {
-  if (call_data_ != nullptr) gpr_free_aligned(call_data_);
+  if (call_data_ != nullptr) {
+    for (const auto& destructor : stack_->data_.filter_destructor) {
+      destructor.call_destroy(Offset(call_data_, destructor.call_offset));
+    }
+    gpr_free_aligned(call_data_);
+  }
 }
 
 void CallFilters::SetStack(RefCountedPtr<Stack> stack) {
-  if (call_data_ != nullptr) gpr_free_aligned(call_data_);
+  GPR_ASSERT(call_data_ == nullptr);
   stack_ = std::move(stack);
   call_data_ = gpr_malloc_aligned(stack_->data_.call_data_size,
                                   stack_->data_.call_data_alignment);
+  for (const auto& constructor : stack_->data_.filter_constructor) {
+    constructor.call_init(Offset(call_data_, constructor.call_offset),
+                          constructor.channel_data);
+  }
   client_initial_metadata_state_.Start();
   client_to_server_message_state_.Start();
   server_initial_metadata_state_.Start();
