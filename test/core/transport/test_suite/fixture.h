@@ -51,27 +51,27 @@ class TransportFixtureRegistry {
 
 }  // namespace grpc_core
 
-#define TRANSPORT_FIXTURE(name)                                              \
-  class TransportFixture_##name : public grpc_core::TransportFixture {       \
-   public:                                                                   \
-    using TransportFixture::TransportFixture;                                \
-    ClientAndServerTransportPair CreateTransportPair(                        \
-        std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> \
-            event_engine) override;                                          \
-                                                                             \
-   private:                                                                  \
-    static grpc_core::TransportFixture* Create() {                           \
-      return new TransportFixture_##name();                                  \
-    }                                                                        \
-    static int registered_;                                                  \
-  };                                                                         \
-  int TransportFixture_##name::registered_ =                                 \
-      (grpc_core::TransportFixtureRegistry::Get().RegisterFixture(           \
-           #name, &TransportFixture_##name::Create),                         \
-       0);                                                                   \
-  grpc_core::TransportFixture::ClientAndServerTransportPair                  \
-      TransportFixture_##name::CreateTransportPair(                          \
-          std::shared_ptr<grpc_event_engine::experimental::                  \
-                              FuzzingEventEngine> event_engine GRPC_UNUSED)
+#define TRANSPORT_FIXTURE(name)                                                \
+  class TransportFixture_##name : public grpc_core::TransportFixture {         \
+   public:                                                                     \
+    using TransportFixture::TransportFixture;                                  \
+    ClientAndServerTransportPair CreateTransportPair(                          \
+        std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>   \
+            event_engine) override;                                            \
+                                                                               \
+   private:                                                                    \
+    static grpc_core::TransportFixture* Create() {                             \
+      return new TransportFixture_##name();                                    \
+    }                                                                          \
+    static int registered_;                                                    \
+  };                                                                           \
+  int TransportFixture_##name::registered_ =                                   \
+      (grpc_core::TransportFixtureRegistry::Get().RegisterFixture(             \
+           #name, &TransportFixture_##name::Create),                           \
+       0);                                                                     \
+  grpc_core::TransportFixture::ClientAndServerTransportPair                    \
+      TransportFixture_##name::CreateTransportPair(                            \
+          std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> \
+              event_engine GRPC_UNUSED)
 
 #endif  // GRPC_TEST_CORE_TRANSPORT_TEST_SUITE_FIXTURE_H
