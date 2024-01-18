@@ -139,7 +139,6 @@ class ChaoticGoodServerListener
  private:
   Server* server_;
   ChannelArgs args_;
-  grpc_event_engine::experimental::ChannelArgsEndpointConfig config_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>
       ee_listener_;

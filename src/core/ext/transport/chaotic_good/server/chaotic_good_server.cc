@@ -85,7 +85,6 @@ ChaoticGoodServerListener::ChaoticGoodServerListener(Server* server,
                                                      const ChannelArgs& args)
     : server_(server),
       args_(args),
-      config_(args_),
       event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
 
 ChaoticGoodServerListener::~ChaoticGoodServerListener() {}
@@ -107,7 +106,8 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(const char* addr) {
   };
   GPR_ASSERT(event_engine_ != nullptr);
   auto ee_listener = event_engine_->CreateListener(
-      std::move(accept_cb), std::move(shutdown_cb), config_,
+      std::move(accept_cb), std::move(shutdown_cb),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args_),
       std::make_unique<MemoryQuota>("chaotic_good_server_listener"));
   if (!ee_listener.ok()) {
     return ee_listener.status();

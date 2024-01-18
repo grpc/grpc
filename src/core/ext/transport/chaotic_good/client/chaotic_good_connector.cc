@@ -87,8 +87,6 @@ ChaoticGoodConnector::ChaoticGoodConnector()
   channel_args_ = channel_args_.SetObject(event_engine_);
   channel_args_ =
       channel_args_.Set(GRPC_ARG_RESOURCE_QUOTA, ResourceQuota::Default());
-  ee_config_ =
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args_);
 }
 ChaoticGoodConnector::~ChaoticGoodConnector() {
   if (connect_activity_ != nullptr) {
@@ -155,7 +153,8 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
           };
   self->event_engine_->Connect(
       std::move(on_data_endpoint_connect), *self->resolved_addr_,
-      self->ee_config_,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+          self->channel_args_),
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "data_endpoint_connection"),
       EventEngine::Duration(self->kTimeoutSecs));
@@ -270,7 +269,8 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
             OnHandshakeDone, this);
       };
   event_engine_->Connect(
-      std::move(on_connect), *resolved_addr_, ee_config_,
+      std::move(on_connect), *resolved_addr_,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args_),
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "data_endpoint_connection"),
       EventEngine::Duration(kTimeoutSecs));

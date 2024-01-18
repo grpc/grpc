@@ -91,7 +91,6 @@ class ChaoticGoodConnector
   const size_t kInitialArenaSize = 1024;
   absl::StatusOr<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
       resolved_addr_;
-  grpc_event_engine::experimental::ChannelArgsEndpointConfig ee_config_;
 
   std::shared_ptr<PromiseEndpoint> control_endpoint_;
   std::shared_ptr<PromiseEndpoint> data_endpoint_;
