@@ -55,13 +55,12 @@ template <typename T, typename = void>
 class Context;
 
 template <typename T>
-class Context<T, absl::void_t<decltype(ContextType<T>())>>
-    : public ContextType<T> {
+class ThreadLocalContext : public ContextType<T> {
  public:
-  explicit Context(T* p) : old_(current_) { current_ = p; }
-  ~Context() { current_ = old_; }
-  Context(const Context&) = delete;
-  Context& operator=(const Context&) = delete;
+  explicit ThreadLocalContext(T* p) : old_(current_) { current_ = p; }
+  ~ThreadLocalContext() { current_ = old_; }
+  ThreadLocalContext(const ThreadLocalContext&) = delete;
+  ThreadLocalContext& operator=(const ThreadLocalContext&) = delete;
 
   static T* get() { return current_; }
 
@@ -71,7 +70,13 @@ class Context<T, absl::void_t<decltype(ContextType<T>())>>
 };
 
 template <typename T>
-thread_local T* Context<T, absl::void_t<decltype(ContextType<T>())>>::current_;
+thread_local T* ThreadLocalContext<T>::current_;
+
+template <typename T>
+class Context<T, absl::void_t<decltype(ContextType<T>())>>
+    : public ThreadLocalContext<T> {
+  using ThreadLocalContext<T>::ThreadLocalContext;
+};
 
 template <typename T>
 class Context<T, absl::void_t<typename ContextSubclass<T>::Base>>
