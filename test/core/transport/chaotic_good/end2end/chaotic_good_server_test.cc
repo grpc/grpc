@@ -99,8 +99,6 @@ class ChaoticGoodServerTest : public ::testing::Test {
     auto* shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
     core_server_->ShutdownAndNotify(shutdown_cq, nullptr);
     grpc_completion_queue_destroy(shutdown_cq);
-    if (connector_ != nullptr) connector_.reset();
-    if (listener_ != nullptr) listener_.reset();
   }
 
   void StartServer() {

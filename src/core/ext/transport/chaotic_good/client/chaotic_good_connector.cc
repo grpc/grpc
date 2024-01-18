@@ -248,7 +248,6 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
       reinterpret_cast<const sockaddr*>(args_.address->addr),
       args_.address->len);
   GPR_ASSERT(resolved_addr_.value().address() != nullptr);
-  Ref().release();  // Ref held by OnHandshakeDone().
   grpc_event_engine::experimental::EventEngine::OnConnectCallback on_connect =
       [this](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
         if (!endpoint.ok() || handshake_mgr_ == nullptr) {
@@ -313,10 +312,6 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         EventEngineWakeupScheduler(
             grpc_event_engine::experimental::GetDefaultEventEngine()),
         [self](absl::Status status) {
-          MutexLock lock(&self->mu_);
-          if (self->handshake_mgr_ != nullptr) {
-            self->handshake_mgr_.reset();
-          }
           MaybeNotify(DEBUG_LOCATION, self->notify_, status);
         },
         MakeScopedArena(self->kInitialArenaSize, &memory_allocator),
@@ -327,10 +322,6 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
     self->result_->Reset();
     auto error = GRPC_ERROR_CREATE("handshake complete with empty endpoint.");
     MaybeNotify(DEBUG_LOCATION, self->notify_, error);
-  }
-  MutexLock lock(&self->mu_);
-  if (self->handshake_mgr_ != nullptr) {
-    self->handshake_mgr_.reset();
   }
 }
 }  // namespace chaotic_good
