@@ -285,7 +285,7 @@ class ContextHolder<std::unique_ptr<Context, Deleter>> {
 template <>
 class Context<Activity> {
  public:
-  static Activity* get() { return GetContext<Activity>(); }
+  static Activity* get() { return Activity::current(); }
 };
 
 template <typename HeldContext>
