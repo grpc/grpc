@@ -72,9 +72,7 @@ cdef enum AioServerStatus:
 cdef class _ConcurrentRpcLimiter:
     cdef int _maximum_concurrent_rpcs
     cdef int _active_rpcs
-    cdef object _active_rpcs_condition # asyncio.Condition
-    cdef object _loop  # asyncio.EventLoop
-    cdef bint _concurrency_exceeded
+    cdef bint limiter_concurrency_exceeded
 
 
 cdef class AioServer:

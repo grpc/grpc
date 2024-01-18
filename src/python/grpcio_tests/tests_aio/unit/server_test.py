@@ -591,16 +591,25 @@ class TestServer(AioTestBase):
         await_tasks = asyncio.wait(rpc_tasks, return_when=asyncio.ALL_COMPLETED)
 
         done, _ = await await_tasks
+        exceptions = []
         for task in done:
             exception = task.exception()
             if exception:
-                self.assertTrue(isinstance(exception, aio.AioRpcError))
-                self.assertEqual(
-                    grpc.StatusCode.RESOURCE_EXHAUSTED, exception.code()
-                )
-                self.assertIn(
-                    "Concurrent RPC limit exceeded", exception.details()
-                )
+                exceptions.append(exception)
+
+        # Check whether the number of tasks raised RESOURCE_EXHAUSTED is roughly
+        # 2 * _MAXIMUM_CONCURRENT_RPCS.
+        self.assertAlmostEqual(
+            len(exceptions),
+            2 * _MAXIMUM_CONCURRENT_RPCS,
+            delta=_MAXIMUM_CONCURRENT_RPCS,
+        )
+        for exception in exceptions:
+            self.assertTrue(isinstance(exception, aio.AioRpcError))
+            self.assertEqual(
+                grpc.StatusCode.RESOURCE_EXHAUSTED, exception.code()
+            )
+            self.assertIn("Concurrent RPC limit exceeded", exception.details())
 
         # Clean-up
         await channel.close()

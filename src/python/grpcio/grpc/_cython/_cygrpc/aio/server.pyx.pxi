@@ -859,37 +859,23 @@ cdef CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHan
 
 cdef class _ConcurrentRpcLimiter:
 
-    def __cinit__(self, int maximum_concurrent_rpcs, object loop):
+    def __cinit__(self, int maximum_concurrent_rpcs):
         if maximum_concurrent_rpcs <= 0:
             raise ValueError("maximum_concurrent_rpcs should be a postive integer")
         self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
         self._active_rpcs = 0
-        self._active_rpcs_condition = asyncio.Condition()
-        self._loop = loop
-        self._concurrency_exceeded = False
+        self.limiter_concurrency_exceeded = False
 
-    async def check_before_request_call(self):
-        await self._active_rpcs_condition.acquire()
-        try:
-            if self._active_rpcs >= self._maximum_concurrent_rpcs:
-                self._concurrency_exceeded = True
-            else:
-                self._active_rpcs += 1
-        finally:
-            self._active_rpcs_condition.release()
-
-    async def _decrease_active_rpcs_count_with_lock(self):
-        await self._active_rpcs_condition.acquire()
-        try:
-            self._active_rpcs -= 1
-            if self._active_rpcs < self._maximum_concurrent_rpcs:
-                self._concurrency_exceeded = False
-            self._active_rpcs_condition.notify()
-        finally:
-            self._active_rpcs_condition.release()
+    def check_before_request_call(self):
+        if self._active_rpcs >= self._maximum_concurrent_rpcs:
+            self.limiter_concurrency_exceeded = True
+        else:
+            self._active_rpcs += 1
 
     def _decrease_active_rpcs_count(self, unused_future):
-        self._loop.create_task(self._decrease_active_rpcs_count_with_lock())
+        self._active_rpcs -= 1
+        if self._active_rpcs < self._maximum_concurrent_rpcs:
+            self.limiter_concurrency_exceeded = False
 
     def decrease_once_finished(self, object rpc_task):
         rpc_task.add_done_callback(self._decrease_active_rpcs_count)
@@ -931,8 +917,7 @@ cdef class AioServer:
 
         self._thread_pool = thread_pool
         if maximum_concurrent_rpcs is not None:
-            self._limiter = _ConcurrentRpcLimiter(maximum_concurrent_rpcs,
-                                                  loop)
+            self._limiter = _ConcurrentRpcLimiter(maximum_concurrent_rpcs)
 
     def add_generic_rpc_handlers(self, object generic_rpc_handlers):
         self._generic_handlers.extend(generic_rpc_handlers)
@@ -977,8 +962,8 @@ cdef class AioServer:
 
             concurrency_exceeded = False
             if self._limiter is not None:
-                await self._limiter.check_before_request_call()
-                concurrency_exceeded = self._limiter._concurrency_exceeded
+                self._limiter.check_before_request_call()
+                concurrency_exceeded = self._limiter.limiter_concurrency_exceeded
 
             # Accepts new request from Core
             rpc_state = await self._request_call()
