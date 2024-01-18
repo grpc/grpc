@@ -50,12 +50,12 @@ class BaseContext {
   ~BaseContext() = default;
 };
 
-class CorrectContext : public BaseContext {
+class CorrectContext final : public BaseContext {
  public:
   int Answer() override { return 42; }
 };
 
-class IncorrectContext : public BaseContext {
+class IncorrectContext final : public BaseContext {
  public:
   int Answer() override { return 0; }
 };
