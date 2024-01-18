@@ -32,9 +32,14 @@ def grpc_transport_test(name, deps):
         name = name + "_fuzzer",
         srcs = ["fuzzer_main.cc"],
         tags = ["no_windows"],
+        external_deps = [
+            "gtest",
+        ],
         deps = [
             ":test",
+            ":fixture",
             ":fuzzer",
+            "//:event_engine_base_hdrs",
             "//:config_vars",
             "//:exec_ctx",
             "//:gpr",

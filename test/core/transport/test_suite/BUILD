@@ -65,6 +65,7 @@ grpc_cc_library(
     hdrs = ["test.h"],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/random",
         "absl/random:bit_gen_ref",
         "absl/strings",
         "gtest",
@@ -85,6 +86,7 @@ grpc_cc_library(
     name = "test_main",
     testonly = 1,
     srcs = ["test_main.cc"],
+    external_deps = ["absl/random"],
     deps = [
         "fixture",
         "test",
@@ -97,9 +99,8 @@ grpc_cc_library(
     name = "call_content",
     testonly = 1,
     srcs = ["call_content.cc"],
-    deps = [
-        ":test",
-    ],
+    external_deps = ["gtest"],
+    deps = ["test"],
     alwayslink = 1,
 )
 
@@ -107,9 +108,7 @@ grpc_cc_library(
     name = "call_shapes",
     testonly = 1,
     srcs = ["call_shapes.cc"],
-    deps = [
-        ":test",
-    ],
+    deps = ["test"],
     alwayslink = 1,
 )
 
@@ -117,9 +116,7 @@ grpc_cc_library(
     name = "no_op",
     testonly = 1,
     srcs = ["no_op.cc"],
-    deps = [
-        ":test",
-    ],
+    deps = ["test"],
     alwayslink = 1,
 )
 
@@ -127,9 +124,8 @@ grpc_cc_library(
     name = "stress",
     testonly = 1,
     srcs = ["stress.cc"],
-    deps = [
-        ":test",
-    ],
+    external_deps = ["absl/random"],
+    deps = ["test"],
     alwayslink = 1,
 )
 
