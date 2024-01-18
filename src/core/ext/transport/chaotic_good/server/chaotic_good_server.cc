@@ -196,14 +196,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::Start(
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     EndpointReadSettingsFrame(std::shared_ptr<HandshakingState> self) {
   return TrySeq(
-      []() {
-        // TODO(ladynana): find a way to resolve SeqState to actual value.
-        return absl::OkStatus();
-      },
-      [self]() {
-        return self->connection_->endpoint_->ReadSlice(
-            FrameHeader::kFrameHeaderSize);
-      },
+      self->connection_->endpoint_->ReadSlice(FrameHeader::kFrameHeaderSize),
       [self](Slice slice) {
         // Parse frame header
         auto frame_header = FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
@@ -359,10 +352,12 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "server_connection");
   self->connection_->receive_settings_activity_ = MakeActivity(
-      TrySeq(EndpointReadSettingsFrame(self),
-             [self](bool is_control_endpoint) {
-               return EndpointWriteSettingsFrame(self, is_control_endpoint);
-             }),
+      [self]() {
+        return TrySeq(
+            EndpointReadSettingsFrame(self), [self](bool is_control_endpoint) {
+              return EndpointWriteSettingsFrame(self, is_control_endpoint);
+            });
+      },
       EventEngineWakeupScheduler(
           grpc_event_engine::experimental::GetDefaultEventEngine()),
       [](absl::Status status) {

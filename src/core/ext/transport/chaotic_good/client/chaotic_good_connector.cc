@@ -183,14 +183,7 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
     std::shared_ptr<ChaoticGoodConnector> self) {
   GPR_ASSERT(self->control_endpoint_ != nullptr);
   return TrySeq(
-      []() {
-        // TODO(ladynana): find a way to resolve SeqState to actual value.
-        return absl::OkStatus();
-      },
-      [self]() {
-        return self->control_endpoint_->ReadSlice(
-            FrameHeader::kFrameHeaderSize);
-      },
+      self->control_endpoint_->ReadSlice(FrameHeader::kFrameHeaderSize),
       [self](Slice slice) {
         // Parse frame header
         auto frame_header = FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
@@ -312,9 +305,11 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
             "connect_activity");
     self->connect_activity_ = MakeActivity(
-        TrySeq(ControlEndpointWriteSettingsFrame(self),
-               ControlEndpointReadSettingsFrame(self),
-               []() { return absl::OkStatus(); }),
+        [self] {
+          return TrySeq(ControlEndpointWriteSettingsFrame(self),
+                        ControlEndpointReadSettingsFrame(self),
+                        []() { return absl::OkStatus(); });
+        },
         EventEngineWakeupScheduler(
             grpc_event_engine::experimental::GetDefaultEventEngine()),
         [self](absl::Status status) {
