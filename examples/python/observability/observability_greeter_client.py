@@ -16,7 +16,7 @@
 from collections import defaultdict
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Optional
 
 import grpc
 import grpc_observability

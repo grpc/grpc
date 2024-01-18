@@ -12,25 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import defaultdict
-import datetime
-import logging
-import os
-import sys
-import time
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Dict, List
 
-import grpc_observability
-from grpc_observability import _open_telemetry_measures
-from grpc_observability._open_telemetry_plugin import GRPC_METHOD_LABEL
-from grpc_observability._open_telemetry_plugin import GRPC_OTHER_LABEL_VALUE
-from grpc_observability._open_telemetry_plugin import GRPC_TARGET_LABEL
-from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import AggregationTemporality
 from opentelemetry.sdk.metrics.export import MetricExportResult
 from opentelemetry.sdk.metrics.export import MetricExporter
 from opentelemetry.sdk.metrics.export import MetricsData
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 
 
 class OTelMetricExporter(MetricExporter):
