@@ -19842,6 +19842,14 @@ add_executable(observable_test
   src/core/lib/promise/activity.cc
   test/core/promise/observable_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(observable_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(observable_test PUBLIC cxx_std_14)
 target_include_directories(observable_test
   PRIVATE
