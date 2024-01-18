@@ -26,7 +26,6 @@ import open_telemetry_exporter
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 
-
 OTEL_EXPORT_INTERVAL_S = 0.5
 
 
@@ -48,13 +47,13 @@ def run():
     provider = MeterProvider(metric_readers=[reader])
     otel_plugin = BaseOpenTelemetryPlugin(provider)
 
-    with grpc_observability.OpenTelemetryObservability(
-        plugins=[otel_plugin]
-    ):
+    with grpc_observability.OpenTelemetryObservability(plugins=[otel_plugin]):
         with grpc.insecure_channel(target="localhost:50051") as channel:
             stub = helloworld_pb2_grpc.GreeterStub(channel)
             try:
-                response = stub.SayHello(helloworld_pb2.HelloRequest(name="You"))
+                response = stub.SayHello(
+                    helloworld_pb2.HelloRequest(name="You")
+                )
                 print(f"Greeter client received: {response.message}")
             except grpc.RpcError as rpc_error:
                 print("Call failed with code: ", rpc_error.code())
@@ -65,6 +64,7 @@ def run():
     print("Metrics exported on client side:")
     for metric in all_metrics:
         print(metric)
+
 
 if __name__ == "__main__":
     logging.basicConfig()

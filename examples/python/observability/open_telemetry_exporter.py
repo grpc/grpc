@@ -32,6 +32,7 @@ from opentelemetry.sdk.metrics.export import MetricExporter
 from opentelemetry.sdk.metrics.export import MetricsData
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 
+
 class OTelMetricExporter(MetricExporter):
     """Implementation of :class:`MetricExporter` that export metrics to the
     provided metric_list.

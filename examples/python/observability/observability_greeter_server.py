@@ -29,6 +29,7 @@ from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 
 OTEL_EXPORT_INTERVAL_S = 0.5
 
+
 class BaseOpenTelemetryPlugin(grpc_observability.OpenTelemetryPlugin):
     def __init__(self, provider: MeterProvider):
         self.provider = provider
@@ -45,7 +46,9 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
 def serve():
     all_metrics = defaultdict(list)
-    otel_exporter = open_telemetry_exporter.OTelMetricExporter(all_metrics, print_live=False)
+    otel_exporter = open_telemetry_exporter.OTelMetricExporter(
+        all_metrics, print_live=False
+    )
     reader = PeriodicExportingMetricReader(
         exporter=otel_exporter,
         export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
@@ -54,9 +57,7 @@ def serve():
     otel_plugin = BaseOpenTelemetryPlugin(provider)
     port = "50051"
 
-    with grpc_observability.OpenTelemetryObservability(
-        plugins=[otel_plugin]
-    ):
+    with grpc_observability.OpenTelemetryObservability(plugins=[otel_plugin]):
         server = grpc.server(
             thread_pool=futures.ThreadPoolExecutor(max_workers=10),
         )
@@ -71,6 +72,7 @@ def serve():
             print(metric)
 
         server.stop(0)
+
 
 if __name__ == "__main__":
     logging.basicConfig()

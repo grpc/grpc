@@ -91,7 +91,7 @@ class OpenTelemetryPluginOption(abc.ABC):
 # pylint: disable=no-self-use
 class OpenTelemetryPlugin:
     """Describes a Plugin for OpenTelemetry observability.
-    
+
     This is class is part of an EXPERIMENTAL API.
     """
 
