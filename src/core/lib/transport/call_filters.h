@@ -644,7 +644,7 @@ struct StackData {
       std::is_empty<typename FilterType::Call>::value &&
           std::is_trivially_constructible<typename FilterType::Call>::value,
       size_t>
-  AddFilterConstructor(FilterType* channel_data) {
+  AddFilterConstructor(FilterType*) {
     const size_t alignment = alignof(typename FilterType::Call);
     call_data_alignment = std::max(call_data_alignment, alignment);
     return 0;
@@ -665,7 +665,7 @@ struct StackData {
   template <typename FilterType>
   absl::enable_if_t<
       std::is_trivially_destructible<typename FilterType::Call>::value>
-  AddFilterDestructor(size_t call_offset) {}
+  AddFilterDestructor(size_t) {}
 
   template <typename FilterType>
   size_t AddFilter(FilterType* filter) {
