@@ -27,8 +27,7 @@ grpc_cc_library(
         "no_windows",
     ],
     visibility = [
-        "//src/objective-c/tests:__subpackages__",
-        "//test:__subpackages__",
+        "//visibility:private",  # Only private by automation, not intent. Owner may accept CLs adding visibility. See go/scheuklappen#explicit-private.
     ],
     deps = [
         "//:gpr_platform",
