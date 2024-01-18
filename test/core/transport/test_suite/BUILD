@@ -100,6 +100,7 @@ grpc_cc_library(
     deps = [
         ":test",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(
@@ -109,6 +110,7 @@ grpc_cc_library(
     deps = [
         ":test",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(
@@ -118,6 +120,7 @@ grpc_cc_library(
     deps = [
         ":test",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(
@@ -127,6 +130,7 @@ grpc_cc_library(
     deps = [
         ":test",
     ],
+    alwayslink = 1,
 )
 
 grpc_proto_library(

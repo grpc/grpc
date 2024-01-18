@@ -43,6 +43,8 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
   const auto& tests = grpc_core::TransportTestRegistry::Get().tests();
   const auto& fixtures = grpc_core::TransportFixtureRegistry::Get().fixtures();
+  GPR_ASSERT(!tests.empty());
+  GPR_ASSERT(!fixtures.empty());
   const int test_id = msg.test_id() % tests.size();
   const int fixture_id = msg.fixture_id() % fixtures.size();
 
