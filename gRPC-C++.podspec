@@ -221,6 +221,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
+    ss.dependency 'abseil/container/fixed_array', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -1389,11 +1390,8 @@ Pod::Spec.new do |s|
                       'third_party/re2/re2/unicode_groups.h',
                       'third_party/re2/re2/walker-inl.h',
                       'third_party/re2/util/logging.h',
-                      'third_party/re2/util/mix.h',
-                      'third_party/re2/util/mutex.h',
                       'third_party/re2/util/strutil.h',
                       'third_party/re2/util/utf.h',
-                      'third_party/re2/util/util.h',
                       'third_party/upb/upb/base/descriptor_constants.h',
                       'third_party/upb/upb/base/internal/log2.h',
                       'third_party/upb/upb/base/status.h',
@@ -2589,11 +2587,8 @@ Pod::Spec.new do |s|
                               'third_party/re2/re2/unicode_groups.h',
                               'third_party/re2/re2/walker-inl.h',
                               'third_party/re2/util/logging.h',
-                              'third_party/re2/util/mix.h',
-                              'third_party/re2/util/mutex.h',
                               'third_party/re2/util/strutil.h',
                               'third_party/re2/util/utf.h',
-                              'third_party/re2/util/util.h',
                               'third_party/upb/upb/base/descriptor_constants.h',
                               'third_party/upb/upb/base/internal/log2.h',
                               'third_party/upb/upb/base/status.h',
