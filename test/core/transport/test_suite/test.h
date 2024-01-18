@@ -149,9 +149,8 @@ Promise<Empty> WrapPromiseAndNext(std::shared_ptr<ActionState> action_state,
 }
 
 template <typename Arg>
-NextSpawner<Arg> WrapFollowUps(NameAndLocation loc,
-                               ActionStateFactory action_state_factory,
-                               PromiseSpawner spawner) {
+NextSpawner<Arg> WrapFollowUps(NameAndLocation, ActionStateFactory,
+                               PromiseSpawner) {
   return [](Empty) {};
 }
 
@@ -216,7 +215,7 @@ class TransportTest : public ::testing::Test {
                   options;
               return options;
             }(),
-            fuzzing_event_engine::Actions())),
+            actions)),
         fixture_(std::move(fixture)),
         rng_(rng) {}
 

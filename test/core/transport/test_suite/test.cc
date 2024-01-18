@@ -231,7 +231,7 @@ Arena* TransportTest::Acceptor::CreateArena() {
 }
 
 absl::StatusOr<CallInitiator> TransportTest::Acceptor::CreateCall(
-    ClientMetadata& client_initial_metadata, Arena* arena) {
+    ClientMetadata&, Arena* arena) {
   auto call = MakeCall(event_engine_, arena);
   handlers_.push(std::move(call.handler));
   return std::move(call.initiator);
