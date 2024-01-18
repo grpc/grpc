@@ -1042,6 +1042,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "observable",
+    hdrs = [
+        "lib/promise/observable.h",
+    ],
+    external_deps = ["absl/container:flat_hash_set"],
+    language = "c++",
+    deps = [
+        "activity",
+        "poll",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "for_each",
     external_deps = [
         "absl/status",
@@ -6713,6 +6727,9 @@ grpc_cc_library(
     ],
     hdrs = [
         "lib/transport/message.h",
+    ],
+    external_deps = [
+        "absl/strings",
     ],
     deps = [
         "arena",
