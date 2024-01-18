@@ -1046,15 +1046,12 @@ grpc_cc_library(
     hdrs = [
         "lib/promise/observable.h",
     ],
-    external_deps = ["absl/base:core_headers"],
+    external_deps = ["absl/container:flat_hash_set"],
     language = "c++",
     deps = [
         "activity",
         "poll",
-        "ref_counted",
-        "wait_set",
         "//:gpr",
-        "//:ref_counted_ptr",
     ],
 )
 
