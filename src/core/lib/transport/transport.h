@@ -63,6 +63,8 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/message.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
@@ -74,93 +76,7 @@
 
 #define GRPC_ARG_TRANSPORT "grpc.internal.transport"
 
-/// Internal bit flag for grpc_begin_message's \a flags signaling the use of
-/// compression for the message. (Does not apply for stream compression.)
-#define GRPC_WRITE_INTERNAL_COMPRESS (0x80000000u)
-/// Internal bit flag for determining whether the message was compressed and had
-/// to be decompressed by the message_decompress filter. (Does not apply for
-/// stream compression.)
-#define GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED (0x40000000u)
-/// Mask of all valid internal flags.
-#define GRPC_WRITE_INTERNAL_USED_MASK \
-  (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
-
 namespace grpc_core {
-
-// Server metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ServerMetadata = grpc_metadata_batch;
-using ServerMetadataHandle = Arena::PoolPtr<ServerMetadata>;
-
-// Client initial metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ClientMetadata = grpc_metadata_batch;
-using ClientMetadataHandle = Arena::PoolPtr<ClientMetadata>;
-
-class Message {
- public:
-  Message() = default;
-  ~Message() = default;
-  Message(SliceBuffer payload, uint32_t flags)
-      : payload_(std::move(payload)), flags_(flags) {}
-  Message(const Message&) = delete;
-  Message& operator=(const Message&) = delete;
-
-  uint32_t flags() const { return flags_; }
-  uint32_t& mutable_flags() { return flags_; }
-  SliceBuffer* payload() { return &payload_; }
-  const SliceBuffer* payload() const { return &payload_; }
-
-  std::string DebugString() const;
-
- private:
-  SliceBuffer payload_;
-  uint32_t flags_ = 0;
-};
-
-using MessageHandle = Arena::PoolPtr<Message>;
-
-// Ok/not-ok check for trailing metadata, so that it can be used as result types
-// for TrySeq.
-inline bool IsStatusOk(const ServerMetadataHandle& m) {
-  return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
-         GRPC_STATUS_OK;
-}
-
-ServerMetadataHandle ServerMetadataFromStatus(
-    const absl::Status& status, Arena* arena = GetContext<Arena>());
-
-template <>
-struct StatusCastImpl<ServerMetadataHandle, absl::Status> {
-  static ServerMetadataHandle Cast(const absl::Status& m) {
-    return ServerMetadataFromStatus(m);
-  }
-};
-
-template <>
-struct StatusCastImpl<ServerMetadataHandle, const absl::Status&> {
-  static ServerMetadataHandle Cast(const absl::Status& m) {
-    return ServerMetadataFromStatus(m);
-  }
-};
-
-template <>
-struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
-  static ServerMetadataHandle Cast(const absl::Status& m) {
-    return ServerMetadataFromStatus(m);
-  }
-};
-
-// Anything that can be first cast to absl::Status can then be cast to
-// ServerMetadataHandle.
-template <typename T>
-struct StatusCastImpl<
-    ServerMetadataHandle, T,
-    absl::void_t<decltype(StatusCast<absl::Status>(std::declval<T>()))>> {
-  static ServerMetadataHandle Cast(const T& m) {
-    return ServerMetadataFromStatus(StatusCast<absl::Status>(m));
-  }
-};
 
 // Move only type that tracks call startup.
 // Allows observation of when client_initial_metadata has been processed by the
