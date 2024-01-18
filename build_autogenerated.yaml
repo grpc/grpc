@@ -12149,7 +12149,6 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/wait_set.h
   src:
   - src/core/lib/promise/activity.cc
   - test/core/promise/observable_test.cc
