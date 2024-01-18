@@ -7979,6 +7979,7 @@ targets:
   deps:
   - gtest
   - absl/base:config
+  - absl/meta:type_traits
   - gpr
   uses_polling: false
 - name: core_configuration_test

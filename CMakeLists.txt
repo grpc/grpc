@@ -11431,6 +11431,7 @@ target_link_libraries(context_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::type_traits
   gpr
 )
 
