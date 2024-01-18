@@ -6636,7 +6636,6 @@ grpc_cc_library(
     ],
 )
 
-
 grpc_cc_library(
     name = "call_final_info",
     srcs = [
