@@ -88,12 +88,20 @@ class ChaoticGoodServerTest : public ::testing::Test {
     event_engine_ = std::shared_ptr<EventEngine>(
         grpc_event_engine::experimental::CreateEventEngine());
     channel_args_ = channel_args_.SetObject(event_engine_);
-    resource_quota_ = ResourceQuota::Default();
-    channel_args_ = channel_args_.Set(GRPC_ARG_RESOURCE_QUOTA, resource_quota_);
+    auto resource_quota = ResourceQuota::Default();
+    channel_args_ =
+        channel_args_.Set(GRPC_ARG_RESOURCE_QUOTA, std::move(resource_quota));
     StartServer();
     ConstructConnector();
   }
-  ~ChaoticGoodServerTest() override { core_server_->StopListening(); }
+  ~ChaoticGoodServerTest() override {
+    core_server_->StopListening();
+    auto* shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
+    core_server_->ShutdownAndNotify(shutdown_cq, nullptr);
+    grpc_completion_queue_destroy(shutdown_cq);
+    if (connector_ != nullptr) connector_.reset();
+    if (listener_ != nullptr) listener_.reset();
+  }
 
   void StartServer() {
     port_ = grpc_pick_unused_port_or_die();
@@ -122,8 +130,8 @@ class ChaoticGoodServerTest : public ::testing::Test {
 
  protected:
   static void OnConnectingFinished(void* arg, grpc_error_handle) {
-    ChaoticGoodServerTest* self = static_cast<ChaoticGoodServerTest*>(arg);
-    self->connect_finished_.Notify();
+    Notification* connect_finished_ = static_cast<Notification*>(arg);
+    connect_finished_->Notify();
   }
   grpc_server* server_;
   Server* core_server_;
@@ -137,24 +145,23 @@ class ChaoticGoodServerTest : public ::testing::Test {
   std::shared_ptr<ChaoticGoodServerListener> listener_;
   std::shared_ptr<ChaoticGoodConnector> connector_;
   std::shared_ptr<EventEngine> event_engine_;
-  std::unique_ptr<MemoryQuota> memory_quota_;
-  ResourceQuotaRefPtr resource_quota_;
-  Notification connect_finished_;
 };
 
 TEST_F(ChaoticGoodServerTest, Connect) {
-  GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
-                    grpc_schedule_on_exec_ctx);
+  Notification connect_finished;
+  GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished,
+                    &connect_finished, grpc_schedule_on_exec_ctx);
   connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
-  connect_finished_.WaitForNotification();
+  connect_finished.WaitForNotification();
 }
 
 TEST_F(ChaoticGoodServerTest, ConnectAndShutdown) {
-  GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
-                    grpc_schedule_on_exec_ctx);
+  Notification connect_finished;
+  GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished,
+                    &connect_finished, grpc_schedule_on_exec_ctx);
   connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
   connector_->Shutdown(absl::InternalError("shutdown"));
-  connect_finished_.WaitForNotification();
+  connect_finished.WaitForNotification();
 }
 }  // namespace testing
 }  // namespace chaotic_good
