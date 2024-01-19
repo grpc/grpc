@@ -165,7 +165,7 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
            TrySeq(Sleep(Timestamp::Now() + Duration::Seconds(kTimeoutSecs)),
                   []() -> absl::Status {
                     return absl::DeadlineExceededError(
-                        "Data endpoint connect deadline excced.");
+                        "Data endpoint connect deadline exceeded.");
                   })));
 }
 

@@ -61,7 +61,6 @@ class ChaoticGoodConnector : public SubchannelConnector {
     if (handshake_mgr_ != nullptr) {
       handshake_mgr_->Shutdown(error);
     }
-    event_engine = std::move(event_engine_);
   };
 
  private:
@@ -89,7 +88,8 @@ class ChaoticGoodConnector : public SubchannelConnector {
   std::shared_ptr<PromiseEndpoint> control_endpoint_;
   std::shared_ptr<PromiseEndpoint> data_endpoint_;
   ActivityPtr connect_activity_;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+      event_engine_;
   std::shared_ptr<HandshakeManager> handshake_mgr_;
   HPackCompressor hpack_compressor_;
   HPackParser hpack_parser_;
