@@ -59,6 +59,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
             error.ToString().c_str(), handshake_mgr_.get());
     ActivityPtr connect_activity;
     MutexLock lock(&mu_);
+    if (is_shutdown_) return;
     is_shutdown_ = true;
     if (handshake_mgr_ != nullptr) {
       handshake_mgr_->Shutdown(error);

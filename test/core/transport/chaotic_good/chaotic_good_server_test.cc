@@ -93,7 +93,9 @@ class ChaoticGoodServerTest : public ::testing::Test {
   }
 
  protected:
-  static void OnConnectingFinished(void* arg, grpc_error_handle) {
+  static void OnConnectingFinished(void* arg, grpc_error_handle error) {
+    gpr_log(GPR_ERROR, "OnConnectingFinished: %p %s", arg,
+            error.ToString().c_str());
     Notification* connect_finished_ = static_cast<Notification*>(arg);
     connect_finished_->Notify();
   }

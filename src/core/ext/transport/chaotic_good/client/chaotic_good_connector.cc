@@ -59,11 +59,11 @@ namespace grpc_core {
 namespace chaotic_good {
 using grpc_event_engine::experimental::EventEngine;
 namespace {
-void MaybeNotify(const DebugLocation& location, grpc_closure* notify,
+void MaybeNotify(const DebugLocation& location, grpc_closure*& notify,
                  grpc_error_handle error) {
   if (notify != nullptr) {
     ExecCtx exec_ctx;
-    ExecCtx::Run(location, notify, error);
+    ExecCtx::Run(location, std::exchange(notify, nullptr), error);
   }
 }
 const int32_t kDataAlignmentBytes = 64;
