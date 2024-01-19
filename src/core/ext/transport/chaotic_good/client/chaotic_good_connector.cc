@@ -271,6 +271,8 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   RefCountedPtr<ChaoticGoodConnector> self(
       static_cast<ChaoticGoodConnector*>(args->user_data));
+  grpc_slice_buffer_destroy(args->read_buffer);
+  gpr_free(args->read_buffer);
   // Start receiving setting frames;
   {
     MutexLock lock(&self->mu_);
@@ -282,8 +284,6 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         if (args->endpoint != nullptr) {
           grpc_endpoint_shutdown(args->endpoint, error);
           grpc_endpoint_destroy(args->endpoint);
-          grpc_slice_buffer_destroy(args->read_buffer);
-          gpr_free(args->read_buffer);
         }
       }
       self->result_->Reset();
