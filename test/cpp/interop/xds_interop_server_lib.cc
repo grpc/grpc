@@ -81,7 +81,7 @@ class TestServiceImpl : public TestService::Service {
                            absl::string_view server_id)
       : hostname_(hostname), server_id_(server_id) {}
 
-  Status UnaryCall(ServerContext* context, const SimpleRequest* /*request*/,
+  Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) override {
     response->set_server_id(server_id_);
     for (const auto& rpc_behavior : GetRpcBehaviorMetadata(context)) {
@@ -90,6 +90,11 @@ class TestServiceImpl : public TestService::Service {
       if (maybe_status.has_value()) {
         return *maybe_status;
       }
+    }
+    if (request->response_size() > 0) {
+      std::unique_ptr<char[]> body(new char[request->response_size()]());
+      response->mutable_payload()->set_body(body.get(),
+                                            request->response_size());
     }
     response->set_hostname(hostname_);
     context->AddInitialMetadata("hostname", hostname_);

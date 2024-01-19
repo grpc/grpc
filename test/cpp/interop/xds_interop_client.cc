@@ -121,6 +121,9 @@ struct RpcConfig {
   ClientConfigureRequest::RpcType type;
   std::vector<std::pair<std::string, std::string>> metadata;
   int timeout_sec = 0;
+  std::string request_payload;
+  int request_payload_size = 0;
+  int response_payload_size = 0;
 };
 struct RpcConfigurationsQueue {
   // A queue of RPC configurations detailing how RPCs should be sent.
@@ -159,13 +162,12 @@ class TestClient {
       }
     }
     SimpleRequest request;
-    if (absl::GetFlag(FLAGS_response_payload_size) > 0) {
-      request.set_response_size(absl::GetFlag(FLAGS_response_payload_size));
+    if (config.response_payload_size > 0) {
+      request.set_response_size(config.response_payload_size);
     }
-    if (absl::GetFlag(FLAGS_request_payload_size) > 0) {
-      std::string payload(absl::GetFlag(FLAGS_request_payload_size), '\0');
-      request.mutable_payload()->set_body(
-          payload.c_str(), absl::GetFlag(FLAGS_request_payload_size));
+    if (config.request_payload_size > 0) {
+      request.mutable_payload()->set_body(config.request_payload.c_str(),
+                                          config.request_payload_size);
     }
     call->context.set_deadline(deadline);
     call->result.saved_request_id = saved_request_id;
@@ -345,6 +347,15 @@ class XdsUpdateClientConfigureServiceImpl
       if (metadata_iter != metadata_map.end()) {
         config.metadata = metadata_iter->second;
       }
+      if (absl::GetFlag(FLAGS_request_payload_size) > 0) {
+        config.request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
+        std::string payload(config.request_payload_size, '\0');
+        config.request_payload = payload;
+      }
+      if (absl::GetFlag(FLAGS_response_payload_size) > 0) {
+        config.response_payload_size =
+            absl::GetFlag(FLAGS_response_payload_size);
+      }
       configs.push_back(std::move(config));
     }
     {
@@ -482,6 +493,15 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     auto metadata_iter = metadata_map.find(config.type);
     if (metadata_iter != metadata_map.end()) {
       config.metadata = metadata_iter->second;
+    }
+    if (absl::GetFlag(FLAGS_request_payload_size) > 0) {
+      config.request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
+      std::string payload(config.request_payload_size, '\0');
+      config.request_payload = payload;
+    }
+    if (absl::GetFlag(FLAGS_response_payload_size) > 0) {
+      config.response_payload_size =
+          absl::GetFlag(FLAGS_response_payload_size);
     }
     configs.push_back(std::move(config));
   }
