@@ -1744,7 +1744,7 @@ argp.add_argument(
         "gcc12_openssl309",
         "gcc_musl",
         "clang6",
-        "clang16",
+        "clang17",
         # TODO: Automatically populate from supported version
         "python3.7",
         "python3.8",
