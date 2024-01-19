@@ -230,6 +230,7 @@ AresResolver::AresResolver(
 
 AresResolver::~AresResolver() {
   GPR_ASSERT(fd_node_list_.empty());
+  GPR_ASSERT(callback_map_.empty());
   ares_destroy(channel_);
 }
 
@@ -583,13 +584,6 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
   auto* hostname_qa = static_cast<HostnameQueryArg*>(arg);
   GPR_ASSERT(hostname_qa->pending_requests-- > 0);
   auto* ares_resolver = hostname_qa->ares_resolver;
-  auto it = ares_resolver->callback_map_.find(hostname_qa->callback_map_id);
-  GPR_ASSERT(it != ares_resolver->callback_map_.end());
-  GPR_ASSERT(
-      absl::holds_alternative<EventEngine::DNSResolver::LookupHostnameCallback>(
-          it->second));
-  auto& callback =
-      absl::get<EventEngine::DNSResolver::LookupHostnameCallback>(it->second);
   if (status != ARES_SUCCESS) {
     std::string error_msg =
         absl::StrFormat("address lookup failed for %s: %s",
@@ -647,6 +641,13 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
     }
   }
   if (hostname_qa->pending_requests == 0) {
+    auto nh =
+        ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
+    GPR_ASSERT(!nh.empty());
+    GPR_ASSERT(absl::holds_alternative<
+               EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
+    auto callback = absl::get<EventEngine::DNSResolver::LookupHostnameCallback>(
+        std::move(nh.mapped()));
     if (!hostname_qa->result.empty() || hostname_qa->error_status.ok()) {
       ares_resolver->event_engine_->Run(
           [callback = std::move(callback),
