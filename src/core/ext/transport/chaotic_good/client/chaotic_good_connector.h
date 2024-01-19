@@ -55,12 +55,15 @@ class ChaoticGoodConnector : public SubchannelConnector {
   ~ChaoticGoodConnector() override;
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
   void Shutdown(grpc_error_handle error) override {
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
+    gpr_log(GPR_ERROR, "SubchannelConnector::Shutdown: %s; mgr=%p",
+            error.ToString().c_str(), handshake_mgr_.get());
+    ActivityPtr connect_activity;
     MutexLock lock(&mu_);
     is_shutdown_ = true;
     if (handshake_mgr_ != nullptr) {
       handshake_mgr_->Shutdown(error);
     }
+    connect_activity = std::move(connect_activity_);
   };
 
  private:
@@ -87,7 +90,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
 
   std::shared_ptr<PromiseEndpoint> control_endpoint_;
   std::shared_ptr<PromiseEndpoint> data_endpoint_;
-  ActivityPtr connect_activity_;
+  ActivityPtr connect_activity_ ABSL_GUARDED_BY(mu_);
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
   std::shared_ptr<HandshakeManager> handshake_mgr_;

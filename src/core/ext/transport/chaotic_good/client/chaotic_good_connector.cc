@@ -271,6 +271,8 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   RefCountedPtr<ChaoticGoodConnector> self(
       static_cast<ChaoticGoodConnector*>(args->user_data));
+  gpr_log(GPR_ERROR, "SubchannelConnector::OnHandshakeDone:%p",
+          static_cast<SubchannelConnector*>(self.get()));
   grpc_slice_buffer_destroy(args->read_buffer);
   gpr_free(args->read_buffer);
   // Start receiving setting frames;
@@ -298,7 +300,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         grpc_event_engine::experimental::
             grpc_take_wrapped_event_engine_endpoint(args->endpoint),
         SliceBuffer());
-    self->connect_activity_ = MakeActivity(
+    auto activity = MakeActivity(
         [self] {
           return TrySeq(ControlEndpointWriteSettingsFrame(self),
                         ControlEndpointReadSettingsFrame(self),
@@ -311,6 +313,10 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         },
         MakeScopedArena(kInitialArenaSize, &self->memory_allocator_),
         self->event_engine_.get());
+    MutexLock lock(&self->mu_);
+    if (!self->is_shutdown_) {
+      self->connect_activity_ = std::move(activity);
+    }
   } else {
     // Handshaking succeeded but there is no endpoint.
     MutexLock lock(&self->mu_);

@@ -89,7 +89,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
     args_.address = &resolved_addr_;
     args_.deadline = Timestamp::Now() + Duration::Seconds(5);
     args_.channel_args = channel_args();
-    connector_ = std::make_shared<ChaoticGoodConnector>();
+    connector_ = MakeRefCounted<ChaoticGoodConnector>();
   }
 
  protected:
@@ -112,7 +112,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
   int port_;
   std::string addr_;
   grpc_resolved_address resolved_addr_;
-  std::shared_ptr<ChaoticGoodConnector> connector_;
+  RefCountedPtr<ChaoticGoodConnector> connector_;
   std::shared_ptr<EventEngine> event_engine_;
 };
 
