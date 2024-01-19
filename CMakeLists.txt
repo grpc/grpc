@@ -49,7 +49,6 @@ set(gRPC_BUILD_MSVC_MP_COUNT 0 CACHE STRING "The maximum number of processes for
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
 option(gRPC_BUILD_CODEGEN "Build codegen" ON)
-option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
 set(gRPC_INSTALL_default ON)
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -285,14 +284,6 @@ if(gRPC_USE_PROTO_LITE)
   add_definitions("-DGRPC_USE_PROTO_LITE")
 else()
   set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
-endif()
-
-if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
-  add_definitions(-DGPR_BACKWARDS_COMPATIBILITY_MODE)
-  if(_gRPC_PLATFORM_MAC)
-    # some C++11 constructs not supported before OS X 10.10
-    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.10)
-  endif()
 endif()
 
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
