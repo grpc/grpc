@@ -208,7 +208,7 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 }
 
 int main(int argc, char** argv) {
-  // TODO(hork): rewrite this test with a custom EventEngine DNS Resolver
+  // TODO(yijiem): rewrite this test with a custom EventEngine DNS Resolver
   if (grpc_core::IsEventEngineDnsEnabled()) {
     gpr_log(
         GPR_ERROR,
