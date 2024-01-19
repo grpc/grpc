@@ -329,21 +329,23 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(void* arg, grpc_error_handle error) {
+  auto* args = static_cast<HandshakerArgs*>(arg);
+  GPR_ASSERT(args != nullptr);
+  RefCountedPtr<HandshakingState> self(
+      static_cast<HandshakingState*>(args->user_data));
+  grpc_slice_buffer_destroy(args->read_buffer);
+  gpr_free(args->read_buffer);
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "Server handshake failed: %s",
             StatusToString(error).c_str());
     return;
   }
-  auto* args = static_cast<HandshakerArgs*>(arg);
-  GPR_ASSERT(args != nullptr);
   if (args->endpoint == nullptr) {
     gpr_log(GPR_ERROR, "Server handshake done but has empty endpoint.");
     return;
   }
   GPR_ASSERT(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
       args->endpoint));
-  RefCountedPtr<HandshakingState> self(
-      static_cast<HandshakingState*>(args->user_data));
   self->connection_->endpoint_ = std::make_shared<PromiseEndpoint>(
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
           args->endpoint),
