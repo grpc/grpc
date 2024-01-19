@@ -349,7 +349,7 @@ class XdsUpdateClientConfigureServiceImpl
       }
       if (absl::GetFlag(FLAGS_request_payload_size) > 0) {
         config.request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
-        std::string payload(config.request_payload_size, '\0');
+        std::string payload(config.request_payload_size, '0');
         config.request_payload = payload;
       }
       if (absl::GetFlag(FLAGS_response_payload_size) > 0) {
@@ -496,7 +496,7 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     }
     if (absl::GetFlag(FLAGS_request_payload_size) > 0) {
       config.request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
-      std::string payload(config.request_payload_size, '\0');
+      std::string payload(config.request_payload_size, '0');
       config.request_payload = payload;
     }
     if (absl::GetFlag(FLAGS_response_payload_size) > 0) {
