@@ -76,7 +76,7 @@ class ChaoticGoodServerListener final
    public:
     explicit ActiveConnection(
         RefCountedPtr<ChaoticGoodServerListener> listener);
-    ~ActiveConnection();
+    ~ActiveConnection() override;
     void Start(
         std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
             endpoint);
@@ -95,7 +95,7 @@ class ChaoticGoodServerListener final
     class HandshakingState : public RefCounted<HandshakingState> {
      public:
       explicit HandshakingState(RefCountedPtr<ActiveConnection> connection);
-      ~HandshakingState(){};
+      ~HandshakingState() override{};
       void Start(std::unique_ptr<
                  grpc_event_engine::experimental::EventEngine::Endpoint>
                      endpoint);
@@ -159,9 +159,9 @@ class ChaoticGoodServerListener final
       ee_listener_;
   Mutex mu_;
   // Map of connection id to endpoints connectivity.
-  absl::flat_hash_map<std::string, std::shared_ptr<Latch<std::shared_ptr<
-                                       PromiseEndpoint>>>> connectivity_map_
-      ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<std::string,
+                      std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>>>
+      connectivity_map_ ABSL_GUARDED_BY(mu_);
   std::vector<OrphanablePtr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
