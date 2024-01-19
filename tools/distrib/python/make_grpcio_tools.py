@@ -63,7 +63,7 @@ COMMIT_HASH_SUFFIX = '"'
 EXTERNAL_LINKS = [
     ("@com_google_absl//", "third_party/abseil-cpp/"),
     ("@com_google_protobuf//", "third_party/protobuf/"),
-    ("@utf8_range//:", "third_party/utf8_range/"),
+    ("@utf8_range//", "third_party/protobuf/third_party/utf8_range"),
 ]
 
 PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//src/"
@@ -72,7 +72,7 @@ PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//src/"
 CC_INCLUDES = [
     os.path.join("third_party", "abseil-cpp"),
     os.path.join("third_party", "protobuf", "src"),
-    os.path.join("third_party", "utf8_range"),
+    os.path.join("third_party", "protobuf", "third_party", "utf8_range"),
 ]
 
 # include path for .proto files
@@ -88,7 +88,10 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("src/compiler", "grpc_root/src/compiler"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
     ("third_party/protobuf/src", "third_party/protobuf/src"),
-    ("third_party/utf8_range", "third_party/utf8_range"),
+    (
+        "third_party/protobuf/third_party/utf8_range",
+        "third_party/protobuf/third_party/utf8_range",
+    ),
 ]
 
 DELETE_TARGETS_ON_CLEANUP = ["third_party"]
