@@ -47,17 +47,14 @@ struct Done;
 
 template <>
 struct Done<absl::Status> {
-  static absl::Status Make() { return absl::OkStatus(); }
+  static absl::Status Make(bool cancelled) {
+    return cancelled ? absl::CancelledError() : absl::OkStatus();
+  }
 };
 
 template <>
 struct Done<StatusFlag> {
-  static StatusFlag Make() { return StatusFlag(true); }
-};
-
-template <>
-struct Done<Success> {
-  static Success Make() { return Success{}; }
+  static StatusFlag Make(bool cancelled) { return StatusFlag(!cancelled); }
 };
 
 template <typename Reader, typename Action>
@@ -139,7 +136,7 @@ class ForEach {
         reading_next_ = false;
         return PollAction();
       } else {
-        return Done<Result>::Make();
+        return Done<Result>::Make(p->cancelled());
       }
     }
     return Pending();

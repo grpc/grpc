@@ -74,7 +74,7 @@ class Observable {
     GRPC_MUST_USE_RESULT Waker Add(Observer* observer)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       observers_.insert(observer);
-      return Activity::current()->MakeNonOwningWaker();
+      return GetContext<Activity>()->MakeNonOwningWaker();
     }
 
    private:

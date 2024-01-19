@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
+#include "src/core/ext/transport/inproc/inproc_transport.h"
+#include "test/core/transport/test_suite/fixture.h"
 
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
+namespace grpc_core {
 
-grpc_core::TraceFlag grpc_chaotic_good_trace(false, "chaotic_good");
+TRANSPORT_FIXTURE(Inproc) {
+  auto transports = MakeInProcessTransportPair();
+  return {std::move(transports.first), std::move(transports.second)};
+}
 
-namespace grpc_core {}  // namespace grpc_core
+}  // namespace grpc_core

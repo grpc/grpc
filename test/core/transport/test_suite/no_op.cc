@@ -12,10 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
+#include "test/core/transport/test_suite/test.h"
 
-#include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
+namespace grpc_core {
 
-grpc_core::TraceFlag grpc_chaotic_good_trace(false, "chaotic_good");
+TRANSPORT_TEST(NoOp) {}
 
-namespace grpc_core {}  // namespace grpc_core
+TRANSPORT_TEST(WaitForAllPendingWork) { WaitForAllPendingWork(); }
+
+TRANSPORT_TEST(SetServerAcceptorAndFinish) {
+  SetServerAcceptor();
+  WaitForAllPendingWork();
+}
+
+}  // namespace grpc_core
