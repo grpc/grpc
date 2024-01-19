@@ -28,6 +28,7 @@
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/ext/transport/chaotic_good/settings_metadata.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -65,6 +66,9 @@ void MaybeNotify(const DebugLocation& location, grpc_closure* notify,
     ExecCtx::Run(location, notify, error);
   }
 }
+const int32_t kDataAlignmentBytes = 64;
+const int32_t kTimeoutSecs = 5;
+const size_t kInitialArenaSize = 1024;
 }  // namespace
 
 ChaoticGoodConnector::ChaoticGoodConnector()
@@ -113,15 +117,9 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
     // Serialize setting frame.
     SettingsFrame frame;
     // frame.header set connectiion_type: control
-    ClientMetadataHandle metadata =
-        GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
-    metadata->Set(ChaoticGoodConnectionTypeMetadata(),
-                  Slice::FromCopiedString("data"));
-    metadata->Set(ChaoticGoodConnectionIdMetadata(),
-                  self->connection_id_.Ref());
-    metadata->Set(ChaoticGoodDataAlignmentMetadata(),
-                  self->kDataAlignmentBytes);
-    frame.headers = std::move(metadata);
+    frame.headers = SettingsMetadata{SettingsMetadata::ConnectionType::kData,
+                                     self->connection_id_, kDataAlignmentBytes}
+                        .ToMetadataBatch(GetContext<Arena>());
     auto write_buffer = frame.Serialize(&self->hpack_compressor_);
     return self->data_endpoint_->Write(std::move(write_buffer.control));
   };
@@ -134,6 +132,11 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
       on_data_endpoint_connect =
           [self](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
                      endpoint) mutable {
+            if (!endpoint.ok() || self->handshake_mgr_ == nullptr) {
+              auto error = GRPC_ERROR_CREATE("connect endpoint failed");
+              MaybeNotify(DEBUG_LOCATION, self->notify_, error);
+              return;
+            }
             self->data_endpoint_latch_->Set(std::make_shared<PromiseEndpoint>(
                 std::move(endpoint.value()), SliceBuffer()));
             auto cb = self->wait_for_data_endpoint_callback_->MakeCallback();
@@ -146,7 +149,7 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
           self->channel_args_),
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "data_endpoint_connection"),
-      EventEngine::Duration(self->kTimeoutSecs));
+      EventEngine::Duration(kTimeoutSecs));
 
   return TrySeq(
       self->wait_for_data_endpoint_callback_->MakeWaitPromise(),
@@ -159,12 +162,11 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
                      DataEndpointReadSettingsFrame(self),
                      []() -> absl::Status { return absl::OkStatus(); });
                }),
-           TrySeq(
-               Sleep(Timestamp::Now() + Duration::Seconds(self->kTimeoutSecs)),
-               []() -> absl::Status {
-                 return absl::DeadlineExceededError(
-                     "Data endpoint connect deadline excced.");
-               })));
+           TrySeq(Sleep(Timestamp::Now() + Duration::Seconds(kTimeoutSecs)),
+                  []() -> absl::Status {
+                    return absl::DeadlineExceededError(
+                        "Data endpoint connect deadline excced.");
+                  })));
 }
 
 auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
@@ -188,11 +190,20 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
                       &self->hpack_parser_, frame_header,
                       absl::BitGenRef(self->bitgen_), GetContext<Arena>(),
                       std::move(buffer_pair), FrameLimits{});
-                  GPR_ASSERT(status.ok());
-                  self->connection_id_ =
-                      frame.headers
-                          ->get_pointer(ChaoticGoodConnectionIdMetadata())
-                          ->Ref();
+                  if (!status.ok()) return status;
+                  if (frame.headers == nullptr) {
+                    return absl::UnavailableError("no settings headers");
+                  }
+                  auto settings_metadata =
+                      SettingsMetadata::FromMetadataBatch(*frame.headers);
+                  if (!settings_metadata.ok()) {
+                    return settings_metadata.status();
+                  }
+                  if (!settings_metadata->connection_id.has_value()) {
+                    return absl::UnavailableError(
+                        "no connection id in settings frame");
+                  }
+                  self->connection_id_ = *settings_metadata->connection_id;
                   return absl::OkStatus();
                 },
                 WaitForDataEndpointSetup(self)),
@@ -207,13 +218,9 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
     // Serialize setting frame.
     SettingsFrame frame;
     // frame.header set connectiion_type: control
-    ClientMetadataHandle metadata =
-        GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
-    metadata->Set(ChaoticGoodConnectionTypeMetadata(),
-                  Slice::FromCopiedString("control"));
-    auto connection_type =
-        metadata->get_pointer(ChaoticGoodConnectionTypeMetadata())->Ref();
-    frame.headers = std::move(metadata);
+    frame.headers = SettingsMetadata{SettingsMetadata::ConnectionType::kControl,
+                                     absl::nullopt, absl::nullopt}
+                        .ToMetadataBatch(GetContext<Arena>());
     auto write_buffer = frame.Serialize(&self->hpack_compressor_);
     return self->control_endpoint_->Write(std::move(write_buffer.control));
   };
@@ -288,9 +295,6 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         grpc_event_engine::experimental::
             grpc_take_wrapped_event_engine_endpoint(args->endpoint),
         SliceBuffer());
-    auto memory_allocator =
-        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-            "connect_activity");
     self->connect_activity_ = MakeActivity(
         [self] {
           return TrySeq(ControlEndpointWriteSettingsFrame(self),
@@ -302,7 +306,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         [self](absl::Status status) {
           MaybeNotify(DEBUG_LOCATION, self->notify_, status);
         },
-        MakeScopedArena(self->kInitialArenaSize, &memory_allocator),
+        MakeScopedArena(kInitialArenaSize, &self->memory_allocator_),
         self->event_engine_.get());
   } else {
     // Handshaking succeeded but there is no endpoint.

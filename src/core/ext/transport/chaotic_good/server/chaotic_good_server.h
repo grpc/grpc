@@ -41,6 +41,8 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/handshaker.h"
@@ -58,7 +60,7 @@ class ChaoticGoodServerListener
   absl::StatusOr<int> Bind(const char* addr);
   absl::Status StartListening();
   const ChannelArgs& args() const { return args_; }
-  void Orphan() override{};
+  void Orphan() override {};
 
   class ActiveConnection
       : public std::enable_shared_from_this<ActiveConnection> {
@@ -101,6 +103,9 @@ class ChaoticGoodServerListener
    private:
     std::string GenerateConnectionIDLocked();
     void NewConnectionID();
+    grpc_event_engine::experimental::MemoryAllocator memory_allocator_ =
+        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+            "server_connection");
     std::shared_ptr<ChaoticGoodServerListener> listener_;
     const size_t kInitialArenaSize = 1024;
     const Duration kConnectionDeadline = Duration::Seconds(5);
@@ -110,16 +115,16 @@ class ChaoticGoodServerListener
     HPackCompressor hpack_compressor_;
     HPackParser hpack_parser_;
     absl::BitGen bitgen_;
-    Slice connection_id_;
+    std::string connection_id_;
     int32_t data_alignment_;
   };
 
   // Overridden to initialize listener but not actually used.
-  void Start(Server*, const std::vector<grpc_pollset*>*) override{};
+  void Start(Server*, const std::vector<grpc_pollset*>*) override {};
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return nullptr;
   }
-  void SetOnDestroyDone(grpc_closure*) override{};
+  void SetOnDestroyDone(grpc_closure*) override {};
 
  private:
   Server* server_;
@@ -129,9 +134,9 @@ class ChaoticGoodServerListener
       ee_listener_;
   Mutex mu_;
   // Map of connection id to endpoints connectivity.
-  absl::flat_hash_map<std::string,
-                      std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>>>
-      connectivity_map_ ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<std::string, std::shared_ptr<Latch<std::shared_ptr<
+                                       PromiseEndpoint>>>> connectivity_map_
+      ABSL_GUARDED_BY(mu_);
   std::vector<std::shared_ptr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
 };

@@ -83,8 +83,6 @@ class ChaoticGoodConnector
   grpc_closure* notify_;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
   ChannelArgs channel_args_;
-  const int32_t kTimeoutSecs = 5;
-  const size_t kInitialArenaSize = 1024;
   absl::StatusOr<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
       resolved_addr_;
 
@@ -98,8 +96,10 @@ class ChaoticGoodConnector
   absl::BitGen bitgen_;
   std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>> data_endpoint_latch_;
   std::shared_ptr<WaitForCallback> wait_for_data_endpoint_callback_;
-  Slice connection_id_;
-  const int32_t kDataAlignmentBytes = 64;
+  std::string connection_id_;
+  grpc_event_engine::experimental::MemoryAllocator memory_allocator_ =
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "connect_activity");
 };
 }  // namespace chaotic_good
 }  // namespace grpc_core
