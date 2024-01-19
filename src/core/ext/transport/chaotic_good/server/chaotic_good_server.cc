@@ -364,7 +364,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         }
       },
       MakeScopedArena(self->connection_->kInitialArenaSize,
-                      &self->connection_->memory_allocator_),
+                      &self->connection_->listener_->memory_allocator_),
       grpc_event_engine::experimental::GetDefaultEventEngine().get());
 }
 

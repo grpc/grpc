@@ -53,6 +53,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
     ConstructConnector();
   }
   ~ChaoticGoodServerTest() {
+    args_.channel_args = ChannelArgs();
     if (connector_ != nullptr) connector_->Shutdown(absl::CancelledError());
     connector_.reset();
     auto* shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);

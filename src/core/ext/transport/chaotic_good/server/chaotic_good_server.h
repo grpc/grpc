@@ -88,6 +88,7 @@ class ChaoticGoodServerListener final
         handshaking_state_.reset();
       }
       listener_.reset();
+      receive_settings_activity_.reset();
       Unref();
     }
 
@@ -126,9 +127,6 @@ class ChaoticGoodServerListener final
    private:
     std::string GenerateConnectionIDLocked();
     void NewConnectionID();
-    grpc_event_engine::experimental::MemoryAllocator memory_allocator_ =
-        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-            "server_connection");
     RefCountedPtr<ChaoticGoodServerListener> listener_;
     const size_t kInitialArenaSize = 1024;
     const Duration kConnectionDeadline = Duration::Seconds(5);
@@ -167,6 +165,9 @@ class ChaoticGoodServerListener final
   std::vector<OrphanablePtr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
+  grpc_event_engine::experimental::MemoryAllocator memory_allocator_ =
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "server_connection");
 };
 
 }  // namespace chaotic_good
