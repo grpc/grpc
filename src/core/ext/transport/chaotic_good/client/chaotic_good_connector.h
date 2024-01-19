@@ -49,32 +49,32 @@
 
 namespace grpc_core {
 namespace chaotic_good {
-class ChaoticGoodConnector
-    : public SubchannelConnector,
-      public std::enable_shared_from_this<ChaoticGoodConnector> {
+class ChaoticGoodConnector : public SubchannelConnector {
  public:
   ChaoticGoodConnector();
   ~ChaoticGoodConnector() override;
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
   void Shutdown(grpc_error_handle error) override {
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
     MutexLock lock(&mu_);
     is_shutdown_ = true;
     if (handshake_mgr_ != nullptr) {
       handshake_mgr_->Shutdown(error);
     }
+    event_engine = std::move(event_engine_);
   };
 
  private:
   static auto DataEndpointReadSettingsFrame(
-      std::shared_ptr<ChaoticGoodConnector> self);
+      RefCountedPtr<ChaoticGoodConnector> self);
   static auto DataEndpointWriteSettingsFrame(
-      std::shared_ptr<ChaoticGoodConnector> self);
+      RefCountedPtr<ChaoticGoodConnector> self);
   static auto ControlEndpointReadSettingsFrame(
-      std::shared_ptr<ChaoticGoodConnector> self);
+      RefCountedPtr<ChaoticGoodConnector> self);
   static auto ControlEndpointWriteSettingsFrame(
-      std::shared_ptr<ChaoticGoodConnector> self);
+      RefCountedPtr<ChaoticGoodConnector> self);
   static auto WaitForDataEndpointSetup(
-      std::shared_ptr<ChaoticGoodConnector> self);
+      RefCountedPtr<ChaoticGoodConnector> self);
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
 
   Mutex mu_;

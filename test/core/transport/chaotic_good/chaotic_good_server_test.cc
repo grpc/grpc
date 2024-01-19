@@ -49,14 +49,11 @@ class ChaoticGoodServerTest : public ::testing::Test {
   ChaoticGoodServerTest() {
     event_engine_ = std::shared_ptr<EventEngine>(
         grpc_event_engine::experimental::CreateEventEngine());
-    channel_args_ = channel_args_.SetObject(event_engine_);
-    auto resource_quota = ResourceQuota::Default();
-    channel_args_ =
-        channel_args_.Set(GRPC_ARG_RESOURCE_QUOTA, std::move(resource_quota));
     StartServer();
     ConstructConnector();
   }
-  ~ChaoticGoodServerTest() override {
+  ~ChaoticGoodServerTest() {
+    if (connector_ != nullptr) connector_->Shutdown(absl::CancelledError());
     connector_.reset();
     auto* shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
@@ -76,7 +73,8 @@ class ChaoticGoodServerTest : public ::testing::Test {
     addr_ = absl::StrCat("ipv6:[::1]:", port_);
     server_ = grpc_server_create(nullptr, nullptr);
     core_server_ = Server::FromC(server_);
-    auto* listener = new ChaoticGoodServerListener(core_server_, channel_args_);
+    auto* listener =
+        new ChaoticGoodServerListener(core_server_, channel_args());
     auto port = listener->Bind(addr_.c_str());
     EXPECT_TRUE(port.ok());
     EXPECT_EQ(port.value(), port_);
@@ -89,7 +87,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
     GPR_ASSERT(grpc_parse_uri(*uri, &resolved_addr_));
     args_.address = &resolved_addr_;
     args_.deadline = Timestamp::Now() + Duration::Seconds(5);
-    args_.channel_args = channel_args_;
+    args_.channel_args = channel_args();
     connector_ = std::make_shared<ChaoticGoodConnector>();
   }
 
@@ -98,9 +96,15 @@ class ChaoticGoodServerTest : public ::testing::Test {
     Notification* connect_finished_ = static_cast<Notification*>(arg);
     connect_finished_->Notify();
   }
+
+  ChannelArgs channel_args() {
+    return ChannelArgs()
+        .SetObject(event_engine_)
+        .Set(GRPC_ARG_RESOURCE_QUOTA, ResourceQuota::Default());
+  }
+
   grpc_server* server_;
   Server* core_server_;
-  ChannelArgs channel_args_;
   ChaoticGoodConnector::Args args_;
   ChaoticGoodConnector::Result connecting_result_;
   grpc_closure on_connecting_finished_;

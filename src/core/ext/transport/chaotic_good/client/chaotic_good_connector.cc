@@ -88,7 +88,7 @@ ChaoticGoodConnector::~ChaoticGoodConnector() {
 }
 
 auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
-    std::shared_ptr<ChaoticGoodConnector> self) {
+    RefCountedPtr<ChaoticGoodConnector> self) {
   GPR_ASSERT(self->data_endpoint_ != nullptr);
   return TrySeq(
       self->data_endpoint_->ReadSlice(FrameHeader::kFrameHeaderSize),
@@ -111,7 +111,7 @@ auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
 }
 
 auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
-    std::shared_ptr<ChaoticGoodConnector> self) {
+    RefCountedPtr<ChaoticGoodConnector> self) {
   GPR_ASSERT(self->data_endpoint_ != nullptr);
   return [self]() {
     // Serialize setting frame.
@@ -126,7 +126,7 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
 }
 
 auto ChaoticGoodConnector::WaitForDataEndpointSetup(
-    std::shared_ptr<ChaoticGoodConnector> self) {
+    RefCountedPtr<ChaoticGoodConnector> self) {
   // Data endpoint on_connect callback.
   grpc_event_engine::experimental::EventEngine::OnConnectCallback
       on_data_endpoint_connect =
@@ -170,7 +170,7 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
 }
 
 auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
-    std::shared_ptr<ChaoticGoodConnector> self) {
+    RefCountedPtr<ChaoticGoodConnector> self) {
   GPR_ASSERT(self->control_endpoint_ != nullptr);
   return TrySeq(
       self->control_endpoint_->ReadSlice(FrameHeader::kFrameHeaderSize),
@@ -212,7 +212,7 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
 }
 
 auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
-    std::shared_ptr<ChaoticGoodConnector> self) {
+    RefCountedPtr<ChaoticGoodConnector> self) {
   return [self]() {
     GPR_ASSERT(self->control_endpoint_ != nullptr);
     // Serialize setting frame.
@@ -244,17 +244,20 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
       args_.address->len);
   GPR_ASSERT(resolved_addr_.value().address() != nullptr);
   grpc_event_engine::experimental::EventEngine::OnConnectCallback on_connect =
-      [this](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-        if (!endpoint.ok() || handshake_mgr_ == nullptr) {
+      [self = RefAsSubclass<ChaoticGoodConnector>()](
+          absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
+              endpoint) mutable {
+        if (!endpoint.ok() || self->handshake_mgr_ == nullptr) {
           auto error = GRPC_ERROR_CREATE("connect endpoint failed");
-          MaybeNotify(DEBUG_LOCATION, notify_, error);
+          MaybeNotify(DEBUG_LOCATION, self->notify_, error);
           return;
         }
         ExecCtx exec_ctx;
-        handshake_mgr_->DoHandshake(
+        auto* p = self.release();
+        p->handshake_mgr_->DoHandshake(
             grpc_event_engine_endpoint_create(std::move(endpoint.value())),
-            channel_args_, args_.deadline, nullptr /* acceptor */,
-            OnHandshakeDone, this);
+            p->channel_args_, p->args_.deadline, nullptr /* acceptor */,
+            OnHandshakeDone, p);
       };
   event_engine_->Connect(
       std::move(on_connect), *resolved_addr_,
@@ -266,8 +269,8 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
 
 void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
-  std::shared_ptr<ChaoticGoodConnector> self =
-      static_cast<ChaoticGoodConnector*>(args->user_data)->shared_from_this();
+  RefCountedPtr<ChaoticGoodConnector> self(
+      static_cast<ChaoticGoodConnector*>(args->user_data));
   // Start receiving setting frames;
   {
     MutexLock lock(&self->mu_);
