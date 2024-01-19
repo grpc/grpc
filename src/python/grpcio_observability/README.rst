@@ -7,9 +7,9 @@ More details can be found in `OpenTelemetry Metrics gRFC <https://github.com/grp
 How gRPC Python Observability Works
 -------------------------
 
-gRPC Python is a wrapper layer built upon the gRPC Core (written in C/C++). Most of census data
+gRPC Python is a wrapper layer built upon the gRPC Core (written in C/C++). Most of telemetry data
 is collected at core layer and then exported to Python layer. To optimize performance and reduce
-the overhead of acquiring GIL too frequently, census data is initially cached at the Core layer
+the overhead of acquiring the GIL too frequently, telemetry data is initially cached at the Core layer
 and then exported to the Python layer in batches.
 
 Note that while this approach enhances efficiency, it will introduce a slight delay between the
@@ -23,7 +23,7 @@ Python >= 3.7
 Installation
 ------------
 
-Currently gRPC Python Observability is :code:`only available for Linux`.
+Currently gRPC Python Observability is **only available for Linux**.
 
 Installing From PyPI
 ~~~~~~~~~~~~~~~~~~~~
@@ -71,18 +71,18 @@ Usage
 
 You can find example usage in `Python example folder <https://github.com/grpc/grpc/tree/master/examples/python/observability>`_.
 
-We also provides couple of environment variables to help you optimize gRPC python observability for your particular use.
+We also provide several environment variables to help you optimize gRPC python observability for your particular use.
 
 1. GRPC_PYTHON_CENSUS_EXPORT_BATCH_INTERVAL
-    * This controls how frequently census data collected within gRPC Core is sent to Python layer.
+    * This controls how frequently telemetry data collected within gRPC Core is sent to Python layer.
     * Default value is 0.5 (Seconds).
 
 2. GRPC_PYTHON_CENSUS_MAX_EXPORT_BUFFER_SIZE
-    * This controls the maximum number of census data items that can be held in the buffer within gRPC Core before they are sent to Python.
+    * This controls the maximum number of telemetry data items that can be held in the buffer within gRPC Core before they are sent to Python.
     * Default value is 10,000.
 
 3. GRPC_PYTHON_CENSUS_EXPORT_THRESHOLD
-    * This setting acts as a trigger: When the buffer in gRPC Core reaches a certain percentage of its capacity, the census data is sent to Python.
+    * This setting acts as a trigger: When the buffer in gRPC Core reaches a certain percentage of its capacity, the telemetry data is sent to Python.
     * Default value is 0.7 (Which means buffer will start export when it's 70% full).
 
 4. GRPC_PYTHON_CENSUS_EXPORT_THREAD_TIMEOUT

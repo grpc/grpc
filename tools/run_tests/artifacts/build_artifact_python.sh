@@ -185,7 +185,7 @@ fix_faulty_universal2_wheel() {
 # This is necessary due to https://github.com/pypa/wheel/issues/406.
 # wheel incorrectly generates a universal2 artifact that only contains
 # x86_64 libraries.
-if [ "$GRPC_UNIVERSAL2_REPAIR" != "" ]; then
+if [ "$GRPC_BUILD_MAC" != "" ]; then
   for WHEEL in dist/*.whl tools/distrib/python/grpcio_tools/dist/*.whl; do
     fix_faulty_universal2_wheel "$WHEEL"
   done
@@ -284,7 +284,7 @@ then
 
   # Build grpcio_observability source distribution
   # Skips MacOS since grpcio_observability does not support MacOS.
-  if [ "$GRPC_UNIVERSAL2_REPAIR" == "" ]; then
+  if [ "$GRPC_BUILD_MAC" == "" ]; then
     "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
     ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py \
         sdist bdist_wheel
