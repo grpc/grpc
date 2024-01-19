@@ -930,6 +930,7 @@ libs:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/directory_reader.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
@@ -2024,6 +2025,7 @@ libs:
   - re2
   - z
   - absl/algorithm:container
+  - absl/base:config
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -2406,6 +2408,7 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
@@ -3069,6 +3072,7 @@ libs:
   - utf8_range_lib
   - z
   - absl/algorithm:container
+  - absl/base:config
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -4447,6 +4451,7 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
@@ -4567,6 +4572,7 @@ libs:
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
@@ -4974,6 +4980,7 @@ libs:
   - re2
   - utf8_range_lib
   - z
+  - absl/base:config
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -5159,6 +5166,7 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -5185,6 +5193,7 @@ targets:
   - test/core/promise/activity_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -6257,6 +6266,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -6392,6 +6402,7 @@ targets:
   - gtest
   - upb_message_lib
   - utf8_range_lib
+  - absl/base:config
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
@@ -7253,6 +7264,49 @@ targets:
   - gtest
   - grpcpp_channelz
   - grpc++_test_util
+- name: chaotic_good_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/transport/test_suite/fixture.h
+  - test/core/transport/test_suite/test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/test_suite/call_content.cc
+  - test/core/transport/test_suite/call_shapes.cc
+  - test/core/transport/test_suite/chaotic_good_fixture.cc
+  - test/core/transport/test_suite/fixture.cc
+  - test/core/transport/test_suite/no_op.cc
+  - test/core/transport/test_suite/stress.cc
+  - test/core/transport/test_suite/test.cc
+  - test/core/transport/test_suite/test_main.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
 - name: check_gcp_environment_linux_test
   gtest: true
   build: test
@@ -7335,6 +7389,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -7436,6 +7491,7 @@ targets:
   - gtest
   - upb_message_lib
   - utf8_range_lib
+  - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -7961,11 +8017,14 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/promise/context.h
   src:
   - test/core/promise/context_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/meta:type_traits
   - gpr
   uses_polling: false
 - name: core_configuration_test
@@ -8684,6 +8743,7 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -8765,6 +8825,7 @@ targets:
   - gtest
   - upb_message_lib
   - utf8_range_lib
+  - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -9191,6 +9252,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -9298,6 +9360,7 @@ targets:
   - gtest
   - upb_message_lib
   - utf8_range_lib
+  - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9322,6 +9385,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -9433,6 +9497,7 @@ targets:
   - gtest
   - upb_message_lib
   - utf8_range_lib
+  - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10755,6 +10820,32 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: inproc_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/transport/test_suite/fixture.h
+  - test/core/transport/test_suite/test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/test_suite/call_content.cc
+  - test/core/transport/test_suite/call_shapes.cc
+  - test/core/transport/test_suite/fixture.cc
+  - test/core/transport/test_suite/inproc_fixture.cc
+  - test/core/transport/test_suite/no_op.cc
+  - test/core/transport/test_suite/stress.cc
+  - test/core/transport/test_suite/test.cc
+  - test/core/transport/test_suite/test_main.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
 - name: insecure_security_connector_test
   gtest: true
   build: test
@@ -10808,6 +10899,7 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -10830,6 +10922,7 @@ targets:
   - test/core/promise/inter_activity_pipe_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -10852,6 +10945,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -10955,6 +11049,7 @@ targets:
   - gtest
   - upb_message_lib
   - utf8_range_lib
+  - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11282,6 +11377,7 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -11307,6 +11403,7 @@ targets:
   - test/core/promise/latch_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -11436,6 +11533,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -11547,6 +11645,7 @@ targets:
   - gtest
   - upb_message_lib
   - utf8_range_lib
+  - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11926,6 +12025,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -11943,6 +12043,7 @@ targets:
   - test/core/promise/mpsc_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -12131,6 +12232,37 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: observable_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/notification.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/observable.h
+  - src/core/lib/promise/poll.h
+  src:
+  - src/core/lib/promise/activity.cc
+  - test/core/promise/observable_test.cc
+  deps:
+  - gtest
+  - absl/base:config
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
 - name: oracle_event_engine_posix_test
   gtest: true
   build: test
@@ -12926,6 +13058,7 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -12952,6 +13085,7 @@ targets:
   - test/core/promise/promise_mutex_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -17246,6 +17380,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -17264,6 +17399,7 @@ targets:
   - test/core/promise/wait_for_callback_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor

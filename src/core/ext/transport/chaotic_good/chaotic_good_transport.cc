@@ -16,4 +16,6 @@
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 
+grpc_core::TraceFlag grpc_chaotic_good_trace(false, "chaotic_good");
+
 namespace grpc_core {}  // namespace grpc_core

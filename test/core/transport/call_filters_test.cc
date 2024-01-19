@@ -137,11 +137,12 @@ TEST(StackDataTest, OneByteAlignmentAndSize) {
   d.AddFilter(&f1);
   EXPECT_EQ(d.call_data_alignment, 1);
   EXPECT_EQ(d.call_data_size, 1);
-  ASSERT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filter_constructor.size(), 1u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   // Check channel data
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1);
   // Check call offsets
-  EXPECT_EQ(d.filters[0].call_offset, 0);
+  EXPECT_EQ(d.filter_constructor[0].call_offset, 0);
 }
 
 TEST(StackDataTest, PointerAlignmentAndSize) {
@@ -159,11 +160,12 @@ TEST(StackDataTest, PointerAlignmentAndSize) {
   d.AddFilter(&f1);
   EXPECT_EQ(d.call_data_alignment, alignof(void*));
   EXPECT_EQ(d.call_data_size, sizeof(void*));
-  ASSERT_EQ(d.filters.size(), 1u);
+  ASSERT_EQ(d.filter_constructor.size(), 1u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   // Check channel data
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1);
   // Check call offsets
-  EXPECT_EQ(d.filters[0].call_offset, 0);
+  EXPECT_EQ(d.filter_constructor[0].call_offset, 0);
 }
 
 TEST(StackDataTest, PointerAndOneByteAlignmentAndSize) {
@@ -192,13 +194,14 @@ TEST(StackDataTest, PointerAndOneByteAlignmentAndSize) {
   EXPECT_EQ(d.call_data_alignment, alignof(void*));
   // Padding added after 1-byte element to align pointer.
   EXPECT_EQ(d.call_data_size, 2 * sizeof(void*));
-  ASSERT_EQ(d.filters.size(), 2u);
+  ASSERT_EQ(d.filter_constructor.size(), 2u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   // Check channel data
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[1].channel_data, &f2);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[1].channel_data, &f2);
   // Check call offsets
-  EXPECT_EQ(d.filters[0].call_offset, 0);
-  EXPECT_EQ(d.filters[1].call_offset, sizeof(void*));
+  EXPECT_EQ(d.filter_constructor[0].call_offset, 0);
+  EXPECT_EQ(d.filter_constructor[1].call_offset, sizeof(void*));
 }
 
 TEST(StackDataTest, PointerAndOneByteAlignmentAndSizeBackwards) {
@@ -227,13 +230,14 @@ TEST(StackDataTest, PointerAndOneByteAlignmentAndSizeBackwards) {
   EXPECT_EQ(d.call_data_alignment, alignof(void*));
   // No padding needed, so just the sum of sizes.
   EXPECT_EQ(d.call_data_size, sizeof(void*) + 1);
-  ASSERT_EQ(d.filters.size(), 2u);
+  ASSERT_EQ(d.filter_constructor.size(), 2u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   // Check channel data
-  EXPECT_EQ(d.filters[0].channel_data, &f2);
-  EXPECT_EQ(d.filters[1].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f2);
+  EXPECT_EQ(d.filter_constructor[1].channel_data, &f1);
   // Check call offsets
-  EXPECT_EQ(d.filters[0].call_offset, 0);
-  EXPECT_EQ(d.filters[1].call_offset, sizeof(void*));
+  EXPECT_EQ(d.filter_constructor[0].call_offset, 0);
+  EXPECT_EQ(d.filter_constructor[1].call_offset, sizeof(void*));
 }
 
 TEST(StackDataTest, EmptyFilter) {
@@ -274,21 +278,14 @@ TEST(StackDataTest, OneFilterThenManyEmptyThenOneNonEmpty) {
   d.AddFilter(&f1b);
   // Check overall size
   EXPECT_EQ(d.call_data_size, 2);
-  ASSERT_EQ(d.filters.size(), 6u);
+  ASSERT_EQ(d.filter_constructor.size(), 2u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   // Check channel data
-  EXPECT_EQ(d.filters[0].channel_data, &f1a);
-  EXPECT_EQ(d.filters[1].channel_data, &f2a);
-  EXPECT_EQ(d.filters[2].channel_data, &f2b);
-  EXPECT_EQ(d.filters[3].channel_data, &f2c);
-  EXPECT_EQ(d.filters[4].channel_data, &f2d);
-  EXPECT_EQ(d.filters[5].channel_data, &f1b);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1a);
+  EXPECT_EQ(d.filter_constructor[1].channel_data, &f1b);
   // Check call offsets
-  EXPECT_EQ(d.filters[0].call_offset, 0);
-  EXPECT_EQ(d.filters[1].call_offset, 0);
-  EXPECT_EQ(d.filters[2].call_offset, 0);
-  EXPECT_EQ(d.filters[3].call_offset, 0);
-  EXPECT_EQ(d.filters[4].call_offset, 0);
-  EXPECT_EQ(d.filters[5].call_offset, 1);
+  EXPECT_EQ(d.filter_constructor[0].call_offset, 0);
+  EXPECT_EQ(d.filter_constructor[1].call_offset, 1);
 }
 
 TEST(StackDataTest, FilterInit) {
@@ -300,13 +297,15 @@ TEST(StackDataTest, FilterInit) {
   StackData d;
   Filter1 f1;
   d.AddFilter(&f1);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, 0);
+  ASSERT_EQ(d.filter_constructor.size(), 1u);
+  ASSERT_EQ(d.filter_destructor.size(), 1u);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[0].call_offset, 0);
+  EXPECT_EQ(d.filter_destructor[0].call_offset, 0);
   void* p = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  d.filters[0].call_init(p, &f1);
+  d.filter_constructor[0].call_init(p, &f1);
   EXPECT_EQ(*static_cast<Filter1::Call*>(p)->p, 42);
-  d.filters[0].call_destroy(p);
+  d.filter_destructor[0].call_destroy(p);
   gpr_free_aligned(p);
 }
 
@@ -320,13 +319,15 @@ TEST(StackDataTest, FilterInitWithArg) {
   StackData d;
   Filter1 f1;
   d.AddFilter(&f1);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, 0);
+  ASSERT_EQ(d.filter_constructor.size(), 1u);
+  ASSERT_EQ(d.filter_destructor.size(), 1u);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[0].call_offset, 0);
+  EXPECT_EQ(d.filter_destructor[0].call_offset, 0);
   void* p = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  d.filters[0].call_init(p, &f1);
+  d.filter_constructor[0].call_init(p, &f1);
   EXPECT_EQ(*static_cast<Filter1::Call*>(p)->p, &f1);
-  d.filters[0].call_destroy(p);
+  d.filter_destructor[0].call_destroy(p);
   gpr_free_aligned(p);
 }
 
@@ -344,9 +345,8 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoid) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 0u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
@@ -384,9 +384,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoidTakingChannelPtr) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 0u);
   ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
@@ -428,9 +426,10 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningAbslStatus) {
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 1u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[0].call_offset, call_offset);
   ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
@@ -439,7 +438,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningAbslStatus) {
   EXPECT_EQ(d.client_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  d.filters[0].call_init(call_data, &f1);
+  d.filter_constructor[0].call_init(call_data, &f1);
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
@@ -462,7 +461,6 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningAbslStatus) {
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
-  d.filters[0].call_destroy(call_data);
   gpr_free_aligned(call_data);
 }
 
@@ -488,9 +486,10 @@ TEST(StackDataTest,
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 1u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[0].call_offset, call_offset);
   ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
@@ -499,7 +498,7 @@ TEST(StackDataTest,
   EXPECT_EQ(d.client_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  d.filters[0].call_init(call_data, &f1);
+  d.filter_constructor[0].call_init(call_data, &f1);
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
@@ -522,7 +521,6 @@ TEST(StackDataTest,
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
-  d.filters[0].call_destroy(call_data);
   gpr_free_aligned(call_data);
   EXPECT_THAT(f1.v, ::testing::ElementsAre(11, 22));
 }
@@ -547,9 +545,10 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 1u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[0].call_offset, call_offset);
   ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
@@ -558,7 +557,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
   EXPECT_EQ(d.client_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  d.filters[0].call_init(call_data, &f1);
+  d.filter_constructor[0].call_init(call_data, &f1);
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
@@ -581,7 +580,6 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
-  d.filters[0].call_destroy(call_data);
   gpr_free_aligned(call_data);
 }
 
@@ -609,9 +607,10 @@ TEST(StackDataTest,
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 1u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[0].call_offset, call_offset);
   ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
@@ -620,7 +619,7 @@ TEST(StackDataTest,
   EXPECT_EQ(d.client_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  d.filters[0].call_init(call_data, &f1);
+  d.filter_constructor[0].call_init(call_data, &f1);
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
@@ -643,7 +642,6 @@ TEST(StackDataTest,
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
-  d.filters[0].call_destroy(call_data);
   gpr_free_aligned(call_data);
   EXPECT_THAT(f1.v, ::testing::ElementsAre(11, 22));
 }
@@ -672,15 +670,16 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 1u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[0].call_offset, call_offset);
   ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  d.filters[0].call_init(call_data, &f1);
+  d.filter_constructor[0].call_init(call_data, &f1);
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
@@ -723,7 +722,6 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   EXPECT_FALSE(r.ready());
   d.client_initial_metadata.ops[0].early_destroy(promise_data);
   // ASAN will trigger if things aren't cleaned up
-  d.filters[0].call_destroy(call_data);
   gpr_free_aligned(promise_data);
   gpr_free_aligned(call_data);
 }
@@ -755,15 +753,16 @@ TEST(StackDataTest,
   const size_t call_offset = d.AddFilter(&f1);
   EXPECT_EQ(call_offset, 0);
   d.AddClientInitialMetadataOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 1u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
+  EXPECT_EQ(d.filter_constructor[0].channel_data, &f1);
+  EXPECT_EQ(d.filter_constructor[0].call_offset, call_offset);
   ASSERT_EQ(d.client_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.client_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_initial_metadata.ops[0].channel_data, &f1);
   // Check promise init
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  d.filters[0].call_init(call_data, &f1);
+  d.filter_constructor[0].call_init(call_data, &f1);
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
@@ -806,7 +805,6 @@ TEST(StackDataTest,
   EXPECT_FALSE(r.ready());
   d.client_initial_metadata.ops[0].early_destroy(promise_data);
   // ASAN will trigger if things aren't cleaned up
-  d.filters[0].call_destroy(call_data);
   gpr_free_aligned(promise_data);
   gpr_free_aligned(call_data);
   EXPECT_THAT(f1.v, ::testing::ElementsAre(11, 22));
@@ -826,9 +824,8 @@ TEST(StackDataTest, InstantServerInitialMetadataReturningVoid) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddServerInitialMetadataOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 0);
+  ASSERT_EQ(d.filter_destructor.size(), 0);
   ASSERT_EQ(d.server_initial_metadata.ops.size(), 1u);
   EXPECT_EQ(d.server_initial_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.server_initial_metadata.ops[0].channel_data, &f1);
@@ -864,9 +861,8 @@ TEST(StackDataTest, InstantClientToServerMessagesReturningVoid) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddClientToServerMessageOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 0u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   ASSERT_EQ(d.client_to_server_messages.ops.size(), 1u);
   EXPECT_EQ(d.client_to_server_messages.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.client_to_server_messages.ops[0].channel_data, &f1);
@@ -900,9 +896,8 @@ TEST(StackDataTest, InstantServerToClientMessagesReturningVoid) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddServerToClientMessageOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 0u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   ASSERT_EQ(d.server_to_client_messages.ops.size(), 1u);
   EXPECT_EQ(d.server_to_client_messages.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.server_to_client_messages.ops[0].channel_data, &f1);
@@ -936,9 +931,8 @@ TEST(StackDataTest, InstantServerTrailingMetadataReturningVoid) {
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddServerTrailingMetadataOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 0u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   ASSERT_EQ(d.server_trailing_metadata.ops.size(), 1u);
   EXPECT_EQ(d.server_trailing_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.server_trailing_metadata.ops[0].channel_data, &f1);
@@ -977,9 +971,8 @@ TEST(StackDataTest,
   EXPECT_EQ(call_offset, 0);
   EXPECT_EQ(d.call_data_size, 0);
   d.AddServerTrailingMetadataOp(&f1, call_offset);
-  ASSERT_EQ(d.filters.size(), 1u);
-  EXPECT_EQ(d.filters[0].channel_data, &f1);
-  EXPECT_EQ(d.filters[0].call_offset, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 0u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   ASSERT_EQ(d.server_trailing_metadata.ops.size(), 1u);
   EXPECT_EQ(d.server_trailing_metadata.ops[0].call_offset, call_offset);
   EXPECT_EQ(d.server_trailing_metadata.ops[0].channel_data, &f1);
@@ -1043,13 +1036,14 @@ TEST(OperationExecutorTest, InstantTwo) {
   const size_t call_offset2 = d.AddFilter(&f2);
   d.AddClientInitialMetadataOp(&f1, call_offset1);
   d.AddClientInitialMetadataOp(&f2, call_offset2);
-  ASSERT_EQ(d.filters.size(), 2u);
+  ASSERT_EQ(d.filter_constructor.size(), 2u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   ASSERT_EQ(d.client_initial_metadata.ops.size(), 2u);
   void* call_data1 =
       gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  void* call_data2 = Offset(call_data1, d.filters[1].call_offset);
-  d.filters[0].call_init(call_data1, &f1);
-  d.filters[1].call_init(call_data2, &f2);
+  void* call_data2 = Offset(call_data1, d.filter_constructor[1].call_offset);
+  d.filter_constructor[0].call_init(call_data1, &f1);
+  d.filter_constructor[1].call_init(call_data2, &f2);
   OperationExecutor<ClientMetadataHandle> transformer;
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
@@ -1070,8 +1064,6 @@ TEST(OperationExecutorTest, InstantTwo) {
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
-  d.filters[1].call_destroy(call_data2);
-  d.filters[0].call_destroy(call_data1);
   gpr_free_aligned(call_data1);
 }
 
@@ -1109,13 +1101,14 @@ TEST(OperationExecutorTest, PromiseTwo) {
   const size_t call_offset2 = d.AddFilter(&f2);
   d.AddClientInitialMetadataOp(&f1, call_offset1);
   d.AddClientInitialMetadataOp(&f2, call_offset2);
-  ASSERT_EQ(d.filters.size(), 2u);
+  ASSERT_EQ(d.filter_constructor.size(), 2u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   ASSERT_EQ(d.client_initial_metadata.ops.size(), 2u);
   void* call_data1 =
       gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  void* call_data2 = Offset(call_data1, d.filters[1].call_offset);
-  d.filters[0].call_init(call_data1, &f1);
-  d.filters[1].call_init(call_data2, &f2);
+  void* call_data2 = Offset(call_data1, d.filter_constructor[1].call_offset);
+  d.filter_constructor[0].call_init(call_data1, &f1);
+  d.filter_constructor[1].call_init(call_data2, &f2);
   OperationExecutor<ClientMetadataHandle> transformer;
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
@@ -1148,8 +1141,6 @@ TEST(OperationExecutorTest, PromiseTwo) {
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
-  d.filters[1].call_destroy(call_data2);
-  d.filters[0].call_destroy(call_data1);
   gpr_free_aligned(call_data1);
 }
 
@@ -1186,13 +1177,10 @@ TEST(InfallibleOperationExecutor, InstantTwo) {
   const size_t call_offset2 = d.AddFilter(&f2);
   d.AddServerTrailingMetadataOp(&f1, call_offset1);
   d.AddServerTrailingMetadataOp(&f2, call_offset2);
-  ASSERT_EQ(d.filters.size(), 2u);
+  ASSERT_EQ(d.filter_constructor.size(), 0u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
   ASSERT_EQ(d.server_trailing_metadata.ops.size(), 2u);
-  void* call_data1 =
-      gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  void* call_data2 = Offset(call_data1, d.filters[1].call_offset);
-  d.filters[0].call_init(call_data1, &f1);
-  d.filters[1].call_init(call_data2, &f2);
+  void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   InfallibleOperationExecutor<ServerMetadataHandle> transformer;
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
@@ -1201,13 +1189,11 @@ TEST(InfallibleOperationExecutor, InstantTwo) {
   auto md = Arena::MakePooled<ServerMetadata>(arena.get());
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   auto r =
-      transformer.Start(&d.server_trailing_metadata, std::move(md), call_data1);
+      transformer.Start(&d.server_trailing_metadata, std::move(md), call_data);
   EXPECT_TRUE(r.ready());
   EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
             "world");
-  d.filters[1].call_destroy(call_data2);
-  d.filters[0].call_destroy(call_data1);
-  gpr_free_aligned(call_data1);
+  gpr_free_aligned(call_data);
 }
 
 }  // namespace filters_detail
@@ -1385,6 +1371,7 @@ TEST(CallFiltersTest, UnaryCall) {
       void OnFinalize(const grpc_call_final_info*, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnFinalize"));
       }
+      std::unique_ptr<int> i = std::make_unique<int>(3);
     };
 
     const std::string label;

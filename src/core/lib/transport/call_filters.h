@@ -19,6 +19,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <type_traits>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -109,10 +110,10 @@ struct NoInterceptor {};
 
 namespace filters_detail {
 
-// One call filter metadata
-// Contains enough information to allocate and initialize/destruct the
+// One call filter constructor
+// Contains enough information to allocate and initialize the
 // call data for one filter.
-struct Filter {
+struct FilterConstructor {
   // Pointer to corresponding channel data for this filter
   void* channel_data;
   // Offset of the call data for this filter within the call data memory
@@ -120,6 +121,13 @@ struct Filter {
   size_t call_offset;
   // Initialize the call data for this filter
   void (*call_init)(void* call_data, void* channel_data);
+};
+
+// One call filter destructor
+struct FilterDestructor {
+  // Offset of the call data for this filter within the call data memory
+  // allocation
+  size_t call_offset;
   // Destroy the call data for this filter
   void (*call_destroy)(void* call_data);
 };
@@ -568,7 +576,8 @@ struct StackData {
   size_t call_data_size = 0;
   // A complete list of filters for this call, so that we can construct the
   // call data for each filter.
-  std::vector<Filter> filters;
+  std::vector<FilterConstructor> filter_constructor;
+  std::vector<FilterDestructor> filter_destructor;
   // For each kind of operation, a layout of the operations for this call.
   // (there's some duplicate data here, and that's ok: we want to avoid
   // pointer chasing as much as possible when executing a call)
@@ -592,7 +601,7 @@ struct StackData {
   // story.
   template <typename FilterType>
   absl::enable_if_t<!std::is_empty<typename FilterType::Call>::value, size_t>
-  AddFilter(FilterType* channel_data) {
+  AddFilterConstructor(FilterType* channel_data) {
     const size_t alignment = alignof(typename FilterType::Call);
     call_data_alignment = std::max(call_data_alignment, alignment);
     if (call_data_size % alignment != 0) {
@@ -600,37 +609,69 @@ struct StackData {
     }
     const size_t call_offset = call_data_size;
     call_data_size += sizeof(typename FilterType::Call);
-    filters.push_back(Filter{
+    filter_constructor.push_back(FilterConstructor{
         channel_data,
         call_offset,
         [](void* call_data, void* channel_data) {
           CallConstructor<FilterType>::Construct(
               call_data, static_cast<FilterType*>(channel_data));
         },
-        [](void* call_data) {
-          static_cast<typename FilterType::Call*>(call_data)->~Call();
-        },
     });
     return call_offset;
   }
 
   template <typename FilterType>
-  absl::enable_if_t<std::is_empty<typename FilterType::Call>::value, size_t>
-  AddFilter(FilterType* channel_data) {
+  absl::enable_if_t<
+      std::is_empty<typename FilterType::Call>::value &&
+          !std::is_trivially_constructible<typename FilterType::Call>::value,
+      size_t>
+  AddFilterConstructor(FilterType* channel_data) {
     const size_t alignment = alignof(typename FilterType::Call);
     call_data_alignment = std::max(call_data_alignment, alignment);
-    filters.push_back(Filter{
+    filter_constructor.push_back(FilterConstructor{
         channel_data,
         0,
         [](void* call_data, void* channel_data) {
           CallConstructor<FilterType>::Construct(
               call_data, static_cast<FilterType*>(channel_data));
         },
+    });
+    return 0;
+  }
+
+  template <typename FilterType>
+  absl::enable_if_t<
+      std::is_empty<typename FilterType::Call>::value &&
+          std::is_trivially_constructible<typename FilterType::Call>::value,
+      size_t>
+  AddFilterConstructor(FilterType*) {
+    const size_t alignment = alignof(typename FilterType::Call);
+    call_data_alignment = std::max(call_data_alignment, alignment);
+    return 0;
+  }
+
+  template <typename FilterType>
+  absl::enable_if_t<
+      !std::is_trivially_destructible<typename FilterType::Call>::value>
+  AddFilterDestructor(size_t call_offset) {
+    filter_destructor.push_back(FilterDestructor{
+        call_offset,
         [](void* call_data) {
           static_cast<typename FilterType::Call*>(call_data)->~Call();
         },
     });
-    return 0;
+  }
+
+  template <typename FilterType>
+  absl::enable_if_t<
+      std::is_trivially_destructible<typename FilterType::Call>::value>
+  AddFilterDestructor(size_t) {}
+
+  template <typename FilterType>
+  size_t AddFilter(FilterType* filter) {
+    const size_t call_offset = AddFilterConstructor(filter);
+    AddFilterDestructor<FilterType>(call_offset);
+    return call_offset;
   }
 
   // Per operation adders - one for each interception point.

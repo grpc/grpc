@@ -107,8 +107,15 @@ class ChaoticGoodServerTransport final : public Transport,
   absl::Status NewStream(uint32_t stream_id, CallInitiator call_initiator);
   absl::optional<CallInitiator> LookupStream(uint32_t stream_id);
   absl::optional<CallInitiator> ExtractStream(uint32_t stream_id);
+  auto SendCallInitialMetadataAndBody(uint32_t stream_id,
+                                      MpscSender<ServerFrame> outgoing_frames,
+                                      CallInitiator call_initiator);
+  auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
+                    CallInitiator call_initiator);
+  static auto SendFragment(ServerFragmentFrame frame,
+                           MpscSender<ServerFrame> outgoing_frames);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
-  auto OnTransportActivityDone();
+  auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop();
   auto TransportWriteLoop();
   // Read different parts of the server frame from control/data endpoints
@@ -133,6 +140,7 @@ class ChaoticGoodServerTransport final : public Transport,
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
+  uint32_t last_seen_new_stream_id_ = 0;
   grpc_event_engine::experimental::MemoryAllocator allocator_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   ActivityPtr writer_;

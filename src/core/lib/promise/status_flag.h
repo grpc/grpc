@@ -77,6 +77,7 @@ class StatusFlag {
   bool ok() const { return value_; }
 
   bool operator==(StatusFlag other) const { return value_ == other.value_; }
+  std::string ToString() const { return value_ ? "ok" : "failed"; }
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, StatusFlag flag) {

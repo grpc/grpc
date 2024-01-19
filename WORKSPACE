@@ -59,12 +59,16 @@ local_repository(
     path = "third_party/utf8_range",
 )
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_install")
+load("@rules_python//python:pip.bzl", "pip_parse")
 
-pip_install(
+pip_parse(
     name = "grpc_python_dependencies",
-    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
+    requirements_lock = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
+
+load("@grpc_python_dependencies//:requirements.bzl", "install_deps")
+
+install_deps()
 
 load("@com_google_protobuf//bazel:system_python.bzl", "system_python")
 
@@ -73,9 +77,9 @@ system_python(
     minimum_python_version = "3.7",
 )
 
-load("@system_python//:pip.bzl", "pip_parse")
+load("@system_python//:pip.bzl", system_pip_parse = "pip_parse")
 
-pip_parse(
+system_pip_parse(
     name = "pip_deps",
     requirements = "@com_google_protobuf//python:requirements.txt",
     requirements_overrides = {

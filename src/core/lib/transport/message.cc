@@ -16,6 +16,8 @@
 
 #include "src/core/lib/transport/message.h"
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/impl/grpc_types.h>
 
 namespace grpc_core {
