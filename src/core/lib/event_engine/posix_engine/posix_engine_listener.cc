@@ -186,8 +186,14 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     if (addr.address()->sa_family == AF_UNIX) {
       socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
       if (getpeername(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
-        gpr_log(GPR_ERROR, "Closing acceptor. Failed getpeername: %s",
-                strerror(errno));
+        auto listener_addr_uri = ResolvedAddressToURI(socket_.addr);
+        gpr_log(
+            GPR_ERROR,
+            "Failed getpeername: %s. This is a critical failure, the "
+            "listener on %s:%d is shutting down.",
+            strerror(errno),
+            listener_addr_uri.ok() ? listener_addr_uri->c_str() : "<unknown>",
+            socket_.port);
         close(fd);
         // Shutting down the acceptor. Unref the ref grabbed in
         // AsyncConnectionAcceptor::Start().

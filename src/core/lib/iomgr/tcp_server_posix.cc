@@ -420,8 +420,14 @@ static void on_read(void* arg, grpc_error_handle err) {
       addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
       if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                       &(addr.len)) < 0) {
-        gpr_log(GPR_ERROR, "Failed getpeername: %s",
-                grpc_core::StrError(errno).c_str());
+        auto listener_addr_uri = grpc_sockaddr_to_uri(&sp->addr);
+        gpr_log(
+            GPR_ERROR,
+            "Failed getpeername: %s. This is a critical failure, the "
+            "listener on %s:%d is shutting down.",
+            grpc_core::StrError(errno).c_str(),
+            listener_addr_uri.ok() ? listener_addr_uri->c_str() : "<unknown>",
+            sp->port);
         close(fd);
         goto error;
       }
