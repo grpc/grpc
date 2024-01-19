@@ -500,8 +500,7 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
       config.request_payload = payload;
     }
     if (absl::GetFlag(FLAGS_response_payload_size) > 0) {
-      config.response_payload_size =
-          absl::GetFlag(FLAGS_response_payload_size);
+      config.response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
     }
     configs.push_back(std::move(config));
   }
