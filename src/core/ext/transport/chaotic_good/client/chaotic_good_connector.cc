@@ -146,7 +146,7 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
           self->channel_args_),
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "data_endpoint_connection"),
-      EventEngine::Duration(self->kTimeoutSecs));
+      Duration(self->args_.deadline - Timestamp::Now()));
 
   return TrySeq(
       self->wait_for_data_endpoint_callback_->MakeWaitPromise(),
@@ -159,12 +159,10 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
                      DataEndpointReadSettingsFrame(self),
                      []() -> absl::Status { return absl::OkStatus(); });
                }),
-           TrySeq(
-               Sleep(Timestamp::Now() + Duration::Seconds(self->kTimeoutSecs)),
-               []() -> absl::Status {
-                 return absl::DeadlineExceededError(
-                     "Data endpoint connect deadline excced.");
-               })));
+           TrySeq(Sleep(self->args_.deadline), []() -> absl::Status {
+             return absl::DeadlineExceededError(
+                 "Data endpoint connect deadline excced.");
+           })));
 }
 
 auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
@@ -254,7 +252,16 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args_),
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "data_endpoint_connection"),
-      EventEngine::Duration(kTimeoutSecs));
+      Duration(args_.deadline - Timestamp::Now()));
+}
+
+void ChaoticGoodConnector::OnTimeout() {
+  MutexLock lock(&mu_);
+  result_->Reset();
+  if (connect_activity_ != nullptr) connect_activity_.reset();
+  if (timer_handle_.has_value()) timer_handle_.reset();
+  grpc_error_handle error = GRPC_ERROR_CREATE("connection timeout");
+  MaybeNotify(DEBUG_LOCATION, notify_, error);
 }
 
 void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
@@ -288,22 +295,29 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         grpc_event_engine::experimental::
             grpc_take_wrapped_event_engine_endpoint(args->endpoint),
         SliceBuffer());
-    auto memory_allocator =
+    self->memory_allocator_ =
         ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
             "connect_activity");
     self->connect_activity_ = MakeActivity(
         [self] {
           return TrySeq(ControlEndpointWriteSettingsFrame(self),
                         ControlEndpointReadSettingsFrame(self),
-                        []() { return absl::OkStatus(); });
+                        []() -> absl::Status { return absl::OkStatus(); });
         },
         EventEngineWakeupScheduler(
             grpc_event_engine::experimental::GetDefaultEventEngine()),
         [self](absl::Status status) {
           MaybeNotify(DEBUG_LOCATION, self->notify_, status);
         },
-        MakeScopedArena(self->kInitialArenaSize, &memory_allocator),
+        MakeScopedArena(self->kInitialArenaSize, &self->memory_allocator_),
         self->event_engine_.get());
+    MutexLock lock(&self->mu_);
+    self->timer_handle_ = self->event_engine_->RunAfter(
+        self->args_.deadline - Timestamp::Now(), [self] {
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
+          self->OnTimeout();
+        });
   } else {
     // Handshaking succeeded but there is no endpoint.
     MutexLock lock(&self->mu_);

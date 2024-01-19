@@ -62,6 +62,12 @@ class ChaoticGoodConnector
     if (handshake_mgr_ != nullptr) {
       handshake_mgr_->Shutdown(error);
     }
+    if (connect_activity_ != nullptr) {
+      connect_activity_.reset();
+    }
+    if (timer_handle_.has_value()) {
+      timer_handle_.reset();
+    }
   };
 
  private:
@@ -76,6 +82,7 @@ class ChaoticGoodConnector
   static auto WaitForDataEndpointSetup(
       std::shared_ptr<ChaoticGoodConnector> self);
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
+  void OnTimeout();
 
   Mutex mu_;
   Args args_;
@@ -83,11 +90,10 @@ class ChaoticGoodConnector
   grpc_closure* notify_;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
   ChannelArgs channel_args_;
-  const int32_t kTimeoutSecs = 5;
   const size_t kInitialArenaSize = 1024;
   absl::StatusOr<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
       resolved_addr_;
-
+  grpc_event_engine::experimental::MemoryAllocator memory_allocator_;
   std::shared_ptr<PromiseEndpoint> control_endpoint_;
   std::shared_ptr<PromiseEndpoint> data_endpoint_;
   ActivityPtr connect_activity_;
@@ -100,6 +106,8 @@ class ChaoticGoodConnector
   std::shared_ptr<WaitForCallback> wait_for_data_endpoint_callback_;
   Slice connection_id_;
   const int32_t kDataAlignmentBytes = 64;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      timer_handle_ ABSL_GUARDED_BY(mu_);
 };
 }  // namespace chaotic_good
 }  // namespace grpc_core
