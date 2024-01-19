@@ -7303,6 +7303,9 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
 - name: check_gcp_environment_linux_test
   gtest: true
   build: test
@@ -10839,6 +10842,9 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
 - name: insecure_security_connector_test
   gtest: true
   build: test
@@ -12231,6 +12237,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -12249,6 +12256,7 @@ targets:
   - test/core/promise/observable_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
