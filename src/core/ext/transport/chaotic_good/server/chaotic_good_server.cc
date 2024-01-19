@@ -68,19 +68,28 @@ namespace chaotic_good {
 using grpc_event_engine::experimental::EventEngine;
 ChaoticGoodServerListener::ChaoticGoodServerListener(Server* server,
                                                      const ChannelArgs& args)
-    : server_(server),
+    : RefCounted<ChaoticGoodServerListener>("ChaoticGoodServerListener"),
+      server_(server),
       args_(args),
       event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
 
-ChaoticGoodServerListener::~ChaoticGoodServerListener() {}
+ChaoticGoodServerListener::~ChaoticGoodServerListener() {
+  event_engine_->Run([on_destroy_done = on_destroy_done_]() {
+    ExecCtx exec_ctx;
+    if (on_destroy_done != nullptr) {
+      ExecCtx::Run(DEBUG_LOCATION, on_destroy_done, absl::OkStatus());
+      ExecCtx::Get()->Flush();
+    }
+  });
+}
 
 absl::StatusOr<int> ChaoticGoodServerListener::Bind(const char* addr) {
   EventEngine::Listener::AcceptCallback accept_cb =
-      [self = shared_from_this()](std::unique_ptr<EventEngine::Endpoint> ep,
-                                  MemoryAllocator) {
+      [self = Ref()](std::unique_ptr<EventEngine::Endpoint> ep,
+                     MemoryAllocator) {
         MutexLock lock(&self->mu_);
         self->connection_list_.insert(self->connection_list_.end(),
-                                      std::make_shared<ActiveConnection>(self));
+                                      MakeOrphanable<ActiveConnection>(self));
         self->connection_list_.back()->Start(std::move(ep));
       };
   auto shutdown_cb = [](absl::Status status) {
@@ -119,8 +128,8 @@ absl::Status ChaoticGoodServerListener::StartListening() {
 }
 
 ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
-    std::shared_ptr<ChaoticGoodServerListener> listener)
-    : listener_(listener) {}
+    RefCountedPtr<ChaoticGoodServerListener> listener)
+    : InternallyRefCounted("ActiveConnection"), listener_(listener) {}
 
 ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
   if (receive_settings_activity_ != nullptr) receive_settings_activity_.reset();
@@ -129,7 +138,7 @@ ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
 void ChaoticGoodServerListener::ActiveConnection::Start(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
   GPR_ASSERT(handshaking_state_ == nullptr);
-  handshaking_state_ = std::make_shared<HandshakingState>(shared_from_this());
+  handshaking_state_ = MakeRefCounted<HandshakingState>(Ref());
   handshaking_state_->Start(std::move(endpoint));
 }
 
@@ -164,20 +173,21 @@ void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
 }
 
 ChaoticGoodServerListener::ActiveConnection::HandshakingState::HandshakingState(
-    std::shared_ptr<ActiveConnection> connection)
-    : connection_(connection),
-      handshake_mgr_(std::make_shared<HandshakeManager>()) {}
+    RefCountedPtr<ActiveConnection> connection)
+    : RefCounted<HandshakingState>("handshaking_state"),
+      connection_(std::move(connection)),
+      handshake_mgr_(MakeRefCounted<HandshakeManager>()) {}
 
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::Start(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
   handshake_mgr_->DoHandshake(
       grpc_event_engine_endpoint_create(std::move(endpoint)),
       connection_->args(), GetConnectionDeadline(), nullptr, OnHandshakeDone,
-      this);
+      Ref().release());
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
-    EndpointReadSettingsFrame(std::shared_ptr<HandshakingState> self) {
+    EndpointReadSettingsFrame(RefCountedPtr<HandshakingState> self) {
   return TrySeq(
       self->connection_->endpoint_->ReadSlice(FrameHeader::kFrameHeaderSize),
       [self](Slice slice) {
@@ -230,7 +240,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
-    WaitForDataEndpointSetup(std::shared_ptr<HandshakingState> self) {
+    WaitForDataEndpointSetup(RefCountedPtr<HandshakingState> self) {
   return Race(
       TrySeq(
           []() {
@@ -265,7 +275,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
-    ControlEndpointWriteSettingsFrame(std::shared_ptr<HandshakingState> self) {
+    ControlEndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self) {
   return TrySeq(
       [self]() {
         self->connection_->NewConnectionID();
@@ -283,7 +293,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
-    DataEndpointWriteSettingsFrame(std::shared_ptr<HandshakingState> self) {
+    DataEndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self) {
   return TrySeq(
       [self]() {
         // Send data endpoint setting frame
@@ -311,7 +321,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
-    EndpointWriteSettingsFrame(std::shared_ptr<HandshakingState> self,
+    EndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self,
                                bool is_control_endpoint) {
   return If(is_control_endpoint, ControlEndpointWriteSettingsFrame(self),
             DataEndpointWriteSettingsFrame(self));
@@ -332,8 +342,8 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   }
   GPR_ASSERT(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
       args->endpoint));
-  std::shared_ptr<HandshakingState> self =
-      static_cast<HandshakingState*>(args->user_data)->shared_from_this();
+  RefCountedPtr<HandshakingState> self(
+      static_cast<HandshakingState*>(args->user_data));
   self->connection_->endpoint_ = std::make_shared<PromiseEndpoint>(
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
           args->endpoint),

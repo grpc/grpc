@@ -50,9 +50,9 @@
 
 namespace grpc_core {
 namespace chaotic_good {
-class ChaoticGoodServerListener
+class ChaoticGoodServerListener final
     : public Server::ListenerInterface,
-      public std::enable_shared_from_this<ChaoticGoodServerListener> {
+      public RefCounted<ChaoticGoodServerListener> {
  public:
   ChaoticGoodServerListener(Server* server, const ChannelArgs& args);
   ~ChaoticGoodServerListener() override;
@@ -60,44 +60,67 @@ class ChaoticGoodServerListener
   absl::StatusOr<int> Bind(const char* addr);
   absl::Status StartListening();
   const ChannelArgs& args() const { return args_; }
-  void Orphan() override {};
+  void Orphan() override {
+    gpr_log(GPR_INFO, "ORPHAN");
+    {
+      std::vector<OrphanablePtr<ActiveConnection>> connection_list;
+      MutexLock lock(&mu_);
+      connection_list = std::move(connection_list_);
+    }
+    ee_listener_.reset();
+    Unref();
+    gpr_log(GPR_INFO, "~ORPHAN");
+  };
 
-  class ActiveConnection
-      : public std::enable_shared_from_this<ActiveConnection> {
+  class ActiveConnection : public InternallyRefCounted<ActiveConnection> {
    public:
     explicit ActiveConnection(
-        std::shared_ptr<ChaoticGoodServerListener> listener);
+        RefCountedPtr<ChaoticGoodServerListener> listener);
     ~ActiveConnection();
     void Start(
         std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
             endpoint);
     const ChannelArgs& args() const { return listener_->args(); }
 
-    class HandshakingState
-        : public std::enable_shared_from_this<HandshakingState> {
+    void Orphan() override {
+      if (handshaking_state_ != nullptr) {
+        handshaking_state_->Shutdown();
+        handshaking_state_.reset();
+      }
+      listener_.reset();
+      Unref();
+    }
+
+    class HandshakingState : public RefCounted<HandshakingState> {
      public:
-      explicit HandshakingState(std::shared_ptr<ActiveConnection> connection);
+      explicit HandshakingState(RefCountedPtr<ActiveConnection> connection);
       ~HandshakingState(){};
       void Start(std::unique_ptr<
                  grpc_event_engine::experimental::EventEngine::Endpoint>
                      endpoint);
 
+      void Shutdown() {
+        gpr_log(GPR_INFO, "Shutdown:%p", this);
+        handshake_mgr_->Shutdown(absl::CancelledError("Shutdown"));
+        connection_.reset();
+      }
+
      private:
       static auto EndpointReadSettingsFrame(
-          std::shared_ptr<HandshakingState> self);
+          RefCountedPtr<HandshakingState> self);
       static auto EndpointWriteSettingsFrame(
-          std::shared_ptr<HandshakingState> self, bool is_control_endpoint);
+          RefCountedPtr<HandshakingState> self, bool is_control_endpoint);
       static auto WaitForDataEndpointSetup(
-          std::shared_ptr<HandshakingState> self);
+          RefCountedPtr<HandshakingState> self);
       static auto ControlEndpointWriteSettingsFrame(
-          std::shared_ptr<HandshakingState> self);
+          RefCountedPtr<HandshakingState> self);
       static auto DataEndpointWriteSettingsFrame(
-          std::shared_ptr<HandshakingState> self);
+          RefCountedPtr<HandshakingState> self);
 
       static void OnHandshakeDone(void* arg, grpc_error_handle error);
       Timestamp GetConnectionDeadline();
-      std::shared_ptr<ActiveConnection> connection_;
-      std::shared_ptr<HandshakeManager> handshake_mgr_;
+      RefCountedPtr<ActiveConnection> connection_;
+      RefCountedPtr<HandshakeManager> handshake_mgr_;
     };
 
    private:
@@ -106,10 +129,10 @@ class ChaoticGoodServerListener
     grpc_event_engine::experimental::MemoryAllocator memory_allocator_ =
         ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
             "server_connection");
-    std::shared_ptr<ChaoticGoodServerListener> listener_;
+    RefCountedPtr<ChaoticGoodServerListener> listener_;
     const size_t kInitialArenaSize = 1024;
     const Duration kConnectionDeadline = Duration::Seconds(5);
-    std::shared_ptr<HandshakingState> handshaking_state_;
+    RefCountedPtr<HandshakingState> handshaking_state_;
     ActivityPtr receive_settings_activity_;
     std::shared_ptr<PromiseEndpoint> endpoint_;
     HPackCompressor hpack_compressor_;
@@ -119,12 +142,16 @@ class ChaoticGoodServerListener
     int32_t data_alignment_;
   };
 
-  // Overridden to initialize listener but not actually used.
-  void Start(Server*, const std::vector<grpc_pollset*>*) override {};
+  void Start(Server*, const std::vector<grpc_pollset*>*) override {
+    StartListening().IgnoreError();
+  };
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return nullptr;
   }
-  void SetOnDestroyDone(grpc_closure*) override {};
+  void SetOnDestroyDone(grpc_closure* closure) override {
+    MutexLock lock(&mu_);
+    on_destroy_done_ = closure;
+  };
 
  private:
   Server* server_;
@@ -137,9 +164,11 @@ class ChaoticGoodServerListener
   absl::flat_hash_map<std::string, std::shared_ptr<Latch<std::shared_ptr<
                                        PromiseEndpoint>>>> connectivity_map_
       ABSL_GUARDED_BY(mu_);
-  std::vector<std::shared_ptr<ActiveConnection>> connection_list_
+  std::vector<OrphanablePtr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
+  grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
 };
+
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
