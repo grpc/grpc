@@ -52,7 +52,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
     StartServer();
     ConstructConnector();
   }
-  ~ChaoticGoodServerTest() {
+  ~ChaoticGoodServerTest() override {
     args_.channel_args = ChannelArgs();
     if (connector_ != nullptr) connector_->Shutdown(absl::CancelledError());
     connector_.reset();
