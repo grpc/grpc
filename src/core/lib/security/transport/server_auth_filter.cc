@@ -123,7 +123,7 @@ grpc_metadata_array MetadataBatchToMetadataArray(
 struct ServerAuthFilter::RunApplicationCode::State {
   explicit State(ClientMetadata& client_metadata)
       : client_metadata(&client_metadata) {}
-  Waker waker{Activity::current()->MakeOwningWaker()};
+  Waker waker{GetContext<Activity>()->MakeOwningWaker()};
   absl::StatusOr<ClientMetadata*> client_metadata;
   grpc_metadata_array md = MetadataBatchToMetadataArray(*client_metadata);
   std::atomic<bool> done{false};
@@ -136,7 +136,7 @@ ServerAuthFilter::RunApplicationCode::RunApplicationCode(
     gpr_log(GPR_ERROR,
             "%s[server-auth]: Delegate to application: filter=%p this=%p "
             "auth_ctx=%p",
-            Activity::current()->DebugTag().c_str(), filter, this,
+            GetContext<Activity>()->DebugTag().c_str(), filter, this,
             filter->auth_context_.get());
   }
   filter->server_credentials_->auth_metadata_processor().process(
