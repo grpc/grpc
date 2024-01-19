@@ -19,8 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -34,10 +35,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -326,10 +323,17 @@ class ChannelArgs {
 
   class Value {
    public:
-    explicit Value(int n) : rep_(reinterpret_cast<void*>(n), &int_vtable_) {}
-    explicit Value(std::string s)
-        : rep_(RefCountedString::Make(s).release(), &string_vtable_) {}
-    explicit Value(Pointer p) : rep_(std::move(p)) {}
+    explicit Value(int n, grpc_core::SourceLocation& location)
+        : rep_(reinterpret_cast<void*>(n), &int_vtable_),
+          location_(location) {}
+
+    explicit Value(std::string s, grpc_core::SourceLocation& location)
+        : rep_(RefCountedString::Make(s).release(), &string_vtable_),
+          location_(location) {}
+
+    explicit Value(Pointer p, grpc_core::SourceLocation& location)
+        : rep_(std::move(p)),
+          location_(location) {}
 
     absl::optional<int> GetIfInt() const {
       if (rep_.c_vtable() != &int_vtable_) return absl::nullopt;
@@ -347,6 +351,10 @@ class ChannelArgs {
 
     absl::string_view ToString(std::list<std::string>& backing) const;
 
+    // TODO(tjagtap) : Make this available in the
+    // GetChannelArgsDebugInfo() function after rebasing.
+    std::string GetSourceLocationString() const;
+
     grpc_arg MakeCArg(const char* name) const;
 
     bool operator<(const Value& rhs) const { return rep_ < rhs.rep_; }
@@ -363,6 +371,7 @@ class ChannelArgs {
     static const grpc_arg_pointer_vtable string_vtable_;
 
     Pointer rep_;
+    grpc_core::SourceLocation location_;
   };
 
   struct ChannelArgsDeleter {
@@ -378,9 +387,13 @@ class ChannelArgs {
   ChannelArgs(ChannelArgs&&) noexcept;
   ChannelArgs& operator=(ChannelArgs&&) noexcept;
 
-  static ChannelArgs FromC(const grpc_channel_args* args);
-  static ChannelArgs FromC(const grpc_channel_args& args) {
-    return FromC(&args);
+  static ChannelArgs FromC(
+      const grpc_channel_args* args,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation());
+  static ChannelArgs FromC(
+      const grpc_channel_args& args,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) {
+    return FromC(&args, location);
   }
   // Construct a new grpc_channel_args struct.
   CPtr ToC() const;
@@ -395,37 +408,50 @@ class ChannelArgs {
   FuzzingReferenceUnionWith(ChannelArgs other) const;
 
   const Value* Get(absl::string_view name) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                       Pointer value) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name, int value) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                       absl::string_view value) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                       std::string value) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                       const char* value) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(grpc_arg arg) const;
+  GRPC_MUST_USE_RESULT ChannelArgs
+  Set(absl::string_view name, Pointer value,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const;
+  GRPC_MUST_USE_RESULT ChannelArgs
+  Set(absl::string_view name, int value,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const;
+  GRPC_MUST_USE_RESULT ChannelArgs
+  Set(absl::string_view name, absl::string_view value,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const;
+  GRPC_MUST_USE_RESULT ChannelArgs
+  Set(absl::string_view name, std::string value,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const;
+  GRPC_MUST_USE_RESULT ChannelArgs
+  Set(absl::string_view name, const char* value,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const;
+  GRPC_MUST_USE_RESULT ChannelArgs
+  Set(grpc_arg arg,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const;
   template <typename T>
   GRPC_MUST_USE_RESULT absl::enable_if_t<
       std::is_same<const grpc_arg_pointer_vtable*,
                    decltype(ChannelArgTypeTraits<T>::VTable())>::value,
       ChannelArgs>
-  Set(absl::string_view name, T* value) const {
-    return Set(name, Pointer(ChannelArgTypeTraits<T>::TakeUnownedPointer(value),
-                             ChannelArgTypeTraits<T>::VTable()));
+  Set(absl::string_view name, T* value,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const {
+    return Set(name,
+               Pointer(ChannelArgTypeTraits<T>::TakeUnownedPointer(value),
+                       ChannelArgTypeTraits<T>::VTable()),
+               location);
   }
   template <typename T>
-  GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
-                                RefCountedPtr<T> value) const
+  GRPC_MUST_USE_RESULT auto Set(
+      absl::string_view name, RefCountedPtr<T> value,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const
       -> absl::enable_if_t<
           !ChannelArgPointerShouldBeConst<T>::kValue &&
               std::is_same<const grpc_arg_pointer_vtable*,
                            decltype(ChannelArgTypeTraits<
                                     absl::remove_cvref_t<T>>::VTable())>::value,
           ChannelArgs> {
-    return Set(
-        name, Pointer(value.release(),
-                      ChannelArgTypeTraits<absl::remove_cvref_t<T>>::VTable()));
+    return Set(name,
+               Pointer(value.release(),
+                       ChannelArgTypeTraits<absl::remove_cvref_t<T>>::VTable()),
+               location);
   }
   template <typename T>
   GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
@@ -446,7 +472,8 @@ class ChannelArgs {
           const grpc_arg_pointer_vtable*,
           decltype(ChannelArgTypeTraits<std::shared_ptr<T>>::VTable())>::value,
       ChannelArgs>
-  Set(absl::string_view name, std::shared_ptr<T> value) const {
+  Set(absl::string_view name, std::shared_ptr<T> value,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const {
     static_assert(SupportedSharedPtrType<T>::value,
                   "Type T must extend std::enable_shared_from_this to be added "
                   "into ChannelArgs as a shared_ptr<T>");
@@ -455,13 +482,15 @@ class ChannelArgs {
         name,
         Pointer(ChannelArgTypeTraits<std::shared_ptr<T>>::TakeUnownedPointer(
                     store_value),
-                ChannelArgTypeTraits<std::shared_ptr<T>>::VTable()));
+                ChannelArgTypeTraits<std::shared_ptr<T>>::VTable()),
+        location);
   }
   template <typename T>
-  GRPC_MUST_USE_RESULT ChannelArgs SetIfUnset(absl::string_view name,
-                                              T value) const {
+  GRPC_MUST_USE_RESULT ChannelArgs SetIfUnset(
+      absl::string_view name, T value,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const {
     if (Contains(name)) return *this;
-    return Set(name, std::move(value));
+    return Set(name, std::move(value), location);
   }
   GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
   bool Contains(absl::string_view name) const;
@@ -496,16 +525,23 @@ class ChannelArgs {
   // Expects ChannelArgTypeTraits to exist for T, and T to expose:
   //   static string_view ChannelArgName();
   template <typename T>
-  GRPC_MUST_USE_RESULT ChannelArgs SetObject(T* p) const {
-    return Set(T::ChannelArgName(), p);
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(
+      T* p,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const {
+    return Set(T::ChannelArgName(), p, location);
   }
   template <typename T>
-  GRPC_MUST_USE_RESULT ChannelArgs SetObject(RefCountedPtr<T> p) const {
-    return Set(T::ChannelArgName(), std::move(p));
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(
+      RefCountedPtr<T> p,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const {
+    return Set(T::ChannelArgName(), std::move(p), location);
   }
   template <typename T>
-  GRPC_MUST_USE_RESULT ChannelArgs SetObject(std::shared_ptr<T> p) const {
-    return Set(ChannelArgNameTraits<T>::ChannelArgName(), std::move(p));
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(
+      std::shared_ptr<T> p,
+      grpc_core::SourceLocation location = grpc_core::SourceLocation()) const {
+    return Set(ChannelArgNameTraits<T>::ChannelArgName(), std::move(p),
+               location);
   }
   template <typename T>
   typename GetObjectImpl<T>::Result GetObject() const {
@@ -650,7 +686,7 @@ typedef grpc_core::ChannelArgs (
     const char* target, const grpc_core::ChannelArgs& old_args,
     grpc_channel_stack_type type);
 
-// Should be called only once globaly before grpc is init'ed.
+// Should be called only once globally before grpc is init'ed.
 void grpc_channel_args_set_client_channel_creation_mutator(
     grpc_channel_args_client_channel_creation_mutator cb);
 // This will be called at the creation of each channel.
