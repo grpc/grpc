@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_TRATCH_H
-#define GRPC_SRC_CORE_LIB_TRATCH_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SETTINGS_METADATA_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SETTINGS_METADATA_H
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/types/optional.h"
 
@@ -41,4 +43,4 @@ struct SettingsMetadata {
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SETTINGS_METADATA_H
