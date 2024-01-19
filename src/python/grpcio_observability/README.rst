@@ -4,6 +4,16 @@ Package for gRPC Python Observability.
 
 More details can be found in `OpenTelemetry Metrics gRFC <https://github.com/grpc/proposal/blob/master/A66-otel-stats.md#opentelemetry-metrics>`_.
 
+How gRPC Python Observability Works
+-------------------------
+
+gRPC Python is a wrapper layer built upon the gRPC Core (written in C/C++). Most of census data is collected at core layer and then exported to Python layer.
+
+To optimize performance and reduce the overhead of acquiring GIL too frequently, census data is initially cached at the Core layer.
+
+This data is then exported to the Python layer in batches. While this approach enhances efficiency, it will introduce a slight delay between the time the data is collected and the time it becomes available through Python exporters.
+
+
 Supported Python Versions
 -------------------------
 Python >= 3.7
@@ -58,3 +68,22 @@ Usage
 -----
 
 You can find example usage in `Python example folder <https://pypi.python.org/pypi/grpcio-health-checking>`_.
+
+We also provides couple of environment variables to help you optimize gRPC for your particular use.
+
+1. GRPC_PYTHON_CENSUS_EXPORT_BATCH_INTERVAL
+    * This controls how frequently census data collected within gRPC Core is sent to Python layer.
+    * Default value is 0.5 (Seconds).
+
+2. GRPC_PYTHON_CENSUS_MAX_EXPORT_BUFFER_SIZE
+    * This controls the maximum number of census data items that can be held in the buffer within gRPC Core before they are sent to Python.
+    * Default value is 10,000.
+
+3. GRPC_PYTHON_CENSUS_EXPORT_THRESHOLD
+    * This setting acts as a trigger: When the buffer in gRPC Core reaches a certain percentage of its capacity, the census data is sent to Python.
+    * Default value is 0.7 (Which means buffer will start export when it's 70% full).
+
+4. GRPC_PYTHON_CENSUS_EXPORT_THREAD_TIMEOUT
+    * This controls the maximum time allowed for the exporting thread (responsible for sending data to Python) to complete.
+    * Main thread will terminate the exporting thread after this timeout.
+    * Default value is 10 (Seconds).
