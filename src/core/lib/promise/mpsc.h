@@ -62,7 +62,7 @@ class Center : public RefCounted<Center<T>> {
   bool PollReceiveBatch(std::vector<T>& dest) {
     ReleasableMutexLock lock(&mu_);
     if (queue_.empty()) {
-      receive_waker_ = Activity::current()->MakeNonOwningWaker();
+      receive_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
       return false;
     }
     dest.swap(queue_);
@@ -87,7 +87,7 @@ class Center : public RefCounted<Center<T>> {
       receive_waker.Wakeup();
       return Poll<bool>(true);
     }
-    send_wakers_.AddPending(Activity::current()->MakeNonOwningWaker());
+    send_wakers_.AddPending(GetContext<Activity>()->MakeNonOwningWaker());
     return Pending{};
   }
 
