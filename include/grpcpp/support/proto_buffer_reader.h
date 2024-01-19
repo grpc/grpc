@@ -163,6 +163,9 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
       set_byte_count(ByteCount() + slice_length);
       if (slice_length <= static_cast<uint64_t>(count)) {
         cord->Append(MakeCordFromSlice(grpc_slice_ref(*slice())));
+        // This cast is safe as the size of a serialized protobuf message
+        // should be smaller than 2GiB.
+        // (https://protobuf.dev/programming-guides/encoding/#size-limit)
         count -= static_cast<int>(slice_length);
       } else {
         cord->Append(MakeCordFromSlice(grpc_slice_split_head(slice(), count)));
