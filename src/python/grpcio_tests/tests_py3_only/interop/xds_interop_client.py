@@ -172,9 +172,8 @@ class _StatsWatcher:
             for method, count_by_peer in self._rpcs_by_method.items():
                 for peer, count in count_by_peer.items():
                     response.rpcs_by_method[method].rpcs_by_peer[peer] = count
-            if len(self._metadata_by_peer.keys()) > 0:
-                for peer, metadata_by_peer in self._metadata_by_peer.items():
-                    response.metadatas_by_peer[peer].CopyFrom(metadata_by_peer)
+            for peer, metadata_by_peer in self._metadata_by_peer.items():
+                response.metadatas_by_peer[peer].CopyFrom(metadata_by_peer)
             response.num_failures = self._no_remote_peer + self._rpcs_needed
         return response
 
