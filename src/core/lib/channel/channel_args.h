@@ -326,7 +326,9 @@ class ChannelArgs {
 
   class Value {
    public:
-    explicit Value(int n) : rep_(reinterpret_cast<void*>(n), &int_vtable_) {}
+    explicit Value(int n)
+        : rep_(reinterpret_cast<void*>(static_cast<intptr_t>(n)),
+               &int_vtable_) {}
     explicit Value(std::string s)
         : rep_(RefCountedString::Make(s).release(), &string_vtable_) {}
     explicit Value(Pointer p) : rep_(std::move(p)) {}
