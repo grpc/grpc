@@ -208,7 +208,7 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(
       request_service_config_(
           !channel_args()
                .GetBool(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION)
-               .value_or(true)),
+               .value_or(false)),
       enable_srv_queries_(channel_args()
                               .GetBool(GRPC_ARG_DNS_ENABLE_SRV_QUERIES)
                               .value_or(false)),
