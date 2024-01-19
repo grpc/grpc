@@ -7,11 +7,13 @@ More details can be found in `OpenTelemetry Metrics gRFC <https://github.com/grp
 How gRPC Python Observability Works
 -------------------------
 
-gRPC Python is a wrapper layer built upon the gRPC Core (written in C/C++). Most of census data is collected at core layer and then exported to Python layer.
+gRPC Python is a wrapper layer built upon the gRPC Core (written in C/C++). Most of census data
+is collected at core layer and then exported to Python layer. To optimize performance and reduce
+the overhead of acquiring GIL too frequently, census data is initially cached at the Core layer
+and then exported to the Python layer in batches.
 
-To optimize performance and reduce the overhead of acquiring GIL too frequently, census data is initially cached at the Core layer.
-
-This data is then exported to the Python layer in batches. While this approach enhances efficiency, it will introduce a slight delay between the time the data is collected and the time it becomes available through Python exporters.
+Note that while this approach enhances efficiency, it will introduce a slight delay between the
+time the data is collected and the time it becomes available through Python exporters.
 
 
 Supported Python Versions
@@ -67,9 +69,9 @@ gRPC Python Observability Depends on the following packages:
 Usage
 -----
 
-You can find example usage in `Python example folder <https://pypi.python.org/pypi/grpcio-health-checking>`_.
+You can find example usage in `Python example folder <https://github.com/grpc/grpc/tree/master/examples/python/observability>`_.
 
-We also provides couple of environment variables to help you optimize gRPC for your particular use.
+We also provides couple of environment variables to help you optimize gRPC python observability for your particular use.
 
 1. GRPC_PYTHON_CENSUS_EXPORT_BATCH_INTERVAL
     * This controls how frequently census data collected within gRPC Core is sent to Python layer.
