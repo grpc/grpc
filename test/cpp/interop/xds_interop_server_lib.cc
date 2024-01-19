@@ -92,8 +92,8 @@ class TestServiceImpl : public TestService::Service {
       }
     }
     if (request->response_size() > 0) {
-      std::unique_ptr<char[]> body(new char[request->response_size()]());
-      response->mutable_payload()->set_body(body.get(),
+      std::string payload(request->response_size(), '0');
+      response->mutable_payload()->set_body(payload.c_str(),
                                             request->response_size());
     }
     response->set_hostname(hostname_);
